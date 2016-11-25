@@ -110,21 +110,20 @@ void PopulatePrimitiveValueWithCustomDataSet(ECValueR value, PrimitiveType primi
             case PRIMITIVETYPE_DateTime:
             {
             DateTime dt;
-            DateTimeInfo dti;
+            DateTime::Info dti;
             if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
-                DateTime::Info info = dti.GetInfo(true);
-                if (info.GetKind() == DateTime::Kind::Local)
+                if (dti.IsValid() && dti.GetKind() == DateTime::Kind::Local)
                     {
                     //local date times are not supported by ECObjects
                     break;
                     }
 
-                DateTime::FromJulianDay(dt, 2456341.75, info);
+                DateTime::FromJulianDay(dt, 2456341.75, dti);
                 }
             else
                 {
-                DateTime::FromJulianDay(dt, 2456341.75, DateTimeInfo::GetDefault());
+                DateTime::FromJulianDay(dt, 2456341.75, DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified));
                 }
 
             value.SetDateTime(dt);
@@ -271,8 +270,7 @@ TEST_F(ECDbInstances, ECInstanceAdapterGetECInstanceWithNullValues)
             Utf8CP propName = propValue.GetValueAccessor().GetAccessString();
             const bool expectedIsNull = BeStringUtilities::Stricmp(propName, nonNullPropertyName) != 0;
             value = propValue.GetValue();
-            bool actualIsNull = ECDbTestUtility::IsECValueNull(value);
-
+            bool actualIsNull = value.IsNull() || (value.IsArray() && value.GetArrayInfo().GetCount() == 0);
             EXPECT_EQ(expectedIsNull, actualIsNull) << "Assertion of IsNull check for property value failed for property '" << propName << "'.";
             }
         }

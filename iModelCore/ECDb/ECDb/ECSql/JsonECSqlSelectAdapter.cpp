@@ -651,7 +651,7 @@ bool JsonECSqlSelectAdapter::JsonFromDateTime(JsonValueR jsonValue, IECSqlValue 
     DateTime dateTime = ecsqlValue.GetDateTime();
     if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
         {
-        jsonValue = dateTime.ToUtf8String();
+        jsonValue = dateTime.ToString();
         return true;
         }
     else

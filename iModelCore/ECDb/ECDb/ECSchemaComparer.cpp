@@ -1891,7 +1891,7 @@ Utf8String DateTimeChange::_ToString(ValueId id) const
     if (v.IsNull())
         str = NULL_TEXT;
     else
-        str.assign(v.Value().ToUtf8String());
+        str.assign(v.Value().ToString());
 
     return str;
     }

@@ -23,15 +23,15 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
         {
         ECPropertyCP property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
-        DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
             ReportError(ECSqlStatus::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             return;
             }
 
-        m_datetimeMetadata = dateTimeInfo.GetInfo(true);
+        if (!m_datetimeMetadata.IsValid())
+            m_datetimeMetadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified); //default
         }
     }
 
@@ -75,10 +75,10 @@ double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime:
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
+uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     const double jd = _GetDateTimeJulianDays(metadata);
-    return DateTime::RationalDayToHns(jd);
+    return DateTime::RationalDayToMsec(jd);
     }
 
 //-----------------------------------------------------------------------------------------

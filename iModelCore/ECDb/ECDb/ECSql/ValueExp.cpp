@@ -767,10 +767,10 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
         {
         DateTime::Info dtInfo;
         if (m_value.EqualsI(CURRENT_DATE))
-            dtInfo = DateTime::Info(DateTime::Kind::Unspecified, DateTime::Component::Date);
+            dtInfo = DateTime::Info::CreateForDate();
         else if (m_value.EqualsI(CURRENT_TIMESTAMP))
             //deviating from SQL-99 ECSQL considers CURRENT_TIMESTAMP to return a UTC time stamp
-            dtInfo = DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime);
+            dtInfo = DateTime::Info::CreateForDateTime(DateTime::Kind::Utc);
         else
             {
             DateTime dt;
@@ -783,8 +783,7 @@ BentleyStatus LiteralValueExp::ResolveDataType(ECSqlParseContext& ctx)
             dtInfo = dt.GetInfo();
             }
 
-        DateTimeInfo dtMetadata(dtInfo);
-        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dtMetadata));
+        SetTypeInfo(ECSqlTypeInfo(PRIMITIVETYPE_DateTime, false, &dtInfo));
         }
 
     return SUCCESS;
@@ -820,12 +819,13 @@ void LiteralValueExp::_DoToECSql(Utf8StringR ecsql) const
                 return;
                 }
 
-            auto const& dtInfo = typeInfo.GetDateTimeInfo();
-            if (!dtInfo.IsComponentNull() && dtInfo.GetInfo(false).GetComponent() == DateTime::Component::Date)
-                ecsql.append("DATE '").append(m_value).append("'");
+            DateTime::Info const& dtInfo = typeInfo.GetDateTimeInfo();
+            if (dtInfo.IsValid() && dtInfo.GetComponent() == DateTime::Component::Date)
+                ecsql.append("DATE '");
             else
-                ecsql.append("TIMESTAMP '").append(m_value).append("'");
+                ecsql.append("TIMESTAMP '");
 
+            ecsql.append(m_value).append("'");
             return;
             }
         }

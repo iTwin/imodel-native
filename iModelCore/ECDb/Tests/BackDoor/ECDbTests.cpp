@@ -63,9 +63,6 @@ BentleyApi::NativeLogging::ILogger& ECDbTestLogger::Get()
 //ECDbTestUtility
 //************************************************************************************
 
-//Datetimes in ECDb are stored as JulianDays as doubles. Accuracy therefore is approx. at the milliseconds level only
-static const int DATETIME_ACCURACY_TOLERANCE_HNS = 5000;
-
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                11/2012
 //+---------------+---------------+---------------+---------------+---------------+-
@@ -273,10 +270,9 @@ bool CompareProperties(IECInstanceCR actual, ECValuesCollectionCR expected)
         PrimitiveType actualType = actualValue.GetPrimitiveType();
         if (actualType == PRIMITIVETYPE_DateTime)
             {
-            //Storing dates in DgnDb only allows accuracy of approx millisecs right now.
             int64_t expectedECTicks = expectedValue.GetDateTimeTicks();
             int64_t actualECTicks = actualValue.GetDateTimeTicks();
-            if (ECDbTestUtility::CompareECDateTimes(expectedECTicks, actualECTicks))
+            if (expectedECTicks == actualECTicks)
                 continue;
             }
 
@@ -417,8 +413,9 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
 
             const int64_t referenceECTicks = referenceValue.GetDateTimeTicks();
             const double jsonJd = jsonValue.asDouble();
-            const int64_t jsonECTicks = JulianDayToCommonEraTicks(jsonJd);
-            return CompareECDateTimes(referenceECTicks, jsonECTicks);
+            const uint64_t jdMsec = DateTime::RationalDayToMsec(jsonJd);
+            const int64_t jsonCETicks = DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000;
+            return referenceECTicks == jsonCETicks;
             }
 
             case PRIMITIVETYPE_Double:
@@ -535,267 +532,27 @@ bool ECDbTestUtility::CompareJsonWithECArrayValue(const Json::Value& jsonValue, 
         }
     return true;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECDbTestUtility::GetIterableCount(ECCustomAttributeInstanceIterable const& iterable)
-    {
-    size_t count = 0;
-    for (IECInstancePtr instance : iterable)
-        count++;
-    return count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-size_t ECDbTestUtility::GetIterableCount(ECPropertyIterable const& iterable)
-    {
-    size_t count = 0;
-    for (ECPropertyP p : iterable)
-        {
-        UNUSED_VARIABLE(p); // To avoid unreferenced variable compilation warning
-        count++;
-        }
-    return count;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Krischan.Eberle                   10/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-bool ECDbTestUtility::IsECValueNull
-(
-    ECValueCR value
-    )
-    {
-    return value.IsNull() || (value.IsArray() && value.GetArrayInfo().GetCount() == 0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECDbTestUtility::IsECValueNullOrEmpty(ECValueCR value)
-    {
-    if (IsECValueNull(value))
-        return true;
-
-    if (value.IsString())
-        {
-        if (value.IsString())
-            {
-            Utf8CP valueStr = value.GetUtf8CP();
-            if (valueStr == nullptr || valueStr[0] == 0)
-                return true;
-            }
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Krischan.Eberle                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-void ECDbTestUtility::AssertECDateTime
-(
-    ECValueCR expectedECValue,
-    const Db& db,
-    double actualJd
-    )
+void ECDbTestUtility::AssertECDateTime(ECValueCR expectedECValue, const Db& db, double actualJd)
     {
     const DateTime expectedDateTime = expectedECValue.GetDateTime();
-
-    Utf8String assertMessageHeader;
-    assertMessageHeader.Sprintf("EC date time assertion failed for '%s': ", expectedDateTime.ToUtf8String().c_str());
-
     const int64_t expectedCETicks = expectedECValue.GetDateTimeTicks();
-    double expectedJd;
-    BentleyStatus stat = expectedECValue.GetDateTime().ToJulianDay(expectedJd);
-    EXPECT_EQ(SUCCESS, stat) << assertMessageHeader.c_str() << L"Julian Day for expected ECValue could not be computed.";
-
-    const int64_t actualCETicks = JulianDayToCommonEraTicks(actualJd);
-
-    AssertECDateTime(expectedCETicks, actualCETicks, assertMessageHeader.c_str());
+    uint64_t expectedJdMsec = DateTime::CommonEraMillisecondsToJulianDay(expectedCETicks / 10000);
+    const uint64_t actualJdMsec = DateTime::RationalDayToMsec(actualJd);
+    ASSERT_EQ(expectedJdMsec, actualJdMsec) << "EC date time assertion failed for " << expectedDateTime.ToString().c_str();
 
     //now compare with SQLite date time functions
     Utf8String sql;
-    sql.Sprintf("select julianday('%s');", expectedDateTime.ToUtf8String().c_str());
+    sql.Sprintf("select julianday('%s');", expectedDateTime.ToString().c_str());
     Statement sqliteStatement;
-    DbResult dbStat = sqliteStatement.Prepare(db, sql.c_str());
-    EXPECT_EQ(BE_SQLITE_OK, dbStat) << assertMessageHeader.c_str() << "SQL statement '" << sql.c_str() << "' could not be prepared";
-    dbStat = sqliteStatement.Step();
-    EXPECT_EQ(BE_SQLITE_ROW, dbStat) << assertMessageHeader.c_str() << "SQL statement '" << sql.c_str() << "' could not be executed";;
+    ASSERT_EQ(BE_SQLITE_OK, sqliteStatement.Prepare(db, sql.c_str())) << sql.c_str();
+    ASSERT_EQ(BE_SQLITE_ROW, sqliteStatement.Step()) << sql.c_str();
     const double sqliteJd = sqliteStatement.GetValueDouble(0);
-    const int64_t sqliteCETicks = JulianDayToCommonEraTicks(sqliteJd);
-    LOG.infov("Expected JD: %lf - SQLite JD: %lf", expectedJd, sqliteJd);
-    assertMessageHeader.Sprintf("Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for '%s'. ", expectedDateTime.ToUtf8String().c_str());
-    AssertECDateTime(expectedCETicks, sqliteCETicks, assertMessageHeader.c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Krischan.Eberle                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-void ECDbTestUtility::AssertECDateTime
-(
-    int64_t expectedCETicks,
-    int64_t actualCETicks,
-    Utf8CP assertMessageHeader
-    )
-    {
-    if (!CompareECDateTimes(expectedCETicks, actualCETicks))
-        {
-        FAIL() << assertMessageHeader << "Common Era ticks difference outside the tolerance. Expected ticks: " << expectedCETicks << " Actual ticks: " << actualCETicks;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Krischan.Eberle                   10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-//static
-bool ECDbTestUtility::CompareECDateTimes(int64_t expectedECTicks, int64_t actualECTicks)
-    {
-    int64_t diff = expectedECTicks - actualECTicks;
-    //get absolute diff
-    if (diff < 0)
-        {
-        diff *= -1;
-        }
-
-    if (diff == 0)
-        {
-        return true;
-        }
-
-    if (diff < DATETIME_ACCURACY_TOLERANCE_HNS)
-        {
-        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds but is within tolerance of %d hecto-nanoseconds.",
-                   diff,
-                   DATETIME_ACCURACY_TOLERANCE_HNS);
-        return true;
-        }
-    else
-        {
-        LOG.tracev("CompareECInstances> Instances are not equal: DateTime value differs by %d hecto-nanoseconds which is outside the tolerance of %d hecto-nanoseconds.",
-                  diff,
-                  DATETIME_ACCURACY_TOLERANCE_HNS);
-        return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbTestUtility::GetClassUsageStatistics
-(
-    size_t& instanceCount,
-    size_t& propertyCount,
-    size_t& nullPropertyCount,
-    size_t& customAttributeInstanceCount,
-    ECClassCR ecClass,
-    ECDbR ecdb
-    )
-    {
-    // Initialize default return counts
-    instanceCount = 0;
-    ECPropertyIterable allPropertiesIterable = ecClass.GetProperties(true);
-    propertyCount = GetIterableCount(allPropertiesIterable);
-    nullPropertyCount = propertyCount;
-
-    // Find total number of custom attributes
-    customAttributeInstanceCount = GetIterableCount(ecClass.GetCustomAttributes(false));
-    for (ECPropertyCP p : ecClass.GetProperties(false))
-        customAttributeInstanceCount += GetIterableCount(p->GetCustomAttributes(false));
-
-    // Find count of instances of the specified class in the Db
-    SqlPrintfString ecSql("SELECT * FROM [%s].[%s]", Utf8String(ecClass.GetName()).c_str(), Utf8String(ecClass.GetSchema().GetName()).c_str());
-    ECSqlStatement ecStatement;
-    ECSqlStatus status = ecStatement.Prepare(ecdb, ecSql.GetUtf8CP());
-    ASSERT_TRUE(ECSqlStatus::Success == status);
-
-    bvector<IECInstancePtr> instances;
-    ECInstanceECSqlSelectAdapter adapter(ecStatement);
-    while (BE_SQLITE_ROW == ecStatement.Step())
-        {
-        IECInstancePtr instance = adapter.GetInstance();
-        BeAssert(instance.IsValid());
-        instances.push_back(instance);
-        }
-    instanceCount = instances.size();
-
-    // Find count of null properties (properties that are null in *all* instances)
-    bset<unsigned int> nonNullPropertyIndices;
-    for (IECInstancePtr instance : instances)
-        {
-        ASSERT_TRUE(instance.IsValid());
-        int propertyIndex = 0;
-        for (ECPropertyCP p : allPropertiesIterable)
-            {
-            ECValue v;
-            instance->GetValue(v, p->GetName().c_str());
-            if (!IsECValueNullOrEmpty(v))
-                nonNullPropertyIndices.insert(propertyIndex);
-            propertyIndex++;
-            }
-        }
-    ASSERT_TRUE((size_t) nonNullPropertyIndices.size() <= propertyCount);
-    nullPropertyCount = propertyCount - nonNullPropertyIndices.size();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ramanujam.Raman                   04/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECDbTestUtility::DumpECSchemaUsageStatistics(ECSchemaCR schema, ECDbR ecdb, bool dumpEmptyClasses)
-    {
-    LOG.infov("ECSchema: %s.%02d.%02d", schema.GetName().c_str(), schema.GetVersionRead(), schema.GetVersionMinor());
-    size_t totalClassCount = 0;
-    size_t totalUsedClassCount = 0;
-    size_t totalCustomAttributeClassCount = 0;
-    size_t totalCustomAttributeInstanceCount = GetIterableCount(schema.GetCustomAttributes(false));
-    size_t totalPropertyCount = 0;
-    size_t totalNullPropertyCount = 0;
-
-    for (ECClassP ecClass : schema.GetClasses())
-        {
-        totalClassCount++;
-        if (ecClass->IsCustomAttributeClass())
-            {
-            totalCustomAttributeClassCount++;
-            LOG.infov("    ECClass: %-40s\t\t(Custom Attribute Class)", ecClass->GetName().c_str());
-            continue;
-            }
-
-        ECInstanceInserter inserter(ecdb, *ecClass, nullptr);
-        if (!inserter.IsValid())
-            {
-            LOG.infov("    ECClass: %-40s\t\t(Not mapped to any table)", ecClass->GetName().c_str());
-            continue;
-            }
-
-        size_t instanceCount, propertyCount, nullPropertyCount, customAttributeInstanceCount;
-        GetClassUsageStatistics(instanceCount, propertyCount, nullPropertyCount, customAttributeInstanceCount,
-                                *ecClass, ecdb);
-        if (instanceCount > 0 && dumpEmptyClasses)
-            {
-            LOG.infov("    ECClass: %-40s: %5d instances, %5d properties, %5d null-properties, %5d cust-attr-instances",
-                      ecClass->GetName().c_str(), instanceCount, propertyCount, nullPropertyCount, customAttributeInstanceCount);
-            }
-        if (instanceCount > 0) totalUsedClassCount++;
-        totalCustomAttributeInstanceCount += customAttributeInstanceCount;
-        totalPropertyCount += propertyCount;
-        totalNullPropertyCount += nullPropertyCount;
-        }
-
-    LOG.infov("%-30s = %5d", "Total Classes", totalClassCount);
-    LOG.infov("%-30s = %5d", "Total CustAttr Classes", totalCustomAttributeClassCount);
-    LOG.infov("%-30s = %5d", "Total Used Classes", totalUsedClassCount);
-    LOG.infov("%-30s = %5d", "Total Unused Classes", totalClassCount - totalUsedClassCount - totalCustomAttributeClassCount);
-    LOG.infov("%-30s = %5d", "Total Custom Attr Instances", totalCustomAttributeInstanceCount);
-    LOG.infov("%-30s = %5d", "Total Property Count", totalPropertyCount);
-    LOG.infov("%-30s = %5d", "Total Null Property Count", totalNullPropertyCount);
-    LOG.infov("");
+    const uint64_t sqliteJdMsec = DateTime::RationalDayToMsec(sqliteJd);
+    ASSERT_EQ(expectedJdMsec, sqliteJdMsec) << "Comparison of Julian Days computed by Bentley::DateTime and SQLite date function failed for " << expectedDateTime.ToString().c_str();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -828,16 +585,6 @@ void ECDbTestUtility::DebugDumpJson(const Json::Value& jsonValue)
         Utf8String subStr = strValue.substr(ii, 1000);
         LOG.infov("%s", subStr.c_str());
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                   02/13
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-int64_t ECDbTestUtility::JulianDayToCommonEraTicks(double jd)
-    {
-    uint64_t jdHns = DateTime::RationalDayToHns(jd);
-    return DateTime::JulianDayToCommonEraTicks(jdHns);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1034,11 +781,10 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
             case PRIMITIVETYPE_DateTime:
             {
             DateTime dt;
-            DateTimeInfo dti;
+            DateTime::Info dti;
             if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
-                DateTime::Info info = dti.GetInfo(true);
-                if (info.GetKind() == DateTime::Kind::Local)
+                if (dti.IsValid() && dti.GetKind() == DateTime::Kind::Local)
                     {
                     //local date times are not supported by ECDb
                     break;
@@ -1047,7 +793,7 @@ void ECDbTestUtility::GenerateRandomValue(ECValueR value, PrimitiveType type, EC
                 uint64_t jd = 0;
                 DateTime::GetCurrentTimeUtc().ToJulianDay(jd);
 
-                DateTime::FromJulianDay(dt, jd, info);
+                DateTime::FromJulianDay(dt, jd, dti);
                 }
             else
                 {
@@ -1128,18 +874,17 @@ void ECDbTestUtility::PopulatePrimitiveValue(ECValueR value, PrimitiveType primi
                 value.SetDouble(PI); break;
             case PRIMITIVETYPE_DateTime:
             {
-            DateTimeInfo dti;
+            DateTime::Info dti;
             if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
-                DateTime::Info info = dti.GetInfo(true);
-                if (info.GetKind() == DateTime::Kind::Local)
+                if (dti.GetKind() == DateTime::Kind::Local)
                     {
                     //local date times are not supported by ECObjects
                     break;
                     }
 
                 DateTime dt;
-                DateTime::FromJulianDay(dt, 2456341.75, info);
+                DateTime::FromJulianDay(dt, 2456341.75, dti);
                 value.SetDateTime(dt);
                 }
             break;

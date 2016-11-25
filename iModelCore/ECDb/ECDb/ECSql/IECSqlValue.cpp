@@ -16,48 +16,47 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlColumnInfoCR IECSqlValue::GetColumnInfo () const
+ECSqlColumnInfoCR IECSqlValue::GetColumnInfo() const
     {
-    return _GetColumnInfo ();
+    return _GetColumnInfo();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlValue::IsNull () const
+bool IECSqlValue::IsNull() const
     {
-    return _IsNull ();
+    return _IsNull();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* IECSqlValue::GetBinary (int* binarySize) const
+void const* IECSqlValue::GetBinary(int* binarySize) const
     {
-    return _GetPrimitive ()._GetBinary (binarySize);
+    return _GetPrimitive()._GetBinary(binarySize);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlValue::GetBoolean () const
+bool IECSqlValue::GetBoolean() const
     {
-    return _GetPrimitive ()._GetBoolean ();
+    return _GetPrimitive()._GetBoolean();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DateTime IECSqlValue::GetDateTime () const
+DateTime IECSqlValue::GetDateTime() const
     {
     DateTime::Info metadata;
-    const uint64_t jdHns = GetDateTimeJulianDaysHns (metadata);
-
+    const uint64_t jdMsec = GetDateTimeJulianDaysMsec(metadata);
     DateTime dt;
-    if (SUCCESS != DateTime::FromJulianDay (dt, jdHns, metadata))
+    if (SUCCESS != DateTime::FromJulianDay(dt, jdMsec, metadata))
         {
         LOG.error("ECSqlStatement::GetDateTime> Could not convert JulianDays into DateTime.");
-        return DateTime ();
+        return DateTime();
         }
 
     return dt;
@@ -66,66 +65,66 @@ DateTime IECSqlValue::GetDateTime () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t IECSqlValue::GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
+uint64_t IECSqlValue::GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
-    return _GetPrimitive()._GetDateTimeJulianDaysHns(metadata);
+    return _GetPrimitive()._GetDateTimeJulianDaysMsec(metadata);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 07/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-double IECSqlValue::GetDateTimeJulianDays (DateTime::Info& metadata) const
+double IECSqlValue::GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    return _GetPrimitive ()._GetDateTimeJulianDays (metadata);
+    return _GetPrimitive()._GetDateTimeJulianDays(metadata);
     }
 
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-double IECSqlValue::GetDouble () const
+double IECSqlValue::GetDouble() const
     {
-    return _GetPrimitive ()._GetDouble ();
+    return _GetPrimitive()._GetDouble();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-int IECSqlValue::GetInt () const
+int IECSqlValue::GetInt() const
     {
-    return _GetPrimitive ()._GetInt ();
+    return _GetPrimitive()._GetInt();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-int64_t IECSqlValue::GetInt64 () const
+int64_t IECSqlValue::GetInt64() const
     {
-    return _GetPrimitive ()._GetInt64 ();
+    return _GetPrimitive()._GetInt64();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP IECSqlValue::GetText () const
+Utf8CP IECSqlValue::GetText() const
     {
-    return _GetPrimitive ()._GetText ();
+    return _GetPrimitive()._GetText();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d IECSqlValue::GetPoint2d () const
+DPoint2d IECSqlValue::GetPoint2d() const
     {
-    return _GetPrimitive ()._GetPoint2d ();
+    return _GetPrimitive()._GetPoint2d();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d IECSqlValue::GetPoint3d () const
+DPoint3d IECSqlValue::GetPoint3d() const
     {
-    return _GetPrimitive ()._GetPoint3d ();
+    return _GetPrimitive()._GetPoint3d();
     }
 
 //--------------------------------------------------------------------------------------
@@ -139,9 +138,9 @@ IGeometryPtr IECSqlValue::GetGeometry() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 11/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* IECSqlValue::GetGeometryBlob (int* blobSize) const
+void const* IECSqlValue::GetGeometryBlob(int* blobSize) const
     {
-    return _GetPrimitive ()._GetGeometryBlob (blobSize);
+    return _GetPrimitive()._GetGeometryBlob(blobSize);
     }
 
 //---------------------------------------------------------------------------------------
@@ -165,34 +164,34 @@ BeGuid IECSqlValue::GetGuid() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructValue const& IECSqlValue::GetStruct () const
+IECSqlStructValue const& IECSqlValue::GetStruct() const
     {
-    return _GetStruct ();
+    return _GetStruct();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue const& IECSqlValue::GetArray () const
+IECSqlArrayValue const& IECSqlValue::GetArray() const
     {
-    return _GetArray ();
+    return _GetArray();
     }
 
 //********************** IECSqlStructValue **************************************
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-int IECSqlStructValue::GetMemberCount () const
+int IECSqlStructValue::GetMemberCount() const
     {
-    return _GetMemberCount ();
+    return _GetMemberCount();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlValue const& IECSqlStructValue::GetValue (int columnIndex) const
+IECSqlValue const& IECSqlStructValue::GetValue(int columnIndex) const
     {
-    return _GetValue (columnIndex);
+    return _GetValue(columnIndex);
     }
 
 //********************** IECSqlArrayValue **************************************
@@ -200,25 +199,25 @@ IECSqlValue const& IECSqlStructValue::GetValue (int columnIndex) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-int IECSqlArrayValue::GetArrayLength () const
+int IECSqlArrayValue::GetArrayLength() const
     {
-    return _GetArrayLength ();
+    return _GetArrayLength();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator IECSqlArrayValue::begin () const
+IECSqlArrayValue::const_iterator IECSqlArrayValue::begin() const
     {
-    return const_iterator (*this);
+    return const_iterator(*this);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator IECSqlArrayValue::end () const
+IECSqlArrayValue::const_iterator IECSqlArrayValue::end() const
     {
-    return const_iterator ();
+    return const_iterator();
     }
 
 
@@ -226,33 +225,33 @@ IECSqlArrayValue::const_iterator IECSqlArrayValue::end () const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator ()
-: m_arrayValue (nullptr)
+IECSqlArrayValue::const_iterator::const_iterator()
+    : m_arrayValue(nullptr)
     {
-    BeAssert (IsEndIterator ());
+    BeAssert(IsEndIterator());
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator (IECSqlArrayValue const& arrayValue)
-: m_arrayValue (&arrayValue)
+IECSqlArrayValue::const_iterator::const_iterator(IECSqlArrayValue const& arrayValue)
+    : m_arrayValue(&arrayValue)
     {
-    BeAssert (!IsEndIterator ());
-    m_arrayValue->_MoveNext (true); //iterator points to first element, therefore call MoveNext to initialize the iterator
+    BeAssert(!IsEndIterator());
+    m_arrayValue->_MoveNext(true); //iterator points to first element, therefore call MoveNext to initialize the iterator
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::~const_iterator ()
+IECSqlArrayValue::const_iterator::~const_iterator()
     {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator (const_iterator const& rhs)
-: m_arrayValue (rhs.m_arrayValue)
+IECSqlArrayValue::const_iterator::const_iterator(const_iterator const& rhs)
+    : m_arrayValue(rhs.m_arrayValue)
     {}
 
 //--------------------------------------------------------------------------------------
@@ -271,8 +270,8 @@ IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator= (c
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator (const_iterator&& rhs)
-: m_arrayValue (std::move (rhs.m_arrayValue))
+IECSqlArrayValue::const_iterator::const_iterator(const_iterator&& rhs)
+    : m_arrayValue(std::move(rhs.m_arrayValue))
     {
     rhs.m_arrayValue = nullptr;
     }
@@ -284,7 +283,7 @@ IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator= (c
     {
     if (this != &rhs)
         {
-        m_arrayValue = std::move (rhs.m_arrayValue);
+        m_arrayValue = std::move(rhs.m_arrayValue);
 
         rhs.m_arrayValue = nullptr;
         }
@@ -297,13 +296,13 @@ IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator= (c
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlValue const* IECSqlArrayValue::const_iterator::operator*() const
     {
-    if (IsEndIterator ())
+    if (IsEndIterator())
         {
-        BeAssert (false && "Don't call * on end iterator.");
+        BeAssert(false && "Don't call * on end iterator.");
         return nullptr;
         }
 
-    return m_arrayValue->_GetCurrent ();
+    return m_arrayValue->_GetCurrent();
     }
 
 //--------------------------------------------------------------------------------------
@@ -311,10 +310,10 @@ IECSqlValue const* IECSqlArrayValue::const_iterator::operator*() const
 //+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator++()
     {
-    BeAssert (!IsEndIterator () && "Don't call ++ on end iterator.");
+    BeAssert(!IsEndIterator() && "Don't call ++ on end iterator.");
 
-    if (!IsEndIterator ())
-        m_arrayValue->_MoveNext ();
+    if (!IsEndIterator())
+        m_arrayValue->_MoveNext();
 
     return *this;
     }
@@ -324,8 +323,8 @@ IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator++()
 //+---------------+---------------+---------------+---------------+---------------+------
 bool IECSqlArrayValue::const_iterator::operator==(const_iterator const& rhs) const
     {
-    const bool lhsEoc = IsAtEnd ();
-    const bool rhsEoc = rhs.IsAtEnd ();
+    const bool lhsEoc = IsAtEnd();
+    const bool rhsEoc = rhs.IsAtEnd();
     if (lhsEoc || rhsEoc)
         return lhsEoc == rhsEoc;
 
@@ -343,15 +342,15 @@ bool IECSqlArrayValue::const_iterator::operator!=(const_iterator const& rhs) con
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlArrayValue::const_iterator::IsAtEnd () const
+bool IECSqlArrayValue::const_iterator::IsAtEnd() const
     {
-    return IsEndIterator () || m_arrayValue->_IsAtEnd ();
+    return IsEndIterator() || m_arrayValue->_IsAtEnd();
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlArrayValue::const_iterator::IsEndIterator () const
+bool IECSqlArrayValue::const_iterator::IsEndIterator() const
     {
     return m_arrayValue == nullptr;
     }

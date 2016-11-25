@@ -53,7 +53,7 @@ private:
 
     virtual void const* _GetBinary(int* binarySize) const override;
     virtual bool _GetBoolean() const override;
-    virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override;
+    virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
     virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
     virtual double _GetDouble() const override;
     virtual int _GetInt() const override;
@@ -66,7 +66,7 @@ private:
 
     bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 public:
-    PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const* dateTimeMetadata);
+    PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata);
     ~PrimitiveJsonECSqlValue() {}
     };
 
@@ -123,7 +123,7 @@ private:
 
 public:
     static std::unique_ptr<JsonECSqlValue> CreateValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&);
-    static std::unique_ptr<JsonECSqlValue> CreateArrayElementValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&, DateTime::Info const*, ECN::ECStructClassCP);
+    static std::unique_ptr<JsonECSqlValue> CreateArrayElementValue(ECDbCR, Json::Value const&, ECSqlColumnInfo const&, DateTime::Info const&, ECN::ECStructClassCP);
     };
 
 //=======================================================================================

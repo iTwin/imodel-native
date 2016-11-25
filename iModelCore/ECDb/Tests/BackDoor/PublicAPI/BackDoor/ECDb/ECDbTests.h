@@ -73,25 +73,10 @@ struct ECDbTestUtility
     typedef void(*PopulatePrimitiveValueCallback)(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecproperty);
 
     private:
-        static size_t   GetIterableCount(ECN::ECCustomAttributeInstanceIterable const& iterable);
-        static size_t   GetIterableCount(ECN::ECPropertyIterable const& iterable);
-        static void     GetClassUsageStatistics
-            (
-                size_t& instanceCount,
-                size_t& propertyCount,
-                size_t& nullPropertyCount,
-                size_t& customAttributeInstanceCount,
-                ECN::ECClassCR ecClass,
-                BeSQLite::EC::ECDbR ecdb
-                );
-
-        static bool     IsECValueNullOrEmpty(ECN::ECValueCR value);
         static bool     CompareJsonWithECValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
         static bool     CompareJsonWithECPrimitiveValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
         static bool     CompareJsonWithECArrayValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue, ECN::IECInstanceCR referenceInstance, Utf8CP referencePropertyAccessString);
         static bool     CompareJsonWithECStructValue(const Json::Value& jsonValue, ECN::ECValueCR referenceValue);
-
-        static int64_t  JulianDayToCommonEraTicks(double jd);
 
         static void     PopulateStructValue(ECN::ECValueR value, ECN::ECClassCR structType, PopulatePrimitiveValueCallback callback);
         static void     PopulatePrimitiveValue(ECN::ECValueR value, ECN::PrimitiveType primitiveType, ECN::ECPropertyCP ecProperty);
@@ -112,18 +97,13 @@ struct ECDbTestUtility
         // If file name is not supplied, constructs one from the schema name
         static void     WriteECSchemaToDisk(ECN::ECSchemaCR ecSchema, WCharCP filenameNoVerExt = nullptr);
         static bool     CompareECInstances(ECN::IECInstanceCR a, ECN::IECInstanceCR b);
-        static void     DumpECSchemaUsageStatistics(ECN::ECSchemaCR schema, BeSQLite::EC::ECDbR ecdb, bool dumpEmptyClasses);
         static int64_t  ReadCellValueAsInt64(BeSQLite::DbR db, Utf8CP tableName, Utf8CP columnName, Utf8CP whereClause);
         static bool     CompareJsonWithECInstance(const Json::Value& json, ECN::IECInstanceCR referenceInstance);
         static void     DebugDumpJson(const Json::Value& jsonValue);
         
-        static bool     IsECValueNull(ECN::ECValueCR value);
-
         static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
 
-        static bool     CompareECDateTimes(int64_t expectedECTicks, int64_t actualECTicks);
         static void     AssertECDateTime(ECN::ECValueCR expectedECValue, const Db& db, double actualJd);
-        static void     AssertECDateTime(int64_t expectedCETicks, int64_t actualCETicks, Utf8CP assertMessageHeader);
 
         static BentleyStatus SetECInstanceId(ECN::IECInstanceR instance, ECInstanceId instanceId);
 

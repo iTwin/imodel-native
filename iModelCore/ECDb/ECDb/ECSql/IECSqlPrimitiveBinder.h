@@ -22,17 +22,17 @@ struct IECSqlPrimitiveBinder
 public:
     virtual ~IECSqlPrimitiveBinder() {}
 
-    virtual ECSqlStatus _BindBoolean(bool value) = 0;
-    virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) = 0;
-    virtual ECSqlStatus _BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata) = 0;
-    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) = 0;
-    virtual ECSqlStatus _BindDouble(double value) = 0;
-    virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) = 0;
-    virtual ECSqlStatus _BindInt(int value) = 0;
-    virtual ECSqlStatus _BindInt64(int64_t value) = 0;
-    virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) = 0;
-    virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) = 0;
-    virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) = 0;
+    virtual ECSqlStatus _BindBoolean(bool) = 0;
+    virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy) = 0;
+    virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) = 0;
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) = 0;
+    virtual ECSqlStatus _BindDouble(double) = 0;
+    virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) = 0;
+    virtual ECSqlStatus _BindInt(int ) = 0;
+    virtual ECSqlStatus _BindInt64(int64_t) = 0;
+    virtual ECSqlStatus _BindPoint2d (DPoint2dCR) = 0;
+    virtual ECSqlStatus _BindPoint3d (DPoint3dCR) = 0;
+    virtual ECSqlStatus _BindText(Utf8CP, IECSqlBinder::MakeCopy, int byteCount) = 0;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

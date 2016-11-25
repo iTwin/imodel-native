@@ -404,7 +404,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
 
                     double jd = it->GetDouble();
                     DateTime dt;
-                    if (SUCCESS != DateTime::FromJulianDay(dt, jd, DateTime::Info(DateTime::Kind::Utc)))
+                    if (SUCCESS != DateTime::FromJulianDay(dt, jd, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)))
                         return ERROR;
 
                     if (!dt.Equals(GetTestDate()))

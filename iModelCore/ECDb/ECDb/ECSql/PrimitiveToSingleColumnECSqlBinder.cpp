@@ -100,22 +100,22 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
-    const double jd = DateTime::HnsToRationalDay(julianDayHns);
+    const double jd = DateTime::MsecToRationalDay(julianDayMsec);
     return _BindDateTime(jd, metadata);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_DateTime);
     if (!stat.IsSuccess())
         return stat;
 
-    if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
+    if (metadata.IsValid() && metadata.GetKind() == DateTime::Kind::Local)
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
         return ECSqlStatus::Error;

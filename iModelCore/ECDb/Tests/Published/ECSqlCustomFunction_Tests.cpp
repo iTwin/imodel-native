@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlCustomFunction_Tests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -439,7 +439,7 @@ TEST_F(ECSqlStatementTestFixture, DateECSqlFunction)
     ECDbR ecdb = SetupECDb("ecsqlfunctiontest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
     DateTime dt(2015, 3, 24);
-    Utf8String dtStr = dt.ToUtf8String();
+    Utf8String dtStr = dt.ToString();
     //insert test data
         {
         ECSqlStatement stmt;

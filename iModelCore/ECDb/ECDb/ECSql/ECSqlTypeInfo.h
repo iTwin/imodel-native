@@ -30,7 +30,7 @@ struct ECSqlTypeInfo
     private:
         Kind m_kind;
         ECN::PrimitiveType m_primitiveType;
-        ECN::DateTimeInfo m_dateTimeInfo;
+        DateTime::Info m_dateTimeInfo;
         ECN::ECStructClassCP m_structType;
         uint32_t m_minOccurs;
         uint32_t m_maxOccurs;
@@ -38,14 +38,12 @@ struct ECSqlTypeInfo
 
         void DetermineTypeInfo(ECN::ECPropertyCR ecProperty);
 
-        void Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP, int minOccurs, int maxOccurs, ECN::DateTimeInfo const* dateTimeInfo);
-
-        bool DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const;
+        void Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP, int minOccurs, int maxOccurs, DateTime::Info const* dateTimeInfo);
 
     public:
         explicit ECSqlTypeInfo(Kind kind = Kind::Unset);
         explicit ECSqlTypeInfo(ECN::PrimitiveType primitiveType) : ECSqlTypeInfo(primitiveType, false, nullptr) {}
-        ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, ECN::DateTimeInfo const* dateTimeInfo);
+        ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, DateTime::Info const* dateTimeInfo);
         explicit ECSqlTypeInfo(ECN::ECStructClassCR structType) : ECSqlTypeInfo(structType, false) {}
         ECSqlTypeInfo(ECN::ECStructClassCR, bool isArray);
         explicit ECSqlTypeInfo(PropertyMapCR propertyMap);
@@ -78,25 +76,10 @@ struct ECSqlTypeInfo
         bool IsArray() const { return m_kind == Kind::PrimitiveArray || m_kind == Kind::StructArray; }
 
 
-        //! Checks whether @p rhs matches the DateTimeInfo of this object.
-        //! @remarks This is how matching is defined:
-        //!         * if one of the sides is a date-only (DateTime::Component::Date). In this
-        //!            case the time component of the date-only is interpreted as midnight and it uses the same date time kind.
-        //!         * if kind / component of one side is null, the kind / component matches.
-        //!         * if kind / component is not null on both sides, they match if they are equal
-        //!         @e Examples:
-        //!         * Dt(Kind::Utc) op Dt(KindIsNull) -> matches
-        //!         * Dt(Kind::Utc) op Dt(Kind::Unspecified) -> no match
-        //!         * Dt(Kind::Unspecified) op Dt(KindIsNull) -> matches
-        //!         * Dt(Component::Date) op Dt(any kind) -> matches
-        //!
-        //! @param[in] rhs DateTimeInfo object to check against this object
-        //! @return true if DateTimeInfo matches. false otherwise
-        bool DateTimeInfoMatches(ECN::DateTimeInfo const& rhs) const;
-        bool DateTimeInfoMatches(DateTime::Info const* rhs) const;
+        bool DateTimeInfoMatches(DateTime::Info const& rhs) const;
 
         ECN::PrimitiveType GetPrimitiveType() const { return m_primitiveType; }
-        ECN::DateTimeInfo const& GetDateTimeInfo() const { return m_dateTimeInfo; }
+        DateTime::Info const& GetDateTimeInfo() const { return m_dateTimeInfo; }
         ECN::ECStructClassCR GetStructType() const { return *m_structType; }
         ECN::ArrayKind GetArrayKind() const { return (m_structType != nullptr) ? ECN::ARRAYKIND_Struct : ECN::ARRAYKIND_Primitive; }
 
