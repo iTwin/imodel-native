@@ -95,7 +95,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         virtual AsyncTaskPtr<void> CancelAllTasks() = 0;
 
-        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) = 0;
+        //! Check server for schema changes and update if needed.
+        virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) = 0;
 
         //! Get read/write transaction for local data cache storage. Must be called in cache access thread.
         //! READ/WRITE:
@@ -158,8 +159,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            std::shared_ptr<const ISelectProvider> cachedSelectProvider,
-            ICancellationTokenPtr ct
+            std::shared_ptr<const ISelectProvider> cachedSelectProvider = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Do objects query to server or cache (depending on DataOrigin) and cache results with responseKey. Return ECInstanceKeys of instances cached.
@@ -172,7 +173,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             CachedResponseKeyCR responseKey,
             WSQueryCR query,
             DataOrigin origin,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Get navigation instances.
@@ -184,7 +185,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR parentId,
             DataOrigin origin,
-            std::shared_ptr<const SelectProvider> readOptions,
+            std::shared_ptr<const SelectProvider> readOptions = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -192,7 +193,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR parentId,
             DataOrigin origin,
-            std::shared_ptr<const ISelectProvider> remoteSelectProvider,
+            std::shared_ptr<const ISelectProvider> remoteSelectProvider = nullptr,
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
@@ -200,23 +201,23 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             (
             ObjectIdCR fileId,
             DataOrigin origin,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<BatchResult> CacheFiles
             (
             const bvector<ObjectId>& filesIds,
-            bool skipCachedFiles,
-            FileCache fileCacheLocation,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            bool skipCachedFiles = false,
+            FileCache fileCacheLocation = FileCache::Auto,
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         virtual AsyncTaskPtr<Result> DownloadAndCacheChildren
             (
             const bvector<ObjectId>& parentIds,
-            ICancellationTokenPtr ct
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! Push all local changes to server with SyncStatus::Ready.
@@ -229,8 +230,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         //! after everything is synced.
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct,
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
 
@@ -245,8 +246,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         virtual AsyncTaskPtr<BatchResult> SyncLocalChanges
             (
             const bset<ECInstanceKey>& instancesToSync,
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct,
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr,
             SyncOptions options = SyncOptions()
             ) = 0;
 
@@ -267,8 +268,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             bvector<ECInstanceKey> initialInstances,
             bvector<IQueryProvider::Query> initialQueries,
             bvector<IQueryProviderPtr> queryProviders,
-            SyncProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            SyncProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
 
         //! DEPRECATED - Use SyncCachedData ().
@@ -288,8 +289,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             const bvector<ObjectId>& persistenceNavigationTrees,
             const bvector<ObjectId>& temporaryNavigationTrees,
             std::shared_ptr<const ISelectProvider> temporaryNavigationTreesServerSelectProvider,
-            LabeledProgressCallback onProgress,
-            ICancellationTokenPtr ct
+            LabeledProgressCallback onProgress = nullptr,
+            ICancellationTokenPtr ct = nullptr
             ) = 0;
     };
 
