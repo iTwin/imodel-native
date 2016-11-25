@@ -32,24 +32,8 @@ ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does n
 DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
 
-ChangeSummaryTestFixture.ElementChildRelationshipChanges # notified Raman
-
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
-
-DgnECNavigatorTest.* # expected to fail until merge is done
-
-ChangeSummaryTestFixture.ElementChildRelationshipChanges
-    # DgnDb61-16Q2, NDEBUG, WinX64
-    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
-    # F:\DgnDb61-16Q2\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(947): error: Value of: instance.MakeValueIterator(changeSummary).QueryCount()
-    # Actual: 7
-    # Expected: 8
-    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (59 ms)
-
-ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction # notified Raman
-ChangeSummaryTestFixture.ElementChangesFromSavedTransactions # notified Raman
-ChangeSummaryTestFixture.ValidateInstanceIterator # notified Raman
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 RevisionTestFixture.Codes
