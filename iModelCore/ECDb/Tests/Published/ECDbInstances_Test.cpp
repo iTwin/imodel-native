@@ -113,7 +113,10 @@ void PopulatePrimitiveValueWithCustomDataSet(ECValueR value, PrimitiveType primi
             DateTime::Info dti;
             if (ecProperty != nullptr && StandardCustomAttributeHelper::GetDateTimeInfo(dti, *ecProperty) == ECObjectsStatus::Success)
                 {
-                if (dti.IsValid() && dti.GetKind() == DateTime::Kind::Local)
+                if (!dti.IsValid())
+                    dti = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+
+                if (dti.GetKind() == DateTime::Kind::Local)
                     {
                     //local date times are not supported by ECObjects
                     break;
