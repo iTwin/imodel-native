@@ -306,25 +306,21 @@ TEST(DateTimeTests, DateTimeComparisonTests)
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, GetDayOfWeek)
     {
-    const DateTime baselineYear(2014, 2, 15);
-    const int baselineDayOfWeekNr = static_cast<int> (DateTime::DayOfWeek::Saturday);
+    const DateTime baselineYear(2016, 11, 25);
+    const int baselineDayOfWeekNr = static_cast<int> (DateTime::DayOfWeek::Friday);
 
     DateTime testDt(baselineYear);
-    int i = 0;
-    do
+    for (int i = 0; i < 50; i++)
         {
+        double testJd = 0.0;
+        ASSERT_EQ(SUCCESS, testDt.ToJulianDay(testJd));
+        testJd -= i; //decrement test date by one day each
+        ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDt, testJd, testDt.GetInfo()));
+
         int expectedDayOfWeekNr = baselineDayOfWeekNr - (i % 7);
         const auto actualDayOfWeek = testDt.GetDayOfWeek();
         ASSERT_EQ(expectedDayOfWeekNr, static_cast<int> (actualDayOfWeek)) << "GetDayOfWeek failed for test date " << testDt.ToString().c_str();
-
-        //decrement test date by one day
-        double testJd = 0.0;
-        ASSERT_EQ(SUCCESS, testDt.ToJulianDay(testJd));
-        testJd--;
-        ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDt, testJd, testDt.GetInfo()));
-
-        i++;
-        } while (testDt.GetYear() > 1); //dates before 1 AD are not supported
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -594,9 +590,14 @@ TEST(DateTimeTests, FromStringTests)
     assertFromString(isoDateTime, expectedDate, true);
 
     //Invalid ISO strings for which the parser still returns something.
-    isoDateTime = "2011-02-29";
+    BeTest::SetFailOnAssert(false);
+    {
     expectedDate = DateTime(2011, 2, 29);
-    assertFromString(isoDateTime, expectedDate, true);
+    ASSERT_FALSE(expectedDate.IsValid()) << "2011-02-29";
+    DateTime dt;
+    ASSERT_EQ(ERROR, DateTime::FromString(dt, "2011-02-29"));
+    }
+    BeTest::SetFailOnAssert(true);
 
 
     //unsupported ISO strings
@@ -838,7 +839,7 @@ TEST(DateTimeTests, CompareDates)
     EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date2, date1));
 
     //Date and Date Time Objects
-    DateTime date3(DateTime::Kind::Utc, 2014, 13, 13, 22, 3, 12, 888);
+    DateTime date3(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 888);
     DateTime date4(2014, 04, 13);
 
     ASSERT_TRUE(date3.IsValid());
@@ -894,33 +895,29 @@ TEST(DateTimeTests, ComputeOffsetToUtcInMsec)
     {
     DateTime date(2013, 02, 14);
     ASSERT_TRUE(date.IsValid());
-    int64_t offset = 0;
 
-    int64_t offset_expected = 0;
+    int64_t offset = 0;
     ASSERT_EQ(SUCCESS, date.ComputeOffsetToUtcInMsec(offset));
-    EXPECT_EQ(offset_expected, offset);
+    EXPECT_EQ(0, offset);
 
     DateTime date1(DateTime::Kind::Unspecified, 2013, 02, 14, 23, 23, 56, 888);
     ASSERT_TRUE(date1.IsValid());
-    offset = 0;
 
-    offset_expected = 0;
+    offset = 0;
     ASSERT_EQ(SUCCESS, date1.ComputeOffsetToUtcInMsec(offset));
-    EXPECT_EQ(offset_expected, offset);
+    EXPECT_EQ(0, offset);
 
     DateTime date2(DateTime::Kind::Utc, 2013, 02, 14, 23, 23, 56, 888);
     ASSERT_TRUE(date2.IsValid());
-    offset = 0;
 
-    offset_expected = 0;
+    offset = 0;
     ASSERT_EQ(SUCCESS, date2.ComputeOffsetToUtcInMsec(offset));
-    EXPECT_EQ(offset_expected, offset);
+    EXPECT_EQ(0, offset);
 
     DateTime local(DateTime::Kind::Local, 2012, 02, 14, 23, 23, 56, 888);
     ASSERT_TRUE(local.IsValid());
-    offset = 0;
-
-    offset_expected = 18000000;
-    ASSERT_EQ(SUCCESS, local.ComputeOffsetToUtcInMsec(offset)) << "This is Offset " << offset;
-    ASSERT_EQ(offset_expected, offset) << "This is Offset " << offset;
+    //WIP How can this work on machines outside the UTC-1 or UTC+1 timezone?
+    //offset = 0;
+    //ASSERT_EQ(SUCCESS, local.ComputeOffsetToUtcInMsec(offset)) << "This is Offset " << offset;
+    //ASSERT_EQ(18000000, offset) << "This is Offset " << offset;
     }

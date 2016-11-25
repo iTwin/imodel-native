@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY
 //---------------------------------------------------------------------------------------
 TEST(DateTime_Tests, MillisecondsToRationalDays)
     {
-    ASSERT_DOUBLE_EQ(44.2013773151, DateTime::MsecToRationalDay(3818999000));
+    ASSERT_DOUBLE_EQ(5.7938, DateTime::MsecToRationalDay(500584320));
     }
 
 //---------------------------------------------------------------------------------------

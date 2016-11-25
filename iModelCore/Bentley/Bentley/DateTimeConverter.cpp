@@ -216,7 +216,7 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
     if (targetInfo.GetComponent() == DateTime::Component::Date)
         {
         dateTime = DateTime(year, month, day);
-        return SUCCESS;
+        return dateTime.IsValid() ? SUCCESS : ERROR;
         }
 
     //time fraction
@@ -248,7 +248,7 @@ BentleyStatus DateTimeConverter::ParseJulianDay(DateTimeR dateTime, uint64_t jul
         }
 
     dateTime = DateTime(targetInfo.GetKind(), year, month, day, hour, minute, second, msec);
-    return SUCCESS;
+    return dateTime.IsValid() ? SUCCESS : ERROR;
 
     //ARCHIVE: Alternate algorithm from http://www.tondering.dk/claus/cal/julperiod.php
     //for which roundtrip also works for leap years BC. (e.g -1000-03-01)
@@ -507,7 +507,7 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
         }
 
     dateTime = DateTime(kind, year, month, day, hour, minute, second, msecond);
-    return SUCCESS;
+    return dateTime.IsValid() ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
