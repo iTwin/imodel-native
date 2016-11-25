@@ -1380,7 +1380,6 @@ namespace connectivity
                         {OSQLParseNode::delete_statement_searched, "delete_statement_searched"},
                         {OSQLParseNode::derived_column, "derived_column"},
                         {OSQLParseNode::ecsqloptions_clause, "ecsqloptions_clause"},
-                        {OSQLParseNode::ecclassid_fct_spec, "ecclassid_fct_spec"},
                         {OSQLParseNode::ecrelationship_join, "ecrelationship_join"},
                         {OSQLParseNode::existence_test, "existence_test"},
                         {OSQLParseNode::extract_exp, "extract_exp"},

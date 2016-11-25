@@ -147,9 +147,9 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatOld(
     static Utf8CP selectQueryFormat = ""
         "SELECT related.%%s "
         "  FROM %%s this, %s relationship, %s related "
-        " WHERE     [this].[ECInstanceId] = ? "
-        "       AND [this].[ECInstanceId] = [relationship].[%s] AND [this].GetECClassId() = [relationship].[%s] "
-        "       AND [related].[ECInstanceId] = [relationship].[%s] AND [related].GetECClassId() = [relationship].[%s]";
+        " WHERE     this.ECInstanceId = ? "
+        "       AND this.ECInstanceId = relationship.[%s] AND this.ECClassId = relationship.[%s] "
+        "       AND related.ECInstanceId = relationship.[%s] AND related.ECClassId = relationship.[%s]";
 
     query = Utf8PrintfString(selectQueryFormat, 
                 relationshipClass->GetECSqlName().c_str(), relatedClass->GetECSqlName().c_str(),
@@ -212,11 +212,11 @@ ExpressionStatus ECDbExpressionSymbolProvider::GetRelatedInstanceQueryFormatNew(
         }
     
     static Utf8CP selectQueryFormat = ""
-        "SELECT [related].%%s "
+        "SELECT related.%%s "
         "  FROM %%s this, [%s].[%s] relationship, [%s].[%s] related "
-        " WHERE     [this].[ECInstanceId] = ? "
-        "       AND [this].[ECInstanceId] = [relationship].[%s] AND [this].GetECClassId() = [relationship].[%s] "
-        "       AND [related].[ECInstanceId] = [relationship].[%s] AND [related].GetECClassId() = [relationship].[%s]";
+        " WHERE     this.ECInstanceId = ? "
+        "       AND this.ECInstanceId = relationship.[%s] AND this.ECClassId = relationship.[%s] "
+        "       AND related.ECInstanceId = relationship.[%s] AND related.ECClassId = relationship.[%s]";
 
     query = Utf8PrintfString(selectQueryFormat, 
                 relationshipSchemaName.c_str(), relationshipClassName.c_str(),

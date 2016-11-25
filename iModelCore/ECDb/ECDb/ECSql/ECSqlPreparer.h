@@ -57,7 +57,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareCrossJoinExp(ECSqlPrepareContext&, CrossJoinExp const&);
         static ECSqlStatus PrepareFromExp(ECSqlPrepareContext&, FromExp const*);
         static ECSqlStatus PrepareFunctionCallExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, FunctionCallExp const&);
-        static ECSqlStatus PrepareECClassIdFunctionExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, ECClassIdFunctionExp const&);
         static ECSqlStatus PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, GetPointCoordinateFunctionExp const&);
         static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext&, GroupByExp const*);
         static ECSqlStatus PrepareHavingExp(ECSqlPrepareContext&, HavingExp const*);

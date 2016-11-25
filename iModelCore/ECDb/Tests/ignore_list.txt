@@ -19,6 +19,3 @@ ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
 #TFS 520654
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
-
-#TFS 555738
-ECDbMappingTestFixture.UserDefinedIndexTest

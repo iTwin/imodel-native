@@ -430,6 +430,15 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                     return ERROR;
                     }
 
+                if (column->IsOverflow())
+                    {
+                    Issues().Report(ECDbIssueSeverity::Error,
+                                    "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                    "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
+                                    i, GetClass().GetFullName(), propertyAccessString.c_str());
+                    return ERROR;
+                    }
+
                 DbTable const& table = column->GetTable();
                 if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
                     {

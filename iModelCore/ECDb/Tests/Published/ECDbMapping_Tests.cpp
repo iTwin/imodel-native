@@ -3976,8 +3976,95 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
     AssertSchemaImport(asserted, GetECDb(), testItem);
     ASSERT_FALSE(asserted);
     }
+    }
 
-    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, NotNullConstraint)
+    {
+    //NotNull constraint on FK Relationship for OwnTable
+            {
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "<ECEntityClass typeName='Foo' modifier='None' >"
+                "   <ECProperty propertyName='FooProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Goo' modifier='None' >"
+                "   <ECProperty propertyName='GooProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+                "        <ECCustomAttributes>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+                "            </ForeignKeyRelationshipMap>"
+                "        </ECCustomAttributes>"
+                "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
+                "      <Class class = 'Foo' />"
+                "    </Source>"
+                "    <Target multiplicity='(1..1)' polymorphic='false' roleLabel='Goo'>"
+                "      <Class class = 'Goo' />"
+                "    </Target>"
+                "</ECRelationshipClass>"
+                "</ECSchema>", true, "NotNull constarint is honoured when a single class is mapped to a table.");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Statement sqlstmt;
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignKeyId'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(0, sqlstmt.GetValueInt(0));
+            }
+
+            //NotNull constraint on FK Relationship for SharedTable CA 
+            {
+
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "<ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                "<ECEntityClass typeName='Parent' modifier='None' >"
+                "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                "            </ClassMap>"
+                "        </ECCustomAttributes>"
+                "   <ECProperty propertyName='ParentProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Child' modifier='None' >"
+                "   <BaseClass>Parent</BaseClass>"
+                "   <ECProperty propertyName='ChildAProp' typeName='int' />"
+                "</ECEntityClass>"
+                "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
+                "        <ECCustomAttributes>"
+                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                "                   <ForeignKeyColumn>ForeignKeyId</ForeignKeyColumn>"
+                "            </ForeignKeyRelationshipMap>"
+                "        </ECCustomAttributes>"
+                "    <Source cardinality='(0,1)' polymorphic='false'>"
+                "      <Class class = 'Parent' />"
+                "    </Source>"
+                "    <Target cardinality='(1,N)' polymorphic='false'>"
+                "      <Class class = 'Child' />"
+                "    </Target>"
+                "</ECRelationshipClass>"
+                "</ECSchema>", true, "NotNull constraint is honoured when multiple classes are mapped to a same table.");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "NotNull.ecdb");
+            ASSERT_FALSE(asserted);
+
+            Statement sqlstmt;
+            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='ForeignKeyId'"));
+            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
+            ASSERT_EQ(0, sqlstmt.GetValueInt(0));
+            }
     }
 
 //---------------------------------------------------------------------------------------
@@ -5518,6 +5605,32 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                 "    <ECEntityClass typeName='A' modifier='None' >"
                 "        <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                "            </ClassMap>"
+                "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+                "            <DbIndexList xmlns='ECDbMap.02.00'>"
+                "                 <Indexes>"
+                "                   <DbIndex>"
+                "                       <IsUnique>False</IsUnique>"
+                "                       <Name>MyIndex</Name>"
+                "                       <Properties>"
+                "                          <string>AProp</string>"
+                "                       </Properties>"
+                "                   </DbIndex>"
+                "                 </Indexes>"
+                "            </DbIndexList>"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName='AProp' typeName='string'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>", false, "Index with properties that map to overflow columns is not supported"));
+
+            testItems.push_back(SchemaItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                "    <ECEntityClass typeName='A' modifier='None' >"
+                "        <ECCustomAttributes>"
                 "            <DbIndexList xmlns='ECDbMap.02.00'>"
                 "                 <Indexes>"
                 "                   <DbIndex>"
@@ -5835,6 +5948,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                    "              <SharedColumnCount>5</SharedColumnCount>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -5871,7 +5985,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertSchemaImport(db, asserted, testItem, "userdefinedindextest5.ecdb");
                 ASSERT_FALSE(asserted);
 
-                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"sc01"});
+                AssertIndex(db, "ix_sub1_aid", false, "ts5_Base", {"sc1"});
                 }
 
                 {
@@ -5885,6 +5999,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                     "                <MapStrategy>TablePerHierarchy</MapStrategy>"
                     "            </ClassMap>"
                     "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                    "              <SharedColumnCount>5</SharedColumnCount>"
                     "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
                     "            </ShareColumns>"
                     "        </ECCustomAttributes>"
@@ -5929,7 +6044,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 ECClassId sub1ClassId = db.Schemas().GetECClassId("TestSchema", "Sub1");
                 ECClassId sub11ClassId = db.Schemas().GetECClassId("TestSchema", "Sub11");
                 Utf8String indexWhereClause = "ECClassId=" + sub1ClassId.ToString() + " OR ECClassId=" + sub11ClassId.ToString();
-                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc01"}, indexWhereClause.c_str());
+                AssertIndex(db, "uix_sub1_aid", true, "ts6_Base", {"sc1"}, indexWhereClause.c_str());
                 }
 
                 {
@@ -6157,10 +6272,11 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                 AssertIndex(db, "uix_root", true, "ts8_Root", {"RootProp"});
 
                 //index from Interface class is applied to Sub and Sub2 which are stored in joined tables
+                /* #TFS 555738
                 AssertIndex(db, "uix_interface_ts8_Sub", true, "ts8_Sub", {"InterfaceProp"});
+                */
                 AssertIndex(db, "uix_interface_ts8_Sub2", true, "ts8_Sub2", {"InterfaceProp"});
                 AssertIndex(db, "uix_interface_ts82_Sub3", true, "ts82_Sub3", {"InterfaceProp"});
-
                 AssertIndex(db, "uix_sub", true, "ts8_Sub", {"SubProp"});
                 AssertIndex(db, "uix_sub2", true, "ts8_Sub2", {"Sub2Prop"});
                 AssertIndex(db, "uix_sub3", true, "ts82_Sub3", {"Sub3Prop"});
@@ -10562,5 +10678,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     ASSERT_TRUE(mapStrategy.m_tphInfo.IsUnset());
     ASSERT_EQ(count_ManyFooHasManyGoo, GetRelationshipInstanceCount(ecdb, "ts.ManyFooHasManyGoo"));
     }
+
+
 
 END_ECDBUNITTESTS_NAMESPACE

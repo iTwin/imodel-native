@@ -764,19 +764,11 @@ TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+1+GetECClassId(), true, 'Chair')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
-
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(1000/5, false, 'Table')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+2+ECClassId, false, 'Table')"));
-    ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ECST.Product (UnitPrice, ProductAvailable, ProductName) VALUES(100+2+GetECClassId(), false, 'Table')"));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, statement.Step());
     statement.Finalize();
 
@@ -789,40 +781,21 @@ TEST_F(ECSqlStatementTestFixture, VerifyLiteralExpressionAsConstants)
     ASSERT_STREQ("Table", statement.GetValueText(0));
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductName FROM ECST.Product WHERE UnitPrice=100+2+GetECClassId()"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_STREQ("Table", statement.GetValueText(0));
-    statement.Finalize();
-
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice>ECClassId AND ProductName='Chair'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT AVG(UnitPrice) FROM ECST.Product WHERE UnitPrice>GetECClassId() AND ProductName='Chair'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    statement.Finalize();
-
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+ECClassId AND ProductName='LCD'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_TRUE(statement.GetValueBoolean(0));
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+ECClassId AND ProductName='LCD'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_TRUE(statement.GetValueBoolean(0));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice>100+2+GetECClassId() AND ProductName='LCD'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_TRUE(statement.GetValueBoolean(0));
     statement.Finalize();
 
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice=100+3+ECClassId OR ProductName='LCD'"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_TRUE(statement.GetValueBoolean(0));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ProductAvailable FROM ECST.Product WHERE UnitPrice=100+3+GetECClassId() OR ProductName='LCD'"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_TRUE(statement.GetValueBoolean(0));
     statement.Finalize();
@@ -3863,8 +3836,7 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
 
     ECClassId sub1ClassId = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("Sub1")->GetId();
     Utf8String expectedNativeSql;
-    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:__p1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:__p1,:__p2,:__p3,:ecidauto_1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
-                             //INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:__p1,58);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:__p1,:__p2,:__p3,:ecidauto_1,58)
+    expectedNativeSql.Sprintf("INSERT INTO [ts_Base] ([Prop1],[ECInstanceId],ECClassId) VALUES (1.1,:_ecdbparam1,%s);INSERT INTO [ts_Sub1] ([sc2],[sc3],[sc4],[BaseECInstanceId],ECClassId) VALUES (:_ecdbparam1,:_ecdbparam2,:_ecdbparam3,:_ecdbecinstanceid_1,%s)", sub1ClassId.ToString().c_str(), sub1ClassId.ToString().c_str());
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();

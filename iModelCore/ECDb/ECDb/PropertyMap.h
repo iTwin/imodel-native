@@ -208,7 +208,7 @@ struct CompoundDataPropertyMap : DataPropertyMap
  
     private:
         virtual DbTable const& _GetTable() const override;
-        virtual bool _IsOverflow() const  override { return m_list.front()->IsOverflow(); }
+        virtual bool _IsOverflow() const override { return m_list.front()->IsOverflow(); }
     protected:
         bvector<DataPropertyMap const*> m_list;
         CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)

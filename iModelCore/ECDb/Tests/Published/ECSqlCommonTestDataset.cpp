@@ -62,7 +62,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::CasingTests(ECSqlType ecsqlType, ECDbCR
             AddTestItem(dataset, ecsqlType, "SELECT S FROM ecsql.p", rowCountPerClass);
             AddTestItem(dataset, ecsqlType, "SELECT s FROM ecsql.P", rowCountPerClass);
             AddTestItem(dataset, ecsqlType, "SELECT ecinsTanceiD FROM ECSqlTest.P", rowCountPerClass);
-            AddTestItem(dataset, ecsqlType, "SELECT getecCLassid() FROM ECSqlTest.P", rowCountPerClass);
+            AddTestItem(dataset, ecsqlType, "SELECT ecCLassid FROM ECSqlTest.P", rowCountPerClass);
             break;
             }
             case ECSqlType::Update:
@@ -443,14 +443,8 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
     if (ToECSql (pClassECSqlStub, ecsqlType, *pClass, false))
         {
         Utf8String ecsql;
-        ecsql.Sprintf ("%s WHERE GetECClassId() <> %s", pClassECSqlStub.c_str (), pClassId.ToString().c_str());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
-
         ecsql.Sprintf("%s WHERE ECClassId <> %s", pClassECSqlStub.c_str(), pClassId.ToString().c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
-
-        ecsql.Sprintf ("%s WHERE GetECClassId() = %s", pClassECSqlStub.c_str (), pClassId.ToString().c_str());
-        AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
 
         ecsql.Sprintf("%s WHERE ECClassId = %s", pClassECSqlStub.c_str(), pClassId.ToString().c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);

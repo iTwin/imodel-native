@@ -234,7 +234,10 @@ NativeSqlBuilder& NativeSqlBuilder::AppendParameter(Utf8CP ecsqlParameterName, i
         Append(nativeSqlParameterName.c_str());
         }
     else
-        AppendFormatted(":__p%d", globalIndex);
+        {
+        //internal naming scheme for unnamed ECSQL parameters
+        AppendFormatted(":_ecdbparam%d", globalIndex);
+        }
 
     return *this;
     }

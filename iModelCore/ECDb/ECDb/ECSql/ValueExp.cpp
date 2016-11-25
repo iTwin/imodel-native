@@ -290,106 +290,6 @@ Utf8String CastExp::_ToString() const
     return str;
     }
 
-
-//****************************** ECClassIdFunctionExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    03/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-Utf8CP const ECClassIdFunctionExp::NAME = "GetECClassId";
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Exp::FinalizeParseStatus ECClassIdFunctionExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
-    {
-    if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
-        {
-        auto finalizeParseArgs = ctx.GetFinalizeParseArg();
-        BeAssert(finalizeParseArgs != nullptr && "ECClassIdFunctionExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-        RangeClasssInfo::List const& rangeClassRefList = *static_cast<RangeClasssInfo::List const*> (finalizeParseArgs);
-
-        if (HasClassAlias())
-            {
-            bvector<RangeClassRefExp const*> matchingClassRefExpList;
-            //1. Assume that the first entry of the prop path is a property name and not a class alias and directly search it in classrefs
-            for (RangeClasssInfo const& rangeClassRef : rangeClassRefList)
-                {
-                if (rangeClassRef.GetExp().GetId().Equals(m_classAlias))
-                    matchingClassRefExpList.push_back(&rangeClassRef.GetExp());
-                }
-
-            const auto matchCount = matchingClassRefExpList.size();
-            if (matchCount == 0)
-                {
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "Undefined Class alias '%s' in expression '%s'.", GetClassAlias(), ToECSql().c_str());
-                return FinalizeParseStatus::Error;
-                }
-            else if (matchCount > 1)
-                {
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "Class alias '%s' used in expression '%s' is ambiguous.", GetClassAlias(), ToECSql().c_str());
-                return FinalizeParseStatus::Error;
-                }
-
-            m_classRefExp = matchingClassRefExpList[0];
-            }
-        else // no class alias
-            {
-            const auto classRefCount = rangeClassRefList.size();
-            if (classRefCount == 0)
-                {
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "No class reference found for '%s' in ECSQL statement.", ToECSql().c_str());
-                return FinalizeParseStatus::Error;
-                }
-            else if (classRefCount > 1)
-                {
-                ctx.Issues().Report(ECDbIssueSeverity::Error, "Ambiguous call to '%s'. Class alias is missing.", ToECSql().c_str());
-                return FinalizeParseStatus::Error;
-                }
-
-            m_classRefExp = &rangeClassRefList[0].GetExp();
-            }
-
-        if (m_classRefExp == nullptr)
-            {
-            BeAssert(m_classRefExp != nullptr && "Resolved class reference expression is nullptr");
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "Resolved class reference expression is nullptr");
-            return FinalizeParseStatus::Error;
-            }
-
-        if (m_classRefExp->GetType() != Exp::Type::ClassName)
-            {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "%s only supported for simple class references. Subqueries are not yet supported.", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-
-        SetTypeInfo(ECSqlTypeInfo(FunctionCallExp::DetermineReturnType(ctx.GetECDb(), NAME, 0)));
-        }
-
-    return FinalizeParseStatus::Completed;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String ECClassIdFunctionExp::_ToString() const
-    {
-    Utf8String str("ECClassIdFunction [Alias: ");
-    str.append(m_classAlias).append("]");
-    return str;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    10/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECClassIdFunctionExp::_DoToECSql(Utf8StringR ecsql) const
-    {
-    if (HasClassAlias())
-        ecsql.append(m_classAlias).append(".");
-
-    ecsql.append(NAME).append("()");
-    }
-
 //****************************** GetPointCoordinateFunctionExp *****************************************
 
 #define GETPOINTCOORDINATEFUNCTION_NAMEROOT "Get"
@@ -641,9 +541,6 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP func
 
     if (BeStringUtilities::StricmpAscii(functionName, "every") == 0)
         return PRIMITIVETYPE_Boolean;
-
-    if (BeStringUtilities::StricmpAscii(functionName, "getecclassid") == 0)
-        return PRIMITIVETYPE_Long;
 
     if (BeStringUtilities::StricmpAscii(functionName, "glob") == 0)
         return PRIMITIVETYPE_Boolean;

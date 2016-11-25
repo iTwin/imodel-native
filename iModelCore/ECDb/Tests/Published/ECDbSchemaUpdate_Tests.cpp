@@ -6728,6 +6728,137 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='string' isStrict='True'>" // StrictEnum
+        "        <ECEnumerator value = 'val1' displayLabel = 'txt' />"
+        "        <ECEnumerator value = 'val2' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='StrictEnum' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='StrictEnum' backingTypeName='string' isStrict='True'>" // StrictEnum
+        "        <ECEnumerator value = 'val1' displayLabel = 'txt' />"
+        "        <ECEnumerator value = 'val2' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing String Enum to String should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing String Enum to String should be successful");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing String Enum to String should be successful");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECEnumerationCP strictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "StrictEnum");
+        ASSERT_TRUE(strictEnum != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == nullptr);
+        ASSERT_TRUE(foo_type->GetType() == PrimitiveType::PRIMITIVETYPE_String);
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Type' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEnumeration typeName='NonStrictEnum' backingTypeName='string' isStrict='False'>"
+        "        <ECEnumerator value = 'val1' displayLabel = 'txt' />"
+        "        <ECEnumerator value = 'val2' displayLabel = 'bat' />"
+        "    </ECEnumeration>"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Type' typeName='NonStrictEnum' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing String to Unstrict Enum is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing String to Unstrict Enum is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing String to Unstrict Enum is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        ECEnumerationCP nonStrictEnum = GetECDb().Schemas().GetECEnumeration("TestSchema", "NonStrictEnum");
+        ASSERT_TRUE(nonStrictEnum != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_type = foo->GetPropertyP("Type")->GetAsPrimitiveProperty();
+
+        ASSERT_TRUE(foo_type != nullptr);
+        ASSERT_TRUE(foo_type->GetEnumeration() == nonStrictEnum);
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
