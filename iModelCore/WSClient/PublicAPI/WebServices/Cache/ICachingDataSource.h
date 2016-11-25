@@ -75,6 +75,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
         typedef std::function<void(double bytesTransfered, double bytesTotal, Utf8StringCR taskLabel)> LabeledProgressCallback;
 
         //! synced - percentage (0.0 -> 1.0) of total sync done based on instances count
+        //! TODO: change synced to instancesSynced & instancesTotal to give more contorl for consumers
         //! currentLabel - label of instance being synced
         //! fileBytesTransfered - files bytes already synced to server. 0 if no files are being synced
         //! fileBytesTotal - total files bytes to sync. 0 if no files are being synced
