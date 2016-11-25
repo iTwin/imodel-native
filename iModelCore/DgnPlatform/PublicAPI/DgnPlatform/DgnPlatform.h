@@ -924,6 +924,7 @@ public:
     static ColorDef Blue()        {return ColorDef(0,0,0xff);}
     static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
     static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
+    static ColorDef Orange()      {return ColorDef(0xff,0xa5,0);}
     static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
     static ColorDef Brown()       {return ColorDef(0xa5,0x2a,0x2a);}
     static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
@@ -933,6 +934,7 @@ public:
     static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //<! Green
     static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //<! Navy
     static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //<! Olive
+    static ColorDef DarkOrange()  {return ColorDef(0xff,0x8c,0);}
     static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //<! Teal
     static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //<! Purple
     static ColorDef DarkBrown()   {return ColorDef(0x8b,0x45,0x13);}

@@ -193,7 +193,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-    graphic->SetSymbology(ColorDef::Black(), ColorDef::Green(), 0);  // debugging
+    graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);  // debugging
     graphic->AddRangeBox(tile.m_range);                              // debugging
     
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
@@ -273,7 +273,7 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     m_view->GetViewDefinition().AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
 
     // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
-    m_maxPixelSize = DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    m_maxPixelSize = .5* DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
 
     auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
@@ -281,6 +281,8 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     Transform location = Transform::From(range.low);
     location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
+
+    SetExpirationTime(std::chrono::seconds(5));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -321,7 +323,7 @@ void Sheet::ViewController::_LoadState()
         auto tree = FindAttachment(attachId);
 
         if (!tree.IsValid())
-            tree = new Tree(GetDgnDb(), attachId, 256);
+            tree = new Tree(GetDgnDb(), attachId, 512);
 
         attachments.push_back(tree);
         }
