@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConnection.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -31,7 +31,6 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
         mutable std::shared_ptr<WebApi> m_webApi;
 
     private:
-        AsyncTaskPtr<void> InvalidateInfo() const;
         std::shared_ptr<WebApi> GetWebApi(WSInfoCR info) const;
 
     public:
@@ -79,7 +78,7 @@ struct ClientConnection : std::enable_shared_from_this<ClientConnection>
                     if (!response.IsSuccess() &&
                         WSError::Status::ServerNotSupported == response.GetError().GetStatus())
                         {
-                        InvalidateInfo();
+                        m_infoProvider->InvalidateInfo();
                         }
                     *responsePtr = response;
                     });
