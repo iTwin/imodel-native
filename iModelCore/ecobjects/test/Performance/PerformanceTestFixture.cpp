@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/PerformanceTestFixture.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -35,7 +35,7 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
     if (!existingFile)
         fprintf (logFile, "Date, Test Description, Baseline, Time (secs)\n");
 
-    Utf8String dateTime = DateTime::GetCurrentTime().ToUtf8String();
+    Utf8String dateTime = DateTime::GetCurrentTime().ToString();
     FOR_EACH(T_TimerResultPair const& pair, results)
         {
         fprintf (logFile, "%s, %s,, %.4f\n", dateTime.c_str(), pair.first.c_str(), pair.second);
