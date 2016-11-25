@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ServerInfoProvider.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,6 +10,7 @@
 #include <WebServices/Client/WSClient.h>
 #include <MobileDgn/Utils/Threading/WorkerThread.h>
 #include <MobileDgn/Utils/Threading/AsyncTask.h>
+#include <MobileDgn/Utils/Threading/UniqueTaskHolder.h>
 #include <set>
 
 #include "ClientConnection.h"
@@ -26,16 +27,18 @@ typedef AsyncResult<WSInfo, HttpResponse> WSInfoHttpResult;
 struct ServerInfoProvider
     {
     private:
+        BeCriticalSection m_mutex;
+        UniqueTaskHolder<WSInfoResult> m_getInfoExecutor;
+
         std::shared_ptr<const ClientConfiguration> m_configuration;
-        std::shared_ptr<WorkerThread> m_thread;
         std::vector<std::weak_ptr<IWSClient::IServerInfoListener>> m_listeners;
 
-        mutable WSInfo m_serverInfo;
-        mutable uint64_t m_serverInfoUpdated;
+        WSInfo m_serverInfo;
+        uint64_t m_serverInfoUpdated;
 
     private:
         bool CanUseCachedInfo() const;
-        void UpdateInfo(WSInfoCR info) const;
+        void UpdateInfo(WSInfoCR info);
         void NotifyServerInfoUpdated(WSInfoCR info) const;
 
         AsyncTaskPtr<WSInfoResult> GetInfo(ICancellationTokenPtr ct) const;
@@ -48,8 +51,8 @@ struct ServerInfoProvider
         void RegisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
         void UnregisterServerInfoListener(std::weak_ptr<IWSClient::IServerInfoListener> listener);
 
-        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct) const;
-        AsyncTaskPtr<void> InvalidateInfo() const;
+        AsyncTaskPtr<WSInfoResult> GetServerInfo(bool forceQuery, ICancellationTokenPtr ct);
+        void InvalidateInfo();
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

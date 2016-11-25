@@ -2,7 +2,7 @@
 |
 |     $Source: Client/ClientConnection.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -65,14 +65,6 @@ ICancellationTokenPtr ct
         {
         return result;
         });
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    06/2014
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncTaskPtr<void> ClientConnection::InvalidateInfo() const
-    {
-    return m_infoProvider->InvalidateInfo();
     }
 
 /*--------------------------------------------------------------------------------------+
