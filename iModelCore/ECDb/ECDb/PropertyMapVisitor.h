@@ -120,11 +120,9 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         Utf8CP m_classIdentifier;
         DbTable const& m_tableFilter;
         bool m_wrapInParentheses;
-        bool m_usePropertyNameAsAliasForSystemPropertyMaps;
         mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
         mutable std::vector<Result> m_resultSet;
         bool m_writeData;
-        bool m_forDebugView;
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
         BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
@@ -138,10 +136,9 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false, bool usePropertyNameAsAliasForSystemPropertyMaps = false);
+        ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false);
         ~ToSqlPropertyMapVisitor() {}
         void EnableSqlForInsertOrUpdate() { m_writeData = true; }
-        void EnableDebugView() { m_forDebugView = true; }
         std::vector<Result> const& GetResultSet() const { return m_resultSet; }
         const Result* Find(Utf8CP accessString) const;
         void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }

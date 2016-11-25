@@ -193,15 +193,9 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/, bool usePropertyNameAsAliasForSystemPropertyMaps /*= false*/) 
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses), m_usePropertyNameAsAliasForSystemPropertyMaps(usePropertyNameAsAliasForSystemPropertyMaps), m_writeData(false), m_forDebugView(false)
+ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/) 
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses),  m_writeData(false)
     {
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        BeAssert(target == SqlTarget::Table);
-        BeAssert(!wrapInParentheses);
-        }
-
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
     }
@@ -259,7 +253,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
                     addBlobToBase64Func = true;
                     }
 
-                if (addBlobToBase64Func && !m_forDebugView)
+                if (addBlobToBase64Func)
                     result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
                     .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
                     .AppendComma().Append("'$.")
@@ -269,7 +263,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
                     .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
                     .AppendComma().Append("'$.")
                     .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-
                 }
             else
                 {
@@ -303,7 +296,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
     if (m_target == SqlTarget::SelectView)
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
     else
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultClassId()).AppendSpace().Append(propertyMap.GetColumn().GetName().c_str());
+        result.GetSqlBuilderR().Append(propertyMap.GetDefaultClassId());
 
     return SUCCESS;
     }
@@ -328,13 +321,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropert
         result.GetSqlBuilderR().AppendParenLeft();
     
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
-    
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-        }
-    
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 
@@ -354,7 +340,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& p
         }
 
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
-
     Result& result = Record(*vmap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
     if (m_target == SqlTarget::SelectView)
@@ -367,13 +352,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& p
             result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
         }
         
-
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-        }
-
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 
@@ -406,12 +384,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMa
             result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
         }
 
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-        }
-
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 
@@ -436,12 +408,6 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const
         result.GetSqlBuilderR().AppendParenLeft();
     
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-        }
-
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 

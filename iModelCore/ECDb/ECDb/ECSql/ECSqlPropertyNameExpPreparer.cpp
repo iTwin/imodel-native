@@ -197,8 +197,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
     ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
                                         ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::SelectView : ToSqlPropertyMapVisitor::SqlTarget::Table, classIdentifier, exp.HasParentheses());
 
-    bool isWriteData = (ecsqlType == ECSqlType::Insert && exp.GetParent()->GetType() == Exp::Type::PropertyNameList)
-        || (ecsqlType == ECSqlType::Update && exp.GetParent()->GetType() == Exp::Type::Assignment);
+    bool isWriteData = exp.IsWrittenTo();
 
     if (isWriteData)
         sqlVisitor.EnableSqlForInsertOrUpdate();
@@ -215,6 +214,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
             if (r.GetColumn().GetPersistenceType() == PersistenceType::Virtual && !r.GetColumn().IsOverflow())
                 continue;
             }
+        
         nativeSqlSnippets.push_back(r.GetSqlBuilder());
         }
     }
