@@ -120,7 +120,7 @@ std::ostream& operator << (std::ostream &o, DateTimeCR date)
     {
     if (date.IsValid())
         {
-        o << date.ToUtf8String();
+        o << date.ToString();
         }
     else
         {

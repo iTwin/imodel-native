@@ -88,7 +88,7 @@ void RepositorySchemaUpgradeTests::SetUp()
 
 void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
     {
-    Utf8String name = testName + "-" + DateTime::GetCurrentTimeUtc().ToUtf8String() + ".stamp";
+    Utf8String name = testName + "-" + DateTime::GetCurrentTimeUtc().ToString() + ".stamp";
     name.ReplaceAll(":", ".");
     path.AppendToPath(BeFileName(name));
     BeFile file;

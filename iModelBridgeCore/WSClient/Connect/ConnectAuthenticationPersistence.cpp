@@ -110,7 +110,7 @@ void ConnectAuthenticationPersistence::SetToken(SamlTokenPtr token)
 
     m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_Token, token ? token->AsString().c_str() : "");
 
-    Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToUtf8String();
+    Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToString();
     m_secureStore->SaveValue(SecureStoreNameSpace_Connect, SecureStoreKey_TokenSetTime, token ? dateStr.c_str() : "");
 
     m_token.reset();
