@@ -176,7 +176,7 @@ Utf8String ECDbHelper::UtcDateToString(DateTimeCR utcDate)
         BeAssert(false && "Only Utc should be passed");
         return nullptr;
         }
-    return utcDate.ToUtf8String();
+    return utcDate.ToString();
     }
 
 /*--------------------------------------------------------------------------------------+

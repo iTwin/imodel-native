@@ -552,7 +552,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
 //    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
 //    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
 //    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("ETagA")));
-//    SimpleWriteToFile(cache.ReadResponseCachedDate(key1).ToUtf8String(), GetNewFilePath(paths.first, "CacheDateResponseA"));
+//    SimpleWriteToFile(cache.ReadResponseCachedDate(key1).ToString(), GetNewFilePath(paths.first, "CacheDateResponseA"));
 //
 //    instances.Clear();
 //    instances.Add({"TestSchema.TestClass", "C"});
