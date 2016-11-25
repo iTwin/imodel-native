@@ -220,6 +220,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             ) = 0;
 
         //! Push all local changes to server with SyncStatus::Ready.
+        //! Note that created instances could change ECInstanceKey if class changes after sync.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param ct - cancelling sync task
         //! @param options - additonal configuration for sync
@@ -233,7 +234,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
             SyncOptions options = SyncOptions()
             ) = 0;
 
-        //! Push specific local changes to server
+        //! Push specific local changes to server. See SyncLocalChages() for more.
         //! @param instancesToSync - locally changed instances to sync. Changes with SyncStatus::NotReady are also synced if specified.
         //! @param onProgress - callback to track progress. Will report object labels that are being synced and progress value if any files are being uploaded.
         //! @param ct - cancelling sync task
