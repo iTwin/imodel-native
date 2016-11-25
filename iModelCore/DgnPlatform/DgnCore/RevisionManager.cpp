@@ -432,7 +432,7 @@ void DgnRevision::Dump(DgnDbCR dgndb) const
     LOG.infov("User Name: %s", m_userName.c_str());
     LOG.infov("Summary: %s", m_summary.c_str());
     LOG.infov("ChangeStreamFile: %ls", m_changeStreamFile.c_str());
-    LOG.infov("DateTime: %s", m_dateTime.ToUtf8String().c_str());
+    LOG.infov("DateTime: %s", m_dateTime.ToString().c_str());
 
     RevisionFileStreamReader fs(m_changeStreamFile, dgndb);
     fs.Dump("Revision Contents:\n", dgndb, false, 0);

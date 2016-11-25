@@ -321,7 +321,7 @@ struct JsECSqlValue : RefCountedBaseWithCreate
     JsECSqlValue(BeSQLite::EC::IECSqlValue const* value) : m_value(value) { ; }
 
     Utf8String GetText() { return m_value->GetText(); }
-    Utf8String GetDateTime() { return m_value->GetDateTime().ToUtf8String(); }
+    Utf8String GetDateTime() { return m_value->GetDateTime().ToString(); }
     double GetDouble() { return m_value->GetDouble(); }
     JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3d()); }
     int32_t GetInt() { return m_value->GetInt(); }
@@ -1217,7 +1217,7 @@ struct JsECValue : RefCountedBaseWithCreate
         if (m_value.IsNull())
             return "";
         auto dt = m_value.GetDateTime();
-        return dt.ToUtf8String();
+        return dt.ToString();
         }
     int32_t GetInteger() const {return m_value.IsNull()? 0: m_value.GetInteger();}
     double GetDouble() const {return m_value.IsNull()? 0.0: m_value.GetDouble();}

@@ -1414,7 +1414,6 @@ void compareDateTimes(DateTimeCR dateTime1, DateTimeCR dateTime2)
     EXPECT_EQ(dateTime1.GetMinute(), dateTime2.GetMinute());
     EXPECT_EQ(dateTime1.GetSecond(), dateTime2.GetSecond());
     EXPECT_EQ(dateTime1.GetMillisecond(), dateTime2.GetMillisecond());
-    EXPECT_EQ(dateTime1.GetHectoNanosecond(), dateTime2.GetHectoNanosecond());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1424,7 +1423,7 @@ TEST_F(DgnElementTests, GetSetPropertyValues)
     {
     SetupSeedProject();
 
-    DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 4560000);
+    DateTime dateTime = DateTime(DateTime::Kind::Utc, 2016, 2, 14, 9, 58, 17, 456);
     DateTime dateTimeUtc = DateTime::GetCurrentTimeUtc();
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
