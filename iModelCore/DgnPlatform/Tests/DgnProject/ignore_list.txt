@@ -2,7 +2,9 @@
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
 GeometricPrimitiveTests.FacetCounts # Demonstrating disparity for Diego to fix
-IndirectLocksTest.* # TFS 627787
+
+#TFS 627787
+IndirectLocksTest.*
 
 BackwardsCompatibilityTests.OpenDgndbInCurrent
 
@@ -28,12 +30,14 @@ ConfigurationManagerTest.*                             # UmarH -- Tests are port
 ViewAttachmentTest.Geom                                 # NonVisibleViewport
 VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
 
-ElementAspectTests.ImportElementsWithAspect             # Defect 386647 - Does not element import aspects
-DateTimeFormatterTest.*                                 # UmarH fails randomly, need to investigate
-DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad       # Defect 386093 - Unable to query line style unless we reload the file ( which will reload the cache )
+#TFS 386647 : Does not element import aspects
+ElementAspectTests.ImportElementsWithAspect
 
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
+DgnECNavigatorTest.*
+#TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 RevisionTestFixture.Codes
