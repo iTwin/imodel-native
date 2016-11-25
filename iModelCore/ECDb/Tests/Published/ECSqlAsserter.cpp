@@ -356,6 +356,10 @@ void ECSqlSelectAsserter::AssertCurrentCell(ECSqlTestItem const& testItem, ECSql
         for (int i = 0; i < structValue.GetMemberCount(); i++)
             AssertCurrentCell(testItem, statement, structValue.GetValue(i), &dataType, isInStructArray);
         }
+    else if (dataType.IsNavigation())
+        {        
+        ecsqlValue.GetNavigation(nullptr);
+        }
     else // array
         {
         IECSqlArrayValue const& arrayValue = ecsqlValue.GetArray();
