@@ -653,8 +653,10 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(status, reportString.c_str());
     ASSERT_TRUE(status == BeXmlStatus::BEXML_Success);
     int fileCount = 0;
-    Utf8String attributeName = "FileName";
-    WString filename;
+    Utf8String attributeName;
+    WString attribute;
+    BeFile file;
+    uint64_t actualSize, statedSize;
 
     while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element)))
     {
@@ -665,8 +667,16 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
             || 0 == xmlNodeName.CompareTo("File"))
             {
             fileCount++;
-            reader->ReadToNextAttribute(&attributeName, &filename);
-            ASSERT_TRUE(BeFileName::DoesPathExist(filename.c_str()));
+            reader->ReadToNextAttribute(&attributeName, &attribute); //FileName
+            ASSERT_TRUE(attributeName.CompareToI("FileName") == 0);
+            ASSERT_TRUE(BeFileName::DoesPathExist(attribute.c_str()));
+            ASSERT_TRUE(BeFileStatus::Success == file.Open(attribute.c_str(), BeFileAccess::Read));
+            reader->ReadToNextAttribute(&attributeName, &attribute); //url
+            reader->ReadToNextAttribute(&attributeName, &attribute); //filesize
+            ASSERT_TRUE(attributeName.CompareToI("filesize") == 0);
+            ASSERT_TRUE(BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(statedSize, attribute.c_str()));
+            ASSERT_TRUE(BeFileStatus::Success == file.GetSize(actualSize));
+            ASSERT_TRUE(actualSize == statedSize);
             }
     }
 
