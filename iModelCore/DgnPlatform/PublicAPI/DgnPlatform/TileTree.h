@@ -284,7 +284,7 @@ protected:
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
     Utf8String m_contentType;   // MIME type of the data. Can be empty.
     uint64_t m_expirationDate;  // Expiration date. Will be 0 when not available.
-    bool m_cachingAllowed;      // Turn off caching for sensitive information.
+    bool m_saveToCache = false;
 
     //! Constructor for TileLoader.
     //! @param[in] fileName full file name or URL name.
@@ -292,7 +292,7 @@ protected:
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
     TileLoader(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
-        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0), m_cachingAllowed(true) {}
+        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
 public:
     BentleyStatus LoadTile();
@@ -375,6 +375,8 @@ struct DrawArgs
     RenderContextR m_context;
     Transform m_location;
     double m_scale;
+    double m_biasDistance = 0.0; // for 2d display priority
+    double m_substitueBiasDistance = -1.0; // for moving "substitute" tiles behind real tiles.
     Render::GraphicBranch m_graphics;
     Render::GraphicBranch m_substitutes;
     MissingNodes m_missing;

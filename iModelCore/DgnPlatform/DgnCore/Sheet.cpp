@@ -193,8 +193,10 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
+#if defined (DEBUG_TILES)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);  // debugging
     graphic->AddRangeBox(tile.m_range);                              // debugging
+#endif
     
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
