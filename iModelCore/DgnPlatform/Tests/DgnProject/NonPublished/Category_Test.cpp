@@ -450,17 +450,31 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     ASSERT_TRUE(defaultSubCat1.IsValid());
     EXPECT_EQ(defaultSubCat1->GetCode().GetValue(), "Cat1");
     EXPECT_EQ(defaultSubCat1->GetSubCategoryId(), DgnCategory::GetDefaultSubCategoryId(cat1Id));
+    db.SaveChanges();
 
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
     DgnCode code;    // invalid code
     EXPECT_EQ(DgnDbStatus::InvalidCodeAuthority, defaultSubCat1Edit->SetCode(code));
-    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat1"); // wrong category
-    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
-    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2"); // wrong category
-    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+
+    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2"); // Duplicate code
+    EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));
+    DgnDbStatus status;
+    defaultSubCat1Edit->Update(&status);
+    ASSERT_EQ(DgnDbStatus::DuplicateCode, status);
+    db.SaveChanges();
+
+    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat1"); // Same category Code doens't effect anything.
+    EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));
+    defaultSubCat1Edit->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    db.SaveChanges();
+
     code = DgnSubCategory::CreateCode(db, cat1Id, "NewName"); // sub-category name must equal category name
-    EXPECT_EQ(DgnDbStatus::InvalidName, defaultSubCat1Edit->SetCode(code));
+    EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));
+    defaultSubCat1Edit->Update(&status);
+    ASSERT_EQ(DgnDbStatus::Success, status);
+    db.SaveChanges();
 
     // Cannot delete default sub-category
     EXPECT_EQ(DgnDbStatus::ParentBlockedChange, defaultSubCat1->Delete());
@@ -470,7 +484,6 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     // require valid parent category
     DgnSubCategory noParent(DgnSubCategory::CreateParams(db, DgnCategoryId(), "NoParent", app, "Sub-category requires valid parent category"));
-    DgnDbStatus status;
     EXPECT_TRUE(noParent.Insert(&status).IsNull());
     EXPECT_EQ(status, DgnDbStatus::InvalidName); // InvalidName because parent ID used to generate code.
 
@@ -487,8 +500,8 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     ASSERT_TRUE(cpSubcat2B.IsValid());
 
     db.SaveChanges();
+    //printf("\n%s, %s\n", pSubcat2B->GetCode().GetValue().c_str(), DgnSubCategory::CreateCode(db, cat2Id, "2A").GetValue().c_str());
     DgnSubCategoryPtr pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
-    printf("\n%s, %s\n", pSubcat2B->GetCode().GetValue().c_str(), DgnSubCategory::CreateCode(db, cat2Id, "2A").GetValue().c_str());
     pSubcat2B->SetCode(DgnSubCategory::CreateCode(db, cat2Id, "2A"));
     EXPECT_TRUE(pSubcat2B->Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
@@ -498,14 +511,14 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     // Code validation
     code = DgnSubCategory::CreateCode(db, cat1Id, "2B"); // wrong category
-    EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
-    code = DgnSubCategory::CreateCode(db, cat2Id, "NewName");
+    EXPECT_EQ(DgnDbStatus::Success, pSubcat2B->SetCode(code));
+    code = DgnSubCategory::CreateCode(db, cat2Id, "2BNewName");
     EXPECT_EQ(DgnDbStatus::Success, pSubcat2B->SetCode(code));
 
     // Can rename non-default sub-category if no name collisions
     cpSubcat2B = pSubcat2B->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    EXPECT_EQ(0, strcmp(cpSubcat2B->GetCode().GetValue().c_str(), "NewName"));
+    EXPECT_EQ(0, strcmp(cpSubcat2B->GetCode().GetValue().c_str(), "2BNewName"));
 
     // Illegal characters in names
     pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
@@ -515,9 +528,13 @@ TEST_F(CategoryTests, SubCategoryInvariants)
         Utf8String newName("SubCat");
         newName.append(1, invalidChar);
         code = DgnSubCategory::CreateCode(db, cat2Id, newName);
-        EXPECT_EQ(DgnDbStatus::InvalidName, pSubcat2B->SetCode(code));
+        EXPECT_EQ(DgnDbStatus::Success, pSubcat2B->SetCode(code));
+
+        pSubcat2B->Update(&status);
+        ASSERT_EQ(DgnDbStatus::InvalidName, status);
         }
 
+    // create and insert new subCategory with invalid Code, should return InvalidName.
     DgnSubCategory subcatWithInvalidName(DgnSubCategory::CreateParams(db, cat2Id, invalidChars, app));
     EXPECT_TRUE(subcatWithInvalidName.Insert(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::InvalidName, status);
