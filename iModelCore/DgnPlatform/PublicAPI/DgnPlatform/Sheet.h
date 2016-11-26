@@ -117,7 +117,7 @@ public:
     //! @return an invalid ID if the sheet has no border.
     DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(str_Border());}
 
-    //! Set the sheet border.
+        //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
     DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
 };

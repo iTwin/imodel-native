@@ -170,7 +170,7 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     if (!vp)
         return ERROR;
 
-    return vp->_CreateTile(m_image, *root.m_view, tile.m_range, root.m_pixels);
+    return vp->_RenderTile(m_image, *root.m_view, tile, root.m_pixels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -270,7 +270,16 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     else
         m_pixels.Init(tileSize, tileSize/aspect);
 
-    m_view->GetViewDefinition().AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
+    auto& def=m_view->GetViewDefinition();
+    def.AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
+
+    auto* spatial=def.ToSpatialViewP();
+    if (spatial)
+        {
+        auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
+//        env.m_groundPlane.m_enabled = false;
+        env.m_skybox.m_enabled = false;
+        }
 
     // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
     m_maxPixelSize = .5* DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
@@ -282,7 +291,7 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
 
-    SetExpirationTime(std::chrono::seconds(5));
+    SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
     }
 
 /*---------------------------------------------------------------------------------**//**

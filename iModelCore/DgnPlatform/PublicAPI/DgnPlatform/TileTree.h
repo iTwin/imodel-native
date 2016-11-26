@@ -8,11 +8,11 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/RealityDataCache.h>
+#include "DgnPlatform.h"
 #include <folly/futures/Future.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
+#include <DgnPlatform/RealityDataCache.h>
 
 #define BEGIN_TILETREE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
 #define END_TILETREE_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
@@ -427,18 +427,20 @@ struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile)
 
+    bool m_isLeaf;
     TileId m_id; 
     Render::IGraphicBuilder::TileCorners m_corners; 
     Render::GraphicPtr m_graphic;                   
 
-    Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {}
+    Tile(Root& quadRoot, TileId id, Tile const* parent) : T_Super(quadRoot, parent), m_id(id) {m_isLeaf = (id.m_level == quadRoot.m_maxZoom);}
 
     TileId GetTileId() const {return m_id;}
     virtual TilePtr _CreateChild(TileId) const = 0;
     bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
     void TryHigherRes(TileTree::DrawArgsR args) const;
-    bool _HasChildren() const override {return m_id.m_level < GetQuadRoot().m_maxZoom;}
+    bool _HasChildren() const override {return !m_isLeaf;}
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
+    void SetIsLeaf() {m_isLeaf = true; m_children.clear();}
     ChildTiles const* _GetChildren(bool load) const override;
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     Utf8String _GetTileName() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
@@ -462,8 +464,8 @@ struct ProgressiveTask : Dgn::ProgressiveTask
     ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
     ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
-
-}
+    
+} // end QuadTree
 
 END_TILETREE_NAMESPACE
 
