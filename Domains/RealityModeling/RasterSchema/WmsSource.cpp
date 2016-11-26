@@ -433,7 +433,7 @@ folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
         return ERROR;
         }
 
-    m_cachingAllowed = query.GetCacheContolExpirationDate(m_expirationDate);
+    m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
 
     return SUCCESS;
     }
