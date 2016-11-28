@@ -577,55 +577,6 @@ TEST_F (CategoryTests, DeleteSubCategory)
     }
 
 //=======================================================================================
-//! Test for Updating a subcategory.
-// @bsiclass                                                     Maha Nasir      07/15
-//=======================================================================================
-TEST_F (CategoryTests, UpdateSubCategory)
-    {
-    SetupSeedProject();
-
-    Utf8CP name = "TestCategory";
-    Utf8CP desc = "This is a test category.";
-
-    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
-
-    //Appearence properties.
-    uint32_t weight = 10;
-    double trans = 0.5;
-    uint32_t dp = 1;
-
-    DgnSubCategory::Appearance appearence;
-    appearence.SetInvisible (false);
-    appearence.SetColor (ColorDef::DarkRed ());
-    appearence.SetWeight (weight);
-    appearence.SetTransparency (trans);
-    appearence.SetDisplayPriority (dp);
-
-    //Insert category
-    EXPECT_TRUE(category.Insert(appearence).IsValid());
-    DgnCategoryId id = category.GetCategoryId();
-    EXPECT_TRUE (id.IsValid ());
-
-    //Utf8CP u_name = "UpdatedSubCategory";
-    Utf8CP u_desc = "This is the updated sub category.";
-
-    //Updates category.
-    DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(id);
-    DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
-    DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
-    appearance2.SetColor(ColorDef::Red());
-    subCat->SetDescription(Utf8String(u_desc));
-    DgnDbStatus updateStatus;
-    subCat->Update(&updateStatus);
-    EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
-
-    //Verification of category properties
-    DgnSubCategoryCPtr updatedSubCat = DgnSubCategory::Get(*m_db, subCategoryId);
-    EXPECT_TRUE(updatedSubCat.IsValid());
-    EXPECT_STREQ(u_desc, updatedSubCat->GetDescription());
-    }
-
-//=======================================================================================
 //! Test for Quering a category.using elementID
 // @betest                                                     Umar.Hayat      09/15
 //=======================================================================================
@@ -685,85 +636,123 @@ TEST_F (CategoryTests, QueryByElementId)
 //
 //    }
 
+//=======================================================================================
+//
+// @betest                                                     Ridha.Malik      11/16
+//=======================================================================================
 TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     {
     SetupSeedProject();
+    m_db->Schemas().CreateECClassViewsInDb();
     BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
     Utf8CP name = "TestCategory";
     Utf8CP desc = "This is a test category.";
-    DgnCategoryId categoryId; 
+    DgnCategoryId categoryId;
+    DgnCode  sub2code;
+    {
+    SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
 
-        {
-        SpatialCategory category(*m_db, name, DgnCategory::Rank::Domain, desc);
+    //Appearence properties.
+    uint32_t weight = 10;
+    double trans = 0.5;
+    uint32_t dp = 1;
 
-        //Appearence properties.
-        uint32_t weight = 10;
-        double trans = 0.5;
-        uint32_t dp = 1;
+    DgnSubCategory::Appearance appearence;
+    appearence.SetInvisible(false);
+    appearence.SetWeight(weight);
+    appearence.SetColor(ColorDef::White());
+    appearence.SetTransparency(trans);
+    appearence.SetDisplayPriority(dp);
 
-        DgnSubCategory::Appearance appearence;
-        appearence.SetInvisible(false);
-        appearence.SetColor(ColorDef::DarkRed());
-        appearence.SetWeight(weight);
-        appearence.SetTransparency(trans);
-        appearence.SetDisplayPriority(dp);
+    //Insert category
+    EXPECT_TRUE(category.Insert(appearence).IsValid());
+    categoryId = category.GetCategoryId();
+    EXPECT_TRUE(categoryId.IsValid());
 
-        //Insert category
-        EXPECT_TRUE(category.Insert(appearence).IsValid());
-        categoryId = category.GetCategoryId();
-        EXPECT_TRUE(categoryId.IsValid());
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+    DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
+    GeometrySourceP geomElem = el->ToGeometrySourceP();
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
+    DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
+    0, 0, 2,
+    0, 3, 0,
+    0.0, Angle::TwoPi());
+    ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
+    EXPECT_TRUE(builder->Append(*ellipse));
 
-        PhysicalModelPtr model = GetDefaultPhysicalModel();
-        DgnElementPtr el = TestElement::Create(*m_db, m_defaultModelId, categoryId, DgnCode());
-        GeometrySourceP geomElem = el->ToGeometrySourceP();
-        GeometryBuilderPtr builder = GeometryBuilder::Create(*model, categoryId, DPoint3d::From(0.0, 0.0, 0.0));
-        DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,
-            0, 0, 2,
-            0, 3, 0,
-            0.0, Angle::TwoPi());
-        ICurvePrimitivePtr ellipse = ICurvePrimitive::CreateArc(ellipseData);
-        EXPECT_TRUE(builder->Append(*ellipse));
-        DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
-        EXPECT_TRUE(builder->Append(subCategoryId));
-        EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
-        auto elem = m_db->Elements().Insert(*el);
-        EXPECT_TRUE(elem.IsValid());
-        m_db->SaveChanges();
-        builder->GetGeometryParams().GetSubCategoryId();
-       }
+    // Insert child subcategory
+    DgnSubCategory subcategory2(DgnSubCategory::CreateParams(*m_db, categoryId, "subcatecogory2", appearence, "subcatecogory2 of TestCategoty"));
+    DgnSubCategoryCPtr sub2 = subcategory2.Insert();
+    EXPECT_TRUE(sub2.IsValid());
+    sub2code = sub2->GetCode();
+    DgnSubCategoryId subCategoryId = DgnSubCategory::QuerySubCategoryId(*m_db, sub2code);
+    EXPECT_TRUE(builder->Append(subCategoryId));
+    EXPECT_EQ(SUCCESS, builder->Finish(*geomElem));
+    auto elem = m_db->Elements().Insert(*el);
+    EXPECT_TRUE(elem.IsValid());
+
+    m_db->SaveChanges();
+    }
     m_db->CloseDb();
 
     OpenDb(m_db, outFileName, mode);
-        {
-        //Updates category.
-        DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
-        DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
-        DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
-        appearance2.SetColor(ColorDef::Red());
-        appearance2.SetWeight(5);
-        appearance2.SetTransparency(1);
-        appearance2.SetDisplayPriority(2);
-        DgnDbStatus updateStatus;
-        subCat->Update(&updateStatus);
-        EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
-        //Verification of category properties
-        DgnSubCategoryCPtr updatedSubCat = DgnSubCategory::Get(*m_db, subCategoryId);
-        EXPECT_TRUE(updatedSubCat.IsValid());
+    {
+    //Updates default Subcategory appearance
+    DgnSubCategory::Appearance appearance2;
+    appearance2.SetColor(ColorDef::Red());
+    appearance2.SetWeight(5);
+    appearance2.SetTransparency(1);
+    appearance2.SetDisplayPriority(2);
+    DgnCategoryPtr subCatd = m_db->Elements().GetForEdit<DgnCategory>(categoryId);
+    subCatd->SetDefaultAppearance(appearance2);
+    DgnDbStatus updateStatus;
+    subCatd->Update(&updateStatus);
+    EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
 
-        EXPECT_TRUE(ColorDef::Red() == appearance2.GetColor());
-        EXPECT_TRUE(5 == appearance2.GetWeight());
-        EXPECT_TRUE(1 == appearance2.GetTransparency());
-        EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
-        m_db->SaveChanges();
-        }
-    m_db->CloseDb();
-    OpenDb(m_db, outFileName, mode);
-    DgnSubCategoryId subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId);
-    DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
-    DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
+    //Verification of default subcategory properties
     EXPECT_TRUE(ColorDef::Red() == appearance2.GetColor());
     EXPECT_TRUE(5 == appearance2.GetWeight());
     EXPECT_TRUE(1 == appearance2.GetTransparency());
     EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
+
+    //Updates Child Subcategory appearance
+    DgnSubCategoryId subCategoryId = DgnSubCategory::QuerySubCategoryId(*m_db, sub2code);
+    DgnSubCategoryPtr subCat = m_db->Elements().GetForEdit<DgnSubCategory>(subCategoryId);
+    appearance2 = subCat->GetAppearance();
+    appearance2.SetColor(ColorDef::Green());
+    appearance2.SetWeight(5);
+    appearance2.SetTransparency(1);
+    appearance2.SetDisplayPriority(2);
+    subCat->GetAppearanceR() = appearance2;
+    subCat->Update(&updateStatus);
+    EXPECT_TRUE(DgnDbStatus::Success == updateStatus);
+
+    //Verification of child subcategory properties
+    EXPECT_TRUE(ColorDef::Green() == appearance2.GetColor());
+    EXPECT_TRUE(5 == appearance2.GetWeight());
+    EXPECT_TRUE(1 == appearance2.GetTransparency());
+    EXPECT_TRUE(2 == appearance2.GetDisplayPriority());
+
+    m_db->SaveChanges();
+    }
+    m_db->CloseDb();
+    OpenDb(m_db, outFileName, mode);
+    // Verify default subcategory updated apprearance values that stored in Db
+    DgnSubCategoryId DsubCatid = DgnCategory::GetDefaultSubCategoryId(categoryId);
+    DgnSubCategoryCPtr subCat = m_db->Elements().Get<DgnSubCategory>(DsubCatid);
+    DgnSubCategory::Appearance appearance2 = subCat->GetAppearance();
+    ASSERT_TRUE(ColorDef::Red() == appearance2.GetColor());
+    ASSERT_TRUE(5 == appearance2.GetWeight());
+    ASSERT_TRUE(1 == appearance2.GetTransparency());
+    ASSERT_TRUE(2 == appearance2.GetDisplayPriority());
+
+    // Verify child subcategory updated apprearance values that stored in Db
+    DgnSubCategoryId C_subcatid = DgnSubCategory::QuerySubCategoryId(*m_db, sub2code);
+    DgnSubCategoryCPtr C_subCat = m_db->Elements().Get<DgnSubCategory>(C_subcatid);
+    appearance2 = C_subCat->GetAppearance();
+    ASSERT_TRUE(ColorDef::Green() == appearance2.GetColor());
+    ASSERT_TRUE(5 == appearance2.GetWeight());
+    ASSERT_TRUE(1 == appearance2.GetTransparency());
+    ASSERT_TRUE(2 == appearance2.GetDisplayPriority());
     }
