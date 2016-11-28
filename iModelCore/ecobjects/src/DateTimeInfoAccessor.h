@@ -20,27 +20,27 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //=======================================================================================    
 struct DateTimeInfoAccessor : NonCopyableClass
     {
-private:
-    //static class
-    DateTimeInfoAccessor ();
-    ~DateTimeInfoAccessor ();
+    private:
+        //static class
+        DateTimeInfoAccessor();
+        ~DateTimeInfoAccessor();
 
-    static bool TryParseKind (bool& isKindNull, DateTime::Kind& kind, ECValueCR ecValue);
-    static bool TryParseComponent (bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue);
+        static bool TryParseKind(bool& isKindNull, DateTime::Kind& kind, ECValueCR ecValue);
+        static bool TryParseComponent(bool& isComponentNull, DateTime::Component& component, ECValueCR ecValue);
 
-    static void LogPropertyNotFoundError (Utf8CP propertyName);
+        static void LogPropertyNotFoundError(Utf8CP propertyName);
 
-public:
-    //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
-    //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
-    //! @b CoreCustomAttributes) on a date time ECProperty.
-    //! See also DateTimeInfo.
-    //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
-    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
-    //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
-    //! @return ::ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
-    //! is not of type ::PRIMITIVETYPE_DateTime. 
-    static ECObjectsStatus GetFrom (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
+    public:
+        //! Retrieves the DateTimeInfo metadata from the specified date time ECProperty.
+        //! @remarks The DateTimeInfo metadata is defined through the \b %DateTimeInfo custom attribute (defined in the standard schema 
+        //! @b CoreCustomAttributes) on a date time ECProperty.
+        //! See also DateTimeInfo.
+        //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
+        //!             carry the %DateTimeInfo custom attribute, the parameter remains unchanged.
+        //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
+        //! @return ::ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
+        //! is not a primitive or primitive array property of type ::PRIMITIVETYPE_DateTime. 
+        static ECObjectsStatus GetFrom(DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

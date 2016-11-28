@@ -13,106 +13,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
 #define ECDBMAP_SCHEMA_NAME "ECDbMap"
 
-//*********************** DateTimeInfo *************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-const DateTime::Kind DateTimeInfo::DEFAULT_KIND = DateTime::Kind::Unspecified;
-const DateTime::Component DateTimeInfo::DEFAULT_COMPONENT = DateTime::Component::DateAndTime;
-const DateTime::Info DateTimeInfo::s_default = DateTime::Info(DateTimeInfo::DEFAULT_KIND, DateTimeInfo::DEFAULT_COMPONENT);
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTimeInfo::DateTimeInfo(bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component)
-    : m_isKindNull(isKindNull), m_isComponentNull(isComponentNull), m_info(kind, component)
-    {}
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::operator== (DateTimeInfo const& rhs) const
-    {
-    return ((m_isKindNull && rhs.m_isKindNull) || (!m_isKindNull && !rhs.m_isKindNull && m_info.GetKind() == rhs.m_info.GetKind())) &&
-        ((m_isComponentNull && rhs.m_isComponentNull) || (!m_isComponentNull && !rhs.m_isComponentNull && m_info.GetComponent() == rhs.m_info.GetComponent()));
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info DateTimeInfo::GetInfo(bool useDefaultIfUnset) const
-    {
-    if (!useDefaultIfUnset)
-        {
-        return m_info;
-        }
-
-    const DateTime::Kind kind = IsKindNull() ? DEFAULT_KIND : m_info.GetKind();
-    const DateTime::Component component = IsComponentNull() ? DEFAULT_COMPONENT : m_info.GetComponent();
-
-    return DateTime::Info(kind, component);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-DateTime::Info const& DateTimeInfo::GetInfo() const { return m_info; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-DateTime::Info const& DateTimeInfo::GetDefault() { return s_default; }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool DateTimeInfo::IsMatchedBy(DateTime::Info const& rhs) const
-    {
-    DateTime::Info const& lhsInfo = GetInfo();
-    //If one of the members
-    //of this object is null, the RHS counterpart is ignored and the
-    //members are considered matching.
-    return (IsKindNull() || lhsInfo.GetKind() == rhs.GetKind()) &&
-        (IsComponentNull() || lhsInfo.GetComponent() == rhs.GetComponent());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 02/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8String DateTimeInfo::ToString() const
-    {
-    DateTime::Info const& info = GetInfo();
-
-    Utf8String str;
-    //reserve for the maximum length
-    str.reserve(36);
-
-    const bool isKindNull = IsKindNull();
-    if (!isKindNull)
-        {
-        str.append("Kind: ");
-        str.append(DateTime::Info::KindToString(info.GetKind()));
-        }
-
-    if (!IsComponentNull())
-        {
-        if (!isKindNull)
-            {
-            str.append(" ");
-            }
-
-        str.append("Component: ");
-        str.append(DateTime::Info::ComponentToString(info.GetComponent()));
-        }
-
-    return str;
-    }
-
-
 //*********************** StandardCustomAttributesSchemaHolder *************************************
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,7 +141,7 @@ IECInstancePtr StandardCustomAttributesSchemaHolder::CreateCustomAttributeInstan
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
+ECObjectsStatus StandardCustomAttributeHelper::GetDateTimeInfo(DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     return DateTimeInfoAccessor::GetFrom(dateTimeInfo, dateTimeProperty);
     }

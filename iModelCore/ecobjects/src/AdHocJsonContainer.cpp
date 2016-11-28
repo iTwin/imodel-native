@@ -144,7 +144,7 @@ void AdHocJsonPropertyValue::SetValuePoint3d(DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 void AdHocJsonPropertyValue::SetValueDateTime(DateTimeCR value)
     {
-    Json::Value jsonValue = value.ToUtf8String();
+    Json::Value jsonValue = value.ToString();
     m_value[m_name.c_str()] = jsonValue;
     SetType(PRIMITIVETYPE_DateTime);
     }
