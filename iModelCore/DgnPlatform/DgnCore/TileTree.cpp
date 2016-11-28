@@ -59,20 +59,9 @@ folly::Future<BentleyStatus> TileLoader::CreateTile()
     LoadFlag loadFlag(m_tile->GetRootR());
 
     if (!m_tile->IsQueued())
-        return SUCCESS; // this node was abandoned.
+        return ERROR; // this node was abandoned.
 
-    if (SUCCESS == _ReadFromDb())
-        {
-        if (SUCCESS == LoadTile())
-            {
-            m_tile->SetIsReady();    // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-            return SUCCESS;
-            }
-            
-        // If we failed to load from the db, try from the source.
-        }
-        
-    return _GetFromSource();
+    return (SUCCESS == _ReadFromDb()) ? SUCCESS : _GetFromSource();
     }
 
 //----------------------------------------------------------------------------------------
@@ -90,8 +79,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             return ERROR;
 
         m_contentType = query.GetContentType();
-
-        m_cachingAllowed = query.GetCacheContolExpirationDate(m_expirationDate);
+        m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
         }
     else
         {
@@ -162,8 +150,8 @@ BentleyStatus TileLoader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoader::_SaveToDb()
     {
-    if (!m_cachingAllowed)
-        return ERROR;
+    if (!m_saveToCache)
+        return SUCCESS;
 
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -452,7 +440,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
 
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-            // On a successful load, store the tile in the cache.
+            // On a successful load, potentially store the tile in the cache.   
             loader->_SaveToDb();
             return SUCCESS;
             });
@@ -653,11 +641,14 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
 
+    DPoint3d offset = {0.0, 0.0, m_biasDistance};
+    Transform location = Transform::FromProduct(m_location, Transform::From(offset));
+
     if (!m_graphics.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
         m_graphics.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_graphics, &m_location, m_clip);
+        auto branch = m_context.CreateBranch(m_graphics, &location, m_clip);
         BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
         m_context.OutputGraphic(*branch, nullptr);
         }
@@ -666,9 +657,8 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     if (!m_substitutes.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
-        DPoint3d offset = {0.0, 0.0, -1};
-        Transform moveBack = Transform::From(offset);
-        Transform location = Transform::FromProduct(m_location, moveBack);
+        offset.z = m_substitueBiasDistance;
+        location = Transform::FromProduct(location, Transform::From(offset));
 
         m_substitutes.SetViewFlags(flags);
         auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip);
@@ -696,7 +686,7 @@ void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     {
-    if (!_HasChildren()) // is this is the highest resolution tile?
+    if (m_isLeaf) // if this is a leaf, it has no children
         return nullptr;
 
     if (create && m_children.empty())
