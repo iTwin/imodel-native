@@ -306,20 +306,19 @@ TEST(DateTimeTests, DateTimeComparisonTests)
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, GetDayOfWeek)
     {
-    const DateTime baselineYear(2016, 11, 25);
-    const int baselineDayOfWeekNr = static_cast<int> (DateTime::DayOfWeek::Friday);
+    const DateTime baselineYear(2016, 11, 26);
+    double baselineJd = -1.0;
+    ASSERT_EQ(SUCCESS, baselineYear.ToJulianDay(baselineJd));
+    const DateTime::DayOfWeek baselineDayOfWeekNr = DateTime::DayOfWeek::Saturday;
 
-    DateTime testDt(baselineYear);
     for (int i = 0; i < 50; i++)
         {
-        double testJd = 0.0;
-        ASSERT_EQ(SUCCESS, testDt.ToJulianDay(testJd));
-        testJd -= i; //decrement test date by one day each
-        ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDt, testJd, testDt.GetInfo()));
+        double testJd = baselineJd - i; //decrement test date by one day each
+        DateTime testDate;
+        ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDate, testJd, baselineYear.GetInfo()));
 
-        int expectedDayOfWeekNr = baselineDayOfWeekNr - (i % 7);
-        const auto actualDayOfWeek = testDt.GetDayOfWeek();
-        ASSERT_EQ(expectedDayOfWeekNr, static_cast<int> (actualDayOfWeek)) << "GetDayOfWeek failed for test date " << testDt.ToString().c_str();
+        DateTime::DayOfWeek expectedDayOfWeekNr = (DateTime::DayOfWeek) ((int) baselineDayOfWeekNr - (i % 7));
+        ASSERT_EQ(expectedDayOfWeekNr, testDate.GetDayOfWeek()) << testDate.ToString().c_str();
         }
     }
 

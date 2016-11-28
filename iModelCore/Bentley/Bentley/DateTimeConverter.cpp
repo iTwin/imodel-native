@@ -469,7 +469,7 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
         //no time component specified.
         BeAssert(!RegexGroupMatched(matches, Iso8601Regex::MINUTE_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECOND_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::SECONDFRACTION_GROUPINDEX) && !RegexGroupMatched(matches, Iso8601Regex::TIMEZONE_GROUPINDEX));
         dateTime = DateTime(year, month, day);
-        return SUCCESS;
+        return dateTime.IsValid() ? SUCCESS : ERROR;
         }
 
     //if hour component is given, minute must be given too (all the rest is optional)
