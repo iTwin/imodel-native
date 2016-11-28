@@ -153,7 +153,7 @@ void ECSqlStatementTestFixture::VerifyECSqlValue (ECSqlStatement const& statemen
             if (typeStr.EqualsI ("datetime"))
                 {
                 ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_DateTime) << "Property: " << name.c_str ();;
-                ASSERT_STREQ (expectedValue["datetime"].asCString (), actualValue.GetDateTime ().ToUtf8String ().c_str ()) << "Property: " << name.c_str ();;
+                ASSERT_STREQ (expectedValue["datetime"].asCString (), actualValue.GetDateTime ().ToString().c_str ()) << "Property: " << name.c_str ();;
                 }
             else if (typeStr.EqualsI ("point2d"))
                 {

@@ -155,15 +155,14 @@ TEST_F(ECInstanceUpdaterTests, UpdateWithCurrentTimeStampTrigger)
     tryGetLastMod(newLastMod, ecdb, testId);
     ASSERT_TRUE(newLastMod.IsValid());
 
-    uint64_t firstLastModJdHns = 0ULL;
-    ASSERT_EQ(SUCCESS, firstLastMod.ToJulianDay(firstLastModJdHns));
+    uint64_t firstLastModJdMsec = 0ULL;
+    ASSERT_EQ(SUCCESS, firstLastMod.ToJulianDay(firstLastModJdMsec));
 
-    uint64_t newLastModJdHns = 0ULL;
-    ASSERT_EQ(SUCCESS, newLastMod.ToJulianDay(newLastModJdHns));
+    uint64_t newLastModJdMsec = 0ULL;
+    ASSERT_EQ(SUCCESS, newLastMod.ToJulianDay(newLastModJdMsec));
 
-    uint64_t timeSpan = newLastModJdHns - firstLastModJdHns;
-    const uint64_t timeSpan_1sec_in_hns = 5000000ULL;
-    ASSERT_GT(timeSpan, timeSpan_1sec_in_hns) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
+    uint64_t timeSpan = newLastModJdMsec - firstLastModJdMsec;
+    ASSERT_GT(timeSpan, 1000) << "New LastMod must be at least 1 second later than old LastMod as test was paused for 1 sec before updating";
     }
 
 //---------------------------------------------------------------------------------------

@@ -31,15 +31,15 @@ struct PointToColumnsECSqlBinder : public ECSqlBinder, IECSqlPrimitiveBinder
 
         virtual ECSqlStatus _BindNull() override;
         virtual ECSqlStatus _BindBoolean(bool value) override;
-        virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
-        virtual ECSqlStatus _BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata) override;
-        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) override;
+        virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
+        virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
+        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
         virtual ECSqlStatus _BindDouble(double value) override;
         virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
         virtual ECSqlStatus _BindInt(int value) override;
         virtual ECSqlStatus _BindInt64(int64_t value) override;
-        virtual ECSqlStatus _BindPoint2d(DPoint2dCR value) override;
-        virtual ECSqlStatus _BindPoint3d(DPoint3dCR value) override;
+        virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
+        virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
         virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
         bool IsPoint3d() const { return m_isPoint3d; }

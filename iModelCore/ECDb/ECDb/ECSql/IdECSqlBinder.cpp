@@ -93,7 +93,7 @@ ECSqlStatus IdECSqlBinder::_BindBinary(const void* value, int binarySize, IECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus IdECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const&)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Id parameter.");
     return ECSqlStatus::Error;
@@ -102,7 +102,7 @@ ECSqlStatus IdECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const*
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus IdECSqlBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const&)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to Id parameter.");
     return ECSqlStatus::Error;

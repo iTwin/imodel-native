@@ -156,7 +156,7 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBinary(void const* value, int bina
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_DateTime)
         {
@@ -164,7 +164,7 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(double julianDay, DateTim
         return ECSqlStatus::Error;
         }
 
-    if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
+    if (metadata.IsValid() && metadata.GetKind() == DateTime::Kind::Local)
         {
         GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
         return ECSqlStatus::Error;
@@ -184,9 +184,9 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(double julianDay, DateTim
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
-    const double jd = DateTime::HnsToRationalDay(julianDayHns);
+    const double jd = DateTime::MsecToRationalDay(julianDayMsec);
     return _BindDateTime(jd, metadata);
     }
 

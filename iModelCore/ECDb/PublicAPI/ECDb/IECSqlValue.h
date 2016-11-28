@@ -69,11 +69,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         ECDB_EXPORT DateTime GetDateTime() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-        //! Gets the value as DateTime Julian Day ticks in hecto-nanoseconds.
+        //! Gets the value as a DateTime Julian Day in milliseconds.
         //! @param[out] metadata DateTime metadata.
-        //! @return Julian Day ticks in hecto-nanoseconds
+        //! @return Julian Day in milliseconds
         //! @see BentleyApi::DateTime::FromJulianDay
-        ECDB_EXPORT uint64_t GetDateTimeJulianDaysHns(DateTime::Info& metadata) const;
+        ECDB_EXPORT uint64_t GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const;
 
         //! Gets the value as DateTime Julian Day.
         //! @param[out] metadata DateTime metadata.
