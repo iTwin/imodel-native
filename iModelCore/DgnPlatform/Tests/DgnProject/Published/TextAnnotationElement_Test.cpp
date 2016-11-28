@@ -95,6 +95,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
         // auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
         // EXPECT_TRUE(viewDef->Insert().IsValid());
 
+    db->SaveChanges();
     }
 
     // Read the element back out, modify, and rewrite.
@@ -266,6 +267,8 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //.........................................................................................
         auto range = insertedAnnotationElement->CalculateRange3d();
         DgnDbTestUtils::InsertCameraView(*model, "TextAnnotation3dTest-BasicCrud", &range, StandardView::Top, Render::RenderMode::Wireframe);
+
+        db->SaveChanges();
     }
 
     // Read the element back out, modify, and rewrite.

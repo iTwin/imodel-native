@@ -63,8 +63,6 @@
 #include <Units/Units.h>
 #include <Logging/bentleylogging.h>
 
-#define ___DGNPLATFORM_SERIALIZED___ BeSystemMutexHolder ___holdBeSystemMutexInScope___
-
 #define DGNCORE_RUNONCE_CHECK(VAR) {if (VAR) return; VAR=true;}
 #define DGNCORELOG NativeLogging::LoggingManager::GetLogger(L"DgnPlatform")
 

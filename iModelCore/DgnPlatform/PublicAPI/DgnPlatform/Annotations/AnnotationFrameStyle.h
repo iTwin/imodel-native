@@ -112,7 +112,7 @@ private:
     Utf8String m_description;
     AnnotationFrameStylePropertyBag m_data;
 
-    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationFrameStyle); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_AnnotationFrameStyle, db, name); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
@@ -121,7 +121,7 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
 
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_AnnotationFrameStyle); }
@@ -133,7 +133,7 @@ public:
     AnnotationFrameStylePtr CreateCopy() const { return MakeCopy<AnnotationFrameStyle>(); }
     
     Utf8String GetName() const { return GetCode().GetValue(); }
-    void SetName(Utf8CP value) { T_Super::SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
 
@@ -169,7 +169,7 @@ public:
 
     DGNPLATFORM_EXPORT AnnotationFrameStylePtr CreateEffectiveStyle(AnnotationFrameStylePropertyBagCR overrides) const;
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCode(db, name)); }
     static AnnotationFrameStyleCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static AnnotationFrameStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationFrameStyle>(id); }
     static AnnotationFrameStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationFrameStyle>(id); }

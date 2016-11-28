@@ -497,9 +497,9 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
+Utf8String TilePublisher::AddUnlitShaderTechnique (Json::Value& rootNode)
     {
-    Utf8String      s_techniqueName = "polylineTechnique";
+    Utf8String      s_techniqueName = "unlitTechnique";
 
     if (rootNode.isMember("techniques") &&
         rootNode["techniques"].isMember(s_techniqueName.c_str()))
@@ -512,11 +512,11 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    static char         *s_programName                    = "polylineProgram",
-                        *s_vertexShaderName               = "polylineVertexShader",
-                        *s_fragmentShaderName             = "polylineFragmentShader",
-                        *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
-                        *s_fragmentShaderBufferViewName   = "polylineFragmentShaderBufferView";
+    static char         *s_programName                    = "unlitProgram",
+                        *s_vertexShaderName               = "unlitVertexShader",
+                        *s_fragmentShaderName             = "unlitFragmentShader",
+                        *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
+                        *s_fragmentShaderBufferViewName   = "unlitFragmentShaderBufferView";
 
     technique["program"] = s_programName;
 
@@ -546,8 +546,8 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
 
     auto& bufferViews = rootNode["bufferViews"];
 
-    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_polylineVertexShader);
-    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_polylineFragmentShader); 
+    AddBufferView(bufferViews, s_vertexShaderBufferViewName, s_unlitVertexShader);
+    AddBufferView(bufferViews, s_fragmentShaderBufferViewName, s_unlitFragmentShader); 
 
     AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
     techniqueUniforms["u_color"] = "color";
@@ -706,10 +706,10 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
     uint32_t        rgbInt  = displayParams->GetFillColor();
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
-    bool            isPolyline = mesh.Triangles().empty();
+    bool            isUnlit = displayParams->GetIgnoreLighting();
     RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
 
-    if (!isPolyline && displayParams->GetMaterialId().IsValid())
+    if (!isUnlit && displayParams->GetMaterialId().IsValid())
         {
         JsonRenderMaterial  jsonMaterial;
 
@@ -729,7 +729,7 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
             if (jsonMaterial.GetBool (RENDER_MATERIAL_FlagHasTransmit, false))
                 alpha = 1.0 - jsonMaterial.GetDouble (RENDER_MATERIAL_Transmit, 0.0);
 
-            DgnMaterialCPtr material = DgnMaterial::QueryMaterial(displayParams->GetMaterialId(), m_context.GetDgnDb());
+            DgnMaterialCPtr material = DgnMaterial::Get(m_context.GetDgnDb(), displayParams->GetMaterialId());
 
             if (material.IsValid())
                 materialValue["name"] = material->GetMaterialName().c_str();
@@ -741,24 +741,24 @@ Utf8String TilePublisher::AddMaterial (Json::Value& rootNode, bool& isTextured, 
     TileTextureImageCP      textureImage = nullptr;
 
     displayParams->ResolveTextureImage(m_context.GetDgnDb());
-    if (false != (isTextured = (!isPolyline && nullptr != (textureImage = displayParams->GetTextureImage()))))
+    if (false != (isTextured = (nullptr != (textureImage = displayParams->GetTextureImage()))))
         {
         materialValue["technique"] = AddMeshShaderTechnique (rootNode, true, alpha < 1.0, displayParams->GetIgnoreLighting()).c_str();
         materialValue["values"]["tex"] = AddTextureImage (rootNode, *textureImage, mesh, suffix);
         }
     else
         {
-        auto&           materialColor = materialValue["values"]["color"] = Json::arrayValue;
+        auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
         materialColor.append(rgb.red);
         materialColor.append(rgb.green);
         materialColor.append(rgb.blue);
         materialColor.append(alpha);
 
-        materialValue["technique"] = isPolyline ? AddPolylineShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
+        materialValue["technique"] = isUnlit ? AddUnlitShaderTechnique (rootNode).c_str() : AddMeshShaderTechnique(rootNode, false, alpha < 1.0, false).c_str();
         }
 
-    if (!isPolyline && !displayParams->GetIgnoreLighting())
+    if (! isUnlit)
         {
         materialValue["values"]["specularExponent"] = specularExponent;
 
@@ -1339,11 +1339,24 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
     auto spatialView = m_viewController._ToSpatialView();
-    if (nullptr == spatialView)
+    auto drawingView = m_viewController._ToDrawingView();
+
+#ifndef WIP_2D_SUPPORT
+    drawingView = nullptr;
+#endif
+    
+    if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
         return Status::NoGeometry;
         }
+
+    DgnModelIdSet viewedModels;
+
+    if (nullptr != spatialView)
+        viewedModels = spatialView->GetViewedModels();
+    else
+        viewedModels.insert (drawingView->GetViewedModelId());
 
     Json::Value     value;
     value["asset"]["version"] = "0.0";
@@ -1366,7 +1379,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     rootRange = DRange3d::NullRange();
 
     static size_t           s_maxPointsPerTile = 250000;
-    auto status = generator.GenerateTiles(*this, spatialView->GetViewedModels(), toleranceInMeters, s_maxPointsPerTile);
+    auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
     if (TileGenerator::Status::Success != status)
         return ConvertStatus(status);
 
@@ -1442,7 +1455,7 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform)
+void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
     OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
@@ -1454,7 +1467,11 @@ void PublisherContext::GetSpatialViewJson (Json::Value& json, SpatialViewDefinit
         }
 
     json["name"] = view.GetName();
-    json["modelSelector"] = view.GetModelSelectorId().ToString();
+
+    auto spatialView = view.ToSpatialView();
+    if (nullptr != spatialView)
+        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
+
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
@@ -1517,18 +1534,27 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
         {
-        auto viewDefinition = ViewDefinition::QueryView(view.GetId(), GetDgnDb());
-        SpatialViewDefinitionCP spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
+        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), view.GetId());
+        if (!viewDefinition.IsValid())
+            continue;
+
+        auto spatialView = viewDefinition->ToSpatialView();
+
+#ifndef WIP_2D_SUPPORT
         if (nullptr == spatialView)
             continue;
+#endif
+    
+        if (nullptr != spatialView)
+            allModelSelectors.insert(spatialView->GetModelSelectorId());
 
         Json::Value entry(Json::objectValue);
 
-        allModelSelectors.insert(spatialView->GetModelSelectorId());
-        allCategorySelectors.insert(spatialView->GetCategorySelectorId());
-        allDisplayStyles.insert(spatialView->GetDisplayStyleId());
+ 
+        allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
+        allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetSpatialViewJson(entry, *spatialView, transform);
+        GetViewJson(entry, *viewDefinition, transform);
         viewsJson[view.GetId().ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default

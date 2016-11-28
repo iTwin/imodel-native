@@ -161,7 +161,7 @@ void PerformanceTestFixture::LogResultsToFile(bmap<Utf8String, double> results)
     {
     FILE* logFile=NULL;
 
-    Utf8String dateTime = DateTime::GetCurrentTime().ToUtf8String();
+    Utf8String dateTime = DateTime::GetCurrentTime().ToString();
     BeFileName dir;
     BeTest::GetHost().GetOutputRoot (dir);
     dir.AppendToPath (L"DgnECPerformanceResults.csv");

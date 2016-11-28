@@ -191,7 +191,7 @@ DgnDbR                  GetDgnDb()
     }
 
 DgnModelId              GetModelId()            { return s_modelId; }
-DgnCategoryId           GetCategoryId()         { return DrawingCategory::QueryCategoryId(GetDgnDb(), TEST_CATEGORY_NAME); }
+DgnCategoryId           GetCategoryId()         { return DgnCategory::QueryCategoryId(GetDgnDb(), DrawingCategory::CreateCode(GetDgnDb(), DgnModel::DictionaryId(), TEST_CATEGORY_NAME)); }
 DgnElementId            GetTextStyleId()        { return AnnotationTextStyle::QueryId(GetDgnDb(), TEST_TEXTSTYLE_NAME); }
 
 /*---------------------------------------------------------------------------------**//**

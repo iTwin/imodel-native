@@ -746,7 +746,10 @@ module DgnScriptTests {
         ele.Transform(rotateTransform);
         ele.Update();
 
-        if (ele.Placement.Angles.YawDegrees != 45.0)
+        // Equivalent to DoubleOps::AlmostEqual.
+        let actualAngle = be.Angle.CreateDegrees(ele.Placement.Angles.YawDegrees);
+        let expectedAngle = be.Angle.CreateDegrees(45.0);
+        if (!actualAngle.AlmostEqualNoPeriodShift(expectedAngle))
             be.Script.ReportError('Element.Transform failed');
 
         //  Test GeometryBuilders

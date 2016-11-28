@@ -85,7 +85,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName, Utf8StringCR value, DgnMaterialId parentMaterialId, Utf8StringCR descr)
-  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateMaterialCode(paletteName, materialName), nullptr, parentMaterialId),
+  : T_Super(db, DgnModel::DictionaryId(), DgnMaterial::QueryDgnClassId(db), CreateCode(db, paletteName, materialName), nullptr, parentMaterialId),
     m_data(value, descr)
     {
     }
@@ -93,7 +93,7 @@ DgnMaterial::CreateParams::CreateParams(DgnDbR db, Utf8StringCR paletteName, Utf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId DgnMaterial::QueryMaterialId(DgnCode const& code, DgnDbR db)
+DgnMaterialId DgnMaterial::QueryMaterialId(DgnDbR db, DgnCodeCR code)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnMaterialId(elemId.GetValueUnchecked());
@@ -139,7 +139,7 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
     DgnDbStatus status = T_Super::_OnChildImport(child, destModel, importer);
     if (DgnDbStatus::Success == status && importer.IsBetweenDbs() && !importer.FindElementId(GetElementId()).IsValid())
         {
-        DgnMaterialId destParentId = DgnMaterial::QueryMaterialId(GetCode(), importer.GetDestinationDb());
+        DgnMaterialId destParentId = DgnMaterial::QueryMaterialId(importer.GetDestinationDb(), GetCode());
         if (!destParentId.IsValid())
             Import(&status, destModel, importer);
         else
@@ -193,7 +193,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
     {
     //  See if we already have a material with the same palette and code in the destination Db.
     //  If so, we'll map the source material to it.
-    DgnMaterialCPtr srcMaterial = DgnMaterial::QueryMaterial(srcMaterialId, importer.GetSourceDb());
+    DgnMaterialCPtr srcMaterial = DgnMaterial::Get(importer.GetSourceDb(), srcMaterialId);
     BeAssert(srcMaterial.IsValid());
     if (!srcMaterial.IsValid())
         {
@@ -201,7 +201,7 @@ DgnMaterialId DgnMaterial::ImportMaterial(DgnMaterialId srcMaterialId, DgnImport
         return DgnMaterialId();
         }
 
-    DgnMaterialId dstMaterialId = QueryMaterialId(srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName(), importer.GetDestinationDb());
+    DgnMaterialId dstMaterialId = QueryMaterialId(importer.GetDestinationDb(), srcMaterial->GetPaletteName(), srcMaterial->GetMaterialName());
     if (dstMaterialId.IsValid())
         {
         //  *** TBD: Check if the material definitions match. If not, rename and remap

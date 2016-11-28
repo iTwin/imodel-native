@@ -48,7 +48,7 @@ public:
         EXPECT_EQ(a.z, b.z);
         }
 
-    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
+    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::Get(db, m_viewId)->ToDrawingView());}
 
     void AddTextToModel(TextAnnotation2dCPtr&, DgnModelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees=0.0);
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
