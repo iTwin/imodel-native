@@ -258,8 +258,7 @@ ICancellationTokenPtr ct
 )
     {
     auto sql = Utf8PrintfString(
-        "SELECT GetECClassId(), ECInstanceId FROM ONLY %s "
-        "WHERE %s",
+        "SELECT ECClassId, ECInstanceId FROM ONLY %s WHERE %s",
         ecClass.GetECSqlName().c_str(),
         m_whereClause.c_str());
 

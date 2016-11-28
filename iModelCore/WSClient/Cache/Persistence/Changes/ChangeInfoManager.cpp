@@ -292,9 +292,9 @@ BentleyStatus ChangeInfoManager::RemoveLocalDeletedInfos()
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::RemoveLocalDeletedInfos", [&]
         {
         return
-            "SELECT GetECClassId(), ECInstanceId FROM " ECSql_ChangeInfo " "
+            "SELECT ECClassId, ECInstanceId FROM " ECSql_ChangeInfo " "
             "WHERE [" CLASS_ChangeInfo_PROPERTY_IsLocal "] = TRUE "
-            "  AND [" CLASS_ChangeInfo_PROPERTY_ChangeStatus "] = ? ";
+            "  AND [" CLASS_ChangeInfo_PROPERTY_ChangeStatus "]=?";
         });
 
     statement->BindInt(1, static_cast<int> (IChangeManager::ChangeStatus::Deleted));

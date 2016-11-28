@@ -584,7 +584,7 @@ JsonValueR instanceInfo
         }
 
     // Instance and InstanceInfo
-    Utf8PrintfString statementKey("ReadInstanceData:%llu", key.GetECClassId().GetValue());
+    Utf8PrintfString statementKey("ReadInstanceData:%s", key.GetECClassId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(statementKey, [&]
         {
         Utf8String ecsql("SELECT * FROM ONLY ");

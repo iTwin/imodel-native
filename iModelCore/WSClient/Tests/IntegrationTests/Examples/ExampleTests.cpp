@@ -184,7 +184,7 @@ TEST_F(ExampleTests, CachingDataSource_PWDocumentRenameAndSync)
     Json::Value properties;
     txn.GetCache().GetAdapter().GetJsonInstance(properties, documentKey);
 
-    properties["Name"] = ("Renamed " + DateTime::GetCurrentTime().ToUtf8String()).c_str();
+    properties["Name"] = ("Renamed " + DateTime::GetCurrentTime().ToString()).c_str();
     txn.GetCache().GetChangeManager().ModifyObject(documentKey, properties);
     txn.Commit();
 

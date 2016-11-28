@@ -303,7 +303,7 @@ void DataSourceCacheUpgradeTests::ValidateV5SeedData(IDataSourceCache& cache, Be
     auto findInstanceByPropertyValue = [&] (Utf8StringCR testPropertyValue)
         {
         ECSqlStatement statement;
-        Utf8String ecsql = "SELECT GetECClassId(), ECInstanceId FROM [TS].[TestClass] WHERE [TestProperty] = ? ";
+        Utf8String ecsql = "SELECT ECClassId, ECInstanceId FROM TS.TestClass WHERE TestProperty=?";
         EXPECT_EQ(SUCCESS, cache.GetAdapter().PrepareStatement(statement, ecsql));
         EXPECT_EQ(ECSqlStatus::Success, statement.BindText(1, testPropertyValue.c_str(), IECSqlBinder::MakeCopy::No));
         EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
@@ -552,7 +552,7 @@ TEST_F(DataSourceCacheUpgradeTests, Open_V8CreatedObjectsAreDeleted_CommitLocalD
 //    instances.Add({"TestSchema.TestClass", "A"}).AddRelated({"TestSchema.TestRelationshipClass", "AB"}, {"TestSchema.TestClass", "B"});
 //    CachedResponseKey key1(cache.FindOrCreateRoot(nullptr), "ResponseA");
 //    ASSERT_EQ(SUCCESS, cache.CacheResponse(key1, instances.ToWSObjectsResponse("ETagA")));
-//    SimpleWriteToFile(cache.ReadResponseCachedDate(key1).ToUtf8String(), GetNewFilePath(paths.first, "CacheDateResponseA"));
+//    SimpleWriteToFile(cache.ReadResponseCachedDate(key1).ToString(), GetNewFilePath(paths.first, "CacheDateResponseA"));
 //
 //    instances.Clear();
 //    instances.Add({"TestSchema.TestClass", "C"});

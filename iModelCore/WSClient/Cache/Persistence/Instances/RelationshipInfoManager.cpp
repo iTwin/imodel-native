@@ -221,7 +221,7 @@ ECInstanceKeyR targetOut
         return ERROR;
         }
 
-    Utf8PrintfString key("RelationshipInfoManager::ReadRelationshipEnds:%llu", relationship.GetECClassId().GetValue());
+    Utf8PrintfString key("RelationshipInfoManager::ReadRelationshipEnds:%s", relationship.GetECClassId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return Utf8PrintfString
@@ -396,7 +396,7 @@ bset<CachedInstanceKey>& cachedRelationshipsOut
         return ERROR;
         }
 
-    Utf8PrintfString key("RelationshipInfoManager::GetRelationshipsForHolder:%llu:%llu", holder.GetECClassId().GetValue(), holderToInfoRelClass->GetId().GetValue());
+    Utf8PrintfString key("RelationshipInfoManager::GetRelationshipsForHolder:%s:%s", holder.GetECClassId().ToString().c_str(), holderToInfoRelClass->GetId().ToString().c_str());
     auto statement = m_statementCache.GetPreparedStatement(key, [&]
         {
         return
@@ -490,7 +490,7 @@ BentleyStatus RelationshipInfoManager::RemoveAllCachedRelationships()
     {
     auto statement = m_statementCache.GetPreparedStatement("RelationshipInfoManager::RemoveAllCachedRelationships", [&]
         {
-        return "SELECT info.GetECClassId(), info.ECInstanceId FROM ONLY " ECSql_CachedRelationshipInfo " info ";
+        return "SELECT info.ECClassId, info.ECInstanceId FROM ONLY " ECSql_CachedRelationshipInfo " info ";
         });
 
     return m_hierarchyManager.DeleteInstances(*statement);
