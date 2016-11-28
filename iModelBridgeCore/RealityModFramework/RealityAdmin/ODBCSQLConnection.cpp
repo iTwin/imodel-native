@@ -312,7 +312,7 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
         thumbnailPresent = true;
         Utf8String thumbUrl = thumbnail.GetThumbnailUrl();
         CHAR* thumbnailQuery = new CHAR[1024];
-        sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailUrl]) VALUES ('%s', '%s', '%ls', '%s', '%s')",
+        sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailUrl]) VALUES ('%s', '%s', '%s', '%s', '%s')",
             m_dbName,
             thumbnail.GetProvenance().c_str(),
             thumbnail.GetFormat().c_str(),
@@ -336,7 +336,7 @@ void ServerConnection::Save(SpatialEntityDataCR data, bool dualMode)
                 dataArray[i] = thumbnailBytes[i];
 
             CHAR* thumbnailQuery = new CHAR[1048576];
-            sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailWidth], [ThumbnailHeight], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailData]) VALUES ('%s', '%s', %d, %d, '%ls', '%s', ?)",
+            sprintf(thumbnailQuery, "INSERT INTO [%s].[dbo].[Thumbnails] ([ThumbnailProvenance], [ThumbnailFormat], [ThumbnailWidth], [ThumbnailHeight], [ThumbnailStamp], [ThumbnailGenerationDetails], [ThumbnailData]) VALUES ('%s', '%s', %d, %d, '%s', '%s', ?)",
                 m_dbName,
                 thumbnail.GetProvenance().c_str(),
                 thumbnail.GetFormat().c_str(),

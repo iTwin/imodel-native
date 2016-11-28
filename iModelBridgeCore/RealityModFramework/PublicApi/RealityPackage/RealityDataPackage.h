@@ -160,7 +160,7 @@ private:
 
     static RealityDataPackagePtr CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, Utf8CP defaultName, WStringP pParseError);
 
-    WString BuildCreationDateUTC();   // May update m_creationDate.
+    Utf8String BuildCreationDateUTC();   // May update m_creationDate.
 
 
     uint32_t m_majorVersion;

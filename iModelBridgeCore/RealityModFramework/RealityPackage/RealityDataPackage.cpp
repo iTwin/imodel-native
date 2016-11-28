@@ -354,7 +354,7 @@ RealityPackageStatus RealityDataPackage::Write(BeFileNameCR filename)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
-WString RealityDataPackage::BuildCreationDateUTC()
+Utf8String RealityDataPackage::BuildCreationDateUTC()
     {
     if(GetCreationDate().IsValid() && GetCreationDate().GetInfo().GetKind() != DateTime::Kind::Utc)
         return GetCreationDate().ToString();
