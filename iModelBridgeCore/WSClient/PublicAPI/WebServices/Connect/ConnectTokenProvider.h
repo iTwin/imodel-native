@@ -17,7 +17,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ConnectTokenProvider : public IConnectTokenProvider
+struct EXPORT_VTABLE_ATTRIBUTE ConnectTokenProvider : public IConnectTokenProvider
     {
     private:
         IImsClientPtr m_client;
