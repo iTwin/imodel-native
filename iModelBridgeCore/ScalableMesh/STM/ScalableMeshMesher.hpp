@@ -240,17 +240,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
           }
         if (status == SUCCESS)
             {
-            /* if (node->m_featureDefinitions.size() > 0)
-                 {
-                 WString dtmFileName(L"d:\\clipping\\tmproblems\\features\\meshtile_");
-                 dtmFileName.append(std::to_wstring(node->m_nodeHeader.m_level).c_str());
-                 dtmFileName.append(L"_");
-                 dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetXMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                 dtmFileName.append(L"_");
-                 dtmFileName.append(std::to_wstring(ExtentOp<EXTENT>::GetYMin(node->m_nodeHeader.m_nodeExtent)).c_str());
-                 dtmFileName.append(L".dtm");
-                 bcdtmWrite_toFileDtmObject(dtmObjP, dtmFileName.c_str());
-                 }*/
+
 
             IScalableMeshMeshPtr meshPtr;
 
@@ -260,7 +250,9 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
 
             if (meshP == 0)
                 {
+#ifndef NDEBUG
                 std::cout << " ERROR: TRIANGULATION AND NO MESH AT NODE"<< node->GetBlockID().m_integerID << std::endl;
+#endif
                 return true;
                 }
 
