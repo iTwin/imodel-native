@@ -206,31 +206,7 @@ struct StandardCustomAttributeHelperTestFixture : public DateTimeInfoTestFixture
 struct ECInstanceGetSetDateTimeTestFixture : DateTimeInfoTestFixture
     {
     protected:
-        static void AssertSetValue(IECInstancePtr instance, Utf8CP propertyName, bool retrievalExpectedToFail, DateTime::Info const& expectedInfo)
-            {
-            bvector<DateTime> testDateTimes;
-            testDateTimes.push_back(DateTime::GetCurrentTimeUtc());
-            testDateTimes.push_back(DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22));
-            testDateTimes.push_back(DateTime(2013, 2, 18));
-
-            for (DateTimeCR testDateTime : testDateTimes)
-                {
-                ECValue value;
-                EXPECT_EQ(SUCCESS, value.SetDateTime(testDateTime)) << "Return value of ECValue::SetDateTime";
-                const bool isExpectedToSucceed = !retrievalExpectedToFail && expectedInfo.IsValid();
-                if (!isExpectedToSucceed)
-                    {
-                    DISABLE_ASSERTS
-                        ECObjectsStatus stat = instance->SetValue(propertyName, value);
-                    EXPECT_NE(ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a mismatching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString().c_str();
-                    }
-                else
-                    {
-                    ECObjectsStatus stat = instance->SetValue(propertyName, value);
-                    EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a matching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString().c_str();
-                    }
-                }
-            }
+        
 
         static void AssertGetValue(IECInstancePtr instance, Utf8CP propertyName, DateTimeCR expectedDateTime, bool expectedMatch)
             {
@@ -354,16 +330,59 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTime)
     IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ASSERT_TRUE(instance.IsValid());
 
-    AssertSetValue(instance, "nodatetimeinfo", false, DateTime::Info());
-    AssertSetValue(instance, "emptydatetimeinfo", false, DateTime::Info());
-    AssertSetValue(instance, "utc", false, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
-    AssertSetValue(instance, "unspecified", false, DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified));
-    AssertSetValue(instance, "dateonly", false, DateTime::Info::CreateForDate());
+    auto assertSetValue = [] (IECInstancePtr instance, Utf8CP propertyName, DateTimeCR testDateTime, bool expectedToSucceed)
+        {
+        ECValue value;
+        EXPECT_EQ(SUCCESS, value.SetDateTime(testDateTime)) << "Return value of ECValue::SetDateTime";
+        if (expectedToSucceed)
+            {
+            ECObjectsStatus stat = instance->SetValue(propertyName, value);
+            EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a matching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString().c_str();
+            }
+        else
+            {
+            DISABLE_ASSERTS
+                ECObjectsStatus stat = instance->SetValue(propertyName, value);
+            EXPECT_NE(ECObjectsStatus::Success, stat) << "IECInstance::SetValue with a mismatching DateTimeKind> Property: " << propertyName << " DateTime: " << testDateTime.ToString().c_str();
+            }
+        };
 
-    //wrong values are treated as if the meta data wasn't specified
-    AssertSetValue(instance, "garbagekind", true, DateTime::Info());
-    AssertSetValue(instance, "garbagecomponent", true, DateTime::Info());
-    AssertSetValue(instance, "garbagekindgarbagecomponent", true, DateTime::Info());
+    bvector<DateTime> testDateTimes;
+    testDateTimes.push_back(DateTime::GetCurrentTimeUtc());
+    testDateTimes.push_back(DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22));
+    testDateTimes.push_back(DateTime(2013, 2, 18));
+
+    assertSetValue(instance, "nodatetimeinfo", DateTime::GetCurrentTimeUtc(), true);
+    assertSetValue(instance, "nodatetimeinfo", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), true);
+    assertSetValue(instance, "nodatetimeinfo", DateTime(2013, 2, 18), true);
+
+    assertSetValue(instance, "emptydatetimeinfo", DateTime::GetCurrentTimeUtc(), true);
+    assertSetValue(instance, "emptydatetimeinfo", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), true);
+    assertSetValue(instance, "emptydatetimeinfo", DateTime(2013, 2, 18), true);
+
+    assertSetValue(instance, "utc", DateTime::GetCurrentTimeUtc(), true);
+    assertSetValue(instance, "utc", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), false);
+    assertSetValue(instance, "utc", DateTime(2013, 2, 18), true);
+
+    assertSetValue(instance, "unspecified", DateTime::GetCurrentTimeUtc(), false);
+    assertSetValue(instance, "unspecified", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), true);
+    assertSetValue(instance, "unspecified", DateTime(2013, 2, 18), true);
+
+    assertSetValue(instance, "dateonly", DateTime::GetCurrentTimeUtc(), true);
+    assertSetValue(instance, "dateonly", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), true);
+    assertSetValue(instance, "dateonly", DateTime(2013, 2, 18), true);
+
+    assertSetValue(instance, "garbagekind", DateTime::GetCurrentTimeUtc(), false);
+    assertSetValue(instance, "garbagekind", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), false);
+    assertSetValue(instance, "garbagekind", DateTime(2013, 2, 18), false);
+
+    assertSetValue(instance, "garbagecomponent", DateTime::GetCurrentTimeUtc(), false);
+    assertSetValue(instance, "garbagecomponent", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), false);
+    assertSetValue(instance, "garbagecomponent", DateTime(2013, 2, 18), false);
+
+    assertSetValue(instance, "garbagekindgarbagecomponent", DateTime::GetCurrentTimeUtc(), false);
+    assertSetValue(instance, "garbagekindgarbagecomponent", DateTime(DateTime::Kind::Unspecified, 2013, 2, 18, 14, 22), false);
+    assertSetValue(instance, "garbagekindgarbagecomponent", DateTime(2013, 2, 18), false);
     }
 
 //---------------------------------------------------------------------------------------

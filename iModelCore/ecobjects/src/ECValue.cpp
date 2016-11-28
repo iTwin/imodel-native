@@ -358,6 +358,15 @@ bool ECValue::DateTimeInfo::MetadataMatches(DateTime::Info const& caDateTimeMeta
     if (!IsMetadataSet() || !caDateTimeMetadata.IsValid())
         return true;
 
+    //if either side is DateTime::Component::Date, the two dates are always matching. This
+    //is to allow assigning Dates to any kind of DateTime property and to assign any kind of DateTime 
+    //to a Date property
+    if (!IsMetadataSet() && m_info.GetComponent() == DateTime::Component::Date)
+        return true;
+
+    if (caDateTimeMetadata.IsValid() && caDateTimeMetadata.GetComponent() == DateTime::Component::Date)
+        return true;
+
     return m_info == caDateTimeMetadata;
     }
 
