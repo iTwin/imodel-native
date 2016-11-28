@@ -24,8 +24,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                     int                     nbTriangles,
                                                                     int*                    indices,
                                                                     float*                  params,
-                                                                    SmCachedDisplayTexture* cachedTexture)
-//uint64_t nodeId)
+                                                                    SmCachedDisplayTexture* cachedTexture,
+                                                                    uint64_t nodeId,
+                                                                    uint64_t smId)
     {
     QvTextureID textureId = 0;
 

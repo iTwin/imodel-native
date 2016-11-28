@@ -47,8 +47,9 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
                                                 int                     nbTriangles,
                                                 int*                    indices,
                                                 float*                  params,
-                                                SmCachedDisplayTexture* cachedTexture) override;
-           // uint64_t nodeId) override;
+                                                SmCachedDisplayTexture* cachedTexture,
+                                                uint64_t nodeId,
+                                                uint64_t smId) override;
 
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) override;
 
@@ -60,6 +61,13 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
                                                    unsigned char const *    texels) override; // => texel image)
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) override;
+
+        virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayMesh* cachedDisplayMesh) override { return SUCCESS; }
+
+        virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayTexture* cachedDisplayTex) override { return SUCCESS; }
+       
+        virtual bool _IsUsingVideoMemory() { return false;  }
+
 
 		//virtual void _SetCacheDirty(bool isDirty) override;
 
