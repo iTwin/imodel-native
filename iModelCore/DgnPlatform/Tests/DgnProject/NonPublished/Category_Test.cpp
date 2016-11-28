@@ -643,7 +643,6 @@ TEST_F (CategoryTests, QueryByElementId)
 TEST_F(CategoryTests, UpdateSubCategory_VerifyPresistence)
     {
     SetupSeedProject();
-    m_db->Schemas().CreateECClassViewsInDb();
     BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
     Utf8CP name = "TestCategory";
