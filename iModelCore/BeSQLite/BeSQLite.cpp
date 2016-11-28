@@ -783,7 +783,7 @@ Utf8String DbFile::ExplainQuery(Utf8CP sql, bool explainPlan, bool suppressDiagn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(nullptr) {}
+Db::Db() : m_embeddedFiles(*this), m_dbFile(nullptr), m_statements(35) {}
 Db::~Db() {DoCloseDb();}
 
 /*---------------------------------------------------------------------------------**//**
@@ -2131,7 +2131,7 @@ void Db::DoCloseDb()
 
     m_appData.clear();
 
-    DELETE_AND_CLEAR(m_statements);
+    m_statements.Empty();
     DELETE_AND_CLEAR(m_dbFile);
     }
 
@@ -3175,7 +3175,7 @@ uint32_t CachedStatement::Release()
     // Since statements can be referenced from multiple threads, and since we want to reset the statement 
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
-    BeDbMutexHolder holder(m_myCache.m_mutex);
+    BeMutexHolder holder(m_myCache.m_mutex);
 
     bool inCache = m_inCache; // hold this in a local before we decrement the refcount in case another thread deletes us
     uint32_t countWas = m_refCount.DecrementAtomicPost();
@@ -3203,10 +3203,13 @@ uint32_t CachedStatement::Release()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::Empty()
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
 
     for (auto& entry : m_entries)
+        {
         entry->m_inCache = false;
+        BeAssert(entry->GetRefCount() == 1); // someone is still holding a reference to this statement?
+        }
 
     m_entries.clear();
     }
@@ -3246,7 +3249,7 @@ StatementCache::Entries::iterator StatementCache::FindEntry(Utf8CP sql) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::AddStatement(CachedStatementPtr& newEntry, Utf8CP sql) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
 
     if (m_entries.size() >= m_size) // if cache is full, remove oldest entry
         {
@@ -3276,7 +3279,7 @@ DbResult StatementCache::GetPreparedStatement(CachedStatementPtr& stmt, DbFile c
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
 
     auto entry = FindEntry(sql);
     if (entry == m_entries.end())
@@ -3287,17 +3290,6 @@ void StatementCache::FindStatement(CachedStatementPtr& stmt, Utf8CP sql) const
 
     m_entries.splice(m_entries.begin(), m_entries, entry); // move this most-recently-accessed statement to front 
     stmt = *entry;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   06/11
-+---------------+---------------+---------------+---------------+---------------+------*/
-StatementCache& Db::GetStatementCache() const
-    {
-    if (nullptr == m_statements)
-        m_statements = new StatementCache(35);
-
-    return *m_statements;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4248,7 +4240,7 @@ BeBriefcaseBasedId DbEmbeddedFileTable::QueryFile(Utf8CP name, uint64_t* size, u
         else
             {
             double lastModifiedJulianDay = stmt.GetValueDouble(5);
-            DateTime::FromJulianDay(*lastModified, lastModifiedJulianDay, DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+            DateTime::FromJulianDay(*lastModified, lastModifiedJulianDay, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
             }
         }
 
@@ -4326,7 +4318,7 @@ uint32_t DbEmbeddedFileTable::Iterator::Entry::GetChunkSize() const {return m_sq
 DateTime DbEmbeddedFileTable::Iterator::Entry::GetLastModified() const
     {
     DateTime lastModified;
-    DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info(DateTime::Kind::Utc, DateTime::Component::DateAndTime));
+    DateTime::FromJulianDay(lastModified, m_sql->GetValueDouble(6), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc));
     return lastModified;
     }
 
@@ -5090,7 +5082,7 @@ Utf8String BeIdSet::ToString() const
 DbResult Db::SaveCreationDate()
     {
     SavePropertyString(Properties::BeSQLiteBuild(), REL_V "." MAJ_V "." MIN_V "." SUBMIN_V);
-    return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToUtf8String());
+    return SavePropertyString(Properties::CreationDate(), DateTime::GetCurrentTimeUtc().ToString());
     }
 
 //---------------------------------------------------------------------------------------
