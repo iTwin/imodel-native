@@ -185,6 +185,55 @@ struct ECDbDateTimeTests : ECDbTestFixture
             }
     };
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbDateTimeTests, DifferingDateTimeInfos)
+    {
+    ECDbCR ecdb = SetupECDb("ecdbdatetime.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ecsqltest.PSADateTime(nodatetimeinfo, emptydatetimeinfo, utc, unspecified, dateonly, structwithdatetimes.nodatetimeinfo, structwithdatetimes.utc, structwithdatetimes.dateonly) VALUES (?,?,?,?,?,?,?,?)"));
+    DateTime utc = DateTime::GetCurrentTimeUtc();
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(1, utc)) << "Property nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(2, utc)) << "Property emptydatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(3, utc)) << "Property utc";
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindDateTime(4, utc)) << "Property unspecified";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(5, utc)) << "Property dateonly";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(6, utc)) << "Property structwithdatetimes.nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(7, utc)) << "Property structwithdatetimes.utc";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(8, utc)) << "Property structwithdatetimes.dateonly";
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    statement.Reset();
+    statement.ClearBindings();
+
+    DateTime unspecified = DateTime(DateTime::Kind::Unspecified, 2016, 11, 28, 12, 13, 14);
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(1, unspecified)) << "Property nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(2, unspecified)) << "Property emptydatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindDateTime(3, unspecified)) << "Property utc";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(4, unspecified)) << "Property unspecified";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(5, unspecified)) << "Property dateonly";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(6, unspecified)) << "Property structwithdatetimes.nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Error, statement.BindDateTime(7, unspecified)) << "Property structwithdatetimes.utc";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(8, unspecified)) << "Property structwithdatetimes.dateonly";
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    statement.Reset();
+    statement.ClearBindings();
+
+    DateTime dateonly = DateTime(2016, 11, 28);
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(1, dateonly)) << "Property nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(2, dateonly)) << "Property emptydatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(3, dateonly)) << "Property utc";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(4, dateonly)) << "Property unspecified";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(5, dateonly)) << "Property dateonly";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(6, dateonly)) << "Property structwithdatetimes.nodatetimeinfo";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(7, dateonly)) << "Property structwithdatetimes.utc";
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindDateTime(8, dateonly)) << "Property structwithdatetimes.dateonly";
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+    statement.Reset();
+    statement.ClearBindings();
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  10/13
