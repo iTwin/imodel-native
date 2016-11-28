@@ -7146,6 +7146,123 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+        "                    displayLabel='KindOfQuantity1' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='KindOfQuantity1' />"
+        "        <ECProperty propertyName='Homepage' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+        "                    displayLabel='KindOfQuantity1' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='METRE' precision='5'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Length' typeName='double' kindOfQuantity='KindOfQuantity2' />"
+        "    <ECProperty propertyName='Homepage' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "Standalone Briefcase: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "Clientside BriefcaseId: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        KindOfQuantityCP KindOfQuantity2 = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
+        ASSERT_TRUE(KindOfQuantity2 != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        PrimitiveECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveProperty();
+        ASSERT_TRUE(foo_length != nullptr);
+        ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />"
+        "        <ECProperty propertyName='Homepage' typeName='string' />"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "  <ECEntityClass typeName='Foo' >"
+        "    <ECProperty propertyName='Length' typeName='double' />"
+        "    <ECProperty propertyName='Homepage' typeName='string' />"
+        "  </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting KindOfQuantity from an ECSchema is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "Standalone Briefcase:Deleting KindOfQuantity from an ECSchema is not supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "Clientside BriefcaseId:Deleting KindOfQuantity from an ECSchema is not supported");
+    ASSERT_FALSE(asserted);
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
