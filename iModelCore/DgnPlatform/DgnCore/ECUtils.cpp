@@ -145,7 +145,7 @@ BentleyStatus ECUtils::ConvertECValueToJson(Json::Value& jv, ECN::ECValue const&
         case ECN::PRIMITIVETYPE_Point2d:    JsonUtils::DPoint2dToJson(jv, v.GetPoint2d()); break;
         case ECN::PRIMITIVETYPE_Point3d:    JsonUtils::DPoint3dToJson(jv, v.GetPoint3d()); break;
 
-        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime().ToUtf8String().c_str(); break;
+        case ECN::PRIMITIVETYPE_DateTime:   jv = v.GetDateTime().ToString().c_str(); break;
 
         /* WIP_ECUTILS
         case ECN::PRIMITIVETYPE_IGeometry:  jv = ...

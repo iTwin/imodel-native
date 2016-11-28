@@ -765,7 +765,7 @@ void JsPreparedECSqlStatement::BindPoint3d(int parameterIndex, JsDPoint3dP value
 #define CHECK_GET_VALUE_ARGS(COL,ERRVAL) DGNJSAPI_VALIDATE_ARGS(IsValid(), ERRVAL); if (BSISUCCESS != CheckValueIndexInRange(COL)) return ERRVAL;
 
 Utf8String JsPreparedECSqlStatement::GetValueText(int32_t col) { CHECK_GET_VALUE_ARGS(col,""); return m_stmt->GetValueText(col); }
-Utf8String JsPreparedECSqlStatement::GetValueDateTime(int32_t col) { CHECK_GET_VALUE_ARGS(col, ""); return m_stmt->GetValueDateTime(col).ToUtf8String(); }
+Utf8String JsPreparedECSqlStatement::GetValueDateTime(int32_t col) { CHECK_GET_VALUE_ARGS(col, ""); return m_stmt->GetValueDateTime(col).ToString(); }
 double JsPreparedECSqlStatement::GetValueDouble(int32_t col) { CHECK_GET_VALUE_ARGS(col, 0.0); return m_stmt->GetValueDouble(col); }
 JsDPoint3dP JsPreparedECSqlStatement::GetValueDPoint3d(int32_t col) { CHECK_GET_VALUE_ARGS(col, nullptr); return new JsDPoint3d(m_stmt->GetValuePoint3d(col)); }
 int32_t JsPreparedECSqlStatement::GetValueInt(int32_t col) { CHECK_GET_VALUE_ARGS(col, 0); return m_stmt->GetValueInt(col); }
