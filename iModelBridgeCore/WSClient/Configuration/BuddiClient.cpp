@@ -136,13 +136,8 @@ AsyncTaskPtr<BuddiUrlResult> BuddiClient::GetUrl(Utf8StringCR url, uint32_t id)
         Utf8String url;
         BeXmlNodeP valueNode = dom->GetRootElement()->SelectSingleNode(xpathExpression);
         if (nullptr == valueNode ||
-            BEXML_Success != valueNode->GetContent(url))
-            {
-            BeAssert(false && "Unable to get value from XML");
-            return BuddiUrlResult::Error(BuddiError());
-            }
-
-        if (url.empty())
+            BEXML_Success != valueNode->GetContent(url) ||
+            url.empty())
             {
             return BuddiUrlResult::Error(BuddiError(BuddiError::UrlNotConfigured));
             }

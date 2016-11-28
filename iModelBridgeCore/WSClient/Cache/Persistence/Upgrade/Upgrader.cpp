@@ -29,9 +29,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-Upgrader::Upgrader(ObservableECDb& db, CacheEnvironmentCR environment) :
+Upgrader::Upgrader(ObservableECDb& db, CacheEnvironmentCR baseEnvironment) :
 m_db(db),
-m_environment(environment)
+m_baseEnvironment(baseEnvironment)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -44,11 +44,11 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
         {
         // GraphiteXXXX generation
         case 3:
-            if (SUCCESS != UpgraderFromV3ToV4(adapter, m_environment).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV3ToV4(adapter, m_baseEnvironment).Upgrade()) return ERROR;
         case 4:
             if (SUCCESS != UpgraderFromV4ToV5(adapter).Upgrade()) return ERROR;
         case 5:
-            if (SUCCESS != UpgraderFromV5ToCurrent(adapter, m_environment).Upgrade()) return ERROR;
+            if (SUCCESS != UpgraderFromV5ToCurrent(adapter, m_baseEnvironment).Upgrade()) return ERROR;
             return SUCCESS; // Upgraded to latest version, done
         case 6:
             return ERROR; // 5 to 6 handled in previous case
@@ -79,7 +79,7 @@ BentleyStatus Upgrader::Upgrade(int oldVersion)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Upgrader::GetNewCachePathForUpgrade(BeFileNameCR oldCachePath, CacheEnvironmentCR environment)
+BeFileName Upgrader::GetNewCachePathForUpgrade(BeFileNameCR oldCachePath, CacheEnvironmentCR baseEnvironment)
     {
     return BeFileName(oldCachePath + L"-upgrade-new");
     }
@@ -87,9 +87,9 @@ BeFileName Upgrader::GetNewCachePathForUpgrade(BeFileNameCR oldCachePath, CacheE
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Upgrader::FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, CacheEnvironmentCR environment)
+BentleyStatus Upgrader::FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, CacheEnvironmentCR baseEnvironment)
     {
-    BeFileName newCachePath = GetNewCachePathForUpgrade(oldCachePath, environment);
+    BeFileName newCachePath = GetNewCachePathForUpgrade(oldCachePath, baseEnvironment);
     if (!newCachePath.DoesPathExist())
         {
         return SUCCESS;
@@ -107,8 +107,8 @@ BentleyStatus Upgrader::FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, Cache
         return ERROR;
         }
 
-    auto oldEnv = FileStorage::CreateCacheEnvironment(oldCachePath, environment);
-    auto newEnv = FileStorage::CreateCacheEnvironment(newCachePath, environment);
+    auto oldEnv = FileStorage::CreateCacheEnvironment(oldCachePath, baseEnvironment);
+    auto newEnv = FileStorage::CreateCacheEnvironment(newCachePath, baseEnvironment);
 
     if (oldEnv.persistentFileCacheDir.DoesPathExist() &&
         BeFileNameStatus::Success != BeFileName::EmptyAndRemoveDirectory(oldEnv.persistentFileCacheDir))

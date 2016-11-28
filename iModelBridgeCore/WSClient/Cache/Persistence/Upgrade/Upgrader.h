@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/Upgrader.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -20,17 +20,17 @@ struct Upgrader
     {
     private:
         ObservableECDb& m_db;
-        CacheEnvironment m_environment;
+        CacheEnvironment m_baseEnvironment;
 
     private:
         BentleyStatus UpgradeCascade(int oldVersion);
 
     public:
-        Upgrader(ObservableECDb& db, CacheEnvironmentCR environment);
+        Upgrader(ObservableECDb& db, CacheEnvironmentCR baseEnvironment);
         BentleyStatus Upgrade(int oldVersion);
 
-        static BentleyStatus FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, CacheEnvironmentCR environment);
-        static BeFileName GetNewCachePathForUpgrade(BeFileNameCR oldCachePath, CacheEnvironmentCR environment);
+        static BentleyStatus FinalizeUpgradeIfNeeded(BeFileNameCR oldCachePath, CacheEnvironmentCR baseEnvironment);
+        static BeFileName GetNewCachePathForUpgrade(BeFileNameCR oldCachePath, CacheEnvironmentCR baseEnvironment);
 
         static BentleyStatus SetUpgradeFinishedFlag(BeFileNameCR cachePath);
         static bool GetUpgradeFinishedFlag(BeFileNameCR cachePath);

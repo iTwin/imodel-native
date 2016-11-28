@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/IntegrationTests/Cache/RepositorySchemaUpgradeTests.h $
+|     $Source: Tests/CompatibilityTests/Cache/RepositorySchemaUpgradeTests.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <WebServicesTestsHelper.h>
+#include <Bentley/BeTest.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 

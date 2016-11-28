@@ -47,6 +47,15 @@ TEST_F(SamlTokenTests, CopyCtor_OriginalWithLifetimeAndCopyDestroyed_LifetimeSam
     EXPECT_EQ(42, original->GetLifetime());
     }
 
+TEST_F(SamlTokenTests, AssignmentOperator_Self_LifetimeSame)
+    {
+    auto token = std::make_shared<SamlToken>(StubSamlTokenXML(111));
+    ASSERT_EQ(111, token->GetLifetime());
+
+    *token = *token;
+    ASSERT_EQ(111, token->GetLifetime());
+    }
+
 TEST_F(SamlTokenTests, AssignmentOperator_BothWithLifetimeAndRightDestroyed_LifetimeCopied)
     {
     auto token1 = std::make_shared<SamlToken>(StubSamlTokenXML(111));

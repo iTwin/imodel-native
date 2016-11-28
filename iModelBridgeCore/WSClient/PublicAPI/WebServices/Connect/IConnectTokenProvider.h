@@ -9,8 +9,11 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Connect/SamlToken.h>
+#include <Bentley/Tasks/AsyncTask.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+
+USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    12/2014
