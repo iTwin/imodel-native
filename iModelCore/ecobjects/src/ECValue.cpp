@@ -339,8 +339,8 @@ BentleyStatus ECValue::DateTimeInfo::SetMetadata(DateTime::Info const& caMetadat
     //impossible to do time zone conversions right in a generic and portable way.
     if (caMetadata.GetKind() == DateTime::Kind::Local)
         {
-        LOG.error(L"DateTime kind 'Local' not supported.");
-        BeAssert(false && L"DateTime kind 'Local' not supported.");
+        LOG.error("DateTime kind 'Local' not supported.");
+        BeAssert(false && "DateTime kind 'Local' not supported.");
         return ERROR;
         }
 
@@ -361,7 +361,7 @@ bool ECValue::DateTimeInfo::MetadataMatches(DateTime::Info const& caDateTimeMeta
     //if either side is DateTime::Component::Date, the two dates are always matching. This
     //is to allow assigning Dates to any kind of DateTime property and to assign any kind of DateTime 
     //to a Date property
-    if (!IsMetadataSet() && m_info.GetComponent() == DateTime::Component::Date)
+    if (IsMetadataSet() && m_info.GetComponent() == DateTime::Component::Date)
         return true;
 
     if (caDateTimeMetadata.IsValid() && caDateTimeMetadata.GetComponent() == DateTime::Component::Date)
