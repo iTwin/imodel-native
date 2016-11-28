@@ -36,7 +36,6 @@ WCharCP DgnDb::GetThreadIdName()
         }
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/14
 //---------------------------------------------------------------------------------------
@@ -115,13 +114,12 @@ void DgnPlatformLib::Host::_OnAssert(WCharCP _Message, WCharCP _File, unsigned _
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnHost::GetKeyIndex(DgnHost::Key& key)
     {
-    static size_t s_highestKey = 0; // MT: DgnCoreCriticalSection
-
+    static size_t s_highestKey = 0;
     BeAssert(key.m_key >= 0 && key.m_key<=s_highestKey); // make sure we're given a valid key
 
     if (0 == key.m_key)
         {
-        ___DGNPLATFORM_SERIALIZED___;
+        BeSystemMutexHolder lock;
 
         if (0 == key.m_key)
             key.m_key = ++s_highestKey;
@@ -230,7 +228,7 @@ void DgnPlatformLib::StaticInitialize()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/08
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Initialize(Host& host, bool loadResources, bool)
+void DgnPlatformLib::Initialize(Host& host, bool loadResources)
     {
     StaticInitialize();
 
@@ -247,7 +245,6 @@ void DgnPlatformLib::Initialize(Host& host, bool loadResources, bool)
 
     if (loadResources)
         host.LoadResources();
-
     }
 
 /*---------------------------------------------------------------------------------**//**
