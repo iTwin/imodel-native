@@ -109,7 +109,6 @@ void DgnDbServerHost::Adopt(std::shared_ptr<DgnDbServerHost> const& host)
         }
     else
         {
-        DgnPlatformLib::AdoptHost(*host);
         BeStringUtilities::Initialize(host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
         }
     }
@@ -126,10 +125,6 @@ void DgnDbServerHost::Forget(std::shared_ptr<DgnDbServerHost> const& host, bool 
             host->m_terminated = true;
             host->Terminate(false);
             }
-        else
-            {
-            DgnPlatformLib::ForgetHost();
-            }
         }
     }
 
@@ -139,23 +134,7 @@ void DgnDbServerHost::Forget(std::shared_ptr<DgnDbServerHost> const& host, bool 
 DgnDbServerHost::~DgnDbServerHost()
     {
     if (m_initialized && !m_terminated)
-        {
-        auto wasHost = DgnPlatformLib::QueryHost();
-        if (wasHost && wasHost != this)
-            {
-            DgnPlatformLib::ForgetHost();
-            DgnPlatformLib::AdoptHost(*this);
-            }
-        else if (!wasHost)
-            {
-            DgnPlatformLib::AdoptHost(*this);
-            }
         Terminate(false);
-        if (wasHost && wasHost != this)
-            {
-            DgnPlatformLib::AdoptHost(*wasHost);
-            }
-        }
     }
 
 //---------------------------------------------------------------------------------------
