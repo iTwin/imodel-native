@@ -213,7 +213,7 @@ private:
                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Push this revision file to server.
-    DgnDbServerStatusTaskPtr Push (DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
+    DgnDbServerStatusTaskPtr Push(DgnRevisionPtr revision, Dgn::DgnDbCR dgndb, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR callback = nullptr,
                                  ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all revision information based on a query (repeated).
@@ -255,7 +255,7 @@ private:
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Initializes the revision.
-    DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, BeSQLite::BeBriefcaseId briefcaseId, JsonValueR pushJson, ObjectId revisionObjectId, bool relinquishCodesLocks,
+    DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId revisionObjectId, bool relinquishCodesLocks,
                                               Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
     //! Acquire the requested set of locks.
