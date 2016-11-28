@@ -1623,7 +1623,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     {
     DgnModelPtr     modelPtr(&model);
     auto            pCollector = &collector;
-    auto            host = &T_HOST;
     auto            generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
 
     if (nullptr != generateMeshTiles)
