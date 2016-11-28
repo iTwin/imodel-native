@@ -782,7 +782,7 @@ BENTLEYDTM_Private                     int bcdtmInsert_scanPointForPointAngleInt
 BENTLEYDTM_Public                      int bcdtmInsert_storePointInDtmObject(BC_DTM_OBJ *dtmP, long drapeOption, long internalPoint, double x, double y, double z, long *dtmPointNumP, DTMInsertPointCallback insertPointCallback = nullptr);
 BENTLEYDTM_Public                      int bcdtmInsert_storeRigidPointInDtmObject(BC_DTM_OBJ *dtmP, long drapeFlag, long insertFlag, double x, double y, double z, long *dtmPntNumP);
 BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp, bool allowAdd);
-BENTLEYDTM_Private                     int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
+BENTLEYDTM_Public                      int bcdtmInsert_swapTinLinesThatIntersectInsertLineDtmObject (BC_DTM_OBJ *dtmP, long Fp, long Lp);
 BENTLEYDTM_Public                      int bcdtmInsert_triangulateAboutPointDtmObject (BC_DTM_OBJ *dtmP, long point);
 
 ///////// bcdtmInterpolate/////////
@@ -1313,7 +1313,7 @@ BENTLEYDTM_Private                     int bcdtmObject_triangulateGridDtmObject 
 BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateLatticeObject (DTM_LAT_OBJ *latticeP, BC_DTM_OBJ **dtmPP);
 BENTLEYDTM_EXPORT                      int bcdtmObject_updateDtmObjectForDtmElement (BC_DTM_OBJ *dtmP,  void *headerP, void *featureArraysP, void *pointArraysP, void *nodeArraysP, void *fListArraysP, void *cListArraysP);
 BENTLEYDTM_Public                     void bcdtmObject_updateLastModifiedTime (BC_DTM_OBJ *dtmP);
-BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateStmTrianglesDtmObject(BC_DTM_OBJ *dtmP) ;
+BENTLEYDTM_EXPORT                      int bcdtmObject_triangulateStmTrianglesDtmObject(BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Private                     int bcdtmObject_fixStmHullKnotPointDtmObject(BC_DTM_OBJ *dtmP,long hullPoint,long nextHullPoint) ;
 BENTLEYDTM_Private                     int bcdtmObject_logProblemStmTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *tempDtmP) ;
 BENTLEYDTM_Private                     int bcdtmObject_checkAndFixTopologyStmTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ *trgDtmP) ;
@@ -1578,7 +1578,7 @@ BENTLEYDTM_Public                      int bcdtmTin_getSwapTriangleDtmObject (BC
 BENTLEYDTM_Private                     int bcdtmTin_getUcTangentDtmObject (BC_DTM_OBJ *dtmP, long p1l, long p1r, long p2l, long p2r, long col1, long col2, long *l, long *r); 
 BENTLEYDTM_Private                     int bcdtmTin_inCircleTestDtmObject (BC_DTM_OBJ *dtmP, long maxMinTest, long P1, long P2, long P3, long P4); 
 BENTLEYDTM_Private                     int bcdtmTin_insertBoundaryLinesDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_OBJ *dataP); 
-BENTLEYDTM_Private                     int bcdtmTin_insertDtmFeatureTypeIntoDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType dtmFeatureType);
+BENTLEYDTM_Public                      int bcdtmTin_insertDtmFeatureTypeIntoDtmObject (BC_DTM_OBJ *dtmP, DTMFeatureType dtmFeatureType);
 BENTLEYDTM_Private                    long bcdtmTin_leftMostPointDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2); 
 BENTLEYDTM_EXPORT                      int bcdtmTin_markInternalVoidPointsDtmObject (BC_DTM_OBJ *dtmP);
 BENTLEYDTM_Public                      int bcdtmTin_maxMinTestDtmObject (BC_DTM_OBJ *dtmP, long p1, long p2, long p3, long p4); 
@@ -1600,7 +1600,7 @@ BENTLEYDTM_EXPORT                      int bcdtmTin_setTriangulationCheckStopCal
 BENTLEYDTM_Public                      int bcdtmTin_swapTinLinesThatIntersectConnectLineDtmObject (BC_DTM_OBJ *dtmP, long startPnt, long lastPnt, long *lineConnectedP); 
 BENTLEYDTM_Private                     int bcdtmTin_testIfHullLineCanBeRemovedDtmObject (BC_DTM_OBJ *dtmP, long dtmFeature, long startPnt, long nextPnt, long *removeFlagP); 
 BENTLEYDTM_Private                    long bcdtmTin_topMostPointDtmObject (BC_DTM_OBJ *dtmP, long P1, long P2); 
-BENTLEYDTM_Private                     int bcdtmTin_triangulateDtmObject (BC_DTM_OBJ *dtmP, long *colinearPtsP); 
+BENTLEYDTM_Public                      int bcdtmTin_triangulateDtmObject (BC_DTM_OBJ *dtmP, long *colinearPtsP); 
 BENTLEYDTM_Private                     int bcdtmTin_validateDrapeVoidDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_FEATURE *dtmFeatureP, DPoint3d *hullPtsP, long numHullPts, long *drapeVoidValidatedP, DPoint3d  **drapeVoidPtsPP, long *numDrapeVoidPtsP);
 BENTLEYDTM_Private                     int bcdtmTin_validatePolygonalOffsetFeatureDtmObject (BC_DTM_OBJ *dtmP, BC_DTM_FEATURE *dtmFeatureP, long *validateResultP);
 BENTLEYDTM_Private                     int bcdtmTin_insertDtmFeatureTypeIntoDtmObjectNew(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType) ;
