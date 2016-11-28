@@ -157,7 +157,6 @@ ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
     {
     }
 
-static bool s_createTexture = true; 
 static double s_pixelSize = 1;
 static DRange3d s_availableRange;
 /*
@@ -389,6 +388,7 @@ static bool   s_useMultiThread = false;
 
 static double s_time;
 static size_t s_nbPoints;
+static bool   s_activateLog = false;
 
 StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {    
@@ -439,17 +439,20 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     clock_t endTime = clock() - startTime;
     double duration = (double)endTime / CLOCKS_PER_SEC;
 
-    FILE* logfile = fopen("D:\\MyDoc\\RM - SM - Sprint 15\\OptimizingGroundDetection\\Log.txt","a");
-    s_time = duration;
-    s_nbPoints = ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints();
+    if (s_activateLog)
+        {
+        FILE* logfile = fopen("D:\\MyDoc\\RM - SM - Sprint 15\\OptimizingGroundDetection\\Log.txt","a");
+        s_time = duration;
+        s_nbPoints = ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints();
 
-    if (s_useMultiThread)
-        //fprintf(logfile, "Total MT ground detection executionTime : %f nbGroundPoints %I64 \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
-        fprintf(logfile, "Total MT ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
-    else
-        fprintf(logfile, "Total ST ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+        if (s_useMultiThread)
+            //fprintf(logfile, "Total MT ground detection executionTime : %f nbGroundPoints %I64 \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+            fprintf(logfile, "Total MT ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
+        else
+            fprintf(logfile, "Total ST ground detection executionTime : %.3f nbGroundPoints %zi \r\n", duration, ((ScalableMeshPointsAccumulator*)accumPtr.get())->GetNbPoints());
 
-    fclose(logfile);
+        fclose(logfile);
+        }
         
     IGroundPointsAccumulatorPtr nullAcc;
 

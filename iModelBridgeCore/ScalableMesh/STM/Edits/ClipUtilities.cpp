@@ -595,11 +595,11 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
     if (dtmCreateStatus == 0)
         {
         BcDTMPtr bcDtmObjPtr;
-#ifdef VANCOUVER_API
+//#ifdef VANCOUVER_API
         bcDtmObjPtr = BcDTM::CreateFromDtmHandle(*bcDtmP);
-#else
-        bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
-#endif
+//#else
+ //       bcDtmObjPtr = BcDTM::CreateFromDtmHandle(bcDtmP);
+//#endif
         dtmPtr = bcDtmObjPtr.get();
         }
     else return;
@@ -949,7 +949,7 @@ bool Clipper::GetRegionsFromClipPolys(bvector<bvector<PolyfaceHeaderPtr>>& polyf
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtmPtr->GetBcDTM());
     if (m_uvBuffer && m_uvIndices)en->SetUseRealPointIndexes(true);
     en->SetExcludeAllRegions();
-    en->SetMaxTriangles(2000000);
+    en->SetMaxTriangles((int)m_nIndices*10);
     bmap<int32_t, int32_t> updatedIndices;
     if (m_uvBuffer && m_uvIndices)
         {

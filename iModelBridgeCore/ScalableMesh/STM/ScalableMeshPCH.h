@@ -96,12 +96,12 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #endif //!BEGIN_UNNAMED_NAMESPACE
 
 //TM API changes
-#ifdef VANCOUVER_API
+//#ifdef VANCOUVER_API
 #define GET_POINT_AT_INDEX(drapedLineP, pt, dist, code, sample)\
                     drapedLineP->GetPointByIndex(pt, dist, code, sample)
-#else
-#define GET_POINT_AT_INDEX(drapedLineP, pt, dist, code, sample)\
-                        drapedLineP->GetPointByIndex(&pt, dist, code, sample)
-#endif
+//#else
+//#define GET_POINT_AT_INDEX(drapedLineP, pt, dist, code, sample)\
+//                        drapedLineP->GetPointByIndex(&pt, dist, code, sample)
+//#endif
 
 #define scmInterface struct __declspec(novtable)

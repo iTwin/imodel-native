@@ -1374,7 +1374,7 @@ StatusInt DrapeOnScalableMesh(DTMPtr& smPtr, std::vector<std::vector<DPoint3d>>&
     for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
         {
         DPoint3d pt;
-        drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
+        drapedLine->GetPointByIndex(pt, nullptr, nullptr, ptNum);
         drapedPoints[0].push_back(pt);
         }
 
@@ -4930,7 +4930,7 @@ void DrapeLinesOnScalableMesh(bvector<bvector<DPoint3d>>&lines, bvector<bvector<
             for (unsigned int ptNum = 0; ptNum < numPoints; ptNum++)
                 {
                 DPoint3d pt;
-                drapedLine->GetPointByIndex(&pt, nullptr, nullptr, ptNum);
+                drapedLine->GetPointByIndex(pt, nullptr, nullptr, ptNum);
                 lineDraped.push_back(pt);
                 }
             bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);
@@ -4954,7 +4954,7 @@ void DrapeLinesOnDTM(bvector<bvector<DPoint3d>>&lines, bvector<bvector<DPoint3d>
                 {
                 DPoint3d pt;
                 DTMDrapedLineCode code;
-                drapedLine->GetPointByIndex(&pt, nullptr, &code, ptNum);
+                drapedLine->GetPointByIndex(pt, nullptr, &code, ptNum);
                 if (code != DTMDrapedLineCode::External && code != DTMDrapedLineCode::InVoid) lineDraped.push_back(pt);
                 }
             bvector<DPoint3d>::iterator it = unique(lineDraped.begin(), lineDraped.end(), DPoint3dEqualityTest);

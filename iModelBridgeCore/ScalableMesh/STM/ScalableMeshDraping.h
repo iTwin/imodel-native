@@ -28,22 +28,22 @@ struct ScalableMeshDraping : IDTMDraping
         size_t m_levelForDrapeLinear;
 
         bvector<IScalableMeshNodePtr> m_nodeSelection;
-#ifdef VANCOUVER_API
+//#ifdef VANCOUVER_API
         DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
-#else
-        DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
-#endif
+//#else
+//        DTMStatusInt DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point, const DMatrix4d& w2vMap);
+//#endif
 
         size_t ComputeLevelForTransform(const DMatrix4d& w2vMap);
 
         void QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>& nodes, const DPoint3d& testPt, const IScalableMeshNodeQueryParamsPtr& params, const IScalableMeshPtr& targetedMeshPtr);
 
     protected:
-#ifdef VANCOUVER_API
+//#ifdef VANCOUVER_API
         virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override;
-#else
-        virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
-#endif
+//#else
+       // virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override;
+//#endif
 
         virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
         //virtual DTMStatusInt _FastDrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
@@ -154,6 +154,119 @@ struct MeshTraversalQueue
         bool CollectAlongElevation(MeshTraversalStep& start, NodeCallback c);
             bool CollectAlongDirection(MeshTraversalStep& start, NodeCallback c);
 
+    };
+
+struct Tile3dTM :public RefCounted<BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM>, IDTMDraping
+    {
+    private:
+        const IScalableMeshNodePtr m_node;
+        DRange3d m_range;
+
+    protected:
+///#ifdef VANCOUVER_API
+        virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedTypeP, DPoint3dCR point) override
+            {
+            return DTM_ERROR;
+            }
+/*#else
+        virtual DTMStatusInt _DrapePoint(double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) override
+            {
+            return DTM_ERROR;
+            }
+#endif*/
+
+        virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) override;
+
+        virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override
+            {
+            return DTM_ERROR;
+            }
+
+        virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
+            {
+            return false;
+            }
+
+        virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override
+            {
+            return DTM_ERROR;
+            }
+
+
+        virtual IDTMDrapingP     _GetDTMDraping() override
+            {
+            return this;
+            }
+
+        virtual IDTMDrainageP    _GetDTMDrainage() override
+            {
+            return nullptr;
+            }
+
+        virtual IDTMContouringP  _GetDTMContouring() override
+            {
+            return nullptr;
+            }
+
+        virtual int64_t _GetPointCount() override
+            {
+            return (int64_t)m_node->GetPointCount();
+            }
+
+        virtual DTMStatusInt _GetRange(DRange3dR range) override
+            {
+            range = m_node->GetContentExtent();
+            return DTM_SUCCESS;
+            }
+
+        virtual BcDTMP _GetBcDTM() override
+            {
+            return nullptr;
+            }
+
+        virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) override
+            {
+            return DTM_ERROR;
+            }
+
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) override
+            {
+            return DTM_ERROR;
+            }
+
+        virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) override
+            {
+            return DTM_ERROR;
+            }
+
+        virtual DTMStatusInt _GetTransformDTM(DTMPtr& transformedDTM, TransformCR transformation) override
+            {
+            return DTM_ERROR;
+            }
+
+        virtual bool _GetTransformation(TransformR transformation) override
+            {
+            return false;
+            }
+
+        virtual IDTMVolumeP _GetDTMVolume() override
+            {
+            return nullptr;
+            }
+
+        virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) override
+            {
+            return DTM_ERROR;
+            }
+
+    public:
+        Tile3dTM(IScalableMeshNodePtr node): m_node(node)
+            {}
+
+        static DTMPtr Create(IScalableMeshNodePtr node)
+            {
+            return new Tile3dTM(node);
+            }
     };
 
 

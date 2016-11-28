@@ -527,7 +527,7 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     CachedStatementPtr stmt;
     m_database->GetCachedStatement(stmt, "SELECT ParentNodeId, Resolution, Filtered, Extent,"
                                   "ContentExtent, TotalCount, ArePoints3d, NbFaceIndexes, "
-                                  "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution FROM SMNodeHeader WHERE NodeId=?");
+                                  "NumberOfMeshComponents, AllComponent,SubNode, Neighbor, TexID, IsTextured, NodeCount, GeometryResolution, TextureResolution, length(SubNode), length(Neighbor) FROM SMNodeHeader WHERE NodeId=?");
     stmt->BindInt64(1, nodeHeader.m_nodeID);
 
 
@@ -553,16 +553,16 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     const void* allComponentTmp = stmt->GetValueBlob(9);
 
     const void* childrenTmp = stmt->GetValueBlob(10);
-    size_t nofNodes = stmt->GetColumnBytes(10) / sizeof(int);
+    size_t nofNodes = stmt->GetValueInt(17) / sizeof(int);
     nodeHeader.m_apSubNodeID.resize(nofNodes);
-    memcpy(&nodeHeader.m_apSubNodeID[0], childrenTmp, stmt->GetColumnBytes(10));
+    memcpy(&nodeHeader.m_apSubNodeID[0], childrenTmp, stmt->GetValueInt(17));
     const void* neighborTmp = stmt->GetValueBlob(11);
-    if (stmt->GetColumnBytes(11) >= 26*sizeof(int))
+    if (stmt->GetValueInt(18) >= 26 * sizeof(int))
         {
         const int* neighbors = (const int*)neighborTmp;
         for (size_t i = 0; i < 26; ++i)
             {
-            int nNeighbors = i + 1 < 26 ? (neighbors[i + 1] - neighbors[i]) : (stmt->GetColumnBytes(11)/sizeof(int) - (neighbors[i]+26));
+            int nNeighbors = i + 1 < 26 ? (neighbors[i + 1] - neighbors[i]) : (stmt->GetValueInt(18)/ sizeof(int) - (neighbors[i] + 26));
             nodeHeader.m_apNeighborNodeID[i].resize(nNeighbors);
             memcpy(&nodeHeader.m_apNeighborNodeID[i][0], &neighbors[26 + neighbors[i]], nNeighbors*sizeof(int));
             }
