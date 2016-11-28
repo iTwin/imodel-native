@@ -287,7 +287,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR 
     const Utf8String methodName = "DgnDbRepositoryConnection::UpdateServerFile";
     Json::Value properties = Json::objectValue;
     fileInfo.ToPropertiesJson(properties);
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, BeFileName(), nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
     ([=] (const WSUpdateObjectResult& result)
         {
         if (!result.IsSuccess())
@@ -366,7 +366,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
     fileInfo.ToPropertiesJson(fileProperties);
     fileProperties[ServerSchema::Property::IsUploaded] = true;
 
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, BeFileName(), nullptr, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (const WSUpdateObjectResult& initializeFileResult)
         {
         if (!initializeFileResult.IsSuccess())

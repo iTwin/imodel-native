@@ -132,11 +132,12 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
-        MOCK_CONST_METHOD5(SendUpdateObjectRequest, AsyncTaskPtr<WSUpdateObjectResult>
+        MOCK_CONST_METHOD6(SendUpdateObjectRequest, AsyncTaskPtr<WSUpdateObjectResult>
             (
             ObjectIdCR objectId,
             JsonValueCR propertiesJson,
-            Utf8String eTag,
+            Utf8StringCR eTag,
+            BeFileNameCR filePath,
             Http::Request::ProgressCallbackCR uploadProgressCallback,
             ICancellationTokenPtr ct
             ));

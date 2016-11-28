@@ -54,11 +54,14 @@ struct FileInfo : public ChangeInfo
         //! Set file path. Set fileName to empty if file is not yet cached
         void SetFilePath(FileCache location, BeFileName relativeDir, Utf8StringCR fileName);
 
-        //! Get relative dir for the file
+        //! Get relative path for the file
         BeFileName GetRelativePath() const;
 
-        //! Set cache location
-        FileCache GetLocation(FileCache defaultLocation = FileCache::Temporary) const;
+        //! Get file cache location
+        FileCache GetLocation(FileCache defaultLocation = FileCache::Auto) const;
+
+        //! Get specific new location for file based on requested - for example FileCache::Auto
+        FileCache GetNewLocation(FileCache requestedLocation) const;
 
         //! Return cache tag if file is found on disk
         Utf8String GetFileCacheTag() const;

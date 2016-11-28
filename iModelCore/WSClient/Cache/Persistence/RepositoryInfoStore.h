@@ -29,7 +29,9 @@ struct RepositoryInfoStore : public IRepositoryInfoStore
         IWSRepositoryClientPtr m_client;
         std::shared_ptr<InfoListener> m_infoListener;
         WorkerThreadPtr m_thread;
-        WSInfo m_cachedInfo;
+
+        BeMutex m_infoMutex;
+        WSInfo m_info;
 
     private:
         WSInfo ReadServerInfo(IDataSourceCache& cache);
@@ -38,13 +40,14 @@ struct RepositoryInfoStore : public IRepositoryInfoStore
         //! Create info cache for client and cache db
         RepositoryInfoStore(ICacheTransactionManager* cacheTxnManager, IWSRepositoryClientPtr client, WorkerThreadPtr thread);
         virtual ~RepositoryInfoStore();
-
+        
         //! Cache server info asynchronously. ICacheTransactionManager and WorkerThread must be specified.
         void CacheServerInfo(WSInfoCR info);
-
         BentleyStatus CacheServerInfo(IDataSourceCache& cache, WSInfoCR info) override;
-        WSInfoCR GetServerInfo(IDataSourceCache& cache) override;
-
+        
+        BentleyStatus PrepareServerInfo(IDataSourceCache& cache) override;
+        WSInfo GetServerInfo() override;
+        
         BentleyStatus SetCacheInitialized(IDataSourceCache& cache) override;
         bool IsCacheInitialized(IDataSourceCache& cache) override;
     };

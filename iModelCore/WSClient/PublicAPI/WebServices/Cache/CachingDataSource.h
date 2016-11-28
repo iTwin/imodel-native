@@ -45,6 +45,7 @@ struct CachingDataSource :
         typedef AsyncResult<DataOrigin, Error> DataOriginResult;
 
     private:
+        bool                                        m_isOpen = false;
         IWSRepositoryClientPtr                      m_client;
         std::shared_ptr<ICacheTransactionManager>   m_cacheTransactionManager;
         std::shared_ptr<IRepositoryInfoStore>       m_infoStore;
@@ -69,6 +70,7 @@ struct CachingDataSource :
             BeFileNameCR temporaryDir
             );
 
+        BentleyStatus FinalizeOpen(CacheTransactionCR txn);
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
         SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
@@ -131,13 +133,19 @@ struct CachingDataSource :
         //!     [Required] DgnClientFx {platform specific} Initialize
         //!     [Required] DgnClientFxL10N::Initialize() (error message localization needs SQLang file built from HttpError.xliff.h)
         //!     [Optional] HttpClient::InitializeNetworkActivityCallback()
-
+        //! @param client - used for communicating to server
+        //! @param cacheFilePath - cache database file path to store or open
+        //! @param cacheEnvironment - cache environment to use for file caching
+        //! @param cacheAccessThread - thread to do all I/O on cache
+        //! @param ct - cancellation token to cancel open/creation 
+        //! @return pointer to valid CachingDataSource or error that occurred
         WSCACHE_EXPORT static AsyncTaskPtr<OpenResult> OpenOrCreate
             (
             IWSRepositoryClientPtr client,
             BeFileNameCR cacheFilePath,
             CacheEnvironmentCR cacheEnvironment,
-            WorkerThreadPtr cacheAccessThread = nullptr
+            WorkerThreadPtr cacheAccessThread = nullptr,
+            ICancellationTokenPtr ct = nullptr
             );
 
         //! DO NOT USE for production! Used only for internal testing and may be removed in future.
@@ -153,7 +161,7 @@ struct CachingDataSource :
         WSCACHE_EXPORT IWSRepositoryClientPtr GetClient() const override;
         WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
 
-        WSCACHE_EXPORT void CancelAllTasksAndWait() override;
+        WSCACHE_EXPORT AsyncTaskPtr<void> CancelAllTasks() override;
 
         WSCACHE_EXPORT AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct) override;
 
@@ -162,7 +170,10 @@ struct CachingDataSource :
 
         WSCACHE_EXPORT bvector<ECN::ECSchemaCP> GetRepositorySchemas(CacheTransactionCR txn) override;
         WSCACHE_EXPORT bvector<SchemaKey> GetRepositorySchemaKeys(CacheTransactionCR txn) override;
+
+        //! DEPRECATED, use GetServerInfo()
         WSCACHE_EXPORT WSInfo GetServerInfo(CacheTransactionCR txn) override;
+        WSCACHE_EXPORT WSInfo GetServerInfo() override;
 
         WSCACHE_EXPORT void SetClassesToAlwaysCacheChildren(const bset<Utf8String>& classesToAlwaysCacheChildren) override;
 

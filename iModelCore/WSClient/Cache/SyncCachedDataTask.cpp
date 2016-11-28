@@ -175,12 +175,8 @@ void SyncCachedDataTask::CacheFiles()
         ReportProgress(fileName);
         };
 
-    m_ds->DownloadAndCacheFiles(
-        filesToDownload,
-        FileCache::Persistent,
-        onProgress,
-        GetCancellationToken())
-    ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult& result)
+    m_ds->DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, GetCancellationToken())
+        ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult& result)
         {
         AddResult(result);
         });
@@ -246,10 +242,10 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
             {
             RegisterError(txn, responseKey, result.GetError());
             }
-        
+
         m_syncedQueries++;
         ReportProgress();
-        
+
         ContinueCachingQueries(txn);
         txn.Commit();
         });
