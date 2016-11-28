@@ -103,11 +103,11 @@ bool PointMappedToColumnsECSqlField::_GetBoolean () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysHns (DateTime::Info& metadata) const
+uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     ReportError (ECSqlStatus::Error, "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert (false && "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
-    return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDaysHns (metadata);
+    return NoopECSqlValue::GetSingleton ().GetDateTimeJulianDaysMsec(metadata);
     }
 
 //-----------------------------------------------------------------------------------------

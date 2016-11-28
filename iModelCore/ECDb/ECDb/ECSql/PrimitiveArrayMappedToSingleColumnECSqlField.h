@@ -35,7 +35,7 @@ private:
             //IECSqlPrimitiveValue
             virtual void const* _GetBinary(int* binarySize) const override;
             virtual bool _GetBoolean() const override;
-            virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override;
+            virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
             virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;
             virtual double _GetDouble() const override;
             virtual int _GetInt() const override;

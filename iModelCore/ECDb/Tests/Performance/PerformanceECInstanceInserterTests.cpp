@@ -241,13 +241,10 @@ private:
 
             case PRIMITIVETYPE_DateTime:
             {
-                bool hasMetadata = false;
                 DateTime::Info metadata;
-                const int64_t ceTicks = v.GetDateTimeTicks(hasMetadata, metadata);
-                const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
-
-                DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
-                ecsqlStat = stmt.GetBinder(parameterIndex).BindDateTime(jdHns, actualMetadata);
+                const int64_t ceTicks = v.GetDateTimeTicks(metadata);
+                const uint64_t jdHns = DateTime::CommonEraMillisecondsToJulianDay(ceTicks / 10000);
+                ecsqlStat = stmt.GetBinder(parameterIndex).BindDateTime(jdHns, metadata);
                 break;
             }
 

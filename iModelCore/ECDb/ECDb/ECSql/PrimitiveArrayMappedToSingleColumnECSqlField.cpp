@@ -33,17 +33,17 @@ PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumn
 
     if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {
-        auto property = m_ecsqlColumnInfo.GetProperty();
+        ECPropertyCP property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
-        DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
             ReportError(ECSqlStatus::Error, "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
             BeAssert(false && "Retrieving DateTimeInfo custom attribute from corresponding ECProperty failed.");
             return;
             }
 
-        m_datetimeMetadata = dateTimeInfo.GetInfo(true);
+        if (!m_datetimeMetadata.IsValid())
+            m_datetimeMetadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified); //default
         }
 
     m_arrayElement.Init(m_ecsqlColumnInfo);
@@ -270,14 +270,13 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBoolea
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
+uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     if (!CanRead(PRIMITIVETYPE_DateTime))
-        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysHns(metadata);
+        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
 
-    bool hasMetadata = false;
-    const int64_t ceTicks = m_value.GetDateTimeTicks(hasMetadata, metadata);
-    return DateTime::CommonEraTicksToJulianDay(ceTicks);
+    const int64_t ceTicks = m_value.GetDateTimeTicks(metadata);
+    return DateTime::CommonEraMillisecondsToJulianDay(ceTicks / 10000);
     }
 
 //---------------------------------------------------------------------------------------
@@ -285,8 +284,8 @@ uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDa
 //---------------------------------------------------------------------------------------
 double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
-    const uint64_t jdHns = _GetDateTimeJulianDaysHns(metadata);
-    return DateTime::HnsToRationalDay(jdHns);
+    const uint64_t jdMsec = _GetDateTimeJulianDaysMsec(metadata);
+    return DateTime::MsecToRationalDay(jdMsec);
     }
 
 //---------------------------------------------------------------------------------------

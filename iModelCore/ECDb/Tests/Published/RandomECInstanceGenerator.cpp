@@ -166,9 +166,14 @@ void DefaultPropertyValueGenerator::Init()
         (GetProperty()->GetIsPrimitive() && GetProperty()->GetAsPrimitiveProperty()->GetType() ==PRIMITIVETYPE_DateTime) || 
         (GetProperty()->GetIsPrimitiveArray() && GetProperty()->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType() == PRIMITIVETYPE_DateTime)))
         {
-        DateTimeInfo info;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == ECObjectsStatus::Success)        
-            seed = DateTime (info.GetInfo(true).GetKind(), seed.GetYear(), seed.GetMonth(), seed.GetDay(), seed.GetHour(),  seed.GetMinute());
+        DateTime::Info info;
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(info, *GetProperty()) == ECObjectsStatus::Success)
+            {
+            if (!info.IsValid())
+                info = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
+
+            seed = DateTime(info.GetKind(), seed.GetYear(), seed.GetMonth(), seed.GetDay(), seed.GetHour(), seed.GetMinute());
+            }
         }
 
     SetSeedDateTime(seed, 432/*hectoseconds = 12hrs*/ );

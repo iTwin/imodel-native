@@ -74,17 +74,17 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
     //! Binds a %DateTime value expressed as Julian Day to the parameter
     //! @param[in] julianDayTicks DateTime value as Julian Day
-    //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
+    //! @param[in] metadata DateTime metadata. Pass an empty DateTime::Info object if no metadata exist for the ticks
     //! @return ECSqlStatus::Success or error codes
     //! @see BentleyApi::DateTime::ToJulianDay
-    ECDB_EXPORT ECSqlStatus BindDateTime(double julianDay, DateTime::Info const* metadata);
+    ECDB_EXPORT ECSqlStatus BindDateTime(double julianDay, DateTime::Info const& metadata);
 
     //! Binds a %DateTime value expressed as Julian Day ticks to the parameter
-    //! @param[in] julianDayTicksHns DateTime value as Julian Day ticks in hecto-nanoseconds    
-    //! @param[in] metadata DateTime metadata. Pass nullptr if no metadata exist for the ticks
+    //! @param[in] julianDayMsec DateTime value as Julian Day in milliseconds
+    //! @param[in] metadata DateTime metadata. Pass an empty DateTime::Info object if no metadata exist for the ticks
     //! @return ECSqlStatus::Success or error codes
     //! @see BentleyApi::DateTime::ToJulianDay
-    ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata);
+    ECDB_EXPORT ECSqlStatus BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata);
 
 #endif
 
