@@ -232,7 +232,7 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
         return ECSqlStatus::Error;
         }
 
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraMilliseconds(julianDayMsec) * 10000;
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayMsec);
     ECValue v;
     v.SetDateTimeTicks(ceTicks, metadata);
     return SetValue(v);

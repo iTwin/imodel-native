@@ -385,7 +385,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             {
             DateTime::Info metadata;
             const uint64_t jdMsec = value.GetDateTimeJulianDaysMsec(metadata);
-            const int64_t ceTicks = DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000;
+            const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdMsec);
             val.SetDateTimeTicks(ceTicks, metadata);
             break;
             }

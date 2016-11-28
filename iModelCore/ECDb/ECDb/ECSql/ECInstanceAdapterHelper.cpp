@@ -384,7 +384,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
             {
             DateTime::Info metadata;
             const int64_t ceTicks = value.GetDateTimeTicks(metadata);
-            const uint64_t jdMsec = DateTime::CommonEraMillisecondsToJulianDay(ceTicks / 10000);
+            const uint64_t jdMsec = DateTime::CommonEraTicksToJulianDay(ceTicks);
             stat = binder.BindDateTime(jdMsec, metadata);
             break;
 

@@ -276,7 +276,7 @@ uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDa
         return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
 
     const int64_t ceTicks = m_value.GetDateTimeTicks(metadata);
-    return DateTime::CommonEraMillisecondsToJulianDay(ceTicks / 10000);
+    return DateTime::CommonEraTicksToJulianDay(ceTicks);
     }
 
 //---------------------------------------------------------------------------------------
