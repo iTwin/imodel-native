@@ -301,7 +301,7 @@ bool BriefcaseManager::InitializeLocalDb()
     // Save the DgnDb creation date for later verification in offline mode...
     DateTime dgnDbCreationDate;
     if (BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(dgnDbCreationDate))
-        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
+        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToString());
 
     // Set up the required tables
     return CreateCodesTable(TABLE_Codes) && CreateLocksTable(TABLE_Locks)

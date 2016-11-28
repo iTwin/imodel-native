@@ -1223,15 +1223,20 @@ BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr
         {
         IBRepEntityPtr planeEntity;
         CurveVectorPtr planeCurve = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Open, ICurvePrimitive::CreateLine(DSegment3d::From(rayE.origin, rayS.origin)));
+        DRange3d       expandedRange = entityOut->GetEntityRange();
 
-        if (SUCCESS != BRepUtil::Create::SweptBodyFromOpenCurveVector(planeEntity, *planeCurve, targetRange, &rayE.direction, true, 0L))
+        // NOTE: Always create a hole and not a notch in order to have more stable ids on inner loops...
+        expandedRange.Extend(1.0e-3);
+        expandedRange.Extend(targetRange);
+
+        if (SUCCESS != BRepUtil::Create::SweptBodyFromOpenCurveVector(planeEntity, *planeCurve, expandedRange, &rayE.direction, true, 0L))
             return ERROR;
 
         if (SUCCESS != PSolidUtil::DoBoolean(*planeEntity, &entityOut, 1, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint))
             return ERROR;
 
         if (nodeId)
-            PSolidTopoId::AssignProfileBodyIds(PSolidUtil::GetEntityTag(*planeEntity), nodeId); // NEEDSWORK: More robust topology assignment is required...
+            PSolidTopoId::AssignProfileBodyIds(PSolidUtil::GetEntityTag(*planeEntity), nodeId, true);
 
         entityOut = planeEntity;
         }
@@ -1892,6 +1897,199 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
     revolveAxis.direction.Normalize();
 
     BentleyStatus   status = PSolidUtil::SweepBodyAxis(targetEntityTag, revolveAxis.direction, revolveAxis.origin, angle);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     03/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection)
+    {                           
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType()) 
+        return ERROR;
+
+    PK_ENTITY_t targetTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetTag)
+        return ERROR;
+
+    PK_ENTITY_t toolTag = PSolidUtil::GetEntityTag(toolEntity);
+
+    if (PK_ENTITY_null == toolTag)
+        return ERROR;
+
+    DRange3d targetRange;
+
+    if (SUCCESS != PSolidUtil::GetEntityRange(targetRange, targetTag))
+        return ERROR;
+ 
+    DRay3d      toolRay;
+    Transform   invTargetTransform, toolTransform;
+
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    toolTransform.InitProduct(invTargetTransform, toolEntity.GetEntityTransform());
+
+    bvector<PK_FACE_t> toolFaces;
+
+    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag) ||
+        SUCCESS != PSolidUtil::GetPlanarFaceData(&toolRay.origin, &toolRay.direction, toolFaces.front()))
+        return ERROR;
+
+    toolTransform.Multiply(toolRay.origin);
+    toolTransform.MultiplyMatrixOnly(toolRay.direction);
+    toolRay.direction.Normalize();
+
+    if (reverseDirection)
+        toolRay.direction.Negate();
+            
+    DRange1d  targetDepthRange = targetRange.GetCornerRange(toolRay);
+    double    toolDepth = toolRay.direction.DotProduct(toolRay.origin);
+
+    PK_BODY_emboss_o_t  options;
+    PK_TOPOL_track_r_t  tracking;
+    PK_TOPOL_local_r_t  results;
+
+    PK_BODY_emboss_o_m(options);
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    options.sidewall_data.sidewall = PK_emboss_sidewall_swept_c;
+    options.convexity = PK_emboss_convexity_both_c; // Let pad or pocket be determined by whether cap is "above" or "below" target body according to emboss direction...
+    options.overflow_data.laminar_walled = true;
+    toolRay.direction.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    PK_ENTITY_copy(toolTag, &toolTag);
+    PSolidUtil::TransformBody(toolTag, toolTransform);
+
+    if (reverseDirection)
+        PK_BODY_reverse_orientation(toolTag);
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_emboss(targetTag, toolTag, toolTag, &options, &tracking, &results) ? SUCCESS : ERROR);
+
+    PK_ENTITY_delete(1, &toolTag);
+    PK_TOPOL_track_r_f(&tracking);
+    PK_TOPOL_local_r_f(&results);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ThickenSheet(IBRepEntityR targetEntity, double frontDistance, double backDistance)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Sheet != targetEntity.GetEntityType()) 
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    PK_BODY_thicken_o_t options;
+    PK_TOPOL_track_r_t  tracking;
+    PK_TOPOL_local_r_t  results;
+
+    PK_BODY_thicken_o_m(options);
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&frontDistance, 1);
+    invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&backDistance, 1);
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_thicken_3(targetEntityTag, frontDistance, backDistance, 1.0e-6, &options, &tracking, &results) ? SUCCESS : ERROR);
+
+    PK_TOPOL_local_r_f(&results);
+    PK_TOPOL_track_r_f(&tracking);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges, bvector<double>& radii, bool propagate)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (edges.empty() || edges.size() != radii.size())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+
+    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+        {
+        ISubEntityR edge = *edges.at(iEdge);
+
+        if (ISubEntity::SubEntityType::Edge != edge.GetSubEntityType ())
+            continue;
+
+        double      radius = radii.at(iEdge);
+        PK_EDGE_t   edgeTag = PSolidSubEntity::GetSubEntityTag(edge);
+
+        invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&radius, 1);
+
+        PK_EDGE_set_blend_constant_o_t options;
+
+        PK_EDGE_set_blend_constant_o_m(options);
+        options.properties.propagate = propagate ? PK_blend_propagate_yes_c : PK_blend_propagate_no_c;
+
+        int         nBlend = 0;
+        PK_EDGE_t*  blends = nullptr;
+
+        PK_EDGE_set_blend_constant(1, &edgeTag, radius, &options, &nBlend, &blends);
+        PK_MEMORY_free(blends);
+        }
+
+    BentleyStatus   status = PSolidUtil::FixBlends(targetEntityTag);
 
     if (SUCCESS != status)
         PK_MARK_goto(markTag);

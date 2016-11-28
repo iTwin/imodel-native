@@ -14,7 +14,9 @@ void DgnViewport::DestroyViewport()
     {
     m_elementProgressiveTasks.clear();
     m_terrainProgressiveTasks.clear();
-    RenderQueue().WaitForIdle();
+    if (m_renderTarget.IsValid())
+        RenderQueue().WaitForIdle();
+
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
@@ -1229,6 +1231,24 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
+    }
+
+
+static RefCountedPtr<TileViewport> s_tileVp;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileViewport* DgnViewport::GetTileViewport()
+    {
+    return s_tileVp.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetTileViewport(TileViewport* creator)
+    {
+    s_tileVp = creator;
     }
 
 /*---------------------------------------------------------------------------------**//**

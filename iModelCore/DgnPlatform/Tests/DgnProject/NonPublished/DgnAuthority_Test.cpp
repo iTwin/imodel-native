@@ -27,9 +27,9 @@ struct DgnAuthoritiesTest : public DgnDbTestFixture
         EXPECT_EQ(authId, id);
         }
 
-    RefCountedPtr<NamespaceAuthority> Create(Utf8CP name, bool insert = true)
+    DatabaseScopeAuthorityPtr Create(Utf8CP name, bool insert = true)
         {
-        auto auth = NamespaceAuthority::CreateNamespaceAuthority(name, GetDgnDb());
+        auto auth = DatabaseScopeAuthority::Create(name, GetDgnDb());
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());

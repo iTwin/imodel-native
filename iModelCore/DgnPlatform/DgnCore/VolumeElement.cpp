@@ -37,7 +37,7 @@ VolumeElement::VolumeElement(CreateParams const& params) : T_Super(params)
 // static
 DgnCategoryId VolumeElement::GetDefaultCategoryId(DgnDbR db)
     {
-    DgnCategoryId categoryId = SpatialCategory::QueryCategoryId(db, VOLUME_DEFAULT_CATEGORY_NAME);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, VOLUME_DEFAULT_CATEGORY_NAME));
     if (categoryId.IsValid())
         return categoryId;
 

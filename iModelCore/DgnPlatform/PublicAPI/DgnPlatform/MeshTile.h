@@ -8,18 +8,11 @@
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
-#if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-        #define MESHTILE_NO_FOLLY
-#endif
-
 #include "Render.h"
 #include "DgnTexture.h"
 #include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
-
-#if !defined(MESHTILE_NO_FOLLY)
 #include <folly/futures/Future.h>
-#endif
 
 #include <DgnPlatform/DgnPlatformLib.h>
 
@@ -106,14 +99,14 @@ private:
     mutable TileTextureImagePtr     m_textureImage;
     bool                            m_ignoreLighting;
 
-    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
+    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
     TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()) {}
     TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
-    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
-    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
+    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return Create(&graphicParams, &geometryParams, ignoreLighting); }
+    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(graphicParams, geometryParams, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, DgnMaterialId materialId) { return new TileDisplayParams(fillColor, materialId); }
@@ -349,11 +342,21 @@ struct TileGeometry : RefCountedBase
         {
         TileDisplayParamsPtr    m_displayParams;
         PolyfaceHeaderPtr       m_polyface;
-
             
         TilePolyface(TileDisplayParamsR displayParams, PolyfaceHeaderPtr& polyface) : m_displayParams(&displayParams), m_polyface(polyface) { }
         };
+    struct TileStrokes
+        {
+        TileDisplayParamsPtr        m_displayParams;
+        bvector<bvector<DPoint3d>>  m_strokes;
+
+        TileStrokes (TileDisplayParamsR displayParams, bvector<bvector<DPoint3d>>&& strokes) : m_displayParams(&displayParams),  m_strokes(std::move(strokes)) { }
+        }; 
+
     typedef bvector<TilePolyface>   T_TilePolyfaces;
+    typedef bvector<TileStrokes>    T_TileStrokes;
+
+
 
 private:
     TileDisplayParamsPtr    m_params;
@@ -369,30 +372,35 @@ protected:
     TileGeometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) = 0;
-    virtual CurveVectorPtr _GetStrokedCurve(double chordTolerance) = 0;
-    virtual bool _IsPolyface() const = 0;
+    virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) { return T_TileStrokes(); }
+    virtual bool _DoDecimate() const { return false; }
+    virtual bool _DoVertexCluster() const { return true; }
     virtual size_t _GetFacetCount(FacetCounter& counter) const = 0;
 
     void SetFacetCount(size_t numFacets);
-    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 public:
     TileDisplayParamsPtr GetDisplayParams() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount(IFacetOptionsR options) const;
+    IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
     T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
-    bool IsPolyface() const { return _IsPolyface(); }
-    CurveVectorPtr    GetStrokedCurve(double chordTolerance) { return _GetStrokedCurve(chordTolerance); }
-    
+    bool DoDecimate() const { return _DoDecimate(); }
+    bool DoVertexCluster() const { return _DoVertexCluster(); }
+    T_TileStrokes GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
+
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, bool isCurved, DgnDbR db);
     //! Create a TileGeometry for an IBRepEntity
     static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
+    //! Create a TileGeometry for text.
+    static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
+
 };
 
 //=======================================================================================
@@ -436,7 +444,8 @@ struct TileModelDelta : RefCountedBase, ITileGenerationFilter
         ElementState() { }
         ElementState(int64_t lastModified,  uint32_t facetCount) : m_lastModifiedTime(lastModified), m_facetCount(facetCount) { }
         uint32_t GetFacetCount() const { return m_facetCount; }
-        int64_t GetLastModifiedTime() const { return m_lastModifiedTime; }
+        int64_t GetLastModifiedTime() const { return m_lastModifiedTime; }
+
         Json::Value GetJsonValue () const;
         void SetFacetCount(uint32_t facetCount) { m_facetCount = facetCount; }
         };
@@ -452,10 +461,12 @@ struct TileModelDelta : RefCountedBase, ITileGenerationFilter
     DGNPLATFORM_EXPORT bool DoIncremental (TileNodeCR tile) const;     // Return true if this previously generated tile is available and compatible with the current tile.
 
 
-    virtual bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
+    virtual bool _AcceptElement(DgnElementId elementId) const override  { return m_added.find(elementId) != m_added.end(); }
+
 
 private:
-    BeFileName                          m_dataDirectory;
+    BeFileName                          m_dataDirectory;
+
     BeFileName                          m_fileName;
     WString                             m_rootName;
     bmap<DgnElementId, ElementState>    m_elementStates;
@@ -764,7 +775,6 @@ private:
             { BeAssert(TileGenerator::Status::Success != m_status || m_tile.IsValid()); }
         };
 
-#if !defined(MESHTILE_NO_FOLLY)
     typedef folly::Future<Status> FutureStatus;
     typedef folly::Future<ElementTileResult> FutureElementTileResult;
 
@@ -776,7 +786,6 @@ private:
 
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile);
-#endif
 
 public:
     DGNPLATFORM_EXPORT explicit TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGenerationFilterP filter=nullptr, ITileGenerationProgressMonitorP progress=nullptr);
@@ -809,7 +818,8 @@ struct IGenerateMeshTiles
 struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
-    DGNPLATFORM_EXPORT static BentleyStatusReadJsonFromFile (Json::Value& value, WCharCP fileName);
+    DGNPLATFORM_EXPORT static BentleyStatus
+ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
 
 };  // TileUtil

@@ -62,7 +62,7 @@ void LightDefinition::_CopyFrom(DgnElementCR el)
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8StringCR value, Utf8StringCR descr)
-  : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateLightDefinitionCode(name)),
+  : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, name)),
     m_data(value, descr)
     {
     //
@@ -71,11 +71,8 @@ LightDefinition::CreateParams::CreateParams(DgnDbR db, Utf8StringCR name, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnLightId LightDefinition::QueryLightId(DgnCode const& code, DgnDbR db)
+DgnLightId LightDefinition::QueryLightId(DgnDbR db, DgnCodeCR code)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnLightId(elemId.GetValueUnchecked());
     }
-
-
-
