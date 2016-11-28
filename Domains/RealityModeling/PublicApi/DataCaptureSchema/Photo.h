@@ -39,6 +39,11 @@ public:
         return *this;
         }
 
+    RotationMatrixType& operator= (RotMatrixCR rhs)
+        {
+        Copy(rhs);
+        return *this;
+        }
 
     //! Bind the ImageDimensionType field in a ECSQL statement
     static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
