@@ -2153,8 +2153,8 @@ TEST_F (FastQueryTest, CacheCodes)
     DgnDbR dbA = *m_dbA,
            dbB = *m_dbB;
 
-    DgnCode code1 = DgnMaterial::CreateMaterialCode("Code", "One"),
-            code2 = DgnMaterial::CreateMaterialCode("Code", "Two");
+    DgnCode code1 = DgnMaterial::CreateCode(dbA, "Code", "One"),
+            code2 = DgnMaterial::CreateCode(dbA, "Code", "Two");
 
     // reserve codes
     DgnCodeSet codes;
@@ -2169,7 +2169,7 @@ TEST_F (FastQueryTest, CacheCodes)
     Request req(ResponseOptions::CodeState);
     ExpectResponsesEqual(req, dbB);
 
-    DgnCode code3 = DgnMaterial::CreateMaterialCode("Code", "Three");
+    DgnCode code3 = DgnMaterial::CreateCode(dbA, "Code", "Three");
     req.Reset();
     req.SetOptions(ResponseOptions::CodeState);
     req.Codes().insert(code1);  // unavailable
@@ -2244,7 +2244,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = SpatialCategory::CreateCode("RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode(db, "RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2297,9 +2297,9 @@ struct CodesManagerTest : RepositoryManagerTest
         SetupMasterFile();
         }
 
-    static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
+    static DgnCode MakeCode(DgnDbR db, Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
-        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : SpatialCategory::CreateCode(name);
+        return nullptr != nameSpace ? DgnMaterial::CreateCode(db, nameSpace, name) : SpatialCategory::CreateCode(db, name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }
@@ -2436,7 +2436,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
 
     // Reserve single code
-    DgnCode code = MakeCode("Palette", "Material");
+    DgnCode code = MakeCode(db, "Palette", "Material");
     req.insert(code);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);
@@ -2446,7 +2446,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     ExpectState(MakeAvailable(code), db);
 
     // Reserve 2 codes
-    DgnCode code2 = MakeCode("Category");
+    DgnCode code2 = MakeCode(db, "Category");
     req.insert(code2);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);

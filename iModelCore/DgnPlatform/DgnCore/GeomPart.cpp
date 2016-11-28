@@ -144,7 +144,7 @@ void DgnGeometryPart::_CopyFrom(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnCode const& code, DgnDbR db)
+DgnGeometryPartId DgnGeometryPart::QueryGeometryPartId(DgnDbR db, DgnCodeCR code)
     {
     return DgnGeometryPartId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -199,7 +199,7 @@ BentleyStatus DgnGeometryPart::QueryGeometryPartRange(DRange3dR range, DgnDbR db
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    04/2016
 //---------------------------------------------------------------------------------------
-DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCode code)
+DgnGeometryPartPtr DgnGeometryPart::Create(DgnDbR db, DgnCodeCR code)
     {
     DgnModelId modelId = DgnModel::DictionaryId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::GeometryPart::GetHandler());
@@ -223,11 +223,12 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     if (!sourceGeometryPart.IsValid())
         return DgnGeometryPartId();
 
-    dest = DgnGeometryPart::QueryGeometryPartId(sourceGeometryPart->GetCode(), GetDestinationDb());
+    DgnCode destCode = sourceGeometryPart->GetCode();
+    dest = DgnGeometryPart::QueryGeometryPartId(GetDestinationDb(), destCode);
 
     if (!dest.IsValid())
         {
-        DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(GetDestinationDb());
+        DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(GetDestinationDb(), destCode);
         GeometryStreamIO::Import(destGeometryPart->GetGeometryStreamR(), sourceGeometryPart->GetGeometryStream(), *this);
 
         destGeometryPart->SetBoundingBox(sourceGeometryPart->GetBoundingBox());

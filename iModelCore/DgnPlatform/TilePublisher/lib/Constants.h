@@ -154,8 +154,8 @@ static std::string s_unlitTextureFragmentShader =
 "void main(void) {gl_FragColor = texture2D(u_tex, v_texc);}\n";
 
 
-// Polyline shaders.... (no lighting).
-static std::string s_polylineVertexShader =
+// Unlit shaders....
+static std::string s_unlitVertexShader =
 "precision highp float;\n" 
 "attribute vec3 a_pos;\n"
 "attribute float a_batchId;\n"
@@ -164,7 +164,7 @@ static std::string s_polylineVertexShader =
 "void main(void) {\n"
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
 
-static std::string s_polylineFragmentShader =
+static std::string s_unlitFragmentShader =
 "precision highp float;\n"
 "uniform vec4 u_color;\n"
 "void main(void) {gl_FragColor = vec4(u_color);}\n";

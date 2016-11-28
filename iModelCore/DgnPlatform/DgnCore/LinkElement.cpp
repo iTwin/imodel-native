@@ -369,8 +369,7 @@ DgnElementIdSet UrlLink::Query(DgnDbCR dgndb, Utf8CP url, Utf8CP label /*= nullp
 //---------------------------------------------------------------------------------------
 DgnCode RepositoryLink::CreateCode(LinkModelCR model, Utf8CP name)
     {
-    // LinkElements must have unique names with the scope of the model that contains them
-    return LinkAuthority::CreateLinkCode(name, model.GetModeledElementId());
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_LinkElement, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**

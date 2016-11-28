@@ -41,7 +41,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DimensionStyle : DefinitionElement
 private:
     DgnElementId m_textStyleId;
 
-    static DgnCode CreateCodeFromName(Utf8CP name) {return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationTextStyle);}
+    static DgnCode CreateCode(DgnDbR db, Utf8CP name) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_AnnotationTextStyle, db, name);}
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -49,7 +49,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DgnDbStatus _OnDelete() const override {return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
-    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return ResourceAuthority::IsResourceAuthority(auth);}
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
 
 public:
@@ -60,9 +60,9 @@ public:
     DimensionStylePtr CreateCopy() const {return MakeCopy<DimensionStyle>();}
 
     Utf8String GetName() const {return GetCode().GetValue();}
-    void SetName(Utf8CP value) {T_Super::SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) {T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCodeFromName(name));}
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCode(db, name));}
     static DimensionStyleCPtr Get(DgnDbR db, Utf8CP name) {return Get(db, QueryId(db, name));}
     static DimensionStyleCPtr Get(DgnDbR db, DgnElementId id) {return db.Elements().Get<DimensionStyle>(id);}
     static DimensionStylePtr GetForEdit(DgnDbR db, DgnElementId id) {return db.Elements().GetForEdit<DimensionStyle>(id);}

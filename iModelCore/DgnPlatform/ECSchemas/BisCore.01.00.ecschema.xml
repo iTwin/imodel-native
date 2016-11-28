@@ -104,85 +104,29 @@
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
-    <ECEntityClass typeName="LocalAuthority">
+    <ECEntityClass typeName="NullAuthority" modifier="Sealed">
+        <!-- Authority that issues null codes -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="NamespaceAuthority">
+    <ECEntityClass typeName="DatabaseScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique name+namespace combinations within the scope of the database -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="MaterialAuthority">
+    <ECEntityClass typeName="ModelScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique names within the scope of a model -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="PartitionAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="TrueColorAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ResourceAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DrawingCategoryAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SpatialCategoryAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SubCategoryAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="GeometryPartAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SessionAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="LinkAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DrawingAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SheetAuthority">
+    <ECEntityClass typeName="ElementScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique names within the scope of a "parent" element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>

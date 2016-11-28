@@ -199,7 +199,7 @@ void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
 //---------------------------------------------------------------------------------------
 void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     {
-    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView(viewId, db).get());
+    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::Get(db, viewId).get());
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
@@ -283,10 +283,10 @@ DgnCategoryId DgnDbTestUtils::GetFirstSpatialCategoryId(DgnDbR db)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP authorityName)
+DgnAuthorityId DgnDbTestUtils::InsertDatabaseScopeAuthority(DgnDbR db, Utf8CP authorityName)
     {
     MUST_HAVE_HOST(DgnAuthorityId());
-    DgnAuthorityPtr authority = NamespaceAuthority::CreateNamespaceAuthority(authorityName, db);
+    DgnAuthorityPtr authority = DatabaseScopeAuthority::Create(authorityName, db);
     EXPECT_TRUE(authority.IsValid());
     DgnDbStatus status = authority->Insert();
     EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - Authority insert into %ls failed with %x", WString(authorityName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();

@@ -99,14 +99,14 @@ private:
     mutable TileTextureImagePtr     m_textureImage;
     bool                            m_ignoreLighting;
 
-    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams);
+    TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
     TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
     TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()) {}
     TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
-    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams) { return Create(&graphicParams, &geometryParams); }
-    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) { return new TileDisplayParams(graphicParams, geometryParams); }
+    static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return Create(&graphicParams, &geometryParams, ignoreLighting); }
+    static TileDisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting = false) { return new TileDisplayParams(graphicParams, geometryParams, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, TileTextureImageP textureImage, bool ignoreLighting) { return new TileDisplayParams(fillColor, textureImage, ignoreLighting); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new TileDisplayParams(fillColor, geometryParams); }
     static TileDisplayParamsPtr Create(uint32_t fillColor, DgnMaterialId materialId) { return new TileDisplayParams(fillColor, materialId); }

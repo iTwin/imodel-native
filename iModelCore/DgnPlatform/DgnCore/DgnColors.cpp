@@ -21,7 +21,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTrueColor::CreateParams::CreateParams(DgnDbR db, ColorDef colorDef, Utf8StringCR name, Utf8StringCR book)
-  : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateColorCode(name, book)),
+  : T_Super(db, DgnModel::DictionaryId(), QueryDgnClassId(db), CreateCode(db, name, book)),
     m_colorDef(colorDef)
     {
     //
@@ -63,7 +63,7 @@ void DgnTrueColor::_CopyFrom(DgnElementCR src)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTrueColorId DgnTrueColor::QueryColorId(DgnCode const& code, DgnDbR db)
+DgnTrueColorId DgnTrueColor::QueryColorId(DgnDbR db, DgnCodeCR code)
     {
     return DgnTrueColorId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }

@@ -41,9 +41,9 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
     {
     SetupSeedProject();
 
-    Utf8CP json =
+    Utf8PrintfString json(
         "{"
-        "\"CodeAuthorityId\" : {\"Id\" : \"12\"},"
+        "\"CodeAuthorityId\" : \"%d\","
         "\"CodeNamespace\" : \"\","
         "\"CodeValue\" : \"Hub\","
         "\"Descr\" : \"\","
@@ -52,10 +52,11 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
         "\"Rank\" : 1,"
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null"
-        "}";
+        "}", 
+        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_SpatialCategory).GetValue()));
 
     DgnElementPtr inserted = nullptr;
-    CreateAndInsertElement(inserted, json, BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
+    CreateAndInsertElement(inserted, json.c_str(), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
     ASSERT_TRUE(inserted.IsValid());
     }
 

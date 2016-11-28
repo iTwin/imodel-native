@@ -174,7 +174,7 @@ private:
     BeFileName  GetBinaryDataFileName() const;
 
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
-    Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
+    Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
 

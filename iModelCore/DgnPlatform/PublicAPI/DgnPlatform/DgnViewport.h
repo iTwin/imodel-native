@@ -10,7 +10,7 @@
 
 #include "DgnDb.h"
 #include "ViewController.h"
-#include <folly/futures/Future.h>
+#include "TileTree.h"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -571,7 +571,11 @@ public:
 //=======================================================================================
 struct TileViewport : DgnViewport
 {
-    virtual folly::Future<Render::Image> _CreateTile(ViewControllerR, DRange3dCR npc, Point2dCR tileSize) = 0;
+    BeMutex m_mutex;
+    BSIRect m_rect;
+
+    virtual folly::Future<BentleyStatus> _RenderTile(Render::Image&, ViewControllerR, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    BSIRect _GetViewRect() const override {return m_rect;}
     TileViewport() : DgnViewport(nullptr) {}
 };
 

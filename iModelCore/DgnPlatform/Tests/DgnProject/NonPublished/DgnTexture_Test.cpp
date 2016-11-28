@@ -76,7 +76,7 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     Compare(*tx2Edit, tx2);
 
     tx2Edit->SetDescription("New description");
-    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateTextureCode("Texture2Renamed")));
+    EXPECT_EQ(DgnDbStatus::Success, tx2Edit->SetCode(DgnTexture::CreateCode(db, "Texture2Renamed")));
     tx2Edit->SetImageSource(MakeTextureData(ImageSource::Format::Jpeg, 9, 18), 9, 18);
 
     DgnDbStatus status;
@@ -90,8 +90,8 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     pTx2 = nullptr;
     EXPECT_TRUE(db.Memory().PurgeUntil(0));
 
-    pTx1 = DgnTexture::QueryTexture(tx1.GetTextureId(), db);
-    pTx2 = DgnTexture::QueryTexture(tx2.GetTextureId(), db);
+    pTx1 = DgnTexture::Get(db, tx1.GetTextureId());
+    pTx2 = DgnTexture::Get(db, tx2.GetTextureId());
     ASSERT_TRUE(pTx1.IsValid());
     ASSERT_TRUE(pTx2.IsValid());
 
@@ -110,14 +110,13 @@ TEST_F (DgnTexturesTest, InsertQueryUpdateDelete)
     EXPECT_TRUE(unnamed2.Insert().IsValid());
 
     // Can't query unnamed texture by name
-    EXPECT_FALSE(DgnTexture::QueryTextureId("", db).IsValid());
+    EXPECT_FALSE(DgnTexture::QueryTextureId(db, "").IsValid());
 
     // Can query unnamed textures by ID
-    auto pUnnamed1 = DgnTexture::QueryTexture(unnamed1.GetTextureId(), db),
-         pUnnamed2 = DgnTexture::QueryTexture(unnamed2.GetTextureId(), db);
+    auto pUnnamed1 = DgnTexture::Get(db, unnamed1.GetTextureId()),
+         pUnnamed2 = DgnTexture::Get(db, unnamed2.GetTextureId());
     ASSERT_TRUE(pUnnamed1.IsValid());
     ASSERT_TRUE(pUnnamed2.IsValid());
     EXPECT_EQ(pUnnamed1->GetTextureId(), unnamed1.GetTextureId());
     EXPECT_EQ(pUnnamed2->GetTextureId(), unnamed2.GetTextureId());
     }
-

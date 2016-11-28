@@ -358,4 +358,45 @@ BentleyStatus   PSolidUtil::SweepBodyAxis (PK_BODY_t bodyTag, DVec3dCR revolveAx
     return (BentleyStatus) status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::FixBlends(PK_BODY_t bodyTag)
+    {
+    PK_MARK_t   markTag = PK_ENTITY_null;
 
+    PK_MARK_create(&markTag);
+
+    PK_BODY_fix_blends_o_t options;
+
+    PK_BODY_fix_blends_o_m(options);
+    options.local_check = PK_LOGICAL_true;
+
+    BentleyStatus    status = SUCCESS;
+    int              nBlends = 0;
+    PK_EDGE_t*       edges = nullptr;
+    PK_FACE_t*       blends = nullptr;
+    PK_FACE_array_t* faces = nullptr;
+    PK_blend_fault_t fault;
+    PK_EDGE_t        faultEdge;
+    PK_TOPOL_t       faultTopo;
+    PK_ERROR_code_t  failureCode = PK_BODY_fix_blends(bodyTag, &options, &nBlends, &blends, &faces, &edges, &fault, &faultEdge, &faultTopo);
+
+    if (PK_ERROR_no_errors != failureCode || 0 == nBlends || (PK_blend_fault_no_fault_c != fault && PK_blend_fault_repaired_c != fault))
+        status = ERROR;
+
+    PK_MEMORY_free(blends);
+    PK_MEMORY_free(edges);
+
+    for (int i=0; i < nBlends; i++)
+        PK_MEMORY_free(faces[i].array);
+
+    PK_MEMORY_free(faces);
+        
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+    }

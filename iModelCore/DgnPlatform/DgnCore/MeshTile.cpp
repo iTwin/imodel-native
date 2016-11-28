@@ -550,14 +550,14 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     if (!texMap.IsValid() || !(texId = texMap.GetTextureId()).IsValid())
         return nullptr;
 
-    return DgnTexture::QueryTexture(texId, db);
+    return DgnTexture::Get(db, texId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams) :
-    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (false)
+TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting) :
+    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (ignoreLighting)
     {
     if (nullptr != geometryParams)
         {
@@ -2361,7 +2361,7 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
 
     Transform::FromProduct (localToTile, clone->ComputeTransform()).Multiply (range, range);
                                
-    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 

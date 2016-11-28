@@ -14,7 +14,9 @@ void DgnViewport::DestroyViewport()
     {
     m_elementProgressiveTasks.clear();
     m_terrainProgressiveTasks.clear();
-    RenderQueue().WaitForIdle();
+    if (m_renderTarget.IsValid())
+        RenderQueue().WaitForIdle();
+
     if (m_viewController.IsValid())
         {
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
