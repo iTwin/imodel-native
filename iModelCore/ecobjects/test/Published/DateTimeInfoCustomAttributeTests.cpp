@@ -27,14 +27,21 @@ struct DateTimeInfoTestFixture : ECTestFixture
             Utf8String expectedActualStr;
             expectedActualStr.Sprintf("Expected: %s - Actual: %s", expected.ToString().c_str(), actual.ToString().c_str());
 
-            if (ignoreDateTimeInfo)
+            ASSERT_EQ(expected.GetYear(), actual.GetYear()) << expectedActualStr.c_str();
+            ASSERT_EQ(expected.GetMonth(), actual.GetMonth()) << expectedActualStr.c_str();
+            ASSERT_EQ(expected.GetDay(), actual.GetDay()) << expectedActualStr.c_str();
+
+            if (actual.GetInfo().GetComponent() != DateTime::Component::Date &&
+                expected.GetInfo().GetComponent() != DateTime::Component::Date)
                 {
-                EXPECT_TRUE(expected.Equals(actual, true)) << "DateTimes are expected to be equal except for date time info. " << expectedActualStr.c_str();
-                EXPECT_FALSE(expected == actual) << "DateTime metadata is expected to differ. " << expectedActualStr.c_str();
-                }
-            else
-                {
-                EXPECT_TRUE(expected == actual) << "DateTimes are expected to be equal. " << expectedActualStr.c_str();
+
+                if (!ignoreDateTimeInfo)
+                    ASSERT_EQ(expected.GetInfo(), actual.GetInfo()) << expectedActualStr.c_str();
+
+                ASSERT_EQ(expected.GetHour(), actual.GetHour()) << expectedActualStr.c_str();
+                ASSERT_EQ(expected.GetMinute(), actual.GetMinute()) << expectedActualStr.c_str();
+                ASSERT_EQ(expected.GetSecond(), actual.GetSecond()) << expectedActualStr.c_str();
+                ASSERT_EQ(expected.GetMillisecond(), actual.GetMillisecond()) << expectedActualStr.c_str();
                 }
             }
 
@@ -440,10 +447,10 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeTicks)
     EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to match with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue("utc", ticksWithDateOnly);
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Utc)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to match with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue("dateonly", ticksWithUtc);
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to mismatch with the DateTimeInfo custom attribute.";
+    EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Utc): Expected to match with the DateTimeInfo custom attribute.";
 
     stat = instance->SetValue("dateonly", ticksWithDateOnly);
     EXPECT_EQ(ECObjectsStatus::Success, stat) << "IECInstance::SetValue> DateTimeInfo (Date)  - ECValue::SetDateTimeTicks (ticks, Date): Expected to match with the DateTimeInfo custom attribute.";
@@ -707,7 +714,7 @@ TEST_F(ECInstanceGetSetDateTimeTestFixture, SetDateTimeArrayWithMismatchingArray
     expected[1] = DateTime(DateTime::Kind::Unspecified, 2012, 1, 1, 13, 14);
     expectedSuccess[1] = ECObjectsStatus::DataTypeMismatch;
     expected[2] = DateTime(2011, 1, 1);
-    expectedSuccess[2] = ECObjectsStatus::DataTypeMismatch;
+    expectedSuccess[2] = ECObjectsStatus::Success;
 
     instance->AddArrayElements(propertyName, expectedArraySize);
     for (uint32_t i = 0; i < expectedArraySize; i++)

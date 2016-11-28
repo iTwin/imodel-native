@@ -1079,6 +1079,12 @@ ECObjectsStatus IECInstance::ValidateDateTimeMetadata(uint32_t propertyIndex, EC
             return stat;
             }
 
+        if (dateTimeInfo.IsValid() && dateTimeInfo.GetKind() == DateTime::Kind::Local)
+            {
+            LOG.error("ECProperties with DateTime kind 'Local' not supported.");
+            return ECObjectsStatus::DataTypeMismatch;
+            }
+
         if (!v.DateTimeInfoMatches(dateTimeInfo))
             {
             LOG.error("Setting a DateTime ECValue in ECInstance failed. DateTime metadata in ECValue mismatches the DateTimeInfo custom attribute on the respective ECProperty");
