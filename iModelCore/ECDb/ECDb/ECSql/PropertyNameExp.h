@@ -76,17 +76,13 @@ struct PropertyNameExp : ValueExp
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
-        bool IsWrittenTo() const
+        bool IsLhsAssignmentOperandExpression() const
             {
-            if (this->FindParent(Exp::Type::Insert))
-                {
-                return  GetParent()->GetType() == Exp::Type::PropertyNameList;
-                }
+            if (FindParent(Exp::Type::Insert))
+                return GetParent()->GetType() == Exp::Type::PropertyNameList;
 
-            if (this->FindParent(Exp::Type::Update))
-                {
-                return  GetParent()->GetType() == Exp::Type::Assignment;
-                }
+            if (FindParent(Exp::Type::Update))
+                return GetParent()->GetType() == Exp::Type::Assignment;
 
             return false;
             }

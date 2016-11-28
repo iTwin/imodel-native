@@ -193,8 +193,8 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/) 
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses),  m_writeData(false)
+ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/, bool forAssignmentExpression /*= false*/) 
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses),  m_isForAssignmentExpression(forAssignmentExpression)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
@@ -238,7 +238,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
         DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
         BeAssert(overFlowColumn != nullptr);
         //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
-        if (m_writeData)
+        if (m_isForAssignmentExpression)
             {
             //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
             result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
