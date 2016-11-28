@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMPointDrawer.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -73,7 +73,7 @@ private:
     BcDTMP m_dtmElement;
     DTMElementPointsHandler::DisplayParams &m_displayParams;
     DTMDrawingInfo& m_drawingInfo;
-    const uint32_t m_id;
+    const UInt32 m_id;
     double const m_rescaleFactor;
     PointAndTextDrawer* m_drawer;
     ViewContextP m_context;
@@ -94,7 +94,7 @@ public:
         BcDTMP DTMDataRefXAttribute,
         DTMElementPointsHandler::DisplayParams& displayParams,
         DTMDrawingInfo  &drawingInfo,
-        uint32_t id,
+        UInt32 id,
         double rescaleFactor,
         std::function<void (DTMStrokeForPoints& stroker, BcDTMP dtm, const DTMFenceParams& fenceParams, DTMFeatureCallback defaultCallback)> browsePointsFunction = nullptr
         );

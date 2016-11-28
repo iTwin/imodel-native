@@ -39,16 +39,16 @@ struct DTMFeatureEnumerator : RefCountedBase
             {
             }
 
-        // these three methods form the basis of an iterator for use with 
-        // a range-based for loop 
+        // these three methods form the basis of an iterator for use with
+        // a range-based for loop
         bool
             operator!= (const iterator& other) const
             {
             return m_pos != other.m_pos;
             }
 
-        // this method must be defined after the definition of IntVector 
-        // since it needs to use it 
+        // this method must be defined after the definition of IntVector
+        // since it needs to use it
         BENTLEYDTM_EXPORT DTMFeatureInfo operator* () const;
         BENTLEYDTM_EXPORT DRange3d GetRange3d () const;
         BENTLEYDTM_EXPORT const iterator& operator++ ();
@@ -120,12 +120,11 @@ struct DTMFeatureEnumerator : RefCountedBase
         m_readSourceFeatures = value;
         }
 
-    public: void ClearFilterByUserTag()
+    public: void ClearFilterByUserTag ()
         {
         m_userTagLow = 1;
         m_userTagHigh = 0;
         }
-
     public: bool GetUserTagFilterRange (DTMUserTag& low, DTMUserTag& high) const
         {
         low = m_userTagLow;
@@ -209,15 +208,15 @@ struct DTMMeshEnumerator : RefCountedBase
                 delete m_polyface;
             }
 
-        // these three methods form the basis of an iterator for use with 
-        // a range-based for loop 
+        // these three methods form the basis of an iterator for use with
+        // a range-based for loop
         bool operator!= (const iterator& other) const
             {
             return m_pos != other.m_pos && m_pos2 != other.m_pos2;
             }
 
-        // this method must be defined after the definition of IntVector 
-        // since it needs to use it 
+        // this method must be defined after the definition of IntVector
+        // since it needs to use it
         BENTLEYDTM_EXPORT PolyfaceQueryP operator* () const;
         BENTLEYDTM_EXPORT DRange3d GetRange () const;
         BENTLEYDTM_EXPORT const iterator& operator++ ();
@@ -260,6 +259,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: void ScanAndMarkRegion(long featureId,long& minPnt, long& maxPnt) const;
     private: int bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum = -1) const;
     private: int bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const;
+    private: bool bcdtmList_isPointOnRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1) const;
     private: bool bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const;
     private: int bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const;
 
@@ -356,7 +356,7 @@ struct DTMMeshEnumerator : RefCountedBase
 //
 // Other Enumerators
 //  --- Meshes/Triangles with Shading.
-//  --- Ponds  
+//  --- Ponds
 //  --- tinPointsVisibility, tinLinesVisibility, RadialView, RegionView
 //  --- DrainageFeatures
 

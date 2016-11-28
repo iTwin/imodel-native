@@ -144,6 +144,7 @@ BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainMo
     <ClInclude Include="src\IDtmProvider.h" />
     <ClInclude Include="src\PCGroundTIN.h" />
     <ClInclude Include="src\PCThreadUtilities.h" />
+    <ClInclude Include="src\TriangleSearcher.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AutomaticGroundDetectionPCH.cpp" />
@@ -158,6 +159,7 @@ BentleyBuild.py -ax64 -p AutomaticGroundDetection -f  TerrainModel -r  TerrainMo
     <ClCompile Include="src\IPointsProvider.cpp" />
     <ClCompile Include="src\PCGroundTIN.cpp" />
     <ClCompile Include="src\PCThreadUtilities.cpp" />
+    <ClCompile Include="src\TriangleSearcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="AutomaticGroundDetection.mke" />

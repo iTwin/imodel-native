@@ -2,12 +2,17 @@
 #
 #     $Source: ElementHandler/Commands/commands.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
-%include  mdl.mki
 
 baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelElementPolicy.mki
+#SolutionPolicyMki=$(baseDir)TerrainModelElementHandlerApp.mki
+
+appendMacroSeparator=;
+PolicyPaths+$(BuildContext)SubParts/Assemblies/
+%undef appendMacroSeparator
 
 # This isn't great, but we're in a weird situation.  For some reason this is in a separate
 #  partfile, but needs to access PowerPlatform.FeatureAspects.h.  This file is linked into
@@ -15,6 +20,15 @@ baseDir         = $(_MakeFilePath)
 #  I can make to get this building will be to just include it from the gensrc location.
 #  It might be better to call the PowerProductSDK-postwire part earlier?
 GensrcInclude = $(OutputRootDir)build/PowerPlatform/gensrc/
+
+%include  mdl.mki
+
+### To go into solution policy file
+
+%if !exists ($(GensrcInclude))
+  PowerProductSDK         = $(BuildContext)SubParts/PowerProductSDK/
+  GensrcInclude            = $(PowerProductSDK)Include/
+%endif
 
 BentleyTerrainModelcommandsObj       = $(terrainModelBuildDir_)Commands/
 
@@ -34,16 +48,23 @@ dirToSearch     = $(TerrainModelElementHandlerDir)handler
 
 dirToSearch     = $(BentleyTerrainModelcommandsObj)
 %include cincapnd.mki
-
+ 
 dirToSearch     = $(GensrcInclude)
 %include    cincapnd.mki
 
 moreRscCompileOpts  + -i$(GensrcInclude)
 
-o               = $(BentleyTerrainModelcommandsObj)
-gensrcTransKit  = $(o)
+#MultiCompileIntermediatePdbFile=$(terrainModelHandlerAppObj)$(CCompPDBName).pdb
+#IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
 
-appName         = TerrainModelCommands
+
+## End of Solution Policy..
+
+o = $(BentleyTerrainModelcommandsObj)
+gensrcTransKit = $(o)
+
+appName             = TerrainModelCommands
+sAppName            = TerrainModelCommands
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -61,7 +82,7 @@ always:
 #----------------------------------------------------------------------
 appRscs = \
     $(o)commandsCmd.rsc \
-    $(o)commandsTyp.rsc
+	$(o)commandsTyp.rsc
 
 #----------------------------------------------------------------------
 #       Create output directory
@@ -206,31 +227,15 @@ MA_CONTEXT_LOCATION = $(ContextDeliveryDir)
 $(ContextDeliveryDir)TranskitInclude/TerrainModelAppHeaders/commandsDefs.h : $(_MakeFilePath)commandsDefs.h
     $(LinkFirstDepToFirstTarget)
 
-MuiTranskitSourceDir = $(basedir)
+MuiTranskitSourceDir = $(basedir)Transkit/
 MuiBaseName = $(sAppName).ma
 MuiTranskitDeliveryDir = $(ContextDeliveryDir)TransKit/TerrainModelCommands/
 MuiAdditionalIncludes = $(o) $(GensrcInclude)
 
 %include $(SharedMki)CreateAndSymlinkMui.mki
 
-#----------------------------------------------------------------------
-# Temporary hack... place a link in mdlapps directory.  I can't get
-#                   the app to load from the ExampleApps directory
-#----------------------------------------------------------------------
-##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/TerrainModelApp.dll : $(terrainModel_bin)TerrainModelApp.dll
-##    $(LinkFirstDepToFirstTarget)
-
-##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/TerrainModelApp.ma : $(terrainModel_bin)TerrainModelApp.ma
-##    $(LinkFirstDepToFirstTarget)
-
-##$(OutputRootDir)Product/Mstn/MicroStation/mdlapps/en/TerrainModelApp.ma.mui : $(terrainModel_bin)TerrainModelApp.ma.mui
-##    $(LinkFirstDepToFirstTarget)
-
-#$(OutputRootDir)Product/Mstn/MicroStation/config/appl/TerrainModel.cfg : $(basedir)TerrainModel.cfg
-#    $(LinkFirstDepToFirstTarget)
-
-#$(OutputRootDir)Product/Mstn/MicroStation/config/appl/TerrainModel.cfg : $(basedir)TerrainModel.cfg
-#    $(LinkFirstDepToFirstTarget)
+#always:
+#   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
 
 always:
-   @SymLinkResxTranskitFiles.py $(baseDir)transkit.xml $(o) $(MuiTranskitDeliveryDir)
+   @SymLinkResxTranskitFiles.py $(basedir)Transkit.xml $(o)Managed\ $(MuiTranskitDeliveryDir)Managed\

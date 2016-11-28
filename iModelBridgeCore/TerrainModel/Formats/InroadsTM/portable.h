@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* portable.h                                                                 */
@@ -64,7 +64,6 @@
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE
 #endif
-#pragma warning( disable : 4996)
 
 
 #include <afxwin.h>                     // MFC core and standard components
@@ -76,28 +75,6 @@
 #include <afxole.h>
 #endif
 
-////-------------------------------------------------------------------
-//// Defines Needed for MicroStation Header Files
-////-------------------------------------------------------------------
-//
-//#ifndef winNT
-//#define winNT
-//#endif
-//
-//#ifndef NO_BOOLEAN_TYPE
-//#define NO_BOOLEAN_TYPE
-//#endif
-//
-//#ifndef NO_IODEFS
-//#define NO_IODEFS
-//#endif
-//
-//#ifndef NO_LEGACY_DVEC3D
-//#ifndef LEGACY_DVEC3D
-//#define LEGACY_DVEC3D
-//#endif
-//#endif
-
 //-------------------------------------------------------------------
 // MicroStation Header Files
 //-------------------------------------------------------------------
@@ -108,24 +85,12 @@
 #include <Bentley/DateTime.h>
 #include <Bentley/BeFilename.h>
 #include <BeSQLite/BeSQLite.h>
-//#include <DgnPlatform\DgnPlatformAPI.h>
-//#include <Mstn\MstnPlatformAPI.h>
-//
-//#include <Mstn\MdlApi\MdlApi.h>
-//#include <Mstn\MdlApi\deprecated_beijing.fdf>
-//#include <Mstn\MdlApi\mstextstyle.fdf>
-//#include <Mstn\MdlApi\msdgnobj.fdf>
-//#include <Mstn\MdlApi\msunits.fdf>
-//#include <Mstn\MdlApi\mssheetdef.fdf>
 
 using namespace BENTLEY_NAMESPACE_NAME;
-//using namespace Bentley::DgnPlatform;
 
 //-------------------------------------------------------------------
 // Standard product pragmas
 //-------------------------------------------------------------------
-
-#pragma warning(disable:4100 4505 4189 4805 4800)          /* unreferenced formal parameter       */
 
 //-------------------------------------------------------------------
 // Standard product definitions
@@ -136,12 +101,6 @@ using namespace BENTLEY_NAMESPACE_NAME;
 #endif
 
 #define DEFAULT_OBJECT_NAME DEFAULT_PREFERENCE_NAME
-
-#define USERDATAPTRGET( hWnd ) (( hWnd ) ? GetWindowLong(( hWnd ), GWLP_USERDATA ) : NULL )
-#define USERDATAPTRSET(hWnd, pUserData) ( (hWnd) ? (boolean) SetWindowLong ( (hWnd), GWLP_USERDATA, (long)(pUserData) ) : FALSE )
-
-
-
 
 // ------------- DH Added -------------------
 #ifndef _AFXDLL
@@ -302,8 +261,6 @@ class CPtrArray :public CArray<void*>
 BentleyStatus BeGetUserName (WStringR s);
 
 #define _tcscpy wcscpy
-//#define _mbsncmp(a,b,c) strncmp((char*)a, (char*)b, b)
-//#define _mbsncpy(a,b,c) strncpy((char*)a, (char*)b, b)
 #define _T(a) L a
 #define TEXT(a) a
 #define LCID long

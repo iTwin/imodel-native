@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LidarImporter.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -128,4 +128,3 @@ bvector<LidarImporter::ClassificationInfo> const& LidarImporter::GetClassificati
         }
     return m_classificationInfo;
     }
- 

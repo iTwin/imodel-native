@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayUtils.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
@@ -90,6 +90,9 @@ bool GetViewVectorPoints (DTMDrawingInfo& drawingInfo, ViewContextR context, DTM
     Transform trans;
     context.GetCurrLocalToFrustumTrans (trans);
     trans.inverseOf (&trans);
+
+    if (!context.GetIPickGeom ())
+        return false;
 
     point = context.GetIPickGeom ()->GetPickPointRoot();
 
@@ -196,7 +199,7 @@ bool GetUpdateRangeFromRangeNPCSubRect (ViewContextR viewContext, DTMUnitsConver
     ::DMatrix4d   npcToLocal = viewContext.GetFrustumToNpc().M1;
     ::DMap4d      npcSubRectMap;
     npcSubRectMap.initFromRanges (&refClipRange.low, &refClipRange.high, &polyhedron[NPC_000], &polyhedron[NPC_111]);
-    npcToLocal.InitProduct (&npcToLocal, &npcSubRectMap.M1);
+    npcToLocal.productOf (&npcToLocal, &npcSubRectMap.M1);
 
     npcToLocal.multiplyAndRenormalize (polyhedron, polyhedron, NPC_CORNER_COUNT);
     viewContext.FrustumToLocal(polyhedron, polyhedron, NPC_CORNER_COUNT);
@@ -505,6 +508,8 @@ bool GetVisibleAreaForView(::DPoint3d** areaPt, int& nbPts, const DPoint3d viewB
     DRange3d dtmViewRange;
     bool isVisible = false;
        
+    if (dtmRange.IsEmpty ())
+        return false;
     dtmViewRange = dtmRange;
      
     DPoint3d dtmBox[8];    
@@ -576,6 +581,8 @@ bool GetVisibleFencePointsFromContext(::DPoint3d*& fencePt, int& nbPts, ViewCont
     {
     purposeMethod method = WholeDTM;
 
+    if (dtmRange.IsEmpty ())
+        return false;
     if (_countof (purposeUseScanCriteria) > static_cast<size_t>(context->GetDrawPurpose ()))
         method = purposeUseScanCriteria [static_cast<size_t>(context->GetDrawPurpose ())];
 
@@ -700,7 +707,7 @@ DgnModelRefP GetModelRef (ElementHandleCR element)
 
     modelRef = element.GetDgnModelP();
     if (modelRef) return modelRef;
-    if (IViewManager::GetActiveViewSet().GetSelectedViewport())
+    if (nullptr != &DgnViewLib::GetHost () && IViewManager::GetActiveViewSet ().GetSelectedViewport ())
         modelRef = IViewManager::GetActiveViewSet().GetSelectedViewport()->GetTargetModel();
     BeAssert (modelRef);
     return modelRef;
@@ -725,7 +732,7 @@ DgnModelRefP GetActivatedModel (ElementHandleCR element, ViewContextCP context)
     if (context && context->GetViewport())
         return context->GetViewport()->GetRootModel();
 
-    if (IViewManager::GetActiveViewSet().GetSelectedViewport())
+    if (nullptr != &DgnViewLib::GetHost () && IViewManager::GetActiveViewSet ().GetSelectedViewport ())
         return IViewManager::GetActiveViewSet ().GetSelectedViewport ()->GetRootModel ();
     return element.GetModelRef()->GetRoot();
 //ToDo    return DTMSessionMonitor::GetInstance().GetActive ();
@@ -733,9 +740,12 @@ DgnModelRefP GetActivatedModel (ElementHandleCR element, ViewContextCP context)
 
 void RedrawElement (ElementHandleR element)
     {
-    RedrawElems redraw (nullptr, DRAW_MODE_Erase, DrawPurpose::ChangedPre, true);
-    redraw.SetViews (IViewManager::GetActiveViewSet(), 0xffff);
-    redraw.DoRedraw (element);
+    if (nullptr != &DgnViewLib::GetHost ())
+        {
+        RedrawElems redraw (nullptr, DRAW_MODE_Erase, DrawPurpose::ChangedPre, true);
+        redraw.SetViews (IViewManager::GetActiveViewSet (), 0xffff);
+        redraw.DoRedraw (element);
+        }
     }
 
 /*=================================================================================**//**
@@ -780,7 +790,7 @@ struct DTMTranslationManager
         d.put ((Int8*)&trsf, sizeof(trsf.form3d));
 
         XAttributeHandlerId handlerId (TMElementMajorId, XATTRIBUTES_SUBID_DTM_TRANSLATION);
-        element.ScheduleWriteXAttribute(handlerId, 1, (uint32_t)d.getBytesWritten(), d.getBuf());
+        element.ScheduleWriteXAttribute(handlerId, 1, (UInt32)d.getBytesWritten(), d.getBuf());
         }
     };
 

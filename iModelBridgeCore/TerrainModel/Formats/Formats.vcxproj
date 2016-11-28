@@ -55,7 +55,7 @@
     <NMakePreprocessorDefinitions>__BENTLEYTMFORMATS_BUILD__;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501; _WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64
 </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"
+    <NMakeReBuildCommandLine>python.exe $(SrcBsiCommon)build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64  -d"BMAKE_OPT=$(BMAKE_OPT) -a"
 </NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -p Formats -f TerrainModel -r TerrainModel re Formats -x64 -c
 </NMakeCleanCommandLine>
@@ -166,6 +166,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModel
     <ClInclude Include="msl_array.h" />
     <ClInclude Include="MXModelFile.h" />
     <ClInclude Include="mxtriangle.h" />
+    <ClInclude Include="PublicAPI\InroadsExporter.h" />
     <ClInclude Include="TriangulationPreserver.h" />
     <ClInclude Include="PublicAPI\Esri.h" />
     <ClInclude Include="PublicAPI\Formats.h" />
@@ -186,6 +187,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModel
     <ClCompile Include="bcdtmLidar.cpp" />
     <ClCompile Include="bcdtmMX.cpp" />
     <ClCompile Include="ImagePP.cpp" />
+    <ClCompile Include="InroadsExporter.cpp" />
     <ClCompile Include="InroadsImporter.cpp" />
     <ClCompile Include="InroadsTM\actprj.cpp" />
     <ClCompile Include="InroadsTM\addftr.cpp" />
@@ -232,6 +234,7 @@ xcopy /Y /r $(OutRoot)Winx64\Build\TerrainModel\TerrainModelFormats\TerrainModel
     <ClCompile Include="InroadsTM\heapmanager.cpp" />
     <ClCompile Include="InroadsTM\hshftr.cpp" />
     <ClCompile Include="InroadsTM\hshuti.cpp" />
+    <ClCompile Include="InroadsTM\InroadsTM.cpp" />
     <ClCompile Include="InroadsTM\insbnd.cpp" />
     <ClCompile Include="InroadsTM\intsct.cpp" />
     <ClCompile Include="InroadsTM\intuti.cpp" />

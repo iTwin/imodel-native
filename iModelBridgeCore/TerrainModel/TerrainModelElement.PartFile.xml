@@ -2,6 +2,8 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
+<!--        <SubPart PartName="Ustation"            PartFile="PowerPlatform"     Repository="MstnPlatform" /> -->
+
     <Part Name="ElementHandler" BMakeFile="elementhandler\handler\handler.mke">
         <SubPart PartName="DgnPlatformDll" PartFile="DgnPlatform"     Repository="DgnPlatform" />
         <SubPart PartName="DgnView"     PartFile="DgnDisplay"      Repository="DgnDisplay" />
@@ -27,7 +29,6 @@
     <Part Name="ElementHandlerNET" BMakeFile="elementhandler\handlerNET\handlerNET.mke">
         <SubPart PartName="ElementHandler"  />
         <SubPart PartName="TerrainModel"         PartFile="TerrainModel" />
-        <SubPart PartName="Ustation" PartFile="PowerPlatform" Repository="MstnPlatform" />
         <SubPart PartName="DgnPlatformNETAssembly"  PartFile="DgnPlatformNET" Repository="DgnPlatformNET" />
 
         <Bindings>

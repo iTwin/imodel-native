@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/Utils.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "StdAfx.h"
@@ -50,21 +50,6 @@ enum IntersectionType : long
     INTERSECTION_TYPE_Triangle  = 3,
     };
 
-/// <author>Piotr.Slowinski</author>                            <date>10/2011</date>
-inline DPoint3d operator- (DPoint3dCR p1, DPoint3dCR p2)
-    {
-    DPoint3d p = {p1.x - p2.x, p1.y - p2.y, p1.z - p2.z};
-    return p;
-    }
-
-/// <author>Piotr.Slowinski</author>                            <date>10/2011</date>
-inline DPoint3dR operator-= (DPoint3dR p1, DPoint3dCR p2)
-    {
-    p1.x -= p2.x;
-    p1.y -= p2.y;
-    p1.z -= p2.z;
-    return p1;
-    }
 
 DMatrix4d GetMatrixWorldToView(int view)
     {
@@ -72,7 +57,7 @@ DMatrix4d GetMatrixWorldToView(int view)
     if (!mdlView_isValidIndex(view))
         {
         BeAssert(0);
-        bsiDMap4d_InitIdentity (&worldToViewMap);
+        bsiDMap4d_initIdentity (&worldToViewMap);
         }
     else
         mdlView_getHomogeneousMaps(NULL, NULL, &worldToViewMap, NULL, NULL, NULL, NULL, NULL, view);
@@ -81,7 +66,7 @@ DMatrix4d GetMatrixWorldToView(int view)
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>9/2011</date>
-static StatusInt PrepareDimensionElement (EditElementHandleR element, double val, int viewNumber)
+static StatusInt PrepareDimensionElement (EditElementHandleR element, double val, int viewNumber, DgnModelRef* dtmModelRef = nullptr)
     {
     MSElement dimElem;
     StatusInt       status;
@@ -96,7 +81,11 @@ static StatusInt PrepareDimensionElement (EditElementHandleR element, double val
     BeAssert (SUCCESS == status && "mdlDim_create failed");
     if (SUCCESS != status)
         return status;
-    dstModelRef = ACTIVEMODEL;
+
+    if (dtmModelRef == nullptr)
+        dstModelRef = ACTIVEMODEL;
+    else
+        dstModelRef = dtmModelRef;
 
     element.SetModelRef (dstModelRef);
     element.SetElementDescr (EditElementHandle (&dimElem, dstModelRef).ExtractElementDescr(), true, false, dstModelRef);
@@ -205,7 +194,7 @@ static void ConvertToText (WStringR t, double val, ViewportP vp, DgnModelRef* dt
     EditElementHandle  elemHandle;
     bool            /*OWNED = true,*/ /*IS_UNMODIFIED = true,*/ CHECK_RANGE = true, CHECK_SCAN_CRITERIA = true;
 
-    status = PrepareDimensionElement (elemHandle, val, vp->GetViewNumber());
+    status = PrepareDimensionElement (elemHandle, val, vp->GetViewNumber (), dtmModelRef);
     BeAssert (SUCCESS == status && "PrepareDimensionElement failed");
     
     TextExtractorViewContext context;
@@ -235,7 +224,7 @@ void ConvertToTextBlock (TextBlockPtr& tb, double elevation, ViewportP vp, DgnMo
     WString buf;
 
     memset (&tpw, 0, sizeof (tpw));
-    if (!ConvertToTextBlock (buf, elevation, vp, dtmModelRef))
+    if (!ConvertToTextBlock (buf, elevation, vp, dtmModelRef) || buf.empty () || buf.CompareTo (L"0") == 0)
         { return; }
     dstModelRef = ACTIVEMODEL;
     mdlTextStyle_getTextParamWideFromTCB (&tpw, &txtScale.x, &txtScale.y, &lineLength, !IS_TEXT_NODE);
@@ -311,21 +300,14 @@ bool     PrepText (TextBlockPtr& rtb, ElementHandleCR elHandle, DgnButtonEventCR
 
     converter.FullRootUorsToRefMeters (cPt);
 
-    Transform trans;
-    Transform transInv;
-    mdlTMatrix_getIdentity (&trans);
-    DTMElementHandlerManager::GetStorageToUORMatrix (trans, elHandle);
-    transInv.inverseOf(&trans);
     DPoint3d cStoragePt = cPt;
-    transInv.multiply (&cStoragePt);
 
-    dtm->GetDTMDraping()->DrapePoint (&elevation, &slope, &aspect, triangle, &drapeType, cStoragePt);
+    dtm->GetDTMDraping()->DrapePoint (&elevation, &slope, &aspect, triangle, drapeType, cStoragePt);
     cStoragePt.z = elevation;
-    trans.multiply (&cStoragePt);
 
     cPt.z = cStoragePt.z;
     // Encode Labels
-    DPoint3d ptGO;
+    DVec3d ptGO;
     mdlModelRef_getGlobalOrigin (elHandle.GetModelRef(), &ptGO);
     cPt -= ptGO;
 
@@ -525,10 +507,10 @@ struct LabelContoursCollector
                 if (SUCCESS == ih.GetDtmDataRef()->GetDTMReferenceDirect (dtm))
                     {
                     double aspect;
-
-                    dtm->GetDTMDraping()->DrapePoint (NULL, NULL, &aspect, NULL, NULL, pt) ;
+                    int drapeType;
+                    dtm->GetDTMDraping()->DrapePoint (NULL, NULL, &aspect, NULL, drapeType, pt) ;
                     angleVec.rotate (-aspect * PI / 180.);
-                    if (angleVec.y < 0.)
+                    if (angleVec.y > 0.)
                         { m_angle -= PI; }
                     }
                 }
@@ -561,15 +543,16 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
     LazyStorageToUORTransformProvider&  m_stu;
     double                  m_factor;
     DPoint3d                m_globalOrigin;
+    bool                    m_ignore;
 
     public: ContoursIntersectOutput
                 (
                 LabelContoursCollector&             textCollector,
                 LazyStorageToUORTransformProvider&  stu
-                ) : m_textCollector (textCollector), m_stu (stu), m_processFirstIntersection (false)
+                ) : m_textCollector (textCollector), m_stu (stu), m_processFirstIntersection (false), m_ignore(false)
                 {}
 
-    private: ViewportP GetViewport (void)
+   private: ViewportP GetViewport (void)
                  { return GetViewContext()->GetViewport(); }
 
     public: void ContoursIntersectOutput::SetDTMRef (DTMDataRefPtr value, ElementHandleCR elem)
@@ -626,7 +609,7 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
 
                    if (numIntersectPts > 0)
                        {
-                       DPoint3d    pt;
+                       DVec3d originShift;
 
                        if (m_processFirstIntersection)
                            {
@@ -636,14 +619,16 @@ struct ContoursIntersectOutput : public SimplifyViewDrawGeom, public Intersectio
 
                        if (m_sheet)
                            {
-                           pt = points[0];
+                           DPoint3d pt = points[0];
                            mdlTMatrix_transformPoint (&pt, &m_stu.GetTransform());
-                           pt -= m_globalOrigin;
+                           originShift = pt -m_globalOrigin;
                            }
                        else
-                           { pt =  m_activeUORs[0] - m_globalOrigin;}
+                           { 
+                           originShift = m_activeUORs[0] - m_globalOrigin;
+                           }
 
-                       m_textCollector.PreTraverse (pt.z * m_factor, GetViewport()->GetViewNumber());
+                       m_textCollector.PreTraverse (originShift.z * m_factor, GetViewport()->GetViewNumber());
                        for (DPoint3dCP intersectionPt = &intersectPtsA[0]; intersectionPt < &intersectPtsA[numIntersectPts]; ++intersectionPt)
                            { m_textCollector.OnIntersection (*intersectionPt, *this); }
                        }
@@ -717,6 +702,7 @@ struct ContoursIntersectContext : public ViewContext
             fencePts[4].y = drange.low.y;
             fencePts[4].z = 0;
 
+            DTMSubElementContext subElementContext;
             DTMElementHandlerManager::GetElementForSymbology (inEl, symbologyElem, ACTIVEMODEL);
             DTMSubElementIter &iter = *DTMSubElementIter::Create (symbologyElem);
             for (; iter.IsValid (); iter.ToNext ())
@@ -726,10 +712,10 @@ struct ContoursIntersectContext : public ViewContext
                     RefCountedPtr<DTMElementContoursHandler::DisplayParams> params = DTMElementContoursHandler::DisplayParams::From (iter);
                     if (params->GetIsMajor () || dtmcommandsInfoP->annotateContoursMode == OPTIONBUTTONIDX_AllContours)
                         {
-                        if (GetLocalToView().coff[0][2] == 0)
-                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, _countof(fencePts)));
+                        if (GetLocalToView ().coff[0][2] == 0)
+                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (DTMFenceType::Block, DTMFenceOption::Overlap, fencePts, _countof (fencePts)), subElementContext);
                         else
-                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams ()); //FenceType_Block, FenceOption_Overlap, fencePts, 5));
+                            DTMElementDisplayHandler::DrawSubElement (inEl, iter, *this, DTMFenceParams (), subElementContext); //FenceType_Block, FenceOption_Overlap, fencePts, 5));
                         }
                     }
                 }
@@ -909,7 +895,7 @@ void    DimStyleChangeContours (DgnModelRefP modelRef, ElementId styleId, Dimens
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>09/2011</date>
-void        StartSequence (uint64_t cmdNum)
+void        StartSequence (UInt64 cmdNum)
     {
     StartViewMonitor ();
     switch (cmdNum)
@@ -934,7 +920,7 @@ void        StartSequence (uint64_t cmdNum)
     }
 
 /// <author>Piotr.Slowinski</author>                            <date>09/2011</date>
-void        EndSequence (uint64_t cmdNum)
+void        EndSequence (UInt64 cmdNum)
     {
     switch (cmdNum)
         {

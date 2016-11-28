@@ -87,6 +87,8 @@ $(o)GroundDetectionManager$(oext) : $(groundDetectSrcDir)GroundDetectionManager.
 
 $(o)PCThreadUtilities$(oext) : $(groundDetectSrcDir)PCThreadUtilities.cpp $(groundDetectSrcDir)PCThreadUtilities.h  ${MultiCompileDepends}
 
+#$(o)TriangleSearcher$(oext) : $(groundDetectSrcDir)TriangleSearcher.cpp $(groundDetectSrcDir)TriangleSearcher.h  ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 
@@ -117,6 +119,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BaseGeoCoord.lib \
     $(ContextSubpartsLibs)Bentley.lib \
     $(ContextSubpartsLibs)BentleyGeom.lib \
+    $(ContextSubpartsLibs)CGAL.lib \
     ws2_32.lib \
     $(ContextSubpartsLibs)TerrainModelCore.lib \
     $(ContextSubpartsLibs)TerrainModelFormats.lib

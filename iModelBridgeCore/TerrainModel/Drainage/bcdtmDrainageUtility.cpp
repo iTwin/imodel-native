@@ -2,7 +2,7 @@
 |
 |     $Source: Drainage/bcdtmDrainageUtility.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
@@ -32,7 +32,7 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
 //
    {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
-    long voidTrg ;
+    bool voidTrg ;
     bool trgFound=false ;
 
     // Log Parameters
@@ -91,7 +91,7 @@ int bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject
       {
        if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Flow Direction On The Fly") ;
        voidTriangle = false ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint3,trgPoint2,&voidTrg) ) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint3,trgPoint2,voidTrg) ) goto errexit ;
        if( voidTrg ) voidTriangle = true ;
        flowDirection = bcdtmDrainage_getTriangleFlowDirectionDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3) ;
       } 
@@ -139,7 +139,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
 //
    {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
-    long   voidTrg ;
+    bool   voidTrg ;
     double trgSlope,trgAscentAngle,trgDescentAngle ;
     bool trgFound=false ;
 
@@ -198,7 +198,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
     else 
       {
        voidTriangle = false ;
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,&voidTrg) ) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,voidTrg) ) goto errexit ;
        if( voidTrg ) voidTriangle = true ;
        if( bcdtmDrainage_getTriangleDescentAndAscentAnglesDtmObject(dtmP,trgPoint1,trgPoint2,trgPoint3,&trgDescentAngle,&trgAscentAngle,&trgSlope) ) goto errexit ;
        slope        = trgSlope ;
@@ -923,7 +923,7 @@ int bcdtmDrainage_insertPointIntoTinLineDtmObject
     {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
     int antPnt,clkPnt,savePoint ;
-    long voidLine ;
+    bool voidLine ;
 
     // Log Function Arguments
 
@@ -937,7 +937,7 @@ int bcdtmDrainage_insertPointIntoTinLineDtmObject
 
     //  Test For Void Line
 
-    bcdtmList_testForVoidLineDtmObject(dtmP,linePoint1,linePoint2,&voidLine) ;
+    bcdtmList_testForVoidLineDtmObject(dtmP,linePoint1,linePoint2,voidLine) ;
     if( voidLine )
         {
         bcdtmFlag_setVoidBitPCWD(&nodeAddrP(dtmP,point)->PCWD) ; 

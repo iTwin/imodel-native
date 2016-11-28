@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/Commands/Stdafx.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -87,7 +87,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT
 #if !defined (BEGIN_BENTLEY_TERRAINMODEL_COMMANDS_NAMESPACE)
 #define BEGIN_BENTLEY_TERRAINMODEL_COMMANDS_NAMESPACE namespace Bentley { namespace TerrainModel { namespace Commands {
 #define END_BENTLEY_TERRAINMODEL_COMMANDS_NAMESPACE }}}
-#define USING_NAMESPACE_BENTLEY_TERRAINMODEL_COMMANDS using namespace BENTLEY_NAMESPACE_NAME::TerrainModel::Commands;
+#define USING_NAMESPACE_BENTLEY_TERRAINMODEL_COMMANDS using namespace Bentley::TerrainModel::Commands;
 #endif
 
 #pragma managed

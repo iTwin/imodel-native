@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTM.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,6 @@
 #include "DTMTinEditor.h"
 #include "DTMDrapedLinearElement.h"
 #include "dtmmesh.h"
-#include "dtmedges.h"
 
 //using namespace Bentley::Civil::BCSystem::Base;
 
@@ -527,7 +526,7 @@ public ref class DTMCrossingFeatureError
 /// Defines values for the Purge flags
 /// </summary>                
 //=======================================================================================
-[Flags]
+[System::Flags]
 public enum class DTMPurgeFlags : unsigned long
     {
     //=======================================================================================
@@ -3312,6 +3311,10 @@ public ref class DTM
     {
     private:
         /// <summary>
+        /// The release Marshaller
+        /// </summary>
+        ReleaseMarshaller* m_marshaller;
+        /// <summary>
         /// Unmanaged DTM definition
         /// </summary>                    
         BcDTMP m_nativeDtm;
@@ -3370,7 +3373,10 @@ public ref class DTM
         //=======================================================================================
         !DTM();
 
-        void InternalDispose();
+        /// <summary>
+        /// Dispose the DTM
+        /// </summary>
+        void InternalDispose(bool disposing);
         //=======================================================================================
         /// <summary>
         /// Browses Dynamic feature
@@ -3431,11 +3437,11 @@ public ref class DTM
         /// <category>DTM Creation</category>
         /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
         //=======================================================================================
-        property IntPtr ExternalHandle
+        property System::IntPtr ExternalHandle
             {
-            IntPtr get()
+            System::IntPtr get()
                 {
-                return IntPtr(Handle);
+                return System::IntPtr(Handle);
                 }
             }
 
@@ -3563,7 +3569,7 @@ public ref class DTM
         /// <param name="fileName">Name of the file to save the DTM to.</param>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        void Save (String^ fileName);
+        void Save(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -3583,7 +3589,7 @@ public ref class DTM
         /// <param name="fileName">Name of the tin file to populate the DTM from.</param>
         /// <author>Rob.Cormack</author>                              <date>07/2008</date>
         //=======================================================================================
-        void PopulateFromGeopakTinFile (String^ fileName);
+        void PopulateFromGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -3593,7 +3599,7 @@ public ref class DTM
         /// <param name="fileName">Name of the file to save the DTM to.</param>
         /// <author>Rob.Cormack</author>                              <date>07/2008</date>
         //=======================================================================================
-        void SaveAsGeopakTinFile (String^ fileName);
+        void SaveAsGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4494,7 +4500,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromFile (String^ fileName);
+        static DTM^ CreateFromFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4516,7 +4522,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Rob.Cormack</author>                              <date>08/2008</date>
         //=======================================================================================
-        static DTM^ CreateFromGeopakTinFile (String^ fileName);
+        static DTM^ CreateFromGeopakTinFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4527,7 +4533,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromGeopakDatFile (String^ fileName);
+        static DTM^ CreateFromGeopakDatFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4538,7 +4544,7 @@ public ref class DTM
         /// <returns>A new DTM instance.</returns>
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
-        static DTM^ CreateFromXyzFile (String^ fileName);
+        static DTM^ CreateFromXyzFile(System::String^ fileName);
 
         //=======================================================================================
         /// <summary>
@@ -4679,7 +4685,7 @@ public ref class DTM
         /// <param name="handle">Handle.</param>
         /// <author>Daryl.Holmwood</author>                              <date>01/2008</date>
         //=======================================================================================
-        static DTM^ FromHandle (IntPtr handle);
+        static DTM^ FromHandle (System::IntPtr handle);
 
 
         //=======================================================================================
@@ -4690,7 +4696,7 @@ public ref class DTM
         /// <param name="handle">Handle.</param>
         /// <author>Rob.Cormack</author>                                 <date>07/2009</date>
         //=======================================================================================
-        static DTM^ FromNativeDtmHandle (IntPtr handle);
+        static DTM^ FromNativeDtmHandle (System::IntPtr handle);
 
         //=======================================================================================
         /// <summary>
@@ -4703,16 +4709,6 @@ public ref class DTM
         /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
         //=======================================================================================
         Mesh^ GetMesh (bool firstCall, int maxMeshSize);
-
-        //=======================================================================================
-        /// <summary>
-        /// Gets the edges that represents this DTM.
-        /// </summary>
-        /// <category>DTM</category>
-        /// <returns>The edge representation.</returns>
-        /// <author>Sylvain.Pucci</author>                              <date>10/2007</date>
-        //=======================================================================================
-        Edges^ GetEdges ();
 
         //=======================================================================================
         /// <summary>
@@ -4782,7 +4778,7 @@ public ref class DTM
         /// <category>DTM</category>
         /// <author>Rob.Cormack</author>                              <date>03/2009</date>
         //=======================================================================================
-        static  array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile (String ^fileName) ;
+        static  array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile(System::String ^fileName);
 
 
         //=======================================================================================
@@ -5050,6 +5046,13 @@ public ref class DTM
         /// <param name="pointsAfter">Number of points after the filter.</param>
         void FilterPoints (long numPointsToRemove, double percentageToRemove, [System::Runtime::InteropServices::Out]long% pointsBefore, [System::Runtime::InteropServices::Out]long% pointsAfter);
 
+
+        /// <summary>
+        /// Addes a Transformation to the DTM, This doesn't change the actual data, just what is returned.
+        /// Use this if you want to access a DTM in feet when the coordinates are currently in meters.
+        /// </summary>
+        /// <param name="transformation">The Transformation to add</param>
+        DTM^ GetTransformedDTM(BGEO::DTransform3d transformation);
         };
 
 END_BENTLEY_TERRAINMODELNET_NAMESPACE

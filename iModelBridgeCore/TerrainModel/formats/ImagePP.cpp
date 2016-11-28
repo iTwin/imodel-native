@@ -26,6 +26,8 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 #ifdef TODO
+typedef std::function <int(long numPixels, char *nameP, char *descP, char *projectionP, void *baseCordP, void *userP)> ImagePPCallBack;
+
 void readImage(char *imageFileP,char *proCodeP,double scaleFactor) ;
 
 static char BaseGeoCoordPath[512] ;
@@ -110,7 +112,7 @@ int bcdtmDem_importAndTriangulateImageDtmObject
  long   point,point1,point2 ;
  double xImageMin,yImageMin,zImageMin,xImageMax,yImageMax,zImageMax ;
  double xDist,yDist,colSpacing,rowSpacing ;
- DTM_TIN_POINT *p1P ,*p2P,*p3P,*pointP ;
+ DPoint3d *p1P ,*p2P,*p3P,*pointP ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -530,7 +532,7 @@ int bcdtmDem_importAndTriangulateImagePointsDtmObject
  double dx,dy,nullValue=-98765.4321 ;
  long   nx,ny,point,resort=0,dtmFeature,numVoids,numIslands,*islandsP=NULL ;
  long   startTime,cleanInternalVoids=0 ;
- DTM_TIN_POINT *p1P ,*p2P ;
+ DPoint3d *p1P ,*p2P ;
  BC_DTM_FEATURE *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -582,7 +584,7 @@ int bcdtmDem_importAndTriangulateImagePointsDtmObject
  if( dbg )
    {
     long point,numValues=0,numMissingValues=0 ;
-    DTM_TIN_POINT *pointP ;
+    DPoint3d *pointP ;
     for( point = 0 ; point < (*dtmPP)->numPoints ; ++point )
       {
        pointP = pointAddrP(*dtmPP,point) ;
@@ -1091,7 +1093,7 @@ int bcdtmImagePP_importImagePointsDtmObject
  long row,col,offset=0,numPts,gridStore=1 ;
  long noDataValueSet=0,xyLimitsSet=0,zLimitsSet=0,geoCordSysSet=0 ;
  double noDataValue=-987654.321,xMin=0.0,yMin=0.0,zMin=0.0,xMax=0.0,yMax=0.0,zMax=0.0 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  P3D *p3dP ;
 /*
 ** Write Entry Message
@@ -1267,7 +1269,7 @@ int bcdtmImagePP_importImageDtmObject
  long row,col,offset=0,heightInPixels,widthInPixels,numPixels,numPts,gridStore=1 ;
  long noDataValueSet=0,xyLimitsSet=0,zLimitsSet=0,geoCordSysSet=0 ;
  double noDataValue=-987654.321,xMin=0.0,yMin=0.0,zMin=0.0,xMax=0.0,yMax=0.0,zMax=0.0 ;
- DTM_TIN_POINT *pointP ;
+ DPoint3d *pointP ;
  P3D *p3dP ;
 /*
 ** Write Entry Message
@@ -2263,7 +2265,7 @@ static int bcdtmDem_checkSortOrderDemDtmObject(BC_DTM_OBJ *dtmP, long writeError
     {
     int   ret=DTM_SUCCESS;
     long  point ;
-    DTM_TIN_POINT *p1P,*p2P ;
+    DPoint3d *p1P,*p2P ;
     /*
     ** Check For Valid Dtm Object
     */
@@ -2329,7 +2331,7 @@ WCharCP    projectionKeyP
     long row, col, offset = 0, heightInPixels, widthInPixels, numPixels, numPts, gridStore = 1;
     long noDataValueSet = 0, xyLimitsSet = 0, zLimitsSet = 0, geoCordSysSet = 0;
     double noDataValue = -987654.321, xMin = 0.0, yMin = 0.0, zMin = 0.0, xMax = 0.0, yMax = 0.0, zMax = 0.0;
-    DTM_TIN_POINT *pointP;
+    DPoint3d *pointP;
     DPoint3dP p3dP;
     /*
     ** Write Entry Message
@@ -2639,15 +2641,14 @@ double     elevationScaleFactor               // Elevation Scale Factor
     int dbg = DTM_TRACE_VALUE (0), cdbg = DTM_CHECK_VALUE (0);
     DTMStatusInt ret = DTM_SUCCESS;
     double dx, dy, nullValue = -98765.4321;
-    long   nx, ny, numColPts = 0, lastColPts = 0, colNum = 0, /*dtmFeature,*/ numRows, numCols/*, numVoids,numIslands*/;
+    long   nx, ny, numColPts = 0, lastColPts = 0, colNum = 0, numRows, numCols;
     long* islandsP = nullptr;
-    long   startTime, /*cleanInternalVoids = 0,*/ numImagePoints;
+    long   startTime, numImagePoints;
     bool imageRegular = true;
     long   point, point1, point2;
     double xImageMin, yImageMin, zImageMin, xImageMax, yImageMax, zImageMax;
     double xDist, yDist, colSpacing, rowSpacing;
-    DTM_TIN_POINT *p1P, *p2P, *p3P, *pointP;
-    //BC_DTM_FEATURE *dtmFeatureP;
+    DPoint3d *p1P, *p2P, *p3P, *pointP;
     BC_DTM_OBJ* dtmP;
     /*
     ** Write Entry Message
@@ -2903,66 +2904,7 @@ double     elevationScaleFactor               // Elevation Scale Factor
         if (dbg) bcdtmWrite_message (0, 0, 0, "Voiding Missing Values");
         if (bcdtmObject_placeVoidsAroundNullValuesDtmObject (dtmP, nullValue)) goto errexit;
         }
-    goto apply;
-    ///*
-    //** Count Number Of Voids
-    //*/
-    //numVoids = 0;
-    //numIslands = 0;
-    //for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-    //    {
-    //    dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-    //    if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Void) ++numVoids;
-    //    if (dtmFeatureP->dtmFeatureType == DTMFeatureType::Island) ++numIslands;
-    //    }
-    //if (dbg) bcdtmWrite_message (0, 0, 0, "numVoids = %8ld ** numIslands = %8ld", numVoids, numIslands);
-    ///*
-    //**  Clean Up Voids Resulting From Null Values
-    //*/
-    //if (numVoids > 0)
-    //    {
-    //    /*
-    //    **  Remove Voids On Tin Hull
-    //    */
-    //    if (dbg) bcdtmWrite_message (0, 0, 0, "Removing Voids On Tin Hull");
-    //    if (bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject (dtmP, 0)) goto errexit;
-    //    /*
-    //    **  Clean Internal Voids
-    //    */
-    //    if (cleanInternalVoids)
-    //        {
-    //        if (dbg) bcdtmWrite_message (0, 0, 0, "Removing Null Values From Internal Voids");
-    //        for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-    //            {
-    //            dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-    //            if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeatureType == DTMFeatureType::Void)
-    //                {
-    //                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Cleaning Void Feature %8ld", dtmFeature);
-    //                /*
-    //                **           Get Island Features Internal To Void
-    //                */
-    //                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Getting IslandS Internal To Void");
-    //                if (bcdtmEdit_getIslandsInternalToVoidDtmObject (dtmP, dtmFeature, &islandsP, &numIslands)) goto errexit;
-    //                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Number Of Islands = %8ld", numIslands);
-    //                /*
-    //                **           Remove Internal Void Points And Lines
-    //                */
-    //                if (dbg == 2) bcdtmWrite_message (0, 0, 0, "Removing Internal Void Points And Lines");
-    //                if (bcdtmEdit_removeInternalVoidPointsAndLinesDtmObject (dtmP, dtmFeature, islandsP, numIslands)) goto errexit;
-    //                if (islandsP != NULL) { free (islandsP); islandsP = NULL; }
-    //                }
-    //            }
-    //        }
-    //    /*
-    //    **  Clean Dtm Object
-    //    */
-    //    if (dbg) bcdtmWrite_message (0, 0, 0, "Cleaning Dtm Object");
-    //    if (bcdtmList_cleanDtmObject (dtmP)) goto errexit;
-    //    }
-    /*
-    ** Apply Unit Conversion Factor To Elevation Values
-    */
-apply:
+
     if (unitConversionFactor != 1.0)
         {
         if (dbg) bcdtmWrite_message (0, 0, 0, "Applying Unit Conversions To Elevations");

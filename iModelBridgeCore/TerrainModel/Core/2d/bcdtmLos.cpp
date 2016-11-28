@@ -2,12 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmLos.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 #include <stdlib.h>
 //#pragma optimize( "p", on )
 
@@ -29,7 +29,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
 ) ;
 
 /*
-** Static Global Variables 
+** Static Global Variables
 */
 static long   numHorLines=0,memHorLines=0,trgNumber,numHorLinesIndex=0,*hozIndexListP=nullptr,numHorIndexList=0,memHorIndexList=0 ;
 static double eyeX,eyeY,eyeZ,tinRadius=0.0 ;
@@ -52,7 +52,7 @@ BENTLEYDTM_Public int bcdtmVisibility_freeMemory(void)
 ** Job Completed
 */
  return(DTM_SUCCESS) ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -71,7 +71,7 @@ BENTLEYDTM_Private int bcdtmVisibility_freeLosVertices(void)
 ** Job Completed
 */
  return(DTM_SUCCESS) ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -94,7 +94,7 @@ BENTLEYDTM_Private int bcdtmVisibility_freeHorizonLineArrays(void)
 ** Job Completed
 */
  return(DTM_SUCCESS) ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -188,7 +188,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityDirectionOfTriangleDtm
 {
  int    ret=DTM_SUCCESS ;
  double dp,Ca,Cb,Cc,Cd,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,Xmin,Ymin,Zmin ;
- DTM_TIN_POINT *pntP ;
+ DPoint3d *pntP ;
 /*
 ** Test For Valid Dtm Object
 */
@@ -267,7 +267,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityOfPoint
  double x,
  double y,
  double z,
- long   *visibilityP 
+ long   *visibilityP
 )
 /*
 ** This Function Determines If The Eye Is On Visible Side Of The Triangle Face
@@ -297,7 +297,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityOfPoint
     bcdtmWrite_message(0,0,0,"x     = %12.5lf",x) ;
     bcdtmWrite_message(0,0,0,"y     = %12.5lf",y) ;
     bcdtmWrite_message(0,0,0,"z     = %12.5lf",z) ;
-   } 
+   }
 /*
 ** Initialise
 */
@@ -393,7 +393,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityOfEdge(double Xe,doubl
 ** Set Visibility
 */
  if     ( Vp1 == 0 && Vp2 == 0 ) *Visibility = -1 ;
- else if( Vp1 == 1 && Vp2 == 1 ) *Visibility =  1 ; 
+ else if( Vp1 == 1 && Vp2 == 1 ) *Visibility =  1 ;
 /*
 ** Set Visible Part Of Line
 */
@@ -403,26 +403,26 @@ BENTLEYDTM_Private int bcdtmVisibility_determineVisibilityOfEdge(double Xe,doubl
       {
        if( dp2 < 0.0 ) { *Visibility =  1 ; return(0) ; }
        if( dp2 > 0.0 ) { *Visibility = -1 ; return(0) ; }
-      }   
+      }
     if( fabs(dp2) < 0.0000001 )
       {
        if( dp1 < 0.0 ) { *Visibility =  1 ; return(0) ; }
        if( dp1 > 0.0 ) { *Visibility = -1 ; return(0) ; }
-      } 
+      }
     if( dp1 < 0.0 ) dp1 = -dp1 ;
     if( dp2 < 0.0 ) dp2 = -dp2 ;
-    x = X3 + (X4-X3) * dp1/(dp1+dp2) ;   
-    y = Y3 + (Y4-Y3) * dp1/(dp1+dp2) ;   
-    z = Z3 + (Z4-Z3) * dp1/(dp1+dp2) ; 
-    if( Vp1 ) 
+    x = X3 + (X4-X3) * dp1/(dp1+dp2) ;
+    y = Y3 + (Y4-Y3) * dp1/(dp1+dp2) ;
+    z = Z3 + (Z4-Z3) * dp1/(dp1+dp2) ;
+    if( Vp1 )
       {
-       Point[0].x = X3 ; Point[0].y = Y3 ; Point[0].z = Z3 ;  
-       Point[1].x = x  ; Point[1].y = y  ; Point[1].z = z  ;  
+       Point[0].x = X3 ; Point[0].y = Y3 ; Point[0].z = Z3 ;
+       Point[1].x = x  ; Point[1].y = y  ; Point[1].z = z  ;
       }
     else
       {
-       Point[0].x = x  ; Point[0].y = y  ; Point[0].z = z  ;  
-       Point[1].x = X4 ; Point[1].y = Y4 ; Point[1].z = Z4 ;  
+       Point[0].x = x  ; Point[0].y = y  ; Point[0].z = z  ;
+       Point[1].x = X4 ; Point[1].y = Y4 ; Point[1].z = Z4 ;
       }
     Point[0].x += Xmin ; Point[0].y += Ymin ; Point[0].z += Zmin ;
     Point[1].x += Xmin ; Point[1].y += Ymin ; Point[1].z += Zmin ;
@@ -451,8 +451,8 @@ BENTLEYDTM_Private double bcdtmVisibility_interpolateZOnLineOfSight(double Xe,do
 /*
 ** Job Completed
 */
- return(z) ;   
-} 
+ return(z) ;
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -515,7 +515,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
  long    drapeFlag,numDrapePts ;
  DPoint3d     stringPts[2] ;
  double  Zs ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=nullptr ;
+ DTMDrapePoint *drapeP, *drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -550,27 +551,27 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 ** Determine If Eye Is Within Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( ! drapeFlag ) 
-   { 
+ if( ! drapeFlag )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin or Internal To Void") ;
-    *isVisibleP = 0 ; 
+    *isVisibleP = 0 ;
     goto errexit ;
    }
 /*
 ** Check Eye Is Above Tin Surface
 */
- if( drapeFlag && Zs > Ze ) 
+ if( drapeFlag && Zs > Ze )
    {
     bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
-    *isVisibleP = 0 ; 
+    *isVisibleP = 0 ;
     goto errexit ;
    }
 /*
 ** Determine If Target Point Is Within Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xp,Yp,&Zs,&drapeFlag)) goto errexit ;
- if( ! drapeFlag ) 
-   { 
+ if( ! drapeFlag )
+   {
     bcdtmWrite_message(1,0,0,"Target Point External To Tin or Internal To Void") ;
     *isVisibleP = 0 ;
     goto errexit ;
@@ -578,10 +579,10 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 /*
 **  Check Target Point Is Above Surface
 */
- if( drapeFlag && Zs > Zp ) 
+ if( drapeFlag && Zs > Zp )
    {
     bcdtmWrite_message(1,0,0,"Target Point Below Tin Surface") ;
-    *isVisibleP = 0 ; 
+    *isVisibleP = 0 ;
     goto errexit ;
    }
 /*
@@ -589,29 +590,27 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determinePointVisibilityDtmObject(BC_DTM_O
 */
  stringPts[0].x = Xe ; stringPts[0].y = Ye ; stringPts[0].z = Ze ;
  stringPts[1].x = Xp ; stringPts[1].y = Yp ; stringPts[1].z = Zp ;
- if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,stringPts,2,false,drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 ** Log Drape Angle
 */
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Angle From Eye To Point = %12.10lf",bcdtmMath_getAngle(Xe,Ye,Xp,Yp)) ;
-   } 
+   }
 /*
 **  Scan Drape Points
 */
  for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts && *isVisibleP == 1 ; ++drapeP )
    {
-    if( drapeP->drapeZ > bcdtmVisibility_interpolateZOnLineOfSight(Xe,Ye,Ze,Xp,Yp,Zp,drapeP->drapeX,drapeP->drapeY)) *isVisibleP = 0 ; 
+    if( drapeP->drapePt.z > bcdtmVisibility_interpolateZOnLineOfSight(Xe,Ye,Ze,Xp,Yp,Zp,drapeP->drapePt.x,drapeP->drapePt.y)) *isVisibleP = 0 ;
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( drapePtsP != nullptr ) 
-   {
-    bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-   } 
 /*
 ** Job Completed
 */
@@ -651,7 +650,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmFile
 **
 ** isVisibleP = -1  Line Not Visible
 **            =  0  Line Partially Visible
-**            =  1  Line Visible 
+**            =  1  Line Visible
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -727,11 +726,11 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
 **
 ** isVisibleP = -1  Line Not Visible
 **            =  0  Line Partially Visible
-**            =  1  Line Visible 
+**            =  1  Line Visible
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   isPointVisible,c0,c1,*pl,lastVisibility ;  
+ long   isPointVisible,c0,c1,*pl,lastVisibility ;
  double Xp,Yp,Zp,dx,dy,dz,llen,linc,ldist,stroke=100 ;
  DPoint3d    *p3dP,loadPts[2] ;
 /*
@@ -761,8 +760,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
  /*
 ** Calculate 3D Line Length And Line Increments
 */
- dx = X2 - X1 ; 
- dy = Y2 - Y1 ; 
+ dx = X2 - X1 ;
+ dy = Y2 - Y1 ;
  dz = Z2 - Z1 ;
  llen = sqrt(dx*dx+dy*dy+dz*dz) ;
  linc = llen / stroke ;
@@ -772,15 +771,15 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
 /*
 ** Clear Memory
 */
- if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit ; 
+ if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit ;
 /*
 ** Scan Line And Determine Visibility Of Points On Line
 */
  Xp = X1 ;
  Yp = Y1 ;
- Zp = Z1 ; 
+ Zp = Z1 ;
  if(bcdtmVisibility_determinePointVisibilityDtmObject(dtmP,Xe,Ye,Ze,Xp,Yp,Zp,&isPointVisible)) goto errexit ;
- if( bcdtmVisibility_storeVertice(1,isPointVisible,Xp,Yp,Zp) ) goto errexit ; 
+ if( bcdtmVisibility_storeVertice(1,isPointVisible,Xp,Yp,Zp) ) goto errexit ;
  lastVisibility = isPointVisible ;
  while( ldist < llen )
    {
@@ -790,24 +789,24 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
     if(bcdtmVisibility_determinePointVisibilityDtmObject(dtmP,Xe,Ye,Ze,Xp,Yp,Zp,&isPointVisible)) goto errexit ;
     if( isPointVisible != lastVisibility )
       {
-       if( bcdtmVisibility_storeVertice(1,lastVisibility,Xp,Yp,Zp) ) goto errexit ; 
-       if( bcdtmVisibility_storeVertice(1,isPointVisible,Xp,Yp,Zp) ) goto errexit ; 
+       if( bcdtmVisibility_storeVertice(1,lastVisibility,Xp,Yp,Zp) ) goto errexit ;
+       if( bcdtmVisibility_storeVertice(1,isPointVisible,Xp,Yp,Zp) ) goto errexit ;
        lastVisibility = isPointVisible ;
       }
-   } 
- if( bcdtmVisibility_storeVertice(1,isPointVisible,X2,Y2,Z2) ) goto errexit ; 
+   }
+ if( bcdtmVisibility_storeVertice(1,isPointVisible,X2,Y2,Z2) ) goto errexit ;
 /*
 ** Determine Line Visibility
 */
  c0 = c1 = 0 ;
  for( pl = losLinesP ; pl < losLinesP + numLosPts ; ++pl )
    {
-    if( *pl ) ++c1 ; 
+    if( *pl ) ++c1 ;
     else      ++c0 ;
    }
  if     ( c1 == numLosPts ) *isVisibleP =  1 ;
  else if( c0 == numLosPts ) *isVisibleP = -1 ;
- else                       *isVisibleP =  0 ; 
+ else                       *isVisibleP =  0 ;
 /*
 ** Load Visibility Lines
 */
@@ -815,12 +814,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineLineVisibiltyDtmObject
    {
     for( p3dP = losPtsP , pl = losLinesP ; p3dP < losPtsP + numLosPts ; p3dP = p3dP + 2 , pl = pl + 2  )
       {
-       loadPts[0].x = p3dP->x     ; loadPts[0].y = p3dP->y     ; loadPts[0].z = p3dP->z ; 
-       loadPts[1].x = (p3dP+1)->x ; loadPts[1].y = (p3dP+1)->y ; loadPts[1].z = (p3dP+1)->z ; 
+       loadPts[0].x = p3dP->x     ; loadPts[0].y = p3dP->y     ; loadPts[0].z = p3dP->z ;
+       loadPts[1].x = (p3dP+1)->x ; loadPts[1].y = (p3dP+1)->y ; loadPts[1].z = (p3dP+1)->z ;
        if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPts,2,userP)) goto errexit ; }
        else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPts,2,userP)) goto errexit ; }
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -912,7 +911,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
  double x,y,z,Zs  ;
  DPoint3d    dtmPoint[2]  ;
  DTM_TIN_NODE  *nodeP ;
- DTM_TIN_POINT  *pointP ;
+ DPoint3d  *pointP ;
 /*
 ** Write Status Message
 */
@@ -942,14 +941,14 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
 ** Determine If Eye Is Inside Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( drapeFlag == 0 ) 
-   { 
+ if( drapeFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin Or Internal To Void") ;
     goto errexit ;
    }
- if( drapeFlag  && Zs > Ze )  
-   { 
-    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ; 
+ if( drapeFlag  && Zs > Ze )
+   {
+    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit ;
    }
 /*
@@ -961,7 +960,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
     goto errexit ;
    }
 /*
-** Build Visibility Tables For Dtm 
+** Build Visibility Tables For Dtm
 */
  startTime = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Visibility Tables") ;
@@ -974,7 +973,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
  for( point =0  ; point < dtmP->numPoints ; ++point)
    {
     nodeP = nodeAddrP(dtmP,point) ;
-    pointP = pointAddrP(dtmP,point) ; 
+    pointP = pointAddrP(dtmP,point) ;
     if( dbg && ( point % 10000 == 0 || point + 1 == dtmP->numPoints) ) bcdtmWrite_message(0,0,0,"Processing Point %8ld of %8ld",point,dtmP->numPoints) ;
 /*
 **  Determine Dtm Point Visibility
@@ -982,28 +981,28 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinPointsDtmObject
     if( ! bcdtmFlag_testVoidBitPCWD(&nodeP->PCWD) )
       {
        x = pointP->x ;
-       y = pointP->y ; 
+       y = pointP->y ;
        z = pointP->z + 0.000001 ;
        if( bcdtmVisibility_determinePointVisibilityUsingVisibilityTables(horLinesP,numHorLines,horLinesIndexP,numHorLinesIndex,hozIndexListP,Xe,Ye,Ze,x,y,z,&isVisible)) goto errexit ;
 /*
 **    Load Visibility Points
 */
-      dtmPoint[0].x = x ; 
-      dtmPoint[0].y = y ; 
-      dtmPoint[0].z = pointP->z ; 
-      dtmPoint[1].x = x + dtmP->ppTol ; 
-      dtmPoint[1].y = z + dtmP->ppTol ; 
-      dtmPoint[1].z = pointP->z ; 
+      dtmPoint[0].x = x ;
+      dtmPoint[0].y = y ;
+      dtmPoint[0].z = pointP->z ;
+      dtmPoint[1].x = x + dtmP->ppTol ;
+      dtmPoint[1].y = z + dtmP->ppTol ;
+      dtmPoint[1].z = pointP->z ;
       if( isVisible ) { if( loadFunctionP(DTMFeatureType::VisiblePoint,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,dtmPoint,1,userP)) goto errexit ; }
       else            { if( loadFunctionP(DTMFeatureType::InvisiblePoint,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,dtmPoint,1,userP)) goto errexit ; }
       if( isVisible ) ++numVisiblePoints ;
       else            ++numInvisiblePoints ;
-     } 
+     }
   }
 /*
 ** Write Timing Information
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Number Of Visible Points   = %8ld",numVisiblePoints) ;
     bcdtmWrite_message(0,0,0,"Number Of Invisible Points = %8ld",numInvisiblePoints) ;
@@ -1095,7 +1094,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2,clc,*losLineP,isVisible,voidLine,drapeFlag,startTime,lineNum=0 ;
+ long   p1,p2,clc,*losLineP,isVisible,drapeFlag,startTime,lineNum=0 ;
+ bool voidLine;
  double X1,Y1,Z1,X2,Y2,Z2,Zs ;
  DPoint3d    *p3dP,linePts[2]  ;
 /*
@@ -1127,14 +1127,14 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
 ** Determine If Eye Is Inside Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( drapeFlag == 0 ) 
-   { 
+ if( drapeFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin Or Internal To Void") ;
     goto errexit ;
    }
- if( drapeFlag  && Zs > Ze )  
-   { 
-    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ; 
+ if( drapeFlag  && Zs > Ze )
+   {
+    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit ;
    }
 /*
@@ -1146,9 +1146,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
     goto errexit ;
    }
 /*
-** Build Visibility Tables For Dtm 
+** Build Visibility Tables For Dtm
 */
- if( bcdtmVisibility_buildVisibilityTablesForDtmObject(dtmP,Xe,Ye,Ze)) goto errexit ; 
+ if( bcdtmVisibility_buildVisibilityTablesForDtmObject(dtmP,Xe,Ye,Ze)) goto errexit ;
 /*
 ** Scan Tin Lines And Determine Their Visibility
 */
@@ -1166,12 +1166,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
           p2  = clistAddrP(dtmP,clc)->pntNum ;
           clc = clistAddrP(dtmP,clc)->nextPtr ;
           if( p2 > p1 )
-            { 
+            {
              if( dbg && ( lineNum % 10000 == 0 || lineNum + 1 == dtmP->numLines) ) bcdtmWrite_message(1,0,0,"Processing Line %8ld of %8ld",lineNum+1,dtmP->numLines) ;
-             ++lineNum ;  
-             if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
-             if( ! voidLine ) 
-               { 
+             ++lineNum ;
+             if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
+             if( ! voidLine )
+               {
                 X2 = pointAddrP(dtmP,p2)->x ;
                 Y2 = pointAddrP(dtmP,p2)->y ;
                 Z2 = pointAddrP(dtmP,p2)->z + 0.00001 ;
@@ -1189,7 +1189,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
                }
             }
          }
-      } 
+      }
    }
 /*
 ** Write Elapsed Time ** Developement Purposes Only
@@ -1217,7 +1217,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineVisibilityTinLinesDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibility,double x,double y,double z) 
+BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibility,double x,double y,double z)
 /*
 ** This Function Stores A Visibility Vertice
 */
@@ -1234,7 +1234,7 @@ BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibil
  if( numLosPts == memLosPts )
    {
     memLosPts = memLosPts + memLosPtsInc ;
-    if( losPtsP == nullptr )  
+    if( losPtsP == nullptr )
       {
        losPtsP   = (  DPoint3d  * )  malloc  ( memLosPts * sizeof(DPoint3d)) ;
        losLinesP = ( long  * )  malloc  ( memLosPts * sizeof(long)) ;
@@ -1243,14 +1243,14 @@ BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibil
       {
        losPtsP   = (  DPoint3d  * )  realloc  ( losPtsP, memLosPts * sizeof(DPoint3d)) ;
        losLinesP = ( long  * )  realloc  ( losLinesP,memLosPts * sizeof(long)) ;
-      }    
+      }
     if( losPtsP == nullptr || losLinesP == nullptr )
       {
        if( losPtsP   != nullptr ) { free(losPtsP)   ; losPtsP = nullptr ; }
        if( losLinesP != nullptr ) { free(losLinesP) ; losPtsP = nullptr ; }
        numLosPts = memLosPts = 0 ;
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
-       goto errexit ; 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+       goto errexit ;
       }
    }
 /*
@@ -1258,7 +1258,7 @@ BENTLEYDTM_Private int bcdtmVisibility_storeVertice(long actionFlag,long visibil
 */
  if( actionFlag == 0 && numLosPts > 0 )
    {
-    if( visibility == *(losLinesP+numLosPts-1) ) goto cleanup ; 
+    if( visibility == *(losLinesP+numLosPts-1) ) goto cleanup ;
    }
  if( actionFlag == 2 )
    {
@@ -1360,7 +1360,8 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
  double dd,dx,dy,dz,Zs,x,y,z,angle,anginc,radius,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    *p3d,radial[2],*loadPtsP=nullptr ;
  long   start,finish ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
+ DTMDrapePoint *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Entry Message
 */
@@ -1397,14 +1398,14 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 ** Determine If Eye Is Inside Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( drapeFlag == 0 ) 
-   { 
+ if( drapeFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin Or Internal To Void") ;
     goto errexit ;
    }
- if( drapeFlag  && Zs > Ze )  
-   { 
-    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ; 
+ if( drapeFlag  && Zs > Ze )
+   {
+    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit ;
    }
 /*
@@ -1426,7 +1427,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
  radius = sqrt((dtmP->xMax-dtmP->xMin)*(dtmP->xMax-dtmP->xMin)+(dtmP->yMax-dtmP->yMin)*(dtmP->yMax-dtmP->yMin)) ;
 /*
 ** Scan Radially About Eye
-*/ 
+*/
  while( angle <= DTM_2PYE )
    {
     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Angle = %10.8lf",angle) ;
@@ -1436,13 +1437,15 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
     radial[0].x = Xe ;
     radial[0].y = Ye ;
     radial[0].z = 0.0 ;
-    radial[1].x = Xe + radius * cos(angle) ; 
+    radial[1].x = Xe + radius * cos(angle) ;
     radial[1].y = Ye + radius * sin(angle) ;
     radial[1].z = 0.0 ;
 /*
 **  Drape Radial On Tin Surface
 */
-    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+    if( bcdtmDrape_stringDtmObject(dtmP,radial,2,false,drapePts)) goto errexit ;
+    drapePtsP = drapePts.data();
+    numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -1453,7 +1456,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 */
     for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
       {
-       if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+       if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
          {
           ++drape1P ;
           *drape1P = *drape2P ;
@@ -1464,55 +1467,55 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 **  Determine Visibility Of Draped Radial Points
 */
     if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit ;
-    if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit ;
-    dx = (drapePtsP+1)->drapeX - Xe ;
-    dy = (drapePtsP+1)->drapeY - Ye ;
-    dz = (drapePtsP+1)->drapeZ - Ze ;
+    if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit ;
+    dx = (drapePtsP+1)->drapePt.x - Xe ;
+    dy = (drapePtsP+1)->drapePt.y - Ye ;
+    dz = (drapePtsP+1)->drapePt.z - Ze ;
     dd = sqrt(dx*dx+dy*dy) ;
     maxAngle = atan2(dz,dd) ;
     drape1P = drapePtsP + 2 ;
     drape2P = drapePtsP + numDrapePts - 1 ;
     scan = 1 ;
     while ( scan )
-      { 
+      {
 /*
 **     Scan Visible Drape Points
 */
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Visible Draped Points") ; 
-       if( drape1P <= drape2P ) 
+       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Visible Draped Points") ;
+       if( drape1P <= drape2P )
          {
-          process = 1 ; 
+          process = 1 ;
           while ( drape1P <= drape2P && process )
             {
-             dx = drape1P->drapeX - Xe ;
-             dy = drape1P->drapeY - Ye ;
-             dz = drape1P->drapeZ - Ze ;
+             dx = drape1P->drapePt.x - Xe ;
+             dy = drape1P->drapePt.y - Ye ;
+             dz = drape1P->drapePt.z - Ze ;
              dd = sqrt(dx*dx+dy*dy) ;
              eyeAngle = atan2(dz,dd) ;
              if( eyeAngle >= maxAngle ) { maxAngle = eyeAngle ; ++drape1P ; }
-             else                        process = 0 ; 
-            }  
+             else                        process = 0 ;
+            }
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-          if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-          ++drape1P ; 
-         } 
+          if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+          if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+          ++drape1P ;
+         }
 /*
 **     Scan Invisible Drape Points
 */
-       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Invisible Draped Points") ; 
-       if( drape1P <= drape2P )  
+       if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Scanning Invisible Draped Points") ;
+       if( drape1P <= drape2P )
          {
-          process = 1 ; 
+          process = 1 ;
           while ( drape1P <= drape2P && process )
             {
-             dx = drape1P->drapeX - Xe ;
-             dy = drape1P->drapeY - Ye ;
-             dz = drape1P->drapeZ - Ze ;
+             dx = drape1P->drapePt.x - Xe ;
+             dy = drape1P->drapePt.y - Ye ;
+             dz = drape1P->drapePt.z - Ze ;
              dd = sqrt(dx*dx+dy*dy) ;
              eyeAngle = atan2(dz,dd) ;
              if( eyeAngle < maxAngle ) { lastEyeAngle = eyeAngle ; ++drape1P ; }
-             else                        process = 0 ; 
+             else                        process = 0 ;
             }
 /*
 **        Calculate Max Angle Intercept On Radial
@@ -1520,25 +1523,25 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
           if( process )
             {
              --drape1P ;
-             if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+             if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
              ++drape1P ;
             }
           else
-            { 
+            {
              dx = maxAngle - lastEyeAngle ;
              dd = eyeAngle - lastEyeAngle ;
-             x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-             y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-             z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+             x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+             y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+             z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
              if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit ;
              if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit ;
-            } 
+            }
          }
 /*
 **     Test For End Of Scan
 */
        if( drape1P > drape2P ) scan = 0 ;
-      } 
+      }
 /*
 ** Load Visibility Lines
 */
@@ -1549,16 +1552,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
     if( *pl ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     numLoadPts = 0 ;
-   } 
+   }
 /*
 **  Increment Angle For Next Radial
 */
     angle = angle + anginc ;
-/*
-**  Free Drape Points
-*/
-    if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
-   } 
+   }
 /*
 ** Get Elapsed Time ** Developement Purposes Only
 */
@@ -1569,7 +1568,6 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialViewShedsDtmObject
 */
  cleanup :
  if( loadPtsP != nullptr ) { free(loadPtsP) ; loadPtsP = nullptr ; }
- if( drapePtsP != nullptr ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
 /*
 ** Job Completed
 */
@@ -1659,7 +1657,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
 /*
 ** Write Status Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Determining Region View Sheds From DTM Object") ;
     bcdtmWrite_message(0,0,0,"Dtm Object       = %p",dtmP) ;
@@ -1685,14 +1683,14 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
 ** Determine If Eye Is Inside Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( drapeFlag == 0 ) 
-   { 
+ if( drapeFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin Or Internal To Void") ;
     goto errexit ;
    }
- if( drapeFlag && Zs > Ze )  
-   { 
-    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ; 
+ if( drapeFlag && Zs > Ze )
+   {
+    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit ;
    }
 /*
@@ -1727,11 +1725,11 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRegionViewShedsDtmObject
  startTime = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Polygonising Tin Region Visibility") ;
  if( bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmObject(tempDtmP,Xe,Ye,Ze,horLinesIndexP,numHorLinesIndex,hozIndexListP,loadFunctionP,userP)) goto errexit ;
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Time To Polygonise Regional Visibility   = %7.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime) ) ;
     bcdtmWrite_message(0,0,0,"Time To Process    Regional Visibility   = %7.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),processTime) ) ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -1768,7 +1766,8 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  p1,p2,ap,cp,clc,visibiltyAnt=0,visibiltyClk=0,visibiltyRidge ;
- long  dtmFeature,voidsInDtm,voidLine,startTime=bcdtmClock() ;
+ long  dtmFeature,startTime=bcdtmClock() ;
+ bool voidsInDtm, voidLine;
  DPoint3d   breakPts[2] ;
  BC_DTM_FEATURE *dtmFeatureP ;
  BC_DTM_OBJ *dataDtmP=nullptr ;
@@ -1782,7 +1781,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
     bcdtmWrite_message(0,0,0,"dtmP       = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"Xe         = %12.5lf",Xe) ;
     bcdtmWrite_message(0,0,0,"Ye         = %12.5lf",Ye) ;
-   }  
+   }
 /*
 ** Only Build Visibility Tables For Tin If Necessary
 */
@@ -1790,7 +1789,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
 /*
 ** Check For Voids In DTM
 */
- voidsInDtm = FALSE ; 
+ voidsInDtm = FALSE ;
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures && voidsInDtm == FALSE ; ++dtmFeature )
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
@@ -1799,20 +1798,20 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
        voidsInDtm = TRUE ;
       }
    }
- if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;  
+ if( dbg ) bcdtmWrite_message(0,0,0,"voidsInDtm = %2ld",voidsInDtm) ;
 /*
 ** Initialise Visibility Data Structures
 */
  bcdtmVisibility_freeMemory() ;
- eyeX = Xe ; 
- eyeY = Ye ; 
- eyeZ = Ze ; 
+ eyeX = Xe ;
+ eyeY = Ye ;
+ eyeZ = Ze ;
  losDtmP = dtmP ;
  tinRadius = sqrt((dtmP->xMax-dtmP->xMin)*(dtmP->xMax-dtmP->xMin) + (dtmP->yMax-dtmP->yMin)*(dtmP->yMax-dtmP->yMin) ) ;
 /*
 ** Create Data Object
 */
- if( bcdtmObject_createDtmObject(&dataDtmP)) goto errexit ; 
+ if( bcdtmObject_createDtmObject(&dataDtmP)) goto errexit ;
 /*
 ** Write Visibility Ridges To Dtm Object
 */
@@ -1827,17 +1826,17 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
           clc = clistAddrP(dtmP,clc)->nextPtr ;
           if(  p1 < p2  )
             {
-             voidLine = FALSE ;
-             if( voidsInDtm == TRUE )
+             voidLine = false ;
+             if( voidsInDtm == true)
                {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,&voidLine)) goto errexit ;
-               } 
+                if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
+               }
              if( voidLine == FALSE  )
-               {  
+               {
              if( ( ap = bcdtmList_nextAntDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
              if( ( cp = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
-             if( ! bcdtmList_testLineDtmObject(dtmP,p2,ap)) ap = dtmP->nullPnt ; 
-             if( ! bcdtmList_testLineDtmObject(dtmP,p2,cp)) cp = dtmP->nullPnt ; 
+             if( ! bcdtmList_testLineDtmObject(dtmP,p2,ap)) ap = dtmP->nullPnt ;
+             if( ! bcdtmList_testLineDtmObject(dtmP,p2,cp)) cp = dtmP->nullPnt ;
              if( ap != dtmP->nullPnt ) bcdtmVisibility_determineVisibilityDirectionOfTriangleDtmObject(dtmP,Xe,Ye,Ze,p1,p2,ap,&visibiltyAnt) ;
              if( cp != dtmP->nullPnt ) bcdtmVisibility_determineVisibilityDirectionOfTriangleDtmObject(dtmP,Xe,Ye,Ze,p1,cp,p2,&visibiltyClk) ;
              visibiltyRidge = 0 ;
@@ -1849,12 +1848,12 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
                 breakPts[0].x = pointAddrP(dtmP,p1)->x ; breakPts[0].y = pointAddrP(dtmP,p1)->y ; breakPts[0].z = pointAddrP(dtmP,p1)->z ;
                 breakPts[1].x = pointAddrP(dtmP,p2)->x ; breakPts[1].y = pointAddrP(dtmP,p2)->y ; breakPts[1].z = pointAddrP(dtmP,p2)->z ;
                 if( bcdtmObject_storeDtmFeatureInDtmObject(dataDtmP,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,1,&nullFeatureId,breakPts,2)) goto errexit ;
-               }  
-            }  
+               }
+            }
          }
       }
-   } 
-   } 
+   }
+   }
 /*
 ** Log Number Of Visibility Edges
 */
@@ -1862,7 +1861,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildVisibilityTablesForDtmObject
    {
     bcdtmWrite_message(0,0,0,"Number Of Visibility Ridges = %8ld",dataDtmP->numFeatures) ;
     if( bcdtmWrite_geopakDatFileFromDtmObject(dataDtmP,L"visibilityRidges.dat")) goto errexit ;
-   } 
+   }
 /*
 ** Build Horizon Table
 */
@@ -1913,39 +1912,39 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonTableFromDtmObject
  DTM_HORIZON_LINE **horLinesPP,
  long *numHorLinesP,
  long *memHorLinesP
-) 
+)
 /*
 ** This Function Builds The Horizon Table From Horizon Lines Stored In A Dtm Object
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   p1,p2 ; 
- double D1,D2,X1,Y1,Z1,X2,Y2,Z2,Ang1,Ang2,ratio ; 
+ long   p1,p2 ;
+ double D1,D2,X1,Y1,Z1,X2,Y2,Z2,Ang1,Ang2,ratio ;
  DTM_HORIZON_LINE  *hLineP ;
 /*
 ** Initialise
 */
  *numHorLinesP = 0 ;
- *numHorLinesP = 0 ;  
+ *numHorLinesP = 0 ;
  if( *horLinesPP != nullptr ) { free(*horLinesPP) ; *horLinesPP = nullptr ; }
 /*
 ** Copy Horizon Line Coordinates To Horizon Table Data Structure
 */
  for( p1 = 0 ; p1 < dataDtmP->numPoints ; p1 = p1 + 2 )
    {
-    p2 = p1 + 1 ; 
+    p2 = p1 + 1 ;
     if( bcdtmMath_sideOf(pointAddrP(dataDtmP,p1)->x,pointAddrP(dataDtmP,p1)->y,pointAddrP(dataDtmP,p2)->x,pointAddrP(dataDtmP,p2)->y,Xe,Ye) != 0 )
-      { 
-       Ang1 = bcdtmMath_getAngle(Xe,Ye,pointAddrP(dataDtmP,p1)->x,pointAddrP(dataDtmP,p1)->y) ;   
+      {
+       Ang1 = bcdtmMath_getAngle(Xe,Ye,pointAddrP(dataDtmP,p1)->x,pointAddrP(dataDtmP,p1)->y) ;
        Ang2 = bcdtmMath_getAngle(Xe,Ye,pointAddrP(dataDtmP,p2)->x,pointAddrP(dataDtmP,p2)->y) ;
        X1   = pointAddrP(dataDtmP,p1)->x  ;
        Y1   = pointAddrP(dataDtmP,p1)->y  ;
        Z1   = pointAddrP(dataDtmP,p1)->z  ;
-       D1   = bcdtmMath_distance(pointAddrP(dataDtmP,p1)->x,pointAddrP(dataDtmP,p1)->y,Xe,Ye) ; 
+       D1   = bcdtmMath_distance(pointAddrP(dataDtmP,p1)->x,pointAddrP(dataDtmP,p1)->y,Xe,Ye) ;
        X2   = pointAddrP(dataDtmP,p2)->x  ;
        Y2   = pointAddrP(dataDtmP,p2)->y  ;
        Z2   = pointAddrP(dataDtmP,p2)->z  ;
-       D2   = bcdtmMath_distance(pointAddrP(dataDtmP,p2)->x,pointAddrP(dataDtmP,p2)->y,Xe,Ye) ; 
+       D2   = bcdtmMath_distance(pointAddrP(dataDtmP,p2)->x,pointAddrP(dataDtmP,p2)->y,Xe,Ye) ;
 /*
 **     Test And Set Eye-P1-P2 In An Anticlockwise Direction
 */
@@ -1961,7 +1960,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonTableFromDtmObject
 **     Test If Last Angle Equal To Zero
 */
        hLineP = *horLinesPP + *numHorLinesP - 1 ;
-       if( hLineP->Ang2 < hLineP->Ang1 && hLineP->Ang2 == 0.0 ) hLineP->Ang2 = DTM_2PYE ;  
+       if( hLineP->Ang2 < hLineP->Ang1 && hLineP->Ang2 == 0.0 ) hLineP->Ang2 = DTM_2PYE ;
 /*
 **     Normalise Edge Lines Crossing 0 Degress
 */
@@ -1972,20 +1971,20 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonTableFromDtmObject
           D2   = hLineP->D2 ;
           X2   = hLineP->X2 ;
           Y2   = hLineP->Y2 ;
-          Z2   = hLineP->Z2 ; 
+          Z2   = hLineP->Z2 ;
           hLineP->Ang2 = DTM_2PYE ;
           hLineP->X2   = hLineP->X1 + ratio * (X2-hLineP->X1) ;
           hLineP->Y2   = Ye  ;
           hLineP->Z2   = hLineP->Z1 + ratio * (Z2-hLineP->Z1) ;
-          hLineP->D1   = bcdtmMath_distance(hLineP->X1,hLineP->Y1,Xe,Ye) ; 
-          hLineP->D2   = bcdtmMath_distance(hLineP->X2,hLineP->Y2,Xe,Ye) ; 
+          hLineP->D1   = bcdtmMath_distance(hLineP->X1,hLineP->Y1,Xe,Ye) ;
+          hLineP->D2   = bcdtmMath_distance(hLineP->X2,hLineP->Y2,Xe,Ye) ;
           if( bcdtmMath_distance(hLineP->X1,hLineP->Y1,hLineP->X2,hLineP->Y2) == 0.0 ) --(*numHorLinesP) ;
           if( bcdtmVisibility_storeLineInHorizonTable(horLinesPP,numHorLinesP,memHorLinesP,0.0,Ang2,hLineP->D2,D2,hLineP->X2,hLineP->Y2,hLineP->Z2,X2,Y2,Z2)) goto errexit ;
          }
       }
    }
 /*
-** Report Normalised Horizon Lines   
+** Report Normalised Horizon Lines
 */
  if( dbg == 2 )
    {
@@ -2036,7 +2035,7 @@ BENTLEYDTM_Private int bcdtmVisibility_storeLineInHorizonTable
  double X2,
  double Y2,
  double Z2
-) 
+)
 /*
 ** This Function Store A Line In The Horizon Table
 */
@@ -2051,9 +2050,9 @@ BENTLEYDTM_Private int bcdtmVisibility_storeLineInHorizonTable
    {
     *memHorLinesP = *memHorLinesP + minc ;
     if( *horLinesPP == nullptr )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
-    else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;  
-    if( *horLinesPP == nullptr ) 
-      { 
+    else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
+    if( *horLinesPP == nullptr )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
@@ -2106,7 +2105,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
  double Xe,
  double Ye,
  double Ze
-) 
+)
 /*
 ** This Function Removes All Invisible Horizon Lines Whose End Points
 ** Are Totally Within The Vision Angle
@@ -2140,7 +2139,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
    {
     for( hLine1P = *horLinesPP ; hLine1P < *horLinesPP + *numHorLinesP ; ++hLine1P )
     bcdtmWrite_message(0,0,0,"HorizonLine[%8ld] ** Ang1 = %12.10lf Ang2 = %12.10lf ** D1 = %12.4lf D2 = %12.4lf",(long)(hLine1P-*horLinesPP),hLine1P->Ang1,hLine1P->Ang2,hLine1P->D1,hLine1P->D2) ;
-   } 
+   }
 /*
 ** Remove Totally Invisible Lines
 */
@@ -2190,31 +2189,31 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
           if( bcdtmLos_findHorizonLineEntryListUsingHorizonLineIndex(*horLinesIndexPP,*numHorLinesIndexP,*hozIndexListPP,hLine1P->Ang1,&hLineOffset)) goto errexit ;
           if( hLineOffset != DTM_NULL_PNT ) hozLineLowP = saveHorLinesP + hLineOffset ;
           else                     hozLineLowP = saveHorLinesP ;
-          hozLineLowP  = saveHorLinesP + hLineOffset ; 
-          hozLineHighP = saveHorLinesP + numSaveHorLines - 1 ; 
+          hozLineLowP  = saveHorLinesP + hLineOffset ;
+          hozLineHighP = saveHorLinesP + numSaveHorLines - 1 ;
 /*
 **        Process All Lines Whose End Points Are Within The Vision Angles
 */
           for( hLine2P = hozLineLowP ; hLine2P <= hozLineHighP && hLine2P->Ang1 < hLine1P->Ang2 ; ++hLine2P )
-            { 
+            {
              if( hLine2P != hLine1P && hLine2P->ActiveFlag == 1 )
                {
 /*
 **              Edges Totally Within Current Edge Angles
 */
-                if( hLine2P->Ang1 < hLine1P->Ang2 && hLine2P->Ang2 > hLine1P->Ang1 )              
+                if( hLine2P->Ang1 < hLine1P->Ang2 && hLine2P->Ang2 > hLine1P->Ang1 )
                   {
                    if( bcdtmLos_determineIfHorizonLineIsCovered(Xe,Ye,hLine1P,hLine2P) )
                      {
                       if( hLine2P->Ang1 >= hLine1P->Ang1 ) { firstSection = 0 ; X1 = hLine2P->X1 ; Y1 = hLine2P->Y1 ; Z1 = hLine2P->Z1 ; }
-                      else 
+                      else
                         {
                          firstSection = 1 ;
                          X1 = Xe + radius * cos(hLine1P->Ang1) ;
                          Y1 = Ye + radius * sin(hLine1P->Ang1) ;
                          bcdtmMath_normalIntersectCordLines(Xe,Ye,X1,Y1,hLine2P->X1,hLine2P->Y1,hLine2P->X2,hLine2P->Y2,&X1,&Y1) ;
                          bcdtmMath_interpolatePointOnLine(hLine2P->X1,hLine2P->Y1,hLine2P->Z1,hLine2P->X2,hLine2P->Y2,hLine2P->Z2,X1,Y1,&Z1) ;
-                        }  
+                        }
                       if( hLine2P->Ang2 <= hLine1P->Ang2 ) { lastSection = 0 ; X2 = hLine2P->X2 ; Y2 = hLine2P->Y2 ; Z2 = hLine2P->Z2 ; }
                       else
                         {
@@ -2223,27 +2222,27 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
                          Y2 = Ye + radius * sin(hLine1P->Ang2) ;
                          bcdtmMath_normalIntersectCordLines(Xe,Ye,X2,Y2,hLine2P->X1,hLine2P->Y1,hLine2P->X2,hLine2P->Y2,&X2,&Y2) ;
                          bcdtmMath_interpolatePointOnLine(hLine2P->X1,hLine2P->Y1,hLine2P->Z1,hLine2P->X2,hLine2P->Y2,hLine2P->Z2,X2,Y2,&Z2) ;
-                        }  
+                        }
 /*
 **                    Determine Visibility
 */
                       if( bcdtmLos_determineVisibilityOfEdge(Xe,Ye,Ze,hLine1P->X2,hLine1P->Y2,hLine1P->Z2,hLine1P->X1,hLine1P->Y1,hLine1P->Z1,X1,Y1,Z1,X2,Y2,Z2,&visibility,visiblePts)) goto errexit ;
-                      if( visibility != 1 ) 
+                      if( visibility != 1 )
                         {
-                         if( visibility == -1 ) 
+                         if( visibility == -1 )
                            {
                             if( firstSection )
                               {
                                D2 = bcdtmMath_distance(Xe,Ye,X1,Y1) ;
-                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,hLine1P->Ang1,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,X1,Y1,Z1)) goto errexit ; 
+                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,hLine1P->Ang1,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,X1,Y1,Z1)) goto errexit ;
                               }
                             if( lastSection )
                               {
                                D1 = bcdtmMath_distance(Xe,Ye,X2,Y2) ;
-                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine1P->Ang2,hLine2P->Ang2,D1,hLine2P->D2,X2,Y2,Z2,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ; 
-                              } 
-                           } 
-                         if( visibility ==  0 ) 
+                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine1P->Ang2,hLine2P->Ang2,D1,hLine2P->D2,X2,Y2,Z2,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ;
+                              }
+                           }
+                         if( visibility ==  0 )
                            {
                             if( firstSection || lastSection )
                               {
@@ -2254,13 +2253,13 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
                                      D2   = bcdtmMath_distance(Xe,Ye,visiblePts[1].x,visiblePts[1].y) ;
                                      Ang2 = bcdtmMath_getAngle(Xe,Ye,visiblePts[1].x,visiblePts[1].y) ;
                                      if( Ang2 < hLine2P->Ang1 ) Ang2 = DTM_2PYE ;
-                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,Ang2,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ; 
+                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,Ang2,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ;
                                     }
                                   else
                                     {
                                      D2   = bcdtmMath_distance(Xe,Ye,X1,Y1) ;
-                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,hLine1P->Ang1,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,X1,Y1,Z1)) goto errexit ; 
-                                    } 
+                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine2P->Ang1,hLine1P->Ang1,hLine2P->D1,D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,X1,Y1,Z1)) goto errexit ;
+                                    }
                                  }
                                if( lastSection )
                                  {
@@ -2268,19 +2267,19 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
                                     {
                                      D1   = bcdtmMath_distance(Xe,Ye,visiblePts[0].x,visiblePts[0].y) ;
                                      Ang1 = bcdtmMath_getAngle(Xe,Ye,visiblePts[0].x,visiblePts[0].y) ;
-                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,hLine2P->Ang2,D1,hLine2P->D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ; 
+                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,hLine2P->Ang2,D1,hLine2P->D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ;
                                     }
                                   else
                                     {
                                      D1   = bcdtmMath_distance(Xe,Ye,X2,Y2) ;
-                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine1P->Ang2,hLine2P->Ang2,D1,hLine2P->D2,X2,Y2,Z2,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ; 
+                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,hLine1P->Ang2,hLine2P->Ang2,D1,hLine2P->D2,X2,Y2,Z2,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ;
                                      Ang1 = bcdtmMath_getAngle(Xe,Ye,visiblePts[0].x,visiblePts[0].y) ;
                                      Ang2 = bcdtmMath_getAngle(Xe,Ye,visiblePts[1].x,visiblePts[1].y) ;
                                      if( Ang2 < Ang1 ) Ang2 = DTM_2PYE ;
                                      D1   = bcdtmMath_distance(Xe,Ye,visiblePts[0].x,visiblePts[0].y) ;
                                      D2   = bcdtmMath_distance(Xe,Ye,visiblePts[1].x,visiblePts[1].y) ;
-                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,Ang2,D1,D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ; 
-                                    } 
+                                     if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,Ang2,D1,D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ;
+                                    }
                                  }
                               }
                             else
@@ -2290,11 +2289,11 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
                                if( Ang2 < Ang1 ) Ang2 = DTM_2PYE ;
                                D1   = bcdtmMath_distance(Xe,Ye,visiblePts[0].x,visiblePts[0].y) ;
                                D2   = bcdtmMath_distance(Xe,Ye,visiblePts[1].x,visiblePts[1].y) ;
-                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,Ang2,D1,D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ; 
-                              }  
+                               if( bcdtmLos_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang1,Ang2,D1,D2,visiblePts[0].x,visiblePts[0].y,visiblePts[0].z,visiblePts[1].x,visiblePts[1].y,visiblePts[1].z)) goto errexit ;
+                              }
                            }
                          process = 1 ;
-                         hLine2P->ActiveFlag = 0 ; 
+                         hLine2P->ActiveFlag = 0 ;
                         }
                      }
                   }
@@ -2326,7 +2325,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeInvisibleHorizonLines
 */
        for( hLine2P = tempHorLinesP ; hLine2P < tempHorLinesP + numTempHorLines ; ++hLine2P )
          {
-          if( bcdtmLos_storePointInHorizonTable(&saveHorLinesP,&numLines,&memLines,hLine2P->Ang1,hLine2P->Ang2,hLine2P->D1,hLine2P->D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ; 
+          if( bcdtmLos_storePointInHorizonTable(&saveHorLinesP,&numLines,&memLines,hLine2P->Ang1,hLine2P->Ang2,hLine2P->D1,hLine2P->D2,hLine2P->X1,hLine2P->Y1,hLine2P->Z1,hLine2P->X2,hLine2P->Y2,hLine2P->Z2)) goto errexit ;
          }
 /*
 **     Reallocate Horizon Lines
@@ -2390,7 +2389,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
  double *Xp,
  double *Yp,
  double *Zp
-) 
+)
 /*
 ** This Function Gets The Visible Section Of A Line Draped On The Tin Surface
 */
@@ -2399,10 +2398,11 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
  long   scan,process,numDrapePts=0 ;
  double dd,dx,dy,dz,x,y,z,maxAngle,eyeAngle=0.0,lastEyeAngle=0.0 ;
  DPoint3d    radial[2] ;
- DTM_DRAPE_POINT *drape1P,*drape2P,*drapePtsP=nullptr ;
+ DTMDrapePoint *drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Initialise
-*/ 
+*/
  *Xp = Xh ; *Yp = Yh ; *Zp = Zh ;
 /*
 **  Drape Line On Surface
@@ -2412,7 +2412,9 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 /*
 **  Drape Radial On Tin Surface
 */
- if( bcdtmDrape_stringDtmObject(dtmP,radial,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radial,2,false, drapePts)) goto errexit ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -2423,7 +2425,7 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 */
  for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
    {
-    if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+    if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
       {
        *drape1P = *drape2P ;
        ++drape1P ;
@@ -2434,55 +2436,55 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
 **  Determine Visibility Of Draped Radial Points
 */
  if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
- if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit  ;
- dx = (drapePtsP+1)->drapeX - Xe ;
- dy = (drapePtsP+1)->drapeY - Ye ;
- dz = (drapePtsP+1)->drapeZ - Ze ;
+ if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit  ;
+ dx = (drapePtsP+1)->drapePt.x - Xe ;
+ dy = (drapePtsP+1)->drapePt.y - Ye ;
+ dz = (drapePtsP+1)->drapePt.z - Ze ;
  dd = sqrt(dx*dx+dy*dy) ;
  maxAngle = atan2(dz,dd) ;
  drape1P = drapePtsP + 2 ;
  drape2P = drapePtsP + numDrapePts - 1 ;
  scan = 1 ;
  while ( scan )
-   { 
+   {
 /*
 **  Scan Visible Drape Points
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Visible Draped Points") ; 
-    if( drape1P <= drape2P ) 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Visible Draped Points") ;
+    if( drape1P <= drape2P )
       {
-       process = 1 ; 
+       process = 1 ;
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeAngle = atan2(dz,dd) ;
           if( eyeAngle >= maxAngle ) { maxAngle = eyeAngle ; ++drape1P ; }
-          else                        process = 0 ; 
-         }  
+          else                        process = 0 ;
+         }
        --drape1P ;
-       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
-       ++drape1P ; 
-      } 
+       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
+       ++drape1P ;
+      }
 /*
 **  Scan Invisible Drape Points
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Invisible Draped Points") ; 
-    if( drape1P <= drape2P )  
+    if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Invisible Draped Points") ;
+    if( drape1P <= drape2P )
       {
-       process = 1 ; 
+       process = 1 ;
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeAngle = atan2(dz,dd) ;
           if( eyeAngle < maxAngle ) { lastEyeAngle = eyeAngle ; ++drape1P ; }
-          else                        process = 0 ; 
+          else                        process = 0 ;
          }
 /*
 **   Calculate Max Angle Intercept On Radial
@@ -2490,32 +2492,32 @@ BENTLEYDTM_Private int bcdtmVisibility_getLastVisibleSectionOfSurfaceLineBetween
        if( process )
          {
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit ;
+          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit ;
           ++drape1P ;
          }
        else
-         { 
+         {
           dx = maxAngle - lastEyeAngle ;
           dd = eyeAngle - lastEyeAngle ;
-          x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-          y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-          z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+          x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+          y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+          z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
           if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit ;
           if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit ;
-         } 
+         }
       }
 /*
 **  Test For End Of Scan
 */
     if( drape1P > drape2P ) scan = 0 ;
-   } 
+   }
 /*
 ** Set Coordinates Back Into Radial
 */
  if( numLosPts < 2 ) return(0) ;
- *Xp = (losPtsP + numLosPts - 2)->x ; 
- *Yp = (losPtsP + numLosPts - 2)->y ; 
- *Zp = (losPtsP + numLosPts - 2)->z ; 
+ *Xp = (losPtsP + numLosPts - 2)->x ;
+ *Yp = (losPtsP + numLosPts - 2)->y ;
+ *Zp = (losPtsP + numLosPts - 2)->z ;
 /*
 ** Clean Up
 */
@@ -2542,7 +2544,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsCovered
  double Ye,
  DTM_HORIZON_LINE *hLine1P,
  DTM_HORIZON_LINE *hLine2P
-) 
+)
 /*
 ** This Function Determines If The hLine1P is between the Eye Position And hLine2P
 */
@@ -2594,9 +2596,9 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
  double Ye,
  DTM_HORIZON_LINE *hLine1P,
  DTM_HORIZON_LINE *hLine2P
-) 
+)
 /*
-** This Function Determines If The hLine1P is between the 
+** This Function Determines If The hLine1P is between the
 ** Eye Position And hline2P and Totally Covers hLine2P
 */
 {
@@ -2619,7 +2621,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
    bcdtmMath_normalIntersectCordLines(Xe,Ye,x,y,hLine1P->X1,hLine1P->Y1,hLine1P->X2,hLine1P->Y2,&X1,&Y1) ;
    bcdtmMath_normalIntersectCordLines(Xe,Ye,x,y,hLine2P->X1,hLine2P->Y1,hLine2P->X2,hLine2P->Y2,&X2,&Y2) ;
    if( bcdtmMath_distance(Xe,Ye,X1,Y1) < bcdtmMath_distance(Xe,Ye,X2,Y2) ) goto errexit  ;
-  } 
+  }
 /*
 ** Clean Up
 */
@@ -2640,7 +2642,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineIfHorizonLineIsTotallyCovered
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmVisibility_findHorizonLine(DTM_HORIZON_LINE *horLinesP,long numHorLines,double x,double y,long *hozLineOffsetP) 
+BENTLEYDTM_Private int bcdtmVisibility_findHorizonLine(DTM_HORIZON_LINE *horLinesP,long numHorLines,double x,double y,long *hozLineOffsetP)
 {
  DTM_HORIZON_LINE *hLineP ;
 /*
@@ -2652,12 +2654,12 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLine(DTM_HORIZON_LINE *horLine
 */
  for( hLineP = horLinesP ; hLineP < horLinesP + numHorLines ; ++hLineP )
    {
-    if( bcdtmMath_distance(x,y,hLineP->X1,hLineP->Y1) < 0.01 ) 
+    if( bcdtmMath_distance(x,y,hLineP->X1,hLineP->Y1) < 0.01 )
       {
        *hozLineOffsetP = (long)(hLineP - horLinesP) ;
-       return(DTM_SUCCESS) ; 
-      } 
-   } 
+       return(DTM_SUCCESS) ;
+      }
+   }
 /*
 ** Job Completed
 */
@@ -2695,16 +2697,16 @@ BENTLEYDTM_Private int bcdtmVisibility_checkAngleSequenceVisibilityLine(DTM_HORI
 {
  int ret=DTM_SUCCESS ;
  DTM_HORIZON_LINE *hLineP ;
- for( hLineP = horLinesP ; hLineP < horLinesP + numHorLines - 1 ; ++hLineP ) 
+ for( hLineP = horLinesP ; hLineP < horLinesP + numHorLines - 1 ; ++hLineP )
    {
     if( hLineP->Ang2 != (hLineP+1)->Ang1 )
-      { 
+      {
        if( normalFlag &&  hLineP->Ang2 != angle )
-         { 
+         {
           bcdtmWrite_message(0,0,0,"Angle Sequence Error ** horLinesP = %6ld Ang2 = %12.10lf ** horLinesP = %6ld Ang1 = %12.10lf",(long)(hLineP-horLinesP),hLineP->Ang2,(long)(hLineP-horLinesP+1),(hLineP+1)->Ang1) ;
           ret = DTM_ERROR ;
          }
-      }  
+      }
    }
 /*
 ** Job Completed
@@ -2716,7 +2718,7 @@ BENTLEYDTM_Private int bcdtmVisibility_checkAngleSequenceVisibilityLine(DTM_HORI
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmVisibility_calculateHorizonLineIntercept(DTM_HORIZON_LINE *hLineP,double Xe,double Ye,double Angle,double Radius,double *x,double *y,double *z) 
+BENTLEYDTM_Private int bcdtmVisibility_calculateHorizonLineIntercept(DTM_HORIZON_LINE *hLineP,double Xe,double Ye,double Angle,double Radius,double *x,double *y,double *z)
 {
  double  Xr,Yr ;
 /*
@@ -2778,8 +2780,9 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
  long *hozIndexListP
 )
 {
- int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long  p1,p2,p3,clPtr,voidFlag,startPnt,refineFlag,numStringPts,numPoints  ;
+ int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+ long  p1,p2,p3,clPtr,startPnt,refineFlag,numStringPts,numPoints  ;
+ bool voidFlag;
  long  trgNumber,dtmFeature,numFeatures,numBefore,numEnd,numJoinUserTags ;
  DPoint3d   *p3dP,*stringPtsP=nullptr,insertLine[2] ;
  DTM_TIN_NODE   *nodeP ;
@@ -2789,7 +2792,7 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
 /*
 ** Log Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Refining Tin For Region Visibility") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
@@ -2799,19 +2802,19 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
     bcdtmWrite_message(0,0,0,"hozLineIndexP   = %p",hozLineIndexP) ;
     bcdtmWrite_message(0,0,0,"numHorLineIndex = %8ld",numHorLineIndex) ;
     bcdtmWrite_message(0,0,0,"hozIndexListP   = %p",hozIndexListP) ;
-   } 
+   }
 /*
 ** Set Global Eye Values
 */
- eyeX = Xe ; 
- eyeY = Ye ; 
+ eyeX = Xe ;
+ eyeY = Ye ;
  eyeZ = Ze ;
 /*
 ** Create Dtm Object
 */
  if( bcdtmObject_createDtmObject(&dtmDataP)) goto errexit  ;
 /*
-** Scan All Triangle And Set Visibility Attributes 
+** Scan All Triangle And Set Visibility Attributes
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Calculating Region Visibility Break Lines") ;
  refineFlag = 0 ;
@@ -2829,17 +2832,17 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
           clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
           if( p2 > p1 && p3 > p1  )
             {
-             if( nodeP->hPtr != p2 ) 
+             if( nodeP->hPtr != p2 )
                {
                 ++trgNumber ;
                 if( trgNumber == 1 || trgNumber % 100000 == 0 || trgNumber == dtmP->numTriangles ) bcdtmWrite_message(1,0,0,"Processing Triangle %6ld of %6ld",trgNumber,dtmP->numTriangles) ;
-                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit  ;
-                if( ! voidFlag ) 
+                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit  ;
+                if( ! voidFlag )
                   {
                    if( bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObject(dtmP,dtmDataP,p1,p2,p3,numHorLines,hozLineIndexP,numHorLineIndex,hozIndexListP)) goto errexit  ;
                   }
                }
-            } 
+            }
           p2 = p3 ;
          }
       }
@@ -2847,18 +2850,18 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
 /*
 **  Write Number Of Visibility Break Lines
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
 //    bcdtmObject_reportStatisticsDtmObject(dtmP) ;
-    bcdtmWrite_message(0,0,0,"Number Of Visibility Break Lines  = %8ld",dtmDataP->numFeatures) ;   
-    bcdtmWrite_message(0,0,0,"Number Of Visibility Break Points = %8ld",dtmDataP->numPoints) ;   
+    bcdtmWrite_message(0,0,0,"Number Of Visibility Break Lines  = %8ld",dtmDataP->numFeatures) ;
+    bcdtmWrite_message(0,0,0,"Number Of Visibility Break Points = %8ld",dtmDataP->numPoints) ;
     if( bcdtmWrite_geopakDatFileFromDtmObject(dtmDataP,L"visibilityBreakLines.dat")) goto errexit ;
     if( bcdtmObject_appendDtmObject(dtmP,dtmDataP)) goto errexit ;
     if( bcdtmObject_triangulateDtmObject(dtmP)) goto errexit ;
-    bcdtmWrite_message(0,0,0,"After Retriangulation Number Of Points = %8ld",dtmP->numPoints) ;   
+    bcdtmWrite_message(0,0,0,"After Retriangulation Number Of Points = %8ld",dtmP->numPoints) ;
 //    bcdtmObject_reportStatisticsDtmObject(dtmP) ;
     goto cleanup ;
-   } 
+   }
 /*
 **  Join And Filter Horizon Lines
 */
@@ -2871,7 +2874,7 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
       {
        bcdtmWrite_message(0,0,0,"Number Horizon Lines Start = %6ld",numBefore) ;
        bcdtmWrite_message(0,0,0,"Number Horizon Lines End   = %6ld",numEnd) ;
-      } 
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"Filtering Horizon Lines") ;
     if( bcdtmFilter_dtmFeatureTypeDtmObject(dtmDataP,DTMFeatureType::Breakline,dtmP->ppTol*100.0,dtmP->ppTol*100.0,&numFeatures,&numBefore,&numEnd)) goto errexit ;
     if( dbg )
@@ -2879,11 +2882,11 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
        bcdtmWrite_message(0,0,0,"Number Horizon Lines Filtered          = %6ld",numFeatures) ;
        bcdtmWrite_message(0,0,0,"Number Horizon Lines Coordinates Start = %6ld",numBefore) ;
        bcdtmWrite_message(0,0,0,"Number Horizon Lines Coordinates End   = %6ld",numEnd) ;
-      } 
-   } 
+      }
+   }
 /*
 ** Refine Tin Object By Inserting Visibility Break Lines
-*/ 
+*/
  if( dtmDataP->numFeatures > 0  )
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Before Inserting Visibility Break Lines Into Tin ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
@@ -2893,9 +2896,9 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
        dtmFeatureP = ftableAddrP(dtmDataP,dtmFeature) ;
        if( dtmFeatureP->dtmFeatureType == DTMFeatureType::Breakline )
          {
-          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmDataP,dtmFeature,(DTM_TIN_POINT **) &stringPtsP ,&numStringPts)) goto errexit ;
-          if( numStringPts > 1 ) 
-            {         
+          if( bcdtmObject_getPointsForDtmFeatureDtmObject(dtmDataP,dtmFeature,(DPoint3d **) &stringPtsP ,&numStringPts)) goto errexit ;
+          if( numStringPts > 1 )
+            {
              for( p3dP = stringPtsP ; p3dP < stringPtsP + numStringPts - 1 ; ++p3dP)
                {
                 insertLine[0].x = p3dP->x     ; insertLine[0].y = p3dP->y     ; insertLine[0].z = p3dP->z ;
@@ -2903,21 +2906,21 @@ BENTLEYDTM_Private int bcdtmVisibility_refineTinForRegionVisibilityDtmObject
                 if( bcdtmInsert_internalStringIntoDtmObject(dtmP,1,2,insertLine,2,&startPnt)) goto errexit ;
                 if( startPnt != dtmP->nullPnt ) bcdtmList_nullTptrListDtmObject(dtmP,startPnt) ;
                }
-            }    
+            }
           if( stringPtsP != nullptr ) { free(stringPtsP) ; stringPtsP = nullptr ; }
          }
 /*
 **     Clean DTM Object If More Than 2500 Tin Points Have Been Inserted
 */
-       if( dtmP->numPoints - numPoints > 2500 ) 
+       if( dtmP->numPoints - numPoints > 2500 )
          {
           if( bcdtmList_cleanDtmObject(dtmP) ) goto errexit ;
           numPoints = dtmP->numPoints ;
-         } 
+         }
       }
     if( bcdtmList_cleanDtmObject(dtmP) ) goto errexit ;
     if( dbg ) bcdtmWrite_message(0,0,0,"After  Inserting Visibility Break Lines Into Tin ** dtmP->numPoints = %8ld",dtmP->numPoints) ;
-   }   
+   }
 /*
 ** Clean Up
 */
@@ -2957,7 +2960,8 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
 )
 {
  int       ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long      p1,p2,p3,lp,clc,offset,ofs1,ofs2,voidFlag,visValue,visibility ;
+ long      p1,p2,p3,lp,clc,offset,ofs1,ofs2,visValue,visibility ;
+ bool voidFlag;
  long      numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double    x,y,sx,sy,area,X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3  ;
  char      cv,nv=(char)-1/*255*/,*cP,*linesP=nullptr ;
@@ -2971,7 +2975,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
  if( linesP == nullptr ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; goto errexit  ; }
  for( cP = linesP ; cP < linesP + dtmP->cListPtr ; ++cP ) *cP = nv ;
 /*
-** Scan All Triangle And Set Visibility Attributes 
+** Scan All Triangle And Set Visibility Attributes
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Polygonizing Tin Region Visibility") ;
  for( p1 = 0 ; p1 < dtmP->numPoints ; ++p1 )
@@ -2985,19 +2989,19 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
          {
           p3  = clistAddrP(dtmP,clc)->pntNum ;
           clc = clistAddrP(dtmP,clc)->nextPtr ;
-          if( p2 > p1 && p3 > p1 ) 
+          if( p2 > p1 && p3 > p1 )
             {
-             if( nodeP->hPtr != p2 ) 
+             if( nodeP->hPtr != p2 )
                {
-                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,&voidFlag)) goto errexit  ;
-                if( ! voidFlag ) 
+                if( bcdtmList_testForVoidTriangleDtmObject(dtmP,p1,p2,p3,voidFlag)) goto errexit  ;
+                if( ! voidFlag )
                   {
                    X1 = pointAddrP(dtmP,p1)->x ; Y1 = pointAddrP(dtmP,p1)->y ; Z1 = pointAddrP(dtmP,p1)->z + 0.00001 ;
                    X2 = pointAddrP(dtmP,p2)->x ; Y2 = pointAddrP(dtmP,p2)->y ; Z2 = pointAddrP(dtmP,p2)->z + 0.00001 ;
                    X3 = pointAddrP(dtmP,p3)->x ; Y3 = pointAddrP(dtmP,p3)->y ; Z3 = pointAddrP(dtmP,p3)->z + 0.00001 ;
                    if( bcdtmVisibility_determinePointVisibilityUsingVisibilityTables(horLinesP,numHorLines,horLinesIndexP,numHorLinesIndex,hozIndexListP,Xe,Ye,Ze,(X1+X2+X3)/3.0,(Y1+Y2+Y3)/3.0,(Z1+Z2+Z3)/3.0,&visibility)) goto errexit ;
                    if( visibility ) visValue = 1 ;
-                   else             visValue = 2 ; 
+                   else             visValue = 2 ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p1,p2) ) goto errexit ;
                    *(linesP+offset) = ( char ) visValue ;
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&offset,p2,p3) ) goto errexit ;
@@ -3006,20 +3010,20 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
                    *(linesP+offset) = ( char ) visValue  ;
                   }
                }
-            } 
+            }
           p2 = p3 ;
          }
       }
    }
 /*
 ** Extract And Load Visibility Polygons
-*/             
- if( dbg ) bcdtmWrite_message(0,0,0,"Loading Visibility Polygons") ;	  
+*/
+ if( dbg ) bcdtmWrite_message(0,0,0,"Loading Visibility Polygons") ;
 /*
 ** Extract Polygons On the Tin Hull
 */
  p1 = dtmP->hullPoint ;
- do 
+ do
    {
     p2 = nodeAddrP(dtmP,p1)->hPtr ;
     bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p2,p1) ;
@@ -3066,7 +3070,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
        if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs1,p1,p2) ) goto errexit ;
        if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs2,p2,p1) ) goto errexit ;
        if( *(linesP+ofs1) != *(linesP+ofs2)  && *(linesP+ofs1) != nv  && bcdtmList_testLineDtmObject(dtmP,p1,clistAddrP(dtmP,clc)->pntNum) && ( nodeAddrP(dtmP,p1)->hPtr != p2 || nodeAddrP(dtmP,p2)->hPtr != p1 ) )
-         {         
+         {
           cv = *(linesP+ofs1) ;
           p3 = p1 ;
 /*
@@ -3095,7 +3099,7 @@ BENTLEYDTM_Private int bcdtmVisibility_polygoniseAndLoadRegionVisibilityFromDtmO
 /*
 **        If Polygon Is Clockwise Write Polygon
 */
-          if( area > 0.0 ) 
+          if( area > 0.0 )
             {
              p3 = p1 ;
              p2 = clistAddrP(dtmP,clc)->pntNum ;
@@ -3164,10 +3168,10 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
  )
 /*
 ** This Function Calculates The Break Lines To Refine The Tin For Region Visibility
-*/ 
+*/
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
- long   p1,p2,p3,fndType,h1Inside,h2Inside,hozLineIntersect,piVisibility,p2Visibility,p3Visibility,coverFlag,hLineOffset ;  
+ long   p1,p2,p3,fndType,h1Inside,h2Inside,hozLineIntersect,piVisibility,p2Visibility,p3Visibility,coverFlag,hLineOffset ;
  double angle1,angle2,angle3,maxAngle,minAngle ;
  double X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,radius,zMin,zMax,xMid,hzMin,hzMax ;
  double IX1,IY1,IZ1,IX2,IY2,IZ2 ;
@@ -3212,17 +3216,17 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
     bcdtmWrite_message(0,0,0,"%6ld ** %10.4lf %10.4lf %10.4lf",P2,X2,Y2,Z2) ;
     bcdtmWrite_message(0,0,0,"%6ld ** %10.4lf %10.4lf %10.4lf",P3,X3,Y3,Z3) ;
     if( minAngle <= maxAngle ) bcdtmWrite_message(0,0,0,"Angles = %12.8lf %12.8lf %12.8lf ** %12.8lf %12.8lf",angle1,angle2,angle3,minAngle,maxAngle) ;
-    else                       bcdtmWrite_message(0,0,0,"Bngles = %12.8lf %12.8lf %12.8lf ** %12.8lf %12.8lf",angle1,angle2,angle3,minAngle,maxAngle) ;      
+    else                       bcdtmWrite_message(0,0,0,"Bngles = %12.8lf %12.8lf %12.8lf ** %12.8lf %12.8lf",angle1,angle2,angle3,minAngle,maxAngle) ;
     bcdtmWrite_message(0,0,0,"Eye-P1 = %10.4lf",bcdtmMath_distance(eyeX,eyeY,X1,Y1)) ;
     bcdtmWrite_message(0,0,0,"Eye-P2 = %10.4lf",bcdtmMath_distance(eyeX,eyeY,X2,Y2)) ;
     bcdtmWrite_message(0,0,0,"Eye-P3 = %10.4lf",bcdtmMath_distance(eyeX,eyeY,X3,Y3)) ;
-   } 
+   }
 /*
 **  Calculate Plane Coefficients For Triangle
 */
  bcdtmMath_calculatePlaneCoefficients(X1,Y1,Z1,X2,Y2,Z2,X3,Y3,Z3,&A0,&B0,&C0,&D0) ;
 /*
-** Scan Horizon Lines And Determine Visibility BreakLines 
+** Scan Horizon Lines And Determine Visibility BreakLines
 */
     bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineIndex(hozLineIndexP,numHorLineIndex,hozLineIndexListP,minAngle,&hLineOffset) ;
     if( hLineOffset != DTM_NULL_PNT ) lhLineP = horLinesP + hLineOffset ;
@@ -3234,7 +3238,7 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
 **     Test For Covering Horizon Line
 */
        if( hLineP->Ang1 < maxAngle && hLineP->Ang2 > minAngle )
-         { 
+         {
 /*
 **        Determine If Horizon Line Is Between Eye And Triangle
 */
@@ -3243,7 +3247,7 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
 **        Calculate Visibility Of Points
 */
           if( coverFlag )
-            { 
+            {
              bcdtmVisibility_determineVisibilityOfPoint(eyeX,eyeY,eyeZ,hLineP->X2,hLineP->Y2,hLineP->Z2,hLineP->X1,hLineP->Y1,hLineP->Z1,X1,Y1,Z1,&piVisibility) ;
              bcdtmVisibility_determineVisibilityOfPoint(eyeX,eyeY,eyeZ,hLineP->X2,hLineP->Y2,hLineP->Z2,hLineP->X1,hLineP->Y1,hLineP->Z1,X2,Y2,Z2,&p2Visibility) ;
              bcdtmVisibility_determineVisibilityOfPoint(eyeX,eyeY,eyeZ,hLineP->X2,hLineP->Y2,hLineP->Z2,hLineP->X1,hLineP->Y1,hLineP->Z1,X3,Y3,Z3,&p3Visibility) ;
@@ -3274,7 +3278,7 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
 **              Check End Points Have Same z Values On Both Planes - Development Only
 */
                 if( cdbg )
-                  { 
+                  {
                    if( dbg ) bcdtmWrite_message(0,0,0,"Checking End Points") ;
                    bcdtmMath_interpolatePointOnPlane(HX1,HY1,&ZP1,A0,B0,C0,D0) ;
                    bcdtmMath_interpolatePointOnPlane(HX1,HY1,&ZP2,A1,B1,C1,D1) ;
@@ -3334,13 +3338,13 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateRegionVisibilityBreakLinesDtmObj
                      {
                       bcdtmWrite_message(0,0,0,"Break Line ** %12.5lf %12.5lf ** %12.5lf %12.5lf",HX1,HY1,HX2,HY2) ;
                       bcdtmWrite_message(0,0,0,"hLineP = %8ld ** lhLineP = %8ld ** hhLineP = %8ld",(long)(hLineP-horLinesP),(long)(lhLineP-horLinesP),(long)(hhLineP-horLinesP)) ;
-                     }                  
-                   if( fndType1 && fndType2 ) 
-                     { 
+                     }
+                   if( fndType1 && fndType2 )
+                     {
                       breakPts[0].x = HX1 ; breakPts[0].y = HY1 ; breakPts[0].z = HZ1 ;
                       breakPts[1].x = HX2 ; breakPts[1].y = HY2 ; breakPts[1].z = HZ2 ;
                    if( bcdtmObject_storeDtmFeatureInDtmObject(dtmDataP,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,1,&nullFeatureId,breakPts,2)) goto errexit ;
-                  }  
+                  }
                }
             }
          }
@@ -3378,14 +3382,14 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateIntersectionLineBetweenPlanes(do
 */
  if( B0 == 0.0 ) B0 = 0.0000000001 ;
  x = Xval ;
- z = (B1*D0/B0 + B1*A0*x/B0 - D1 - A1*x) / (C1-B1*C0/B0) ; 
- y = -(A0*x+C0*z+D0)/B0 ; 
+ z = (B1*D0/B0 + B1*A0*x/B0 - D1 - A1*x) / (C1-B1*C0/B0) ;
+ y = -(A0*x+C0*z+D0)/B0 ;
 /*
 ** Calculate Coefficients For Line Of Intersection Vector ( Cross Product Normal Vectors )
 */
  A = B0*C1 - B1*C0 ;
  B = C0*A1 - C1*A0 ;
- C = A0*B1 - A1*B0 ; 
+ C = A0*B1 - A1*B0 ;
 /*
 ** Calculate Coordinates For Intersection Line
 */
@@ -3413,7 +3417,7 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateIntersectionLineBetweenPlanes(do
     bcdtmMath_interpolatePointOnLine(*X1,*Y1,*Z1,*X2,*Y2,*Z2,x1,y1,&z1) ;
     bcdtmMath_interpolatePointOnLine(*X1,*Y1,*Z1,*X2,*Y2,*Z2,x2,y2,&z2) ;
    }
- else 
+ else
    {
     ang = atan2(B,A) ;
     if( ang < 0.0 ) ang += DTM_2PYE ;
@@ -3425,12 +3429,12 @@ BENTLEYDTM_Private int bcdtmVisibility_calculateIntersectionLineBetweenPlanes(do
     x2  = Xm + tinRadius * cos(ang) ;
     y2  = Ym + tinRadius * sin(ang) ;
     z2  = Zmin ;
-    if( bcdtmMath_sideOf(x1,y1,x2,y2,eyeX,eyeY) < 0 ) 
+    if( bcdtmMath_sideOf(x1,y1,x2,y2,eyeX,eyeY) < 0 )
       {
        x  = x1 ; y  = y1 ; z  = z1 ;
        x1 = x2 ; y1 = y2 ; z1 = z2 ;
        x2 = x  ; y2 = y  ; z2 = z  ;
-      }     
+      }
    }
 /*
 ** Set Return Valures
@@ -3457,7 +3461,7 @@ BENTLEYDTM_Private int  bcdtmVisibility_checkHorizonLineIntersectsTriangle
  double Y1,
  double X2,
  double Y2
-) 
+)
 {
  int  ret=DTM_SUCCESS ;
  long s1,s2 ;
@@ -3527,7 +3531,7 @@ BENTLEYDTM_Private int   bcdtmVisibility_calculateHorizonLineTriangleEdgeInterse
  double Y2,
  double *X3,
  double *Y3
-) 
+)
 /*
 ** This Function Calculates The Horizon Line Intersection With The Triangle Edge
 */
@@ -3540,44 +3544,44 @@ BENTLEYDTM_Private int   bcdtmVisibility_calculateHorizonLineTriangleEdgeInterse
  if( direction == DTMDirection::Clockwise )
    {
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,X1,Y1) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
-    
+      }
+
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,X1,Y1) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
+      }
 
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,X1,Y1) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
+      }
     *X3 = X1 ; *Y3 = Y1 ;
    }
 
  if( direction == DTMDirection::AntiClockwise )
    {
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,X2,Y2) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
-    
+      }
+
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,X2,Y2) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P2)->x,pointAddrP(dtmP,P2)->y,pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
+      }
 
     if( bcdtmMath_sideOf(pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,X2,Y2) > 0 )
-      {  
+      {
        if( bcdtmMath_intersectCordLines(pointAddrP(dtmP,P3)->x,pointAddrP(dtmP,P3)->y,pointAddrP(dtmP,P1)->x,pointAddrP(dtmP,P1)->y,X1,Y1,X2,Y2,&Xi,&Yi) )
          { *X3 = Xi ; *Y3 = Yi ; goto errexit  ; }
-      } 
+      }
     *X3 = X2 ; *Y3 = Y2 ;
    }
 /*
@@ -3626,7 +3630,7 @@ BENTLEYDTM_Private int bcdtmVisibility_testForCoveringHorizonLineOfTriangle
  *coverFlagP = 0 ;
  if( minAngle < hLineP->Ang1 ) minAngle = hLineP->Ang1 ;
  if( maxAngle > hLineP->Ang2 ) maxAngle = hLineP->Ang2 ;
- angle  = ( minAngle + maxAngle ) / 2.0 ; 
+ angle  = ( minAngle + maxAngle ) / 2.0 ;
  radius = bcdtmMath_distance(Xe,Ye,X1,Y1) ;
  if( ( dr = bcdtmMath_distance(Xe,Ye,X2,Y2)) > radius ) radius = dr ;
  if( ( dr = bcdtmMath_distance(Xe,Ye,X3,Y3)) > radius ) radius = dr ;
@@ -3660,7 +3664,7 @@ BENTLEYDTM_Private int bcdtmVisibility_testForCoveringHorizonLineOfTriangle
    {
     if( bcdtmMath_intersectCordLines(Xe,Ye,Xr,Yr,hLineP->X1,hLineP->Y1,hLineP->X2,hLineP->Y2,&Xh,&Yh))
       {
-       if( bcdtmMath_distance(Xe,Ye,Xh,Yh) < bcdtmMath_distance(Xe,Ye,Xi,Yi) ) *coverFlagP = 1 ; 
+       if( bcdtmMath_distance(Xe,Ye,Xh,Yh) < bcdtmMath_distance(Xe,Ye,Xi,Yi) ) *coverFlagP = 1 ;
       }
    }
 /*
@@ -3686,7 +3690,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineOffsetUsingAngleIndex
 */
 {
  int ret=DTM_SUCCESS ;
- struct  ANGLE_INDEX { double Angle ;long EdgeOfs,AngOfs ; }*baseAngIdxP,*angIdxBotP,*angIdxTopP,*angIdxP ; 
+ struct  ANGLE_INDEX { double Angle ;long EdgeOfs,AngOfs ; }*baseAngIdxP,*angIdxBotP,*angIdxTopP,*angIdxP ;
 /*
 ** Initialise
 */
@@ -3696,7 +3700,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineOffsetUsingAngleIndex
 /*
 ** Test For End Points
 */
- if( angleLow < angIdxBotP->Angle ) return(ret) ; 
+ if( angleLow < angIdxBotP->Angle ) return(ret) ;
  if( angleLow > angIdxTopP->Angle ) *hLineOffsetP = angIdxTopP->EdgeOfs ;
 /*
 ** Binary Scan Angle Index For Closest Entry
@@ -3722,11 +3726,11 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineOffsetUsingAngleIndex
 /*
 **  Go High Until Index Angle Is Greater Than Angle High
 */
- while ( angIdxP < angIdxTopP && angIdxP->Angle <= angleHigh ) 
+ while ( angIdxP < angIdxTopP && angIdxP->Angle <= angleHigh )
    {
     ++angIdxP ;
     if( angIdxP->EdgeOfs < *hLineOffsetP ) *hLineOffsetP = angIdxP->EdgeOfs ;
-   } 
+   }
 /*
 ** Job Completed
 */
@@ -3742,7 +3746,7 @@ BENTLEYDTM_Private int bcdtmVisibility_distanceIndexCompareFunction(const void *
 ** Compare Function For Qsort Of Horizon Point Angles
 */
 {
- DTM_HORIZON_DISTANCE *hd1P,*hd2P ; 
+ DTM_HORIZON_DISTANCE *hd1P,*hd2P ;
  hd1P = ( DTM_HORIZON_DISTANCE * ) Cp1 ;
  hd2P = ( DTM_HORIZON_DISTANCE * ) Cp2 ;
  if ( hd1P->Dist < hd2P->Dist  ) return(-1) ;
@@ -3760,7 +3764,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildDistanceIndexFromHorizonTable
  long numHorLines,
  DTM_HORIZON_DISTANCE **hozDistPP,
  long *numHorDistP
-) 
+)
 /*
 **  This Function Builds An Angle Index From The Horizon Table
 */
@@ -3778,8 +3782,8 @@ BENTLEYDTM_Private int bcdtmVisibility_buildDistanceIndexFromHorizonTable
 */
  *numHorDistP = numHorLines ;
  *hozDistPP = (DTM_HORIZON_DISTANCE * ) malloc( *numHorDistP * sizeof( DTM_HORIZON_DISTANCE) ) ;
- if( *hozDistPP == nullptr ) 
-   { 
+ if( *hozDistPP == nullptr )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
    }
@@ -3820,7 +3824,7 @@ BENTLEYDTM_Private int bcdtmVisibility_horizonLineIndexCompareFunction(const voi
 ** Compare Function For Qsort Of Horizon Point Angles
 */
 {
- DTM_HORIZON_LINE_INDEX *hIndex1P,*hIndex2P ; 
+ DTM_HORIZON_LINE_INDEX *hIndex1P,*hIndex2P ;
  hIndex1P = ( DTM_HORIZON_LINE_INDEX * ) Cp1 ;
  hIndex2P = ( DTM_HORIZON_LINE_INDEX * ) Cp2 ;
  if ( hIndex1P->Angle < hIndex2P->Angle ) return(-1) ;
@@ -3845,7 +3849,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
  long                   **hozLinesIndexListPP,
  long *numHorLinesIndexListP,
  long *memHorLinesIndexListP
-) 
+)
 /*
 **  This Function Builds An Angle Index From The Horizon Table
 */
@@ -3869,7 +3873,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
     bcdtmWrite_message(0,0,0,"*hozLinesIndexListPP  = %p",*hozLinesIndexListPP) ;
     bcdtmWrite_message(0,0,0,"numHorLinesIndexListP = %8ld",numHorLinesIndexListP) ;
     bcdtmWrite_message(0,0,0,"memHorLinesIndexListP = %8ld",memHorLinesIndexListP) ;
-   } 
+   }
 /*
 ** Clear Horizon Line Index List
 */
@@ -3918,26 +3922,26 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
     if( hIndexP->Htype == 1 ) if( bcdtmVisibility_addHorizonLineToActiveList(&activeHorLineListP,&numActiveHorLines,&memActiveHorLines,hIndexP->Hofs)) goto errexit ;
     if( hIndexP->Htype == 2 ) if( bcdtmVisibility_removeHorizonLineFromActiveList(activeHorLineListP,&numActiveHorLines,hIndexP->Hofs)) goto errexit ;
     hIndexP->Hlist  = *numHorLinesIndexListP  ;
-    hIndexP->Nhlist = numActiveHorLines ; 
-    if( numActiveHorLines > 0 ) 
+    hIndexP->Nhlist = numActiveHorLines ;
+    if( numActiveHorLines > 0 )
       {
-       if( bcdtmVisibility_addHorizonListEntiesToHorizonIndexList(hozLinesIndexListPP,numHorLinesIndexListP,memHorLinesIndexListP,activeHorLineListP,numActiveHorLines)) 
-         { 
-          free(*hozLinesIndexListPP) ; 
+       if( bcdtmVisibility_addHorizonListEntiesToHorizonIndexList(hozLinesIndexListPP,numHorLinesIndexListP,memHorLinesIndexListP,activeHorLineListP,numActiveHorLines))
+         {
+          free(*hozLinesIndexListPP) ;
           hozLinesIndexListPP = nullptr ;
-          goto errexit ; 
+          goto errexit ;
          }
-      } 
+      }
     if( numActiveHorLines > MaxActiveEntries ) MaxActiveEntries = numActiveHorLines ;
    }
 /*
 ** Log Stats On Table Sizes
-*/   
- if( dbg ) 
+*/
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Maximum Size Of Horizon Line Active List = %6ld",MaxActiveEntries) ;
     bcdtmWrite_message(0,0,0,"Maximum Size Of Horizon Line Index List  = %6ld",*numHorLinesIndexListP) ;
-   } 
+   }
 /*
 ** Realloc Memory For Horizon Line Index List
 */
@@ -3959,7 +3963,7 @@ BENTLEYDTM_Private int bcdtmVisibility_buildHorizonLineIndexFromHorizonLineTable
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -3986,9 +3990,9 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonLineToActiveList
     *memActiveHorLinesP = *memActiveHorLinesP + memInc ;
     if( *activeHorLinesPP == nullptr ) *activeHorLinesPP = (long*)malloc ( *memActiveHorLinesP * sizeof(long)) ;
     else                            *activeHorLinesPP = (long*)realloc( *activeHorLinesPP, *memActiveHorLinesP * sizeof(long)) ;
-    if( *activeHorLinesPP == nullptr ) 
+    if( *activeHorLinesPP == nullptr )
       {
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
+       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit  ;
       }
    }
@@ -4011,7 +4015,7 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonLineToActiveList
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4032,19 +4036,19 @@ BENTLEYDTM_Private int bcdtmVisibility_removeHorizonLineFromActiveList
 /*
 ** Check For Entries
 */
- if( *numActiveHorLinesP <= 0 ) 
-   { 
-    bcdtmWrite_message(1,0,0,"No Horizon Line Entries In Active List") ; 
-    goto errexit  ; 
+ if( *numActiveHorLinesP <= 0 )
+   {
+    bcdtmWrite_message(1,0,0,"No Horizon Line Entries In Active List") ;
+    goto errexit  ;
    }
 /*
 ** Find Entry
 */
  for( hLineP = activeHorLinesP ; hLineP < activeHorLinesP + *numActiveHorLinesP && hLineEntryP == nullptr ; ++hLineP )
    {
-    if( *hLineP == hozLineOffset ) hLineEntryP = hLineP ; 
+    if( *hLineP == hozLineOffset ) hLineEntryP = hLineP ;
    }
- if( hLineEntryP == nullptr ){ bcdtmWrite_message(1,0,0,"Horizon Line Entry %6ld Not In Active List",hozLineOffset) ; goto errexit  ; } 
+ if( hLineEntryP == nullptr ){ bcdtmWrite_message(1,0,0,"Horizon Line Entry %6ld Not In Active List",hozLineOffset) ; goto errexit  ; }
 /*
 ** Copy Over Removed Entry
 */
@@ -4064,7 +4068,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeHorizonLineFromActiveList
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4087,7 +4091,7 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonListEntiesToHorizonIndexList
 /*
 ** Test For No Entries
 */
- if( numHorList <= 0 ) 
+ if( numHorList <= 0 )
    {
     bcdtmWrite_message(2,0,0,"No Horizon List Entries") ;
     goto errexit ;
@@ -4100,16 +4104,16 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonListEntiesToHorizonIndexList
     while( *numHorIndexP + numHorList > *memHorIndexP ) *memHorIndexP = *memHorIndexP + memInc ;
     if( *hozIndexPP == nullptr ) *hozIndexPP = (long*)malloc ( *memHorIndexP * sizeof(long)) ;
     else              *hozIndexPP = (long*)realloc( *hozIndexPP, *memHorIndexP * sizeof(long)) ;
-    if( *hozIndexPP == nullptr ) 
-      { 
+    if( *hozIndexPP == nullptr )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit  ; 
+       goto errexit  ;
       }
    }
 /*
 ** Store Entry
 */
- for(  idxP = *hozIndexPP + *numHorIndexP , listP = hozListP ; listP < hozListP + numHorList ; ++idxP , ++listP ) *idxP = *listP ; 
+ for(  idxP = *hozIndexPP + *numHorIndexP , listP = hozListP ; listP < hozListP + numHorList ; ++idxP , ++listP ) *idxP = *listP ;
  *numHorIndexP = *numHorIndexP + numHorList ;
 /*
 ** Clean Up
@@ -4125,7 +4129,7 @@ BENTLEYDTM_Private int bcdtmVisibility_addHorizonListEntiesToHorizonIndexList
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -4153,12 +4157,12 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
    {
     bcdtmWrite_message(0,0,0,"Null Horizon Line Index") ;
     return(1) ;
-   }  
+   }
  if( hozLineIndexListP == nullptr )
    {
     bcdtmWrite_message(0,0,0,"Null Horizon Line Index List") ;
     return(1) ;
-   }  
+   }
 /*
 ** Initialise
 */
@@ -4168,7 +4172,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
 /*
 ** Test For End Points
 */
- if( angle < hIdxBotP->Angle || angle > hIdxTopP->Angle ) return(0) ; 
+ if( angle < hIdxBotP->Angle || angle > hIdxTopP->Angle ) return(0) ;
 /*
 ** Binary Scan Horizon Line Index For Closest Entry
 */
@@ -4180,7 +4184,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
     hIdxP =  hozLineIndexP + ((long)(hIdxBotP-hozLineIndexP)+(long)(hIdxTopP-hozLineIndexP)) / 2  ;
    }
 /*
-** 
+**
 */
  if( dbg == 1 )
    {
@@ -4189,9 +4193,9 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
     if( angle != hIdxP->Angle ) bcdtmWrite_message(0,0,0,"Unequal angles %12.10lf %12.10lf",angle,hIdxP->Angle) ;
    }
 /*
-** Get Offset For Unequal angles 
+** Get Offset For Unequal angles
 */
- if( angle != hIdxP->Angle ) 
+ if( angle != hIdxP->Angle )
    {
     if( hIdxP > hozLineIndexP ) --hIdxP ;
     if( hIdxP->Nhlist > 0 )
@@ -4204,12 +4208,12 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
           ++hListP ;
          }
       }
-   } 
+   }
 
 /*
-** Get Offset For Equal angles 
+** Get Offset For Equal angles
 */
- else 
+ else
    {
     sIdxP = hIdxP ;
     if( hIdxP > hozLineIndexP && hIdxP->Angle == angle ) --hIdxP ;
@@ -4225,7 +4229,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
       }
     hIdxP = sIdxP ;
     if( hIdxP < hozLineIndexP + numHorLineIndex && hIdxP->Angle == angle ) ++hIdxP ;
-    --hIdxP ; 
+    --hIdxP ;
     if( hIdxP->Nhlist > 0 )
       {
        hListP = hozLineIndexListP + hIdxP->Hofs ;
@@ -4236,7 +4240,7 @@ BENTLEYDTM_Private int bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineI
           ++hListP ;
          }
       }
-   } 
+   }
 /*
 ** Job Completed
 */
@@ -4272,7 +4276,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determinePointVisibilityUsingVisibilityTa
  DTM_HORIZON_LINE  *hLineP,*hLineLowP,*hLineHighP ;
 /*
 ** Log Function Parameters
-*/ 
+*/
 if( dbg )
   {
    bcdtmWrite_message(0,0,0,"Determining Point Visibility") ;
@@ -4287,7 +4291,7 @@ if( dbg )
    bcdtmWrite_message(0,0,0,"x                  = %15.5lf",x) ;
    bcdtmWrite_message(0,0,0,"y                  = %15.5lf",y) ;
    bcdtmWrite_message(0,0,0,"z                  = %15.5lf",z) ;
-  }            
+  }
 
 /*
 ** Initialise
@@ -4313,12 +4317,12 @@ if( dbg )
       {
        sideof = bcdtmMath_sideOf(hLineP->X1,hLineP->Y1,hLineP->X2,hLineP->Y2,x,y) ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Eye Covered sideOf = %2d",sideof) ;
-       if( sideof <= 0 ) 
+       if( sideof <= 0 )
          {
           bcdtmVisibility_determineVisibilityOfPoint(Xe,Ye,Ze,hLineP->X2,hLineP->Y2,hLineP->Z2,hLineP->X1,hLineP->Y1,hLineP->Z1,x,y,z,visibilityP) ;
           if( *visibilityP == 0 ) { if( dbg) bcdtmWrite_message(0,0,0,"Point Invisible") ; return(0) ; }
          }
-      } 
+      }
    }
  if( dbg) bcdtmWrite_message(0,0,0,"Point Visible") ;
 /*
@@ -4333,7 +4337,7 @@ if( dbg )
           bcdtmWrite_message(0,0,0,"Eye Covered ** ang1 = %12.10lf eye = %12.10lf ang2 = %12.10lf",hLineP->Ang1,eyeAngle,hLineP->Ang2) ;
          }
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -4381,7 +4385,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
  long   reverseFlag,normalFlag,numVisible,numInvisible ;
  long   numDistLines,numDistHorLines=0,memDistHorLines=0,numTempLines,numTempHorLines=0,memTempHorLines=0 ;
  double s,radius,ratio,Ang1,Ang2,Ang,AngL,D1,D2,D3,x,y,z,L1 ;
- DPoint3d    visibilityPts[2] ; 
+ DPoint3d    visibilityPts[2] ;
  DTM_HORIZON_LINE  *dLineP,*hLineP,*tLineP,*hLineLowP,*hLineHighP ;
  DTM_HORIZON_LINE  *tLineOffset1P,*tLineOffset2P,saveHorLine ;
  DTM_HORIZON_LINE  *distHorLinesP=nullptr,*tempHorLinesP=nullptr  ;
@@ -4395,26 +4399,26 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
 */
  *lineVisibilityP = 0 ;
  radius = tinRadius ;
- L1 = bcdtmMath_distance(X1,Y1,X2,Y2) ; 
- if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ; 
+ L1 = bcdtmMath_distance(X1,Y1,X2,Y2) ;
+ if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
 /*
 ** Set Line Anti Clockwise About Eye
 */
  reverseFlag = 0 ;
  sideof = bcdtmMath_sideOf(X1,Y1,X2,Y2,Xe,Ye) ;
  if( sideof == 0 ) return(0) ;
- if( sideof  < 0 ) 
-   { 
-    s = X1 ; X1 = X2 ; X2 = s ; 
-    s = Y1 ; Y1 = Y2 ; Y2 = s ; 
-    s = Z1 ; Z1 = Z2 ; Z2 = s ; 
+ if( sideof  < 0 )
+   {
+    s = X1 ; X1 = X2 ; X2 = s ;
+    s = Y1 ; Y1 = Y2 ; Y2 = s ;
+    s = Z1 ; Z1 = Z2 ; Z2 = s ;
     reverseFlag = 1 ;
    }
 /*
 ** Get Start And End Angles Of Line
 */
- D1 = bcdtmMath_distance(Xe,Ye,X1,Y1) ; 
- D2 = bcdtmMath_distance(Xe,Ye,X2,Y2) ; 
+ D1 = bcdtmMath_distance(Xe,Ye,X1,Y1) ;
+ D2 = bcdtmMath_distance(Xe,Ye,X2,Y2) ;
  Ang1 = bcdtmMath_getAngle(Xe,Ye,X1,Y1) ;
  Ang2 = bcdtmMath_getAngle(Xe,Ye,X2,Y2) ;
  AngL = Ang2 ;
@@ -4430,9 +4434,9 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
  distHorLinesP->Ang2 = Ang2 ;
  distHorLinesP->D1 = D1 ;
  distHorLinesP->D2 = D2 ;
- distHorLinesP->X1 = X1 ; distHorLinesP->Y1 = Y1 ; distHorLinesP->Z1 = Z1 ; 
- distHorLinesP->X2 = X2 ; distHorLinesP->Y2 = Y2 ; distHorLinesP->Z2 = Z2 ; 
- distHorLinesP->ActiveFlag = 1 ; 
+ distHorLinesP->X1 = X1 ; distHorLinesP->Y1 = Y1 ; distHorLinesP->Z1 = Z1 ;
+ distHorLinesP->X2 = X2 ; distHorLinesP->Y2 = Y2 ; distHorLinesP->Z2 = Z2 ;
+ distHorLinesP->ActiveFlag = 1 ;
  numDistHorLines = numDistLines = 1 ;
 /*
 ** Normalise Line Across Zero Degrees
@@ -4446,11 +4450,11 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
     (distHorLinesP+1)->D2 = D2 ;
     distHorLinesP->Ang2 = DTM_2PYE ;
     distHorLinesP->D2 = (distHorLinesP+1)->D1 = bcdtmMath_distance(Xe,Ye,distHorLinesP->X2,distHorLinesP->Y2) ;
-    (distHorLinesP+1)->X2 = X2 ; (distHorLinesP+1)->Y2 = Y2 ; (distHorLinesP+1)->Z2 = Z2 ; 
+    (distHorLinesP+1)->X2 = X2 ; (distHorLinesP+1)->Y2 = Y2 ; (distHorLinesP+1)->Z2 = Z2 ;
     distHorLinesP->X2 = (distHorLinesP+1)->X1 = X1 + ratio * (X2-X1) ;
     distHorLinesP->Z2 = (distHorLinesP+1)->Z1 = Z1 + ratio * (Z2-Z1) ;
     distHorLinesP->Y2 = (distHorLinesP+1)->Y1 = Ye  ;
-    (distHorLinesP+1)->ActiveFlag = 1 ; 
+    (distHorLinesP+1)->ActiveFlag = 1 ;
     numDistHorLines = numDistLines = 2 ;
     normalFlag = 1 ;
    }
@@ -4478,24 +4482,24 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
           if( bcdtmVisibility_determineIfHorizonLineIsCovered(Xe,Ye,(horLinesP+hIndexP->Hofs),dLineP) )
             {
              if( dLineP->D1 >= dLineP->D2 ) radius = dLineP->D1 ;
-             else                         radius = dLineP->D2 ; 
+             else                         radius = dLineP->D2 ;
              bcdtmVisibility_calculateHorizonLineIntercept(dLineP,Xe,Ye,hIndexP->Angle,radius*10.0,&x,&y,&z) ;
              D1 = bcdtmMath_distance(dLineP->X1,dLineP->Y1,x,y) ;
              D2 = bcdtmMath_distance(dLineP->X2,dLineP->Y2,x,y) ;
              if( D1 > 0.0 && D2 > 0.0 )
                {
                 D3 = bcdtmMath_distance(Xe,Ye,x,y) ;
-                if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,dLineP->Ang1,hIndexP->Angle,dLineP->D1,D3,dLineP->X1,dLineP->Y1,dLineP->Z1,x,y,z)) goto errexit  ; 
+                if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,dLineP->Ang1,hIndexP->Angle,dLineP->D1,D3,dLineP->X1,dLineP->Y1,dLineP->Z1,x,y,z)) goto errexit  ;
                 dLineP->Ang1 = hIndexP->Angle ; dLineP->D1 = D3 ; dLineP->X1 = x ; dLineP->Y1 = y ; dLineP->Z1 = z ;
                }
             }
-         } 
-      }     
-    if( bcdtmMath_distance(dLineP->X1,dLineP->Y1,dLineP->X2,dLineP->Y2) > 0 ) 
-      {  
-       if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,dLineP->Ang1,dLineP->Ang2,dLineP->D1,dLineP->D2,dLineP->X1,dLineP->Y1,dLineP->Z1,dLineP->X2,dLineP->Y2,dLineP->Z2)) goto errexit  ; 
+         }
       }
-   }  
+    if( bcdtmMath_distance(dLineP->X1,dLineP->Y1,dLineP->X2,dLineP->Y2) > 0 )
+      {
+       if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,dLineP->Ang1,dLineP->Ang2,dLineP->D1,dLineP->D2,dLineP->X1,dLineP->Y1,dLineP->Z1,dLineP->X2,dLineP->Y2,dLineP->Z2)) goto errexit  ;
+      }
+   }
 /*
 ** Sort tempHorLinesP Structure
 */
@@ -4514,7 +4518,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
        goto errexit  ;
       }
-   }  
+   }
 /*
 ** Determine Line Visibility
 */
@@ -4531,17 +4535,17 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
           bcdtmVisibility_findHorizonLineEntryListUsingHorizonLineIndex(horLinesIndexP,numHorLinesIndex,horIndexListP,tLineP->Ang1,&hLineOffset) ;
           if( hLineOffset != DTM_NULL_PNT ) hLineLowP = horLinesP + hLineOffset ;
           else                         hLineLowP = horLinesP ;
-          hLineHighP = horLinesP + numHorLines - 1 ; 
+          hLineHighP = horLinesP + numHorLines - 1 ;
           for( hLineP = hLineLowP ; hLineP <= hLineHighP && hLineP->Ang1 < tLineP->Ang2 && tLineP->ActiveFlag > 0 ; ++hLineP )
-            { 
-             if( tLineP->Ang1 >= hLineP->Ang1 && tLineP->Ang2 <= hLineP->Ang2 )              
+            {
+             if( tLineP->Ang1 >= hLineP->Ang1 && tLineP->Ang2 <= hLineP->Ang2 )
                {
                 if( bcdtmVisibility_determineIfHorizonLineIsCovered(Xe,Ye,hLineP,tLineP) )
                   {
                    process = 0 ;
                    bcdtmVisibility_determineVisibilityOfEdge(Xe,Ye,Ze,hLineP->X2,hLineP->Y2,hLineP->Z2,hLineP->X1,hLineP->Y1,hLineP->Z1,tLineP->X1,tLineP->Y1,tLineP->Z1,tLineP->X2,tLineP->Y2,tLineP->Z2,&visibility,visibilityPts) ;
                    if( visibility == -1 ) { process = 1 ; tLineP->ActiveFlag = 0 ; }
-                   if( visibility ==  0 ) 
+                   if( visibility ==  0 )
                      {
                       process = 1 ;
                       tLineP->ActiveFlag = -1 ;
@@ -4549,20 +4553,20 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
                       if( visibilityPts[0].x == tLineP->X1 && visibilityPts[0].y == tLineP->Y1 )
                         {
                          Ang = bcdtmMath_getAngle(Xe,Ye,visibilityPts[1].x,visibilityPts[1].y) ;
-                         D2  = bcdtmMath_distance(Xe,Ye,visibilityPts[1].x,visibilityPts[1].y) ; 
-                         if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,Ang,tLineP->D1,D2,tLineP->X1,tLineP->Y1,tLineP->Z1,visibilityPts[1].x,visibilityPts[1].y,visibilityPts[1].z)) goto errexit  ; 
-                         if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang,tLineP->Ang2,D2,tLineP->D2,visibilityPts[1].x,visibilityPts[1].y,visibilityPts[1].z,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ; 
+                         D2  = bcdtmMath_distance(Xe,Ye,visibilityPts[1].x,visibilityPts[1].y) ;
+                         if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,Ang,tLineP->D1,D2,tLineP->X1,tLineP->Y1,tLineP->Z1,visibilityPts[1].x,visibilityPts[1].y,visibilityPts[1].z)) goto errexit  ;
+                         if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang,tLineP->Ang2,D2,tLineP->D2,visibilityPts[1].x,visibilityPts[1].y,visibilityPts[1].z,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ;
                          (tempHorLinesP+numTempHorLines-1)->ActiveFlag = 0 ;
-                        } 
+                        }
                       else
                         {
                          Ang = bcdtmMath_getAngle(Xe,Ye,visibilityPts[0].x,visibilityPts[0].y) ;
                          if( Ang > tLineP->Ang1 && Ang < tLineP->Ang2 )
                            {
-                            D2  = bcdtmMath_distance(Xe,Ye,visibilityPts[0].x,visibilityPts[0].y) ; 
-                            if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,Ang,tLineP->D1,D2,tLineP->X1,tLineP->Y1,tLineP->Z1,visibilityPts[0].x,visibilityPts[0].y,visibilityPts[0].z)) goto errexit  ; 
+                            D2  = bcdtmMath_distance(Xe,Ye,visibilityPts[0].x,visibilityPts[0].y) ;
+                            if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,Ang,tLineP->D1,D2,tLineP->X1,tLineP->Y1,tLineP->Z1,visibilityPts[0].x,visibilityPts[0].y,visibilityPts[0].z)) goto errexit  ;
                             (tempHorLinesP+numTempHorLines-1)->ActiveFlag = 0 ;
-                            if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang,tLineP->Ang2,D2,tLineP->D2,visibilityPts[0].x,visibilityPts[0].y,visibilityPts[0].z,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ; 
+                            if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,Ang,tLineP->Ang2,D2,tLineP->D2,visibilityPts[0].x,visibilityPts[0].y,visibilityPts[0].z,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ;
                            }
                          else tLineP->ActiveFlag = 0 ;
                         }
@@ -4571,7 +4575,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
                   }
                }
             }
-         }   
+         }
       }
    }
 /*
@@ -4606,7 +4610,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
        goto errexit  ;
       }
-   }  
+   }
 /*
 ** De Normalise Line
 */
@@ -4616,7 +4620,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
     for( tLineP = tempHorLinesP ; tLineP->Ang2 <= AngL ; ++tLineP )
       {
        tLineOffset = (long)(tLineP-tempHorLinesP) ;
-       if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,tLineP->Ang2,tLineP->D1,tLineP->D2,tLineP->X1,tLineP->Y1,tLineP->Z1,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ; 
+       if( bcdtmVisibility_storePointInHorizonTable(&tempHorLinesP,&numTempHorLines,&memTempHorLines,tLineP->Ang1,tLineP->Ang2,tLineP->D1,tLineP->D2,tLineP->X1,tLineP->Y1,tLineP->Z1,tLineP->X2,tLineP->Y2,tLineP->Z2)) goto errexit  ;
        tLineP = tempHorLinesP + tLineOffset ;
        (tempHorLinesP+numTempHorLines-1)->ActiveFlag = tLineP->ActiveFlag ;
        tLineP->ActiveFlag = -1 ;
@@ -4631,7 +4635,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
       }
     numTempHorLines = (long)(tLineOffset1P-tempHorLinesP) ;
-   }  
+   }
 /*
 ** Check Calculations ** Development Only
 */
@@ -4646,7 +4650,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
        goto errexit  ;
       }
-   }  
+   }
 /*
 ** Reverse Line Direction
 */
@@ -4654,13 +4658,13 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Reversing Line Direction") ;
     hLineLowP = tempHorLinesP ;
-    hLineHighP = tempHorLinesP + numTempHorLines - 1 ; 
+    hLineHighP = tempHorLinesP + numTempHorLines - 1 ;
     while ( hLineLowP <= hLineHighP )
       {
        *(&saveHorLine) = *hLineLowP ;
        if( hLineLowP != hLineHighP )
          {
-          hLineLowP->ActiveFlag = hLineHighP->ActiveFlag ;  
+          hLineLowP->ActiveFlag = hLineHighP->ActiveFlag ;
           hLineLowP->Ang1 = hLineHighP->Ang2 ;
           hLineLowP->Ang2 = hLineHighP->Ang1 ;
           hLineLowP->D1   = hLineHighP->D2 ;
@@ -4672,7 +4676,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
           hLineLowP->Y2   = hLineHighP->Y1 ;
           hLineLowP->Z2   = hLineHighP->Z1 ;
          }
-       hLineHighP->ActiveFlag = saveHorLine.ActiveFlag ;  
+       hLineHighP->ActiveFlag = saveHorLine.ActiveFlag ;
        hLineHighP->Ang1 = saveHorLine.Ang2 ;
        hLineHighP->Ang2 = saveHorLine.Ang1 ;
        hLineHighP->D1   = saveHorLine.D2 ;
@@ -4683,7 +4687,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
        hLineHighP->X2   = saveHorLine.X1 ;
        hLineHighP->Y2   = saveHorLine.Y1 ;
        hLineHighP->Z2   = saveHorLine.Z1 ;
-       ++hLineLowP ; --hLineHighP ;  
+       ++hLineLowP ; --hLineHighP ;
       }
    }
 /*
@@ -4700,7 +4704,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
        goto errexit  ;
       }
-   }  
+   }
 /*
 ** Remove Contiguos Visible Or Invisible Sections
 */
@@ -4710,21 +4714,21 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
     tLineOffset1P = tLineOffset2P = tempHorLinesP ;
     process = 1 ;
     while( tLineOffset2P < tempHorLinesP + numTempHorLines )
-      { 
+      {
        while ( tLineOffset2P < tempHorLinesP + numTempHorLines && tLineOffset2P->ActiveFlag == tLineOffset1P->ActiveFlag ) ++tLineOffset2P ;
        --tLineOffset2P ;
        if( tLineOffset1P != tLineOffset2P )
          {
-          tLineOffset1P->Ang2 = tLineOffset2P->Ang2 ; 
-          tLineOffset1P->D2   = tLineOffset2P->D2   ; 
-          tLineOffset1P->X2   = tLineOffset2P->X2   ; 
-          tLineOffset1P->Y2   = tLineOffset2P->Y2   ; 
-          tLineOffset1P->Z2   = tLineOffset2P->Z2   ; 
+          tLineOffset1P->Ang2 = tLineOffset2P->Ang2 ;
+          tLineOffset1P->D2   = tLineOffset2P->D2   ;
+          tLineOffset1P->X2   = tLineOffset2P->X2   ;
+          tLineOffset1P->Y2   = tLineOffset2P->Y2   ;
+          tLineOffset1P->Z2   = tLineOffset2P->Z2   ;
           for( tLineP = tLineOffset1P + 1 ; tLineP <= tLineOffset2P ; ++tLineP ) tLineP->ActiveFlag = -1 ;
          }
        ++tLineOffset2P ;
        tLineOffset1P = tLineOffset2P ;
-      }  
+      }
     tLineOffset1P = tempHorLinesP ;
     for( tLineOffset2P = tempHorLinesP ; tLineOffset2P < tempHorLinesP + numTempHorLines ; ++tLineOffset2P )
       {
@@ -4744,11 +4748,11 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
  for( tLineP = tempHorLinesP ; tLineP < tempHorLinesP + numTempHorLines ; ++tLineP )
    {
     if( tLineP->ActiveFlag ) ++numVisible ;
-    else                     ++numInvisible ; 
-   } 
+    else                     ++numInvisible ;
+   }
  if     ( ! numVisible &&   numInvisible ) *lineVisibilityP = -1 ;
  else if(   numVisible && ! numInvisible ) *lineVisibilityP =  1 ;
- else                                      *lineVisibilityP =  0 ; 
+ else                                      *lineVisibilityP =  0 ;
 /*
 ** Check Length Of Line - Development Only
 */
@@ -4763,16 +4767,16 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
          }
        goto errexit  ;
       }
-   }  
+   }
 /*
 ** Copy Visibility To Los Data Structures
 */
- if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ; 
+ if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
  for( tLineP = tempHorLinesP ; tLineP < tempHorLinesP + numTempHorLines ; ++tLineP )
    {
     if( bcdtmVisibility_storeVertice(1,tLineP->ActiveFlag,tLineP->X1,tLineP->Y1,tLineP->Z1) ) goto errexit  ;
     if( bcdtmVisibility_storeVertice(1,tLineP->ActiveFlag,tLineP->X2,tLineP->Y2,tLineP->Z2) ) goto errexit  ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -4797,7 +4801,7 @@ BENTLEYDTM_Private int bcdtmVisibility_determineLineVisibilityUsingVisibilityTab
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmVisibility_storePointInHorizonTable(DTM_HORIZON_LINE **horLinesPP,long *numHorLinesP,long *memHorLinesP,double Ang1,double Ang2,double D1,double D2,double X1,double Y1,double Z1,double X2,double Y2,double Z2) 
+BENTLEYDTM_Private int bcdtmVisibility_storePointInHorizonTable(DTM_HORIZON_LINE **horLinesPP,long *numHorLinesP,long *memHorLinesP,double Ang1,double Ang2,double D1,double D2,double X1,double Y1,double Z1,double X2,double Y2,double Z2)
 /*
 ** This Function Store A Point In The Horizon Table
 */
@@ -4812,11 +4816,11 @@ BENTLEYDTM_Private int bcdtmVisibility_storePointInHorizonTable(DTM_HORIZON_LINE
    {
     *memHorLinesP = *memHorLinesP + minc ;
     if( *horLinesPP == nullptr )  *horLinesPP = (DTM_HORIZON_LINE *) malloc  ( *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
-    else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;  
-    if( *horLinesPP == nullptr ) 
-      { 
+    else                       *horLinesPP = (DTM_HORIZON_LINE *) realloc ( *horLinesPP, *memHorLinesP * sizeof(DTM_HORIZON_LINE)) ;
+    if( *horLinesPP == nullptr )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ; 
+       goto errexit ;
       }
    }
 /*
@@ -4861,8 +4865,8 @@ BENTLEYDTM_Private int bcdtmVisibility_removeTotallyInvisibleHorizonLines
  long             *numHorLinesP,
  double           Xe,
  double           Ye,
- double           Ze 
- )    
+ double           Ze
+ )
 /*
 ** This Function Removes Totally Invisible Horizon Lines
 */
@@ -4880,7 +4884,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeTotallyInvisibleHorizonLines
 */
  hLineHighP = *horLinesPP + *numHorLinesP - 1 ;
  for( hLineP = *horLinesPP ; hLineP <= hLineHighP ; ++hLineP )
-   { 
+   {
     if( hLineP->ActiveFlag )
       {
        hLineLowP = hLineP ;
@@ -4889,10 +4893,10 @@ BENTLEYDTM_Private int bcdtmVisibility_removeTotallyInvisibleHorizonLines
 **     Scan Horizon Line Structure For Covered Horizon Line
 */
        for( hzLineP = hLineLowP ; hzLineP <= hLineHighP && hzLineP->Ang1 < hLineP->Ang2 ; ++hzLineP )
-         {   
+         {
           if( hzLineP->ActiveFlag )
             {
-             if( hzLineP->Ang1 >= hLineP->Ang1 && hzLineP->Ang2 <= hLineP->Ang2 )              
+             if( hzLineP->Ang1 >= hLineP->Ang1 && hzLineP->Ang2 <= hLineP->Ang2 )
                {
 //                if( bcdtmVisibility_determineIfHorizonLineIsCovered(Xe,Ye,hLineP,hzLineP) )
                 if( bcdtmVisibility_determineIfHorizonLineIsTotallyCovered(Xe,Ye,hLineP,hzLineP) )
@@ -4901,14 +4905,14 @@ BENTLEYDTM_Private int bcdtmVisibility_removeTotallyInvisibleHorizonLines
                    else
                      {
                       if( bcdtmMath_calculatePlaneCoefficients(Xe,Ye,Ze,hLineP->X1,hLineP->Y1,hLineP->Z1,hLineP->X2,hLineP->Y2,hLineP->Z2,&Ca,&Cb,&Cc,&Cd) ) goto errexit ;
-                      if( Cc == 0.0 ) Cc = 0.000000001  ;  
+                      if( Cc == 0.0 ) Cc = 0.000000001  ;
                       Z1 = - ( Ca * hzLineP->X1 + Cb * hzLineP->Y1 + Cd ) / Cc ;
                       Z2 = - ( Ca * hzLineP->X2 + Cb * hzLineP->Y2 + Cd ) / Cc ;
                      }
                    if( Z1 > hzLineP->Z1             && Z2 > hzLineP->Z2 ||
-                       fabs(Z1-hzLineP->Z1) < 0.001 && Z2 > hzLineP->Z2 ||  
-                       fabs(Z2-hzLineP->Z2) < 0.001 && Z1 > hzLineP->Z1    )  
-                     { 
+                       fabs(Z1-hzLineP->Z1) < 0.001 && Z2 > hzLineP->Z2 ||
+                       fabs(Z2-hzLineP->Z2) < 0.001 && Z1 > hzLineP->Z1    )
+                     {
                       hzLineP->ActiveFlag = 0 ;
                       removeFlag = 1 ;
                      }
@@ -4917,7 +4921,7 @@ BENTLEYDTM_Private int bcdtmVisibility_removeTotallyInvisibleHorizonLines
             }
          }
       }
-   }   
+   }
 /*
 ** Remove Invisible Lines
 */
@@ -4968,11 +4972,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  long   numLoadPts=0,memLoadPts=0,memLoadPtsInc=1000 ;
  double x,y,z,dx,dy,dz,dd,Zs,maxangle,eyeangle = 0.0,lasteyeangle = 0.0;
  DPoint3d    *p3dP,radialPts[2],*loadPtsP=nullptr ;
- DTM_DRAPE_POINT *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
+ DTMDrapePoint *drapeP,*drape1P,*drape2P,*drapePtsP=nullptr ;
+ bvector<DTMDrapePoint> drapePts;
 /*
 ** Write Status Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Determining Radial Visibility") ;
     bcdtmWrite_message(0,0,0,"dtmP           = %p",dtmP) ;
@@ -4984,7 +4989,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
     bcdtmWrite_message(0,0,0,"Zp             = %12.5lf",Zp) ;
     bcdtmWrite_message(0,0,0,"loadFunctionP  = %12.5lf",Zp) ;
     bcdtmWrite_message(0,0,0,"userP          = %12.5lf",Zp) ;
-   } 
+   }
 /*
 ** Test For Valid Dtm Object
 */
@@ -5001,16 +5006,16 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 ** Determine If Eye Is Within Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit  ;
- if( ! drapeFlag ) 
-   { 
+ if( ! drapeFlag )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin or Internal To Void") ;
     goto errexit  ;
    }
 /*
 ** Check If Eye Is Below Surface
 */
- if( drapeFlag && Zs > Ze ) 
-   {  
+ if( drapeFlag && Zs > Ze )
+   {
     bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit  ;
    }
@@ -5018,15 +5023,15 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 ** Determine If Target Point Is Within Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xp,Yp,&Zs,&drapeFlag)) goto errexit  ;
- if( ! drapeFlag ) 
-   { 
+ if( ! drapeFlag )
+   {
     bcdtmWrite_message(1,0,0,"Target Point External To Tin or Internal To Void") ;
     goto errexit  ;
    }
 /*
 ** Check If Target Point Is Above Below Surface
 */
- if( drapeFlag && Zs > Zp ) 
+ if( drapeFlag && Zs > Zp )
    {
     bcdtmWrite_message(1,0,0,"Target Point Below Tin Surface") ;
     goto errexit  ;
@@ -5040,7 +5045,9 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
 **  Drape Radial On Tin
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Draping Radial On Tin") ;
- if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit  ;
+ if( bcdtmDrape_stringDtmObject(dtmP,radialPts,2,false,drapePts)) goto errexit  ;
+ drapePtsP = drapePts.data();
+ numDrapePts = (long)drapePts.size();
 /*
 **  Remove Drape End Points Not On Tin
 */
@@ -5052,65 +5059,65 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing Duplicate Drape Points") ;
  for( drape1P = drape2P = drapePtsP ; drape2P < drapePtsP + numDrapePts ; ++drape2P )
    {
-    if( drape2P->drapeX != drape1P->drapeX || drape2P->drapeY != drape1P->drapeY )
+    if( drape2P->drapePt.x != drape1P->drapePt.x || drape2P->drapePt.y != drape1P->drapePt.y )
       {
        if( drape1P != drape2P ) *drape1P = *drape2P ;
        ++drape1P ;
       }
-   } 
+   }
  numDrapePts = (long)(drape1P-drapePtsP) ;
 /*
 **  Determine Visibility Of Draped Radial Points
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Determine Visibility Of Draped Radial Points ** numDrapePts = %8ld", numDrapePts) ;
  if( bcdtmVisibility_storeVertice(100,0,0.0,0.0,0.0) ) goto errexit  ;
- if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapeX,drapePtsP->drapeY,drapePtsP->drapeZ) ) goto errexit  ;
- dx = (drapePtsP+1)->drapeX - Xe ;
- dy = (drapePtsP+1)->drapeY - Ye ;
- dz = (drapePtsP+1)->drapeZ - Ze ;
+ if( bcdtmVisibility_storeVertice(1,1,drapePtsP->drapePt.x,drapePtsP->drapePt.y,drapePtsP->drapePt.z) ) goto errexit  ;
+ dx = (drapePtsP+1)->drapePt.x - Xe ;
+ dy = (drapePtsP+1)->drapePt.y - Ye ;
+ dz = (drapePtsP+1)->drapePt.z - Ze ;
  dd = sqrt(dx*dx+dy*dy) ;
  maxangle = atan2(dz,dd) ;
  drape1P = drapePtsP + 2 ;
  drape2P = drapePtsP + numDrapePts - 1 ;
  scan = 1 ;
  while ( scan )
-   { 
+   {
 /*
 **  Scan Visible Drape Points
 */
-    if( drape1P <= drape2P ) 
+    if( drape1P <= drape2P )
       {
-       process = 1 ; 
+       process = 1 ;
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeangle = atan2(dz,dd) ;
           if( eyeangle >= maxangle ) { maxangle = eyeangle ; ++drape1P ; }
-          else                        process = 0 ; 
-         }  
+          else                        process = 0 ;
+         }
        --drape1P ;
-       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
-       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
-       ++drape1P ; 
-      } 
+       if( bcdtmVisibility_storeVertice(1,1,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
+       if( drape1P < drape2P ) if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
+       ++drape1P ;
+      }
 /*
 **  Scan Invisible Drape Points
 */
-    if( drape1P <= drape2P )  
+    if( drape1P <= drape2P )
       {
-       process = 1 ; 
+       process = 1 ;
        while ( drape1P <= drape2P && process )
          {
-          dx = drape1P->drapeX - Xe ;
-          dy = drape1P->drapeY - Ye ;
-          dz = drape1P->drapeZ - Ze ;
+          dx = drape1P->drapePt.x - Xe ;
+          dy = drape1P->drapePt.y - Ye ;
+          dz = drape1P->drapePt.z - Ze ;
           dd = sqrt(dx*dx+dy*dy) ;
           eyeangle = atan2(dz,dd) ;
           if( eyeangle < maxangle ) { lasteyeangle = eyeangle ; ++drape1P ; }
-          else                        process = 0 ; 
+          else                        process = 0 ;
          }
 /*
 **     Calculate Max Angle Intercept On radialPts
@@ -5118,25 +5125,25 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
        if( process )
          {
           --drape1P ;
-          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapeX,drape1P->drapeY,drape1P->drapeZ) ) goto errexit  ;
+          if( bcdtmVisibility_storeVertice(1,0,drape1P->drapePt.x,drape1P->drapePt.y,drape1P->drapePt.z) ) goto errexit  ;
           ++drape1P ;
          }
        else
-         { 
+         {
           dx = maxangle - lasteyeangle ;
           dd = eyeangle - lasteyeangle ;
-          x =  (drape1P-1)->drapeX + (drape1P->drapeX - (drape1P-1)->drapeX) * dx / dd ;
-          y =  (drape1P-1)->drapeY + (drape1P->drapeY - (drape1P-1)->drapeY) * dx / dd ;
-          z =  (drape1P-1)->drapeZ + (drape1P->drapeZ - (drape1P-1)->drapeZ) * dx / dd ;
+          x =  (drape1P-1)->drapePt.x + (drape1P->drapePt.x - (drape1P-1)->drapePt.x) * dx / dd ;
+          y =  (drape1P-1)->drapePt.y + (drape1P->drapePt.y - (drape1P-1)->drapePt.y) * dx / dd ;
+          z =  (drape1P-1)->drapePt.z + (drape1P->drapePt.z - (drape1P-1)->drapePt.z) * dx / dd ;
           if( bcdtmVisibility_storeVertice(1,0,x,y,z) ) goto errexit  ;
           if( bcdtmVisibility_storeVertice(1,1,x,y,z) ) goto errexit  ;
-         } 
+         }
       }
 /*
 **  Test For End Of Scan
 */
     if( drape1P > drape2P ) scan = 0 ;
-   } 
+   }
 /*
 ** Load Visibility Lines
 */
@@ -5148,7 +5155,7 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_determineRadialVisibilityDtmObject
     if( *lP ) { if( loadFunctionP(DTMFeatureType::VisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     else      { if( loadFunctionP(DTMFeatureType::InvisibleLine,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,loadPtsP,numLoadPts,userP)) goto errexit ; }
     numLoadPts = 0 ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -5177,13 +5184,13 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_createVisibilityLatticeDtmObject
  BC_DTM_OBJ *dtmP,                     // ==> Pointer To DTM Object
  DTM_LAT_OBJ **latticePP,              // <== Created View Shed Lattice
  long   numLatticePts,                 // ==> Number Of Lattice Points
- double Xe,                            // ==> x Eye Coordinate 
+ double Xe,                            // ==> x Eye Coordinate
  double Ye,                            // ==> y Eye Coordinate
  double Ze,                            // ==> z Eye Coordinate
  double zOffset                        // ==> z offset Value To Apply To Lattice Elevation Values
 )
 /*
-** This Function Creates A Visibility Lattice 
+** This Function Creates A Visibility Lattice
 */
 {
  int         ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
@@ -5224,19 +5231,19 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_createVisibilityLatticeDtmObject
    {
     bcdtmWrite_message(2,0,0,"Method Requires Null Lattice Pointer") ;
     goto errexit ;
-   }    
+   }
 /*
 ** Determine If Eye Is Inside Tin Hull
 */
  if( bcdtmDrape_pointDtmObject(dtmP,Xe,Ye,&Zs,&drapeFlag)) goto errexit ;
- if( drapeFlag == 0 ) 
-   { 
+ if( drapeFlag == 0 )
+   {
     bcdtmWrite_message(1,0,0,"Eye External To Tin Or Internal To Void") ;
     goto errexit ;
    }
- if( drapeFlag  && Zs > Ze )  
-   { 
-    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ; 
+ if( drapeFlag  && Zs > Ze )
+   {
+    bcdtmWrite_message(1,0,0,"Eye Below Tin Surface") ;
     goto errexit ;
    }
 /*
@@ -5260,12 +5267,12 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_createVisibilityLatticeDtmObject
           index = i * latticeP->NYL + j ;
           if( ( z = *(latticeP->LAT+index) ) == latticeP->NULLVAL ) ++numNullPoints ;
          }
-      } 
-    bcdtmWrite_message(0,0,0,"Number Of Null Lattice Points = %8ld",numNullPoints) ;     
+      }
+    bcdtmWrite_message(0,0,0,"Number Of Null Lattice Points = %8ld",numNullPoints) ;
     numNullPoints = 0 ;
-   } 
+   }
 /*
-** Build Visibility Tables For Dtm 
+** Build Visibility Tables For Dtm
 */
  startTime = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Building Visibility Tables") ;
@@ -5289,28 +5296,28 @@ BENTLEYDTM_EXPORT int bcdtmVisibility_createVisibilityLatticeDtmObject
           y = latticeP->LYMIN + i * latticeP->DY ;
           z = z + zOffset ;
           if( bcdtmVisibility_determinePointVisibilityUsingVisibilityTables(horLinesP,numHorLines,horLinesIndexP,numHorLinesIndex,hozIndexListP,Xe,Ye,Ze,x,y,z,&isVisible)) goto errexit ;
-          if( isVisible ) 
+          if( isVisible )
             {
              ++numVisiblePoints ;
              *(latticeP->LAT+index) = 1.0 ;
-            } 
+            }
           else
             {
              ++numInvisiblePoints ;
-             *(latticeP->LAT+index) = 0.0 ; 
-            } 
+             *(latticeP->LAT+index) = 0.0 ;
+            }
          }
       }
    }
 /*
 ** Set Lattice Min and Max z Values
 */
- latticeP->LZMIN = 0.0 ;   
- latticeP->LZMAX = 1.0 ;   
+ latticeP->LZMIN = 0.0 ;
+ latticeP->LZMAX = 1.0 ;
 /*
 ** Write Timing Information
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Time To Determine Visibility Of Lattice Points = %7.3lf seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
     bcdtmWrite_message(0,0,0,"Number Of Visible Points   = %8ld",numVisiblePoints) ;

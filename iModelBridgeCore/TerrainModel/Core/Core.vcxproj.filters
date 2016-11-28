@@ -238,9 +238,6 @@
     <ClCompile Include="cppwrappers\bcDTMDrapedLineClass.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
-    <ClCompile Include="cppwrappers\bcDTMEdges.cpp">
-      <Filter>Source\CPPWrappers</Filter>
-    </ClCompile>
     <ClCompile Include="cppwrappers\bcDTMFeatureClass.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
@@ -290,6 +287,9 @@
       <Filter>Source\2D</Filter>
     </ClCompile>
     <ClCompile Include="CPPWrappers\DTMIterators.cpp">
+      <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="cppwrappers\TMEditor.cpp">
       <Filter>Source\CPPWrappers</Filter>
     </ClCompile>
   </ItemGroup>

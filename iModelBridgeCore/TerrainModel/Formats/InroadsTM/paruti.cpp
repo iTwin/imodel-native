@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 #include "stdafx.h"
@@ -98,8 +98,8 @@ int aecParams_getStatusState /* <= state: 0 or 1                   */
     }
 
 /*%-----------------------------------------------------------------------------
-FUNC: aecParams_getFileExtension 
-DESC: returns file extensions 
+FUNC: aecParams_getFileExtension
+DESC: returns file extensions
 HIST: Original                                       mohan    12/1992
 MISC:
 KEYW: PARAMETERS FILE EXTENSION GET
@@ -117,7 +117,7 @@ LPWSTR aecParams_getFileExtension /* <= file extension              */
     }
 
 
- 
+
 /*%-----------------------------------------------------------------------------
 FUNC: aecParams_getLinearUnits
 DESC: Gets the Linear Units
@@ -147,7 +147,7 @@ void aecParams_getLinearUnits
     if ( precisionP != (int *)0 )
         {
         *precisionP = 4;
-        //if( tcb ) 
+        //if( tcb )
         //{
         //	adres2.b = (UChar)(tcb->ad1.format.adres2);
 

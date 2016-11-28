@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/TMTransformHelper.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,7 @@ struct TMTransformHelper : RefCountedBase
 #ifdef ToDo
     private:
 
-        struct bcDTMEdgesTransformWrapper : public IBcDTMEdges
+        struct bcDTMEdgesTransformWrapper : public IBcDTMEdges, NonCopyableClass
             {
             private: BcDTMEdgesPtr m_edges;
             private: bcDTMTransformWrapper* m_wrapper;
@@ -49,7 +49,7 @@ struct TMTransformHelper : RefCountedBase
                         }
             };
 
-        struct bcDTMFeatureEnumeratorTransform : public IBcDTMFeatureEnumerator
+        struct bcDTMFeatureEnumeratorTransform : public IBcDTMFeatureEnumerator, NonCopyableClass
             {
             private:
                 BcDTMFeatureEnumeratorPtr m_enumerator;
@@ -124,19 +124,50 @@ struct TMTransformHelper : RefCountedBase
             };
 #endif
     public:
+
+        //=======================================================================================
+        //! Base class to make a class non-copyable
+        // @bsiclass                                                     11/09
+        //=======================================================================================
+        class NonCopyableClassExceptMove
+            {
+            private:
+                NonCopyableClassExceptMove(NonCopyableClass const&);
+                NonCopyableClassExceptMove& operator= (NonCopyableClass const&);
+
+            protected:
+                NonCopyableClassExceptMove()
+                    {
+                    }
+                ~NonCopyableClassExceptMove()
+                    {
+                    }
+                NonCopyableClassExceptMove(NonCopyableClassExceptMove&&)
+                    {
+                    }
+            };
+
         // Help Array Functions for creating and deleting memory if required.
-        struct DPoint3dCopy
+        struct DPoint3dCopy : NonCopyableClassExceptMove
             {
             protected:
                 DPoint3d* m_values;
                 bool m_ownValues;
+
             public:
-                DPoint3dCopy (DPoint3dCP values, bool ownValues)
+                DPoint3dCopy(DPoint3dCopy&& copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
+                    }
+                DPoint3dCopy(DPoint3dCP values, bool ownValues)
                     {
                     m_values = const_cast<DPoint3d*>(values);
                     m_ownValues = ownValues;
                     }
-                ~DPoint3dCopy ()
+                virtual ~DPoint3dCopy ()
                     {
                     if (m_ownValues) delete[] m_values;
                     }
@@ -154,7 +185,12 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_params = params;
                     }
-                ~DTMFenceParamsCopy ()
+                DTMFenceParamsCopy(DTMFenceParamsCopy&& copy) : DPoint3dCopy((DTMFenceParamsCopy&&)copy)
+                    {
+                    m_params = copy.m_params;
+                    copy.m_params = nullptr;
+                    }
+                ~DTMFenceParamsCopy()
                     {
                     if (m_ownValues) delete m_params;
                     }
@@ -163,7 +199,7 @@ struct TMTransformHelper : RefCountedBase
                     return *m_params;
                     }
             };
-        struct DoubleCopy
+        struct DoubleCopy : NonCopyableClass
             {
             private:
                 double* m_values;
@@ -174,6 +210,13 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<double*>(values);
                     m_ownValues = ownValues;
                     }
+                DoubleCopy(DoubleCopy&& copy) : DoubleCopy((DoubleCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
+                    }
                 ~DoubleCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -183,7 +226,7 @@ struct TMTransformHelper : RefCountedBase
                     return m_values;
                     }
             };
-        struct VOLRANGETABCopy
+        struct VOLRANGETABCopy : NonCopyableClass
             {
             private:
                 VOLRANGETAB* m_values;
@@ -194,6 +237,13 @@ struct TMTransformHelper : RefCountedBase
                     m_values = const_cast<VOLRANGETAB*>(values);
                     m_ownValues = ownValues;
                     }
+                VOLRANGETABCopy(VOLRANGETABCopy&& copy) : VOLRANGETABCopy((VOLRANGETABCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
+                    }
                 ~VOLRANGETABCopy ()
                     {
                     if (m_ownValues) delete [] m_values;
@@ -203,7 +253,7 @@ struct TMTransformHelper : RefCountedBase
                     return m_values;
                     }
             };
-        struct DRange1dCopy
+        struct DRange1dCopy : NonCopyableClass
             {
             private:
                 DRange1d* m_values;
@@ -213,6 +263,13 @@ struct TMTransformHelper : RefCountedBase
                     {
                     m_values = const_cast<DRange1d*>(values);
                     m_ownValues = ownValues;
+                    }
+                DRange1dCopy(DRange1dCopy&& copy) : DRange1dCopy((DRange1dCopy&&)copy)
+                    {
+                    m_values = copy.m_values;
+                    m_ownValues = copy.m_ownValues;
+                    copy.m_values = nullptr;
+                    copy.m_ownValues = false;
                     }
                 ~DRange1dCopy ()
                     {
@@ -358,20 +415,20 @@ struct TMTransformHelper : RefCountedBase
             }
         void convertDtmStringVectorFromDTM (bvector<DtmString>& value)
             {
-            for(DtmString it : value)
+            for(DtmString& it : value)
                 convertPointsFromDTM (it);
             return;
             }
         void convertDTMDynamicFeaturesFromDTM (DTMDynamicFeatureArray& features)
             {
-            for(DTMDynamicFeature it : features)
+            for(DTMDynamicFeature& it : features)
                 convertPointsFromDTM (&it.featurePts[0], (int)it.featurePts.size());
             }
 
 #ifdef __BENTLEYDTM_BUILD__
         void convertDrapedPointsFromDTM (bvector<RefCountedPtr<BcDTMDrapedLinePoint>>& drapedPoints)
             {
-            for (RefCountedPtr<BcDTMDrapedLinePoint> it : drapedPoints)
+            for (RefCountedPtr<BcDTMDrapedLinePoint>& it : drapedPoints)
                 {
                 DPoint3d pt;
                 it->GetPointCoordinates (pt);
@@ -616,7 +673,7 @@ struct TMTransformHelper : RefCountedBase
 
         void convertDtmStringVectorToDTM (bvector<DtmString>& value)
             {
-            for (DtmString it : value)
+            for (DtmString& it : value)
                 convertPointsToDTM (it);
             return;
             }
@@ -693,7 +750,7 @@ struct TMTransformHelper : RefCountedBase
             }
 
         // Call back wrappers for converting the coordinates
-        struct PFTriangleMeshCallbackWrapper 
+        struct PFTriangleMeshCallbackWrapper
             {
             DTMTriangleMeshCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -707,7 +764,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, numTriangles, numMeshPoints, meshPointsP, numMeshFaces, meshFacesP, data->userP);
             }
 
-        struct PFDuplicatePointsCallbackWrapper 
+        struct PFDuplicatePointsCallbackWrapper
             {
             DTMDuplicatePointsCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -725,7 +782,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (x, y, dupErrorsP, numDupErrors, data->userP);
             }
 
-        struct PFCrossingFeaturesCallbackWrapper 
+        struct PFCrossingFeaturesCallbackWrapper
             {
             DTMCrossingFeaturesCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -744,7 +801,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (crossError, data->userP);
             }
 
-        struct PFBrowseSinglePointFeatureCallbackWrapper 
+        struct PFBrowseSinglePointFeatureCallbackWrapper
             {
             DTMBrowseSinglePointFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -759,7 +816,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, &pt, data->userP);
             }
 
-        struct PFBrowseContourCallbackWrapper 
+        struct PFBrowseContourCallbackWrapper
             {
             DTMFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -772,7 +829,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (featureType, featureTag, featureId, tPoint, (int)nPoint, data->userP);
             }
 
-        struct PFBrowseFeatureCacheCallbackWrapper 
+        struct PFBrowseFeatureCacheCallbackWrapper
             {
             DTMBrowseFeatureCacheCallback callback;
             bcDTMTransformWrapper* wrapper;
@@ -790,7 +847,7 @@ struct TMTransformHelper : RefCountedBase
             return data->callback (cache, data->userP);
             }
 
-        struct PFBrowseFeatureCallbackWrapper 
+        struct PFBrowseFeatureCallbackWrapper
             {
             DTMFeatureCallback callback;
             bcDTMTransformWrapper* wrapper;

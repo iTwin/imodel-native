@@ -1,6 +1,10 @@
-#pragma warning(disable: 4018)
-#pragma warning(disable: 4786)
-
+/*--------------------------------------------------------------------------------------+
+|
+|   $Source: Core/cppwrappers/DTMIterators.cpp $
+|
+| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/IDTM.h>
 #include <bcDTMBaseDef.h>
@@ -11,18 +15,24 @@
 #include <bcdtminlines.h>
 #include <TerrainModel/Core/DTMIterators.h>
 #include <TerrainModel/Core/TMTransformHelper.h>
-#include <algorithm>
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
 int bcdtmMark_checkForPointOnRegionHullDtmObject (BC_DTM_OBJ* dtmP, long pnt);
 
-DTMFeatureInfo::DTMFeatureInfo (BcDTMP dtm, long feature) : m_dtm (dtm), m_feature (feature)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureInfo::DTMFeatureInfo(BcDTMP dtm, long feature) : m_dtm(dtm), m_feature(feature)
+
     {
     }
 
-void DTMFeatureInfo::GetFeaturePoints (bvector<DPoint3d>& points) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+void DTMFeatureInfo::GetFeaturePoints(bvector<DPoint3d>& points) const
     {
     long dtmFeature = m_feature;
 
@@ -41,7 +51,10 @@ void DTMFeatureInfo::GetFeaturePoints (bvector<DPoint3d>& points) const
         points.clear ();
     }
 
-void DTMFeatureInfo::GetFeatureInfo (DTMFeatureType& featureType, DTMFeatureId& featureId, DTMUserTag& userTag) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+void DTMFeatureInfo::GetFeatureInfo(DTMFeatureType& featureType, DTMFeatureId& featureId, DTMUserTag& userTag) const
     {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP (m_dtm->GetTinHandle (), m_feature);
     featureType = dtmFeatureP->dtmFeatureType;
@@ -49,37 +62,53 @@ void DTMFeatureInfo::GetFeatureInfo (DTMFeatureType& featureType, DTMFeatureId& 
     userTag = dtmFeatureP->dtmUserTag;
     }
 
-DTMFeatureType DTMFeatureInfo::FeatureType () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureType DTMFeatureInfo::FeatureType() const
     {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP (m_dtm->GetTinHandle (), m_feature);
     return dtmFeatureP->dtmFeatureType;
     }
 
-DTMFeatureId DTMFeatureInfo::FeatureId () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureId DTMFeatureInfo::FeatureId() const
     {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP (m_dtm->GetTinHandle (), m_feature);
     return dtmFeatureP->dtmFeatureId;
     return dtmFeatureP->dtmUserTag;
     }
 
-DTMUserTag DTMFeatureInfo::UserTag () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMUserTag DTMFeatureInfo::UserTag() const
     {
     BC_DTM_FEATURE* dtmFeatureP = ftableAddrP (m_dtm->GetTinHandle (), m_feature);
     return dtmFeatureP->dtmUserTag;
     }
 
-long DTMFeatureInfo::FeatureIndex () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+long DTMFeatureInfo::FeatureIndex() const
     {
     return m_feature;
     }
 
-static int featureIdCompareFunction (const DTMFeatureId& id1P, const DTMFeatureId& id2P)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+static bool featureIdCompareFunction(const DTMFeatureId& id1P, const DTMFeatureId& id2P)
     {
-    if (id1P < id2P) return -1;
-    if (id1P > id2P) return 1;
-    return(0);
+    return id1P < id2P;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 DTMFeatureInfo DTMFeatureEnumerator::iterator::operator* () const
     {
     if (m_p_vec->m_sort)
@@ -87,6 +116,9 @@ DTMFeatureInfo DTMFeatureEnumerator::iterator::operator* () const
     return DTMFeatureInfo (m_p_vec->m_dtm.get(), m_pos);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 const DTMFeatureEnumerator::iterator& DTMFeatureEnumerator::iterator::operator++ ()
     {
     if (!m_p_vec->MoveNext (m_pos, m_nextSourcePos))
@@ -97,7 +129,10 @@ const DTMFeatureEnumerator::iterator& DTMFeatureEnumerator::iterator::operator++
     return *this;
     }
 
-DTMFeatureEnumerator::DTMFeatureEnumerator (BcDTMCR dtm)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureEnumerator::DTMFeatureEnumerator(BcDTMCR dtm)
     {
     m_dtm = const_cast<BcDTMP>(&dtm);
     m_dtmP = m_dtm->GetTinHandle ();
@@ -109,13 +144,18 @@ DTMFeatureEnumerator::DTMFeatureEnumerator (BcDTMCR dtm)
     IncludeAllFeatures ();
     }
 
-DTMFeatureEnumeratorPtr DTMFeatureEnumerator::Create (BcDTMCR dtm)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureEnumeratorPtr DTMFeatureEnumerator::Create(BcDTMCR dtm)
     {
     return new DTMFeatureEnumerator (dtm);
     }
 
-
-void DTMFeatureEnumerator::InitializeForSorting () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+void DTMFeatureEnumerator::InitializeForSorting() const
     {
     if (m_sort)
         {
@@ -131,14 +171,18 @@ void DTMFeatureEnumerator::InitializeForSorting () const
         }
     }
 
-void DTMFeatureEnumerator::Initialize () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+void DTMFeatureEnumerator::Initialize() const
     {
     int dbg = DTM_TRACE_VALUE (0);
     /*
     **  Count Number Of Roll Back Features
     */
     long numCleanUpFeatures = 0;
-    
+
+    m_isInitialized = true;
     InitializeForSorting ();
 
     for (long dtmFeature = 0; dtmFeature < m_dtmP->numFeatures; ++dtmFeature)
@@ -178,11 +222,14 @@ void DTMFeatureEnumerator::Initialize () const
     /*
     **     Sort Feature Ids
     */
-    if (numCleanUpFeatures > 1 && !m_sort)
+    if (numCleanUpFeatures > 1 && m_readSourceFeatures)
         std::sort (m_sourceFeatureIds.begin (), m_sourceFeatureIds.end (), &featureIdCompareFunction);
     }
 
-bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureIndex) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+bool DTMFeatureEnumerator::MoveNext(long& m_index, size_t& m_nextSourceFeatureIndex) const
     {
     if (!m_isInitialized)
         Initialize ();
@@ -204,8 +251,9 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         if (!((dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin || dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError || dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray) && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots))
             continue;
 
-        // ToDo Check the feature type matches what the user wants
-        bool isSourceFeature = true;
+        // Check if the user doesn't want source Features.
+        if (!m_readSourceFeatures && dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback)
+            continue;
 
         if (m_filterByFeatureId && m_featureIdFilter != dtmFeatureP->dtmFeatureId)
             continue;
@@ -213,7 +261,7 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         if ((m_userTagLow <= m_userTagHigh) && (
             m_userTagLow > dtmFeatureP->dtmUserTag ||
             m_userTagHigh < dtmFeatureP->dtmUserTag))
-            continue;
+             continue;
 
         if (m_filterByFeatureType)
             {
@@ -230,61 +278,71 @@ bool DTMFeatureEnumerator::MoveNext (long& m_index, size_t& m_nextSourceFeatureI
         else if (m_excludeFeatureTypeByDefault)
             continue;
 
-        if (m_sort)
+        if (m_readSourceFeatures)
             {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
-                {
-                while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size () && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
-                    m_nextSourceFeatureIndex++;
+            bool isSourceFeature = true;
 
-                isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size () || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
-                }
-            }
-        else
-            {
-            if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
+            if (m_sort)
                 {
-                if (m_sourceFeatureIds.size () == 1)
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
-                        {
-                        isSourceFeature = false;
-                        }
+                    while (m_nextSourceFeatureIndex < m_sourceFeatureIds.size() && m_sourceFeatureIds[m_nextSourceFeatureIndex] < dtmFeatureP->dtmFeatureId)
+                        m_nextSourceFeatureIndex++;
+
+                    isSourceFeature = m_nextSourceFeatureIndex >= m_sourceFeatureIds.size() || m_sourceFeatureIds[m_nextSourceFeatureIndex] != dtmFeatureP->dtmFeatureId;
                     }
-                else if (m_sourceFeatureIds.size () > 1)
+                }
+            else
+                {
+                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
                     {
-                    DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
-                    DTMFeatureId* feat1P = featureIdsP;
-                    DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size () - 1];
-                    if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
-                        isSourceFeature = false;
-                    else
+                    if (m_sourceFeatureIds.size() == 1)
                         {
-                        DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
-                        while (feat3P != feat1P && feat3P != feat2P)
+                        if (dtmFeatureP->dtmFeatureId == m_sourceFeatureIds[0])
                             {
-                            if (dtmFeatureP->dtmFeatureId == *feat3P)
+                            isSourceFeature = false;
+                            }
+                        }
+                    else if (m_sourceFeatureIds.size() > 1)
+                        {
+                        DTMFeatureId* featureIdsP = &m_sourceFeatureIds[0];
+                        DTMFeatureId* feat1P = featureIdsP;
+                        DTMFeatureId* feat2P = &featureIdsP[m_sourceFeatureIds.size() - 1];
+                        if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
+                            isSourceFeature = false;
+                        else
+                            {
+                            DTMFeatureId *feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                            while (feat3P != feat1P && feat3P != feat2P)
                                 {
-                                isSourceFeature = false;
-                                feat1P = feat2P = feat3P;
-                                }
-                            else
-                                {
-                                if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
-                                else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
-                                feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                if (dtmFeatureP->dtmFeatureId == *feat3P)
+                                    {
+                                    isSourceFeature = false;
+                                    feat1P = feat2P = feat3P;
+                                    }
+                                else
+                                    {
+                                    if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
+                                    else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
+                                    feat3P = &featureIdsP[((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2];
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            if (isSourceFeature)
+                break;
             }
-        if (isSourceFeature)
+        else
             break;
         } while (true);
         return true;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 DTMFeatureEnumerator::iterator DTMFeatureEnumerator::begin () const
     {
     long index = -1;
@@ -294,252 +352,29 @@ DTMFeatureEnumerator::iterator DTMFeatureEnumerator::begin () const
     return end ();
     }
 
-DTMFeatureEnumerator::iterator DTMFeatureEnumerator::end () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMFeatureEnumerator::iterator DTMFeatureEnumerator::end() const
     {
     return iterator (this, -2, -2);
     }
 
-//void DTMFeatureEnumerator::GetFeaturePoints (bvector<DPoint3d>& points) const
-//    {
-//    long dtmFeature;
-//
-//    if (m_sort)
-//        dtmFeature = m_sortedIds[m_index].featureNum;
-//    else
-//        dtmFeature = m_index;
-//
-//    // ToDo use a more direct way to do this.
-//    DPoint3d* featurePts = nullptr;
-//    long numFeaturePts;
-//    if (bcdtmData_copyInitialDtmFeaturePointsToPointArrayDtmObject (m_dtmP, dtmFeature, (DPoint3d**)featurePts, &numFeaturePts) == DTM_SUCCESS && featurePts)
-//        {
-//        points.reserve (numFeaturePts);
-//        memcpy (&points[0], featurePts, sizeof DPoint3d * numFeaturePts);
-//        free (featurePts);
-//        }
-//    else
-//        points.clear ();
-//    }
-//
-///*-------------------------------------------------------------------+
-//|                                                                    |
-//|                                                                    |
-//|                                                                    |
-//+-------------------------------------------------------------------*/
-//int bcdtmExtData_browseAllSourceFeaturesDtmObject
-//(
-//BC_DTM_OBJ   *dtmP,
-//bool sorted,
-//browseAllSourceCallback callbackFunctionP,
-//void* userP
-//)
-//    {
-//    int ret = DTM_SUCCESS, dbg = 0;
-//    long dtmFeature, numFeatureIds = 0, numCleanUpFeatures, index;
-//    BC_DTM_FEATURE *dtmFeatureP;
-//    DTMFeatureId *feat1P, *feat2P, *feat3P, *featureIdsP = NULL;
-//    bvector<sortedFeatureId> sortedIds;
-//    bool isSourceFeature;
-//    /*
-//    ** Write Entry Message
-//    */
-//    if (dbg)
-//        {
-//        bcdtmWrite_message (0, 0, 0, "Browsing Source Features");
-//        bcdtmWrite_message (0, 0, 0, "dtmP   = %p", dtmP);
-//        bcdtmWrite_message (0, 0, 0, "sorted = %d", sorted);
-//        bcdtmWrite_message (0, 0, 0, "callbackFunctionP = %d", callbackFunctionP);
-//        bcdtmWrite_message (0, 0, 0, "userP = %p", userP);
-//        }
-//    /*
-//    ** Check For Valid Dtm Objects
-//    */
-//    if (bcdtmObject_testForValidDtmObject (dtmP)) goto errexit;
-//    /*
-//    ** Write Entry Message
-//    */
-//    if (dbg) bcdtmWrite_message (0, 0, 0, "Marking Tin Features That Are Roll Back Features");
-//    /*
-//    ** Only Process If Features Present
-//    */
-//    if (dtmP->numFeatures > 0)
-//        {
-//        /*
-//        **  Count Number Of Roll Back Features
-//        */
-//        numCleanUpFeatures = 0;
-//        if (sorted)
-//            sortedIds.resize (dtmP->numFeatures);
-//        for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-//            {
-//            dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-//            if (sorted)
-//                {
-//                sortedIds[dtmFeature].featureId = dtmFeatureP->dtmFeatureId;
-//                sortedIds[dtmFeature].featureNum = dtmFeature;
-//                }
-//
-//            if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots) ++numCleanUpFeatures;
-//            }
-//        if (dbg) bcdtmWrite_message (0, 0, 0, "numCleanUpFeatures = %8ld", numCleanUpFeatures);
-//
-//        /*
-//        **     Allocate Memory For Feature Ids
-//        */
-//        numFeatureIds = numCleanUpFeatures;
-//        featureIdsP = (DTMFeatureId *)malloc (numFeatureIds * sizeof(DTMFeatureId));
-//        if (featureIdsP == NULL)
-//            {
-//            bcdtmWrite_message (0, 0, 0, "Memory Allocation Failure");
-//            goto errexit;
-//            }
-//        if (dbg) bcdtmWrite_message (0, 0, 0, "Number Of Roll Back Features = %8ld", numCleanUpFeatures);
-//        /*
-//        **     Populate Feature Ids
-//        */
-//        if (sorted)
-//            std::sort (sortedIds.begin (), sortedIds.end (), &sortedFeatureId::compare);
-//        numFeatureIds = 0;
-//        for (index = 0; index < dtmP->numFeatures; ++index)
-//            {
-//            if (sorted)
-//                dtmFeature = sortedIds[index].featureNum;
-//            else
-//                dtmFeature = index;
-//            dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-//            if (dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots)
-//                {
-//                *(featureIdsP + numFeatureIds) = dtmFeatureP->dtmFeatureId;
-//                ++numFeatureIds;
-//                }
-//            }
-//        /*
-//        **     Sort Feature Ids
-//        */
-//        if (numCleanUpFeatures > 1) qsort (featureIdsP, numFeatureIds, sizeof(DTMFeatureId), (int (*)(const void*, const void*))bcdtmExtData_featureIdCompareFunction);
-//        /*
-//        **     Mark Tin Features That Have The Same Feature Id As A Roll Back Feature
-//        */
-//        for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
-//            {
-//            dtmFeatureP = ftableAddrP (dtmP, dtmFeature);
-//            if ((dtmFeatureP->dtmFeatureState == DTMFeatureState::Data || dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin || dtmFeatureP->dtmFeatureState == DTMFeatureState::TinError || dtmFeatureP->dtmFeatureState == DTMFeatureState::Rollback || dtmFeatureP->dtmFeatureState == DTMFeatureState::PointsArray) && dtmFeatureP->dtmFeatureType != DTMFeatureType::RandomSpots)
-//                {
-//                isSourceFeature = true;
-//                if (dtmFeatureP->dtmFeatureState != DTMFeatureState::Rollback)
-//                    {
-//                    if (numCleanUpFeatures == 1)
-//                        {
-//                        if (dtmFeatureP->dtmFeatureId == *featureIdsP)
-//                            {
-//                            isSourceFeature = false;
-//                            }
-//                        }
-//                    else if (numCleanUpFeatures > 1)
-//                        {
-//                        feat1P = featureIdsP;
-//                        feat2P = featureIdsP + numCleanUpFeatures - 1;
-//                        if (dtmFeatureP->dtmFeatureId == *feat1P || dtmFeatureP->dtmFeatureId == *feat2P)
-//                            {
-//                            isSourceFeature = false;
-//                            }
-//                        else
-//                            {
-//                            feat3P = featureIdsP + ((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2;
-//                            while (feat3P != feat1P && feat3P != feat2P)
-//                                {
-//                                if (dtmFeatureP->dtmFeatureId == *feat3P)
-//                                    {
-//                                    isSourceFeature = false;
-//                                    feat1P = feat2P = feat3P;
-//                                    }
-//                                else
-//                                    {
-//                                    if (dtmFeatureP->dtmFeatureId < *feat3P) feat2P = feat3P;
-//                                    else if (dtmFeatureP->dtmFeatureId > *feat3P) feat1P = feat3P;
-//                                    feat3P = featureIdsP + ((long)(feat1P - featureIdsP) + (long)(feat2P - featureIdsP)) / 2;
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                if (isSourceFeature)
-//                    {
-//                    if (callbackFunctionP)
-//                        callbackFunctionP (dtmFeature, dtmFeatureP->dtmFeatureType, dtmFeatureP->dtmFeatureId, dtmFeatureP->dtmUserTag, userP);
-//                    }
-//                }
-//            }
-//        }
-//    /*
-//    ** Clean Up
-//    */
-//cleanup:
-//    if (featureIdsP != NULL) { free (featureIdsP); featureIdsP = NULL; }
-//    /*
-//    ** Job Completed
-//    */
-//    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Browsing source features Completed");
-//    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Browsing source features Error");
-//    return(ret);
-//    /*
-//    ** Error Exit
-//    */
-//errexit:
-//    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
-//    goto cleanup;
-//    }
-//// Browse for all source features
-//// 1. Create the arrray of features which are in rollback.
-//// 2. Browse through all features. If the feature type is TIN/TIN_ERROR/Rollback, if it isn't rollback check that there isn't a rollback.
-//// 3. Call callback with featureNum/Type/Id/UserTag
-//// 4. Create function to get original points from featureNum.
-//
-///*-------------------------------------------------------------------+
-//|                                                                    |
-//|                                                                    |
-//|                                                                    |
-//+-------------------------------------------------------------------*/
-//int bcdtmExtData_getSourceFeaturePoints (BC_DTM_OBJ* dtmP, long dtmFeature, DPoint3d** featurePtsPP, long* numFeaturePtsP)
-//    {
-//    int ret = DTM_SUCCESS;
-//    int dbg = 0;
-//    /*
-//    ** Check For Valid Dtm Objects
-//    */
-//    if (bcdtmObject_testForValidDtmObject (dtmP)) goto errexit;
-//
-//    if (dtmFeature < 0 || dtmFeature > dtmP->numFeatures)
-//        {
-//        bcdtmWrite_message (1, 0, 0, "PointNumber out of range");
-//        goto errexit;
-//        }
-//
-//    if (bcdtmData_copyInitialDtmFeaturePointsToPointArrayDtmObject (dtmP, dtmFeature, (DPoint3d**)featurePtsPP, numFeaturePtsP)) goto errexit;
-//cleanup:
-//    /*
-//    ** Job Completed
-//    */
-//    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Browsing source features Completed");
-//    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message (0, 0, 0, "Browsing source features Error");
-//    return(ret);
-//    /*
-//    ** Error Exit
-//    */
-//errexit:
-//    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
-//    goto cleanup;
-//    }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 const DTMMeshEnumerator::iterator& DTMMeshEnumerator::iterator::operator++ ()
     {
     m_polyface = nullptr;
-    if (!m_p_vec->MoveNext (m_pos, m_pos2))
+    if (!m_p_vec->MoveNext(m_pos, m_pos2))
         m_pos = -2;
     return *this;
     }
 
-DTMMeshEnumerator::DTMMeshEnumerator (BcDTMR dtm) : m_dtm (&dtm)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm)
     {
     m_dtmP = dtm.GetTinHandle ();
     clipDtmP = nullptr;
@@ -550,31 +385,26 @@ DTMMeshEnumerator::DTMMeshEnumerator (BcDTMR dtm) : m_dtm (&dtm)
 //D    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
     }
 
-DTMMeshEnumeratorPtr DTMMeshEnumerator::Create (BcDTMR dtm)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMMeshEnumeratorPtr DTMMeshEnumerator::Create(BcDTMR dtm)
     {
     return new DTMMeshEnumerator (dtm);
     }
-DTMMeshEnumerator::~DTMMeshEnumerator ()
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMMeshEnumerator::~DTMMeshEnumerator()
     {
     Reset ();
     }
-/*
-if (fenceType != DTMFenceType::Block)
-{
-bcdtmWrite_message (2, 0, 0, "DTM Fence Block is the only supported fence option.");
-goto errexit;
-}
-// Validate Mesh Size
-if (maxTriangles <= 0) maxTriangles = 50000;
-if (maxTriangles > m_dtmP->numTriangles) maxTriangles = m_dtmP->numTriangles;
-if (dbg) bcdtmWrite_message (0, 0, 0, "Reset maxTriangles To = %8ld", maxTriangles);
-// Validate Normal Vector Option
-if (vectorOption < 1 || vectorOption > 2) vectorOption = 2;
-// Validate z Axis Factor
-if (zAxisFactor <= 0.0) zAxisFactor = 1.0;
-*/
 
-DTMStatusInt DTMMeshEnumerator::Initialize () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMStatusInt DTMMeshEnumerator::Initialize() const
     {
     DTMStatusInt ret = DTM_SUCCESS;
     long dbg = DTM_TRACE_VALUE (0), tdbg = DTM_TIME_VALUE (0);
@@ -618,6 +448,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
         if (fenceType != DTMFenceType::Block && fenceType != DTMFenceType::Shape) fenceType = DTMFenceType::Block;
         if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Overlap;
         }
+
     /*
     ** Test For Valid Dtm Object
     */
@@ -635,7 +466,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     ** Check For Voids In The Triangulation
     */
     voidsInDtm = false;
-    bcdtmList_testForVoidsInDtmObject (m_dtmP, (long*)&voidsInDtm);
+    bcdtmList_testForVoidsInDtmObject (m_dtmP, voidsInDtm);
     if (dbg) bcdtmWrite_message (0, 0, 0, "voidsInDtm = %2ld", voidsInDtm);
     /*
     ** Initialise
@@ -650,15 +481,23 @@ DTMStatusInt DTMMeshEnumerator::Initialize () const
     /*
     **  Build Clipping Dtm For Fence
     */
-    if (useFence == true)
+    if (useFence)
         {
-        if (bcdtmClip_buildClippingTinFromFencePointsDtmObject (&clipDtmP, fencePtsP, numFencePts)) goto errexit;
-        clipDtm = BcDTM::CreateFromDtmHandle (clipDtmP);
-        if (fabs (m_dtmP->xMin - clipDtmP->xMin) < m_dtmP->ppTol) clipDtmP->xMin = m_dtmP->xMin;
-        if (fabs (m_dtmP->xMax - clipDtmP->xMax) < m_dtmP->ppTol) clipDtmP->xMax = m_dtmP->xMax;
-        if (fabs (m_dtmP->yMin - clipDtmP->yMin) < m_dtmP->ppTol) clipDtmP->yMin = m_dtmP->yMin;
-        if (fabs (m_dtmP->yMax - clipDtmP->yMax) < m_dtmP->ppTol) clipDtmP->yMax = m_dtmP->yMax;
-        if (fenceType == DTMFenceType::Block && m_dtmP->xMin >= clipDtmP->xMin && m_dtmP->xMax <= clipDtmP->xMax &&  m_dtmP->yMin >= clipDtmP->yMin && m_dtmP->yMax <= clipDtmP->yMax) useFence = false;
+        if (bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP, fencePtsP, numFencePts)) goto errexit;
+        clipDtm = BcDTM::CreateFromDtmHandle(*clipDtmP);
+        if (fabs(m_dtmP->xMin - clipDtmP->xMin) < m_dtmP->ppTol)
+            clipDtmP->xMin = m_dtmP->xMin;
+        if (fabs(m_dtmP->xMax - clipDtmP->xMax) < m_dtmP->ppTol)
+            clipDtmP->xMax = m_dtmP->xMax;
+        if (fabs(m_dtmP->yMin - clipDtmP->yMin) < m_dtmP->ppTol)
+            clipDtmP->yMin = m_dtmP->yMin;
+        if (fabs(m_dtmP->yMax - clipDtmP->yMax) < m_dtmP->ppTol)
+            clipDtmP->yMax = m_dtmP->yMax;
+        if (fenceType == DTMFenceType::Block && m_dtmP->xMin >= clipDtmP->xMin && m_dtmP->xMax <= clipDtmP->xMax &&  m_dtmP->yMin >= clipDtmP->yMin && m_dtmP->yMax <= clipDtmP->yMax)
+            useFence = false;
+        }
+    if (useFence)
+        {
         if (dbg) bcdtmWrite_message (0, 0, 0, "useFence = %2ld ** fenceType = %2ld", useFence, fenceType);
         if (!m_tilingMode)
             {
@@ -768,15 +607,18 @@ errexit:
     return DTM_ERROR;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 void DTMMeshEnumerator::ScanAndMarkRegions () const
-    {  
+    {
     m_regionPointMask.resize (m_dtmP->numPoints);
     std::fill_n(m_regionPointMask.begin(), m_dtmP->numPoints, false);
     DTMFeatureEnumeratorPtr regionEnumerator = DTMFeatureEnumerator::Create (*m_dtm.get ());
     regionEnumerator->ExcludeAllFeatures ();
     regionEnumerator->IncludeFeature (DTMFeatureType::Region);
     regionEnumerator->SetReadSourceFeatures (false);
-      
+
     if (m_regionMode == RegionMode::RegionFeatureId)
         regionEnumerator->SetFeatureIdFilter (m_regionFeatureId);
     else if (m_regionMode == RegionMode::RegionUserTag)
@@ -804,7 +646,10 @@ void DTMMeshEnumerator::ScanAndMarkRegions () const
         }
     }
 
-void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex, long& minPnt, long& maxPnt) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+void DTMMeshEnumerator::ScanAndMarkRegion(long featureIndex, long& minPnt, long& maxPnt) const
     {
     bool markValue = true;
     long startPnt;
@@ -965,6 +810,9 @@ void DTMMeshEnumerator::ScanAndMarkRegion (long featureIndex, long& minPnt, long
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 void DTMMeshEnumerator::Reset ()
         {
         if (m_initialized)
@@ -978,7 +826,6 @@ void DTMMeshEnumerator::Reset ()
             if (useFence && m_dtmP->dtmState == DTMState::Tin) for (long node = leftMostPnt; node <= lastPnt; ++node) nodeAddrP (m_dtmP, node)->sPtr = m_dtmP->nullPnt;
             }
         }
-
 
 int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, long testPnt, long featureNum) const
     {
@@ -1027,6 +874,7 @@ int DTMMeshEnumerator::bcdtmList_isPtInsideFeature(BC_DTM_OBJ *dtmP, long P1, lo
     return false;
 
     }
+
 
 // This is a simple test as most cases they will only be one region scanned.
 int DTMMeshEnumerator::bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long P3) const
@@ -1077,6 +925,9 @@ int DTMMeshEnumerator::bcdtmList_testTriangleInsideRegionDtmObject(BC_DTM_OBJ *d
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1, long P2, long featureNum) const
 /*
 ** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
@@ -1092,30 +943,30 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
         if (flistAddrP (dtmP, clPtr)->nextPnt == P2)
             {
             if (featureNum == -1)
+            {
+            if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
                 {
-                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+                if (m_regionMode == RegionMode::RegionUserTag)
                     {
-                    if (m_regionMode == RegionMode::RegionUserTag)
-                        {
-                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
-                            return 1;
-                        }
-                    else if (m_regionMode == RegionMode::RegionFeatureId)
-                        {
-                        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
-                            return 1;
-                        }
-                    else
-                        return(1);
+                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                        return 1;
                     }
+                else if (m_regionMode == RegionMode::RegionFeatureId)
+                    {
+                    if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                        return 1;
+                    }
+                else
+                    return(1);
                 }
+            }
                 else
                 {
                 if (featureNum == flistAddrP(dtmP, clPtr)->dtmFeature)
                     return 1;
                 }
-            }
-        clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
+                }
+                clPtr = flistAddrP (dtmP, clPtr)->nextPtr;
         }
     /*
     ** Job Completed
@@ -1123,6 +974,47 @@ int DTMMeshEnumerator::bcdtmList_testForRegionLineDtmObject(BC_DTM_OBJ *dtmP, lo
     return(0);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+bool DTMMeshEnumerator::bcdtmList_isPointOnRegionLineDtmObject(BC_DTM_OBJ *dtmP, long P1) const
+/*
+** This Function Tests If The Line P1-P2 is A Void Or Hole Hull Line
+*/
+    {
+    long clPtr;
+    /*
+    ** Test For Void Hull Line
+    */
+    clPtr = nodeAddrP(dtmP, P1)->fPtr;
+    while (clPtr != dtmP->nullPtr)
+        {
+        if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureType == DTMFeatureType::Region)
+            {
+            if (m_regionMode == RegionMode::RegionUserTag)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmUserTag == m_regionUserTag)
+                    return true;
+                }
+            else if (m_regionMode == RegionMode::RegionFeatureId)
+                {
+                if (ftableAddrP(dtmP, flistAddrP(dtmP, clPtr)->dtmFeature)->dtmFeatureId == m_regionFeatureId)
+                    return true;
+                }
+            else
+                return true;
+            }
+        clPtr = flistAddrP(dtmP, clPtr)->nextPtr;
+        }
+    /*
+    ** Job Completed
+    */
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtmP, std::vector<bool>& pointMask, long P1, long P2, long P3) const
 /*
 ** This Function Tests For A Void Triangle
@@ -1136,16 +1028,48 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
     /*
     ** If any Lines are Void Lines Then Triangle Is A Void triangle
     */
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1)) return true;
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2)) return true;
-    if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3)) return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P2, P1))
+        return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P3, P2))
+        return true;
+    if (bcdtmList_testForRegionLineDtmObject (dtmP, P1, P3))
+        return true;
 
-    if (bcdtmList_testTriangleInsideRegionDtmObject(dtmP, P1, P2, P3)) return true;
+    // If p1 is not on the region then this isn't in the region.
+    if (!bcdtmList_isPointOnRegionLineDtmObject(dtmP, P1))
+        return false;
 
+    // If this line is on the region but the otherway then it is on the outside.
+    if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P2))
+        return false;
+
+    while (true)
+        {
+        int P4 = -1;
+        if ((P4 = bcdtmList_nextAntDtmObject(dtmP, P1, P2)) < 0)
+            return false;
+
+        if (P4 == P3)
+            return false;
+
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P4))
+            return false;
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
+            {
+
+            return true;
+            }
+        P2 = P4;
+        }
+
+    // pick one of the lines, and go anticlockwise till we find the
     return false;
     }
 
-    bool DTMMeshEnumerator::MoveNext (long& pnt1, long& pnt2) const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         {
         if (!m_initialized) Initialize ();
 
@@ -1164,6 +1088,7 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         if (pnt1 == -1)
             pnt1 = leftMostPnt;
         // Reset the pointers/counters.
+        meshFaces.resize(maxTriangles * 3);
         faceP = &meshFaces[0];
         numTriangles = 0;
         /*
@@ -1222,9 +1147,7 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
 
                                 if (!voidTriangle && voidsInDtm == true)
                                     {
-                                    long voidTriangleLong;
-                                    if (bcdtmList_testForVoidTriangleDtmObject (m_dtmP, pnt1, pnt2, pnt3, (long*)&voidTriangleLong)) goto errexit;
-                                    voidTriangle = voidTriangleLong != 0;
+                                    if (bcdtmList_testForVoidTriangleDtmObject (m_dtmP, pnt1, pnt2, pnt3, voidTriangle)) goto errexit;
                                     }
                                 if (!voidTriangle && m_regionMode != RegionMode::Normal)
                                     {
@@ -1270,6 +1193,9 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         return false;
         }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 DTMMeshEnumerator::iterator DTMMeshEnumerator::begin () const
     {
     long index = -1;
@@ -1279,11 +1205,17 @@ DTMMeshEnumerator::iterator DTMMeshEnumerator::begin () const
     return end ();
     }
 
-DTMMeshEnumerator::iterator DTMMeshEnumerator::end () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DTMMeshEnumerator::iterator DTMMeshEnumerator::end() const
     {
     return iterator (this, -2, -1);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     {
     long dbg = DTM_TRACE_VALUE (0);
@@ -1314,13 +1246,12 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
             if (nodeP->tPtr == nullPnt)
                 {
                 if (face < minTptrPnt) minTptrPnt = face;
-                else if (face > maxTptrPnt) maxTptrPnt = face;
+                if (face > maxTptrPnt) maxTptrPnt = face;
                 nodeP->tPtr = ++numMeshPts;
                 }
             }
         if (dbg) bcdtmWrite_message(0, 0, 0, "minTptrPoint = %8ld maxTptrPoint = %8ld", minTptrPnt, maxTptrPnt);
 
-        if (maxTptrPnt == -1) maxTptrPnt = minTptrPnt;
         /*
         **                       Allocate Memory For Mesh Points
         */
@@ -1390,6 +1321,9 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     return m_polyface;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
 DRange3d DTMMeshEnumerator::iterator::GetRange () const
     {
     DRange3d range;
@@ -1418,7 +1352,10 @@ DRange3d DTMMeshEnumerator::iterator::GetRange () const
     return range;
     }
 
-DRange3d DTMMeshEnumerator::GetRange () const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Daryl.Holmwood  11/2015
+//---------------------------------------------------------------------------------------
+DRange3d DTMMeshEnumerator::GetRange() const
     {
     DRange3d range;
     range.Init ();
@@ -1427,7 +1364,7 @@ DRange3d DTMMeshEnumerator::GetRange () const
         {
         range.Extend (i.GetRange ());
         }
-    
+
     return range;
-    
+
     }

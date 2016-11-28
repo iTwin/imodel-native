@@ -64,7 +64,6 @@ namespace Bentley.TerrainModel.ElementTemplate
             {
             BECO.Instance.IECPropertyValue property;
             // Apply text style properties
-            property = strucValue.ContainedValues[prefix + "_DisplayText"];
 
             property = strucValue[m_prefix + "_TextInterval"];
             if (property != null && !property.IsNull)

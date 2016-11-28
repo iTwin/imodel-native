@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -165,7 +165,7 @@ struct CIVdtmprj *prjP,             /* => DTM project (or NULL)             */
                                                                                     }
 
 
-                                                                                if ( sts == SUCCESS ) 
+                                                                                if ( sts == SUCCESS )
                                                                                     sts = aecDTM_indexCorridorsComponentsMembers ( *srfPP );
 
                                                                                 if ( handleP ) fclose ( handleP );
@@ -904,7 +904,7 @@ struct CIVdtmsrf *srf,
                 {
                 for ( t = blk->rec.tin; blk->use < blk->alc && numRead < srf->tinf->nrec &&  sts == SUCCESS; blk->use++ )
                     {
-                    if ( j++ == 100 ) 
+                    if ( j++ == 100 )
                         {
                         aecTicker_show();
                         j = 0;
@@ -914,12 +914,12 @@ struct CIVdtmsrf *srf,
                         sts = DTM_M_RDFILF;
                     else
                         {
-                        t[blk->use].p1 = (CIVdtmpnt*)t[blk->use].op1;
-                        t[blk->use].p2 = (CIVdtmpnt*)t[blk->use].op2;
-                        t[blk->use].p3 = (CIVdtmpnt*)t[blk->use].op3;
-                        t[blk->use].n12 = (CIVdtmtin*)t[blk->use].on12;
-                        t[blk->use].n23 = (CIVdtmtin*)t[blk->use].on23;
-                        t[blk->use].n31 = (CIVdtmtin*)t[blk->use].on31;
+                        t[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op1;
+                        t[blk->use].p2 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op2;
+                        t[blk->use].p3 = (CIVdtmpnt*) (unsigned __int64) t[blk->use].op3;
+                        t[blk->use].n12 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on12;
+                        t[blk->use].n23 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on23;
+                        t[blk->use].n31 = (CIVdtmtin*) (unsigned __int64) t[blk->use].on31;
                         numRead++;
                         }
                     }
@@ -1002,9 +1002,9 @@ struct CIVdtmsrf *srf,
                                     }
                                 else
                                     {
-                                    f[blk->use].p1 = (CIVdtmpnt*)f[blk->use].p[0];
-                                    f[blk->use].s1 = (CIVdtmsty*)f[blk->use].p[1];
-                                    f[blk->use].pay = (CIVdtmpay*)f[blk->use].p[2];
+                                    f[blk->use].p1 = (CIVdtmpnt*) (unsigned __int64) f[blk->use].p[0];
+                                    f[blk->use].s1 = (CIVdtmsty*) (unsigned __int64) f[blk->use].p[1];
+                                    f[blk->use].pay = (CIVdtmpay*) (unsigned __int64) f[blk->use].p[2];
                                     }
                                 }
                             else if ( srf->version > 7 )
@@ -1012,8 +1012,12 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV8 ftrV8;
                                 memset ( &ftrV8, 0, sizeof ( ftrV8 ) );
 
-                                if ( fread ( &ftrV8, sizeof ( struct CIVdtmftrV8 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV8, CIVdtmftrV8Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
+
+                                ftrV8.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV8.p[0];
+                                ftrV8.s1 = (CIVdtmsty*) (unsigned __int64) ftrV8.p[1];
+                                ftrV8.pay = (CIVdtmpay*) (unsigned __int64) ftrV8.p[2];
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV8.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV8.nam, CIV_C_NAMSIZ );
@@ -1033,8 +1037,11 @@ struct CIVdtmsrf *srf,
                                 struct CIVdtmftrV7 ftrV7;
                                 memset ( &ftrV7, 0, sizeof ( ftrV7 ) );
 
-                                if ( fread ( &ftrV7, sizeof ( struct CIVdtmftrV7 ), 1, handleP ) != 1 )
+                                if ( fread ( &ftrV7, CIVdtmftrV7Size, 1, handleP ) != 1 )
                                     sts = DTM_M_RDFILF;
+
+                                ftrV7.p1 = (CIVdtmpnt*) (unsigned __int64) ftrV7.p[0];
+                                ftrV7.s1 = (CIVdtmsty*) (unsigned __int64) ftrV7.p[1];
 
                                 aecGuid_copy ( &f[blk->use].guid, &ftrV7.guid );
                                 mbstowcs ( f[blk->use].nam, ftrV7.nam, CIV_C_NAMSIZ );
@@ -1117,7 +1124,7 @@ struct CIVdtmsrf *srf,
             if ( ( sts = aecDTM_allocateBlock ( &blk, srf->styf, srf->styf->nrec, 0 ) ) == SUCCESS )
                 for ( s = blk->rec.sty; blk->use < srf->styf->nrec  &&  sts == SUCCESS; blk->use++ )
                     {
-                    if ( j++ == 100 ) 
+                    if ( j++ == 100 )
                         {
                         aecTicker_show();
                         j = 0;
@@ -1150,7 +1157,7 @@ struct CIVdtmsrf *srf,
 
                         int styChars = sizeof ( s[blk->use].nam ) / sizeof ( s[blk->use].nam[0] );
                         s[blk->use].nam[styChars-1] = '\0';
-                        }         
+                        }
                     }
         }
     else
@@ -1189,7 +1196,7 @@ struct CIVdtmsrf *srf,
             if ( ( sts = aecDTM_allocateBlock ( &blk, srf->payf, srf->payf->nrec, 0 ) ) == SUCCESS )
                 for ( p = blk->rec.pay; blk->use < srf->payf->nrec  &&  sts == SUCCESS; blk->use++ )
                     {
-                    if ( j++ == 100 ) 
+                    if ( j++ == 100 )
                         {
                         aecTicker_show();
                         j = 0;
@@ -1217,7 +1224,7 @@ struct CIVdtmsrf *srf,
                         {
                         int payChars = sizeof ( p[blk->use].nam ) / sizeof ( p[blk->use].nam[0] );
                         p[blk->use].nam[payChars-1] = '\0';
-                        }         
+                        }
                     }
         }
 
@@ -1265,7 +1272,7 @@ struct CIVdtmsrf *srf,
                         {
                         int corChars = sizeof ( c[blk->use].nam ) / sizeof ( c[blk->use].nam[0] );
                         c[blk->use].nam[corChars-1] = '\0';
-                        }         
+                        }
                     }
         }
 
@@ -1330,7 +1337,7 @@ struct CIVdtmsrf *srf,
                             memcpy       ( &c[blk->use].stopXY,   &v10Cmp.stopXY,   sizeof ( c[blk->use].stopXY ) );
                             memcpy       ( &c[blk->use].startStn, &v10Cmp.startStn, sizeof ( c[blk->use].startStn ) );
                             memcpy       ( &c[blk->use].stopStn,  &v10Cmp.stopStn,  sizeof ( c[blk->use].stopStn ) );
-                            memcpy       ( &c[blk->use].flg,      &v10Cmp.flg,      sizeof ( c[blk->use].flg ) );  
+                            memcpy       ( &c[blk->use].flg,      &v10Cmp.flg,      sizeof ( c[blk->use].flg ) );
 
                             c[blk->use].topflg = 0;
                             c[blk->use].botflg = 0;
@@ -1354,7 +1361,7 @@ struct CIVdtmsrf *srf,
                             memcpy       ( &c[blk->use].stopXY,   &v87prelCmp.stopXY,   sizeof ( c[blk->use].stopXY ) );
                             memcpy       ( &c[blk->use].startStn, &v87prelCmp.startStn, sizeof ( c[blk->use].startStn ) );
                             memcpy       ( &c[blk->use].stopStn,  &v87prelCmp.stopStn,  sizeof ( c[blk->use].stopStn ) );
-                            memcpy       ( &c[blk->use].flg,      &v87prelCmp.flg,      sizeof ( c[blk->use].flg ) );              
+                            memcpy       ( &c[blk->use].flg,      &v87prelCmp.flg,      sizeof ( c[blk->use].flg ) );
                             }
                         }
 
@@ -1366,7 +1373,7 @@ struct CIVdtmsrf *srf,
                         c[blk->use].nam[namChars-1] = '\0';
                         c[blk->use].des[desChars-1] = '\0';
                         c[blk->use].stynam[styChars-1] = '\0';
-                        }         
+                        }
                     }
         }
 
@@ -1401,7 +1408,7 @@ struct CIVdtmsrf *srf,
             if ( ( sts = aecDTM_allocateBlock ( &blk, srf->cmpMemf, srf->cmpMemf->nrec, 0 ) ) == SUCCESS )
                 for ( s = blk->rec.cmpMem; blk->use < srf->cmpMemf->nrec  &&  sts == SUCCESS; blk->use++ )
                     {
-                    if ( j++ == 100 ) 
+                    if ( j++ == 100 )
                         {
                         aecTicker_show();
                         j = 0;
@@ -1469,7 +1476,7 @@ static int aecDTM_loadCheckFormat  /* <= TRUE if error              */
         {
         if ( fread ( buf, sizeof ( char ), 1, fptr ) != 1 )
             sts = DTM_M_RDFILF;
-        else 
+        else
             *ttnFormatP = ( int ) buf[0];
         }
     if ( fptr != (FILE *)0 ) fclose ( fptr );

@@ -3,12 +3,14 @@
 #     $Source: Formats/formats.mke $
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
-#       $Date: 2012/11/15 20:19:18 $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #     $Author: Daryl.Holmwood $
 #
 #   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
+#NEEDSWORK_VS2015: WIP, remove these warning suppress
+CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
 
 #---------------------------------------------------------
 # Bmake must be called before mdl.mki is included
@@ -55,6 +57,7 @@ $(formatsDir)PublicAPI\Formats.h \
 $(formatsDir)PublicAPI\Esri.h \
 $(formatsDir)PublicAPI\Inroads.h \
 $(formatsDir)PublicAPI\InroadsImporter.h \
+$(formatsDir)PublicAPI\InroadsExporter.h \
 $(formatsDir)PublicAPI\LandXMLImporter.h \
 $(formatsDir)PublicAPI\LandXMLExporter.h \
 $(formatsDir)PublicAPI\Lidar.h \
@@ -107,7 +110,7 @@ $(o)LandXMLExporter$(oext) : $(formatsDir)LandXMLExporter.cpp $(DependsOnHeaders
 
 $(o)bcdtmMX$(oext) : $(formatsDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-#$(o)bcdtminroads$(oext) : $(formatsDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtminroads$(oext) : $(formatsDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)bcdtmEsri$(oext) : $(formatsDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
@@ -122,6 +125,8 @@ $(o)TerrainImporter$(oext) : $(formatsDir)TerrainImporter.cpp $(DependsOnHeaders
 $(o)TerrainExporter$(oext) : $(formatsDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)InroadsImporter$(oext) : $(formatsDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+
+$(o)InroadsExporter$(oext) : $(formatsDir)InroadsExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 $(o)LidarImporter$(oext) : $(formatsDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDisplayHandlers.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -345,8 +345,7 @@ struct DTMElementSubDisplayHandler
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) abstract;
     virtual SnapStatus _OnSnap (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& drawingInfoProvider, SnapContextP context, int snapPathIndex);
     virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr);
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context);
-    virtual void _GetDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, WString& string, uint32_t desiredLength);
+    virtual void _GetDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, WString& string, UInt32 desiredLength);
     
     UInt16 GetSubHandlerId() const
         {
@@ -362,10 +361,10 @@ struct DTMElementSubDisplayHandler
     DTMELEMENT_EXPORT bool Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context);
     DTMELEMENT_EXPORT void GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr);
 
-    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence);
-    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context)
+    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, const DTMFenceParams& fence, DTMSubElementContext& subElementContext);
+    DTMELEMENT_EXPORT static void DrawSubElement (ElementHandleCR element, const ElementHandle::XAttributeIter& xAttr, ViewContextR context, DTMSubElementContext& subElementContext)
         {
-        DrawSubElement (element, xAttr, context, DTMFenceParams());
+        DrawSubElement (element, xAttr, context, DTMFenceParams(), subElementContext);
         }
 
     //=======================================================================================
@@ -380,12 +379,15 @@ struct DTMElementSubDisplayHandler
     DTMELEMENT_EXPORT static DTMElementSubDisplayHandler* FindHandler (XAttributeHandleCR xAttr);        
     DTMELEMENT_EXPORT static DTMElementSubDisplayHandler* FindHandler (UInt16 subHandlerId);
 
-    DTMELEMENT_EXPORT static void SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context, uint32_t color, int style, uint32_t weight);
+    DTMELEMENT_EXPORT static void SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context, UInt32 color, int style, UInt32 weight);
     DTMELEMENT_EXPORT static bool SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context);
     DTMELEMENT_EXPORT static void SetSymbology(DTMElementSubHandler::SymbologyParams& params, DTMDrawingInfo& drawingInfo, ViewContextR context, Symbology const &symbology)
         {
         SetSymbology (params, drawingInfo, context, symbology.color, symbology.style, symbology.weight);
         }
+    /*__PUBLISH_SECTION_START__*/
+    static bool TestLevelIsVisible (LevelId level, DTMDrawingInfo& drawingInfo, ViewContextR context);
+    /*__PUBLISH_SECTION_END__*/
 
 private:
     static bmap<UInt16, DTMElementSubDisplayHandler*> s_subHandlers;
@@ -400,7 +402,6 @@ protected:
     virtual bool _CanDraw (DTMDataRef* dtmDataRef, ViewContextCR context) const;
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementTrianglesDisplayHandler () : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYTRIANGLES)
         {
         }
@@ -422,7 +423,6 @@ protected:
         }
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
 public:
     bool _CreateDefaultElements(EditElementHandleR m_element, bool visible);
     };
@@ -434,7 +434,6 @@ struct DTMElementContoursDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementContoursDisplayHandler () : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYCONTOURS)
         {
         }
@@ -460,7 +459,6 @@ struct DTMElementFeatureSpotsDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementFeatureSpotsDisplayHandler() : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYFEATURESPOTS)
         {
         }
@@ -473,7 +471,6 @@ struct DTMElementFlowArrowsDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementFlowArrowsDisplayHandler() : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYFLOWARROWS)
         {
         }
@@ -486,7 +483,6 @@ struct DTMElementHighPointsDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementHighPointsDisplayHandler() : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYHIGHPOINTS)
         {
         }
@@ -499,7 +495,6 @@ struct DTMElementLowPointsDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementLowPointsDisplayHandler() : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYLOWPOINTS)
         {
         }
@@ -513,7 +508,6 @@ protected:
     virtual bool _CanDraw(DTMDataRef* dtmDataRef, ViewContextCR context) const;
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementRasterDrapingDisplayHandler() : DTMElementTrianglesDisplayHandler (ELEMENTHANDLER_DTMELEMENTDISPLAYRASTERDRAPING)
         {
         }
@@ -526,7 +520,6 @@ struct DTMElementSpotsDisplayHandler : DTMElementSubDisplayHandler
 protected:
     virtual bool _Draw (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, DTMDrawingInfo& drawingInfo, ViewContextR context) override;
     //virtual void _GetPathDescription (ElementHandleCR m_element, const ElementHandle::XAttributeIter& xAttr, LazyDTMDrawingInfoProvider& ldip, WStringR string, HitPathCR path, WCharCP levelStr, WCharCP modelStr, WCharCP groupStr, WCharCP delimiterStr) override;
-    virtual void _EditProperties (EditElementHandleR element, ElementHandle::XAttributeIter xAttr, DTMSubElementId const &sid, PropertyContextR context) override;
     DTMElementSpotsDisplayHandler() : DTMElementSubDisplayHandler(ELEMENTHANDLER_DTMELEMENTDISPLAYSPOTS)
         {
         }
