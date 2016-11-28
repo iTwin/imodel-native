@@ -181,7 +181,7 @@ private:
     //! @param[in] propertyIndex Index of property to retrieve metadata from (index is 1-based)
     //! @return ECOBJECT_STATUS_Success if successful. ECObjectsStatus::DataTypeMismatch if the 
     ECObjectsStatus SetDateTimeMetadataInECValue (ECValueR v, uint32_t propertyIndex) const;
-    ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, uint32_t propertyIndex) const;
+    ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, uint32_t propertyIndex) const;
 
     //! If the property is a Navigation property it looks at the relationship class and validates whether the relationship
     //! supports this class
