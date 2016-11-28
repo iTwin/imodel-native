@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/Upgrade/UpgraderFromV9ToV10.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ BentleyStatus UpgraderFromV9ToV10::Upgrade()
     // Read response infos
     ECSqlStatement statement;
     if (SUCCESS != m_adapter.PrepareStatement(statement,
-        "SELECT GetECClassId(), ECInstanceId, [CacheDate], [CacheTag] FROM ONLY [DSC].[CachedResponseInfo]"))
+        "SELECT ECClassId, ECInstanceId, CacheDate, CacheTag FROM ONLY DSC.CachedResponseInfo"))
         {
         return ERROR;
         }

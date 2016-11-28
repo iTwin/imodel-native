@@ -292,7 +292,7 @@ BentleyStatus CachedResponseManager::DeleteResponses(Utf8StringCR name)
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::DeleteResponses", [=]
         {
         return
-            "SELECT GetECClassId(), ECInstanceId "
+            "SELECT ECClassId, ECInstanceId "
             "FROM ONLY " ECSql_CachedResponseInfo " "
             "WHERE [" CLASS_CachedResponseInfo_PROPERTY_Name "] = ? ";
         });
@@ -862,7 +862,7 @@ BentleyStatus CachedResponseManager::TrimPages(ResponseKeyCR responseKey, uint64
     auto statement = m_statementCache.GetPreparedStatement("CachedResponseManager::TrimPages", [&]
         {
         return
-            "SELECT page.GetECClassId(), page.ECInstanceId "
+            "SELECT page.ECClassId, page.ECInstanceId "
             "FROM ONLY " ECSql_CachedResponsePageInfo " page "
             "JOIN " ECSql_ResponseToResponsePage " rel1 "
             "  ON rel1.TargetECInstanceId = page.ECInstanceId "

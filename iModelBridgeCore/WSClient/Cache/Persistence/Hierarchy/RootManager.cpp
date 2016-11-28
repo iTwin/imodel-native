@@ -176,7 +176,7 @@ BentleyStatus RootManager::SetRootSyncDate(Utf8StringCR rootName, DateTimeCR utc
     Json::Value root;
     ReadRootInstance(rootName, root);
 
-    root[CLASS_Root_PROPERTY_SyncDate] = utcDateTime.ToUtf8String();
+    root[CLASS_Root_PROPERTY_SyncDate] = utcDateTime.ToString();
     if (BE_SQLITE_OK != m_rootUpdater.Get().Update(ECDbHelper::ECInstanceIdFromJsonInstance(root), root))
         {
         return ERROR;

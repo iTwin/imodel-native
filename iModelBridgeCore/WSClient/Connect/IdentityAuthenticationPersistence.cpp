@@ -51,7 +51,7 @@ void IdentityAuthenticationPersistence::SetToken(SamlTokenPtr token)
     Utf8String tokenStr = token ? m_secureStore->Encrypt(token->AsString().c_str()) : "";
     m_localState.SaveJsonValue(LocalState_NameSpace, LocalState_Token, tokenStr);
 
-    Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToUtf8String();
+    Utf8String dateStr = DateTime::GetCurrentTimeUtc().ToString();
     m_localState.SaveJsonValue(LocalState_NameSpace, LocalState_TokenSetTime, token ? dateStr.c_str() : "");
 
     m_token.reset();

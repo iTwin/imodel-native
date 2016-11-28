@@ -508,7 +508,7 @@ bset<CachedInstanceKey>& instanceKeysOut
         {
         return
             "SELECT "
-            "   info.GetECClassId(), "
+            "   info.ECClassId, "
             "   info.ECInstanceId, "
             "   info.[" CLASS_CachedObjectInfo_PROPERTY_ClassId "], "
             "   info.[" CLASS_CachedObjectInfo_PROPERTY_InstanceId "] "
@@ -592,7 +592,7 @@ BentleyStatus ObjectInfoManager::RemoveAllCachedInstances()
 
     statement = m_statementCache.GetPreparedStatement("ObjectInfoManager::RemoveAllCachedInstances:ObjectInfos", [&]
         {
-        return "SELECT info.GetECClassId(), info.ECInstanceId FROM ONLY " ECSql_CachedObjectInfo " info ";
+        return "SELECT info.ECClassId, info.ECInstanceId FROM ONLY " ECSql_CachedObjectInfo " info ";
         });
 
     return m_hierarchyManager.DeleteInstances(*statement);
