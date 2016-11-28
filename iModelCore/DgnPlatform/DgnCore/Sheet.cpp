@@ -283,8 +283,8 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
         env.m_skybox.m_enabled = false;
         }
 
-    // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
-    m_maxPixelSize = .5* DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    // max pixel size is half the length of the diagonal. 
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
 
     auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
