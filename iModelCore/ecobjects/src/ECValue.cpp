@@ -307,8 +307,8 @@ BentleyStatus ECValue::DateTimeInfo::Set(DateTimeCR dateTime)
     if (SUCCESS != dateTime.ToJulianDay(jd))
         return ERROR;
 
-    //CE Ticks are in hecto-nanoseconds (1 msec = 10000 hecto-nanoseconds)
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraMilliseconds(jd) * 10000;
+    //CE Ticks are in hecto-nanoseconds
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jd);
     Set(ceTicks);
     return SetMetadata(dateTime.GetInfo());
     }
@@ -319,8 +319,8 @@ BentleyStatus ECValue::DateTimeInfo::Set(DateTimeCR dateTime)
 BentleyStatus ECValue::DateTimeInfo::GetDateTime(DateTimeR dateTime) const
     {
     DateTime::Info info = IsMetadataSet() ? m_info : DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified);
-    //CE Ticks are in hecto-nanoseconds (1 msec = 10000 hecto-nanoseconds)
-    uint64_t jdMsec = DateTime::CommonEraMillisecondsToJulianDay(m_ceTicks / 10000);
+    //CE Ticks are in hecto-nanoseconds
+    uint64_t jdMsec = DateTime::CommonEraTicksToJulianDay(m_ceTicks);
     return DateTime::FromJulianDay(dateTime, jdMsec, info);
     }
 
@@ -1060,7 +1060,7 @@ int64_t ECValue::GetDateTimeUnixMillis() const
     PRECONDITION(!IsNull(), 0LL);
 
     int64_t commonEraTicks = m_dateTimeInfo.GetCETicks();
-    uint64_t jdInMsec = DateTime::CommonEraMillisecondsToJulianDay(commonEraTicks / 10000);
+    uint64_t jdInMsec = DateTime::CommonEraTicksToJulianDay(commonEraTicks);
     return DateTime::JulianDayToUnixMilliseconds(jdInMsec);
     }
 
