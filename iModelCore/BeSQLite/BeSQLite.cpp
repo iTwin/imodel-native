@@ -1415,14 +1415,14 @@ DbResult Db::ChangeBriefcaseId(BeBriefcaseId id)
     if (IsReadonly())
         return BE_SQLITE_READONLY;
 
-    //If the passed id is the same as the existing one, we must not do anything. The call DeleteBriefcaseLocalValues 
+    //If the passed id is the same as the existing one, we must not do anything. The call ClearBriefcaseLocalValues 
     //deletes all briefcase local values, which is fine if the briefcase id really changes. If it doesn't change
     //it would mean though to destroy the current state of those values.
     if (!id.IsValid() || (GetBriefcaseId().IsValid() && GetBriefcaseId() == id))
         return BE_SQLITE_ERROR;
 
     // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
-    DbResult stat = DeleteBriefcaseLocalValues();
+    DbResult stat = ClearBriefcaseLocalValues();
     if (stat != BE_SQLITE_OK)
         {
         AbandonChanges();
@@ -1880,10 +1880,22 @@ void CachedBLV::Reset() {m_isUnset = true; m_dirty = false; m_value = 0;}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   12/12
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult Db::DeleteBriefcaseLocalValues()
+DbResult Db::ClearBriefcaseLocalValues()
     {
     m_dbFile->m_blvCache.Clear();
     return TruncateTable(BEDB_TABLE_Local);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void Db::SetupBlvSaveStmt(Statement& stmt, Utf8CP name)
+    {
+    DbResult rc = stmt.Prepare(*this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local " (Name,Val) VALUES(?,?)");
+    BeAssert(rc == BE_SQLITE_OK);
+    UNUSED_VARIABLE(rc);
+
+    stmt.BindText(1, name, Statement::MakeCopy::No);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1892,27 +1904,76 @@ DbResult Db::DeleteBriefcaseLocalValues()
 DbResult Db::SaveBriefcaseLocalValue(Utf8CP name, Utf8StringCR value)
     {
     Statement stmt;
-    stmt.Prepare(*this, "INSERT OR REPLACE INTO " BEDB_TABLE_Local " (Name,Val) VALUES(?,?)");
-    stmt.BindText(1, name, Statement::MakeCopy::No);
+    SetupBlvSaveStmt(stmt, name);
+
     stmt.BindText(2, value, Statement::MakeCopy::No);
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SaveBriefcaseLocalValue(Utf8CP name, uint64_t value)
+    {
+    Statement stmt;
+    SetupBlvSaveStmt(stmt, name);
+
+    stmt.BindUInt64(2, value);
+    return stmt.Step();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const
+    {
+    DbResult rc = stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
+    BeAssert(rc == BE_SQLITE_OK);
+    UNUSED_VARIABLE(rc);
+
+    stmt.BindText(1, name, Statement::MakeCopy::No);
     return stmt.Step();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult Db::QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const
+DbResult Db::QueryBriefcaseLocalValue(Utf8StringR value, Utf8CP name) const
     {
     Statement stmt;
-    stmt.Prepare(*this, "SELECT Val FROM " BEDB_TABLE_Local " WHERE Name=?");
-    stmt.BindText(1, name, Statement::MakeCopy::No);
-
-    DbResult rc = stmt.Step();
+    DbResult rc = ExecBlvQueryStmt(stmt, name);
     if (rc != BE_SQLITE_ROW)
         return rc;
 
     value = stmt.GetValueText(0);
     return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::QueryBriefcaseLocalValue(uint64_t& value, Utf8CP name) const
+    {
+    Statement stmt;
+    DbResult rc = ExecBlvQueryStmt(stmt, name);
+    if (rc != BE_SQLITE_ROW)
+        return rc;
+
+    value = stmt.GetValueUInt64(0);
+    return BE_SQLITE_ROW;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::DeleteBriefcaseLocalValue(Utf8CP name)
+    {
+    Statement stmt;
+    DbResult rc = stmt.Prepare(*this, "DELETE FROM " BEDB_TABLE_Local " WHERE Name=?");
+    BeAssert(rc == BE_SQLITE_OK);
+
+    stmt.BindText(1, name, Statement::MakeCopy::No);
+    return stmt.Step();
     }
 
 /*---------------------------------------------------------------------------------**//**

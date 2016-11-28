@@ -633,7 +633,7 @@ TEST_F(BeSQLiteDbTests, BriefcaseLocalValues)
     EXPECT_EQ(BE_SQLITE_DONE, m_result);
 
     Utf8String val2 = "None";
-    m_result = m_db.QueryBriefcaseLocalValue(testProp2, val2);
+    m_result = m_db.QueryBriefcaseLocalValue(val2, testProp2);
     EXPECT_EQ(BE_SQLITE_ROW, m_result);
     EXPECT_STREQ("Test Value", val2.c_str());
     

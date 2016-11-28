@@ -154,6 +154,9 @@ public:
     //! @param[in] progressTracker Implementation of progress tracker (pass null to unset)
     BE_SQLITE_EXPORT void SetProgressTracker(ICompressProgressTracker* progressTracker);
 
+    //! Set the block size for the compression
+    void SetBlockSize(uint32_t blockSize); //!< @private
+
     //! Start incremental compression to the supplied output stream
     //! @param[in] outStream Output stream to write to
     BE_SQLITE_EXPORT ZipErrors StartCompress(ILzmaOutputStream& outStream);
@@ -167,15 +170,11 @@ public:
     //! Finish incremental compression. 
     BE_SQLITE_EXPORT ZipErrors FinishCompress();
 
-    //! Set the block size for the compression
-    void SetBlockSize(uint32_t blockSize); //!< @private
-
     //! Compress the entire contents of supplied input stream to the supplied output stream
     BE_SQLITE_EXPORT ZipErrors CompressStream(ILzmaOutputStream& out, ILzmaInputStream& in);
 
     //! Compress a buffer of bytes
     BE_SQLITE_EXPORT ZipErrors CompressBuffer(bvector<Byte>& out, void const *input, uint32_t sizeInput);
-
 };
 
 //=======================================================================================
@@ -205,14 +204,14 @@ public:
     //! @param[in] inStream Input stream to read from
     BE_SQLITE_EXPORT ZipErrors StartDecompress(ILzmaInputStream& inStream);
 
-    //! Read and decompress the next page of streamed
+    //! Read and decompress the next page
     //! @param[out] pData Buffer to copy the data to (allocated by the client)
     //! @param[in,out] pnData Set this to the size of the buffer. The method sets it to the actual
     //! number of bytes copied. If the input is exhausted, the value is set to 0. 
     //! @return ZIP_SUCCESS if successfully extracted data. Returns appropriate error otherwise. 
     BE_SQLITE_EXPORT ZipErrors DecompressNextPage(void* pData, int* pnData);
 
-    //! Finish incremental compression. 
+    //! Finish incremental decompression
     BE_SQLITE_EXPORT void FinishDecompress();
 
     //! Decompress the entire contents of the supplied input stream to the supplied output stream
@@ -220,7 +219,6 @@ public:
 
     //! Decompress a buffer of bytes
     BE_SQLITE_EXPORT ZipErrors DecompressBuffer(bvector<Byte>&out, void const*inputBuffer, uint32_t inputSize);
-
 };
 
 END_BENTLEY_SQLITE_NAMESPACE

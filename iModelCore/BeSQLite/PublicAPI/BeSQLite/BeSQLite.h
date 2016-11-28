@@ -2197,7 +2197,9 @@ private:
     void DoCloseDb();
     DbResult DoOpenDb(Utf8CP dbName, OpenParams const& params);
     DbResult TruncateTable(Utf8CP tableName) const;
-    DbResult DeleteBriefcaseLocalValues();
+    DbResult ClearBriefcaseLocalValues();
+    void SetupBlvSaveStmt(Statement& stmt, Utf8CP name);
+    DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
 
 public:
     BE_SQLITE_EXPORT Db();
@@ -2482,16 +2484,21 @@ public:
     BriefcaseLocalValueCache& GetBLVCache() {return m_dbFile->GetBLVCache();}
 
     //! Query the current value of a Briefcase Local Value of type string.
-    //! @param[in] name The name of the BLV.
     //! @param[out] value On success, the value of the BLV.
+    //! @param[in] name The name of the BLV.
     //! @return BE_SQLITE_ROW if the value exists and value is valid, error status otherwise.
-    BE_SQLITE_EXPORT DbResult QueryBriefcaseLocalValue(Utf8CP name, Utf8StringR value) const;
+    BE_SQLITE_EXPORT DbResult QueryBriefcaseLocalValue(Utf8StringR value, Utf8CP name) const;
+    BE_SQLITE_EXPORT DbResult QueryBriefcaseLocalValue(uint64_t& value, Utf8CP name) const;
 
     //! Save a new value of a Briefcase Local Value of type string. If the RLC already exists, its value is replaced.
     //! @param[in] name The name of the BLV.
     //! @param[in] value The new value for BLV name.
     //! @return BE_SQLITE_DONE if the value was saved, error status otherwise.
     BE_SQLITE_EXPORT DbResult SaveBriefcaseLocalValue(Utf8CP name, Utf8StringCR value);
+    BE_SQLITE_EXPORT DbResult SaveBriefcaseLocalValue(Utf8CP name, uint64_t value);
+
+    //! Delete a Briefcase Local Value
+    BE_SQLITE_EXPORT DbResult DeleteBriefcaseLocalValue(Utf8CP name);
     //! @}
 
     //! @return the rowid from the last insert statement for this Db.
