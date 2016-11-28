@@ -414,7 +414,7 @@ bool ECDbTestUtility::CompareJsonWithECPrimitiveValue(const Json::Value& jsonVal
             const int64_t referenceECTicks = referenceValue.GetDateTimeTicks();
             const double jsonJd = jsonValue.asDouble();
             const uint64_t jdMsec = DateTime::RationalDayToMsec(jsonJd);
-            const int64_t jsonCETicks = DateTime::JulianDayToCommonEraMilliseconds(jdMsec) * 10000;
+            const int64_t jsonCETicks = DateTime::JulianDayToCommonEraTicks(jdMsec);
             return referenceECTicks == jsonCETicks;
             }
 
@@ -540,7 +540,7 @@ void ECDbTestUtility::AssertECDateTime(ECValueCR expectedECValue, const Db& db, 
     {
     const DateTime expectedDateTime = expectedECValue.GetDateTime();
     const int64_t expectedCETicks = expectedECValue.GetDateTimeTicks();
-    uint64_t expectedJdMsec = DateTime::CommonEraMillisecondsToJulianDay(expectedCETicks / 10000);
+    uint64_t expectedJdMsec = DateTime::CommonEraTicksToJulianDay(expectedCETicks);
     const uint64_t actualJdMsec = DateTime::RationalDayToMsec(actualJd);
     ASSERT_EQ(expectedJdMsec, actualJdMsec) << "EC date time assertion failed for " << expectedDateTime.ToString().c_str();
 

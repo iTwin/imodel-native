@@ -243,7 +243,7 @@ private:
             {
                 DateTime::Info metadata;
                 const int64_t ceTicks = v.GetDateTimeTicks(metadata);
-                const uint64_t jdHns = DateTime::CommonEraMillisecondsToJulianDay(ceTicks / 10000);
+                const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
                 ecsqlStat = stmt.GetBinder(parameterIndex).BindDateTime(jdHns, metadata);
                 break;
             }
