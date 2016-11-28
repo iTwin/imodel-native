@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -106,13 +106,13 @@ int aecFeature_addPoints    // <=  Non-zero status code if error occurred.
     FeatureHandle ftrHndl,  //  => Handle to feature object.
     CFeaturePnt *ftrPntsP,  //  => feature points to add to feature (or NULL).
     DPoint3d *pntsP,        //  => 3D points to add to feature (or NULL).
-    byte *flgsP,         //  => point properties (or NULL).
+    unsigned char *flgsP,         //  => point properties (or NULL).
     long numPnts            //  => Number of points to add.
 )
 {
     int sts = SUCCESS;
 
-    if ( ftrPntsP )        
+    if ( ftrPntsP )
         sts = ((CFeature *)ftrHndl)->AddPoints ( ftrPntsP, numPnts );
     else if ( pntsP )
         sts = ((CFeature *)ftrHndl)->AddPoints ( pntsP, flgsP, numPnts );
@@ -149,7 +149,7 @@ int aecFeature_getPoints     // <=  Non-zero status code if error occurred.
     FeatureHandle ftrHndl,   //  => Handle to feature object.
     CFeaturePnt **ftrPntsPP, // <=  Feature's 3D coordinates and flags. CALLER MUST FREE.
     DPoint3d **pntsPP,       // <=  Feature's 3D coordinates. CALLER MUST FREE.
-    byte **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
+    unsigned char **pntFlgsPP,     // <=  Feature's point properties.  CALLER MUST FREE
     long *numPntsP           // <=  Number of points returned.
 )
 {
@@ -158,12 +158,12 @@ int aecFeature_getPoints     // <=  Non-zero status code if error occurred.
     if ( ftrPntsPP )
     {
         if ( (sts = ((CFeature *)ftrHndl)->GetPoints ( ftrPntsPP, numPntsP ) ) == SUCCESS )
-            sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, *ftrPntsPP, *numPntsP );                
+            sts = aecFeature_ftrpntsToDpnt3ds ( pntsPP, pntFlgsPP, *ftrPntsPP, *numPntsP );
     }
     else
        sts = ((CFeature *)ftrHndl)->GetPoints ( pntsPP, pntFlgsPP, numPntsP );
 
-    return ( sts );        
+    return ( sts );
 }
 
 
@@ -194,7 +194,7 @@ int aecFeature_dpnt3dsToFtrpnts
 (
     CFeaturePnt **ftrPntsPP,
     DPoint3d *dpnt3dsP,
-    byte *pntflgsP,
+    unsigned char *pntflgsP,
     long numPnts
 )
 {
@@ -208,14 +208,14 @@ int aecFeature_dpnt3dsToFtrpnts
             memcpy ( &((*ftrPntsPP)[i].cor), &dpnt3dsP[i], sizeof ( DPoint3d ) );
 
             if ( pntflgsP )
-                (*ftrPntsPP)[i].flg = pntflgsP[i];         
+                (*ftrPntsPP)[i].flg = pntflgsP[i];
         }
     }
     else
         sts = AEC_E_MEMALF;
 
-    return ( sts ); 
-}   
+    return ( sts );
+}
 
 
 //---------------------------------------------------------------------------
@@ -227,7 +227,7 @@ int aecFeature_dpnt3dsToFtrpnts
 int aecFeature_ftrpntsToDpnt3ds
 (
     DPoint3d **dpnt3dsPP,
-    byte **pntflgsPP,
+    unsigned char **pntflgsPP,
     CFeaturePnt *ftrPntsP,
     long numPnts
 )
@@ -240,7 +240,7 @@ int aecFeature_ftrpntsToDpnt3ds
             sts = AEC_E_MEMALF;
 
     if ( sts == SUCCESS && pntflgsPP )
-        if ( ( *pntflgsPP = ( byte * ) calloc ( numPnts, sizeof ( byte ) ) ) == NULL )
+        if ( ( *pntflgsPP = ( unsigned char * ) calloc ( numPnts, sizeof ( unsigned char ) ) ) == NULL )
             sts = AEC_E_MEMALF;
 
     if ( sts == SUCCESS )
@@ -251,11 +251,11 @@ int aecFeature_ftrpntsToDpnt3ds
                 memcpy ( &(*dpnt3dsPP)[i], &ftrPntsP[i].cor, sizeof ( DPoint3d ) );
 
             if ( pntflgsPP )
-                memcpy ( &(*pntflgsPP)[i], &ftrPntsP[i].flg, sizeof ( byte ) );
+                memcpy ( &(*pntflgsPP)[i], &ftrPntsP[i].flg, sizeof ( unsigned char ) );
         }
     }
 
-    return ( sts ); 
-} 
-                        
+    return ( sts );
+}
+
 

@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -897,7 +897,7 @@ int bcdtmImagePP_getImageSizeAndProjection
 
 //   Get BaseGCS Pointer To Raster Coordinate System
 
-     BaseGCS* pRasterCoordSys = (BaseGCS*)RasterPointExtractor.GetDEMRasterCoordSys() ;
+     BaseGCSCP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSys() ;
 
 //   Set Coordinate System Parameters
 
@@ -2443,7 +2443,7 @@ WCharCP    projectionKeyP
         /*
         **  Instantiate Points Iterator
         */
-        UInt32 NbPoints;
+        uint32_t NbPoints;
         const double* pXYZPoints;
         HAutoPtr<HUTDEMRasterXYZPointsIterator> PointsIterator (RasterPointExtractor.CreateXYZPointsIterator (destCoordSysKeyName, scaleFactor)); // RobC - Inconsisently Crashes here and never reprojects
         if (dbg)
@@ -2454,8 +2454,8 @@ WCharCP    projectionKeyP
         /*
         **  Get Number Of Filtered Rows And Columns
         */
-        UInt64 WidthInPixels;
-        UInt64 HeightInPixels;
+        uint64_t WidthInPixels;
+        uint64_t HeightInPixels;
         PointsIterator->GetFilteredDimensionInPixels (&WidthInPixels, &HeightInPixels);
         heightInPixels = (long)HeightInPixels;
         widthInPixels = (long)WidthInPixels;
@@ -2607,7 +2607,10 @@ void ImagePPConverter::GetImageProperties ()
             HUTDEMRasterXYZPointsExtractor RasterPointExtractor (DEMRasterFilePath, pPool);
             RasterPointExtractor.GetDimensionInPixels (&m_widthInPixels, &m_heightInPixels);
             //   Get BaseGCS Pointer To Raster Coordinate System
-            m_gcs = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS ();
+            if(RasterPointExtractor.GetDEMRasterCoordSysCP () != nullptr)
+                m_gcs = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS ();
+            else
+                m_gcs = nullptr;
             }
         catch (HFCException& rE)
             {
@@ -3032,19 +3035,19 @@ BcDTMPtr ImagePPConverter::ImportAndTriangulateImage (double imageScaleFactor, W
     return nullptr;
     }
 
-UInt64 ImagePPConverter::GetWidth ()
+uint64_t ImagePPConverter::GetWidth ()
     {
     GetImageProperties ();
     return m_widthInPixels;
     }
 
-UInt64 ImagePPConverter::GetHeight ()
+uint64_t ImagePPConverter::GetHeight ()
     {
     GetImageProperties ();
     return m_heightInPixels;
     }
 
-UInt64 ImagePPConverter::GetNumberOfPixels ()
+uint64_t ImagePPConverter::GetNumberOfPixels ()
     {
     GetImageProperties ();
     return m_heightInPixels * m_widthInPixels;

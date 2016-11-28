@@ -13,7 +13,7 @@ BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sylvain.Pucci   08/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 IDTM::GetPointCount ()
+int64_t IDTM::GetPointCount ()
     {
     return _GetPointCount();
     }

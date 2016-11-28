@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 #include "bcdtmEdit.h"
 /*
 ** Set Globals For Holding Edit Context
@@ -1641,7 +1641,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_cleanVoidDtmObject(BC_DTM_OBJ *dtmP,long VoidFea
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islandsPP,long *numIslandsP) 
+BENTLEYDTM_Public int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islandsPP,long *numIslandsP)
 /*
 ** This Function Gets The List Of All Island Feature Internal To A Void
 **
@@ -2058,7 +2058,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteTriangleDtmObject(BC_DTM_OBJ *dtmP,long ti
 **
 */
 {
- int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ; 
+ int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long  numDtmFeatures ;
  DPoint3d   trgPts[4] ;
  DPoint3d *pointP ;
@@ -2764,7 +2764,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeInsertedVoidsOnTinHullDtmObject(BC_DTM_OBJ
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
+BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP)
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  cln,fpnt,npnt,feature,storeFlag,dtmFeature,memFeatureTable=0,memInc=100 ;
@@ -2888,7 +2888,7 @@ BENTLEYDTM_Private int bcdtmEdit_getListOfIntersectedIslandVoidHoleFeaturesDtmOb
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP) 
+BENTLEYDTM_Private int bcdtmEdit_getIslandVoidHoleFeaturesWithACommonHullSegementDtmObject(BC_DTM_OBJ *dtmP,long numStartFeatures,DTMTinPointFeatures **intersectedFeaturesPP,long *numIntersectedFeaturesP)
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  fpnt,npnt,storeFlag,dtmFeature,numLineFeatures ;
@@ -4019,7 +4019,7 @@ BENTLEYDTM_Private int bcdtmEdit_checkForOneCoincidentTptrVoidPolygonSectionWith
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_deleteInternalVoidPointsAndLinesAndRetriangulateVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature) 
+BENTLEYDTM_Private int bcdtmEdit_deleteInternalVoidPointsAndLinesAndRetriangulateVoidDtmObject(BC_DTM_OBJ *dtmP,long voidFeature)
 /*
 ** This Function Deletes Point And Lines Internal To A Void And Retriangulates The Void
 **
@@ -6226,7 +6226,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_getIslandsInternalToVoidDtmObject(BC_DTM_OBJ *dt
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islands,long *numIslands) 
+BENTLEYDTM_Private int bcdtmEdit_getIslandFeaturesInternalToVoidDtmObjectDup(BC_DTM_OBJ *dtmP,long voidFeature,DTMTinPointFeatures **islands,long *numIslands)
 /*
 ** This Function Gets The List Of All Island Feature Internal To A Void
 **
@@ -6849,7 +6849,7 @@ BENTLEYDTM_Public int bcdtmEdit_triangulateVoidDtmObject
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long           sp,spnt,n,np,lp,pp,ps,pn,pl,pnt,point,numPoints,clc ;
- DPoint3d            *pointsP=NULL,intPoint ;
+ DPoint3d               *pointsP = NULL, intPoint{ 0, 0, 0 };
  DPoint3d  *pntP ;
  BC_DTM_OBJ     *tempDtmP=NULL ;
 /*
@@ -7959,7 +7959,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteLineDtmObject(BC_DTM_OBJ *dtmP,long delete
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_polygonMoveZDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *polyPtsP,long numPolyPts,long moveOption,double elevation) 
+BENTLEYDTM_EXPORT int bcdtmEdit_polygonMoveZDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *polyPtsP,long numPolyPts,long moveOption,double elevation)
 /*
 ** This Function Moves The z Values within A Polygon
 */
@@ -8088,7 +8088,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_insertStringIntoDtmObject(BC_DTM_OBJ *dtmP,long 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmEdit_insertDtmFeatureIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DPoint3d *stringPtsP,long numStringPts,long *startPntP) 
+BENTLEYDTM_Public int bcdtmEdit_insertDtmFeatureIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DPoint3d *stringPtsP,long numStringPts,long *startPntP)
 /*
 ** This Function Inserts A DTM Feature Into A Tin Object
 */
@@ -8145,7 +8145,7 @@ BENTLEYDTM_Public int bcdtmEdit_insertDtmFeatureIntoDtmObject(BC_DTM_OBJ *dtmP,D
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_insertVoidIntoDtmObject(BC_DTM_OBJ *dtmP,DTMUserTag userTag,DPoint3d *voidPtsP,long numVoidPts) 
+BENTLEYDTM_EXPORT int bcdtmEdit_insertVoidIntoDtmObject(BC_DTM_OBJ *dtmP,DTMUserTag userTag,DPoint3d *voidPtsP,long numVoidPts)
 /*
 ** This Function Inserts A Void Into A Tin Object
 */
@@ -8335,7 +8335,7 @@ BENTLEYDTM_Public int bcdtmEdit_validateVoidDtmObject(BC_DTM_OBJ *dtmP,DPoint3d 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_insertIslandIntoDtmObject(BC_DTM_OBJ *dtmP,DTMUserTag userTag,DPoint3d *islandPtsP,long numIslandPts) 
+BENTLEYDTM_EXPORT int bcdtmEdit_insertIslandIntoDtmObject(BC_DTM_OBJ *dtmP,DTMUserTag userTag,DPoint3d *islandPtsP,long numIslandPts)
 /*
 ** This Function Inserts A Island Into A Tin Object
 */
@@ -8416,7 +8416,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_insertIslandIntoDtmObject(BC_DTM_OBJ *dtmP,DTMUs
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmEdit_insertLineIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DPoint3d *stringPtsP,long numStringPts,long *startPntP) 
+BENTLEYDTM_Public int bcdtmEdit_insertLineIntoDtmObject(BC_DTM_OBJ *dtmP,DTMFeatureType dtmFeatureType,DTMUserTag userTag,DPoint3d *stringPtsP,long numStringPts,long *startPntP)
 /*
 ** This Function Inserts A String Into A Tin Object
 */
@@ -8786,7 +8786,7 @@ BENTLEYDTM_Public int bcdtmEdit_retriangualteAlongTptrListDtmObject(BC_DTM_OBJ *
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_tptrMoveZDtmObject(BC_DTM_OBJ *dtmP,long startPoint,long moveOption,double elevation) 
+BENTLEYDTM_EXPORT int bcdtmEdit_tptrMoveZDtmObject(BC_DTM_OBJ *dtmP,long startPoint,long moveOption,double elevation)
 /*
 ** This Function Moves The z Values On A Tptr List
 */
@@ -8812,7 +8812,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_tptrMoveZDtmObject(BC_DTM_OBJ *dtmP,long startPo
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_tptrPolygonMoveZDtmObject(BC_DTM_OBJ *dtmP,long startPoint,long moveOption,double elevation) 
+BENTLEYDTM_EXPORT int bcdtmEdit_tptrPolygonMoveZDtmObject(BC_DTM_OBJ *dtmP,long startPoint,long moveOption,double elevation)
 /*
 ** This Function Moves The z Values within A Tptr Polygon
 */
@@ -8940,7 +8940,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_nullTptrListDtmObject(BC_DTM_OBJ *dtmP,long star
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_removeInternalTptrPointsAndRetriangulateDtmObject(BC_DTM_OBJ *dtmP,long startPnt,long fillOption) 
+BENTLEYDTM_EXPORT int bcdtmEdit_removeInternalTptrPointsAndRetriangulateDtmObject(BC_DTM_OBJ *dtmP,long startPnt,long fillOption)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   sp,np,cp,lp,process,clc,nullVal1=-98989898,nullVal2 =-87878787 ;
@@ -9086,7 +9086,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_removeInternalTptrPointsAndRetriangulateDtmObjec
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *deleteLinePtsP,long numDeleteLinePts,DPoint3d **drapePointsPP,long *numDrapePointsP) 
+BENTLEYDTM_Private int bcdtmEdit_drapeDeleteLineOnEditDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *deleteLinePtsP,long numDeleteLinePts,DPoint3d **drapePointsPP,long *numDrapePointsP)
 {
  int   ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long  ofs1,ofs2,numDrapePts=0 ;
@@ -9488,7 +9488,7 @@ return(ret) ;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmEdit_deleteTrianglesOnDeleteLineDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *deleteLinePtsP,long numDeleteLinePts) 
+BENTLEYDTM_EXPORT int bcdtmEdit_deleteTrianglesOnDeleteLineDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *deleteLinePtsP,long numDeleteLinePts)
 /*
 ** This Is The Controlling Function For Deleting Triangles On A Delete Line
 **
@@ -9586,7 +9586,7 @@ BENTLEYDTM_EXPORT int bcdtmEdit_deleteTrianglesOnDeleteLineDtmObject(BC_DTM_OBJ 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_assignTinLinesToDrapePointsDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *drapePtsP,long numDrapePts,DTM_TRG_INDEX_TABLE **drapeTinLinesP,long *numDrapeTinLines) 
+BENTLEYDTM_Private int bcdtmEdit_assignTinLinesToDrapePointsDtmObject(BC_DTM_OBJ *dtmP,DPoint3d *drapePtsP,long numDrapePts,DTM_TRG_INDEX_TABLE **drapeTinLinesP,long *numDrapeTinLines)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long   P1,P2,P3,Ptype ;
@@ -9670,7 +9670,7 @@ BENTLEYDTM_Private int bcdtmEdit_assignTinLinesToDrapePointsDtmObject(BC_DTM_OBJ
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_createVoidAndIslandPolygonsForDeletedTrianglesDtmObject(BC_DTM_OBJ *dtmP,DTM_TRG_INDEX_TABLE *delPointsP,long numDelPoints,BC_DTM_OBJ **voidPolygonsPP) 
+BENTLEYDTM_Private int bcdtmEdit_createVoidAndIslandPolygonsForDeletedTrianglesDtmObject(BC_DTM_OBJ *dtmP,DTM_TRG_INDEX_TABLE *delPointsP,long numDelPoints,BC_DTM_OBJ **voidPolygonsPP)
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0)    ;
  long p1=0,p2,p3,clc,numVoidPts ;
@@ -9824,12 +9824,12 @@ BENTLEYDTM_Private int bcdtmEdit_createVoidAndIslandPolygonsForDeletedTrianglesD
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Private int bcdtmEdit_extractVoidAndIslandPolygonsFromDeletedTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **voidPolygonsPP) 
+BENTLEYDTM_Private int bcdtmEdit_extractVoidAndIslandPolygonsFromDeletedTrianglesDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **voidPolygonsPP)
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    sp,np,p1,p2,p3,clc,numStartFeatures,numIslands,numVoids ;
  long    feature,numVoidPts ;
- DTMFeatureType dtmFeatureType;
+ DTMFeatureType dtmFeatureType = DTMFeatureType::None;
  DPoint3d     *voidPtsP=NULL ;
 /*
 ** Write Entry Message
@@ -10862,7 +10862,7 @@ int bcdtmEdit_deletePolygonalFeatureDtmObject
 
 {
  int  ret=DTM_SUCCESS,dbg=0 ;
- long feat,feature,numIslands=0,*islandListP=NULL,numVoids=0,*voidListP=NULL ;
+ long feat,feature = 0,numIslands=0,*islandListP=NULL,numVoids=0,*voidListP=NULL ;
  BC_DTM_FEATURE  *dtmFeatureP ;
 
 // Write Entry Message
