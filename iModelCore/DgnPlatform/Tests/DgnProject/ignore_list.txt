@@ -51,9 +51,6 @@ CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
 CsvFileTests.GetSections
 
-#TFS 518048
-CategoryTests.UpdateSubCategory_VerifyPresistence 
-
 # bim0200dev, x64 & x86, DEBUG, after merge
 ImportTest.ImportElementsWithDependencies
 ImportTest.ImportElementsWithAuthorities

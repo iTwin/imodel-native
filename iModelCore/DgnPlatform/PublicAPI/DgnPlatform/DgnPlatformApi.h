@@ -54,17 +54,9 @@
        @}
      @defgroup  ViewContext              ViewContext
      @defgroup  ViewController           ViewController
-     @defgroup  NamedView                Named Views
      @defgroup  DisplayStyles            Display Styles
      @defgroup
      @}
-
- @addtogroup Levels
- @{
-     @defgroup LevelCache               Level Cache
-     @defgroup BitMask                  BitMask
-     @defgroup
- @}
 
  @defgroup TextModule     Text
  @{
@@ -72,7 +64,6 @@
     @defgroup TextStyles           Text Styles
     @defgroup
  @}
-
 
  @defgroup AreaPattern              Area Patterns
  @defgroup NamedGroup               Named Groups
@@ -118,8 +109,6 @@ header files</b> (see Microsoft Visual C++ documentation for details.)
 The host application must implement and supply a \ref DgnPlatformHost object to the DgnPlatform library.
 
 The DgnPlatform library is used to read and write \ref DgnPlatformFilesGroup.
-A design file is composed of \ref DgnPlatformModelsGroup.
-A model contains \ref DgnPlatformElementsGroup.
 Use the \ref TxnMgr in order to make changes.
 
 For a list of configuration variables used by DgnPlatform, see \ref ConfigVariableList
