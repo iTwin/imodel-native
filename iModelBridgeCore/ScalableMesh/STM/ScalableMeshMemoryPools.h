@@ -13,6 +13,7 @@
 //#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
 #include "Edits/DifferenceSet.h"
 #include "SMMemoryPool.h"
+#include <Bentley\BeSystemInfo.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <typename POINT> class ScalableMeshMemoryPools
@@ -32,7 +33,17 @@ template <typename POINT> class ScalableMeshMemoryPools
 
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {    
-    m_genericPoolSize = 2000000000;                 
+	static double S_DEFAULT_PHYSICAL_MEM_USED_RATIO = 0.3;
+	
+	uint64_t totalPhysicalSize = BeSystemInfo::GetAmountOfPhysicalMemory();
+	
+	//32 bits usable system memory is limited. 
+	if (sizeof(void*) == 32)
+		{ 
+		totalPhysicalSize = std::min((uint64_t)4000000000, totalPhysicalSize);
+		}	
+
+    m_genericPoolSize = (totalPhysicalSize * S_DEFAULT_PHYSICAL_MEM_USED_RATIO);
     m_genericPool = SMMemoryPool::GetInstance();
     bool result = m_genericPool->SetMaxSize(m_genericPoolSize);
     assert(result == true);

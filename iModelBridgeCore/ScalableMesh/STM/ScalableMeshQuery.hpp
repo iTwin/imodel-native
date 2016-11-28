@@ -2541,6 +2541,7 @@ template <class POINT> BcDTMPtr ScalableMeshNode<POINT>::_GetBcDTM() const
     s_nGetDTMs++;
     auto m_meshNode = dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr());
 
+    assert(!ArePoints3d());
     if (m_meshNode->GetTileDTM().get() == nullptr || m_meshNode->GetTileDTM()->GetData() == nullptr) return nullptr;
     return *m_meshNode->GetTileDTM()->GetData();
     }

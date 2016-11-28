@@ -115,7 +115,7 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
 
 void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, TerrainModel::DTMPtr& dtmPtr)
     {
-    if (dtmPtr->GetBcDTM()->GetTinHandle() == nullptr) return;
+   // if (dtmPtr->GetBcDTM()->GetTinHandle() == nullptr) return;
     IFacetOptionsPtr facetOptions = IFacetOptions::Create();
     bvector<TerrainModel::DTMDrapedLinePtr> drapedSegments;
     TerrainModel::IDTMDraping * draping = dtmPtr->GetDTMDraping();
@@ -231,7 +231,7 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
         }
     }
 
-SkirtBuilder::SkirtBuilder(BcDTMPtr& dtmP)
+SkirtBuilder::SkirtBuilder(DTMPtr& dtmP)
     {
     m_dtm = dtmP;
     m_useTargetTerrain = false;
@@ -251,7 +251,7 @@ void SkirtBuilder::BuildSkirtMesh(bvector<PolyfaceHeaderPtr>& meshParts, bvector
         }
     }
 
-SkirtBuilder::SkirtBuilder(BcDTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes)
+SkirtBuilder::SkirtBuilder(DTMPtr& dtmP, bvector<IScalableMeshNodePtr>& smTerrainNodes)
     {
     m_dtm = dtmP;
     m_smTerrainNodes = smTerrainNodes;

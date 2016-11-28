@@ -3830,6 +3830,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
     }
 
+
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
     {
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
@@ -3850,6 +3851,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
         }
 
     if (!shouldBuildSkirts) return;
+    //if (m_nodeHeader.m_arePoints3d) return;
         //DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
          //                                   ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMax(m_nodeHeader.m_nodeExtent));
 
@@ -3864,7 +3866,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             );
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
-        auto dtm = nodeP->GetBcDTM();
+        auto dtm = m_nodeHeader.m_arePoints3d ? Tile3dTM::Create(nodeP) : nodeP->GetBcDTM();
         if (dtm.get() == nullptr) return;
             SkirtBuilder builder(dtm);
             map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -3941,7 +3943,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
         );
     RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
 
-    auto dtm1 = nodeP->GetBcDTM();
+    DTMPtr dtm1 = nodeP->GetBcDTM();
     if (dtm1.get() == nullptr) return;
 
     bvector<IScalableMeshNodePtr> terrainNodes;

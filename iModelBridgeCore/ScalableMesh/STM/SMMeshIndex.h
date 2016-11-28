@@ -29,6 +29,7 @@
 #include "SmCachedDisplayData.h"
 #include "ScalableMeshQuery.h"
 #include <ScalableMesh\ITextureProvider.h>
+#include "ScalableMeshDraping.h"
 
 
 namespace BENTLEY_NAMESPACE_NAME
