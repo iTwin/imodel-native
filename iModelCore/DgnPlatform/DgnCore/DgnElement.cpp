@@ -2175,14 +2175,14 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s(ElementId) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s(ElementId.Id) VALUES (?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
     if (stmt == nullptr)
         {
         BeAssert(false);
         return DgnDbStatus::WriteError;
         }
 
-    if (ECSqlStatus::Success != stmt->BindNavigationValue(1, el.GetElementId(), ECClassId()))
+    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -2362,8 +2362,8 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
-    if (ECSqlStatus::Success != stmt->BindNavigationValue(1, el.GetElementId(), ECClassId()))
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (ElementId.Id) VALUES(?)", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
+    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
         return DgnDbStatus::WriteError;
 
     ECInstanceKey key;
@@ -2380,9 +2380,9 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el)
 DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ElementId=?", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ElementId.Id=?", GetFullEcSqlClassName().c_str()).c_str(), el.GetDgnDb().GetECSqlWriteToken());
 
-    if (ECSqlStatus::Success != stmt->BindNavigationValue(1, el.GetElementId(), ECClassId()))
+    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
         return DgnDbStatus::WriteError;
 
     DbResult status = stmt->Step();
@@ -2397,14 +2397,14 @@ ECInstanceKey DgnElement::UniqueAspect::_QueryExistingInstanceKey(DgnElementCR e
     // We know what the class and the ID of an instance *would be* if it exists. See if such an instance actually exists.
     DgnClassId classId = GetECClassId(el.GetDgnDb());
 
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE ElementId=?", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT ECInstanceId FROM %s WHERE ElementId.Id=?", GetFullEcSqlClassName().c_str()).c_str());
     if (stmt == nullptr)
         {
         BeAssert(stmt != nullptr);
         return ECInstanceKey();
         }
 
-    if (ECSqlStatus::Success != stmt->BindNavigationValue(1, el.GetElementId(), ECClassId()))
+    if (ECSqlStatus::Success != stmt->BindId(1, el.GetElementId()))
         return ECInstanceKey();
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -2725,11 +2725,11 @@ DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthor
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " ([ElementId],[AuthorityId],[ExternalKey]) VALUES (?,?,?)", element.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (ElementId.Id,AuthorityId,ExternalKey) VALUES (?,?,?)", element.GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
-    statement->BindNavigationValue(1, element.GetElementId(), ECClassId());
+    statement->BindId(1, element.GetElementId());
     statement->BindId(2, GetAuthorityId());
     statement->BindText(3, GetExternalKey(), IECSqlBinder::MakeCopy::No);
 
@@ -2747,11 +2747,11 @@ DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElemen
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?");
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId.Id=? AND AuthorityId=?");
     if (!statement.IsValid())
         return DgnDbStatus::ReadError;
 
-    statement->BindNavigationValue(1, element.GetElementId(), ECClassId());
+    statement->BindId(1, element.GetElementId());
     statement->BindId(2, authorityId);
 
     if (BE_SQLITE_ROW != statement->Step())
@@ -2766,11 +2766,11 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId=? AND AuthorityId=?", element.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE ElementId.Id=? AND AuthorityId=?", element.GetDgnDb().GetECSqlWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
-    statement->BindNavigationValue(1, element.GetElementId(), ECClassId());
+    statement->BindId(1, element.GetElementId());
     statement->BindId(2, authorityId);
 
     if (BE_SQLITE_DONE != statement->Step())

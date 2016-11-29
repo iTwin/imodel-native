@@ -301,10 +301,10 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
         addedOne = true;
         }
 
-    ecSql.append(" WHERE [" PARAM_ElementId "]=:" PARAM_ElementId);
+    ecSql.append(" WHERE " PARAM_ElementId ".Id= :" PARAM_ElementId);
 
     if (!isUniqueAspect)
-        ecSql.append(" AND [" PARAM_ECInstanceId "]=:" PARAM_ECInstanceId);
+        ecSql.append(" AND " PARAM_ECInstanceId ".Id = :" PARAM_ECInstanceId);
 
     return ecSql;
     }
@@ -315,9 +315,7 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
 static Utf8String buildECSqlDeleteString (Utf8CP schemaName, Utf8CP className, bool isUniqueAspect)
     {
     Utf8PrintfString ecSql("DELETE FROM %s.%s WHERE ", schemaName, className);
-    ecSql.append("[").append(PARAM_ECInstanceId).append("]");
-    ecSql.append("=:").append(PARAM_ECInstanceId);
-
+    ecSql.append(PARAM_ECInstanceId).append(".Id = :").append(PARAM_ECInstanceId);
     return ecSql;
     }
 
@@ -332,7 +330,7 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     if ( ! isUniqueAspect)
         {
         // Always select aspectId first
-        ecSql.append("i.[").append(PARAM_ECInstanceId).append("]");
+        ecSql.append("i.").append(PARAM_ECInstanceId);
         first = false;
         }
 
@@ -347,7 +345,7 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     Utf8PrintfString from(" FROM %s.%s i", schemaName, className);
     ecSql.append (from);
 
-    Utf8String whereStr(" WHERE " PARAM_ElementId "=?");
+    Utf8String whereStr(" WHERE " PARAM_ElementId ".Id=?");
     ecSql.append (whereStr);
 
     return ecSql;
@@ -562,7 +560,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
     if (!statement.IsValid())
         return nullptr;
 
-    statement->BindNavigationValue(1, table.GetElementId(), ECClassId());
+    statement->BindId(1, table.GetElementId());
 
     return statement;
     }
@@ -572,7 +570,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
     {
-    statement.BindNavigationValue(statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId(), ECClassId());
+    statement.BindId(statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
         statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());

@@ -243,12 +243,12 @@ public:
 
         Utf8PrintfString ecSql("SELECT " LINK_ECSQL_PREFIX ".ECInstanceId FROM ONLY %s.%s " LINK_ECSQL_PREFIX, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
 
-        ecSql.append(" WHERE " LINK_ECSQL_PREFIX ".ModelId=?");
+        ecSql.append(" WHERE " LINK_ECSQL_PREFIX ".ModelId.Id=?");
 
         BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
         BeAssert(stmt.IsValid());
 
-        stmt->BindNavigationValue(1, linkModelId, ECN::ECClassId());
+        stmt->BindId(1, linkModelId);
 
         return CollectElementIds(*stmt);
         }

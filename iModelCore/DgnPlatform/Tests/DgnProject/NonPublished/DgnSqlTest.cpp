@@ -466,12 +466,12 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
     ECSqlStatement stmt;
-    stmt.Prepare(*m_db, 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, 
         "SELECT TestUniqueAspect.ElementId,TestUniqueAspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestUniqueAspect"
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
             " AND Obstacle.ECInstanceId=rt.ECInstanceId"
-            " AND TestUniqueAspect.ElementId=rt.ECInstanceId AND TestUniqueAspect.TestUniqueAspectProperty = :propertyValue"
-        );
+            " AND TestUniqueAspect.ElementId.Id=rt.ECInstanceId AND TestUniqueAspect.TestUniqueAspectProperty = :propertyValue"
+        ));
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
     Utf8CP sql = stmt.GetNativeSql();

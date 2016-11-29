@@ -1826,7 +1826,7 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String where("WHERE ModelId=?");
+    Utf8String where("WHERE ModelId.Id=?");
 
     if (whereClause)
         {
@@ -1840,7 +1840,7 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
         }
 
     ElementIterator iterator = m_dgndb.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Element), where.c_str(), orderByClause);
-    iterator.GetStatement()->BindNavigationValue(1, GetModelId(), ECClassId());
+    iterator.GetStatement()->BindId(1, GetModelId());
 
     return iterator;
     }
