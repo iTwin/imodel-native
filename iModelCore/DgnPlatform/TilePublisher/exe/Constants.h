@@ -48,16 +48,11 @@ var viewJsonUrl = ')HTML";
 
 Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
-require(['scripts/Bentley/Bim'], function(Bim) {
-    var viewset = new Bim.Viewset(viewJsonUrl);
-    Cesium.when(viewset.readyPromise).then(function() {
-        var tileset = new Bim.Tileset(viewset);
-        Cesium.when(tileset.readyPromise).then(function() {
-            var viewer = new Bim.Viewer('cesiumContainer', tileset, viewset.createCesiumViewerOptions());
-            viewer.createDefaultToolbar();
-        });
+require(['scripts/SampleApp/App'], function(App)
+    {
+    App.start(viewJsonUrl, 'cesiumContainer');
     });
-});
+
 </script>
 </body>
 </html>

@@ -475,7 +475,7 @@ Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, bool is3d)
             }
         }
 
-    return  Traverser::Stop::No;
+    return Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,6 +651,8 @@ void Tree::AddEntry(Entry const& entry)
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
+    BeAssert(m_leafIdx.find(entry.m_id) == m_leafIdx.end());
+
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
         leaf->AddEntryToLeaf(entry, *this);

@@ -170,6 +170,9 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
+    void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
+    void AddMeshIndices(Json::Value& rootNode, Json::Value& primitive, bvector<uint32_t> const& indices, Utf8StringCR idStr);
+    void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, TileMeshR mesh, Utf8StringCR idStr);
 
     BeFileName  GetBinaryDataFileName() const;
 
@@ -177,8 +180,10 @@ private:
     Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
+    void AddPolylines(Json::Value& value, TileMeshR mesh, size_t index);
 
-    Utf8String AddMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddMeshMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
