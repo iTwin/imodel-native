@@ -1213,7 +1213,7 @@ TEST(DateTimeTests, ComputeOffsetToUtcInHns)
     offset = 0;
 
     offset_expected = 180000000000;
-    ASSERT_EQ(BentleyStatus::SUCCESS, local.ComputeOffsetToUtcInHns(offset)) << "This is Offset " << offset;
-    ASSERT_EQ(offset_expected, offset) << "This is Offset " << offset;
+    ASSERT_EQ(BentleyStatus::SUCCESS, local.ComputeOffsetToUtcInHns(offset));
+    ASSERT_EQ(offset_expected, offset);
     //EXPECT_EQ(offset_expected, offset);
     }
