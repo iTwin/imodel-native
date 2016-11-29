@@ -139,7 +139,7 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
-    bool RequiresECSqlWriteToken() const { return m_expectedECSqlWriteToken != nullptr; }
+    bool IsECSqlWriteTokenValid(ECSqlWriteToken const* token) const { return m_expectedECSqlWriteToken == nullptr || m_expectedECSqlWriteToken.get() == token; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.
