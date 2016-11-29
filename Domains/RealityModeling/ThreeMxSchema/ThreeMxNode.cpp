@@ -52,7 +52,7 @@ void Node::_DrawGraphics(DrawArgsR args, int depth) const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileLoaderPtr Node::_CreateTileLoader(LoadStatePtr loads)
+TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads)
     {
     return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);
     }

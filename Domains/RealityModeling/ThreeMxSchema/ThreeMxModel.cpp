@@ -145,10 +145,10 @@ struct ThreeMxProgressive : ProgressiveTask
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
-    LoadStatePtr m_loads;
+    TileLoadStatePtr m_loads;
     ClipVectorCPtr m_clip;
 
-    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, LoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
+    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
     ~ThreeMxProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
@@ -275,7 +275,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        LoadStatePtr loads = std::make_shared<LoadState>();
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*m_scene, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
         }

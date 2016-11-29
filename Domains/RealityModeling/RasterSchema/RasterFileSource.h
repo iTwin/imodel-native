@@ -47,8 +47,7 @@ public:
         {
         Render::Image m_image;  // filled by _ReadFromSource
 
-        RasterTileLoader(TileTree::TileR tile, TileTree::LoadStatePtr loads, Utf8StringCR cacheKey)
-            :TileTree::TileLoader("", tile, loads, cacheKey) {};
+        RasterTileLoader(TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Utf8StringCR cacheKey) : TileTree::TileLoader("", tile, loads, cacheKey) {}
             
         virtual ~RasterTileLoader(){}
         
@@ -66,7 +65,7 @@ public:
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
 };
 
 END_BENTLEY_RASTER_NAMESPACE
