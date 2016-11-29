@@ -177,18 +177,20 @@ int ECSqlCommand::ComputeColumnSize(ECSqlColumnInfo const& colInfo)
                 case PRIMITIVETYPE_DateTime:
                 {
                 //Output: ISO string representation of a DateTime
-                DateTimeInfo dtInfoCA;
+                DateTime::Info dtInfoCA;
                 if (ECObjectsStatus::Success != StandardCustomAttributeHelper::GetDateTimeInfo(dtInfoCA, *colInfo.GetProperty()))
                     return defaultSize;
 
-                DateTime::Info dtInfo = dtInfoCA.GetInfo(false);
-                if (!dtInfoCA.IsComponentNull() && dtInfo.GetComponent() == DateTime::Component::Date)
-                    //Just the date string, e.g "2016-11-02"
-                    return 10;
+                if (dtInfoCA.IsValid())
+                    {
+                    if (dtInfoCA.GetComponent() == DateTime::Component::Date)
+                        //Just the date string, e.g "2016-11-02"
+                        return 10;
 
-                if (!dtInfoCA.IsKindNull() && dtInfo.GetKind() == DateTime::Kind::Utc)
-                    //ISO date time string with trailing Z for UTC: e.g. "2016-11-02T17:39:01.438Z"
-                    return 24;
+                    if (dtInfoCA.GetKind() == DateTime::Kind::Utc)
+                        //ISO date time string with trailing Z for UTC: e.g. "2016-11-02T17:39:01.438Z"
+                        return 24;
+                    }
 
                 //ISO date time string without trailing Z: e.g. "2016-11-02T17:39:01.438"
                 return 23;
@@ -248,7 +250,7 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             }
             case ECN::PRIMITIVETYPE_DateTime:
             {
-            out.Sprintf("%s", value.GetDateTime().ToUtf8String().c_str());
+            out.Sprintf("%s", value.GetDateTime().ToString().c_str());
             break;
             }
             case ECN::PRIMITIVETYPE_Double:

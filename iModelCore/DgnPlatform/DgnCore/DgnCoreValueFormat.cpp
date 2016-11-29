@@ -1503,21 +1503,20 @@ static void formatUtc(Utf8StringR str, DateTimeCR local, DateTimeFormatterCR for
     {
     // The point of this function is to coerce ToString into formatting a time span (vs. a time) representing offset from UTC.
     
-    int64_t offsetHns;
-    local.ComputeOffsetToUtcInHns(offsetHns);
+    int64_t offsetMsec;
+    local.ComputeOffsetToUtcInMsec(offsetMsec);
     
-    bool isOffsetNegative = (offsetHns < 0);
-    uint64_t offsetHnsUnsigned = (isOffsetNegative ? (uint64_t)-offsetHns : (uint64_t)offsetHns);
+    bool isOffsetNegative = (offsetMsec < 0);
+    uint64_t offsetMsecUnsigned = (isOffsetNegative ? (uint64_t)-offsetMsec : (uint64_t) offsetMsec);
 
     // We only care about the hours and minutes. Julian Date begins at 12:00, so to get a 0-based format, we need to advance 12 hours.
     // Note that we only deal in unsigned during the conversion (the sign is pre-pended separately below), so we don't need to worry about underflow.
-    // Note that our representation of Julian Date is in HNS (hectonanoseconds, or 1e-7).
-    const uint64_t HECTONANOSECS_IN_DAY = (86400ULL * 10000000ULL); // seconds in a day * HNS in a second
-    offsetHnsUnsigned += (HECTONANOSECS_IN_DAY / 2);
+    // Note that our representation of Julian Date is in msec.
+    offsetMsecUnsigned += 86400000 / 2;
     
     // It is critical to construct the offset DateTime as NOT DateTime::Kind::Local; otherwise it will apply the local time zone offset, defeating the purpose.
     DateTime offset;
-    DateTime::FromJulianDay(offset, offsetHnsUnsigned, DateTime::Info(DateTime::Kind::Unspecified, DateTime::Component::DateAndTime));
+    DateTime::FromJulianDay(offset, offsetMsecUnsigned, DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified));
     
     DateTimeFormatterPtr utcFmtr = formatter.Clone();
     utcFmtr->ClearFormatParts();
