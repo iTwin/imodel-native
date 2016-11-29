@@ -486,7 +486,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual SMMemoryPoolItemBasePtr AddDisplayMesh(SMMemoryPoolItemBasePtr itemPtr, bool isVideoMemory = false)
     {
         std::lock_guard<std::mutex> lock(m_displayMeshLock);
-        assert(smCachedDisplayData != 0);
 
 
         m_displayMeshPoolItemId = isVideoMemory ? SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr) : GetMemoryPool()->AddItem(itemPtr);
