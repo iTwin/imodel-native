@@ -135,7 +135,7 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool r
 
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
-        StatusInt status = CreateDataIndex(m_pDataIndex);
+        status = CreateDataIndex(m_pDataIndex);
 
         assert(status == SUCCESS && m_pDataIndex != 0);
 

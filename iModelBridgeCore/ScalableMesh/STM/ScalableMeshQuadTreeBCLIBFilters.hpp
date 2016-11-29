@@ -95,7 +95,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBFilter1<POINT,
                 if (subNodePointsPtr->size() <= 10)
                     {
                     // Too few content in node ... promote them all                                        
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+                    parentPointsPtr = parentNode->GetPointsPtr();
                     parentPointsPtr->push_back(&(*subNodePointsPtr)[0], subNodePointsPtr->size());                           
                     }
                 else
@@ -108,7 +108,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBFilter1<POINT,
                     size_t indexStart = (subNodePointsPtr->size() * 7 / 8) + 1;
                     HASSERT ((indexStart > 0) && (indexStart <= (subNodePointsPtr->size() - 1)));
                     
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+                    parentPointsPtr = parentNode->GetPointsPtr();
                     parentPointsPtr->push_back(&(*subNodePointsPtr)[indexStart], subNodePointsPtr->size() - 1);                                               
                 }
             }
@@ -359,7 +359,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
                     }
                 else
                     {
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> subNodePointsPtr(subNodes[indexNodes]->GetPointsPtr());
+                    subNodePointsPtr = subNodes[indexNodes]->GetPointsPtr();
                     pointArrayInitialNumber[indexNodes] = subNodePointsPtr->size();
 
 
@@ -370,7 +370,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 
                     size_t count = (points.size() / pParentMeshNode->m_nodeHeader.m_numberOfSubNodesOnSplit) + 1;
 
-                    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> parentPointsPtr(parentNode->GetPointsPtr());
+                   parentPointsPtr = parentNode->GetPointsPtr();
                     parentPointsPtr->push_back(&points[0], std::min(count, points.size()));
 
                 }               
@@ -477,7 +477,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIB_CGALMeshFilte
                         }
                     bvector<int> contours;
 
-                    RefCountedPtr<SMMemoryPoolGenericBlobItem<MTGGraph>> subMeshGraphPtr(subMeshNode->GetGraphPtr());
+                    subMeshGraphPtr = subMeshNode->GetGraphPtr();
                     if(nullptr != subMeshGraphPtr->GetData()) MergeGraphs(meshInput, inputPts, subMeshGraphPtr->EditData(), pts, extentMin, extentMax, pointsToDestPointsMap, contours);
 
                     }                

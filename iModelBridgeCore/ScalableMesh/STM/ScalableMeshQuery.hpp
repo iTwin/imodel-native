@@ -1328,12 +1328,12 @@ template <class POINT> IScalableMeshMeshPtr ScalableMeshNode<POINT>::_GetMeshUnd
 
             if (d.addedFaces.size() == 0) break;
             bvector<int32_t> allIndices;
-            for (int i = 0; i + 2 < d.addedFaces.size(); i += 3)
+            for (int k = 0; k + 2 < d.addedFaces.size();k  += 3)
                 {
 
                 for (size_t j = 0; j < 3; ++j)
                     {
-                    int32_t idx = (int32_t)(d.addedFaces[i + j] >= d.firstIndex ? d.addedFaces[i + j] - d.firstIndex + m_node->GetNbPoints() + 1 : d.addedFaces[i + j]);
+                    int32_t idx = (int32_t)(d.addedFaces[k + j] >= d.firstIndex ? d.addedFaces[k + j] - d.firstIndex + m_node->GetNbPoints() + 1 : d.addedFaces[k + j]);
                     assert(idx > 0 && idx <= m_node->GetNbPoints() + d.addedVertices.size());
                     allIndices.push_back(idx);
                     }
@@ -2121,11 +2121,11 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     if (dbg)
                         {
-                        const wchar_t* s_path = L"E:\\output\\scmesh\\2016-05-31\\";
+                        const wchar_t* s_path2 = L"E:\\output\\scmesh\\2016-05-31\\";
                         bvector<DPoint3d> ptArray;
                         for (size_t i = 0; i < toLoadNbPoints; ++i)
                             ptArray.push_back(DPoint3d::From(toLoadPoints[i].x + centroid.x, toLoadPoints[i].y + centroid.y, toLoadPoints[i].z + centroid.z));
-                        WString name = WString(s_path) + L"fmeshduringdraw_";
+                        WString name = WString(s_path2) + L"fmeshduringdraw_";
                         name.append(to_wstring(meshNode->GetBlockID().m_integerID).c_str());
                         name.append(L"_");
                         name.append(to_wstring(meshNode->m_nodeHeader.m_nodeExtent.low.x).c_str());
