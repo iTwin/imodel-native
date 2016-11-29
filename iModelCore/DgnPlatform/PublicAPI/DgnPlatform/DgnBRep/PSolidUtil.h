@@ -254,6 +254,7 @@ DGNPLATFORM_EXPORT static BentleyStatus GetVertex(DPoint3dR point, PK_VERTEX_t v
 DGNPLATFORM_EXPORT static void ExtractStartAndSweepFromInterval(double& start, double& sweep, PK_INTERVAL_t const& interval, bool reverse);
 DGNPLATFORM_EXPORT static BentleyStatus MakeEllipseCurve(PK_CURVE_t* curveTag, double* startParam, double* endParam, DPoint3dP center, RotMatrixP rMatrix, double x1, double x2, double startAngle, double sweepAngle);
 DGNPLATFORM_EXPORT static BentleyStatus ImprintSegment(PK_BODY_t bodyTag, PK_EDGE_t* edgeTag, DPoint3dCP segment);
+DGNPLATFORM_EXPORT static BentleyStatus ImprintCurves(PK_ENTITY_t targetTag, bvector<PK_CURVE_t> const& toolCurves, bvector<PK_INTERVAL_t> const& toolIntervals, DVec3dCP direction = nullptr, bool extend = true, bool connectSides = true);
 DGNPLATFORM_EXPORT static BentleyStatus CoverWires(PK_BODY_t bodyTag);
 
 DGNPLATFORM_EXPORT static double CalculateToleranceFromMinCurvature(PK_CURVE_t curveTag, PK_INTERVAL_t* intervalP);

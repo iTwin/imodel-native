@@ -643,17 +643,86 @@ struct Modify
     //! @param[in] radii The vector of blend radius values for each edge.
     //! @param[in] propagateSmooth Whether to automatically continue blend along connected and tangent edges that aren't explicitly specified in edges array.
     //! @return SUCCESS if blends could be created.
-    DGNPLATFORM_EXPORT static BentleyStatus BlendEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double>& radii, bool propagateSmooth = true);
+    DGNPLATFORM_EXPORT static BentleyStatus BlendEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double> const& radii, bool propagateSmooth = true);
 
     //! Modify the specified edges of the given body by changing them into faces having the requested chamfer surface geometry.
     //! @param[in,out] target The target body to chamfer.
     //! @param[in] edges The vector of edge sub-entities to attach chamfers to.
     //! @param[in] values1 The vector of chamfer values for each edge, value meaning varies by ChamferMode.
-    //! @param[in] values2 The vector of chamfer values for each edge, value meaning varies by ChamferMode. (Unused for ChamferMode::Length)
+    //! @param[in] values2 The vector of chamfer values for each edge, value meaning varies by ChamferMode. (Unused for ChamferMode::Length, required for ChamferMode::AngleDistance)
     //! @param[in] mode Specifies chamfer type and determines how values1 and values2 are interpreted and used.
     //! @param[in] propagateSmooth Whether to automatically continue chamfer along connected and tangent edges that aren't explicitly specified in edges array.
     //! @return SUCCESS if chamfers could be created.
-//    DGNPLATFORM_EXPORT static BentleyStatus ChamferEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double>& values1, bvector<double>& values2, ChamferMode mode, bool propagateSmooth = true);
+    DGNPLATFORM_EXPORT static BentleyStatus ChamferEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges, bvector<double> const& values1, bvector<double> const* values2, ChamferMode mode, bool propagateSmooth = true);
+
+    //! Modify the target solid body by hollowing using specified face offsets.
+    //! @param[in,out] target The target body to hollow.
+    //! @param[in] faces The array of faces to be offset by other than the default offset distance.
+    //! @param[in] defaultDistance The offset distance to apply to any face not specifically included in the faces array.
+    //! @param[in] distances The array of offsets for each face.
+    //! @param[in] addStep The option for how to handle the creation of step faces.
+    //! @note A positive offset goes outwards (in the direction of the surface normal), a negative offset is inwards, and a face with zero offset will be pierced/removed.
+    //! @return SUCCESS if hollow could be created.
+    DGNPLATFORM_EXPORT static BentleyStatus HollowFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, double defaultDistance, bvector<double> const& distances, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+
+    //! Modify the target solid or sheet body by offsetting selected faces.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to be offset.
+    //! @param[in] distances The array of offsets for each face.
+    //! @param[in] addStep The option for how to handle the creation of step faces.
+    //! @return SUCCESS if faces could be offset.
+    DGNPLATFORM_EXPORT static BentleyStatus OffsetFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<double> const& distances, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+
+    //! Modify the target solid or sheet body by transforming selected faces.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to be transformed.
+    //! @param[in] translations The array of transforms for each face.
+    //! @param[in] addStep The option for how to handle the creation of step faces.
+    //! @return SUCCESS if faces could be transformed.
+    DGNPLATFORM_EXPORT static BentleyStatus TransformFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bvector<Transform> const& translations, StepFacesOption addStep = StepFacesOption::AddNonCoincident);
+
+    //! Modify the target solid or sheet body by sweeping selected faces along a path vector.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to be swept.
+    //! @param[in] path A scaled vector to define the sweep direction and distance.
+    //! @return SUCCESS if faces could be swept.
+    DGNPLATFORM_EXPORT static BentleyStatus SweepFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, DVec3dCR path);
+
+    //! Modify the target solid or sheet body by spinning selected faces along an arc specified by a revolve axis and sweep angle.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to be spun.
+    //! @param[in] axis The revolve axis.
+    //! @param[in] angle The sweep angle. (value in range of -2pi to 2pi)
+    //! @return SUCCESS if faces could be spun.
+    DGNPLATFORM_EXPORT static BentleyStatus SpinFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, DRay3dCR axis, double angle);
+
+    //! Modify the target solid or sheet body by removing selected faces and healing.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] faces The array of faces to be delted.
+    //! @return SUCCESS if faces could be deleted.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces);
+
+    //! Modify a face of a body by imprinting new edges from the specified curve vector.
+    //! @param[in,out] face The target face sub-entity to imprint.
+    //! @param[in] wires The vector of wire bodies to imprint the curves of onto the face.
+    //! @param[in] extend Whether to extend an open wire body to ensure that it splits the face.
+    //! @return SUCCESS if face imprint created.
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnFace(ISubEntityPtr& face, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true);
+
+    //! Modify the target body by imprinting new edges from the specified curve vector.
+    //! @param[in,out] target The target body to imprint.
+    //! @param[in] curveVector The curve geometry to imprint.
+    //! @param[in] direction The project direction for imprinting the curve.
+    //! @param[in] extend Whether to extend an open curve to ensure that it splits the face.
+    //! @return SUCCESS if imprint created.
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnBody(IBRepEntityR target, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true); 
+
+    //! Modify the target body by imprinting edges where the faces from the supplied tool body intersect.
+    //! @param[in,out] target The target body to imprint (must be solid or sheet)
+    //! @param[in] tool The tool body to imprint (must be solid or sheet).
+    //! @param[in] extend Whether to extend a tool surface to ensure that it splits the face on the target.
+    //! @return SUCCESS if imprint created.
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintBodyOnBody(IBRepEntityR target, IBRepEntityCR tool, bool extend = true); 
     };
 
 //! Support for persistent topological ids on faces, edges, and vertices.
