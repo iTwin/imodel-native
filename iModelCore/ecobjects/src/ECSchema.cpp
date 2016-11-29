@@ -734,12 +734,7 @@ bool ECSchema::Validate(bool resolveIssues)
     bool isValid = true;
     for (ECClassP ecClass : GetClasses())
         {
-        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-        if (relClass == nullptr)
-            continue;
-
-        // Will validate against the EC3.1 rules.
-        if (!relClass->IsValid(resolveIssues))
+        if (!ecClass->_Verify(resolveIssues))
             isValid = false;
         }
 
@@ -954,6 +949,31 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECEntityClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = nullptr;
+        return status;
+        }
+
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateInterfaceClass (ECInterfaceClassP& pClass, Utf8StringCR name)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    pClass = new ECInterfaceClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECObjectsStatus::Success != status)
         {

@@ -1286,7 +1286,7 @@ TEST_F(MemoryLayoutTests, ECValueEqualsMethod)
     v1.SetDateTime(timeInput);
     v2.SetDateTime(timeInput);
     EXPECT_TRUE(v1.Equals(v2));
-    DateTime timeInput2(timeInput.GetInfo().GetKind(), timeInput.GetYear() + 1, timeInput.GetMonth(), timeInput.GetDay(), timeInput.GetHour(), timeInput.GetMinute(), timeInput.GetSecond(), timeInput.GetHectoNanosecond());
+    DateTime timeInput2(timeInput.GetInfo().GetKind(), timeInput.GetYear() + 1, timeInput.GetMonth(), timeInput.GetDay(), timeInput.GetHour(), timeInput.GetMinute(), timeInput.GetSecond(), timeInput.GetMillisecond());
     v2.SetDateTime(timeInput2);
     EXPECT_FALSE(v1.Equals(v2));
 
@@ -2609,7 +2609,7 @@ TEST_F(MemoryLayoutTests, Values)
     EXPECT_TRUE(0 == dateStr.compare("2010-02-25T16:28:27.091")) << "Expected date: " << fixedDate.GetDateTime().ToString().c_str();
 
     // test operator ==
-    DateTime specificTime(nowUtc.GetInfo().GetKind(), nowUtc.GetYear(), nowUtc.GetMonth(), nowUtc.GetDay(), nowUtc.GetHour(), nowUtc.GetMinute(), nowUtc.GetSecond(), nowUtc.GetHectoNanosecond());
+    DateTime specificTime(nowUtc.GetInfo().GetKind(), nowUtc.GetYear(), nowUtc.GetMonth(), nowUtc.GetDay(), nowUtc.GetHour(), nowUtc.GetMinute(), nowUtc.GetSecond(), nowUtc.GetMillisecond());
     EXPECT_TRUE(specificTime == nowUtc);
 
     DateTime defaultTime1;
