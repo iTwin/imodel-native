@@ -443,7 +443,7 @@ const ToSqlPropertyMapVisitor::Result* ToSqlPropertyMapVisitor::Find(Utf8CP acce
 //---------------------------------------------------------------------------------------
 BentleyStatus SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
+    const ECN::ECPropertyId rootPropertyId = propertyMap.GetRootPropertyId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
     if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), propertyMap.GetColumn().GetId()) != SUCCESS)
         {
@@ -459,11 +459,11 @@ BentleyStatus SavePropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& 
 //---------------------------------------------------------------------------------------
 BentleyStatus SavePropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
     {
-    const ECN::ECPropertyId rootPropertyId = propertyMap.GetRoot().GetProperty().GetId();
+    const ECN::ECPropertyId propertyId = propertyMap.GetProperty().GetId();
     Utf8StringCR accessString = propertyMap.GetAccessString();
     for (SystemPropertyMap::PerTablePrimitivePropertyMap const* childMap : propertyMap.GetDataPropertyMaps())
         {
-        if (m_context.InsertPropertyMap(rootPropertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
+        if (m_context.InsertPropertyMap(propertyId, accessString.c_str(), childMap->GetColumn().GetId()) != SUCCESS)
             {
             BeAssert(false);
             return ERROR;

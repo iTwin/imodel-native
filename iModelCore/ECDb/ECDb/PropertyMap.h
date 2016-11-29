@@ -8,10 +8,10 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "DbSchema.h"
-#include "ClassMap.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+struct ClassMap;
 struct PropertyMap;
 struct CompoundDataPropertyMap;
 struct SingleColumnDataPropertyMap;
@@ -63,14 +63,10 @@ struct PropertyMapContainer final : NonCopyableClass, ISupportsPropertyMapVisito
         virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const&)  const override;
 
     public:
-        PropertyMapContainer(ClassMap const& classMap)
-            :m_classMap(classMap), m_readonly(false)
-            {}
+        explicit PropertyMapContainer(ClassMap const& classMap) :m_classMap(classMap), m_readonly(false) {}
         ~PropertyMapContainer() {}
 
         ClassMap const& GetClassMap() const { return m_classMap; }
-        ECN::ECClass const& GetClass() const;
-        ECDbCR GetECDb() const;
         BentleyStatus Insert(RefCountedPtr<PropertyMap> propertyMap, size_t position = std::numeric_limits<size_t>::max());
         PropertyMap const* Find(Utf8CP accessString) const;
         const_iterator begin() const { return m_directDecendentList.begin(); }
@@ -144,9 +140,6 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
 
         Type GetType() const { return m_type; }
 
-        //! Test for inherited type/
-        bool IsKindOf(Type kindOfThisOrOneOfItsParent) const;
-
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
         //! return full access string from root property to current property.
@@ -155,8 +148,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         PropertyMap const* GetParent() const { return m_parentPropertMap; }
         //! return class map that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
-        //! return root property map.
-        PropertyMap const& GetRoot() const;
+        ECN::ECPropertyId GetRootPropertyId() const;
         
         //! Test if current property is of type system. 
         bool IsSystem() const { return Enum::Contains(Type::System, GetType()); }
@@ -213,7 +205,7 @@ struct CompoundDataPropertyMap : DataPropertyMap
         bvector<DataPropertyMap const*> m_list;
         CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, classMap, ecProperty) {}
-        CompoundDataPropertyMap(Type kind, DataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
+        CompoundDataPropertyMap(Type kind, CompoundDataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, parentPropertyMap, ecProperty, true) {}
 
         virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
@@ -279,9 +271,9 @@ struct StructPropertyMap final : CompoundDataPropertyMap
     friend struct StructPropertyMapBuilder;
     private:
         StructPropertyMap(ClassMap const& classMap, ECN::StructECPropertyCR ecProperty) : CompoundDataPropertyMap(Type::Struct, classMap, ecProperty) {}
-        StructPropertyMap(StructPropertyMap const& parentStructPropMap, ECN::StructECPropertyCR ecProperty) : CompoundDataPropertyMap(Type::Struct, parentStructPropMap, ecProperty) {}
+        StructPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::StructECPropertyCR ecProperty) : CompoundDataPropertyMap(Type::Struct, parentPropMap, ecProperty) {}
 
-        static RefCountedPtr<StructPropertyMap> CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructECPropertyCR ecProperty);
+        static RefCountedPtr<StructPropertyMap> CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructECPropertyCR ecProperty);
 
     public:
         virtual ~StructPropertyMap() {}
@@ -295,12 +287,12 @@ struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     private:
         PrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, classMap, ecProperty, column) {}
-        PrimitiveArrayPropertyMap(StructPropertyMap const& parentStructPropMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, parentStructPropMap, ecProperty, column, true) {}
+        PrimitiveArrayPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, parentPropMap, ecProperty, column, true) {}
 
     public:
         virtual ~PrimitiveArrayPropertyMap() {}
 
-        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column);
+        static RefCountedPtr<PrimitiveArrayPropertyMap> CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column);
     };
 
 //=======================================================================================
@@ -310,11 +302,11 @@ struct StructArrayPropertyMap final : SingleColumnDataPropertyMap
     {
     private:
         StructArrayPropertyMap(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::StructArray, classMap, ecProperty, column) {}
-        StructArrayPropertyMap(StructPropertyMap const& parentStructPropMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::StructArray, parentStructPropMap, ecProperty, column, true) {}
+        StructArrayPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::StructArray, parentPropMap, ecProperty, column, true) {}
 
     public:
         virtual ~StructArrayPropertyMap() {}
-        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column);
+        static RefCountedPtr<StructArrayPropertyMap> CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column);
     };
 
 //=======================================================================================
@@ -324,12 +316,12 @@ struct Point2dPropertyMap final : CompoundDataPropertyMap
     {
     private:
         Point2dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty) : CompoundDataPropertyMap(PropertyMap::Type::Point2d, classMap, ecProperty) {}
-        Point2dPropertyMap(StructPropertyMap const& parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty) : CompoundDataPropertyMap(PropertyMap::Type::Point2d, parentStructPropMap, ecProperty) {}
+        Point2dPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::PrimitiveECPropertyCR ecProperty) : CompoundDataPropertyMap(PropertyMap::Type::Point2d, parentPropMap, ecProperty) {}
 
         BentleyStatus Init(DbColumn const& x, DbColumn const& y);
 
     public:
-        static RefCountedPtr<Point2dPropertyMap> CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y);
+        static RefCountedPtr<Point2dPropertyMap> CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y);
         virtual ~Point2dPropertyMap() {}
 
         PrimitivePropertyMap const& GetX() const;
@@ -345,14 +337,14 @@ struct Point3dPropertyMap final : CompoundDataPropertyMap
         Point3dPropertyMap(ClassMap const& classMap, ECN::PrimitiveECPropertyCR ecProperty)
             : CompoundDataPropertyMap(PropertyMap::Type::Point3d, classMap, ecProperty)
             {}
-        Point3dPropertyMap(StructPropertyMap const& parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty)
-            : CompoundDataPropertyMap(PropertyMap::Type::Point3d, parentStructPropMap, ecProperty)
+        Point3dPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::PrimitiveECPropertyCR ecProperty)
+            : CompoundDataPropertyMap(PropertyMap::Type::Point3d, parentPropMap, ecProperty)
             {}
 
         BentleyStatus Init(DbColumn const& x, DbColumn const& y, DbColumn const& z);
 
     public:
-        static RefCountedPtr<Point3dPropertyMap> CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z);
+        static RefCountedPtr<Point3dPropertyMap> CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z);
         virtual ~Point3dPropertyMap() {}
 
         PrimitivePropertyMap const& GetX() const;
@@ -368,12 +360,10 @@ struct StructPropertyMapBuilder final : NonCopyableClass
     {
     private:
         RefCountedPtr<StructPropertyMap> m_propMap;
-        bmap<StructPropertyMap const*, StructPropertyMapBuilder*> m_childStructBuilderCache;
-
         bool m_isFinished;
 
     public:
-        StructPropertyMapBuilder(ClassMap const& classMap, StructPropertyMapBuilder* parentBuilder, ECN::StructECPropertyCR prop);
+        StructPropertyMapBuilder(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructECPropertyCR prop);
         bool IsValid() const { return m_propMap != nullptr; }
 
         BentleyStatus AddMember(RefCountedPtr<DataPropertyMap> propertyMap);
@@ -458,7 +448,7 @@ struct PropertyMapCopier
         PropertyMapCopier();
         ~PropertyMapCopier();
 
-        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const&, ClassMap const& newContext, StructPropertyMapBuilder* parentStructPropMapBuilder);
+        static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const&, ClassMap const& newContext, CompoundDataPropertyMap const* parentPropMap);
 
     public:
         static RefCountedPtr<DataPropertyMap> CreateCopy(DataPropertyMap const&, ClassMap const& newContext);

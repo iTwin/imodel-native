@@ -31,30 +31,13 @@ PropertyMap::PropertyMap(Type kind, PropertyMap const& parentPropertyMap, ECN::E
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-bool PropertyMap::IsKindOf(Type kindOfThisOrOneOfItsParent) const
-    {
-    const PropertyMap *c = this;
-    do
-        {
-        if (Enum::Contains(kindOfThisOrOneOfItsParent, c->GetType()))
-            return true;
-
-        c = c->GetParent();
-        } while (c != nullptr);
-
-        return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-PropertyMap const& PropertyMap::GetRoot() const
+ECPropertyId PropertyMap::GetRootPropertyId() const
     {
     PropertyMap const* root = this;
     while (root->GetParent() != nullptr)
         root = root->GetParent();
 
-    return *root;
+    return root->GetProperty().GetId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -180,16 +163,6 @@ PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
     return nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ECN::ECClass const& PropertyMapContainer::GetClass() const { return m_classMap.GetClass(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-ECDbCR PropertyMapContainer::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
-
 //************************************CompoundDataPropertyMap::Collection********
 
 //---------------------------------------------------------------------------------------
@@ -258,7 +231,7 @@ RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ClassMa
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
+RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y)
     {
     if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point2d)
         {
@@ -267,8 +240,8 @@ RefCountedPtr<Point2dPropertyMap> Point2dPropertyMap::CreateInstance(ClassMap co
         }
 
     RefCountedPtr<Point2dPropertyMap> ptr = nullptr;
-    if (parentStructPropMap != nullptr)
-        ptr = new Point2dPropertyMap(*parentStructPropMap, ecProperty);
+    if (parentPropMap != nullptr)
+        ptr = new Point2dPropertyMap(*parentPropMap, ecProperty);
     else
         ptr = new Point2dPropertyMap(classMap, ecProperty);
 
@@ -335,7 +308,7 @@ PrimitivePropertyMap const& Point2dPropertyMap::GetY() const
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
+RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveECPropertyCR ecProperty, DbColumn const& x, DbColumn const& y, DbColumn const& z)
     {
     if (ecProperty.GetType() != PrimitiveType::PRIMITIVETYPE_Point3d)
         {
@@ -344,8 +317,8 @@ RefCountedPtr<Point3dPropertyMap> Point3dPropertyMap::CreateInstance(ClassMap co
         }
 
     RefCountedPtr<Point3dPropertyMap> ptr = nullptr;
-    if (parentStructPropMap != nullptr)
-        ptr = new Point3dPropertyMap(*parentStructPropMap, ecProperty);
+    if (parentPropMap != nullptr)
+        ptr = new Point3dPropertyMap(*parentPropMap, ecProperty);
     else
         ptr = new Point3dPropertyMap(classMap, ecProperty);
 
@@ -427,10 +400,10 @@ PrimitivePropertyMap const& Point3dPropertyMap::GetZ() const
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructECPropertyCR ecProperty)
+RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructECPropertyCR ecProperty)
     {
-    if (parentStructPropMap != nullptr)
-        return new StructPropertyMap(*parentStructPropMap, ecProperty);
+    if (parentPropMap != nullptr)
+        return new StructPropertyMap(*parentPropMap, ecProperty);
 
     return new StructPropertyMap(classMap, ecProperty);
     }
@@ -442,10 +415,10 @@ RefCountedPtr<StructPropertyMap> StructPropertyMap::CreateInstance(ClassMap cons
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::PrimitiveArrayECPropertyCR prop, DbColumn const& column)
+RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::PrimitiveArrayECPropertyCR prop, DbColumn const& column)
     {
-    if (parentStructPropMap != nullptr)
-        return new PrimitiveArrayPropertyMap(*parentStructPropMap, prop, column);
+    if (parentPropMap != nullptr)
+        return new PrimitiveArrayPropertyMap(*parentPropMap, prop, column);
 
     return new PrimitiveArrayPropertyMap(classMap, prop, column);
     }
@@ -456,10 +429,10 @@ RefCountedPtr<PrimitiveArrayPropertyMap> PrimitiveArrayPropertyMap::CreateInstan
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(ClassMap const& classMap, StructPropertyMap const* parentStructPropMap, ECN::StructArrayECPropertyCR prop, DbColumn const& column)
+RefCountedPtr<StructArrayPropertyMap> StructArrayPropertyMap::CreateInstance(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructArrayECPropertyCR prop, DbColumn const& column)
     {
-    if (parentStructPropMap != nullptr)
-        return new StructArrayPropertyMap(*parentStructPropMap, prop, column);
+    if (parentPropMap != nullptr)
+        return new StructArrayPropertyMap(*parentPropMap, prop, column);
 
     return new StructArrayPropertyMap(classMap, prop, column);
     }
@@ -552,14 +525,9 @@ RefCountedPtr<NavigationPropertyMap::IdPropertyMap> NavigationPropertyMap::IdPro
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle         10/16
 //---------------------------------------------------------------------------------------
-StructPropertyMapBuilder::StructPropertyMapBuilder(ClassMap const& classMap, StructPropertyMapBuilder* parentBuilder, ECN::StructECPropertyCR prop) 
-    : m_propMap(StructPropertyMap::CreateInstance(classMap, parentBuilder != nullptr ? &parentBuilder->GetPropertyMapUnderConstruction() : nullptr, prop)), m_isFinished(false)
-    {
-    if (parentBuilder != nullptr)
-        {
-        parentBuilder->m_childStructBuilderCache[m_propMap.get()] = this;
-        }
-    }
+StructPropertyMapBuilder::StructPropertyMapBuilder(ClassMap const& classMap, CompoundDataPropertyMap const* parentPropMap, ECN::StructECPropertyCR prop)
+    : m_propMap(StructPropertyMap::CreateInstance(classMap, parentPropMap, prop)), m_isFinished(false)
+    {}
 
 
 //---------------------------------------------------------------------------------------
@@ -598,7 +566,7 @@ BentleyStatus StructPropertyMapBuilder::Finish()
         BeAssert(false && "StructPropertyMapBuilder was never initialized or is already finished");
         return ERROR;
         }
-    
+
     if (m_propMap->IsEmpty())
         {
         BeAssert(false && "Struct properties without members is not supported");
@@ -608,35 +576,18 @@ BentleyStatus StructPropertyMapBuilder::Finish()
     DbTable const* table = nullptr;
     for (DataPropertyMap const* member : *m_propMap)
         {
-        if (member->GetType() == PropertyMap::Type::Struct)
+        if (table == nullptr)
+            table = &member->GetTable();
+        else
             {
-            auto it = m_childStructBuilderCache.find(static_cast<StructPropertyMap const*>(member));
-            if (it == m_childStructBuilderCache.end())
+            if (table != &member->GetTable())
                 {
-                BeAssert(false && "Child struct builder should be in cache");
+                BeAssert(false && "All members of the struct property map must map to the same table");
                 return ERROR;
-                }
-
-            if (!it->second->IsFinished())
-                {
-                BeAssert(false && "Child struct builder should be finished before owning builder is finished");
-                return ERROR;
-                }
-
-            if (table == nullptr)
-                table = &member->GetTable();
-            else
-                {
-                if (table != &member->GetTable())
-                    {
-                    BeAssert(false && "All members of the struct property map must map to the same table");
-                    return ERROR;
-                    }
                 }
             }
         }
 
-    m_childStructBuilderCache.clear();
     m_isFinished = true;
     return SUCCESS;
     }
@@ -690,9 +641,8 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext, StructPropertyMapBuilder* parentStructPropMapBuilder)
+RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap const& propertyMap, ClassMap const& newContext, CompoundDataPropertyMap const* parentPropMap)
     {
-    StructPropertyMap const* parentPropMap = parentStructPropMapBuilder != nullptr ? &parentStructPropMapBuilder->GetPropertyMapUnderConstruction() : nullptr;
     switch (propertyMap.GetType())
         {
             case PropertyMap::Type::Primitive:
@@ -732,11 +682,11 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
 
             case PropertyMap::Type::Struct:
             {
-            StructPropertyMapBuilder builder(newContext, parentStructPropMapBuilder, *propertyMap.GetProperty().GetAsStructProperty());
+            StructPropertyMapBuilder builder(newContext, parentPropMap, *propertyMap.GetProperty().GetAsStructProperty());
             StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
             for (DataPropertyMap const* memberPropMap : structPropMap)
                 {
-                RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &builder);
+                RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &structPropMap);
                 if (childMap == nullptr)
                     {
                     BeAssert(false);
