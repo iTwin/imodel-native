@@ -2146,6 +2146,8 @@ TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances
     EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
+#ifdef WIP_MERGE_Vincas
+    
 TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKeys)
     {
     auto schema = ParseSchema(R"(
@@ -2197,4 +2199,5 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     EXPECT_EQ(0, keys.size());
     }
 
+#endif
 #endif
