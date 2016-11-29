@@ -80,26 +80,45 @@ struct ECValue
         void ShallowCopy(ECValueCR v);
         //__PUBLISH_SECTION_START__
 
-public:
-    //! Structure to hold information about Navigation values
-    struct NavigationInfo
-        {
-        private:
-            ECRelationshipClassCP   m_relClass;
+    public:
+        //! Structure to hold information about Navigation values
+        struct NavigationInfo
+            {
+            private:
+                bool m_isPointer = true;
+                union
+                    {
+                    ::int64_t               m_relClassId;
+                    ECRelationshipClassCP   m_relClass;
+                    };
 
-            // If any more types are added make into a union or store everything as String and then parse
-            // into the different types
-            ::int64_t m_idLong;
+                // If any more types are added make into a union or store everything as String and then parse
+                // into the different types
+                ::int64_t m_idLong;
 
-        public:
-            BentleyStatus SetRelationship(ECRelationshipClassCP relationshipClass);
-            ECObjectsStatus Set(::int64_t id);
+            public:
+                //! Sets the relationship that is used to initialize the navigation value as a pointer to the relationship
+                ECObjectsStatus SetRelationship(ECRelationshipClassCP relationshipClass);
+                //! Sets the relationship that is used to initialize the navigation value as a long
+                ECObjectsStatus SetRelationship(::int64_t relationshipClassId);
 
-            //! Returns the relationship class that this navigation value was initialized with
-            ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
-            //! Returns the long value, if this ECValue holds a long
-            ECOBJECTS_EXPORT::int64_t GetIdAsLong() const;
-        };
+                //! Sets the navigation value as a long
+                ECObjectsStatus Set(::int64_t id);
+
+                //! Returns the relationship class that this navigation value was initialized with
+                //! @return A pointer to the relationship class if a it was set as a pointer, otherwise returns nullptr
+                ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
+                //! Returns the relationship class id that this navigation value was initialized with
+                //! @return The relationship class id if the value was set as an id, otherwise returns -1
+                ECOBJECTS_EXPORT ::int64_t GetRelationshipClassId() const;
+                //! Returns the long value, if this ECValue holds a long
+                ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
+
+                //! Retuns whether the relationship class was stored as a pointer to the relationship. If false, than the relationship
+                //! class was stored as an id, long.
+                ECOBJECTS_EXPORT bool IsPointer() const;
+            };
+
     private:
         union
             {
@@ -224,7 +243,7 @@ public:
             DPoint3d            m_dPoint3d;         //!< If a DPoint3d primitive, holds the DPoint3d value
             ArrayInfo           m_arrayInfo;        //!< If an array value, holds the ArrayInfo struct defining the array
             BinaryInfo          m_binaryInfo;       //!< If a binary value, holds the BinaryInfo struct defining the binary data
-        NavigationInfo      m_navigationInfo;   //!< If a navigation value, holds the NavigationInfo struct 
+            NavigationInfo      m_navigationInfo;   //!< If a navigation value, holds the NavigationInfo struct 
             IECInstanceP        m_structInstance;   //!< The ECValue class calls AddRef and Release for the member as needed
             };
 
@@ -312,10 +331,10 @@ public:
         //! @param[in] dateTime Date time value to set.
         ECOBJECTS_EXPORT explicit ECValue(DateTimeCR dateTime);
 
-    //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
-    //! @param[in] relationship The relationship used to initialize this ECValue from
-    //! @param[in] value        Value to initialize this ECValue from
-    ECOBJECTS_EXPORT explicit ECValue(ECRelationshipClassCR relationship, ::int64_t value);
+        //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
+        //! @param[in] relationship The relationship used to initialize this ECValue from
+        //! @param[in] value        Value to initialize this ECValue from
+        ECOBJECTS_EXPORT explicit ECValue(ECRelationshipClassCR relationship, ::int64_t value);
 
         bool operator==(ECValueCR rhs) const { return Equals(rhs); }
         bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
@@ -347,8 +366,8 @@ public:
         //! Frees the values memory, if necessary, and sets the state to NULL.
         ECOBJECTS_EXPORT void           SetToNull();
 
-    //! Frees the values memory, if necessary, sets the type to BentleyAPI::ECN::VALUEKIND_NAVIGATION, and sets the state to NULL
-    ECOBJECTS_EXPORT void           SetNavigationToNull();
+        //! Frees the values memory, if necessary, sets the type to BentleyAPI::ECN::VALUEKIND_NAVIGATION, and sets the state to NULL
+        ECOBJECTS_EXPORT void           SetNavigationToNull();
 
         //! Does a ShallowCopy of the supplied ECValue
         //! @param[in] v    The ECValue to copy from
@@ -417,9 +436,9 @@ public:
         //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Array).
         //! @return true if the ECValue content is an array. false otherwise.
         ECOBJECTS_EXPORT bool           IsArray() const;
-    //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Navigation).
-    //! @return true if the ECValue content is a navigation value. false otherwise.
-    ECOBJECTS_EXPORT bool           IsNavigation() const;
+        //! Indicates whether the content of this ECValue is an array (DgnPlatform::VALUEKIND_Navigation).
+        //! @return true if the ECValue content is a navigation value. false otherwise.
+        ECOBJECTS_EXPORT bool           IsNavigation() const;
         //! Indicates whether the content of this ECValue is a struct (DgnPlatform::VALUEKIND_Struct).
         //! @return true if the ECValue content is a struct. false otherwise.
         ECOBJECTS_EXPORT bool           IsStruct() const;
@@ -481,17 +500,22 @@ public:
         //! Returns the array information defining this ECValue
         ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
 
-    //! Defines the navigation value for this ECValue
-    //! @param[in] relationshipClass The relationship used to set this ECValue
-    //! @param[in] value             Value to set this ECValue to
-    ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value);
+        //! Defines the navigation value for this ECValue
+        //! @param[in] relationshipClass The relationship used to set this ECValue
+        //! @param[in] value             Value to set this ECValue to
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value);
 
-    //! Defines the navigation value for this ECValue
-    //! @param[in] value             Value to set this ECValue to
-    ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value);
+        //! Defines the navigation value for this ECValue
+        //! @param[in] relationshipClassId Id for the relationship used to set this ECValue
+        //! @param[in] value               Value to set this ECValue to
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t relationshipClassId, ::int64_t value);
 
-    //! Returns the navigation information definig this ECValue
-    ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;
+        //! Defines the navigation value for this ECValue
+        //! @param[in] value             Value to set this ECValue to
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value);
+
+        //! Returns the navigation information definig this ECValue
+        ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;
 
         //! Returns the integer value, if this ECValue holds an Integer 
         ECOBJECTS_EXPORT int32_t        GetInteger() const;
@@ -670,10 +694,10 @@ public:
         //! @returns The sizeof the given type, if it is a fixed size primitive 
         static ECOBJECTS_EXPORT uint32_t GetFixedPrimitiveValueSize(PrimitiveType primitiveType);
 
-    //! For a navigation value with a primitive type, returns the number of bytes required to represent the navigation value with the specified type
-    //! @param[in] primitiveType    The type to measure
-    //! @returns The sizeof the navigation value with the given type, if it is a fixed size primitive
-    static ECOBJECTS_EXPORT uint32_t GetNavigationValueSize (PrimitiveType primitiveType);
+        //! For a navigation value with a primitive type, returns the number of bytes required to represent the navigation value with the specified type
+        //! @param[in] primitiveType    The type to measure
+        //! @returns The sizeof the navigation value with the given type, if it is a fixed size primitive
+        static ECOBJECTS_EXPORT uint32_t GetNavigationValueSize (PrimitiveType primitiveType);
 
         //! This is intended for debugging purposes, not for presentation purposes.
         ECOBJECTS_EXPORT Utf8String       ToString() const;

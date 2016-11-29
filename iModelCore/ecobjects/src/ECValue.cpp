@@ -375,10 +375,21 @@ bool ECValue::DateTimeInfo::MetadataMatches(DateTime::Info const& caDateTimeMeta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP relationshipClass)
+ECObjectsStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP relationshipClass)
     {
+    m_isPointer = true;
     m_relClass = relationshipClass;
-    return SUCCESS;
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::NavigationInfo::SetRelationship(::int64_t relationshipClassId)
+    {
+    m_isPointer = false;
+    m_relClassId = relationshipClassId;
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,7 +397,22 @@ BentleyStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP rel
 //+---------------+---------------+---------------+---------------+---------------+------
 ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
     {
+    if (!m_isPointer)
+        return nullptr;
     return m_relClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+int64_t ECValue::NavigationInfo::GetRelationshipClassId() const
+    {
+    if (m_isPointer && nullptr != m_relClass)
+        {
+        ECClassId relId = m_relClass->GetId();
+        return relId.IsValid() ? relId.GetValue() : -1;
+        }
+    return m_relClassId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -407,6 +433,14 @@ ECObjectsStatus ECValue::NavigationInfo::Set(::int64_t id)
 int64_t ECValue::NavigationInfo::GetIdAsLong() const
     {
     return m_idLong;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECValue::NavigationInfo::IsPointer() const
+    {
+    return m_isPointer;
     }
 
 //*********************** ECValue ***************************************
@@ -2033,9 +2067,13 @@ uint32_t        ECValue::GetFixedPrimitiveValueSize(PrimitiveType primitivetype)
 //+---------------+---------------+---------------+---------------+---------------+------
 uint32_t        ECValue::GetNavigationValueSize (PrimitiveType primitiveType)
     {
-    // Initialize with the size of the pointer for the relationship class
+    // A navigation value has 3 parts:
+    // 1. a single bit that tells whether a pointer or id is used to identify the relationship
+    // 2. an int64_t that contains either a pointer or id identifying the relationship used to set the nav value
+    // 3. The actual navigation value 
     uint32_t size = sizeof(int64_t);
     size += GetFixedPrimitiveValueSize(primitiveType);
+    size += 1;
     return size;
     }
 
@@ -2111,7 +2149,7 @@ bool            ArrayInfo::IsStructArray() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relClass, ::int64_t value)
+ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value)
     {
     Clear();
     SetIsNull(false);
@@ -2119,7 +2157,23 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relClass, ::int
     m_valueKind = VALUEKIND_Navigation;
     
     m_navigationInfo.Set(value);
-    m_navigationInfo.SetRelationship(&relClass);
+    m_navigationInfo.SetRelationship(&relationshipClass);
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::SetNavigationInfo(::int64_t relationshipClassId, ::int64_t value)
+    {
+    Clear();
+    SetIsNull(false);
+
+    m_valueKind = VALUEKIND_Navigation;
+
+    m_navigationInfo.Set(value);
+    m_navigationInfo.SetRelationship(relationshipClassId);
 
     return ECObjectsStatus::Success;
     }

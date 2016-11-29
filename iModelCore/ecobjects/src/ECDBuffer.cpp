@@ -2744,21 +2744,38 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
         else
             pValue = GetAddressOfPropertyValue(propertyLayout);
 
+        // Get the bit flag at the beginning of the navigation value
+        // it determines whether the relationship is stored as a 
+        // pointer or long
+        uint8_t isPointerFlag;
+        memcpy(&isPointerFlag, pValue, sizeof(isPointerFlag));
+        isPointerFlag = isPointerFlag >> 7;
+        
+        // Increment to get past bit flag
+        pValue += 1;
+
         int64_t relClassValue;
         memcpy(&relClassValue, pValue, sizeof(relClassValue));
-        void const* relClassP = (void const*) relClassValue;
-        ECClassCP ecClass = (ECClassCP) relClassP;
-        ECRelationshipClassCP relClass = (nullptr == ecClass) ? nullptr : ecClass->GetRelationshipClassCP();
-        BeAssert(nullptr == ecClass || nullptr != relClass);
+        ECRelationshipClassCP relClass = nullptr;
+        if (isPointerFlag)
+            {
+            void const* relClassP = (void const*) relClassValue;
+            ECClassCP ecClass = (ECClassCP) relClassP;
+            if (nullptr != ecClass)
+                relClass = ecClass->GetRelationshipClassCP();
+            BeAssert(nullptr == ecClass || nullptr != relClass);
+            }
 
         if (PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
             {
             int64_t value;
             Byte const * valueP = pValue + sizeof(int64_t);
             memcpy(&value, valueP, sizeof(value));
-            if (nullptr != relClass)
+            if (nullptr != relClass && isPointerFlag) // Set the relationship class pointer
                 v.SetNavigationInfo(*relClass, value);
-            else
+            else if (!isPointerFlag) // Sets the relationship class id
+                v.SetNavigationInfo(relClassValue, value);
+            else  // Sets the relationship to nullptr
                 v.SetNavigationInfo(value);
             }
         else
@@ -3181,16 +3198,36 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
     
     ECObjectsStatus result = ECObjectsStatus::Error;
 
-    // The relationship class pointer is stored as an int64_t before the actual value
+    // A bit flag is in the beginning to tell whether the relationship class is either a pointer or id
     Byte const* relClassValueP = GetPropertyData() + offset;
+
+    uint8_t isPointerFlag = 0;
     int64_t relClassValue = 0;
-    ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
-    if (nullptr != relClass)
-        relClassValue = (int64_t) relClass;
-    if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
+    if (v.GetNavigationInfo().IsPointer())
+        {
+        isPointerFlag |= ((uint8_t) 1 << 7); // The bit flag is stored as either 0 or 1
+        ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
+        if (nullptr != relClass)
+            relClassValue = (int64_t) relClass;
+        }
+    else
+        relClassValue = v.GetNavigationInfo().GetRelationshipClassId();
+
+    if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &isPointerFlag, sizeof(isPointerFlag)))
         return ECObjectsStatus::PropertyValueMatchesNoChange;
-    
-    result = ModifyData(relClassValueP, &relClassValue, sizeof(relClassValue));
+
+    result = ModifyData(relClassValueP, &isPointerFlag, sizeof(isPointerFlag));
+
+    // Increase the pointer to after the bit flag
+    relClassValueP += 1;
+
+    if (ECObjectsStatus::Success == result)
+        {
+        if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
+            return ECObjectsStatus::PropertyValueMatchesNoChange;
+
+        result = ModifyData(relClassValueP, &relClassValue, sizeof(relClassValue));
+        }
     
     if (ECObjectsStatus::Success == result && PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
         {

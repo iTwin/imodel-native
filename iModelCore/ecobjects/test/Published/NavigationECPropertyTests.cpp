@@ -295,24 +295,37 @@ void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP
     */
     }
 
-void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int64_t expectedValue, ECRelationshipClassCP expectedRelClass)
+void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int64_t expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, int64_t expectedRelClassId = 0)
     {
     ECValueAccessor accessor;
     ECValueAccessor::PopulateValueAccessor(accessor, instance, propertyAccessor);
     ECValue myTarget;
     ASSERT_EQ(ECObjectsStatus::Success, instance.GetValueUsingAccessor(myTarget, accessor)) << "Failed to get ECValue for '" << propertyAccessor << "' Navigation Property";
     ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
-    EXPECT_TRUE(myTarget.IsNavigation()) << "";
+    EXPECT_TRUE(myTarget.IsNavigation()) << "Expected Navigation Property '" << propertyAccessor << "' to be ValueKind Navigation but it was not.";
     EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetIdAsLong()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
-    ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-    EXPECT_EQ(expectedRelClass, relClass);
+    if (expectedRelClassId == 0)
+        {
+        ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
+        EXPECT_EQ(expectedRelClass, relClass) << "The relationship class pointer of '" << propertyAccessor << "' is not as expected.";
 
-    if (nullptr != expectedRelClass)
-        EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str());
+        if (nullptr != expectedRelClass)
+            {
+            EXPECT_EQ(expectedRelClass->GetId().GetValue(), myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id value of '" << propertyAccessor << "' is different than expected.";
+            EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str()) << "The relationship for '" << propertyAccessor << "' was not the expected relationship.";
+            }
+        else
+            EXPECT_EQ(0, myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id value of '" << propertyAccessor << "' is different than expected.";
+        }
+    else
+        {
+        EXPECT_EQ(nullptr, myTarget.GetNavigationInfo().GetRelationshipClass()) << "The relationship class pointer of '" << propertyAccessor << "' was not nullptr but should be.";
+        EXPECT_EQ(expectedRelClassId, myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id for '" << propertyAccessor << "' was not the expected value.";
+        }
     }
 
-void TestSettingNavPropLongValues(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
+void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
     {
     ECValue myTargetValue(*expectedRelClass, 42LL);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a long";
@@ -345,6 +358,17 @@ void TestSettingNavPropLongValues(IECInstanceR instance, ECRelationshipClassCP e
 
     VerifyNavPropLongValue(instance, "MyTargetMult[1]", 43LL);
     */
+    }
+
+void TestSettingNavPropLongValuesWithId(IECInstanceR instance)
+    {
+    ECValue myTargetValue;
+    myTargetValue.SetNavigationInfo(25LL, 42LL);
+    ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetWithRelId", myTargetValue)) << "Failed to set the value of MyTargetWithRelId nav prop to a long";
+    EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetWithRelId nav property not as expected";
+    EXPECT_EQ(25LL, myTargetValue.GetNavigationInfo().GetRelationshipClassId()) << "Relationship Class Id of MyTargetWithRelId nav property not as expected";
+
+    VerifyNavPropLongValue(instance, "MyTargetWithRelId", 42LL, nullptr, 25LL);
     }
 
 void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml, PrimitiveType navPropType)
@@ -410,6 +434,7 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     derivedRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
     derivedRelClass->GetTarget().AddClass(*derivedTargetClass);
     derivedRelClass->AddBaseClass(*relClass);
+    derivedRelClass->SetId(ECClassId((uint64_t) 25));
 
     relClass2->GetSource().AddClass(*sourceClass);
     relClass2->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
@@ -420,6 +445,8 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, navPropType);
     NavigationECPropertyP navPropSourceNoRel;
     CreateNavProp(sourceClass, "MyTargetNoRel", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceNoRel, navPropType);
+    NavigationECPropertyP navPropSourceRelId;
+    CreateNavProp(sourceClass, "MyTargetWithRelId", *relClass, ECRelatedInstanceDirection::Forward, navPropSourceRelId, navPropType);
     //NavigationECPropertyP navPropSourceMult;
     //CreateNavProp(sourceClass, "MyTargetMult", *relClass2, ECRelatedInstanceDirection::Forward, navPropSourceMult, navPropType);
     PrimitiveECPropertyP stringProp;
@@ -441,9 +468,14 @@ void InstanceWithNavProp(PrimitiveType navPropType)
     ASSERT_TRUE(myTargetValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
     ECValue myTargetNoRelValueFromInst;
-    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetNoRelValueFromInst, "MyTargetNoRel")) << "Failed to get ECValue for MyTarget Navigation Property";
-    ASSERT_TRUE(myTargetValueFromInst.IsNull());
-    ASSERT_TRUE(myTargetValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetNoRelValueFromInst, "MyTargetNoRel")) << "Failed to get ECValue for MyTargetNoRel Navigation Property";
+    ASSERT_TRUE(myTargetNoRelValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetNoRelValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
+
+    ECValue myTargetRelIdValueFromInst;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetRelIdValueFromInst, "MyTargetWithRelId")) << "Failed to get ECValue for MyTargetWithRelId Navigation Property";
+    ASSERT_TRUE(myTargetRelIdValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetRelIdValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
     if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
         {
@@ -451,7 +483,8 @@ void InstanceWithNavProp(PrimitiveType navPropType)
         }
     else // type is PrimitiveType::PRIMITIVETYPE_Long
         {
-        TestSettingNavPropLongValues(*sourceInstance, derivedRelClass);
+        TestSettingNavPropLongValuesWithRel(*sourceInstance, derivedRelClass);
+        TestSettingNavPropLongValuesWithId(*sourceInstance);
         }
 
     // WIP
