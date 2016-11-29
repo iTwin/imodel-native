@@ -124,6 +124,7 @@
     <ClCompile Include="NonPublished\DateTimeTests.cpp" />
     <ClCompile Include="NonPublished\FileNameTests.cpp" />
     <ClCompile Include="NonPublished\GlobalHandleContainerTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />
