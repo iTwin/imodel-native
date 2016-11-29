@@ -626,7 +626,7 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table,
     {
     BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
     PersistenceType persType = PersistenceType::Persisted;
-    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb() || GetClass().GetClassModifier() != ECClassModifier::Abstract)
+    if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb() || GetClass().GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
     DbColumn* relClassIdCol = table.FindColumnP(relClassIdColName);
