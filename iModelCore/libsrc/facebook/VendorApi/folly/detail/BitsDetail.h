@@ -16,6 +16,11 @@
 
 #pragma once
 
+// BENTLEY_CHANGE - sometimes need to manually include intrin.h for the __pop family of functions.
+#if defined(_MSC_VER) && (_MSC_VER >= 1910)
+#include <intrin.h>
+#endif
+
 namespace folly {
 namespace detail {
 
