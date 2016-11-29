@@ -282,7 +282,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
                 headerSize = readSize;
 
-                uint64_t position = 0;
+                size_t position = 0;
 
                 uint32_t sizeOfOldMasterHeaderPart;
                 memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
@@ -311,7 +311,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 // Parse rest of file -- group information
                 while (position < headerSize)
                     {
-                    size_t group_id;
+                    uint32_t group_id;
                     memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
                     position += sizeof(group_id);
 
@@ -323,8 +323,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                         }
 
                     size_t group_numNodes;
-                    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(size_t));
-                    position += sizeof(size_t);
+                    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
+                    position += sizeof(group_numNodes);
 
                     auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
                                                                      group_id, 
@@ -530,6 +530,31 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(c
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTile(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize) const
     {
+    // Get Cesium 3D tiles required properties
+    Json::Value tile;
+    tile["asset"]["version"] = "0.0";
+
+    auto& rootTile = tile["root"];
+    SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(header, blockID, rootTile);
+
+    Json::Value& children = tile["children"];
+    for (auto& childExtent : header->m_childrenExtents)
+        {
+        Json::Value child;
+        child["content"]["url"] = Utf8String(("n_" + std::to_string(childExtent.first) + ".json").c_str());
+        TilePublisher::WriteBoundingVolume(child, childExtent.second);
+        children.append(child);
+        }
+    rootTile["children"] = children;
+
+    auto utf8Node = Json::FastWriter().write(tile);
+    po_pBinaryData.reset(new Byte[utf8Node.size()]);
+    memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
+    po_pDataSize = (uint32_t)utf8Node.size();
+    }
+
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& tile)
+    {
     // compute node tolerance (for the geometric error)
     bool useContentExtent = header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume () > 0*/;
     DRange3d cesiumRange = useContentExtent ? header->m_contentExtent : header->m_nodeExtent;
@@ -548,45 +573,25 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     // SM_NEEDS_WORK : is there a transformation to apply at some point?
     //transformDbToTile.Multiply(transformedRange, transformedRange);
 
-    // Get Cesium 3D tiles required properties
-    Json::Value tile;
-    tile["asset"]["version"] = "0.0";
-
-    auto& rootTile = tile["root"];
-    rootTile["refine"] = "replace";
-    rootTile["geometricError"] = tolerance;
-    TilePublisher::WriteBoundingVolume(rootTile, cesiumRange);
+    tile["refine"] = "replace";
+    tile["geometricError"] = tolerance;
+    TilePublisher::WriteBoundingVolume(tile, cesiumRange);
 
     if (header->m_contentExtentDefined && !header->m_contentExtent.IsNull() /*&& header->m_contentExtent.Volume() > 0*/)
         {
-        rootTile["content"]["url"] = Utf8String(("p_" + std::to_string(blockID.m_integerID) + ".b3dm").c_str());
-        //TilePublisher::WriteBoundingVolume(rootTile["content"], header->m_contentExtent); // not required
+        tile["content"]["url"] = Utf8String(("p_" + std::to_string(blockID.m_integerID) + ".b3dm").c_str());
         }
 
-    Json::Value children(Json::arrayValue);
-    for (auto& childExtent : header->m_childrenExtents)
-        {
-        Json::Value child;
-        child["content"]["url"] = Utf8String(("n_" + std::to_string(childExtent.first) + ".json").c_str());
-        TilePublisher::WriteBoundingVolume(child, childExtent.second);
-        children.append(child);
-        }
-    rootTile["children"] = children;
 
 
-    // SM_NEEDS_WORK : Get scalable mesh required properties
+    // SM_NEEDS_WORK_STREAMING : Get scalable mesh required properties
     Json::Value smHeader;
-    this->SerializeHeaderToJSON(header, blockID, smHeader);
+    SMStreamingStore<EXTENT>::SerializeHeaderToJSON(header, blockID, smHeader);
 
-    rootTile["SMHeader"] = smHeader;
-
-    auto utf8Node = Json::FastWriter().write(tile);
-    po_pBinaryData.reset(new Byte[utf8Node.size()]);
-    memcpy(po_pBinaryData.get(), utf8Node.data(), utf8Node.size());
-    po_pDataSize = (uint32_t)utf8Node.size();
+    tile["SMHeader"] = smHeader;
     }
 
-template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block) const
+template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(const SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID, Json::Value& block)
     {
     block["id"] = ConvertBlockID(blockID);
     block["resolution"] = (ISMStore::NodeID)header->m_level;

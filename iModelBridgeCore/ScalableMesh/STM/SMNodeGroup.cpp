@@ -15,8 +15,8 @@ std::mutex s_consoleMutex;
 
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
-size_t s_max_group_depth = 2;
-size_t s_max_group_common_ancestor = 2;
+uint32_t s_max_group_depth = 2;
+uint32_t s_max_group_common_ancestor = 2;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 {
@@ -64,11 +64,11 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 
             if (readSize > 0)
             {
-                uint32_t position = 0;
-                size_t id;
-                memcpy(&id, dest.get(), sizeof(size_t));
+                size_t position = 0;
+                uint32_t id;
+                memcpy(&id, dest.get(), sizeof(id));
                 assert(m_groupHeader->GetID() == id);
-                position += sizeof(size_t);
+                position += sizeof(id);
 
                 size_t numNodes;
                 memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
@@ -174,4 +174,39 @@ void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
 #endif
     }
     }
+
+void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile)
+    {
+    if (!m_tileTreeMap.empty())
+        {
+        assert(parentNodeID != uint32_t(-1));
+        auto parentTilePtr = m_tileTreeMap[parentNodeID];
+        assert(parentTilePtr != nullptr);
+
+        Json::Value& children = (*parentTilePtr)["children"];
+        m_tileTreeMap[nodeID] = &children.append(tile);
+        }
+    else
+        { 
+        // We are adding the first tile in a new group
+        // So keep the tile for later reference
+        m_RootTileTreeNode = tile;
+        m_tileTreeMap[nodeID] = &m_RootTileTreeNode;
+
+        if (m_ParentGroup)
+            {
+            assert(m_ParentGroup->m_tileTreeMap.count(parentNodeID) == 1);
+
+            // We must update the parent's content url so we know how to reference the new tile set
+            auto& parentNodeTile = *m_ParentGroup->m_tileTreeMap[parentNodeID];
+            auto& parentNodeTileChildren = parentNodeTile["children"];
+            auto& childTile = parentNodeTileChildren.append(tile);
+            childTile.removeMember("children");
+            childTile.removeMember("SMHeader");
+
+            childTile["content"]["url"] = Utf8String(("n_" + std::to_string(this->GetID()) + ".json").c_str());
+            }
+        }
+    }
+
 

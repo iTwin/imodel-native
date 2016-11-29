@@ -1601,7 +1601,7 @@ StatusInt DoBatchDrape(vector<vector<DPoint3d>>& lines, DTMPtr& dtmPtr, vector<v
 
 void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     {
-    WString scmFileName, outputDir, mode(L"normal"), result;
+    WString scmFileName, outputDir, strategy(L"normal"), result;
     // Parses the test(s) definition:
     if (pTestNode->GetAttributeStringValue(scmFileName, "scmFileName") != BEXML_Success)
         {
@@ -1613,7 +1613,7 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
         printf("ERROR : outputDir attribute not found\r\n");
         return;
         }
-    if (pTestNode->GetAttributeStringValue(mode, "mode") != BEXML_Success)
+    if (pTestNode->GetAttributeStringValue(strategy, "strategy") != BEXML_Success)
         {
         printf("mode attribute not found : default \"normal\" mode will be used\r\n");
         }
@@ -1625,13 +1625,17 @@ void PerformGroupNodeHeaders(BeXmlNodeP pTestNode, FILE* pResultFile)
     double t = clock();
 
     short groupMode = -1;
-    if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"normal")) 
+    if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"normal"))
         {
         groupMode = 1;
         }
-    else if (0 == BeStringUtilities::Wcsicmp(mode.c_str(), L"virtual"))
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"virtual"))
         {
         groupMode = 2;
+        }
+    else if (0 == BeStringUtilities::Wcsicmp(strategy.c_str(), L"cesium"))
+        {
+        groupMode = 3;
         }
     else
         {

@@ -6840,8 +6840,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
     
     if (!m_nodeHeader.m_IsLeaf)
         {
-
-        SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup((uint32_t)this->GetLevel(), pi_pGroup);
+        pi_pGroup->IncreaseDepth();
+        SMNodeGroup::Ptr nextGroup = pi_pGroup->GetStrategy<EXTENT>()->GetNextGroup(this->m_nodeHeader, pi_pGroup);
 
         static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
             {
@@ -6873,10 +6873,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
                 static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveGroupedNodeHeaders(nextGroup);
                 disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
                 this->m_apSubNodes[indexNode] = nullptr;
+                pi_pGroup->GetStrategy<EXTENT>()->ApplyPostChildNodeProcess(this->m_nodeHeader, pi_pGroup, nextGroup);
+
                 }
             }
 
-        pi_pGroup->GetStrategy<EXTENT>()->ApplyPostProcess((uint32_t)this->GetLevel(), pi_pGroup);
+        pi_pGroup->DecreaseDepth();
+        pi_pGroup->GetStrategy<EXTENT>()->ApplyPostProcess(this->m_nodeHeader, pi_pGroup);
         }
     }
 
@@ -7745,7 +7748,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, 0, SMNodeGroup::StrategyType(pi_pGroupMode));
+    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode));
 
     auto strategy = group->GetStrategy<EXTENT>();
 
