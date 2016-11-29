@@ -25,6 +25,7 @@ extern bool s_stream_using_curl;
 extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
+extern bool s_is_legacy_dataset;
 
 //extern std::mutex fileMutex;
 

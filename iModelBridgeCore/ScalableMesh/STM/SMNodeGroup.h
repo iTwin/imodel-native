@@ -978,9 +978,9 @@ void SMBentleyGroupingStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroup::Ptr pi_Group
         file.Write(&NbChars, pi_Group->m_groupHeader->data(), (uint32_t)numNodes * sizeof(SMNodeHeader));
         assert(NbChars == numNodes * sizeof(SMNodeHeader));
 
-        auto sizeHeaders = (uint32_t)pi_Group->GetSizeOfHeaders();
-        file.Write(&NbChars, pi_Group->GetRawHeaders(0), sizeHeaders * sizeof(uint8_t));
-        assert(NbChars == sizeHeaders * sizeof(uint8_t));
+        size_t sizeHeaders = (uint32_t)pi_Group->GetSizeOfHeaders();
+        file.Write(&NbChars, pi_Group->GetRawHeaders(0), (uint32_t)sizeHeaders);
+        assert(NbChars == sizeHeaders);
         }
     else
         {

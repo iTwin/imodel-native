@@ -304,6 +304,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
                 short groupMode = m_use_virtual_grouping;
                 memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
+                if (s_is_legacy_dataset) groupMode += 1;
                 assert((groupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
                 position += sizeof(groupMode);
 
@@ -311,9 +312,19 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 // Parse rest of file -- group information
                 while (position < headerSize)
                     {
-                    uint32_t group_id;
-                    memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
-                    position += sizeof(group_id);
+                    uint64_t group_id;
+                    if (s_is_legacy_dataset)
+                        {
+                        memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
+                        position += sizeof(group_id);
+                        }
+                    else
+                        {
+                        uint32_t group_id_tmp;
+                        memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
+                        position += sizeof(group_id_tmp);
+                        group_id = group_id_tmp;
+                        }
 
                     uint64_t group_totalSizeOfHeaders(0);
                     if (groupMode == SMNodeGroup::StrategyType::VIRTUAL)
@@ -327,7 +338,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     position += sizeof(group_numNodes);
 
                     auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
-                                                                     group_id, 
+                                                                     (uint32_t)group_id, 
                                                                      SMNodeGroup::StrategyType(groupMode),
                                                                      group_numNodes, 
                                                                      group_totalSizeOfHeaders));
