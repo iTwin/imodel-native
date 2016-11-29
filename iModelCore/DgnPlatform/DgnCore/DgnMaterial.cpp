@@ -154,12 +154,12 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,ParentId,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,ParentId.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE CodeNamespace=?");
 
     if (options.m_byParent)
-        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId=?");
+        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId.Id=?");
 
     if (options.m_ordered)
         ecsql.append(" ORDER BY CodeNamespace,CodeValue");
@@ -172,7 +172,7 @@ DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& op
             stmt->BindText(1, options.m_palette.c_str(), IECSqlBinder::MakeCopy::Yes);
 
         if (options.m_byParent)
-            stmt->BindNavigationValue(options.m_byPalette ? 2 : 1, options.m_parent, ECClassId());
+            stmt->BindId(options.m_byPalette ? 2 : 1, options.m_parent);
         }
 
     return iter;

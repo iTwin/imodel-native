@@ -380,15 +380,15 @@ static Utf8String convertToComponents (Utf8CP aspectIndexProp)
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlSelectDupeString (Utf8CP schemaName, Utf8CP className, Utf8CP aspectIndexProp)
     {
-    Utf8String  propsString (PARAM_ElementId);
+    Utf8String  propsString (PARAM_ElementId ".Id");
     propsString.append (", ").append (convertToComponents (aspectIndexProp));
 
     //      SELECT
-    //          ElementId, prop[0], COUNT(*)
+    //          ElementId.Id, prop[0], COUNT(*)
     //      FROM
     //          dgn.AnnotationTableRow
     //      GROUP BY
-    //          ElementId, RowIndex
+    //          ElementId.Id, RowIndex
     //      HAVING 
     //          COUNT(*) > 1
     Utf8String sqlString ("SELECT ");

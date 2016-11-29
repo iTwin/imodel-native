@@ -61,7 +61,7 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
         ASSERT_NE( nullptr , aspect ) << "element should have a peristent aspect";
         ASSERT_STREQ( "Initial Value" , aspect->GetTestUniqueAspectProperty().c_str() );
 
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId.Id=?)");
         stmt->BindId(1, el->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Initial Value" , stmt->GetValueText(0) );
@@ -90,7 +90,7 @@ TEST_F(ElementAspectTests, UniqueAspect_CRUD)
         ASSERT_STREQ( "Changed Value" , aspect->GetTestUniqueAspectProperty().c_str() ) << "I should see the changed value of the aspect now";
 
         // Verify that the aspect's property was changed in the Db
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId.Id=?)");
         stmt->BindId(1, el->GetElementId());
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "Changed Value" , stmt->GetValueText(0) );
@@ -140,7 +140,7 @@ TEST_F(ElementAspectTests, UniqueAspect_Uniqueness)
     ASSERT_STREQ("Latest Value", aspect->GetTestUniqueAspectProperty().c_str());
     ASSERT_STREQ("TestUniqueAspect", aspect->GetECClassName());
 
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId=?)");
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspect WHERE (ElementId.Id=?)");
     stmt->BindId(1, el->GetElementId());
     ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
     ASSERT_STREQ("Latest Value", stmt->GetValueText(0));
@@ -178,7 +178,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
         {
         // Verify that aspects were written to the Db and that the foreign key relationships were put into place
         BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement(
-            "SELECT aspect.ECInstanceId,aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect aspect WHERE aspect.ElementId=?");
+            "SELECT aspect.ECInstanceId,aspect.TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect aspect WHERE aspect.ElementId.Id=?");
         stmt->BindId(1, el->GetElementId());
 
         bool has1=false;
@@ -224,7 +224,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
     if (true)
         {
         // Verify that the a1's property is unchanged and a2's property was changed in the Db
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId.Id=?)");
         stmt->BindId(1, a1id);
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "1" , stmt->GetValueText(0) );
@@ -245,7 +245,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
         m_db->SaveChanges();
 
         //Verify that it is not in the db now and other one is still there.
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId.Id=?)");
         stmt->BindId(1, a1id);
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
         ASSERT_STREQ("1", stmt->GetValueText(0));
