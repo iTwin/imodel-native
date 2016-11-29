@@ -16,8 +16,10 @@ BentleyStatus createFileUri(Utf8StringR fileUri, Utf8StringCR fileName)
 
     WString fileNameAndExt (beFileName.GetFileNameAndExtension());
     if (WString::IsNullOrEmpty(fileNameAndExt.c_str()))
+        {
         // Leave input file name unchanged
         fileUri = fileName;
+        }
     else
         {
         Utf8String fileNameAndExtUtf8(fileNameAndExt);

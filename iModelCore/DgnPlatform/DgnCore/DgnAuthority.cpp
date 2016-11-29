@@ -315,277 +315,185 @@ AuthorityHandlerR DgnAuthority::GetAuthorityHandler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus NullAuthority::Insert(DgnDbR db)
+    {
+    AuthorityHandlerR handler = dgn_AuthorityHandler::Null::GetHandler();
+    CreateParams params(db, db.Domains().GetClassId(handler), BIS_AUTHORITY_NullAuthority);
+    DgnAuthorityPtr authority = handler.Create(params);
+    return authority.IsValid() ? authority->Insert() : DgnDbStatus::InvalidCodeAuthority;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-RefCountedPtr<NamespaceAuthority> NamespaceAuthority::CreateNamespaceAuthority(Utf8CP authorityName, DgnDbR dgndb)
+DatabaseScopeAuthorityPtr DatabaseScopeAuthority::Create(Utf8CP authorityName, DgnDbR dgndb)
     {
-    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
+    AuthorityHandlerR hdlr = dgn_AuthorityHandler::DatabaseScope::GetHandler();
     CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName);
-    return static_cast<NamespaceAuthority*>(hdlr.Create(params).get());
+    return static_cast<DatabaseScopeAuthority*>(hdlr.Create(params).get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelScopeAuthorityPtr ModelScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
+    {
+    AuthorityHandlerR handler = dgn_AuthorityHandler::ModelScope::GetHandler();
+    CreateParams params(db, db.Domains().GetClassId(handler), authorityName);
+    return static_cast<ModelScopeAuthority*>(handler.Create(params).get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementScopeAuthorityPtr ElementScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
+    {
+    AuthorityHandlerR handler = dgn_AuthorityHandler::ElementScope::GetHandler();
+    CreateParams params(db, db.Domains().GetClassId(handler), authorityName);
+    return static_cast<ElementScopeAuthority*>(handler.Create(params).get());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode NamespaceAuthority::CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace)
+DgnCode DatabaseScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, Utf8StringCR value, Utf8StringCR nameSpace)
     {
-    auto auth = dgndb.Authorities().Get<NamespaceAuthority>(authorityName);
-    BeDataAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(value, nameSpace) : DgnCode();
+    DatabaseScopeAuthorityCPtr authority = db.Authorities().Get<DatabaseScopeAuthority>(authorityName);
+    BeAssert(authority.IsValid());
+    return authority.IsValid() ? authority->CreateCode(value, nameSpace) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsistruct                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct SystemAuthority
-{
-    enum BuiltinId
+DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value)
     {
-        Local = 1LL,
-        Material = 2LL,
-        // 3LL is available
-        Resource = 4LL,    // Resources with a single name unique within a DgnDb, e.g. text styles, light definitions...namespace=resource type
-        TrueColor = 5LL,
-        Link = 6LL,
-        Partition = 7LL,
-        Session = 8LL,
-        Drawing = 9LL,
-        Sheet = 10LL,
-        DrawingCategory = 11LL,
-        SpatialCategory = 12LL,
-        SubCategory = 13LL,
-
-        // ............     Introduce new BuiltinIds here
-        
-        GeometryPart = 64LL,
-        // NOTE: Don't introduce BuiltinIds > 64 as this will cause DgnDb file format upgrade/remapping issues
-    };
-
-    struct Info
-    {
-        Utf8CP name;
-        BuiltinId which;
-        AuthorityHandlerR handler;
-    };
-
-    static DgnAuthorityId GetId(BuiltinId which) { return DgnAuthorityId((uint64_t)which); }
-    static DgnCode CreateCode(BuiltinId which, Utf8StringCR value, Utf8StringCR nameSpace="") { return DgnCode(GetId(which), value, nameSpace); }
-    static DgnCode CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId);
-
-    static DbResult Insert(DgnDbR db, Statement& stmt, Info const& info)
-        {
-        stmt.BindId(1, GetId(info.which));
-        stmt.BindText(2, info.name, Statement::MakeCopy::No);
-        stmt.BindId(3, db.Domains().GetClassId(info.handler));
-
-        DbResult result = stmt.Step();
-        BeAssert(BE_SQLITE_DONE == result);
-        return result;
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SystemAuthority::CreateCode(BuiltinId which, Utf8StringCR value, BeInt64Id nameSpaceId)
-    {
-    if (!nameSpaceId.IsValid())
-        return DgnCode();
-
-    return DgnCode(GetId(which), value, nameSpaceId);
+    ModelScopeAuthorityCPtr authority = model.GetDgnDb().Authorities().Get<ModelScopeAuthority>(authorityName);
+    BeAssert(authority.IsValid() && model.GetModelId().IsValid());
+    return authority.IsValid() && model.GetModelId().IsValid() ? authority->CreateCode(model.GetModelId(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, DgnModelId modelId, Utf8StringCR value)
+    {
+    ModelScopeAuthorityCPtr authority = db.Authorities().Get<ModelScopeAuthority>(authorityName);
+    BeAssert(authority.IsValid() && db.Models().GetModel(modelId).IsValid());
+    return authority.IsValid() && modelId.IsValid() ? authority->CreateCode(modelId, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ModelScopeAuthority::CreateCode(DgnModelCR model, Utf8StringCR value) const
+    {
+    return CreateCode(model.GetModelId(), value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ElementScopeAuthority::CreateCode(Utf8CP authorityName, DgnElementCR scopeElement, Utf8StringCR value)
+    {
+    ElementScopeAuthorityCPtr authority = scopeElement.GetDgnDb().Authorities().Get<ElementScopeAuthority>(authorityName);
+    BeAssert(authority.IsValid() && scopeElement.GetElementId().IsValid());
+    return authority.IsValid() && scopeElement.GetElementId().IsValid() ? authority->CreateCode(scopeElement.GetElementId(), value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ElementScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, DgnElementId scopeElementId, Utf8StringCR value)
+    {
+    ElementScopeAuthorityCPtr authority = db.Authorities().Get<ElementScopeAuthority>(authorityName);
+    BeAssert(authority.IsValid() && db.Elements().GetElement(scopeElementId).IsValid());
+    return authority.IsValid() && scopeElementId.IsValid() ? authority->CreateCode(scopeElementId, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode ElementScopeAuthority::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
+    {
+    return CreateCode(scopeElement.GetElementId(), value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus insertDatabaseScopeAuthority(Utf8CP authorityName, DgnDbR db)
+    {
+    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create(authorityName, db);
+    if (!authority.IsValid())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return authority->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus insertModelScopeAuthority(Utf8CP authorityName, DgnDbR db)
+    {
+    ModelScopeAuthorityPtr authority = ModelScopeAuthority::Create(authorityName, db);
+    if (!authority.IsValid())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return authority->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnDbStatus insertElementScopeAuthority(Utf8CP authorityName, DgnDbR db)
+    {
+    ElementScopeAuthorityPtr authority = ElementScopeAuthority::Create(authorityName, db);
+    if (!authority.IsValid())
+        return DgnDbStatus::InvalidCodeAuthority;
+
+    return authority->Insert();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateAuthorities()
     {
-    Json::Value authorityProps(Json::objectValue);
-    Utf8String authorityJson; // no base properties...
-
-    Statement statement(*this, "INSERT INTO " BIS_TABLE(BIS_CLASS_Authority) " (Id,Name,ECClassId,Properties) VALUES (?,?,?,?)");
-    statement.BindText(4, authorityJson, Statement::MakeCopy::No);
-
-    SystemAuthority::Info infos[] =
+    if ((DgnDbStatus::Success != NullAuthority::Insert(*this)) ||
+        // DatabaseScopeAuthorities
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationFrameStyle, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationLeaderStyle, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationTextStyle, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_CategorySelector, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_DisplayStyle, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_GeometryPart, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_LightDefinition, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_LineStyle, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_MaterialElement, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_ModelSelector, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_Session, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_SpatialCategory, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_TextAnnotationSeed, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_Texture, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_TrueColor, *this)) ||
+        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_ViewDefinition, *this)) || 
+        // ModelScopeAuthorities
+        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Drawing, *this)) ||
+        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_DrawingCategory, *this)) ||
+        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_LinkElement, *this)) ||
+        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Sheet, *this)) ||
+        // ElementScopeAuthorities
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_InformationPartitionElement, *this)) ||
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)))
         {
-            { "Local", SystemAuthority::Local, dgn_AuthorityHandler::Local::GetHandler() },
-            { "DgnMaterials", SystemAuthority::Material, dgn_AuthorityHandler::Material::GetHandler() },
-            { "DgnResources", SystemAuthority::Resource, dgn_AuthorityHandler::Resource::GetHandler() },
-            { "DgnColors", SystemAuthority::TrueColor, dgn_AuthorityHandler::TrueColor::GetHandler() },
-            { "DgnPartitions", SystemAuthority::Partition, dgn_AuthorityHandler::Partition::GetHandler() },
-            { "DgnGeometryPart", SystemAuthority::GeometryPart, dgn_AuthorityHandler::GeometryPart::GetHandler() },
-            { "DgnSessions", SystemAuthority::Session, dgn_AuthorityHandler::Session::GetHandler() },
-            { "DgnLinks", SystemAuthority::Link, dgn_AuthorityHandler::Link::GetHandler() },
-            { "DgnDrawings", SystemAuthority::Drawing, dgn_AuthorityHandler::Drawing::GetHandler() },
-            { "DgnSheets", SystemAuthority::Sheet, dgn_AuthorityHandler::Sheet::GetHandler() },
-            { "DgnDrawingCategories", SystemAuthority::DrawingCategory, dgn_AuthorityHandler::DrawingCategory::GetHandler() },
-            { "DgnSpatialCategories", SystemAuthority::SpatialCategory, dgn_AuthorityHandler::SpatialCategory::GetHandler() },
-            { "DgnSubCategories", SystemAuthority::SubCategory, dgn_AuthorityHandler::SubCategory::GetHandler() },
-        };
-
-    for (auto const& info : infos)
-        {
-        DbResult result = SystemAuthority::Insert(*this, statement, info);
-        if (BE_SQLITE_DONE != result)
-            return result;
-
-        statement.Reset();
+        BeAssert(false);
+        return BE_SQLITE_ERROR;
         }
 
     return BE_SQLITE_OK;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DrawingCategoryAuthority::CreateDrawingCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::DrawingCategory, name, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SpatialCategoryAuthority::CreateSpatialCategoryCode(Utf8StringCR name, Utf8StringCR nameSpace)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::SpatialCategory, name, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SubCategoryAuthority::CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR name)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::SubCategory, name, categoryId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnSubCategory::CreateSubCategoryCode(DgnCategoryCR cat, Utf8StringCR name)
-    {
-    return CreateSubCategoryCode(cat.GetCategoryId(), name);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode MaterialAuthority::CreateMaterialCode(Utf8StringCR palette, Utf8StringCR material)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Material, material, palette);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode TrueColorAuthority::CreateTrueColorCode(Utf8StringCR name, Utf8StringCR book)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::TrueColor, name, book);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ResourceAuthority::CreateResourceCode(Utf8StringCR name, Utf8StringCR nameSpace)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Resource, name, nameSpace);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnAuthorityId ResourceAuthority::GetResourceAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Resource); }
-DgnAuthorityId MaterialAuthority::GetMaterialAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Material); }
-DgnAuthorityId DrawingCategoryAuthority::GetDrawingCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::DrawingCategory); }
-DgnAuthorityId SpatialCategoryAuthority::GetSpatialCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::SpatialCategory); }
-DgnAuthorityId SubCategoryAuthority::GetSubCategoryAuthorityId() { return SystemAuthority::GetId(SystemAuthority::SubCategory); }
-DgnAuthorityId GeometryPartAuthority::GetGeometryPartAuthorityId() { return SystemAuthority::GetId(SystemAuthority::GeometryPart); }
-DgnAuthorityId TrueColorAuthority::GetTrueColorAuthorityId() { return SystemAuthority::GetId(SystemAuthority::TrueColor); }
-DgnAuthorityId LinkAuthority::GetLinkAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Link); }
-DgnAuthorityId PartitionAuthority::GetPartitionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Partition); }
-DgnAuthorityId SessionAuthority::GetSessionAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Session); }
-DgnAuthorityId DrawingAuthority::GetDrawingAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Drawing); }
-DgnAuthorityId SheetAuthority::GetSheetAuthorityId() { return SystemAuthority::GetId(SystemAuthority::Sheet); }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool validateResourceCode(DgnCode const& code, Utf8CP nameSpace)
-    {
-    return code.GetAuthority() == SystemAuthority::GetId(SystemAuthority::Resource) && code.GetNamespace().Equals(nameSpace) && !code.GetValue().empty();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ResourceAuthority::CreateViewDefinitionCode(Utf8StringCR name)
-    {
-    return CreateResourceCode(name, BIS_CLASS_ViewDefinition);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ViewDefinition::IsValidCode(DgnCode const& code)
-    {
-    return validateResourceCode(code, BIS_CLASS_ViewDefinition);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DgnTexture::CreateTextureCode(Utf8StringCR name)
-    {
-    // unnamed textures are supported.
-    return name.empty() ? DgnCode::CreateEmpty() : ResourceAuthority::CreateResourceCode(name, BIS_CLASS_Texture);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode LinkAuthority::CreateLinkCode(Utf8StringCR codeValue, DgnElementId scopeId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Link, codeValue, scopeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode PartitionAuthority::CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Partition, codeValue, scopeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DrawingAuthority::CreateDrawingCode(Utf8StringCR codeValue, DgnElementId scopeId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Drawing, codeValue, scopeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SheetAuthority::CreateSheetCode(Utf8StringCR codeValue, DgnElementId scopeId)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Sheet, codeValue, scopeId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode GeometryPartAuthority::CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR ns)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::GeometryPart, name, ns);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode SessionAuthority::CreateSessionCode(Utf8StringCR codeValue)
-    {
-    return SystemAuthority::CreateCode(SystemAuthority::Session, codeValue);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -593,8 +501,7 @@ DgnCode SessionAuthority::CreateSessionCode(Utf8StringCR codeValue)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty()
     {
-    // The default code is not unique and has no special meaning.
-    return SystemAuthority::CreateCode(SystemAuthority::Local, "");
+    return NullAuthority::CreateCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -658,47 +565,12 @@ DgnDbStatus DgnAuthority::_RegenerateCode(DgnCodeR regeneratedCode, DgnElementCR
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus PartitionAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    DgnDbStatus status = T_Super::_ValidateCode(element);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    if (element.GetCode().IsEmpty())
-        return DgnDbStatus::InvalidName; // InformationPartitionElements must have names
-
-    // Partitions use the same name validation function as Models
-    return DgnModels::IsValidName(element.GetCode().GetValue()) ? DgnDbStatus::Success : DgnDbStatus::InvalidName;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingAuthority::_ValidateCode(DgnElementCR element) const
+DgnDbStatus ModelScopeAuthority::_ValidateCode(DgnElementCR element) const
     {
-    return element.GetCode().IsEmpty() ? DgnDbStatus::InvalidName : T_Super::_ValidateCode(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SheetAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    return element.GetCode().IsEmpty() ? DgnDbStatus::InvalidName : T_Super::_ValidateCode(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DrawingCategoryAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    if (nullptr == dynamic_cast<DrawingCategoryCP>(&element))
-        return DgnDbStatus::InvalidCodeAuthority;
-
     DgnCodeCR code = element.GetCode();
-    if (code.IsEmpty() || !DgnCategory::IsValidName(code.GetValue()) || !code.GetNamespace().empty())
+    if (code.GetValue().empty() || code.GetNamespace().empty())
         return DgnDbStatus::InvalidName;
 
     return T_Super::_ValidateCode(element);
@@ -707,28 +579,10 @@ DgnDbStatus DrawingCategoryAuthority::_ValidateCode(DgnElementCR element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SpatialCategoryAuthority::_ValidateCode(DgnElementCR element) const
+DgnDbStatus ElementScopeAuthority::_ValidateCode(DgnElementCR element) const
     {
-    if (nullptr == dynamic_cast<SpatialCategoryCP>(&element))
-        return DgnDbStatus::InvalidCodeAuthority;
-
     DgnCodeCR code = element.GetCode();
-    if (code.IsEmpty() || !DgnCategory::IsValidName(code.GetValue()) || !code.GetNamespace().empty())
-        return DgnDbStatus::InvalidName;
-
-    return T_Super::_ValidateCode(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus SubCategoryAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    if (nullptr == dynamic_cast<DgnSubCategoryCP>(&element))
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    DgnCodeCR code = element.GetCode();
-    if (code.IsEmpty() || code.GetNamespace().empty() || !DgnCategory::IsValidName(code.GetValue()))
+    if (code.GetValue().empty() || code.GetNamespace().empty())
         return DgnDbStatus::InvalidName;
 
     return T_Super::_ValidateCode(element);

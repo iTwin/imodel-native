@@ -56,7 +56,7 @@ DGNPLATFORM_EXPORT static BentleyStatus CurveTopologyIdFromEdge(CurveTopologyId&
 DGNPLATFORM_EXPORT static BentleyStatus AssignConeFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus AssignSlabFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus AssignTorusFaceIds(PK_BODY_t bodyTag, uint32_t nodeId);
-DGNPLATFORM_EXPORT static BentleyStatus AssignProfileBodyIds(PK_BODY_t bodyTag, uint32_t nodeId);
+DGNPLATFORM_EXPORT static BentleyStatus AssignProfileBodyIds(PK_BODY_t bodyTag, uint32_t nodeId, bool singleHoleLoopPriority = false);
 DGNPLATFORM_EXPORT static uint32_t AssignSweptProfileLateralIds(int nLaterals, int* baseArray, int* laterals);
 DGNPLATFORM_EXPORT static BentleyStatus AssignEdgeIds(PK_BODY_t bodyTag, uint32_t nodeId, bool overrideExisting); // NOTE: Edges normally identified by a pair of faces, not this attribute stored on the edge...
 DGNPLATFORM_EXPORT static BentleyStatus AssignFaceIds(PK_BODY_t bodyTag, uint32_t nodeId, bool overrideExisting);
@@ -114,7 +114,7 @@ DGNPLATFORM_EXPORT static BentleyStatus GetBodyEdgesAndFaces(bvector<PK_ENTITY_t
 
 DGNPLATFORM_EXPORT static BentleyStatus GetFaceEdges(bvector<PK_EDGE_t>& edges, PK_FACE_t face);
 DGNPLATFORM_EXPORT static BentleyStatus GetFaceVertices(bvector<PK_VERTEX_t>& vertices, PK_FACE_t face);
-DGNPLATFORM_EXPORT static BentleyStatus GetFaceLoops(bvector<PK_LOOP_t>& edges, PK_FACE_t face);
+DGNPLATFORM_EXPORT static BentleyStatus GetFaceLoops(bvector<PK_LOOP_t>& loops, PK_FACE_t face);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetEdgeFaces(bvector<PK_FACE_t>& faces, PK_EDGE_t edge);
 DGNPLATFORM_EXPORT static BentleyStatus GetEdgeVertices(bvector<PK_VERTEX_t>& vertices, PK_EDGE_t edge);
@@ -274,17 +274,19 @@ DGNPLATFORM_EXPORT static BentleyStatus SweepBodyAxis(PK_BODY_t bodyTag, DVec3dC
 DGNPLATFORM_EXPORT static BentleyStatus Boolean(PK_BODY_t** ppResultBodies, int* pNumResultBodies, PK_boolean_function_t boolOpIn, bool generalTopology, PK_BODY_t blankBodyIn, PK_BODY_t* pToolBodies, int numToolBodiesIn, PKIBooleanOptionEnum booleanOptions);
 DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<PK_BODY_t>& bodies, PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus TransformBody(PK_BODY_t body, TransformCR transform);
+DGNPLATFORM_EXPORT static BentleyStatus FixBlends(PK_BODY_t bodyTag);
 
 DGNPLATFORM_EXPORT static BentleyStatus CheckBody(PK_BODY_t body, bool checkGeometry, bool checkTopology, bool checkSize);
 DGNPLATFORM_EXPORT static bool AreBodiesEqual(PK_BODY_t body1Tag, PK_BODY_t body2Tag, double tolerance, TransformCP deltaTransform1To2);
 DGNPLATFORM_EXPORT static BentleyStatus MassProperties(double* amount, double* periphery, DPoint3dP centroid, double inertia[3][3], PK_BODY_t bodyTag, TransformCP transform, double tolerance);
 
-DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
 DGNPLATFORM_EXPORT static bool LocateSubEntities(PK_ENTITY_t bodyTag, TransformCR bodyTransform, bvector<PK_ENTITY_t>& subEntities, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, size_t maxFace, size_t maxEdge, size_t maxVertex, DRay3dCR boresite, double maxEdgeDistance, double maxVertexDistance);
 DGNPLATFORM_EXPORT static bool RayTestFace(PK_FACE_t faceTag, TransformCR bodyTransform, bvector<DPoint3d>& intersectPts, bvector<DPoint2d>& intersectParams, DRay3dCR boresite);
 DGNPLATFORM_EXPORT static bool ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bodyTransform, PK_ENTITY_t& entityTag, DPoint3dR point, DPoint2dR param, double& distance, DPoint3dCR testPt);
 DGNPLATFORM_EXPORT static bool ClosestPointToFace(PK_FACE_t faceTag, TransformCR bodyTransform, DPoint3dR point, DPoint2dR uvParam, double& distance, DPoint3dCR testPt);
 DGNPLATFORM_EXPORT static bool ClosestPointToEdge(PK_EDGE_t edgeTag, TransformCR bodyTransform, DPoint3dR point, double& uParam, double& distance, DPoint3dCR testPt);
+
+DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
 
 }; // PSolidUtil
 

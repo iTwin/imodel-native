@@ -35,6 +35,7 @@ void Cache::Worker::SaveChanges()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Cache::Worker::Work()
     {
+    m_cache.m_workerRunning = true;
     for(;;)
         {
         if (true)
@@ -49,10 +50,14 @@ void Cache::Worker::Work()
             }
 
         if (m_cache.IsStopped())
-            return;
+            break;
 
         SaveChanges(); // make sure we call this WITHOUT the mutex held
         }
+
+    BeMutexHolder lock(m_cache.m_cv.GetMutex());
+    m_cache.m_workerRunning = false;
+    m_cache.m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -92,7 +97,7 @@ Cache::~Cache()
     m_cv.notify_all();
 
     BeMutexHolder holder(m_cv.GetMutex()); 
-    while (m_accessors>0 || m_saveActive) 
+    while (m_accessors>0 || m_saveActive || m_workerRunning) 
         m_cv.InfiniteWait(holder);
     }
 

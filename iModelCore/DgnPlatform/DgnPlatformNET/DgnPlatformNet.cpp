@@ -5,6 +5,11 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+
+//
+// NOTE: As of November 22, 2016, this is up to date with the object model in version [7e63c6be68f8] of dgnjsapi.d.ts
+//
+
 #pragma unmanaged
 
 #include <DgnPlatform/DgnPlatformAPI.h>
@@ -1287,7 +1292,7 @@ public:
     /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
     DgnCategory^ GetCategory (DgnCategoryId^ categoryId)
         {
-        BDGN::DgnCategoryCPtr nativeCategory = BDGN::DgnCategory::QueryCategory (BDGN::DgnCategoryId (categoryId->Value), *Convert::DgnDbToNative (this));
+        BDGN::DgnCategoryCPtr nativeCategory = BDGN::SpatialCategory::Get (*Convert::DgnDbToNative (this), BDGN::DgnCategoryId (categoryId->Value));
         return Convert::DgnCategoryToManaged (const_cast <BDGN::DgnCategoryP>(nativeCategory.get()), this);
         }
 
@@ -1521,7 +1526,7 @@ internal:
     DgnCategoryIdSet (DgnDb^ dgnDb)
         {
         BDGN::DgnDbP            dgnDbNative = Convert::DgnDbToNative (dgnDb);
-        BDGN::ElementIterator   iterator = BDGN::DgnCategory::MakeIterator (*dgnDbNative, nullptr, nullptr);
+        BDGN::ElementIterator   iterator = BDGN::SpatialCategory::MakeIterator (*dgnDbNative, nullptr, nullptr);
         bvector<BDGN::DgnCategoryId>* idList = new bvector <BDGN::DgnCategoryId>();
         iterator.BuildIdList<BDGN::DgnCategoryId>(*idList);
         m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (idList);
@@ -1926,14 +1931,14 @@ public:
         {
         pin_ptr<wchar_t const> namePinned = PtrToStringChars (name);
         Utf8String utf8Name (namePinned);
-        BDGN::DgnCategoryId nativeCategoryId = BDGN::DgnCategory::QueryCategoryId (utf8Name, *Convert::DgnDbToNative (dgnDb));
+        BDGN::DgnCategoryId nativeCategoryId = BDGN::SpatialCategory::QueryCategoryId (*Convert::DgnDbToNative (dgnDb), utf8Name);
         return gcnew DgnCategoryId (nativeCategoryId.GetValue());
         }
 
     /** Find or load the Category with the specified ID. @param id The ID to look up. @param db The DgnDb that contains the Category. @return The Category if found */
     static DgnCategory^ QueryCategory (DgnCategoryId^ categoryId,  DgnNET::DgnDb^ dgnDb)
         {
-        BDGN::DgnCategoryCPtr nativeCategory = BDGN::DgnCategory::QueryCategory (BDGN::DgnCategoryId (categoryId->Value), *Convert::DgnDbToNative (dgnDb));
+        BDGN::DgnCategoryCPtr nativeCategory = BDGN::SpatialCategory::Get (*Convert::DgnDbToNative (dgnDb), BDGN::DgnCategoryId (categoryId->Value));
         return gcnew DgnCategory (const_cast <BDGN::DgnCategoryP>(nativeCategory.get()), dgnDb);
         }
 

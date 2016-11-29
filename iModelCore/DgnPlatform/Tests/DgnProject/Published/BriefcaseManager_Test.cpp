@@ -71,10 +71,13 @@ public:
     RepositoryManager();
 
     // Simulates what the real server does with codes when a revision is pushed.
-    void OnFinishRevision(DgnRevision const& rev)
+    void OnFinishRevision(DgnRevision const& rev, DgnDbCR dgndb)
         {
-        MarkRevision(rev.GetAssignedCodes(), false, rev.GetId());
-        MarkRevision(rev.GetDiscardedCodes(), true, rev.GetId());
+        DgnCodeSet assignedCodes, discardedCodes;
+        rev.ExtractCodes(assignedCodes, discardedCodes, dgndb);
+
+        MarkRevision(assignedCodes, false, rev.GetId());
+        MarkRevision(discardedCodes, true, rev.GetId());
         }
 
     void MarkUsed(DgnCode const& code, Utf8StringCR revision)
@@ -1537,9 +1540,12 @@ struct DoubleBriefcaseTest : LocksManagerTest
         DgnModelPtr modelA2d0 = CreateModel("Model2d", *m_db);
         CreateElement(*modelA2d0.get(), false);
         CreateElement(*modelA2d0.get(), false);
+        _InitMasterFile();
         m_db->SaveChanges();
         ClearRevisions(*m_db);
         }
+
+    virtual void _InitMasterFile() { };
 
     void SetupDbs(uint32_t baseBcId=2)
         {
@@ -2150,8 +2156,8 @@ TEST_F (FastQueryTest, CacheCodes)
     DgnDbR dbA = *m_dbA,
            dbB = *m_dbB;
 
-    DgnCode code1 = DgnMaterial::CreateMaterialCode("Code", "One"),
-            code2 = DgnMaterial::CreateMaterialCode("Code", "Two");
+    DgnCode code1 = DgnMaterial::CreateCode(dbA, "Code", "One"),
+            code2 = DgnMaterial::CreateCode(dbA, "Code", "Two");
 
     // reserve codes
     DgnCodeSet codes;
@@ -2166,7 +2172,7 @@ TEST_F (FastQueryTest, CacheCodes)
     Request req(ResponseOptions::CodeState);
     ExpectResponsesEqual(req, dbB);
 
-    DgnCode code3 = DgnMaterial::CreateMaterialCode("Code", "Three");
+    DgnCode code3 = DgnMaterial::CreateCode(dbA, "Code", "Three");
     req.Reset();
     req.SetOptions(ResponseOptions::CodeState);
     req.Codes().insert(code1);  // unavailable
@@ -2185,7 +2191,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -2199,7 +2205,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        req.FromRevision(*rev);
+        req.FromRevision(*rev, *m_db);
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
         }
@@ -2241,7 +2247,7 @@ TEST_F(ExtractLocksTest, UsedLocks)
         {
         UndoScope V_V_V_Undo(db);
         auto pEl = cpEl->CopyForEdit();
-        DgnCode newCode = SpatialCategory::CreateCode("RenamedCategory");
+        DgnCode newCode = SpatialCategory::CreateCode(db, "RenamedCategory");
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(newCode));
         IBriefcaseManager::Request bcreq;
         EXPECT_EQ(RepositoryStatus::Success, db.BriefcaseManager().PrepareForElementUpdate(bcreq, *pEl, IBriefcaseManager::PrepareAction::Acquire));
@@ -2294,9 +2300,9 @@ struct CodesManagerTest : RepositoryManagerTest
         SetupMasterFile();
         }
 
-    static DgnCode MakeCode(Utf8StringCR name, Utf8CP nameSpace = nullptr)
+    static DgnCode MakeCode(DgnDbR db, Utf8StringCR name, Utf8CP nameSpace = nullptr)
         {
-        return nullptr != nameSpace ? DgnMaterial::CreateMaterialCode(nameSpace, name) : SpatialCategory::CreateCode(name);
+        return nullptr != nameSpace ? DgnMaterial::CreateCode(db, nameSpace, name) : SpatialCategory::CreateCode(db, name);
         }
 
     static DgnCodeInfo MakeAvailable(DgnCodeCR code) { return DgnCodeInfo(code); }
@@ -2406,12 +2412,12 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
     {
     Utf8String revId;
     DgnRevisionPtr rev;
-    if (BE_SQLITE_OK != db.SaveChanges() || (rev = db.Revisions().StartCreateRevision(nullptr, DgnRevision::Include::Codes)).IsNull())
+    if (BE_SQLITE_OK != db.SaveChanges() || (rev = db.Revisions().StartCreateRevision()).IsNull())
         return revId;
 
     if (RevisionStatus::Success == db.Revisions().FinishCreateRevision())
         {
-        m_server.OnFinishRevision(*rev);
+        m_server.OnFinishRevision(*rev, db);
         revId = rev->GetId();
         }
 
@@ -2433,7 +2439,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
 
     // Reserve single code
-    DgnCode code = MakeCode("Palette", "Material");
+    DgnCode code = MakeCode(db, "Palette", "Material");
     req.insert(code);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);
@@ -2443,7 +2449,7 @@ TEST_F(CodesManagerTest, ReserveQueryRelinquish)
     ExpectState(MakeAvailable(code), db);
 
     // Reserve 2 codes
-    DgnCode code2 = MakeCode("Category");
+    DgnCode code2 = MakeCode(db, "Category");
     req.insert(code2);
     EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
     ExpectState(MakeReserved(code, db), db);
@@ -2610,5 +2616,87 @@ TEST_F(CodesManagerTest, CodesInRevisions)
     EXPECT_STATUS(Success, mgr.RelinquishCodes());
     ExpectState(MakeDiscarded(unusedCode, rev3), db);
     ExpectState(MakeDiscarded(usedCode, rev2), db);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct IndirectLocksTest : DoubleBriefcaseTest
+{
+    DgnElementId    m_displayStyleId;
+
+    virtual void _InitMasterFile() override
+        {
+        DisplayStyle style(*m_db, "MyDisplayStyle");
+        style.Insert();
+        m_displayStyleId = style.GetElementId();
+        ASSERT_TRUE(m_displayStyleId.IsValid());
+        }
+
+    void Acquire(DgnElementCR el, BeSQLite::DbOpcode op)
+        {
+        IBriefcaseManager::Request req;
+        EXPECT_STATUS(Success, el.PopulateRequest(req, op));
+        EXPECT_STATUS(Success, el.GetDgnDb().BriefcaseManager().Acquire(req).Result());
+        }
+
+    bool DeleteDisplayStyle(DgnDbR db);
+    bool CreateView(DgnDbR db);
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IndirectLocksTest::DeleteDisplayStyle(DgnDbR db)
+    {
+    auto style = DisplayStyle::GetByName(db, "MyDisplayStyle");
+    EXPECT_TRUE(style.IsValid());
+    if (!style.IsValid())
+        return false;
+
+    Acquire(*style, BeSQLite::DbOpcode::Delete);
+    return DgnDbStatus::Success == style->Delete();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IndirectLocksTest::CreateView(DgnDbR db)
+    {
+    CategorySelectorPtr categorySelector = new CategorySelector(db, "MyCategorySelector");
+    Acquire(*categorySelector, BeSQLite::DbOpcode::Insert);
+    if (!categorySelector->Insert().IsValid())
+        return false;
+
+    auto displayStyleA = db.Elements().GetForEdit<DisplayStyle>(m_displayStyleId);
+    EXPECT_TRUE(displayStyleA.IsValid());
+    if (!displayStyleA.IsValid())
+        return false;
+
+    DrawingViewDefinition view(db, "MyView", Model2dId(), *categorySelector, *displayStyleA);
+    Acquire(view, BeSQLite::DbOpcode::Insert);
+    return view.Insert().IsValid();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IndirectLocksTest, UseThenDelete)
+    {
+    SetupDbs();
+
+    EXPECT_TRUE(CreateView(*m_dbA));
+    EXPECT_FALSE(DeleteDisplayStyle(*m_dbB));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(IndirectLocksTest, DeleteThenUse)
+    {
+    SetupDbs();
+
+    EXPECT_TRUE(DeleteDisplayStyle(*m_dbB));
+    EXPECT_FALSE(CreateView(*m_dbA));
     }
 

@@ -1034,7 +1034,7 @@ BentleyStatus   PSolidTopoId::AssignTorusFaceIds (PK_BODY_t bodyTag, uint32_t no
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  10/11
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t nodeId)
+BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t nodeId, bool singleHoleLoopPriority)
     {
     PK_BODY_type_t  bodyType = 0;
     unsigned long   edgeEntityId = 1;
@@ -1043,31 +1043,36 @@ BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t no
 
     if (PK_BODY_type_sheet_c == bodyType)
         {
-        int     faceInd, numFace=0, *pFaceTagArray = NULL;
+        int faceInd, numFace=0, *pFaceTagArray = NULL;
 
         PK_BODY_ask_faces (bodyTag, &numFace, &pFaceTagArray);
         edgeEntityId = numFace*2+1;
 
         for (faceInd = 0; faceInd < numFace; faceInd++)
             {
-            int     loopInd, numLoop = 0, *pLoopTagArray = NULL;
+            int loopInd, numLoop = 0, *pLoopTagArray = NULL;
 
             PK_FACE_ask_loops (pFaceTagArray[faceInd], &numLoop, &pLoopTagArray);
 
             if (numLoop > 1)
                 {
+                PK_LOOP_type_t priorityLoopType = PK_LOOP_type_outer_c;
+
+                if (singleHoleLoopPriority && 2 == numLoop)
+                    priorityLoopType = PK_LOOP_type_inner_c;
+
                 for (loopInd = 0; loopInd < numLoop; loopInd++)
                     {
                     PK_LOOP_type_t      loopType;
 
                     PK_LOOP_ask_type (pLoopTagArray[loopInd], &loopType);
 
-                    if (loopType == PK_LOOP_type_outer_c)
+                    if (loopType == priorityLoopType)
                         {
-                        PK_LOOP_t   outerLoopTag = pLoopTagArray[loopInd];
+                        PK_LOOP_t tmpLoopTag = pLoopTagArray[loopInd];
 
                         pLoopTagArray[loopInd] = pLoopTagArray[0];
-                        pLoopTagArray[0]       = outerLoopTag;
+                        pLoopTagArray[0] = tmpLoopTag;
                         break;
                         }
                     }
@@ -1075,23 +1080,23 @@ BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t no
 
             for (loopInd = 0; loopInd < numLoop; loopInd++)
                 {
-                int     coedgeInd=0, coedgeCount=0, numCoedge = 0, *pCoedgeTagArray = NULL;
+                int coedgeInd=0, coedgeCount=0, numCoedge = 0, *pCoedgeTagArray = NULL;
 
                 PK_LOOP_ask_fins (pLoopTagArray[loopInd], &numCoedge, &pCoedgeTagArray);
 
                 if (numCoedge)
                     {
-                    PK_LOGICAL_t    coedgeSense;
+                    PK_LOGICAL_t coedgeSense;
 
                     PK_FIN_is_positive (pCoedgeTagArray[0], &coedgeSense);
 
                     do
                         {
-                        int     edgeTag = 0;
+                        int edgeTag = 0;
 
                         if (SUCCESS == PK_FIN_ask_edge (pCoedgeTagArray[coedgeInd], &edgeTag))
                             {
-                            int     nFins = 0;
+                            int nFins = 0;
 
                             PK_EDGE_ask_fins (edgeTag, &nFins, NULL);
 
@@ -1130,7 +1135,7 @@ BentleyStatus PSolidTopoId::AssignProfileBodyIds (PK_BODY_t bodyTag, uint32_t no
         }
     else if (PK_BODY_type_wire_c == bodyType)
         {
-        int     edgeInd, numEdges = 0, *pEdgeTagArray = NULL;
+        int edgeInd, numEdges = 0, *pEdgeTagArray = NULL;
 
         PK_BODY_ask_edges (bodyTag, &numEdges, &pEdgeTagArray);
 

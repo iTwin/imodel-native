@@ -123,53 +123,7 @@ void LockRequest::ExtractLockSet(DgnLockSet& locks)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::FromRevision(DgnRevision& rev)
+void LockRequest::FromRevision(DgnRevision& rev, DgnDbCR dgndb)
     {
-    rev.ExtractUsedLocks(m_locks);
+    rev.ExtractLocks(m_locks, dgndb);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                 Ramanujam.Raman   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void LockRequest::FromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet, bool stopOnFirst)
-    {
-    Clear();
-
-    for (ElementChangeEntry entry : DgnChangeIterator::MakeElementChangeIterator(dgndb, changeSet))
-        {
-        DgnModelId modelId;
-        switch (entry.GetDbOpcode())
-            {
-                case DbOpcode::Insert:  modelId = entry.GetNewModelId(); break;
-                case DbOpcode::Delete:  modelId = entry.GetOldModelId(); break;
-                case DbOpcode::Update:
-                    {
-                    modelId = entry.GetNewModelId();
-                    auto oldModelId = entry.GetOldModelId();
-                    if (oldModelId != modelId)
-                        InsertLock(LockableId(oldModelId), LockLevel::Shared);
-
-                    break;
-                    }
-            }
-
-        BeAssert(modelId.IsValid());
-        InsertLock(LockableId(modelId), LockLevel::Shared);
-        InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
-        if (stopOnFirst && !IsEmpty())
-            return;
-        }
-
-    // Any models directly changed?
-    for (ModelChangeEntry entry : DgnChangeIterator::MakeModelChangeIterator(dgndb, changeSet))
-        {
-        InsertLock(LockableId(LockableType::Model, entry.GetModelId()), LockLevel::Exclusive);
-        if (stopOnFirst && !IsEmpty())
-            return;
-        }
-
-    // Anything changed at all?
-    if (!IsEmpty())
-        Insert(dgndb, LockLevel::Shared);
-    }
-

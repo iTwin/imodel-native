@@ -239,7 +239,7 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, Render::GeometryParams* customParms)
     {
-    DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
+    DgnCategoryId cat = DgnSubCategory::QueryCategoryId(db, subcat);
 
     DgnElementPtr gelem;
     if (is3d)
@@ -284,8 +284,8 @@ static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rm
         return true;
     if (!lmatid.IsValid() || !rmatid.IsValid())
         return false;
-    DgnMaterialCPtr lmat = DgnMaterial::QueryMaterial(lmatid, ldb);
-    DgnMaterialCPtr rmat = DgnMaterial::QueryMaterial(rmatid, rdb);
+    DgnMaterialCPtr lmat = DgnMaterial::Get(ldb, lmatid);
+    DgnMaterialCPtr rmat = DgnMaterial::Get(rdb, rmatid);
     if (!lmat.IsValid() || !rmat.IsValid())
         return false;
     // Note that textureids will be different. So, we must compare only values that are not IDs.
@@ -369,7 +369,7 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
     ASSERT_TRUE( destSubCategoryId.IsValid() );
     //ASSERT_TRUE( destSubCategoryId != sourceSubCategory1Id );   don't know what Id it was assigned
     
-    DgnSubCategoryCPtr destSubCategory = DgnSubCategory::QuerySubCategory(destSubCategoryId, destDb);
+    DgnSubCategoryCPtr destSubCategory = DgnSubCategory::Get(destDb, destSubCategoryId);
     ASSERT_TRUE(destSubCategory.IsValid());
 
     ASSERT_TRUE(areDisplayParamsEqual(sourceDisplayParams, sourceDb, destDisplayParams, destDb));
@@ -487,11 +487,11 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create some Authorities. 
     DgnAuthorityId sourceAuthorityId;
-    RefCountedPtr<NamespaceAuthority> auth1;
+    RefCountedPtr<DatabaseScopeAuthority> auth1;
     {
-        auto auth0 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_NotUsed", *m_db);
-        auth1 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority", *m_db);
-        auto auth2 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_AlsoNotUsed", *m_db);
+        auto auth0 = DatabaseScopeAuthority::Create("TestAuthority_NotUsed", *m_db);
+        auth1 = DatabaseScopeAuthority::Create("TestAuthority", *m_db);
+        auto auth2 = DatabaseScopeAuthority::Create("TestAuthority_AlsoNotUsed", *m_db);
         ASSERT_EQ(DgnDbStatus::Success, auth0->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth1->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth2->Insert());
@@ -612,10 +612,10 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
+        db2->SaveChanges();
+
         ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
         TestElementDrivesElementHandler::GetHandler().Clear();
-
-        db2->SaveChanges();
     }
 }
 

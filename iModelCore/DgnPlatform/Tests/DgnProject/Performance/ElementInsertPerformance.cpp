@@ -317,17 +317,16 @@ struct PerformanceElementsTests : PerformanceElementsCRUDTestFixture
 //---------------------------------------------------------------------------------------
 TEST_F(PerformanceElementsTests, DISABLED_ElementsInsertStrategies)
     {
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 0, false, 0); // null FederationGuid, sequential IDs
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 1, true, 0); // random FederationGuid, sequential IDs
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 2, false, 1); // null FederationGuid, time-based IDs
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 3, true, 1); // random FederationGuid, time-based IDs
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 4, false, 2); // null FederationGuid, alternating briefcase IDs
-    ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, 0, 500 * 1000 + 5, true, 2); // random FederationGuid, alternating briefcase IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 0, false, 0); // null FederationGuid, sequential IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 1, true, 0); // random FederationGuid, sequential IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 2, false, 1); // null FederationGuid, time-based IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 3, true, 1); // random FederationGuid, time-based IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 4, false, 2); // null FederationGuid, alternating briefcase IDs
+    ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, 0, 500 * 1000 + 5, true, 2); // random FederationGuid, alternating briefcase IDs
     }
 
-static bool needSqlECSql = true;
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                     Muhammad Hassan                  11/15
+// @bsimethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementsTests, ElementsInsert)
     {
@@ -338,74 +337,38 @@ TEST_F(PerformanceElementsTests, ElementsInsert)
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
-            }
-
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 100000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
-            }
-
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 1000000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            //SqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
 
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-            ECSqlInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
-            }
-
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiInsertTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiInsertTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                     Muhammad Hassan                  11/15
+// @bsimethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementsTests, ElementsRead)
     {
@@ -416,74 +379,38 @@ TEST_F(PerformanceElementsTests, ElementsRead)
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL*/, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 100000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 1000000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
-            //SqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false /* optimal SQL */, false, initInstanceCount, opCount);
 
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiSelectTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiSelectTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                     Muhammad Hassan                  11/15
+// @bsimethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementsTests, ElementsUpdate)
     {
@@ -494,74 +421,38 @@ TEST_F(PerformanceElementsTests, ElementsUpdate)
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 100000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 1000000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiUpdateTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiUpdateTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
     }
 
 //---------------------------------------------------------------------------------------
-// @bsiMethod                                     Muhammad Hassan                  11/15
+// @bsimethod                                     Muhammad Hassan                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceElementsTests, ElementsDelete)
     {
@@ -572,68 +463,32 @@ TEST_F(PerformanceElementsTests, ElementsDelete)
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 100000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
 
     initInstanceCount = 1000000;
     for (int i = 1; i <= 3; i++)
         {
         opCount = insertCount*i;
-        if (needSqlECSql)
-            {
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            //SqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
 
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, false, initInstanceCount, opCount);
-            ECSqlDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, false, initInstanceCount, opCount);
-            }
-
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT1_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT2_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT3_CLASS, initInstanceCount, opCount);
-        ApiDeleteTime(ELEMENT_PERFORMANCE_ELEMENT4_CLASS, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENT_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB1_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB2_CLASS_NAME, initInstanceCount, opCount);
+        ApiDeleteTime(PERF_TEST_PERFELEMENTSUB3_CLASS_NAME, initInstanceCount, opCount);
         }
     }

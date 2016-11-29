@@ -178,7 +178,7 @@ public:
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
-    GeoPointCR GetGeoLocation() const { return m_geoLocation; }
+    GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     bool GetIncremental() const { return m_publish; }
 
@@ -197,7 +197,7 @@ public:
 DgnViewId PublisherParams::GetViewId(DgnDbR db) const
     {
     if (!m_viewName.empty())
-        return ViewDefinition::QueryViewId(m_viewName, db);
+        return ViewDefinition::QueryViewId(db, m_viewName);
 
     // Try default view
     DgnViewId viewId;
@@ -207,8 +207,8 @@ DgnViewId PublisherParams::GetViewId(DgnDbR db) const
     // Try first spatial view
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
-        auto view = ViewDefinition::QueryView(entry.GetId(), db);
-        if (view.IsValid() && view->IsSpatialView())
+        auto view = ViewDefinition::Get(db, entry.GetId());
+        if (view.IsValid() && (view->IsSpatialView() || view->IsDrawingView()))
             {
             viewId = view->GetViewId();
             break;
@@ -224,7 +224,7 @@ DgnViewId PublisherParams::GetViewId(DgnDbR db) const
 ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db)
     {
     DgnViewId viewId = GetViewId(db);
-    ViewDefinitionCPtr view = ViewDefinition::QueryView(viewId, db);
+    ViewDefinitionCPtr view = ViewDefinition::Get(db, viewId);
     if (view.IsNull())
         {
         printf("View not found\n");
@@ -439,7 +439,7 @@ public:
         auto& db = viewController.GetDgnDb();
         for (auto& view : ViewDefinition::MakeIterator(db))
             {
-            auto viewDefinition = ViewDefinition::QueryView(view.GetId(), db);
+            auto viewDefinition = ViewDefinition::Get(db, view.GetId());
             auto spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
             if (nullptr == spatialView)
                 continue;
@@ -735,7 +735,7 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), &createParams.GetGeoLocation(), s_maxTilesetDepth, 
+    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
                                                 createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental());
 
     if (!createParams.GetOverwriteExistingOutputFile())

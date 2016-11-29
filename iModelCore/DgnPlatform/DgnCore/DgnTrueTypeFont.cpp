@@ -69,6 +69,7 @@ public:
     virtual BentleyStatus _FillGpa(GPArrayR) const override;
     virtual bool _IsBlank() const override;
     FT_Face GetFace() const { return m_face; }
+    DoFixup _DoFixup () const override { return DoFixup::Always; }
 };
 
 //---------------------------------------------------------------------------------------

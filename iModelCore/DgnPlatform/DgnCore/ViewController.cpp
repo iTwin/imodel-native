@@ -138,7 +138,7 @@ void ViewController::_StoreState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewController::SaveAs(Utf8CP newName)
     {
-    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(newName));
+    DgnElement::CreateParams params(GetDgnDb(), m_definition->GetModelId(), m_definition->GetElementClassId(), ViewDefinition::CreateCode(GetDgnDb(), newName));
 
     ViewDefinitionPtr newView = dynamic_cast<ViewDefinitionP>(m_definition->Clone(nullptr, &params).get());
     BeAssert(newView.IsValid());
@@ -199,8 +199,8 @@ bool ViewController::_IsPointAdjustmentRequired(DgnViewportR vp) const {return v
 bool ViewController::_IsSnapAdjustmentRequired(DgnViewportR vp, bool snapLockEnabled) const {return snapLockEnabled && vp.Is3dView();}
 bool ViewController::_IsContextRotationRequired(DgnViewportR vp, bool contextLockEnabled) const {return contextLockEnabled;}
 
-static bool equalOne(double r1) {return BeNumerical::Compare(r1, 1.0) == 0;}
-static bool equalMinusOne(double r1) {return BeNumerical::Compare(r1, -1.0) == 0;}
+static bool equalOne(double r1) {return DoubleOps::AlmostEqual(r1, 1.0);}
+static bool equalMinusOne(double r1) {return DoubleOps::AlmostEqual(r1, -1.0);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   03/89

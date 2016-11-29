@@ -15,18 +15,11 @@
 #include "ECSqlStatementIterator.h"
 #include "Render.h"
 
-#define BIS_CLASS_ViewDefinition "ViewDefinition"
-#define BIS_CLASS_ViewDefinition3d "ViewDefinition3d"
-#define BIS_CLASS_ViewDefinition2d "ViewDefinition2d"
 #define BIS_CLASS_SpatialViewDefinition "SpatialViewDefinition"
 #define BIS_CLASS_OrthographicViewDefinition "OrthographicViewDefinition"
 #define BIS_CLASS_CameraViewDefinition "CameraViewDefinition"
 #define BIS_CLASS_DrawingViewDefinition "DrawingViewDefinition"
 #define BIS_CLASS_SheetViewDefinition "SheetViewDefinition"
-#define BIS_CLASS_ModelSelector "ModelSelector"
-#define BIS_CLASS_CategorySelector "CategorySelector"
-#define BIS_CLASS_DisplayStyle "DisplayStyle"
-#define BIS_CLASS_DisplayStyle3d "DisplayStyle3d"
 #define BIS_CLASS_ClipVolume "ClipVolume"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
@@ -84,10 +77,10 @@ public:
     //! Construct a new DisplayStyle.
     //! @param[in] db The DgnDb to hold the DisplayStyle
     //! @param[in] name The name of the DisplayStyle. Must be unique across all DisplayStyles
-    DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+    DisplayStyle(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     //! Get a DisplayStyle by name.
-    static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(name)));}
+    static DisplayStyleCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<DisplayStyle>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     void CopyAllStyles(DisplayStyle const& rhs) {m_styles = rhs.m_styles;}
 
@@ -132,7 +125,7 @@ public:
     //! is not overridden, this will return the default appearance of the SubCategory.
     DGNPLATFORM_EXPORT DgnSubCategory::Appearance GetSubCategoryAppearance(DgnSubCategoryId id) const;
 
-    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateDisplayStyleCode(name);}//!< @private
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_DisplayStyle, db, name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DisplayStyle));}//!< @private
 };
 
@@ -186,7 +179,7 @@ public:
     //! Construct a new DisplayStyle3d.
     //! @param[in] db The DgnDb to hold the DisplayStyle3d
     //! @param[in] name The name of the DisplayStyle3d. Must be unique across all DisplayStyles
-    DisplayStyle3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {m_environment.Initialize();}
+    DisplayStyle3d(DgnDbR db, Utf8StringCR name="") : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {m_environment.Initialize();}
 
     /** @name Environment Display*/
     /** @{ */
@@ -198,6 +191,7 @@ public:
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
+    EnvironmentDisplay& GetEnvironmentDisplayR() {return m_environment;}
 
     //! Change the current values for the Environment Display for this DisplayStyle3d
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment = val;}
@@ -236,12 +230,12 @@ public:
     //! Construct a new ModelSelector.
     //! @param[in] db The DgnDb to hold the ModelSelector
     //! @param[in] name The name of the ModelSelector. Must be unique across all ModelSelectors
-    ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+    ModelSelector(DgnDbR db, Utf8StringCR name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ModelSelector
 
     //! Get a ModelSelector by name.
-    static ModelSelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<ModelSelector>(elements.QueryElementIdByCode(CreateCode(name)));}
+    static ModelSelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<ModelSelector>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     //! Query if the specified DgnModelId is selected by this ModelSelector
     bool ContainsModel(DgnModelId modelId) const {return m_models.Contains(modelId);}
@@ -258,7 +252,7 @@ public:
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
     static DgnDbStatus OnModelDelete(DgnDbR, DgnModelId); //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateModelSelectorCode(name);}//!< @private
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_ModelSelector, db, name);}//!< @private
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
 };
 
@@ -288,13 +282,13 @@ protected:
 
 public:
     //! Construct a new CategorySelector
-    CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(name))) {}
+    CategorySelector(DgnDbR db, Utf8CP name) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryClassId(db), CreateCode(db, name))) {}
 
     //! Get the name of this CategorySelector
     Utf8String GetName() const {return GetCode().GetValue();} 
 
     //! Get a CategorySelector by name.
-    static CategorySelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<CategorySelector>(elements.QueryElementIdByCode(CreateCode(name)));}
+    static CategorySelectorCPtr GetByName(DgnDbR db, Utf8StringCR name){auto& elements = db.Elements(); return elements.Get<CategorySelector>(elements.QueryElementIdByCode(CreateCode(db, name)));}
 
     //! Get the set of currently displayed DgnCategories
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
@@ -317,7 +311,7 @@ public:
     DGNPLATFORM_EXPORT static DgnElementIdSet QuerySelectors(DgnDbR db);
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_CategorySelector));} //!< @private
-    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateCategorySelectorCode(name);} //!< @private
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_CategorySelector, db, name);} //!< @private
 };
 
 //=======================================================================================
@@ -359,7 +353,7 @@ protected:
     void ClearState() const {m_categorySelector = nullptr; m_displayStyle = nullptr;}
     static Utf8CP str_Source() {return "Source";}
     static Utf8CP str_Descr() {return "Descr";}
-    static bool IsValidCode(DgnCode const& code);
+    static bool IsValidCode(DgnCodeCR code);
 
     explicit ViewDefinition(CreateParams const& params) : T_Super(params) {if (params.m_categorySelector.IsValid()) SetCategorySelector(*params.m_categorySelector); 
                                                                            if (params.m_displayStyle.IsValid()) SetDisplayStyle(*params.m_displayStyle);}
@@ -375,7 +369,7 @@ protected:
     void _OnDeleted() const override {DeleteThumbnail(); T_Super::_OnDeleted();}
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
-    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override {return ResourceAuthority::IsResourceAuthority(auth);}
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     DgnDbStatus _SetParentId(DgnElementId) override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
@@ -399,7 +393,6 @@ protected:
     Utf8String ToDetailJson();
 
 public:
-
     //! Determine whether two ViewDefinitions are "equal", including their unsaved "state"
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
@@ -410,7 +403,7 @@ public:
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
     Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
-    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(name));} //!< Change this ViewDefinition's name
+    DgnDbStatus SetName(Utf8StringCR name) {return SetCode(CreateCode(GetDgnDb(), name));} //!< Change this ViewDefinition's name
 
     /** @name ViewDefinition Details */
     /** @{ */
@@ -437,22 +430,19 @@ public:
     DGNPLATFORM_EXPORT static ViewControllerPtr LoadViewController(DgnViewId viewId, DgnDbR db);
 
     //! Create a DgnCode for a view with the specified name
-    static DgnCode CreateCode(Utf8StringCR name) {return name.empty() ? DgnCode() : ResourceAuthority::CreateViewDefinitionCode(name);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) {return name.empty() ? DgnCode() : DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_ViewDefinition, db, name);}
 
     //! Look up the Id of the view with the specified DgnCode
-    DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnCode const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnViewId QueryViewId(DgnDbR db, DgnCodeCR code);
 
     //! Look up the Id of the view with the specified name
-    static DgnViewId QueryViewId(Utf8StringCR name, DgnDbR db) {return QueryViewId(CreateCode(name), db);}
+    static DgnViewId QueryViewId(DgnDbR db, Utf8StringCR name) {return QueryViewId(db, CreateCode(db, name));}
 
     //! Look up a view by Id
-    static ViewDefinitionCPtr QueryView(DgnViewId viewId, DgnDbR db) {return db.Elements().Get<ViewDefinition>(viewId);}
+    static ViewDefinitionCPtr Get(DgnDbR db, DgnViewId viewId) {return db.Elements().Get<ViewDefinition>(viewId);}
 
     //! Look up a view by name
-    static ViewDefinitionCPtr QueryView(Utf8StringCR name, DgnDbR db) {return QueryView(QueryViewId(name, db), db);}
-
-    //! Get a ViewDefinition by name. This is just an alias for QueryView with the arguments reversed.
-    static ViewDefinitionCPtr GetByName(DgnDbR db, Utf8StringCR name) {return QueryView(name,db);}
+    static ViewDefinitionCPtr Get(DgnDbR db, Utf8StringCR name) {return Get(db, QueryViewId(db, name));}
 
     //! An entry in an iterator over the views in a DgnDb
     struct Entry : ECSqlStatementEntry
@@ -481,7 +471,7 @@ public:
             DgnDbP db = this->GetDgnDb();
             if (!(this->*TestFunc)() || (nullptr == db))
                 return nullptr;
-            auto vc = ViewDefinition::QueryView(this->GetId(), *db);
+            auto vc = ViewDefinition::Get(*db, this->GetId());
             if (!vc.IsValid())
                 {
                 BeAssert(false);
@@ -692,7 +682,6 @@ public:
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
 
-    Render::Image RenderTile(DRange2dCR npc, Point2dCR size) const;
 
     //! Create a thumbnail for this ViewDefinition.
     //! @param[out] image The thumbnail image.
@@ -846,7 +835,7 @@ public:
     //! @param displayStyle The DisplayStyle for this view
     //! @param models The ModelSelector for this view
     OrthographicViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
+        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
 
     DGNPLATFORM_EXPORT OrthographicViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
@@ -977,7 +966,7 @@ public:
     //! @param displayStyle The DisplayStyle for this view
     //! @param models The ModelSelector for this view
     CameraViewDefinition(DgnDbR db, Utf8StringCR name, CategorySelectorR categories, DisplayStyle3dR displayStyle, ModelSelectorR models) :
-        T_Super(CreateParams(db, QueryClassId(db), CreateCode(name), categories, displayStyle, models)) {}
+        T_Super(CreateParams(db, QueryClassId(db), CreateCode(db, name), categories, displayStyle, models)) {}
 
     DGNPLATFORM_EXPORT CameraViewControllerPtr LoadViewController(bool allowOverrides=true) const;
 
@@ -1136,7 +1125,7 @@ protected:
 
 public:
     ViewDefinition2d(DgnDbR db, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyleR displayStyle) :
-            T_Super(CreateParams(db, classId, CreateCode(name), categorySelector, displayStyle)), m_baseModelId(baseModelId) {}
+            T_Super(CreateParams(db, classId, CreateCode(db, name), categorySelector, displayStyle)), m_baseModelId(baseModelId) {}
 
     DgnModelId GetBaseModelId() const {return m_baseModelId;}   //!< Get the model displayed in this view
     double GetRotAngle() const {return m_rotAngle;}

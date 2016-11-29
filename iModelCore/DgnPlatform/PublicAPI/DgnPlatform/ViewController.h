@@ -157,11 +157,9 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
-    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
     virtual bool _IsSceneReady() const {return m_sceneReady;}
     virtual void _InvalidateScene() {m_sceneReady=false;}
     virtual void _DoHeal(HealContext&) {}
-    virtual void _CreateTerrain(TerrainContextR context) {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
@@ -211,6 +209,8 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
+    virtual void _CreateTerrain(TerrainContextR context) {}
+    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}

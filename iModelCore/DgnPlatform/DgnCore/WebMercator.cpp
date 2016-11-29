@@ -321,21 +321,26 @@ DgnModelId StreetMapHandler::CreateStreetMapModel(StreetMapModel::CreateParams c
     return model->GetModelId();
     }
 
-static Utf8CP JSON_WebMercatorModel() {return "WebMercatorModel";}
-static Utf8CP PROPERTYJSON_MapService() {return "service";}
-static Utf8CP PROPERTYJSON_MapType() {return "map_type";}
-static Utf8CP PROPERTYJSON_GroundBias() {return "groundBias";}
-static Utf8CP PROPERTYJSON_Transparency() {return "transparency";}
+namespace WebMercatorStrings
+{
+static Utf8CP str_WebMercatorModel() {return "WebMercatorModel";}
+static Utf8CP str_MapService() {return "service";}
+static Utf8CP str_MapType() {return "map_type";}
+static Utf8CP str_GroundBias() {return "groundBias";}
+static Utf8CP str_Transparency() {return "transparency";}
+};
+
+using namespace WebMercatorStrings;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::ToJson(Json::Value& value) const
     {
-    value[PROPERTYJSON_MapService()] = (uint32_t) m_mapService;
-    value[PROPERTYJSON_MapType()] = (uint32_t) m_mapType;
-    value[PROPERTYJSON_GroundBias()] = m_groundBias;
-    value[PROPERTYJSON_Transparency()] = m_transparency;
+    value[str_MapService()] = (uint32_t) m_mapService;
+    value[str_MapType()] = (uint32_t) m_mapType;
+    value[str_GroundBias()] = m_groundBias;
+    value[str_Transparency()] = m_transparency;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -343,14 +348,14 @@ void WebMercatorModel::Properties::ToJson(Json::Value& value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::Properties::FromJson(Json::Value const& value)
     {
-    if (value.isMember(PROPERTYJSON_MapService()))
-        m_mapService = (MapService) value[PROPERTYJSON_MapService()].asInt();
+    if (value.isMember(str_MapService()))
+        m_mapService = (MapService) value[str_MapService()].asInt();
 
-    if (value.isMember(PROPERTYJSON_MapType()))
-        m_mapType = (MapType) value[PROPERTYJSON_MapType()].asInt();
+    if (value.isMember(str_MapType()))
+        m_mapType = (MapType) value[str_MapType()].asInt();
 
-    m_groundBias = value.isMember(PROPERTYJSON_GroundBias()) ? value[PROPERTYJSON_GroundBias()].asDouble() : -1.0;
-    m_transparency = value.isMember(PROPERTYJSON_Transparency()) ? value[PROPERTYJSON_Transparency()].asDouble() : 0.0;
+    m_groundBias = value.isMember(str_GroundBias()) ? value[str_GroundBias()].asDouble() : -1.0;
+    m_transparency = value.isMember(str_Transparency()) ? value[str_Transparency()].asDouble() : 0.0;
 
     LIMIT_RANGE(0.0, .9, m_transparency);
     }
@@ -360,7 +365,7 @@ void WebMercatorModel::Properties::FromJson(Json::Value const& value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
     {
-    m_properties.ToJson(val[JSON_WebMercatorModel()]);
+    m_properties.ToJson(val[str_WebMercatorModel()]);
     T_Super::_WriteJsonProperties(val);
     }
 
@@ -369,8 +374,8 @@ void WebMercatorModel::_WriteJsonProperties(Json::Value& val) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WebMercatorModel::_ReadJsonProperties(Json::Value const& val)
     {
-    BeAssert(val.isMember(JSON_WebMercatorModel()));
-    m_properties.FromJson(val[JSON_WebMercatorModel()]);
+    BeAssert(val.isMember(str_WebMercatorModel()));
+    m_properties.FromJson(val[str_WebMercatorModel()]);
     T_Super::_ReadJsonProperties(val);
     }
 

@@ -9,10 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnView.h>
-
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
-    #include <DgnPlatform/TileTree.h>
-#endif
+#include <DgnPlatform/TileTree.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
 #define BIS_CLASS_ViewAttachment "ViewAttachment"
@@ -120,7 +117,7 @@ public:
     //! @return an invalid ID if the sheet has no border.
     DgnElementId GetBorder() const {return GetPropertyValueId<DgnElementId>(str_Border());}
 
-    //! Set the sheet border.
+        //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
     DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
 };
@@ -158,7 +155,6 @@ public:
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
     };
 
-#if !defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   11/16
 //=======================================================================================
@@ -190,7 +186,7 @@ namespace Attachment
 
             Loader(Utf8StringCR url, Tile& tile, TileTree::LoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
             BentleyStatus _LoadTile() override;
-            BentleyStatus _SaveToDb() override {return ERROR;}
+            BentleyStatus _SaveToDb() override {return SUCCESS;}
             BentleyStatus _ReadFromDb() override {return ERROR;}
             folly::Future<BentleyStatus> _GetFromSource() override;
         };
@@ -225,7 +221,6 @@ protected:
     //! Construct a new SheetViewController.
     ViewController(SheetViewDefinitionCR def) : ViewController2d(def) {}
 };
-#endif
 
 //=======================================================================================
 // Sheet::Handlers

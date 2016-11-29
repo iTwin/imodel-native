@@ -1640,7 +1640,6 @@ public:
 //=======================================================================================
 struct TransClip : RefCounted<NonCopyableClass>
 {
-
 };
 
 //=======================================================================================
@@ -1738,8 +1737,9 @@ struct Target : RefCounted<NonCopyableClass>
         };
 
 protected:
-    bool               m_abort;
-    int                m_id; // for debugging
+    bool m_abort;
+    bool m_tileTarget = false;
+    int  m_id; // for debugging
     System&            m_system;
     DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
@@ -1789,6 +1789,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,ImageR,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
@@ -1796,6 +1797,7 @@ public:
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
     DeviceCP GetDevice() const {return m_device.get();}
+    DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
@@ -1806,6 +1808,7 @@ public:
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
+    void SetTileTarget() {m_tileTarget=true;}
 
     static double DefaultFrameRateGoal()
         {

@@ -91,7 +91,7 @@ DgnDbStatus DgnTexture::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnTextureId DgnTexture::QueryTextureId(DgnCode const& code, DgnDbR db)
+DgnTextureId DgnTexture::QueryTextureId(DgnDbR db, DgnCodeCR code)
     {
     return DgnTextureId(db.Elements().QueryElementIdByCode(code).GetValueUnchecked());
     }
@@ -101,7 +101,7 @@ DgnTextureId DgnTexture::QueryTextureId(DgnCode const& code, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureId DgnTexture::ImportTexture(DgnImportContext& context, DgnTextureId source)
     {
-    DgnTextureCPtr sourceTexture = DgnTexture::QueryTexture(source, context.GetSourceDb());
+    DgnTextureCPtr sourceTexture = DgnTexture::Get(context.GetSourceDb(), source);
     if (!sourceTexture.IsValid())
         {
         BeAssert(!source.IsValid()); //look up should fail only for an invalid Textureid
@@ -109,7 +109,7 @@ DgnTextureId DgnTexture::ImportTexture(DgnImportContext& context, DgnTextureId s
         }
 
     // If the destination Db already contains a Texture by this name, then remap to it. Don't create another copy.
-    DgnTextureId destTextureId = DgnTexture::QueryTextureId(sourceTexture->GetCode(), context.GetDestinationDb());
+    DgnTextureId destTextureId = DgnTexture::QueryTextureId(context.GetDestinationDb(), sourceTexture->GetCode());
     if (destTextureId.IsValid())
         return destTextureId;
 

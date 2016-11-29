@@ -52,6 +52,8 @@
 #define MARKUP_CLASSNAME_RedlineViewDefinition      "RedlineViewDefinition"
 #define MARKUP_CLASSNAME_SpatialRedlineModel        "SpatialRedlineModel"
 
+#define MARKUP_AUTHORITY_Redline                    MARKUP_SCHEMA_NAME ":" MARKUP_CLASSNAME_Redline
+
 DGNPLATFORM_REF_COUNTED_PTR(RedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(SpatialRedlineModel)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
@@ -118,7 +120,7 @@ public:
     //! @return A new, non-persistent Redline element or an invalid handle if the element cannot be created.
     DGNPLATFORM_EXPORT static RedlinePtr Create(DgnDbStatus* createStatus, DocumentListModelCR model, DgnCodeCR code);
 
-    static DgnCode CreateCode(Utf8StringCR value, DgnDbR db) {return NamespaceAuthority::CreateCode(MARKUP_SCHEMA(MARKUP_CLASSNAME_Redline), value, db);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR value) {return DatabaseScopeAuthority::CreateCode(MARKUP_AUTHORITY_Redline, db, value);}
     };
 
 //=======================================================================================

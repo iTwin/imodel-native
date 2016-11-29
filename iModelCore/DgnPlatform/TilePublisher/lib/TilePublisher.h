@@ -118,7 +118,7 @@ public:
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
-    TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
+    TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
@@ -174,7 +174,7 @@ private:
     BeFileName  GetBinaryDataFileName() const;
 
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
-    Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
+    Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
 
