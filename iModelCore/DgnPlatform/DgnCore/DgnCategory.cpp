@@ -372,7 +372,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnDbR db, DgnSubCategoryId subCat
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
         {
         stmt->BindId(1, subCatId);
@@ -395,11 +395,11 @@ ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId
     if (whereClause)
         {
         combinedWhere.append(whereClause);
-        combinedWhere.append(" AND ParentId.Id=?");
+        combinedWhere.append(" AND Parent.Id=?");
         }
     else
         {
-        combinedWhere.append("WHERE ParentId.Id=?");
+        combinedWhere.append("WHERE Parent.Id=?");
         }
 
     ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
@@ -415,7 +415,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     size_t count = 0;
     Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append(" WHERE ParentId.Id=?");
+        ecsql.append(" WHERE Parent.Id=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())

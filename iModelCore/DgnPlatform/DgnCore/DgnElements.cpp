@@ -1199,7 +1199,7 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId.Id,ParentId.Id,UserLabel,LastMod FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,Model.Id,Parent.Id,UserLabel,LastMod FROM ");
     sql.append(className);
 
     if (whereClause)

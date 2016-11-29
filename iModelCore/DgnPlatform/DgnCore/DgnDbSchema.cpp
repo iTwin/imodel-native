@@ -193,7 +193,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     DgnCode partitionCode(Authorities().QueryAuthorityId(BIS_AUTHORITY_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,ModelId.Id,ParentId.Id,CodeAuthorityId.Id,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeAuthority.Id,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECSqlWriteToken()))
         {
@@ -281,7 +281,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId.Id,CodeAuthorityId.Id,CodeNamespace,CodeValue,UserLabel,Descr) VALUES(?,?,?,?,?,?,?)", GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeAuthority.Id,CodeNamespace,CodeValue,UserLabel,Descr) VALUES(?,?,?,?,?,?,?)", GetECSqlWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;

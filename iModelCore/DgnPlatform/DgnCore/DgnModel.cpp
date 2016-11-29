@@ -8,7 +8,7 @@
 #include <DgnPlatformInternal.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
-#define MODEL_PROP_ModeledElementId "ModeledElementId"
+#define MODEL_PROP_ModeledElement "ModeledElement"
 #define MODEL_PROP_Visibility "Visibility"
 #define MODEL_PROP_Properties "Properties"
 #define MODEL_PROP_IsTemplate "IsTemplate"
@@ -167,6 +167,8 @@ CachedECSqlStatementPtr DgnModels::GetUpdateStmt(DgnModelR model) {return FindCl
 DgnModel::DgnModel(CreateParams const& params) : m_dgndb(params.m_dgndb), m_classId(params.m_classId), m_modeledElementId(params.m_modeledElementId), m_inGuiList(params.m_inGuiList),
     m_isTemplate(params.m_isTemplate), m_persistent(false)
     {
+    // WIP: Add m_modeledElementRelClassId to CreateParams!!!
+    m_modeledElementRelClassId = DgnClassId(GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -605,13 +607,13 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
         statement.BindId(statement.GetParameterIndex(MODEL_PROP_ECInstanceId), m_modelId);
 
 
-    if (!m_modeledElementId.IsValid())
+    if (!m_modeledElementId.IsValid() || !m_modeledElementRelClassId.IsValid())
         {
         BeAssert(false);
         return ;
         }
 
-    statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElementId), m_modeledElementId, ECClassId());
+    statement.BindNavigationValue(statement.GetParameterIndex(MODEL_PROP_ModeledElement), m_modeledElementId, m_modeledElementRelClassId);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_Visibility), m_inGuiList);
     statement.BindBoolean(statement.GetParameterIndex(MODEL_PROP_IsTemplate), m_isTemplate);
 
@@ -688,7 +690,7 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex()
         return DgnDbStatus::Success;
 
     m_rangeIndex.reset(new RangeIndex::Tree(true, 20));
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId.Id,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ModelId.Id=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Category.Id,Origin,Yaw,Pitch,Roll,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -722,7 +724,7 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 
     m_rangeIndex.reset(new RangeIndex::Tree(false, 20));
 
-    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,CategoryId.Id,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ModelId.Id=?");
+    auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Category.Id,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
     while (BE_SQLITE_ROW == stmt->Step())
         {
@@ -1261,7 +1263,7 @@ ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
 void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     {   
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_ModeledElementId, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Visibility, ECSqlClassParams::StatementType::InsertUpdate);
     params.Add(MODEL_PROP_Properties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
@@ -1281,7 +1283,7 @@ DgnModel::CreateParams DgnModel::InitCreateParamsFromECInstance(DgnDbStatus* inS
         inGuiList = v.GetInteger() == 1;
 
     DgnElementId modeledElementId;
-    if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElementId) || v.IsNull())
+    if (ECN::ECObjectsStatus::Success != properties.GetValue(v, MODEL_PROP_ModeledElement) || v.IsNull())
         stat = DgnDbStatus::BadArg;
     else
         modeledElementId = DgnElementId((uint64_t) v.GetLong());
@@ -1336,7 +1338,7 @@ DgnDbStatus DgnModel::_SetProperties(ECN::IECInstanceCR properties)
         Utf8StringCR propName = prop->GetName();
 
         // Skip special properties that were passed in CreateParams. Generally, these are set once and then read-only properties.
-        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElementId) || propName.Equals(MODEL_PROP_Visibility))
+        if (propName.Equals(MODEL_PROP_ECInstanceId) || propName.Equals(MODEL_PROP_ModeledElement) || propName.Equals(MODEL_PROP_Visibility))
             continue;
 
         ECN::ECValue value;
@@ -1826,7 +1828,7 @@ uint64_t DgnModel::RestrictedAction::Parse(Utf8CP name)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String where("WHERE ModelId.Id=?");
+    Utf8String where("WHERE Model.Id=?");
 
     if (whereClause)
         {

@@ -172,6 +172,7 @@ protected:
     DgnModelId m_modelId;
     DgnClassId m_classId;
     DgnElementId m_modeledElementId;
+    DgnClassId m_modeledElementRelClassId;
     bool m_inGuiList;
     bool m_isTemplate;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
@@ -420,6 +421,9 @@ public:
 
     //! Get the DgnElementId of the element that this DgnModel is describing/modeling.
     DgnElementId GetModeledElementId() const {return m_modeledElementId;}
+
+    //! Get the ECClassId of the ECRelationship that specifies how this DgnModel relates to the modeled element.
+    DgnClassId GetModeledElementRelClassId() const {return m_modeledElementRelClassId;}
 
     //! Get the visibility in model lists shown to the user
     bool GetInGuiList() const {return m_inGuiList;}

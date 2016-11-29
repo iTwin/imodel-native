@@ -133,7 +133,7 @@
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
+    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -163,7 +163,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
+        <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward">
         </ECNavigationProperty>
         <ECProperty propertyName="Properties" typeName="string">
             <ECCustomAttributes>
@@ -294,7 +294,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
+    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -376,7 +376,7 @@
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthorityId.Id</string>
+                            <string>CodeAuthority.Id</string>
                             <string>CodeNamespace</string>
                             <string>CodeValue</string>
                         </Properties>
@@ -408,7 +408,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesElementCode" direction="Backward">
+        <ECNavigationProperty propertyName="CodeAuthority" relationshipName="AuthorityIssuesElementCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -441,7 +441,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -449,7 +449,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
+        <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -828,7 +828,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
+        <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty/>
@@ -924,7 +924,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
+        <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
@@ -1267,7 +1267,7 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
         <ECProperty propertyName="Details" typeName="string" />
     </ECEntityClass>
 
@@ -1370,7 +1370,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
@@ -1399,7 +1399,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
@@ -1425,7 +1425,7 @@
                         <IsUnique>True</IsUnique>
                         <Properties>
                             <!-- Only one ExternalKey per Authority per Element -->
-                            <string>ElementId.Id</string>
+                            <string>Element.Id</string>
                             <string>AuthorityId</string>
                         </Properties>
                     </DbIndex>
@@ -1565,7 +1565,7 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
@@ -1578,7 +1578,7 @@
             <Class class="DrawingCategory"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>

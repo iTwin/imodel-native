@@ -168,8 +168,8 @@ bool DgnElement::SetPropertyFilter::IsBootStrappingProperty(Utf8StringCR propNam
         s_ignoreList = new bset<Utf8String>();
         s_ignoreList->insert("Id");
         s_ignoreList->insert(BIS_ELEMENT_PROP_ECInstanceId);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_ModelId);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeAuthorityId);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_Model);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeAuthority);
         s_ignoreList->insert(BIS_ELEMENT_PROP_CodeNamespace);
         s_ignoreList->insert(BIS_ELEMENT_PROP_CodeValue);
         });
@@ -442,7 +442,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
     DgnModelId mid;
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_ModelId) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_Model) || v.IsNull())
             {
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
@@ -465,7 +465,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
         //! The value may not be an empty string.
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthorityId) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthority) || v.IsNull())
             {
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);

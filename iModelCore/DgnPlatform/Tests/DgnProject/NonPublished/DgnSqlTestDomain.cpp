@@ -98,13 +98,15 @@ void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
 void ObstacleElement::SetTestUniqueAspect(DgnDbR db, Utf8CP value)
     {
     ECSqlStatement insertStmt;
-    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " (TestUniqueAspectProperty,ElementId) VALUES(?,?)");
+    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " (TestUniqueAspectProperty,Element.Id,Element.RelECClassId) VALUES(?,?,?)");
     insertStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     insertStmt.BindId(2, GetElementId());
+    insertStmt.BindId(3, db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect));
+
     if (insertStmt.Step() != BE_SQLITE_DONE)
         {
         ECSqlStatement updateStmt;
-        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " SET TestUniqueAspectProperty=? WHERE ElementId=?");
+        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " SET TestUniqueAspectProperty=? WHERE Element.Id=?");
         updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         updateStmt.BindId(2, GetElementId());
         ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );

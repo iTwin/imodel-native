@@ -154,12 +154,12 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,ParentId.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,Parent.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
         ecsql.append(" WHERE CodeNamespace=?");
 
     if (options.m_byParent)
-        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId.Id=?");
+        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("Parent.Id=?");
 
     if (options.m_ordered)
         ecsql.append(" ORDER BY CodeNamespace,CodeValue");

@@ -382,11 +382,11 @@ static Utf8String buildECSqlSelectDupeString (Utf8CP schemaName, Utf8CP classNam
     propsString.append (", ").append (convertToComponents (aspectIndexProp));
 
     //      SELECT
-    //          ElementId.Id, prop[0], COUNT(*)
+    //          Element.Id, prop[0], COUNT(*)
     //      FROM
     //          dgn.AnnotationTableRow
     //      GROUP BY
-    //          ElementId.Id, RowIndex
+    //          Element.Id, RowIndex
     //      HAVING 
     //          COUNT(*) > 1
     Utf8String sqlString ("SELECT ");
