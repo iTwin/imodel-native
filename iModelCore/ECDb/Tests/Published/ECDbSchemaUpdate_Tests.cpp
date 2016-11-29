@@ -7263,6 +7263,84 @@ TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+        "                    displayLabel='KindOfQuantity1' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='METRE' precision='5'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity1'/>"
+        "        <ECArrayProperty propertyName='Width' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity2'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='KindOfQuantity1' description='KindOfQuantity1'"
+        "                    displayLabel='KindOfQuantity1' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <KindOfQuantity typeName='KindOfQuantity2' description='KindOfQuantity2'"
+        "                    displayLabel='KindOfQuantity2' persistenceUnit='METRE' precision='5'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity2'/>"
+        "        <ECArrayProperty propertyName='Width' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'KindOfQuantity1'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "Standalone Briefcase: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "Clientside BriefcaseId: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
+    ASSERT_FALSE(asserted);
+
+    for (Utf8StringCR dbPath : m_updatedDbs)
+        {
+        ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
+
+        KindOfQuantityCP KindOfQuantity1 = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity1");
+        ASSERT_TRUE(KindOfQuantity1 != nullptr);
+        KindOfQuantityCP KindOfQuantity2 = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "KindOfQuantity2");
+        ASSERT_TRUE(KindOfQuantity2 != nullptr);
+        ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+        ASSERT_TRUE(foo != nullptr);
+
+        ArrayECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsArrayProperty();
+        ASSERT_TRUE(foo_length != nullptr);
+        ArrayECPropertyCP foo_width = foo->GetPropertyP("Width")->GetAsArrayProperty();
+        ASSERT_TRUE(foo_width != nullptr);
+
+        ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
+        ASSERT_TRUE(foo_width->GetKindOfQuantity() == KindOfQuantity1);
+
+        GetECDb().CloseDb();
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
