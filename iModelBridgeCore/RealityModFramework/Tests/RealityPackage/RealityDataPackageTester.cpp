@@ -321,7 +321,7 @@ TEST_F (PackageTestFixture, ReadVersion_1_0)
 
     ASSERT_STREQ(RPACKAGE_NAME, pPackage->GetName().c_str()); 
     ASSERT_STREQ(RPACKAGE_DESCRIPTION, pPackage->GetDescription().c_str()); 
-    ASSERT_STREQ(WIDEN(RPACKAGE_DATE), pPackage->GetCreationDate().ToString().c_str()); 
+    ASSERT_STREQ(RPACKAGE_DATE, pPackage->GetCreationDate().ToString().c_str()); 
     ASSERT_STREQ(RPACKAGE_COPYRIGHT, pPackage->GetCopyright().c_str());     
     ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON), pPackage->GetBoundingPolygon().ToString().c_str());
 
@@ -1598,7 +1598,7 @@ TEST_F (PackageTestFixture, ReadVersion_2_0A)
 
     ASSERT_STREQ(RPACKAGE_NAME2, pPackage->GetName().c_str()); 
     ASSERT_STREQ(RPACKAGE_DESCRIPTION2, pPackage->GetDescription().c_str()); 
-    ASSERT_STREQ(WIDEN(RPACKAGE_DATE2), pPackage->GetCreationDate().ToString().c_str()); 
+    ASSERT_STREQ(RPACKAGE_DATE2, pPackage->GetCreationDate().ToString().c_str()); 
     ASSERT_STREQ(RPACKAGE_COPYRIGHT2, pPackage->GetCopyright().c_str());     
  //   ASSERT_STREQ(WIDEN(RPACKAGE_POLYGON2), pPackage->GetBoundingPolygon().ToString().c_str());
 
