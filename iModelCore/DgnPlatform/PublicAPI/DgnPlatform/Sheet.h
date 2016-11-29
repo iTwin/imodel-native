@@ -184,7 +184,7 @@ namespace Attachment
         {
             Render::Image m_image;
 
-            Loader(Utf8StringCR url, Tile& tile, TileTree::LoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
+            Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
             BentleyStatus _LoadTile() override;
             BentleyStatus _SaveToDb() override {return SUCCESS;}
             BentleyStatus _ReadFromDb() override {return ERROR;}
@@ -194,7 +194,7 @@ namespace Attachment
         Tile(Tree&, TileTree::QuadTree::TileId id, Tile const* parent);
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new Tile(GetTree(), id, this);}
         Tree& GetTree() const {return (Tree&) m_root;}
-        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::LoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileName(*this), *this, loads);}
+        TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetTree()._ConstructTileName(*this), *this, loads);}
     };
 
     DEFINE_REF_COUNTED_PTR(Tree)
