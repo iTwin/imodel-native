@@ -612,10 +612,10 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
+        db2->SaveChanges();
+
         ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
         TestElementDrivesElementHandler::GetHandler().Clear();
-
-        db2->SaveChanges();
     }
 }
 
