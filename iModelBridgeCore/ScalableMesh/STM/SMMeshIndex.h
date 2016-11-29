@@ -521,7 +521,6 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SMMemoryPoolItemBasePtr itemPtr, uint64_t texID, bool isVideoMemory = false)
     {
-        assert(smCachedDisplayData != 0);
 
         auto displayTexDataPoolItemId = isVideoMemory? SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr) : GetMemoryPool()->AddItem(itemPtr);
         m_textureIds.insert(texID);
