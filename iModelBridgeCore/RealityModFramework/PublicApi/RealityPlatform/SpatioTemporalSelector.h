@@ -71,8 +71,14 @@ public:
     //! High res mosaic: High res first, but can be completed by medium and low res if there is any hole left by the high res.
     //! Medium res mosaic: Medium res first, but can be completed by low res if there is any hole left by the medium res.
     //! Low res mosaic: Low res only, a hole may exists if there is no suitable data.
+    //!
+    //! hasNoDataValue:
+    //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
+    //! to the region of interest so that we have a better chance of obtaining a better coverage.
+    //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
     REALITYDATAPLATFORM_EXPORT static const ResolutionMap GetIDsByRes(SpatioTemporalDatasetCR dataset,
-                                                                      const bvector<GeoPoint2d>& regionOfInterest);
+                                                                      const bvector<GeoPoint2d>& regionOfInterest,
+                                                                      bool hasNoDataValue = false);
 
 private:
     //! Take a list of GeoPoints and create a shape from it.
@@ -80,10 +86,16 @@ private:
 
     //! Filter and select the data IDs that best fit the region of interest 
     //! and based on resolution and capture date.
+    //!
+    //! hasNoDataValue:
+    //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
+    //! to the region of interest so that we have a better chance of obtaining a better coverage.
+    //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
     static const bvector<Utf8String> GetIDs(const bvector<SpatioTemporalDataPtr>& dataset,
                                             const ImagePP::HGF2DShape& regionOfInterest,
                                             ResolutionCriteria qualityCriteria,
-                                            DateCriteria captureDateCriteria);
+                                            DateCriteria captureDateCriteria,
+                                            bool hasNoDataValue = false);
 
     static const bvector<Utf8String> GetIDs(const bvector<SpatioTemporalDataPtr>& dataset,
                                             const ImagePP::HGF2DShape& regionOfInterest,
@@ -99,8 +111,10 @@ private:
 
     //! Filter according to specified criteria. Resolution is a priority over capture date.
     static const bvector<SpatioTemporalDataPtr> CriteriaFiltering(const bvector<SpatioTemporalDataPtr>& dataset,
+                                                                  const ImagePP::HGF2DShape& regionOfInterest,
                                                                   ResolutionCriteria qualityCriteria,
-                                                                  DateCriteria captureDateCriteria);
+                                                                  DateCriteria captureDateCriteria,
+                                                                  bool hasNoDataValue);
 
     static const bvector<SpatioTemporalDataPtr> CriteriaFiltering(const bvector<SpatioTemporalDataPtr>& dataset,
                                                                   const double minResolution,
@@ -120,9 +134,19 @@ private:
                                          bvector<SpatioTemporalDataPtr>& upToDateDataset,
                                          const bvector<SpatioTemporalDataPtr>& dataset);
 
+    //! Filter by distance (nearest to region of interest first).
+    static const StatusInt DistanceFiltering(bvector<SpatioTemporalDataPtr>& dataset,
+                                             const ImagePP::HGF2DShape& regionOfInterest);
+
     //! Fill the region of interest with best matching data (create a mosaic).
+    //!
+    //! hasNoDataValue:
+    //! Temporary fix for filtering with data that contains no data value. This will prioritize the data that are the nearest 
+    //! to the region of interest so that we have a better chance of obtaining a better coverage.
+    //! &&JFC TODO: Remove this parameter when we will have a better footprint extraction.
     static const bvector<SpatioTemporalDataPtr> Select(const bvector<SpatioTemporalDataPtr>& dataset,
-                                                       const ImagePP::HGF2DShape& regionOfInterest);
+                                                       const ImagePP::HGF2DShape& regionOfInterest,
+                                                       bool hasNoDataValue = false);
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE
