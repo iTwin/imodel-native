@@ -183,7 +183,7 @@ DgnDbPtr DataCaptureProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
-//     createDgnDbParams.SetRootSubjectLabel("DataCaptureProject");
+//     createDgnDbParams.SetRootSubjectName("DataCaptureProject");
 //     createDgnDbParams.SetRootSubjectDescription("Created by DataCaptureProjectHost");
     createDgnDbParams.SetProjectName("DataCaptureProject");
     createDgnDbParams.SetProjectDescription("Created by DataCaptureProjectHost");
