@@ -36,7 +36,7 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
         CreateDgnMarkupProjectParams cparms (*m_db);
         cparms.SetOverwriteExisting(true);
-        cparms.SetRootSubjectLabel("CreateDgnMarkupProject");
+        cparms.SetRootSubjectName("CreateDgnMarkupProject");
         DbResult status;
         DgnMarkupProjectPtr mproject = DgnMarkupProject::CreateDgnDb (&status, markupProjectFileName, cparms);
         ASSERT_TRUE( status == BE_SQLITE_OK );

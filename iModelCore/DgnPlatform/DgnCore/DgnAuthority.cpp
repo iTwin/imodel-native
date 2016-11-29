@@ -487,7 +487,8 @@ DbResult DgnDb::CreateAuthorities()
         (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Sheet, *this)) ||
         // ElementScopeAuthorities
         (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_InformationPartitionElement, *this)) ||
-        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)))
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)) ||
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_Subject, *this)))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
