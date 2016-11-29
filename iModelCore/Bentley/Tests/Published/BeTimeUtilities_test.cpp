@@ -116,13 +116,13 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
     {
     DateTime dateTimeUtc = DateTime::GetCurrentTimeUtc();
     ASSERT_TRUE(dateTimeUtc.IsValid());
-    //EXPECT_EQ(static_cast<int> (d1.GetYear()), 2013) << "Day 1 is  " << d1.ToUtf8String().c_str();
+    //EXPECT_EQ(static_cast<int> (d1.GetYear()), 2013) << "Day 1 is  " << d1.ToString().c_str();
     DateTime dateTimeTemp;
     ASSERT_TRUE(!dateTimeTemp.IsValid());
     BentleyStatus stat = dateTimeUtc.ToLocalTime(dateTimeTemp);
     ASSERT_TRUE(dateTimeTemp.IsValid());
     ASSERT_EQ(BentleyStatus::SUCCESS, stat);
-    //EXPECT_EQ(static_cast<int> (d2.GetYear()), 2013) << "Day 2 is  " << d2.ToUtf8String().c_str();
+    //EXPECT_EQ(static_cast<int> (d2.GetYear()), 2013) << "Day 2 is  " << d2.ToString().c_str();
     int64_t retUtcMillis;
     int64_t retLocalMillis;
     DateTime dateTimeLocal(DateTime::Kind::Utc, dateTimeTemp.GetYear(), dateTimeTemp.GetMonth(), dateTimeTemp.GetDay(), dateTimeTemp.GetHour(),
