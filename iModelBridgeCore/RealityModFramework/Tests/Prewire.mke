@@ -14,3 +14,6 @@ $(BuildContext)Delivery/UnitTests/ignore_list.txt : $(baseDir)ignore_list.txt
 # NEEDS WORK: Need a cleaner way to depend on RealityPackage.1.0.xsd. Probably, there should be a RealityPackageXsd with RealityPackage.1.0.xsd listed in its Bindings
 $(BuildContext)Delivery/UnitTests/RealityPackage.1.0.xsd : $(_MakeFilePath)../RealityPackage/RealityPackage.1.0.xsd
     $(LinkFirstDepToFirstTarget)
+
+    $(BuildContext)Delivery/UnitTests/RealityPackage.2.0.xsd : $(_MakeFilePath)../RealityPackage/RealityPackage.2.0.xsd
+    $(LinkFirstDepToFirstTarget)
