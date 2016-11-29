@@ -1933,6 +1933,18 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
     ecsql = "SELECT L, B FROM ecsql.PSA Z";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
+    //ecsql = "SELECT DISTINCT Dt_Array FROM ecsql.PSA";
+    //ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "DISTINCT not supported with prim arrays.");
+
+    //ecsql = "SELECT DISTINCT MyPSA FROM ecsql.P";
+    //ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "DISTINCT not supported with nav props.");
+
+    ecsql = "SELECT DISTINCT MyPSA.Id FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
+    ecsql = "SELECT DISTINCT MyPSA.RelECClassId FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
+
     //*******************************************************
     // Select clause in which the class name and the properties name contain, start with or end with under bar
     //*******************************************************
@@ -2017,6 +2029,12 @@ ECSqlTestDataset ECSqlSelectTestDataset::NullLiteralTests(int rowCountPerClass)
 
     ecsql = "SELECT I, S FROM ecsql.PSA WHERE I IS NOT ?";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
+
+    ecsql = "SELECT I FROM ecsql.P WHERE MyPSA IS NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
+
+    ecsql = "SELECT I FROM ecsql.P WHERE MyPSA IS NOT NULL";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, 0);
 
     {
     ecsql = "SELECT I, Dt, S FROM ecsql.PSA WHERE ? = NULL";
