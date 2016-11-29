@@ -212,7 +212,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         rlt = dynamic_cast<dgn_TxnTable::RelationshipLinkTable*>(handler);
         if (nullptr == rlt)
             {
-            BeAssert(false && "relationship link table appears to be handled already. I can't handle it!");
+            //BeAssert(false && "relationship link table appears to be handled already. I can't handle it!");
             return DgnDbStatus::BadArg;
             }
 
