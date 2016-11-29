@@ -32,6 +32,7 @@ template<class POINT, class EXTENT> class ISMPointIndexQuery;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 struct IScalableMeshMesh;
+struct IScalableMesh;
 struct IScalableMeshTexture;
 struct IScalableMeshNode;
 struct IScalableMeshNodeEdit;
@@ -579,7 +580,9 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
-        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;        
+        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;       
+
+        virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
     public : 
 
@@ -587,7 +590,11 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;                
+        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;         
+
+        BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
+
+        BENTLEY_SM_EXPORT static IScalableMeshCachedDisplayNodePtr Create(uint64_t nodeId, IScalableMesh* smP);
     };
 
 

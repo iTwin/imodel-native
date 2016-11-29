@@ -398,6 +398,8 @@ public:
     -----------------------------------------------------------------------------*/
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
 
+    double GetMinResolution() const;
+
     /**----------------------------------------------------------------------------
     Indicates if the node or one of its sub-nodes contains data.
 
@@ -1489,6 +1491,8 @@ public:
         {
         return m_isCanceled;
         }
+
+    HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
 #ifndef NDEBUG
     void                ValidateNeighbors();

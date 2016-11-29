@@ -45,6 +45,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCountDefined = true;
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+   m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeIndIter = 0; nodeIndIter < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeIndIter++)
         {
@@ -145,6 +147,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_arePoints3d = pi_rpParentNode->m_nodeHeader.m_arePoints3d;
     if (!m_nodeHeader.m_arePoints3d) SetNumberOfSubNodesOnSplit(4);
     else SetNumberOfSubNodesOnSplit(8);
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
     
     for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
         {
@@ -196,6 +200,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -274,6 +280,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -354,6 +362,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -413,6 +423,8 @@ template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>::SMPointInde
     m_nodeHeader.m_totalCount = 0;
     m_nodeHeader.m_nodeCount = 0;
     m_nodeHeader.m_arePoints3d = false;
+    m_nodeHeader.m_geometricResolution = 0;
+    m_nodeHeader.m_textureResolution = 0;
 
     for (size_t nodeInd = 0; nodeInd < MAX_NUM_NEIGHBORNODE_POSITIONS; nodeInd++)
         {
@@ -5700,6 +5712,16 @@ const EXTENT& SMPointIndexNode<POINT, EXTENT>::GetContentExtent() const
     return(m_nodeHeader.m_contentExtent);
     }
 
+template<class POINT, class EXTENT>
+double SMPointIndexNode<POINT, EXTENT>::GetMinResolution() const
+{
+    // We do not call invariants for simple accessors as they are extensively called within reorganising methods
+
+    if (!IsLoaded())
+        Load();
+
+    return std::min(m_nodeHeader.m_geometricResolution, m_nodeHeader.m_textureResolution);
+}
 
 
 //=======================================================================================
@@ -7781,6 +7803,14 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveM
     pi_pDataStore->StoreMasterHeader(&masterHeader, sizeof(masterHeader));
 
     return SUCCESS;
+    }
+
+template<class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT>> SMPointIndex<POINT, EXTENT>::FindLoadedNode(uint64_t id) const
+    {
+    if (m_createdNodeMap.count((int64_t)id) == 0)
+        return nullptr;
+
+    return m_createdNodeMap.find((int64_t)id)->second;
     }
 
 #ifdef INDEX_DUMPING_ACTIVATED

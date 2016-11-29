@@ -41,8 +41,9 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
                                                 int                     nbTriangles,
                                                 int*                    indices,
                                                 float*                  params,
-                                                SmCachedDisplayTexture* cachedTexture) = 0;
-//            uint64_t nodeId) = 0; 
+                                                SmCachedDisplayTexture* cachedTexture,
+                                                uint64_t nodeId,
+                                                uint64_t smId) = 0;
 
         virtual BentleyStatus _DestroyCachedMesh(SmCachedDisplayMesh* cachedDisplayMesh) = 0; 
 
@@ -54,6 +55,12 @@ struct IScalableMeshDisplayCacheManager abstract: RefCountedBase
                                                    unsigned char const *    texels) = 0; // => texel image)
 
         virtual BentleyStatus _DestroyCachedTexture(SmCachedDisplayTexture* cachedDisplayTexture) = 0; 
+
+        virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayMesh* cachedDisplayMesh) = 0;
+
+        virtual BentleyStatus _DeleteFromVideoMemory(SmCachedDisplayTexture* cachedDisplayTex) = 0;
+
+        virtual bool _IsUsingVideoMemory() = 0;
 
 		//called when a resource was deleted but dependent resources (which may or may not be in use) need to be regenerated
 		//virtual void _SetCacheDirty(bool isDirty) = 0;
