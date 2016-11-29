@@ -24,11 +24,14 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
+    DgnSubCategory::Appearance defaultApperance;
+    defaultApperance.SetInvisible(false);
+
     DgnCategory cameraCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Camera, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    cameraCategory.Insert(DgnSubCategory::Appearance());
+    cameraCategory.Insert(defaultApperance);
     BeAssert(cameraCategory.GetCategoryId().IsValid());
     DgnCategory photoCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Photo, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    photoCategory.Insert(DgnSubCategory::Appearance());
+    photoCategory.Insert(defaultApperance);
     BeAssert(photoCategory.GetCategoryId().IsValid());
     }
 
