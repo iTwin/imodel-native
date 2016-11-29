@@ -403,7 +403,7 @@ BentleyStatus ChangeInfoManager::SaveBackupInstance(ObjectInfoCR info, Utf8CP se
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::SaveBackupInstance:Insert", [&]
         {
         return "INSERT INTO " ECSql_InstanceBackup " ("
-            "[" CLASS_InstanceBackup_PROPERTY_InfoId "], "
+            CLASS_InstanceBackup_PROPERTY_InfoId ".Id, "
             "[" CLASS_InstanceBackup_PROPERTY_Instance "]) "
             "VALUES (?, ?) ";
         });
@@ -424,7 +424,7 @@ BentleyStatus ChangeInfoManager::DeleteBackupInstance(ObjectInfoCR info)
     {
     auto statement = m_statementCache.GetPreparedStatement("ChangeInfoManager::DeleteBackupInstance", [&]
         {
-        return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE " CLASS_InstanceBackup_PROPERTY_InfoId " = ? ";
+        return "DELETE FROM ONLY " ECSql_InstanceBackup " WHERE " CLASS_InstanceBackup_PROPERTY_InfoId ".Id = ? ";
         });
     statement->BindId(1, info.GetInfoKey().GetECInstanceId());
     if (statement->Step() != BE_SQLITE_DONE)
@@ -442,7 +442,7 @@ ECInstanceId ChangeInfoManager::FindBackupInstance(ObjectInfoCR info)
         return
             "SELECT ECInstanceId "
             "FROM ONLY " ECSql_InstanceBackup " "
-            "WHERE [" CLASS_InstanceBackup_PROPERTY_InfoId "] = ? "
+            "WHERE " CLASS_InstanceBackup_PROPERTY_InfoId ".Id = ? "
             "LIMIT 1 ";
         });
     statement->BindId(1, info.GetInfoKey().GetECInstanceId());
