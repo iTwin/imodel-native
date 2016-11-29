@@ -2146,8 +2146,6 @@ TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances
     EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
-#ifdef WIP_MERGE_Vincas
-    
 TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKeys)
     {
     auto schema = ParseSchema(R"(
@@ -2168,13 +2166,13 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     ECDbAdapter adapter(db);
 
     ECInstanceKey a, b;
-    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.A")).Insert(a, Json::Value()));
-    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.B")).Insert(b, Json::Value()));
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(a, Json::Value()));
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(b, Json::Value()));
 
     ECSqlStatement statement;
     ECInstanceKeyMultiMap keys;
 
-    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT GetECClassId(), ECInstanceId FROM TestSchema.A"));
+    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT ECClassId, ECInstanceId FROM TestSchema.A"));
     ASSERT_EQ(SUCCESS, adapter.ExtractECInstanceKeys(statement, keys));
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(a));
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(b));
@@ -2183,7 +2181,7 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     statement.Finalize();
     keys.clear();
 
-    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT NULL, ECInstanceId, GetECClassId() FROM TestSchema.A"));
+    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT NULL, ECInstanceId, ECClassId FROM TestSchema.A"));
     ASSERT_EQ(SUCCESS, adapter.ExtractECInstanceKeys(statement, keys, nullptr, 2, 1));
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(a));
     EXPECT_CONTAINS(keys, ECDbHelper::ToPair(b));
@@ -2199,5 +2197,4 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
     EXPECT_EQ(0, keys.size());
     }
 
-#endif
 #endif
