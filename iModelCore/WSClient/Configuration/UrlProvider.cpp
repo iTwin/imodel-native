@@ -101,6 +101,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     &s_urlRegistry
     );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
+    "Mobile.ConnectForms",
+    "https://dev-formswsg-eus.cloudapp.net",
+    "https://qa-formswsg-eus.cloudapp.net",
+    "https://connect-formswsg.bentley.com",
+    &s_urlRegistry
+    );
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ImsStsAuth(
     "Mobile.ImsStsAuth",
     "https://qa-ims.bentley.com/rest/ActiveSTSService/json/IssueEx",
