@@ -13,6 +13,7 @@
 
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/WorkerThread.h>
+#include <Bentley/Tasks/TaskScheduler.h>
 
 #include <atomic>
 
@@ -39,6 +40,7 @@ TEST_F(AsyncTaskTests, Wait_TaskPushedToScheduler_BlocksUntilTaskIsExecuted)
     task->Wait();
 
     EXPECT_TRUE(executed);
+    ASSERT_EQ(66, 77);
     }
 
 TEST_F(AsyncTaskTests, Wait_OnExecutedTask_DoesNotBlock)
@@ -197,4 +199,31 @@ TEST_F (AsyncTaskTests, Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted)
 
     EXPECT_TRUE (task1Executed);
     EXPECT_TRUE (task2Executed);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(AsyncTaskTests, Push_GetCount_Pop)
+    {
+    bool executed = false;
+    auto task = std::make_shared<PackagedAsyncTask<void>>([&]
+        {
+        executed = true;
+        });
+    auto task2 = std::make_shared<PackagedAsyncTask<void>>([&]
+        {
+        executed = true;
+        });
+    task2->Execute();
+    TaskScheduler scheduler;
+    ASSERT_FALSE(scheduler.HasRunningTasks());
+    ASSERT_EQ(0, scheduler.GetQueueTaskCount());
+    scheduler.Push(task);
+    scheduler.Push(task2);
+    ASSERT_TRUE(scheduler.HasRunningTasks());
+    ASSERT_TRUE(2 == scheduler.GetQueueTaskCount());
+    task2->Wait();
+    ASSERT_TRUE(task2->IsCompleted());
+
     }
