@@ -12,21 +12,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************************PropertyMap*************************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-PropertyMap::PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-    : m_type(kind),  m_ecProperty(ecProperty), m_classMap(classMap), m_parentPropertMap(nullptr), 
-    m_propertyAccessString(ecProperty.GetName())
-    {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-PropertyMap::PropertyMap(Type kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
-    :m_type(kind), m_ecProperty(ecProperty), m_classMap(parentPropertyMap.GetClassMap()), m_parentPropertMap(&parentPropertyMap),
-    m_propertyAccessString(accessString)
-    {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
@@ -686,7 +671,7 @@ RefCountedPtr<DataPropertyMap> PropertyMapCopier::CreateCopy(DataPropertyMap con
             StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
             for (DataPropertyMap const* memberPropMap : structPropMap)
                 {
-                RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &structPropMap);
+                RefCountedPtr<DataPropertyMap> childMap = CreateCopy(*memberPropMap, newContext, &builder.GetPropertyMapUnderConstruction());
                 if (childMap == nullptr)
                     {
                     BeAssert(false);

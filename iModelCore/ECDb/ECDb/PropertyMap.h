@@ -126,14 +126,21 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         ECN::ECPropertyCR m_ecProperty;
         PropertyMap const* m_parentPropertMap;
         ClassMap const& m_classMap;
+        const Utf8String m_propertyAccessString;
 
         virtual bool _IsMappedToTable(DbTable const&) const = 0;
 
     protected:
-        const Utf8String m_propertyAccessString;
 
-        PropertyMap(Type, ClassMap const&, ECN::ECPropertyCR);
-        PropertyMap(Type, PropertyMap const& parent, ECN::ECPropertyCR, Utf8StringCR accessString);
+        PropertyMap::PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+            : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertMap(nullptr),
+            m_propertyAccessString(ecProperty.GetName())
+            {}
+
+        PropertyMap::PropertyMap(Type type, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
+            :m_type(type), m_classMap(parentPropertyMap.GetClassMap()), m_ecProperty(ecProperty), m_parentPropertMap(&parentPropertyMap),
+            m_propertyAccessString(accessString)
+            {}
 
     public:
         virtual ~PropertyMap() {}
@@ -142,13 +149,13 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
 
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
+        ECN::ECPropertyId GetRootPropertyId() const;
         //! return full access string from root property to current property.
         Utf8StringCR GetAccessString() const { return m_propertyAccessString; }
         //! return parent property map if any. 
         PropertyMap const* GetParent() const { return m_parentPropertMap; }
         //! return class map that owns this property
         ClassMap const& GetClassMap() const { return m_classMap; }
-        ECN::ECPropertyId GetRootPropertyId() const;
         
         //! Test if current property is of type system. 
         bool IsSystem() const { return Enum::Contains(Type::System, GetType()); }
@@ -191,7 +198,7 @@ struct DataPropertyMap : PropertyMap
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
-// Abstract baseclass of property map that has child property map. Only vertical property maps
+// Abstract baseclass of property map that has child property map. Only property maps
 // is allowed to contain child property map that must be in same table
 //+===============+===============+===============+===============+===============+======
 struct CompoundDataPropertyMap : DataPropertyMap
