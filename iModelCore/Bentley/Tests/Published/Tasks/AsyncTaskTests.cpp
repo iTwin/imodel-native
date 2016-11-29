@@ -40,7 +40,6 @@ TEST_F(AsyncTaskTests, Wait_TaskPushedToScheduler_BlocksUntilTaskIsExecuted)
     task->Wait();
 
     EXPECT_TRUE(executed);
-    ASSERT_EQ(66, 77);
     }
 
 TEST_F(AsyncTaskTests, Wait_OnExecutedTask_DoesNotBlock)
