@@ -33,6 +33,7 @@
 #define BIS_AUTHORITY_Sheet                         BIS_AUTHORITY(BIS_CLASS_Sheet)
 #define BIS_AUTHORITY_SpatialCategory               BIS_AUTHORITY(BIS_CLASS_SpatialCategory)
 #define BIS_AUTHORITY_SubCategory                   BIS_AUTHORITY(BIS_CLASS_SubCategory)
+#define BIS_AUTHORITY_Subject                       BIS_AUTHORITY(BIS_CLASS_Subject)
 #define BIS_AUTHORITY_TextAnnotationSeed            BIS_AUTHORITY(BIS_CLASS_TextAnnotationSeed)
 #define BIS_AUTHORITY_Texture                       BIS_AUTHORITY(BIS_CLASS_Texture)
 #define BIS_AUTHORITY_TrueColor                     BIS_AUTHORITY(BIS_CLASS_TrueColor)

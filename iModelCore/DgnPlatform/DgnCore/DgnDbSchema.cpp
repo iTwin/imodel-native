@@ -277,11 +277,12 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     {
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    DgnCode elementCode = DgnCode::CreateEmpty();
+    DgnAuthorityId authorityId = Authorities().QueryAuthorityId(BIS_AUTHORITY_Subject);
+    DgnCode elementCode = DgnCode(authorityId, params.m_rootSubjectName, elementId);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Descr) VALUES(?,?,?,?,?,?,?)", GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECSqlWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -292,8 +293,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     statement.BindId(3, elementCode.GetAuthority());
     statement.BindText(4, elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(6, params.m_rootSubjectLabel.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(7, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);
