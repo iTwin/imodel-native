@@ -191,6 +191,7 @@ public:
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}
+    EnvironmentDisplay& GetEnvironmentDisplayR() {return m_environment;}
 
     //! Change the current values for the Environment Display for this DisplayStyle3d
     void SetEnvironmentDisplay(EnvironmentDisplay const& val) {m_environment = val;}

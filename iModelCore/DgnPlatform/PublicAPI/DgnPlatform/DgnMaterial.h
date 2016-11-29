@@ -14,8 +14,6 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
-#define BIS_CLASS_MaterialElement "MaterialElement"
-
 // JSon  Material Asset Keywords.
 #define MATERIAL_ASSET_Rendering "RenderMaterial"
 

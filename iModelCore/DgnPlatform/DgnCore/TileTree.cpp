@@ -7,10 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
+#include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_TILETREE
 
-#define TABLE_NAME_TileTree "TileTree"
+//#define TABLE_NAME_TileTree "TileTree"    // Initial version with "Filename, Data, DataSize, Created"
+#define TABLE_NAME_TileTree "TileTree_v2"   // Added 'ContentType' and 'Expires'.
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -57,20 +59,9 @@ folly::Future<BentleyStatus> TileLoader::CreateTile()
     LoadFlag loadFlag(m_tile->GetRootR());
 
     if (!m_tile->IsQueued())
-        return SUCCESS; // this node was abandoned.
+        return ERROR; // this node was abandoned.
 
-    if (SUCCESS == _ReadFromDb())
-        {
-        if (SUCCESS == LoadTile())
-            {
-            m_tile->SetIsReady();    // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-            return SUCCESS;
-            }
-            
-        // If we failed to load from the db, try from the source.
-        }
-        
-    return _GetFromSource();
+    return (SUCCESS == _ReadFromDb()) ? SUCCESS : _GetFromSource();
     }
 
 //----------------------------------------------------------------------------------------
@@ -83,11 +74,25 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     if (isHttp)
         {
         HttpDataQuery query(m_fileName, m_loads);
-        return query.Perform(m_tileBytes);
+
+        if (SUCCESS != query.Perform(m_tileBytes))
+            return ERROR;
+
+        m_contentType = query.GetContentType();
+        m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
+        }
+    else
+        {
+        FileDataQuery query(m_fileName, m_loads);
+
+        if (SUCCESS != query.Perform(m_tileBytes))
+            return ERROR;
+
+        m_contentType = "";     // unknown 
+        m_expirationDate = 0;   // unknown 
         }
 
-    FileDataQuery query(m_fileName, m_loads);
-    return query.Perform(m_tileBytes);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -105,7 +110,7 @@ BentleyStatus TileLoader::_ReadFromDb()
         RealityData::Cache::AccessLock lock(*cache);
 
         CachedStatementPtr stmt;
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
             return ERROR;
 
         stmt->ClearBindings();
@@ -115,6 +120,8 @@ BentleyStatus TileLoader::_ReadFromDb()
 
         m_tileBytes.SaveData((Byte*) stmt->GetValueBlob(0), stmt->GetValueInt(1));
         m_tileBytes.SetPos(0);
+        m_contentType = stmt->GetValueText(2);    
+        m_expirationDate = stmt->GetValueInt64(3);
 
         uint64_t rowId = stmt->GetValueInt64(2);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
@@ -143,9 +150,12 @@ BentleyStatus TileLoader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TileLoader::_SaveToDb()
     {
+    if (!m_saveToCache)
+        return SUCCESS;
+
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
-        return ERROR;
+        return ERROR; 
 
     BeAssert(!m_cacheKey.empty());
     BeAssert(m_tileBytes.HasData());
@@ -154,7 +164,7 @@ BentleyStatus TileLoader::_SaveToDb()
 
     // "INSERT OR REPLACE" so we can update old data that we failed to load.
     CachedStatementPtr stmt;
-    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,Created) VALUES (?,?,?,?)");
+    auto rc = cache->GetDb().GetCachedStatement(stmt, "INSERT OR REPLACE INTO " TABLE_NAME_TileTree " (Filename,Data,DataSize,ContentType,Created,Expires) VALUES (?,?,?,?,?,?)");
 
     BeAssert(rc == BE_SQLITE_OK);
     BeAssert(stmt.IsValid());
@@ -163,9 +173,9 @@ BentleyStatus TileLoader::_SaveToDb()
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
     stmt->BindBlob(2, m_tileBytes.GetData(), (int) m_tileBytes.GetSize(), Statement::MakeCopy::No);
     stmt->BindInt64(3, (int64_t) m_tileBytes.GetSize());
-
-    if (m_tile.IsValid()) // for the root, store NULL for time. That way it will never get purged.
-        stmt->BindInt64(4, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
+    stmt->BindInt64(5, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    stmt->BindInt64(6, m_expirationDate);
 
     rc = stmt->Step();
     if (BE_SQLITE_DONE != rc)
@@ -208,6 +218,53 @@ BentleyStatus HttpDataQuery::Perform(ByteStream& data)
     return SUCCESS;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
+    {
+    expirationDate = 0;
+
+    if (!m_response.IsSuccess())
+        return false;
+         
+    Utf8String cacheControl = m_response.GetHeaders().GetCacheControl();
+    size_t offset = 0;
+    Utf8String directive;
+    while ((offset = cacheControl.GetNextToken(directive, ",", offset)) != Utf8String::npos)
+        {
+        // Not parsed:
+        // "private" : means that the cache is for a single user. This is what we have.
+        // "s-maxage": max age for shared cache(aka proxies). We have a private single-user cache, not relevant.
+
+        if (directive.StartsWith("no-cache") || directive.StartsWith("no-store"))
+            {
+            // We are not allowed to cache this response. It may contain sensitive information, requires usage tracking by the server...
+            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+            return false;
+            }
+
+        if (directive.StartsWith("max-age="))
+            {
+            int maxAge = atoi(directive.c_str() + strlen("max-age="));
+
+            expirationDate = BeTimeUtilities::GetCurrentTimeAsUnixMillis() + (maxAge * 1000);
+            }
+        }
+
+    // if cache-control did not provide a max-age we must use 'Expires' directive if present.
+    if (0 == expirationDate)
+        {        
+        Utf8CP expiresStr = m_response.GetHeaders().GetValue("Expires");
+        if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
+            {
+            // if we cannot find an expiration date we are still allowed to cache.
+            }
+        }
+       
+    return true;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -238,7 +295,13 @@ BentleyStatus TileCache::_Prepare() const
     if (m_db.TableExists(TABLE_NAME_TileTree))
         return SUCCESS;
         
-    Utf8CP ddl = "Filename CHAR PRIMARY KEY,Data BLOB,DataSize BIGINT,Created BIGINT";
+    Utf8CP ddl = "Filename CHAR PRIMARY KEY,"
+                 "Data BLOB,"
+                 "DataSize BIGINT,"
+                 "ContentType TEXT," 
+                 "Created BIGINT,"
+                 "Expires BIGINT";
+
     if (BE_SQLITE_OK == m_db.CreateTable(TABLE_NAME_TileTree, ddl))
         return SUCCESS;
 
@@ -377,7 +440,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
 
             tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
 
-            // On a successful load, store the tile in the cache.
+            // On a successful load, potentially store the tile in the cache.   
             loader->_SaveToDb();
             return SUCCESS;
             });
@@ -578,11 +641,14 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
 
+    DPoint3d offset = {0.0, 0.0, m_biasDistance};
+    Transform location = Transform::FromProduct(m_location, Transform::From(offset));
+
     if (!m_graphics.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
         m_graphics.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_graphics, &m_location, m_clip);
+        auto branch = m_context.CreateBranch(m_graphics, &location, m_clip);
         BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
         m_context.OutputGraphic(*branch, nullptr);
         }
@@ -591,9 +657,8 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     if (!m_substitutes.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
-        DPoint3d offset = {0.0, 0.0, -1};
-        Transform moveBack = Transform::From(offset);
-        Transform location = Transform::FromProduct(m_location, moveBack);
+        offset.z = m_substitueBiasDistance;
+        location = Transform::FromProduct(location, Transform::From(offset));
 
         m_substitutes.SetViewFlags(flags);
         auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip);
@@ -621,7 +686,7 @@ void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     {
-    if (!_HasChildren()) // is this is the highest resolution tile?
+    if (m_isLeaf) // if this is a leaf, it has no children
         return nullptr;
 
     if (create && m_children.empty())

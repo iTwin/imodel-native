@@ -210,6 +210,8 @@ struct UpdatePlan
     uint32_t    m_priority = 0;
     uint32_t    m_timeout = 0; // a percentage of frame time, from 0 to 100
     bool        m_timeoutIsPct = false;
+    bool        m_hasSubRect = false;
+    DRange3d    m_subRect;
     Query       m_query;
     AbortFlags  m_abortFlags;
 
@@ -224,6 +226,7 @@ public:
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
     uint32_t GetCreateSceneTimeout() const { return m_timeout; }
     bool IsCreateSceneTimeoutPct() const {return m_timeoutIsPct;}
+    void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
 };
 
 //=======================================================================================

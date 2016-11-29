@@ -20,17 +20,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   11/16
-//=======================================================================================
-struct ScopedHostAdopter
-{
-    ScopedHostAdopter(DgnPlatformLib::Host& host) { DgnPlatformLib::AdoptHost(host); }
-    ~ScopedHostAdopter() { DgnPlatformLib::ForgetHost(); }
-};
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
-
 
 // The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
 // by all threads.
@@ -1633,15 +1623,12 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     {
     DgnModelPtr     modelPtr(&model);
     auto            pCollector = &collector;
-    auto            host = &T_HOST;
     auto            generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
 
     if (nullptr != generateMeshTiles)
         {
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
-            ScopedHostAdopter   hostScope(*host);
-
             auto status = pCollector->_BeginProcessModel(*modelPtr);
             TileNodePtr root;
             if (Status::Success == status)
@@ -1666,12 +1653,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
         return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
             {
-            ScopedHostAdopter hostScope(*host);
             return pCollector->_BeginProcessModel(*modelPtr);
             })
         .then([=](Status status)
             {
-            ScopedHostAdopter hostScope(*host);
             if (Status::Success == status)
                 return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr, modelDelta.get());
 
@@ -1679,7 +1664,6 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
             })
         .then([=](ElementTileResult result)
             {
-            ScopedHostAdopter hostScope(*host);
             if (result.m_tile.IsValid())
                 m_totalTiles += result.m_tile->GetNodeCount();
 
@@ -1717,8 +1701,6 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]                                                         
         {
-        ScopedHostAdopter hostScope(context.m_host);
-
     #if defined (BENTLEYCONFIG_PARASOLID) 
         ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
@@ -1735,8 +1717,6 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureElementTileResult TileGenerator::GenerateTileset(Status status, ElementTileContext context)
     {
-    ScopedHostAdopter hostScope(context.m_host);
-
     auto& cache = *context.m_cache;
     if (Status::Success != status)
         {
@@ -1755,8 +1735,6 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
         {
-        ScopedHostAdopter hostScope(context.m_host);
-
     #if defined (BENTLEYCONFIG_PARASOLID) 
         ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
         ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
@@ -1841,8 +1819,6 @@ void ElementTileNode::AdjustTolerance(double newTolerance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerator::FutureElementTileResult TileGenerator::ProcessChildTiles(Status status, ElementTileNodePtr parent, ElementTileContext context)
     {
-    ScopedHostAdopter hostScope(context.m_host);
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
     ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
     ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 

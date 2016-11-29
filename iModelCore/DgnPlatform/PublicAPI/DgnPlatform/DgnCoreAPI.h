@@ -36,7 +36,6 @@
 #include "ValueParse.h"
 #include "ViewContext.h"
 #include "ViewController.h"
-#include "Sheet.h"
 #include "GeomPart.h"
 #include "Annotations/TextAnnotation.h"
 #include "DgnFont.h"
@@ -50,6 +49,7 @@
 #include "SnapContext.h"
 #include "NullContext.h"
 #include "Sprites.h"
+#include "Sheet.h"
 
 //__PUBLISH_SECTION_END__
 #include "LineStyleApi.h"
