@@ -1170,7 +1170,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             points.push_back(p1);
 
             DPoint3d    previousPoint = (i == 0) ? DPoint3d::FromSumOf (p0, 2.0, p1, -1.0) : meshPoints[polyline.m_indices[i-1]];
-            DPoint3d    nextPoint     = (i == polyline.m_indices.size() - 2) ? DPoint3d::FromSumOf(p1, 2.0, p0, -1.0) : meshPoints[polyline.m_indices[i+1]];
+            DPoint3d    nextPoint     = (i == polyline.m_indices.size() - 2) ? DPoint3d::FromSumOf(p1, 2.0, p0, -1.0) : meshPoints[polyline.m_indices[i+2]];
 
             previous.push_back (previousPoint);
             previous.push_back (previousPoint);
@@ -1192,7 +1192,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     pointRange.Extend (previous.front());
     pointRange.Extend (next.back());
 
-    static bool     s_doQuantize = true;
+    static bool     s_doQuantize = false;
 
     primitive["material"] = AddPolylineMaterial (rootNode, mesh.GetDisplayParams(), mesh, idStr.c_str());
     primitive["mode"] = GLTF_TRIANGLES;
@@ -1201,9 +1201,9 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     primitive["attributes"]["PREVIOUS"] = accPreviousId;
     primitive["attributes"]["NEXT"] = accNextId;
     primitive["attributes"]["WIDTH"] = accWidthId;
-    AddMeshVertexAttribute (rootNode, &points.front().x, bvPositionId, accPositionId, 3, points.size(), "VEC3", true, &pointRange.low.x, &pointRange.high.x);
-    AddMeshVertexAttribute (rootNode, &previous.front().x, bvPreviousId, accPreviousId, 3,previous.size(), "VEC3", true, &pointRange.low.x, &pointRange.high.x);
-    AddMeshVertexAttribute (rootNode, &next.front().x, bvNextId, accNextId, 3, next.size(), "VEC3", true, &pointRange.low.x, &pointRange.high.x);
+    AddMeshVertexAttribute (rootNode, &points.front().x, bvPositionId, accPositionId, 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
+    AddMeshVertexAttribute (rootNode, &previous.front().x, bvPreviousId, accPreviousId, 3,previous.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
+    AddMeshVertexAttribute (rootNode, &next.front().x, bvNextId, accNextId, 3, next.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
     AddMeshVertexAttribute (rootNode, &widths.front(), bvWidthId, accWidthId, 1, widths.size(), "SCALAR", false, nullptr, nullptr);
 
     AddMeshIndices (rootNode, primitive, indices, idStr);
