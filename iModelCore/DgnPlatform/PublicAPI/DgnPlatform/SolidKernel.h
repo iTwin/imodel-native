@@ -704,7 +704,8 @@ struct Modify
 
     //! Modify a face of a body by imprinting new edges from the specified curve vector.
     //! @param[in,out] face The target face sub-entity to imprint.
-    //! @param[in] wires The vector of wire bodies to imprint the curves of onto the face.
+    //! @param[in] curveVector The curve geometry to imprint.
+    //! @param[in] direction The project direction (optional, uses curvature if nullptr).
     //! @param[in] extend Whether to extend an open wire body to ensure that it splits the face.
     //! @return SUCCESS if face imprint created.
     DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnFace(ISubEntityPtr& face, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true);
@@ -712,7 +713,7 @@ struct Modify
     //! Modify the target body by imprinting new edges from the specified curve vector.
     //! @param[in,out] target The target body to imprint.
     //! @param[in] curveVector The curve geometry to imprint.
-    //! @param[in] direction The project direction for imprinting the curve.
+    //! @param[in] direction The project direction (optional, uses curvature if nullptr).
     //! @param[in] extend Whether to extend an open curve to ensure that it splits the face.
     //! @return SUCCESS if imprint created.
     DGNPLATFORM_EXPORT static BentleyStatus ImprintCurveVectorOnBody(IBRepEntityR target, CurveVectorCR curveVector, DVec3dCP direction = nullptr, bool extend = true); 
