@@ -84,6 +84,45 @@ class ContextServicesTestFixture : public testing::Test
         return caBundlePath;
         }
 
+    bvector<GeoPoint2d> GetDefaultPolygon()
+        {
+        bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
+        GeoPoint2d p1, p2, p3, p4, p5;
+        p1.Init(-79.25, 38.57);
+        p2.Init(-79.05, 38.57);
+        p3.Init(-79.05, 38.77);
+        p4.Init(-79.25, 38.77);
+        p5.Init(-79.25, 38.57);
+        filterPolygon.push_back(p1);
+        filterPolygon.push_back(p2);
+        filterPolygon.push_back(p3);
+        filterPolygon.push_back(p4);
+        filterPolygon.push_back(p5);
+
+        return filterPolygon;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  4/2015
+    //----------------------------------------------------------------------------------------
+    BeFileName GetXsdDirectory()
+        {
+        BeFileName outDir;
+        BeTest::GetHost().GetDgnPlatformAssetsDirectory(outDir);
+        outDir.AppendToPath(L"xsd");
+        return outDir;
+        }
+
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                   Mathieu.Marchand  4/2015
+    //----------------------------------------------------------------------------------------
+    BeFileName GetXsd_2_0()
+        {
+        BeFileName out = GetXsdDirectory();
+        out.AppendToPath(L"RealityPackage.2.0.xsd");
+        return out;
+        }
+
     };
 
 //-------------------------------------------------------------------------------------
@@ -99,20 +138,7 @@ TEST_F(ContextServicesTestFixture, ConceptStationTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-    
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -170,7 +196,8 @@ TEST_F(ContextServicesTestFixture, ConceptStationTest)
     i = high.size();
     ASSERT_TRUE(i >= 216);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     WCharCP packageFile = cswBench->GetPackageFileName().GetName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
@@ -186,20 +213,7 @@ TEST_F(ContextServicesTestFixture, SelectTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -223,20 +237,7 @@ TEST_F(ContextServicesTestFixture, FilterTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -262,20 +263,7 @@ TEST_F(ContextServicesTestFixture, USTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -380,20 +368,7 @@ TEST_F(ContextServicesTestFixture, SourceTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -433,20 +408,7 @@ TEST_F(ContextServicesTestFixture, USGSTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -462,7 +424,8 @@ TEST_F(ContextServicesTestFixture, USGSTest)
 
     ASSERT_TRUE(i >= 7);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     WCharCP packageFile = cswBench->GetPackageFileName().GetName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
@@ -478,20 +441,7 @@ TEST_F(ContextServicesTestFixture, IndexTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -507,7 +457,8 @@ TEST_F(ContextServicesTestFixture, IndexTest)
 
     ASSERT_TRUE(i >= 2);
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     WCharCP packageFile = cswBench->GetPackageFileName().GetName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
@@ -523,20 +474,7 @@ TEST_F(ContextServicesTestFixture, PackageIdTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -545,7 +483,8 @@ TEST_F(ContextServicesTestFixture, PackageIdTest)
 
     cswBench->FilterSpatialEntity();
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     ASSERT_TRUE(cswBench->GetInstanceId().Contains(".xrdp"));
 
@@ -563,20 +502,7 @@ TEST_F(ContextServicesTestFixture, PackageDownloadTest)
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -585,7 +511,8 @@ TEST_F(ContextServicesTestFixture, PackageDownloadTest)
 
     cswBench->FilterSpatialEntity();
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     WCharCP packageFile = cswBench->GetPackageFileName().GetName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile));
@@ -597,24 +524,11 @@ TEST_F(ContextServicesTestFixture, PackageDownloadTest)
 // From WSG to Package to download
 //-------------------------------------------------------------------------------------
 TEST_F(ContextServicesTestFixture, COMPLETETest)
-{
+    {
     Utf8String token = GetToken();
     ASSERT_TRUE(token.length() > 100);
 
-    bvector<GeoPoint2d> filterPolygon = bvector<GeoPoint2d>();
-    GeoPoint2d p1, p2, p3, p4, p5;
-    p1.Init(-79.25, 38.57);
-    p2.Init(-79.05, 38.57);
-    p3.Init(-79.05, 38.77);
-    p4.Init(-79.25, 38.77);
-    p5.Init(-79.25, 38.57);
-    filterPolygon.push_back(p1);
-    filterPolygon.push_back(p2);
-    filterPolygon.push_back(p3);
-    filterPolygon.push_back(p4);
-    filterPolygon.push_back(p5);
-
-    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(filterPolygon);
+    RealityPlatform::GeoCoordinationParams params = RealityPlatform::GeoCoordinationParams(GetDefaultPolygon());
 
     RealityPlatform::ContextServicesWorkbench* cswBench = RealityPlatform::ContextServicesWorkbench::Create(token, params);
 
@@ -622,10 +536,24 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
 
     cswBench->FilterSpatialEntity();
 
-    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackage());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageId());
+    ASSERT_TRUE(BentleyStatus::SUCCESS == cswBench->DownloadPackageFile());
 
     BeFileName packageFile = cswBench->GetPackageFileName();
     ASSERT_TRUE(BeFileName::DoesPathExist(packageFile.GetName()));
+
+    BeXmlStatus status = BEXML_Success;
+    /*BeXmlDomPtr pDom = BeXmlDom::CreateAndReadFromFile(status, packageFile.GetName());
+    ASSERT_EQ(BEXML_Success, status);
+     
+    status = pDom->SchemaValidate(GetXsd_2_0().c_str());
+    if(BEXML_Success != status) // report error string first.
+        {
+        WString errorString;
+        BeXmlDom::GetLastErrorString (errorString);
+        ASSERT_STREQ(L"", errorString.c_str());
+        }
+    ASSERT_EQ(BEXML_Success, status);*/
 
     RealityDataDownload::Link_File_wMirrors_wSisters downloadOrder = RealityConversionTools::PackageFileToDownloadOrder(packageFile);
 
@@ -633,7 +561,7 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     BeFileName::BeDeleteFile(packageFile.GetName());
 
     //make sure none of the files are already in the cache
-#pragma omp parallel for
+//#pragma omp parallel for
     for(RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
         for(RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
             for(RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
@@ -647,7 +575,6 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     
     ASSERT_TRUE(report != nullptr);
 
-    BeXmlStatus status;
     Utf8String reportString;
     report->ToXml(reportString);
     BeXmlReaderPtr reader = BeXmlReader::CreateAndReadFromString(status, reportString.c_str());
@@ -659,7 +586,7 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
     uint64_t actualSize, statedSize;
 
     while (IBeXmlReader::ReadResult::READ_RESULT_Success == (reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element)))
-    {
+        {
         Utf8String xmlNodeName;
         reader->GetCurrentNodeName(xmlNodeName);
         IBeXmlReader::NodeType nodeType = reader->GetCurrentNodeType();
@@ -678,13 +605,13 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
             ASSERT_TRUE(BeFileStatus::Success == file.GetSize(actualSize));
             ASSERT_TRUE(actualSize == statedSize);
             }
-    }
+        }
 
     // clear the filesys
-#pragma omp parallel for
+//#pragma omp parallel for
     for (RealityPlatform::RealityDataDownload::mirrorWSistersVector mirrorVec : downloadOrder)
         for (RealityPlatform::RealityDataDownload::sisterFileVector sisterVec : mirrorVec)
             for (RealityPlatform::RealityDataDownload::url_file_pair ufPair : sisterVec)
                 BeFileName::BeDeleteFile(ufPair.second.c_str());
     ASSERT_TRUE(fileCount >= 4);
-}
+    }

@@ -90,8 +90,6 @@ struct ContextServicesWorkbench
         CURLcode performCurl(Utf8StringCR url, Utf8StringCP writeString = nullptr, FILE* fp = nullptr, Utf8StringCR postFields = Utf8String());
         
         Utf8String createSpatialEntityWithDetailsViewUrl(Utf8String filter = "");
-        BentleyStatus downloadPackageId();
-        BentleyStatus downloadPackageFile();
         BentleyStatus handlePackageFile();
     public:
         REALITYDATAPLATFORM_EXPORT static ContextServicesWorkbench* Create(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params);
@@ -111,7 +109,8 @@ struct ContextServicesWorkbench
         REALITYDATAPLATFORM_EXPORT RealityPlatform::ResolutionCriteria GetResolution() { return m_selectedResolution; }
         REALITYDATAPLATFORM_EXPORT void SetResolution(RealityPlatform::ResolutionCriteria resolution) { m_selectedResolution = resolution; }
 
-        REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackage();
+        REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackageId();
+        REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackageFile();
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadFiles();
     };
 

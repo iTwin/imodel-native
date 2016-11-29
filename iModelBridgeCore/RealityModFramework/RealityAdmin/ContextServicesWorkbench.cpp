@@ -200,21 +200,6 @@ void ContextServicesWorkbench::FilterSpatialEntity(ContextServicesWorkbench_Filt
     }
 
 ///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Raphael.Lemieux                   10/2016
-//+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ContextServicesWorkbench::DownloadPackage()
-    {
-    Utf8String instanceId;
-    if (BentleyStatus::SUCCESS != downloadPackageId())
-        return BentleyStatus::ERROR;
-
-    if (BentleyStatus::SUCCESS != downloadPackageFile())
-        return BentleyStatus::ERROR;
-    
-    return BentleyStatus::SUCCESS;
-    }
-
-///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> selectedIds) const
@@ -244,7 +229,7 @@ Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> se
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ContextServicesWorkbench::downloadPackageId()
+BentleyStatus ContextServicesWorkbench::DownloadPackageId()
     {
     //Second query to do the package request, WSG is creating the file on his side and returning us a filename
     Utf8String readBufferPackage;
@@ -272,7 +257,7 @@ BentleyStatus ContextServicesWorkbench::downloadPackageId()
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ContextServicesWorkbench::downloadPackageFile()
+BentleyStatus ContextServicesWorkbench::DownloadPackageFile()
     {
     //Third query to download the file from the server eg: GUID.xrdp
     BeFileName realityDataTempPath = getBaseFolder();

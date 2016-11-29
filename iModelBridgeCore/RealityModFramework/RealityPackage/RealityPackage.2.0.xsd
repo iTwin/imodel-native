@@ -67,7 +67,7 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="SourceType">
-                <xs:attribute name="type" type="xs:string">
+                <xs:attribute name="typeKey" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
                             The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
@@ -282,7 +282,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="streamed" use="optional" type="xs:bool">
+        <xs:attribute name="streamed" use="optional" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
                 Indicates if the URI refers to a streamed source. If streamed then the client application should not attempt to download it
