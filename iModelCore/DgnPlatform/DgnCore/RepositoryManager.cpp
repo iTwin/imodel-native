@@ -301,7 +301,7 @@ bool BriefcaseManager::InitializeLocalDb()
     // Save the DgnDb creation date for later verification in offline mode...
     DateTime dgnDbCreationDate;
     if (BE_SQLITE_ROW == GetDgnDb().QueryCreationDate(dgnDbCreationDate))
-        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToUtf8String());
+        m_localDb.SavePropertyString(GetCreationDatePropSpec(), dgnDbCreationDate.ToString());
 
     // Set up the required tables
     return CreateCodesTable(TABLE_Codes) && CreateLocksTable(TABLE_Locks)
@@ -967,18 +967,22 @@ ReleaseContext::ReleaseContext(DgnDbR db, bool wantLocks, bool wantCodes) : m_db
         }
 
     BeAssert((wantLocks || wantCodes) && "Waste of time attempting to relinquish/release nothing...");
-    auto include = wantCodes ? DgnRevision::Include::Codes : DgnRevision::Include::None;
-    if (wantLocks)
-        include = include | DgnRevision::Include::Locks;
-
+    
     RevisionStatus revStatus;
-    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus, include);
+    DgnRevisionPtr rev = db.Revisions().StartCreateRevision(&revStatus);
     if (rev.IsValid())
         {
-        m_usedLocks.FromRevision(*rev);
-        rev->ExtractAssignedCodes(m_usedCodes);
+        if (wantLocks)
+            m_usedLocks.FromRevision(*rev, db);
+
+        if (wantCodes)
+            {
+            DgnCodeSet discardedCodes;
+            rev->ExtractCodes(m_usedCodes, discardedCodes, db);
+            }
+
         m_status = RepositoryStatus::Success;
-        m_endTxnId = db.Revisions().GetCurrentRevisionEndTxnId();
+        m_endTxnId = db.Revisions().QueryCurrentRevisionEndTxnId();
 
         db.Revisions().AbandonCreateRevision();
         }
@@ -1244,12 +1248,15 @@ RepositoryStatus BriefcaseManager::_OnFinishRevision(DgnRevision const& rev)
     // Any codes which became Used as a result of these changes must necessarily have been Reserved by this briefcase,
     // and are now no longer Reserved by any briefcase
     // (Any codes which became Discarded were necessarily previously Used, therefore no local state needs to be updated for them).
-    if (rev.GetAssignedCodes().empty())
+    DgnCodeSet assignedCodes, discardedCodes;
+    rev.ExtractCodes(assignedCodes, discardedCodes, GetDgnDb());
+
+    if (assignedCodes.empty())
         return RepositoryStatus::Success;
     else if (!Validate())
         return RepositoryStatus::SyncError;
 
-    auto status = Remove(rev.GetAssignedCodes());
+    auto status = Remove(assignedCodes);
     if (RepositoryStatus::Success == status)
         Save();
 

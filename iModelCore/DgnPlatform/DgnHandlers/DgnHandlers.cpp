@@ -8,40 +8,37 @@
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/L10N.h>
 #include <DgnPlatform/DgnECSymbolProvider.h>
-#include <DgnPlatform/Dimension.h>
 #include <DgnPlatform/DgnECTypes.h>
-
-USING_NAMESPACE_BENTLEY_DGN
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::InitializeDgnHandlers()
     {
-    InitializeDgnCore ();
+    InitializeDgnCore();
 
     // Register Symbol Provider for ECExpressions
-    IECSymbolProvider::RegisterExternalSymbolPublisher (&DgnECSymbolProvider::ExternalSymbolPublisher);
+    IECSymbolProvider::RegisterExternalSymbolPublisher(&DgnECSymbolProvider::ExternalSymbolPublisher);
 
-    BeAssert (NULL == m_fontAdmin);             m_fontAdmin             = &_SupplyFontAdmin();
-    BeAssert (NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
-    BeAssert (NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
-    BeAssert (NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
-    BeAssert (NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin ();
-    BeAssert (NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin ();
-    BeAssert (NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin ();
+    BeAssert(NULL == m_fontAdmin);             m_fontAdmin             = &_SupplyFontAdmin();
+    BeAssert(NULL == m_lineStyleAdmin);        m_lineStyleAdmin        = &_SupplyLineStyleAdmin();
+    BeAssert(NULL == m_rasterAttachmentAdmin); m_rasterAttachmentAdmin = &_SupplyRasterAttachmentAdmin();
+    BeAssert(NULL == m_pointCloudAdmin);       m_pointCloudAdmin       = &_SupplyPointCloudAdmin();
+    BeAssert(NULL == m_formatterAdmin);        m_formatterAdmin        = &_SupplyFormatterAdmin();
+    BeAssert(NULL == m_scriptingAdmin);        m_scriptingAdmin        = &_SupplyScriptingAdmin();
+    BeAssert(NULL == m_repositoryAdmin);       m_repositoryAdmin       = &_SupplyRepositoryAdmin();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2008
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Host::Terminate (bool onProgramExit)
+void DgnPlatformLib::Host::Terminate(bool onProgramExit)
     {
     DGNPLATFORM_TRACE ("DgnPlatformLib::Host::Terminate");
 
     if (NULL == DgnPlatformLib::QueryHost())
         {
-        BeAssert (false && "Terminate called on a thread that is not associated with a host");
+        BeAssert(false && "Terminate called with no host");
         return;
         }
 
@@ -56,74 +53,11 @@ void DgnPlatformLib::Host::Terminate (bool onProgramExit)
     ON_HOST_TERMINATE(m_repositoryAdmin, onProgramExit);
 
     // UnRegister Symbol Provider for ECExpressions
-    IECSymbolProvider::UnRegisterExternalSymbolPublisher ();
+    IECSymbolProvider::UnRegisterExternalSymbolPublisher();
 
-    TerminateDgnCore (onProgramExit);
+    TerminateDgnCore(onProgramExit);
 
-    BeAssert (NULL == DgnPlatformLib::QueryHost());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      02/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::StaticInitialize()
-    {
-    BeSystemMutexHolder holdBeSystemMutexInScope;
-
-    static bool s_staticInitialized = false;
-    if (s_staticInitialized)
-        return;
-
-    bentleyAllocator_enableLowFragmentationCRTHeap();
-
-    SectionClipObjectFactory::Register();
-
-    IDgnECTypeAdapterContext::RegisterFactory();
-
-    s_staticInitialized = true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   09/08
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::Initialize (Host& host, bool loadResources, bool adoptHost)
-    {
-    StaticInitialize();
-
-    DgnPlatformLib::Host* wasHost = NULL;   
-    if (!adoptHost)
-        {
-        // *** NEEDS WORK: All of this monkey business with forgetting and adopting the current host is 
-        // necessary because we have initializing and adopting mixed up.
-        // If you want to create a Host for later use or for use by another thread, you
-        // have to call DgnPlaformLib::Initialize to get it set up. But that has the side
-        // effect of making the current thread actually adopt that host. Ideally, we should 
-        // be able to initialize a host without adopting it. However, we can't be sure that
-        // the various initialization functions aren't accessing the host in thread-local 
-        // storage during initialization. Since they might, we have to plug it in.
-        // To preserve the original host, we swap it out again when we're done.
-        wasHost = QueryHost();
-        if (wasHost)
-            ForgetHost();
-        }
-
-    if (NULL != QueryHost())
-        {
-        BeAssert (false && "Call DgnPlatformLib::Initialize once per thread");
-        return;
-        }
-
-    host.InitializeDgnHandlers(); 
-
-    if (loadResources)
-        host.LoadResources();
-
-    if (!adoptHost)
-        {
-        ForgetHost();
-        if (wasHost)
-            AdoptHost(*wasHost);
-        }
+    BeAssert(NULL == DgnPlatformLib::QueryHost());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -142,5 +76,5 @@ DgnPlatformLib::Host::PointCloudAdmin&       DgnPlatformLib::Host::_SupplyPointC
 // ???  Why is this necessary? Who is referencing _wassert?
 // ???
 // ???
-void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert (false);}
+void _wassert(wchar_t const*, wchar_t const*, int) {BeAssert(false);}
 #endif
