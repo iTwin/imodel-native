@@ -48,13 +48,11 @@ protected:
     void BackupTestFile();
     void RestoreTestFile();
 
-    typedef DgnCodeSet CodeSet;
-    typedef DgnCode Code;
-    void ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded);
+    void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
 
     static Utf8String CodeToString(DgnCode const& code) { return Utf8PrintfString("%s:%s\n", code.GetNamespace().c_str(), code.GetValueCP()); }
-    static void ExpectCode(DgnCode const& code, CodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
-    static void ExpectCodes(DgnCodeSet const& exp, CodeSet const& actual)
+    static void ExpectCode(DgnCode const& code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
+    static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
         {
         EXPECT_EQ(exp.size(), actual.size());
         for (auto const& code : exp)
@@ -95,7 +93,7 @@ protected:
         return elem.Insert();
         }
 
-    DgnElementCPtr RenameElement(DgnElementCR el, Code const& code)
+    DgnElementCPtr RenameElement(DgnElementCR el, DgnCode const& code)
         {
         auto pEl = el.CopyForEdit();
         EXPECT_EQ(DgnDbStatus::Success, pEl->SetCode(code));
@@ -348,14 +346,13 @@ TEST_F(RevisionTestFixture, DISABLED_MoreWorkflow)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, CodeSet& discarded)
+void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded)
     {
     m_testDb->SaveChanges();
     DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
 
-    assigned = rev->GetAssignedCodes();
-    discarded = rev->GetDiscardedCodes();
+    rev->ExtractCodes(assigned, discarded, *m_testDb);
 
     m_testDb->Revisions().FinishCreateRevision();
     }
@@ -379,10 +376,10 @@ TEST_F(RevisionTestFixture, Codes)
     ASSERT_TRUE(defaultModel.IsValid());
 
     // Check that the new codes are all reported
-    CodeSet createdCodes, discardedCodes;
+    DgnCodeSet createdCodes, discardedCodes;
     ExtractCodesFromRevision(createdCodes, discardedCodes);
 
-    CodeSet expectedCodes;
+    DgnCodeSet expectedCodes;
     ExpectCodes(expectedCodes, discardedCodes);
 
     expectedCodes.insert(defaultCat->GetCode());

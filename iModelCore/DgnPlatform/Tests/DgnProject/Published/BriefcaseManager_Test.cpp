@@ -71,10 +71,13 @@ public:
     RepositoryManager();
 
     // Simulates what the real server does with codes when a revision is pushed.
-    void OnFinishRevision(DgnRevision const& rev)
+    void OnFinishRevision(DgnRevision const& rev, DgnDbCR dgndb)
         {
-        MarkRevision(rev.GetAssignedCodes(), false, rev.GetId());
-        MarkRevision(rev.GetDiscardedCodes(), true, rev.GetId());
+        DgnCodeSet assignedCodes, discardedCodes;
+        rev.ExtractCodes(assignedCodes, discardedCodes, dgndb);
+
+        MarkRevision(assignedCodes, false, rev.GetId());
+        MarkRevision(discardedCodes, true, rev.GetId());
         }
 
     void MarkUsed(DgnCode const& code, Utf8StringCR revision)
@@ -2188,7 +2191,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
             return DgnDbStatus::WriteError;
 
         RevisionStatus revStat;
-        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat, DgnRevision::Include::Locks);
+        DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision(&revStat);
         if (rev.IsNull())
             {
             if (RevisionStatus::NoTransactions == revStat)
@@ -2202,7 +2205,7 @@ struct ExtractLocksTest : SingleBriefcaseLocksTest
                 }
             }
 
-        req.FromRevision(*rev);
+        req.FromRevision(*rev, *m_db);
         m_db->Revisions().AbandonCreateRevision();
         return DgnDbStatus::Success;
         }
@@ -2409,12 +2412,12 @@ Utf8String CodesManagerTest::CommitRevision(DgnDbR db)
     {
     Utf8String revId;
     DgnRevisionPtr rev;
-    if (BE_SQLITE_OK != db.SaveChanges() || (rev = db.Revisions().StartCreateRevision(nullptr, DgnRevision::Include::Codes)).IsNull())
+    if (BE_SQLITE_OK != db.SaveChanges() || (rev = db.Revisions().StartCreateRevision()).IsNull())
         return revId;
 
     if (RevisionStatus::Success == db.Revisions().FinishCreateRevision())
         {
-        m_server.OnFinishRevision(*rev);
+        m_server.OnFinishRevision(*rev, db);
         revId = rev->GetId();
         }
 
