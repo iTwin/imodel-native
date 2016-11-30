@@ -1318,7 +1318,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             ECValue::NavigationInfo const& navInfo = v.GetNavigationInfo();
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navInfo.GetIdAsLong()) << "Model via ECInstance";
             //WIP_ECOBJECTS_RELCLASSID
-            ASSERT_EQ(relClass.GetId().GetValue(), navInfo.GetRelationshipClassId()) << "Model via ECInstance";
+            ASSERT_EQ(relClass.GetId(), navInfo.GetRelationshipClassId()) << "Model via ECInstance";
             }
         else
             {
