@@ -97,7 +97,7 @@ struct NativeSqlBuilder
         std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings() const { return m_parameterIndexMappings; }
 
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
-        static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::set<size_t>> const& indexSkipList);
+        static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
         void CopyIndexMappingFrom(NativeSqlBuilder const& arg)
             {
             m_parameterIndexMappings = arg.GetParameterIndexMappings();

@@ -290,28 +290,32 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t,std::set<size_t>> const& indexSkipList)
+NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t,std::vector<size_t>> const& indexSkipList)
     {
     List flattenedList;
     auto skipIt = indexSkipList.begin();
     auto skipEndIt = indexSkipList.end();
     for (size_t i = 0; i < listOfLists.size(); i++)
         {
-        auto itor = indexSkipList.find(i);
-        if (itor == indexSkipList.end())
-            continue;
-
         auto const& innerList = listOfLists[i];
-        for (size_t j = 0; j < innerList.size(); i++)
+        auto itor = indexSkipList.find(i);
+        if (itor != indexSkipList.end())
             {
-            if (itor->second.find(j) != itor->second.end())
-                continue;
+            auto skipIt = itor->second.begin();
+            auto skipEndIt = itor->second.end();
+            for (size_t j = 0; j < innerList.size(); j++)
+                {
+                if (skipIt != skipEndIt && j == *skipIt)
+                    {
+                    skipIt++;
+                    continue;
+                    }
 
-            flattenedList.push_back(innerList[j]);
+                flattenedList.push_back(innerList[j]);
+                }
             }
-
-
-        flattenedList.insert(flattenedList.end(), innerList.begin(), innerList.end());
+        else
+            flattenedList.insert(flattenedList.end(), innerList.begin(), innerList.end());
         }
 
     return flattenedList;

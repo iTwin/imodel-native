@@ -20,7 +20,8 @@ struct ECSqlUpdatePreparer
 private:
     struct NativeSqlSnippets
         {
-        std::map<size_t, std::set<size_t>> m_overflowPropertyIndexes;
+        std::map<size_t, std::vector<size_t>> m_overflowPropertyIndexes;
+        std::map<size_t, std::vector<DataPropertyMap const*>> m_overflowProperties;
         NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
         NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
         };
@@ -34,6 +35,5 @@ private:
 public:
     static ECSqlStatus Prepare (ECSqlPrepareContext& ctx, UpdateStatementExp const& exp);
     };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
