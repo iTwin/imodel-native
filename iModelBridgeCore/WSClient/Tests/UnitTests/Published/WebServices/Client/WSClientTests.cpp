@@ -228,6 +228,18 @@ TEST_F(WSClientTests, GetServerInfo_ThirdResponseIsUnauthorized_StopsAndReturnsL
     EXPECT_EQ(WSError::Id::LoginFailed, result.GetError().GetId());
     }
 
+TEST_F(WSClientTests, GetServerInfo_AllResponsesWithServerError_ReturnsServerNotSupportedError)
+    {
+    auto client = WSClient::Create("https://srv.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ForAnyRequest(StubHttpResponse(HttpStatus::InternalServerError));
+
+    auto result = client->GetServerInfo()->GetResult();
+
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Status::ServerNotSupported, result.GetError().GetStatus());
+    }
+
 #ifdef USE_GTEST
 TEST_F(WSClientTests, RegisterServerInfoListener_AddedListener_ListenerNotifiedWithReceivedInfo)
     {

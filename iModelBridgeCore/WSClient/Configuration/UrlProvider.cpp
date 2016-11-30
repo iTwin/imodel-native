@@ -188,8 +188,11 @@ void UrlProvider::Initialize(Environment env, int64_t cacheTimeoutMs, IJsonLocal
 +---------------+---------------+---------------+---------------+---------------+------*/
 void UrlProvider::Uninitialize()
     {
+    s_isInitialized = false;
     s_buddi = nullptr;
     s_customHandler = nullptr;
+    s_localState = nullptr;
+    s_thread = nullptr;
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -1015,11 +1015,18 @@ AsyncTaskPtr<WSUpdateObjectResult> WebApiV1::SendUpdateObjectRequest
 (
 ObjectIdCR objectId,
 JsonValueCR propertiesJson,
-Utf8String eTag,
+Utf8StringCR eTag,
+BeFileNameCR filePath,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
+    if (!filePath.empty())
+        {
+        BeAssert(false && "SendUpdateObjectRequest() supports file upload from WebApi 2.4 only. Update server or use seperate file upload");
+        return CreateCompletedAsyncTask(WSUpdateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+        }
+
     Utf8String url = GetUrl(SERVICE_Objects, CreateObjectIdParam(objectId));
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
 

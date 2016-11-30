@@ -2146,4 +2146,55 @@ TEST_F(ECDbAdapterTests, DeleteInstances_MultipleClassInstances_DeletesInstances
     EXPECT_EQ(0, adapter.FindInstances(ecClass3).size());
     }
 
+TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKeys)
+    {
+    auto schema = ParseSchema(R"(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="A" />
+            <ECClass typeName="B">
+                <BaseClass>A</BaseClass>
+            </ECClass>
+        </ECSchema>)");
+
+    ObservableECDb db;
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, db.CreateNewDb(":memory:"));
+
+    auto cache = ECSchemaCache::Create();
+    cache->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+
+    ECDbAdapter adapter(db);
+
+    ECInstanceKey a, b;
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.A"), nullptr).Insert(a, Json::Value()));
+    ASSERT_EQ(SUCCESS, JsonInserter(db, *adapter.GetECClass("TestSchema.B"), nullptr).Insert(b, Json::Value()));
+
+    ECSqlStatement statement;
+    ECInstanceKeyMultiMap keys;
+
+    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT ECClassId, ECInstanceId FROM TestSchema.A"));
+    ASSERT_EQ(SUCCESS, adapter.ExtractECInstanceKeys(statement, keys));
+    EXPECT_CONTAINS(keys, ECDbHelper::ToPair(a));
+    EXPECT_CONTAINS(keys, ECDbHelper::ToPair(b));
+    EXPECT_EQ(2, keys.size());
+
+    statement.Finalize();
+    keys.clear();
+
+    ASSERT_EQ(SUCCESS, adapter.PrepareStatement(statement, "SELECT NULL, ECInstanceId, ECClassId FROM TestSchema.A"));
+    ASSERT_EQ(SUCCESS, adapter.ExtractECInstanceKeys(statement, keys, nullptr, 2, 1));
+    EXPECT_CONTAINS(keys, ECDbHelper::ToPair(a));
+    EXPECT_CONTAINS(keys, ECDbHelper::ToPair(b));
+    EXPECT_EQ(2, keys.size());
+
+    statement.Finalize();
+    keys.clear();
+
+    BeTest::SetFailOnAssert(false);
+    ASSERT_EQ(ERROR, adapter.PrepareStatement(statement, "Invalid statement"));
+    BeTest::SetFailOnAssert(true);
+    ASSERT_EQ(ERROR, adapter.ExtractECInstanceKeys(statement, keys));
+    EXPECT_EQ(0, keys.size());
+    }
+
 #endif

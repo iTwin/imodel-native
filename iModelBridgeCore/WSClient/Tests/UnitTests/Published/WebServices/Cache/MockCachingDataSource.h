@@ -28,8 +28,8 @@ struct MockCachingDataSource : public ICachingDataSource
         NiceMock<MockTransactionHandler> m_txnManager;
 
     public:
-        MockCachingDataSource () :
-            m_thread (WorkerThread::Create ("MockCachingDataSource"))
+        MockCachingDataSource() :
+            m_thread(WorkerThread::Create("MockCachingDataSource"))
             {
             DefaultValue<AsyncTaskPtr<ObjectsResult>>::Set(CreateCompletedAsyncTask(ObjectsResult()));
             DefaultValue<AsyncTaskPtr<KeysResult>>::Set(CreateCompletedAsyncTask(KeysResult()));
@@ -37,85 +37,86 @@ struct MockCachingDataSource : public ICachingDataSource
             DefaultValue<AsyncTaskPtr<BatchResult>>::Set(CreateCompletedAsyncTask(BatchResult()));
             DefaultValue<AsyncTaskPtr<Result>>::Set(CreateCompletedAsyncTask(Result()));
 
-            ON_CALL (*this, GetCacheAccessThread ()).WillByDefault (Return (m_thread));
+            ON_CALL(*this, GetCacheAccessThread()).WillByDefault(Return(m_thread));
 
-            ON_CALL (m_txnManager, CommitTransaction ()).WillByDefault (Return (SUCCESS));
-            ON_CALL (m_txnManager, RollbackTransaction ()).WillByDefault (Return (SUCCESS));
+            ON_CALL(m_txnManager, CommitTransaction()).WillByDefault(Return(SUCCESS));
+            ON_CALL(m_txnManager, RollbackTransaction()).WillByDefault(Return(SUCCESS));
 
-            ON_CALL (*this, StartCacheTransactionProxy ()).WillByDefault (Invoke ([=]
+            ON_CALL(*this, StartCacheTransactionProxy()).WillByDefault(Invoke([=]
                 {
-                auto stubTransactionPtr = std::make_shared<CacheTransaction> (m_cache, &m_txnManager);
+                auto stubTransactionPtr = std::make_shared<CacheTransaction>(m_cache, &m_txnManager);
                 return stubTransactionPtr;
                 }));
             }
 
-        virtual ~MockCachingDataSource ()
-            {
-            }
+        virtual ~MockCachingDataSource()
+            {}
 
-        MockDataSourceCache& GetCacheMock ()
+        MockDataSourceCache& GetCacheMock()
             {
             return m_cache;
             }
 
-        MOCK_CONST_METHOD0 (GetClient,
-            IWSRepositoryClientPtr ());
-        MOCK_METHOD1 (SetClient,
-            void (IWSRepositoryClientPtr client));
-        MOCK_METHOD0 (CancelAllTasksAndWait,
-            void ());
-        MOCK_METHOD1 (UpdateSchemas,
-            AsyncTaskPtr<Result> (ICancellationTokenPtr ct));
+        MOCK_CONST_METHOD0(GetClient,
+            IWSRepositoryClientPtr());
+        MOCK_METHOD1(SetClient,
+            void(IWSRepositoryClientPtr client));
+        MOCK_METHOD0(CancelAllTasks,
+            AsyncTaskPtr<void>());
+        MOCK_METHOD1(UpdateSchemas,
+            AsyncTaskPtr<Result>(ICancellationTokenPtr ct));
 
-        CacheTransaction StartCacheTransaction () override
+        CacheTransaction StartCacheTransaction() override
             {
             return std::move(*StartCacheTransactionProxy());
             }
 
         //! Use this method to mock StartCacheTransaction that returns non-copyable CacheTransaction
-        MOCK_METHOD0 (StartCacheTransactionProxy,
-            std::shared_ptr<CacheTransaction> ());
+        MOCK_METHOD0(StartCacheTransactionProxy,
+            std::shared_ptr<CacheTransaction>());
 
-        MOCK_METHOD0 (GetCacheAccessThread,
-            WorkerThreadPtr ());
-        MOCK_METHOD1 (GetRepositorySchemas,
-                      bvector<ECN::ECSchemaCP>(CacheTransactionCR));
-        MOCK_METHOD1 (GetRepositorySchemaKeys, 
-            bvector<SchemaKey> (CacheTransactionCR txn));
-        MOCK_METHOD1 (GetServerInfo,
-            WSInfo (CacheTransactionCR));
-        MOCK_METHOD1 (SetClassesToAlwaysCacheChildren,
-            void (const bset<Utf8String>& classesToAlwaysCacheChildren));
-        MOCK_METHOD2 (GetNavigationResponseKey,
-            CachedResponseKey (CacheTransactionCR, ObjectIdCR parentId));
-        MOCK_METHOD2 (GetNavigationResponseKey,
-            CachedResponseKey (CacheTransactionCR, ECInstanceKeyCR parentKey));
-        MOCK_METHOD3 (GetNavigationQuery,
-            WSQueryPtr (CacheTransactionCR, ObjectIdCR parentId, ISelectProviderPtr selectProvider));
-        MOCK_METHOD4 (GetObject,
-            AsyncTaskPtr<ObjectsResult> (ObjectIdCR, DataOrigin, IDataSourceCache::JsonFormat, ICancellationTokenPtr));
-        MOCK_METHOD5 (GetObjects,
-            AsyncTaskPtr<ObjectsResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr ct));
-        MOCK_METHOD4 (GetObjectsKeys,
-            AsyncTaskPtr<KeysResult> (CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, ICancellationTokenPtr ct));
-        MOCK_METHOD4 (GetNavigationChildren,
-            AsyncTaskPtr<ObjectsResult> (ObjectIdCR, DataOrigin, std::shared_ptr<const SelectProvider>, ICancellationTokenPtr));
-        MOCK_METHOD4 (GetNavigationChildrenKeys,
-            AsyncTaskPtr<KeysResult> (ObjectIdCR, DataOrigin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr));
-        MOCK_METHOD4 (GetFile,
-            AsyncTaskPtr<FileResult> (ObjectIdCR fileId, DataOrigin origin, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
-        MOCK_METHOD5 (CacheFiles,
-            AsyncTaskPtr<BatchResult> (const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
-        MOCK_METHOD2 (DownloadAndCacheChildren,
-            AsyncTaskPtr<Result> (const bvector<ObjectId>& parentIds, ICancellationTokenPtr ct));
-        MOCK_METHOD3 (SyncLocalChanges,
+        MOCK_METHOD0(GetCacheAccessThread,
+            WorkerThreadPtr());
+        MOCK_METHOD1(GetRepositorySchemas,
+            bvector<ECN::ECSchemaCP>(CacheTransactionCR));
+        MOCK_METHOD1(GetRepositorySchemaKeys,
+            bvector<SchemaKey>(CacheTransactionCR txn));
+        MOCK_METHOD1(GetServerInfo,
+            WSInfo(CacheTransactionCR));
+        MOCK_METHOD0(GetServerInfo,
+            WSInfo());
+        MOCK_METHOD1(SetClassesToAlwaysCacheChildren,
+            void(const bset<Utf8String>& classesToAlwaysCacheChildren));
+        MOCK_METHOD2(GetNavigationResponseKey,
+            CachedResponseKey(CacheTransactionCR, ObjectIdCR parentId));
+        MOCK_METHOD2(GetNavigationResponseKey,
+            CachedResponseKey(CacheTransactionCR, ECInstanceKeyCR parentKey));
+        MOCK_METHOD3(GetNavigationQuery,
+            WSQueryPtr(CacheTransactionCR, ObjectIdCR parentId, ISelectProviderPtr selectProvider));
+        MOCK_METHOD4(GetObject,
+            AsyncTaskPtr<ObjectsResult>(ObjectIdCR, DataOrigin, IDataSourceCache::JsonFormat, ICancellationTokenPtr));
+        MOCK_METHOD5(GetObjects,
+            AsyncTaskPtr<ObjectsResult>(CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr ct));
+        MOCK_METHOD4(GetObjectsKeys,
+            AsyncTaskPtr<KeysResult>(CachedResponseKeyCR responseKey, WSQueryCR query, DataOrigin origin, ICancellationTokenPtr ct));
+        MOCK_METHOD4(GetNavigationChildren,
+            AsyncTaskPtr<ObjectsResult>(ObjectIdCR, DataOrigin, std::shared_ptr<const SelectProvider>, ICancellationTokenPtr));
+        MOCK_METHOD4(GetNavigationChildrenKeys,
+            AsyncTaskPtr<KeysResult>(ObjectIdCR, DataOrigin, std::shared_ptr<const ISelectProvider>, ICancellationTokenPtr));
+        MOCK_METHOD4(GetFile,
+            AsyncTaskPtr<FileResult>(ObjectIdCR fileId, DataOrigin origin, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
+        MOCK_METHOD5(CacheFiles,
+            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>& filesIds, bool skipCachedFiles, FileCache fileCacheLocation, LabeledProgressCallback onProgress, ICancellationTokenPtr ct));
+        MOCK_METHOD2(DownloadAndCacheChildren,
+            AsyncTaskPtr<Result>(const bvector<ObjectId>& parentIds, ICancellationTokenPtr ct));
+        MOCK_METHOD3(SyncLocalChanges,
             AsyncTaskPtr<BatchResult>(SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
-        MOCK_METHOD4 (SyncLocalChanges,
-            AsyncTaskPtr<BatchResult> (const bset<ECInstanceKey>&, SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
-        MOCK_METHOD5 (SyncCachedData,
+        MOCK_METHOD4(SyncLocalChanges,
+            AsyncTaskPtr<BatchResult>(const bset<ECInstanceKey>&, SyncProgressCallback, ICancellationTokenPtr, SyncOptions));
+        MOCK_METHOD5(SyncCachedData,
             AsyncTaskPtr<BatchResult>(bvector<ECInstanceKey>, bvector<IQueryProvider::Query>, bvector<IQueryProviderPtr>, SyncProgressCallback, ICancellationTokenPtr));
-        MOCK_METHOD5 (CacheNavigation,
-            AsyncTaskPtr<BatchResult> (const bvector<ObjectId>&, const bvector<ObjectId>&, std::shared_ptr<const ISelectProvider>, LabeledProgressCallback, ICancellationTokenPtr));
+        MOCK_METHOD5(CacheNavigation,
+            AsyncTaskPtr<BatchResult>(const bvector<ObjectId>&, const bvector<ObjectId>&, std::shared_ptr<const ISelectProvider>, LabeledProgressCallback, ICancellationTokenPtr));
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

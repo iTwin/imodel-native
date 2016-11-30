@@ -287,7 +287,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UpdateServerFile(FileInfoCR 
     const Utf8String methodName = "DgnDbRepositoryConnection::UpdateServerFile";
     Json::Value properties = Json::objectValue;
     fileInfo.ToPropertiesJson(properties);
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), properties, nullptr, BeFileName(), nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
     ([=] (const WSUpdateObjectResult& result)
         {
         if (!result.IsSuccess())
@@ -366,7 +366,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
     fileInfo.ToPropertiesJson(fileProperties);
     fileProperties[ServerSchema::Property::IsUploaded] = true;
 
-    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, nullptr, cancellationToken)
+    return m_wsRepositoryClient->SendUpdateObjectRequest(fileInfo.GetObjectId(), fileProperties, nullptr, BeFileName(), nullptr, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (const WSUpdateObjectResult& initializeFileResult)
         {
         if (!initializeFileResult.IsSuccess())
@@ -742,7 +742,7 @@ ICancellationTokenPtr           cancellationToken
     
     if (revision->GetURL().empty())
         {
-        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetChangeStreamFile(), nullptr, callback, cancellationToken)
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetRevisionChangesFile(), nullptr, callback, cancellationToken)
             ->Then<DgnDbServerStatusResult>([=](const WSFileResult& fileResult)
             {
             if (fileResult.IsSuccess())
@@ -757,7 +757,7 @@ ICancellationTokenPtr           cancellationToken
     else
         {
         // Download file directly from the url.
-        return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetChangeStreamFile(), nullptr, cancellationToken)
+        return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetRevisionChangesFile(), nullptr, cancellationToken)
             ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
             {
             if (result.IsSuccess())
@@ -2682,7 +2682,7 @@ BeBriefcaseId                  briefcaseId
     properties[ServerSchema::Property::Id] = revision->GetId();
     properties[ServerSchema::Property::Description] = revision->GetSummary();
     uint64_t size;
-    revision->GetChangeStreamFile().GetFileSize(size);
+    revision->GetRevisionChangesFile().GetFileSize(size);
     properties[ServerSchema::Property::FileSize] = size;
     properties[ServerSchema::Property::ParentId] = revision->GetParentId();
     properties[ServerSchema::Property::MasterFileId] = revision->GetDbGuid();
@@ -2697,7 +2697,7 @@ BeBriefcaseId                  briefcaseId
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeRevision
 (
 Dgn::DgnRevisionPtr             revision,
-BeBriefcaseId                   briefcaseId,
+Dgn::DgnDbCR                    dgndb,
 JsonValueR                      pushJson,
 ObjectId                        revisionObjectId,
 bool                            relinquishCodesLocks,
@@ -2705,6 +2705,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
+    BeBriefcaseId briefcaseId = dgndb.GetBriefcaseId();
     std::shared_ptr<WSChangeset> changeset (new WSChangeset ());
 
     //Set Revision initialization request to ECChangeSet
@@ -2714,23 +2715,22 @@ ICancellationTokenPtr           cancellationToken
 
     //Set used locks to the ECChangeSet
     LockRequest usedLocks;
-    usedLocks.FromRevision (*revision);
+    usedLocks.FromRevision (*revision, dgndb);
     BeGuid masterFileId;
     masterFileId.FromString(revision->GetDbGuid().c_str());
     if (!usedLocks.IsEmpty ())
         SetLocksJsonRequestToChangeSet (usedLocks.GetLockSet (), briefcaseId, masterFileId, revision->GetId (), *changeset, WSChangeset::ChangeState::Modified, true);
 
-    DgnCodeSet usedCodes;
-    usedCodes = revision->GetAssignedCodes();
-    if (!usedCodes.empty())
+    DgnCodeSet assignedCodes, discardedCodes;
+    revision->ExtractCodes(assignedCodes, discardedCodes, dgndb);
+
+    if (!assignedCodes.empty())
         {
         DgnCodeState state;
         state.SetUsed(revision->GetId());
-        SetCodesJsonRequestToChangeSet(usedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
+        SetCodesJsonRequestToChangeSet(assignedCodes, state, briefcaseId, masterFileId, revision->GetId(), *changeset, WSChangeset::ChangeState::Modified);
         }
 
-    DgnCodeSet discardedCodes;
-    discardedCodes = revision->GetDiscardedCodes();
     if (!discardedCodes.empty())
         {
         DgnCodeState state;
@@ -2767,7 +2767,7 @@ ICancellationTokenPtr           cancellationToken
             }
 
         //Try to acquire all required locks and codes.
-        DgnCodeSet codesToReserve = usedCodes;
+        DgnCodeSet codesToReserve = assignedCodes;
         codesToReserve.insert(discardedCodes.begin(), discardedCodes.end());
 
         AcquireCodesLocksInternal(usedLocks, codesToReserve, briefcaseId, masterFileId, revision->GetParentId(), IBriefcaseManager::ResponseOptions::None, cancellationToken)
@@ -2805,15 +2805,17 @@ ICancellationTokenPtr           cancellationToken
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::Push
 (
 Dgn::DgnRevisionPtr             revision,
-BeBriefcaseId                   briefcaseId,
+Dgn::DgnDbCR                    dgndb,
 bool                            relinquishCodesLocks,
 Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr           cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::Push";
+    DgnDbCP pDgnDb = &dgndb;
+
     // Stage 1. Create revision.
-    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, m_repositoryInfo.GetId(), briefcaseId));
+    std::shared_ptr<Json::Value> pushJson = std::make_shared<Json::Value>(PushRevisionJson(revision, m_repositoryInfo.GetId(), dgndb.GetBriefcaseId()));
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
@@ -2838,7 +2840,7 @@ ICancellationTokenPtr           cancellationToken
 
             if (url.empty())
                 {
-                m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetChangeStreamFile(), callback, cancellationToken)
+                m_wsRepositoryClient->SendUpdateFileRequest(revisionObjectId, revision->GetRevisionChangesFile(), callback, cancellationToken)
                     ->Then([=] (const WSUpdateObjectResult& uploadRevisionResult)
                     {
     #if defined (ENABLE_BIM_CRASH_TESTS)
@@ -2852,7 +2854,7 @@ ICancellationTokenPtr           cancellationToken
                         }
 
                     // Stage 3. Initialize revision.
-                    InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeRevision(revision, *pDgnDb, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
                         ->Then([=] (DgnDbServerStatusResultCR result)
                         {
                         if (result.IsSuccess())
@@ -2867,7 +2869,7 @@ ICancellationTokenPtr           cancellationToken
                 }
             else
                 {
-                m_azureClient->SendUpdateFileRequest(url, revision->GetChangeStreamFile(), callback, cancellationToken)
+                m_azureClient->SendUpdateFileRequest(url, revision->GetRevisionChangesFile(), callback, cancellationToken)
                     ->Then([=] (const AzureResult& result)
                     {
                     if (!result.IsSuccess())
@@ -2878,7 +2880,7 @@ ICancellationTokenPtr           cancellationToken
                         }
 
                     // Stage 3. Initialize revision.
-                    InitializeRevision(revision, briefcaseId, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
+                    InitializeRevision(revision, *pDgnDb, *pushJson, revisionObjectId, relinquishCodesLocks, callback, cancellationToken)
                         ->Then([=] (DgnDbServerStatusResultCR result)
                         {
                         if (result.IsSuccess())

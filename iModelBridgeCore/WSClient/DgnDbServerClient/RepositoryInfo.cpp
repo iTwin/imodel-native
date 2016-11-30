@@ -108,9 +108,9 @@ DgnDbServerRepositoryResult RepositoryInfo::ReadRepositoryInfo(Dgn::DgnDbCR db)
     Utf8String serverUrl;
     Utf8String id;
     BeSQLite::DbResult status;
-    status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryURL, serverUrl);
+    status = db.QueryBriefcaseLocalValue(serverUrl, Db::Local::RepositoryURL);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
-        status = db.QueryBriefcaseLocalValue(Db::Local::RepositoryId, id);
+        status = db.QueryBriefcaseLocalValue(id, Db::Local::RepositoryId);
     if (BeSQLite::DbResult::BE_SQLITE_ROW == status)
         {
         return DgnDbServerRepositoryResult::Success(Create(serverUrl, id));

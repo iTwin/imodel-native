@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Client/WebServicesClient.h>
+#include <Bentley/BeThread.h>
 #include <Bentley/DateTime.h>
 #include <BeXml/BeXml.h>
 

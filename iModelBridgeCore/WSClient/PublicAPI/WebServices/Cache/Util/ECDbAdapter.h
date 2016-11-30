@@ -118,6 +118,14 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
             ECInstanceKeyMultiMap& keysOut,
             ICancellationTokenPtr ct = nullptr
             ) override;
+        WSCACHE_EXPORT BentleyStatus ExtractECInstanceKeys
+            (
+            ECSqlStatement& statement,
+            ECInstanceKeyMultiMap& keysOut,
+            ICancellationTokenPtr ct = nullptr,
+            int ecClassIdColumn = 0,
+            int ecInstanceIdcolumn = 1
+            ) override;
 
         WSCACHE_EXPORT int CountClassInstances(ECClassCP ecClass) override;
         WSCACHE_EXPORT ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) override;

@@ -65,7 +65,7 @@ DataSourceCache::~DataSourceCache()
 BentleyStatus DataSourceCache::Create
 (
 BeFileNameCR cacheFilePath,
-CacheEnvironmentCR environment,
+CacheEnvironmentCR baseEnvironment,
 const ECDb::CreateParams& params
 )
     {
@@ -86,7 +86,7 @@ const ECDb::CreateParams& params
             return ERROR;
             }
 
-        SetupOpenState(environment);
+        SetupOpenState(baseEnvironment);
         return SUCCESS;
         });
     }
@@ -97,11 +97,11 @@ const ECDb::CreateParams& params
 BentleyStatus DataSourceCache::Open
 (
 BeFileNameCR cacheFilePath,
-CacheEnvironmentCR environment,
+CacheEnvironmentCR baseEnvironment,
 const ECDb::OpenParams& params
 )
     {
-    if (SUCCESS != Upgrader::FinalizeUpgradeIfNeeded(cacheFilePath, environment))
+    if (SUCCESS != Upgrader::FinalizeUpgradeIfNeeded(cacheFilePath, baseEnvironment))
         {
         return ERROR;
         }
@@ -112,14 +112,14 @@ const ECDb::OpenParams& params
         return ERROR;
         }
 
-    if (SUCCESS != UpgradeIfNeeded(cacheFilePath, environment, params))
+    if (SUCCESS != UpgradeIfNeeded(cacheFilePath, baseEnvironment, params))
         {
         return ERROR;
         }
 
     return ExecuteWithinTransaction([&]
         {
-        SetupOpenState(environment);
+        SetupOpenState(baseEnvironment);
         return SUCCESS;
         });
     }
@@ -146,7 +146,7 @@ BentleyStatus DataSourceCache::Close()
 BentleyStatus DataSourceCache::UpgradeIfNeeded
 (
 BeFileNameCR cacheFilePath,
-CacheEnvironmentCR environment,
+CacheEnvironmentCR baseEnvironment,
 const ECDb::OpenParams& params
 )
     {
@@ -183,7 +183,7 @@ const ECDb::OpenParams& params
         return ERROR;
         }
 
-    Upgrader upgrader(m_db, environment);
+    Upgrader upgrader(m_db, baseEnvironment);
     if (SUCCESS != upgrader.Upgrade(version))
         {
         BeAssert(false && "<Error> Failed to upgrade to current version");
@@ -252,10 +252,11 @@ BentleyStatus DataSourceCache::ExecuteWithinTransaction(std::function<BentleySta
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DataSourceCache::SetupOpenState(CacheEnvironmentCR environment)
+void DataSourceCache::SetupOpenState(CacheEnvironmentCR baseEnvironment)
     {
     BeFileName cachePath(m_db.GetDbFileName());
-    m_state = std::make_shared<WSCacheState>(m_db, FileStorage::CreateCacheEnvironment(cachePath, environment));
+    CacheEnvironment actualEnvironment = FileStorage::CreateCacheEnvironment(cachePath, baseEnvironment);
+    m_state = std::make_shared<WSCacheState>(m_db, actualEnvironment);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -304,9 +305,9 @@ BentleyStatus DataSourceCache::UpdateSchemas(const std::vector<ECSchemaPtr>& sch
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR environment)
+BentleyStatus DataSourceCache::DeleteCacheFromDisk(BeFileNameCR cacheFilePath, CacheEnvironmentCR baseEnvironment)
     {
-    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(FileStorage::CreateCacheEnvironment(cacheFilePath, environment)))
+    if (SUCCESS != FileStorage::DeleteFileCacheDirectories(FileStorage::CreateCacheEnvironment(cacheFilePath, baseEnvironment)))
         {
         return ERROR;
         }
@@ -396,6 +397,14 @@ BentleyStatus DataSourceCache::Reset()
 BeFileName DataSourceCache::GetCacheDatabasePath()
     {
     return BeFileName(m_db.GetDbFileName(), true);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+CacheEnvironmentCR DataSourceCache::GetEnvironment()
+    {
+    return m_state->GetFileCacheEnvironment();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1357,12 +1366,12 @@ BentleyStatus DataSourceCache::RemoveRootsByPrefix(Utf8StringCR rootPrefix)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache cacheLocation, BeFileNameCR externalRelativeDir)
+BentleyStatus DataSourceCache::SetFileCacheLocation(ObjectIdCR objectId, FileCache location, BeFileNameCR externalRelativeDir)
     {
     //! TODO: consider removing FileCache parameter and auotmaically use Root persistence instead
     LogCacheDataForMethod();
     FileInfo info = m_state->GetFileInfoManager().ReadInfo(objectId);
-    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, cacheLocation, &externalRelativeDir) ||
+    if (SUCCESS != m_state->GetFileStorage().SetFileCacheLocation(info, location, &externalRelativeDir) ||
         SUCCESS != m_state->GetFileInfoManager().SaveInfo(info))
         {
         return ERROR;
