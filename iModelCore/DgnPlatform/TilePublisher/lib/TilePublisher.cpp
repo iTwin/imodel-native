@@ -1675,8 +1675,18 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
     json["name"] = view.GetName();
 
     auto spatialView = view.ToSpatialView();
+    auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(&view) : nullptr;
     if (nullptr != spatialView)
-        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
+        {
+        auto selectorId = spatialView->GetModelSelectorId().ToString();
+        json["modelSelector"] = selectorId;
+        }
+    else if (nullptr != view2d)
+        {
+        auto fakeModelSelectorId = view2d->GetBaseModelId().ToString();
+        fakeModelSelectorId.append("_2d");
+        json["modelSelector"] = fakeModelSelectorId;
+        }
 
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
@@ -1736,6 +1746,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
+    DgnModelIdSet all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
@@ -1751,11 +1762,13 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
             continue;
 #endif
     
+        auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(viewDefinition.get()) : nullptr;
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
+        else if (nullptr != view2d)
+            all2dModelIds.insert(view2d->GetBaseModelId());
 
         Json::Value entry(Json::objectValue);
-
  
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
@@ -1773,7 +1786,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 
     json["defaultView"] = defaultViewId.ToString();
 
-    WriteModelsJson(json, allModelSelectors);
+    WriteModelsJson(json, allModelSelectors, all2dModelIds);
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
@@ -1788,9 +1801,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors)
+void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels)
     {
-    DgnModelIdSet allModels;
+    DgnModelIdSet allModels = all2dModels;
     Json::Value& selectorsJson = (json["modelSelectors"] = Json::objectValue);
     for (auto const& selectorId : allModelSelectors)
         {
@@ -1801,6 +1814,14 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
             selectorsJson[selectorId.ToString()] = IdSetToJson(models);
             allModels.insert(models.begin(), models.end());
             }
+        }
+
+    // create a fake model selector for each 2d model
+    for (auto const& modelId : all2dModels)
+        {
+        DgnModelIdSet modelIdSet;
+        modelIdSet.insert(modelId);
+        selectorsJson[modelId.ToString()+"_2d"] = IdSetToJson(modelIdSet);
         }
 
     json["models"] = GetModelsJson(allModels);
