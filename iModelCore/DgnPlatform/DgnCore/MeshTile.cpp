@@ -20,6 +20,8 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
+constexpr double s_half2dDepthRange = 500.0;
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
 // The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
@@ -448,8 +450,9 @@ TileGenerationCache::~TileGenerationCache()
 struct RangeAccumulator : RangeIndex::Traverser
 {
     DRange3dR       m_range;
+    bool            m_is2d;
 
-    RangeAccumulator(DRange3dR range) : m_range(range) { m_range = DRange3d::NullRange(); }
+    RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
     virtual bool _AbortOnWriteRequest() const override { return true; }
     virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return true; }
@@ -463,8 +466,17 @@ struct RangeAccumulator : RangeIndex::Traverser
         {
         if (Stop::Yes == tree.Traverse(*this))
             return TileGeneratorStatus::Aborted;
-        else
-            return m_range.IsNull() ? TileGeneratorStatus::NoGeometry : TileGeneratorStatus::Success;
+        else if (m_range.IsNull())
+            return TileGeneratorStatus::NoGeometry;
+
+        if (m_is2d)
+            {
+            BeAssert(m_range.low.z == m_range.high.z == 0.0);
+            m_range.low.z = -s_half2dDepthRange;
+            m_range.high.z = s_half2dDepthRange;
+            }
+
+        return TileGeneratorStatus::Success;
         }
 };
 
@@ -478,7 +490,7 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
     if (nullptr == geomModel || DgnDbStatus::Success != geomModel->FillRangeIndex())
         return TileGeneratorStatus::NoGeometry;
 
-    RangeAccumulator accum(m_range);
+    RangeAccumulator accum(m_range, model.Is2dModel());
     return accum.Accumulate(*geomModel->GetRangeIndex());
     }
 
@@ -1932,6 +1944,8 @@ public:
 //=======================================================================================
 struct GeometrySelector3d
 {
+    static bool Is3d() { return true; }
+
     static Utf8CP GetSql()
         {
         return "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
@@ -1960,6 +1974,8 @@ struct GeometrySelector3d
 //=======================================================================================
 struct GeometrySelector2d
 {
+    static bool Is3d() { return false; }
+
     static Utf8CP GetSql()
         {
         return "SELECT CategoryId,GeometryStream,Rotation,Origin_X,Origin_Y,BBoxLow_X,BBoxLow_Y,BBoxHigh_X,BBoxHigh_Y FROM "
@@ -2004,6 +2020,7 @@ public:
     m_statement(db.GetCachedStatement(T::GetSql()))
         {
         SetDgnDb(db);
+        m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
         }
 };
 
@@ -2101,6 +2118,14 @@ private:
     virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
     virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
+    virtual double _AdjustZDepth(double zDepth) override
+        {
+        // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
+        // Coming from mstn, priorities tend to be in [-500..500]
+        // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
+        constexpr double ratio = s_half2dDepthRange / 0x7fffffff;
+        return zDepth * ratio;
+        }
 
     virtual UnhandledPreference _GetUnhandledPreference(ISolidPrimitiveCR, SimplifyGraphic&) const override { return UnhandledPreference::Facet; }
     virtual UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
