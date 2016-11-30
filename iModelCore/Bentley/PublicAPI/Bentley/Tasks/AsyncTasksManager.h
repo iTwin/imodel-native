@@ -34,6 +34,7 @@ struct AsyncTasksManager
 
         static BeMutex s_threadingStoppingListenersMutex;
         static bvector<std::function<void()>> s_onThreadingStoppingListeners;
+        static bool s_waitForThreadsWhenStopped;
 
         static std::weak_ptr<WorkerThreadPool> s_defaultThreadPool;
 
@@ -61,7 +62,14 @@ struct AsyncTasksManager
         //! that could cause other code to hang or deadlock.
         BENTLEYDLL_EXPORT static std::shared_ptr<ITaskScheduler> GetDefaultScheduler ();
 
+        //! Stop Tasks framework and wait until no tasks are running. Called on app shut-down to ensure all code wraps up.
+        //! All threads should be no longer be held by any code for this to complete.
+        //! Avoid using static threads or call Unitialize() methods before this.
         BENTLEYDLL_EXPORT static void StopThreadingAndWait();
+        
+        //! Disable wait for StopThreadingAndWait(). Is workaround when threads are still held by static variables, but can
+        //! cause undefined code shut-down.
+        BENTLEYDLL_EXPORT static void SetWaitForThreadsWhenStopped(bool value);
     };
 
 END_BENTLEY_TASKS_NAMESPACE
