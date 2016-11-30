@@ -13,6 +13,9 @@ class TriangulationPreserver
     BcDTMPtr m_stmDtm;
     bvector<DPoint3d> m_pts;
     bvector<int> m_ptIdTolocalId;
+    bvector<int> m_pointIndex;
+    std::vector<bool> m_pointUsed;
+    int m_numPointsUsed;
     bool m_useGraphicBreaks;
 
     struct MissingLink
@@ -65,6 +68,8 @@ class TriangulationPreserver
         BcDTMPtr Finish ();
 
         void CheckTriangle (long* ptNums, int numPoints);
+    private:
+        void MatchEdges();
     };
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE

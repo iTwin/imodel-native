@@ -70,9 +70,6 @@
     <ClCompile Include="..\app\handlerAppManaged.cpp">
       <Filter>HandlerApp</Filter>
     </ClCompile>
-    <ClCompile Include="DTMReferenceXAttributeHandler.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
     <ClCompile Include="DTMSymbologyOverrideManager.cpp">
       <Filter>Source</Filter>
     </ClCompile>
@@ -147,7 +144,7 @@
     <ClInclude Include="DTMXAttributeHandler.h">
       <Filter>Includes</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicAPI\DTMReferenceXAttributeHandler.h">
+    <ClInclude Include="..\PublicAPI\TMReferenceXAttributeHandler.h">
       <Filter>PublicAPI</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicAPI\DTMSymbologyOverrideManager.h">

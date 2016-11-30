@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmedtfnc.h                                           aec    08-Feb-1994   */
@@ -118,7 +118,6 @@ int aecDTM_addTriangle      /* <= TRUE if error                    */
   struct CIVdtmtin *n23P,              /* => ptr to tri neigh. side 2-3       */
   struct CIVdtmtin *n31P               /* => ptr to tri neigh. side 3-1       */
 );
-
 int aecDTM_pointAdd         /* <= TRUE if error                    */
 (
   struct CIVpntedt *pntaddP            /* => point add data structure         */
@@ -134,14 +133,6 @@ int aecDTM_deletePoint      /* <= TRUE if error                    */
 int aecDTM_pointDelete      /* <= TRUE if error                    */
 (
   struct CIVpntedt *pntdelP            /* => point edit data structure        */
-);
-
-void aecDTM_pointDeleteCleanup
-(
-  struct CIVdtmsrf *srfP,              /* => surface your using               */
-  struct CIVdtmpnt *pntP,              /* => point we deleted                 */
-  long nnewlst,                        /* => # tins in affected list          */
-  long *newlstP                        /* => array of ptrs to triangle list   */
 );
 
 void aecDTM_deleteTriangle

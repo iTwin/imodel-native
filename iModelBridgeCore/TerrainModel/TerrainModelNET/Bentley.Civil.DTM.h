@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/Bentley.Civil.DTM.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,16 +14,11 @@
 // Civil assembly that this assembly requires to build
 
 #using <bentley.GeometryNET.Structs.dll>
+#using <bentley.GeometryNET.dll>
 #using <Bentley.Exceptions.dll>
 #using <System.dll>
 
-using namespace Bentley::Exceptions;
-using namespace System::ComponentModel;
-using namespace System::Reflection;
-using namespace System::Collections;
-
-namespace BGEO = Bentley::GeometryNET;
-
+#include <Bentley/ReleaseMarshaller.h>
 #include <TerrainModel/TerrainModel.h>
 #include <TerrainModel/Core/bcDTMClass.h>
 #include <TerrainModel/Core/dtm2dfns.h>
@@ -48,3 +43,9 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #define bcMem_realloc realloc
 #define bcMem_calloc calloc
 template<class c> void bcMem_freeAndClear (c **a) { if (a != 0 && *a != 0) { free (*a); *a = 0; } }
+
+using namespace Bentley::Exceptions;
+using namespace System::ComponentModel;
+using namespace System::Reflection;
+using namespace System::Collections;
+namespace BGEO = Bentley::GeometryNET;

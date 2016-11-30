@@ -270,6 +270,9 @@
     <ClInclude Include="TriangulationPreserver.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\InroadsExporter.h">
+      <Filter>PublicAPI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bcdtmEsri.cpp">
@@ -562,6 +565,12 @@
     </ClCompile>
     <ClCompile Include="TriangulationPreserver.cpp">
       <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsExporter.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="InroadsTM\InroadsTM.cpp">
+      <Filter>Source\InroadsTM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

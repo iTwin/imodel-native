@@ -2,7 +2,7 @@
 |
 |     $Source: formats/TriangulationPreserver.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Formats/Formats.h>
@@ -22,6 +22,7 @@ TriangulationPreserver::TriangulationPreserver (BcDTMR dtm) : m_dtm (&dtm), m_dt
     m_numLinkErrors = 0;
     m_numLinkSwapFailed = 0;
     m_numLinksSwapped = 0;
+    m_numPointsUsed = 0;
     }
 
 void TriangulationPreserver::Initialize ()
@@ -43,6 +44,7 @@ void TriangulationPreserver::AddPoints (DPoint3dCP pts, int numPoints, int first
         m_ptIdTolocalId[firstId++] = (int)m_pts.size ();
         m_pts.push_back (*pts++);
         }
+    m_pointUsed.resize(m_pts.size());
     }
 
 void TriangulationPreserver::AddPoint (DPoint3dCR pt, int ptId)
@@ -56,16 +58,50 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
     if (numPoints != 3)
         return;
 
-    DPoint3d pts[4];
+    DPoint3d pts[3];
     pts[0] = m_pts[GetLocalId (ptNums[0])];
     pts[1] = m_pts[GetLocalId (ptNums[1])];
     pts[2] = m_pts[GetLocalId (ptNums[2])];
-    pts[3] = pts[0];
 
-    DTMUserTag dtmUserTag = 0;
-    DTMFeatureId id;
-//    m_dtm->AddLinearFeature (DTMFeatureType::Breakline, pts, 4, dtmUserTag, &id);
-    m_stmDtm->AddLinearFeature (DTMFeatureType::GraphicBreak, pts, 4, dtmUserTag, &id);
+    int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+
+    // Make sure it is the right orientation.
+    if (side > 0)
+        std::swap(ptNums[2], ptNums[1]);
+/*
+    DTMDirection direction;
+    double area;
+    if (bcdtmMath_getPolygonDirectionP3D(pts, numPoints, &direction, &area) != DTM_SUCCESS)
+        return;
+    if (area < MAXAREAFORVOIDORISLANDS)
+        return;
+    long onLine;
+    double X, Y;
+    double d2 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y, &X, &Y);
+
+    if (d2 < 0.001)
+        return;
+
+    double d3 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[1].x, pts[1].y, pts[2].x, pts[2].y, pts[0].x, pts[0].y, &X, &Y);
+
+    if (d3 < 0.001)
+        return;
+    double d4 = bcdtmMath_distanceOfPointFromLine(&onLine, pts[2].x, pts[2].y, pts[0].x, pts[0].y, pts[1].x, pts[1].y, &X, &Y);
+
+    if (d4 < 0.001)
+        return;
+*/
+
+    for (int i = 0; i < 3; i++)
+        {
+        int localPtNum = GetLocalId(ptNums[i]);
+        if (!m_pointUsed[localPtNum])
+            {
+            m_pointUsed[localPtNum] = true;
+            m_numPointsUsed++;
+            }
+        m_pointIndex.push_back(localPtNum);
+        }
     }
 
 BcDTMPtr TriangulationPreserver::Finish ()
@@ -73,15 +109,46 @@ BcDTMPtr TriangulationPreserver::Finish ()
     if (m_stmDtm.IsNull ())
         return m_dtm;
 
+    if (m_numPointsUsed != (int)m_pts.size())
+        {
+        bvector<int> m_ptMapper;
+        m_ptMapper.resize(m_pts.size(), -1);
+        int nextNum = 0;
+        for (int i = 0; i < (int)m_pts.size(); i++)
+            {
+            if (m_pointUsed[i])
+                {
+                if (nextNum != i)
+                    m_pts[nextNum] = m_pts[i];
+
+                m_ptMapper[i] = nextNum;
+                nextNum++;
+                }
+            }
+        m_pts.resize(nextNum);
+        for (auto& pt : m_pointIndex)
+            {
+            pt = m_ptMapper[pt];
+            BeAssert(-1 != pt);
+            }
+        }
+
+    bcdtmObject_storeTrianglesInDtmObject(m_stmDtm->GetTinHandle(), DTMFeatureType::GraphicBreak, m_pts.data(), (int)m_pts.size(), m_pointIndex.data(), (int)m_pointIndex.size() / 3);
+
     // Recreate the triangulation.
-    bcdtmObject_triangulateStmTrianglesDtmObject (m_stmDtm->GetTinHandle ());
-    if (m_dtm->GetPointCount () == 0)
+    if (bcdtmObject_triangulateStmTrianglesDtmObject(m_stmDtm->GetTinHandle()) != DTM_SUCCESS)
+        {
+        m_dtm->AddPoints(m_pts.data(), (int)m_pts.size());
+        m_dtm->Triangulate();
+        return m_dtm;
+        }
+
+    if (m_dtm->GetPointCount() == 0)
         return m_stmDtm;
 
     // Add the void features to the TM.
     DTMFeatureEnumerator features (*m_stmDtm);
     bvector<DPoint3d> pts;
-
     // Add the Voids/Holes/Islands.
     for (const auto& feature : features)
         {
@@ -124,6 +191,11 @@ BcDTMPtr TriangulationPreserver::Finish ()
         m_dtm->AddPoints (m_pts);
         m_dtm->Triangulate ();
         }
+    else
+        {
+        m_dtm->AddPoints(m_pts);
+        }
+
     if (0)
         {
         DTMMeshEnumeratorPtr meshEnum = DTMMeshEnumerator::Create (*m_stmDtm);
@@ -170,6 +242,7 @@ BcDTMPtr TriangulationPreserver::Finish ()
 
             }
         }
+
     if (m_useGraphicBreaks)
         {
         // Triangulate the DTM.
@@ -223,6 +296,85 @@ BcDTMPtr TriangulationPreserver::Finish ()
 //    l->Save (L"d:\\temp\\failedToSwap.tin");
 //    m_dtm->Save (L"d:\\temp\\newDTM.tin");
     return m_dtm;
+    }
+
+void TriangulationPreserver::MatchEdges()
+    {
+    bmap<uint64_t, bool> edgeMap;
+
+    for (size_t i = 0; i < m_pointIndex.size(); i++)
+        {
+        size_t endPointIndex = i + 1;
+        if (i % 3 == 2) endPointIndex -= 3;
+
+        int p1 = m_pointIndex[i];
+        int p2 = m_pointIndex[endPointIndex];
+
+        auto it = edgeMap.find((uint64_t)p2 << 32 | p1);
+
+        if (it != edgeMap.end())
+            {
+            BeAssert(!it->second);
+            it->second = true;
+            }
+        else
+            {
+            it = edgeMap.find((uint64_t)p1 << 32 | p2);
+
+            if (it != edgeMap.end())
+                BeAssert(false);
+            else
+                {
+                edgeMap[(uint64_t)p1 << 32 | p2] = false;
+                }
+            }
+        }
+
+    BcDTMPtr joinDTM = BcDTM::Create();
+
+    for (auto it : edgeMap)
+        {
+        if (it.second)
+            continue;
+
+        DTMFeatureId featureId;
+        DPoint3d pts[2];
+        pts[0] = m_pts[it.first >> 32];
+        pts[1] = m_pts[it.first && 0xffffffff];
+
+        joinDTM->AddLinearFeature(DTMFeatureType::Breakline, pts, 2, &featureId);
+        }
+    int nFeatures, nJoinedFatures;
+    joinDTM->JoinFeatures(DTMFeatureType::Breakline, &nFeatures, &nJoinedFatures, 0);
+
+    m_stmDtm = BcDTM::Create();
+
+    // Add the void features to the TM.
+    DTMFeatureEnumerator features(*joinDTM);
+    bvector<DPoint3d> pts;
+    // Add the Voids/Holes/Islands.
+    for (const auto& feature : features)
+        {
+        DTMFeatureId id;
+        feature.GetFeaturePoints(pts);
+
+        if (pts.size() <= 2)
+            continue;
+
+        DTMDirection direction;
+        double area;
+        if (bcdtmMath_getPolygonDirectionP3D(pts.data(), (long)pts.size(), &direction, &area) != DTM_SUCCESS)
+            continue;
+        if (area < MAXAREAFORVOIDORISLANDS)
+            continue;
+
+        if (direction == DTMDirection::AntiClockwise)
+            m_stmDtm->AddLinearFeature(DTMFeatureType::Island, pts.data(), (int)pts.size(), &id);
+        if (direction == DTMDirection::Clockwise)
+            m_stmDtm->AddLinearFeature(DTMFeatureType::Void, pts.data(), (int)pts.size(), &id);
+        }
+
+
     }
 
 void TriangulationPreserver::CheckTriangle (long* ptNums, int numPts)

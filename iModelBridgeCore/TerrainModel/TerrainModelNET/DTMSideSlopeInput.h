@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMSideSlopeInput.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -184,6 +184,8 @@ public ref class DTMSideSlopeInput : public System::Collections::CollectionBase
 
 
     private: DTM_SIDE_SLOPE_TABLE* CreateSideSlopeInputTable ();
+
+    private: TMTransformHelper* DTMSideSlopeInput::GetTMTransformHelper();
 
     public: array<DTM^>^ CalculateSideSlopes ();
             // public:  void CalculateSideSlopes() ;

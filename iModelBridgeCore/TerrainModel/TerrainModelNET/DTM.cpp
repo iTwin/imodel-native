@@ -2,13 +2,13 @@
 |
 |     $Source: TerrainModelNET/DTM.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
-#include < vcclr.h >
-#include ".\dtm.h"
-#include ".\dtmexception.h"
+#include <vcclr.h>
+#include "dtm.h"
+#include "dtmexception.h"
 #if defined(Public)
 
 #undef Public
@@ -31,7 +31,7 @@ void GetVectorPointsFromIEnumerable (bvector<DPoint3d>& pts, System::Collections
     {
     for each (BGEO::DPoint3d pt in points)
         {
-        pts.push_back(*(DPoint3d*)&pt);
+        pts.push_back(DPoint3d::From(pt.X, pt.Y, pt.Z));
         }
     }
 
@@ -202,7 +202,7 @@ private class DTMTransformCallbackForwarder
             int             nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             array<BGEO::DPoint3d>^ managedPoints = gcnew array<BGEO::DPoint3d> (nPoint);
             pin_ptr<BGEO::DPoint3d const> pointsP = &managedPoints [0];
@@ -429,7 +429,7 @@ private class DTMDynamicFeaturesBrowsingCallbackForwarder
             size_t          nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             DTMDynamicFeatureType ftType;
             DTMHelpers::Copy (ftType, featureType);
@@ -499,7 +499,7 @@ private class DTMFeaturesBrowsingCallbackForwarder
             size_t            nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             DTMFeatureType ftType;
             DTMHelpers::Copy (ftType, featureType);
@@ -554,7 +554,7 @@ private class DTMTriangleMeshBrowsingCallbackForwarder
             long      *meshFacesP
             )
             {
-            if (numMeshPts == 0 || meshPtsP == NULL)
+            if (numMeshPts == 0 || meshPtsP == nullptr)
                 return DTM_SUCCESS;
             bool ret = false;
             if ( dtmFeatureType == ::DTMFeatureType::TriangleMesh )
@@ -630,7 +630,7 @@ private class DTMContoursBrowsingCallbackForwarder
             size_t          nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             DTMDynamicFeatureType ftType;
             DTMHelpers::Copy (ftType, featureType);
@@ -686,7 +686,7 @@ private class DTMPointsCallbackForwarder
             size_t     nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             bool ret = false;
             array<BGEO::DPoint3d>^  tManagedPoint = gcnew array<BGEO::DPoint3d>((int)nPoint);
@@ -737,7 +737,7 @@ private class DTMPointFeaturesCallbackForwarder
             size_t       nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
             bool ret = false;
             array<BGEO::DPoint3d>^  tManagedPoint = gcnew array<BGEO::DPoint3d>((int)nPoint);
@@ -785,7 +785,7 @@ private class DTMTracePointCallbackForwarder
             size_t     nPoint
             )
             {
-            if (nPoint == 0 || tPoint == NULL)
+            if (nPoint == 0 || tPoint == nullptr)
                 return DTM_SUCCESS;
 
             m_tracePoints = gcnew array<BGEO::DPoint3d> ((int)nPoint);
@@ -1107,7 +1107,7 @@ void BrowsingCriteria::SetFenceToBlock(BGEO::DRange3d value)
 //=======================================================================================
 BcDTMP DTM::Handle::get ()
     {
-    if (m_nativeDtm == NULL)
+    if (m_nativeDtm == nullptr)
         {
         throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("This doesn't support this method"));
         }
@@ -1207,7 +1207,7 @@ DTM^ DTM::CreateFromXyzFile  (String ^fileName)
 
     pin_ptr<const wchar_t> ch = PtrToStringChars(fileName);
 
-    BcDTMPtr bcDtmP = NULL;
+    BcDTMPtr bcDtmP = nullptr;
 
     if ( ch )
         bcDtmP = BcDTM::CreateFromXyzFile ( ch );
@@ -1264,7 +1264,7 @@ DTM^ DTM::CreateFromNativeMemoryBlock (System::IntPtr memoryBlock, unsigned long
 array<char>^ DTM::CopyToMemoryBlock()
     {
 
-    char *blockP=NULL ;
+    char *blockP=nullptr ;
     unsigned long blockSize=0 ;
 
     DTMException::CheckForErrorStatus (Handle->CopyToMemoryBlock (&blockP, &blockSize));
@@ -1289,7 +1289,7 @@ array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile (String ^fileName)
 
     pin_ptr<const wchar_t> ch = PtrToStringChars(fileName);
 
-    DPoint3d*  pointsP=NULL ;
+    DPoint3d*  pointsP=nullptr ;
     long        numPoints=0 ;
 
     DTMException::CheckForErrorStatus (bcdtmRead_xyzFileToPointArray (ch,&pointsP,&numPoints));
@@ -1310,7 +1310,7 @@ array<BGEO::DPoint3d>^  DTM::ImportDPoint3DArrayFromXYZFile (String ^fileName)
 //=======================================================================================
 DTM^ DTM::FromHandle (IntPtr handle)
     {
-    if (handle.ToPointer() == NULL) throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("handle"));
+    if (handle.ToPointer() == nullptr) throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("handle"));
     return gcnew DTM((BcDTMP)handle.ToPointer());
     }
 //=======================================================================================
@@ -1318,8 +1318,8 @@ DTM^ DTM::FromHandle (IntPtr handle)
 //=======================================================================================
 DTM^ DTM::FromNativeDtmHandle (IntPtr handle)
     {
-    if (handle.ToPointer() == NULL) throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("handle"));
-    BcDTMPtr bcDtmP = BcDTM::CreateFromDtmHandle((BC_DTM_OBJ*)handle.ToPointer()) ;
+    if (handle.ToPointer() == nullptr) throw ThrowingPolicy::Apply(gcnew System::ArgumentNullException("handle"));
+    BcDTMPtr bcDtmP = BcDTM::CreateFromDtmHandle(*(BC_DTM_OBJ*)handle.ToPointer()) ;
     DTM^ dtm = bcDtmP.IsValid() ? gcnew DTM( bcDtmP.get() ) : nullptr;
     return dtm;
     }
@@ -1329,6 +1329,7 @@ DTM^ DTM::FromNativeDtmHandle (IntPtr handle)
 //=======================================================================================
 DTM::DTM (BcDTMP dtm)
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1349,6 +1350,7 @@ DTM::DTM (BcDTMP dtm)
 //=======================================================================================
 DTM::DTM (int iniPoint, int incPoint)
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1366,6 +1368,7 @@ DTM::DTM (int iniPoint, int incPoint)
 //=======================================================================================
 DTM::DTM ()
     {
+    m_marshaller = ReleaseMarshaller::GetMarshaller();
 #ifdef DEBUG
     m_stackTrace = (gcnew System::Diagnostics::StackTrace(true))->ToString();
 #endif
@@ -1383,7 +1386,7 @@ DTM::DTM ()
 //=======================================================================================
 DTM::~DTM ()
     {
-    InternalDispose();
+    InternalDispose(true);
     }
 
 //=======================================================================================
@@ -1394,10 +1397,10 @@ DTM::!DTM ()
 #ifdef DEBUG
 //    System::Diagnostics::Debug::Fail ("Failed to call Dispose " + m_stackTrace);
 #endif
-    InternalDispose ();
+    InternalDispose (false);
     }
 
-void DTM::InternalDispose()
+void DTM::InternalDispose(bool disposing)
     {
     if (m_memoryUsed)
         {
@@ -1406,15 +1409,18 @@ void DTM::InternalDispose()
         }
     try
         {
-        if (m_nativeDtm != NULL)
+        if (m_nativeDtm != nullptr)
             {
-            Handle->Release();
+            if (disposing)
+                Handle->Release();
+            else
+                m_marshaller->QueueEntry(Handle);
             }
         }
     catch(...)
         {
         }
-    m_nativeDtm = NULL;
+    m_nativeDtm = nullptr;
 
     }
 
@@ -1619,7 +1625,7 @@ DTMDrapedPoint^ DTM::DrapePoint (BGEO::DPoint3d point)
 
     CheckIsTriangulated();
     DTMHelpers::Copy (pt, point);
-    DTMException::CheckForErrorStatus (Handle->DrapePoint (&elevation, &slope, &aspect, triangle, &drapedType, &pt));
+    DTMException::CheckForErrorStatus (Handle->DrapePoint (&elevation, &slope, &aspect, triangle, drapedType, pt));
 
     array<BGEO::DPoint3d>^ tr = gcnew array<BGEO::DPoint3d>(3);
     DTMHelpers::Copy (tr[0], triangle[0]);
@@ -1644,8 +1650,9 @@ DTMDrapedLinearElement^ DTM::DrapeLinearPoints (array<BGEO::DPoint3d>^ points)
     pin_ptr<BGEO::DPoint3d> uPoints = &points[0];
     DTMException::CheckForErrorStatus(Handle->DrapeLinearPoints (pDrapedLine, (DPoint3d*)uPoints, nullptr, points->Length));
 
-    DTMDrapedLinearElement^ ret = gcnew DTMDrapedLinearElement (pDrapedLine.get());
-    return ret;
+    if (pDrapedLine.IsValid())
+        return gcnew DTMDrapedLinearElement(pDrapedLine.get());
+    return nullptr;
     }
 
 //=======================================================================================
@@ -1664,8 +1671,9 @@ DTMDrapedLinearElement^ DTM::DrapeLinearPoints (System::Collections::Generic::IE
     BcDTMDrapedLinePtr pDrapedLine;
     DTMException::CheckForErrorStatus (Handle->DrapeLinearPoints (pDrapedLine, (DPoint3d*)&pts[0], nullptr, nbPt));
 
-    DTMDrapedLinearElement^ ret = gcnew DTMDrapedLinearElement (pDrapedLine.get());
-    return ret;
+    if (pDrapedLine.IsValid())
+        return gcnew DTMDrapedLinearElement(pDrapedLine.get());
+    return nullptr;
     }
 
 //=======================================================================================
@@ -1677,7 +1685,8 @@ DTMFeature^ DTM::GetFeatureById (DTMFeatureId featureId)
     ::DTMFeatureId id = featureId.Id;
     DTMException::CheckForErrorStatus (Handle->GetFeatureById (pDTMFeature, id));
 
-    if (pDTMFeature == NULL) return nullptr;
+    if (pDTMFeature.IsNull())
+        return nullptr;
     return DTMHelpers::GetAsSpecificFeature (pDTMFeature.get());
     }
 
@@ -1688,7 +1697,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea ()
     {
     double area;
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area));
     return gcnew SlopeAreaResult(area);
     }
 
@@ -1704,7 +1713,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea (array<BGEO::DPoint3d>^ polygon)
     int nbPt = polygon->Length;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area, (DPoint3d*)pLocPoly, nbPt));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area, (DPoint3d*)pLocPoly, nbPt));
 
     return gcnew SlopeAreaResult(area);
     }
@@ -1723,7 +1732,7 @@ SlopeAreaResult^ DTM::CalculateSlopeArea (System::Collections::Generic::IEnumera
     int nbPt = (int)pts.size();
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (&area, &pts[0], nbPt));
+    DTMException::CheckForErrorStatus (Handle->CalculateSlopeArea (area, &pts[0], nbPt));
 
     return gcnew SlopeAreaResult(area);
     }
@@ -1803,12 +1812,12 @@ double DTM::CalculatePlanarPrismoidalVolume (double elevation, VolumeCriteria^ c
         pointString = &criteria->FencePoints[0];
         size = criteria->FencePoints->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
             ranges[i].Low = criteria->RangeTable[i]->Low;
@@ -1816,14 +1825,12 @@ double DTM::CalculatePlanarPrismoidalVolume (double elevation, VolumeCriteria^ c
             }
         }
     BcDTMVolumeAreaResult result;
-    DTMException::CheckForErrorStatus (Handle->ComputePlanarPrismoidalVolume (result, elevation, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->ComputePlanarPrismoidalVolume (result, elevation, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
             criteria->RangeTable[i]->SetCutFillValues (ranges[i].Cut, ranges[i].Fill);
-
-        delete [] ranges;
         }
     return ( result.fillVolume - result.cutVolume );
     }
@@ -1844,28 +1851,25 @@ CutFillResult^ DTM::CalculateCutFillVolume (DTM^ dtm, VolumeCriteria^ criteria)
         pointString = &criteria->FencePoints[0];
         size = criteria->FencePoints->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
-            ranges[i].Low = criteria->RangeTable[i]->Low;
-            ranges[i].High= criteria->RangeTable[i]->High;
+            ranges[i].Low  = criteria->RangeTable[i]->Low;
+            ranges[i].High = criteria->RangeTable[i]->High;
             }
         }
     BcDTMVolumeAreaResult result;
-    DTMException::CheckForErrorStatus (Handle->CalculateCutFillVolume (result, *dtm->Handle, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->CalculateCutFillVolume (result, *dtm->Handle, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
-            {
             criteria->RangeTable[i]->SetCutFillValues(ranges[i].Cut, ranges[i].Fill);
-            }
-        delete [] ranges;
         }
     return gcnew CutFillResult (result);
     }
@@ -1882,12 +1886,12 @@ VolumeResult^ DTM::CalculatePrismoidalVolumeToElevation(double elevation, Volume
         pointString = &criteria->VolumePolygon[0];
         size = criteria->VolumePolygon->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
             ranges[i].Low = criteria->RangeTable[i]->Low;
@@ -1896,15 +1900,12 @@ VolumeResult^ DTM::CalculatePrismoidalVolumeToElevation(double elevation, Volume
         }
     DtmVectorString volumePolygons ;
     BcDTMVolumeAreaResult result;
-    DTMException::CheckForErrorStatus (Handle->CalculatePrismoidalVolumeToElevation (result, &volumePolygons, elevation, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->CalculatePrismoidalVolumeToElevation (result, &volumePolygons, elevation, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
-            {
             criteria->RangeTable[i]->SetCutFillValues(ranges[i].Cut, ranges[i].Fill);
-            }
-        delete [] ranges;
         }
     return gcnew VolumeResult(result, volumePolygons);
     }
@@ -1925,12 +1926,12 @@ VolumeResult^ DTM::CalculatePrismoidalVolumeToSurface(DTM^ dtm, VolumeCriteria^ 
         pointString = &criteria->VolumePolygon[0];
         size = criteria->VolumePolygon->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
             ranges[i].Low = criteria->RangeTable[i]->Low;
@@ -1939,15 +1940,12 @@ VolumeResult^ DTM::CalculatePrismoidalVolumeToSurface(DTM^ dtm, VolumeCriteria^ 
         }
     DtmVectorString volumePolygons ;
     BcDTMVolumeAreaResult result;
-    DTMException::CheckForErrorStatus (Handle->CalculatePrismoidalVolumeToSurface (result, &volumePolygons, *dtm->Handle, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->CalculatePrismoidalVolumeToSurface (result, &volumePolygons, *dtm->Handle, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
-            {
             criteria->RangeTable[i]->SetCutFillValues(ranges[i].Cut, ranges[i].Fill);
-            }
-        delete [] ranges;
         }
     return gcnew VolumeResult (result, volumePolygons);
     }
@@ -1988,12 +1986,12 @@ VolumeResult^ DTM::CalculateGridVolumeToElevation(double elevation,int numGridPo
         pointString = &criteria->VolumePolygon[0];
         size = criteria->VolumePolygon->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
             ranges[i].Low = criteria->RangeTable[i]->Low;
@@ -2004,15 +2002,12 @@ VolumeResult^ DTM::CalculateGridVolumeToElevation(double elevation,int numGridPo
     BcDTMVolumeAreaResult result;
     long numCellsUsed;
     double cellArea;
-    DTMException::CheckForErrorStatus (Handle->CalculateGridVolumeToElevation (result, numCellsUsed, cellArea, &volumePolygons, numGridPoints, elevation, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->CalculateGridVolumeToElevation (result, numCellsUsed, cellArea, &volumePolygons, numGridPoints, elevation, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
-            {
             criteria->RangeTable[i]->SetCutFillValues(ranges[i].Cut, ranges[i].Fill);
-            }
-        delete [] ranges;
         }
     return gcnew VolumeResult(result,numCellsUsed,cellArea,volumePolygons);
     }
@@ -2034,12 +2029,12 @@ VolumeResult^ DTM::CalculateGridVolumeToSurface(DTM^ dtm,int numGridPoints,Volum
         pointString = &criteria->VolumePolygon[0];
         size = criteria->VolumePolygon->Length;
         }
-    VOLRANGETAB* ranges = nullptr;
+    bvector<VOLRANGETAB> ranges;
     int numRanges = 0;
     if (criteria && criteria->RangeTable)
         {
         numRanges = criteria->RangeTable->Length;
-        ranges = new VOLRANGETAB[numRanges];
+        ranges.resize(numRanges);
         for(int i = 0; i < numRanges; i++)
             {
             ranges[i].Low = criteria->RangeTable[i]->Low;
@@ -2050,15 +2045,12 @@ VolumeResult^ DTM::CalculateGridVolumeToSurface(DTM^ dtm,int numGridPoints,Volum
     BcDTMVolumeAreaResult result;
     long numCellsUsed;
     double cellArea;
-    DTMException::CheckForErrorStatus (Handle->CalculateGridVolumeToSurface (result, numCellsUsed, cellArea, &volumePolygons, *dtm->Handle, numGridPoints, (DPoint3d*)pointString, size, ranges, numRanges));
+    DTMException::CheckForErrorStatus (Handle->CalculateGridVolumeToSurface (result, numCellsUsed, cellArea, &volumePolygons, *dtm->Handle, numGridPoints, (DPoint3d*)pointString, size, ranges.empty() ? nullptr : ranges.data(), numRanges));
     CheckMemoryPressure();
-    if (ranges)
+    if (!ranges.empty())
         {
         for(int i = 0; i < numRanges; i++)
-            {
             criteria->RangeTable[i]->SetCutFillValues(ranges[i].Cut, ranges[i].Fill);
-            }
-        delete [] ranges;
         }
     return gcnew VolumeResult(result,numCellsUsed,cellArea,volumePolygons);
     }
@@ -2103,7 +2095,7 @@ DTM^ DTM::Delta (DTM^ dtm)
     dtm->CheckIsTriangulated();
     CheckMemoryPressure();
 
-    BcDTMPtr bcDtm = Handle->Delta (*dtm->Handle, NULL, 0);
+    BcDTMPtr bcDtm = Handle->Delta (*dtm->Handle, nullptr, 0);
     if (bcDtm.IsValid())
         return gcnew DTM (bcDtm.get());
     return nullptr;
@@ -2163,7 +2155,7 @@ DTM^ DTM::DeltaElevation (double elevation)
     CheckIsTriangulated();
     CheckMemoryPressure();
 
-    BcDTMPtr bcDtm = Handle->DeltaElevation(elevation, NULL, 0);
+    BcDTMPtr bcDtm = Handle->DeltaElevation(elevation, nullptr, 0);
     if (bcDtm.IsValid())
         return gcnew DTM (bcDtm.get());
     return nullptr;
@@ -2214,7 +2206,7 @@ void  DTM::BrowseContours (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
     DTMContoursBrowsingCallbackForwarder forwarder(this, hdl, oArg);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2263,7 +2255,7 @@ void  DTM::ContourAtPoint (ContoursBrowsingCriteria^ criteria, ContoursBrowsingD
     DTMContoursBrowsingCallbackForwarder forwarder(this, hdl, oArg);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2296,7 +2288,7 @@ void DTM::BrowseDynamicFeatures (DynamicFeaturesBrowsingCriteria^ criteria, DTMD
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2322,7 +2314,7 @@ void DTM::BrowseDynamicFeatures (BrowsingCriteria^ criteria, DTMDynamicFeatureTy
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2416,7 +2408,7 @@ void DTM::BrowseLinearFeatures (LinearFeaturesBrowsingCriteria^ criteria, DTMFea
     DTMHelpers::Copy (featType, featureType);
 
     pin_ptr<BGEO::DPoint3d const> tPoint = nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2440,7 +2432,7 @@ void  DTM::CalculateCatchments (CatchmentsCalculationCriteria^ criteria, Dynamic
     CheckIsTriangulated();
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2465,7 +2457,7 @@ void  DTM::BrowseCatchments (CatchmentsBrowsingCriteria^ criteria, double minDep
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::Catchment);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2491,7 +2483,7 @@ void  DTM::BrowseLowPoints (LowPointsBrowsingCriteria^ criteria, double minDepth
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::LowPoint);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2518,14 +2510,14 @@ void  DTM::BrowseHighPoints (HighPointsBrowsingCriteria^ criteria,  SinglePointF
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::HighPoint);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria && criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
         tPoint = &criteria->FencePoints[0];
         }
 
-    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, NULL, BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
+    DTMException::CheckForErrorStatus (Handle->BrowseSinglePointFeatures (featType, nullptr, Bentley::TerrainModel::DTMFenceParams (criteria ? (::DTMFenceType)criteria->FenceType : ::DTMFenceType::None, criteria ? (::DTMFenceOption)criteria->FenceOption : ::DTMFenceOption::None, (DPoint3d*)tPoint, fenceSize), &nPoint,
         &forwarder, &SinglePointFeatureBrowsingDelegateUnsafeCallback));
     }
 
@@ -2553,7 +2545,7 @@ void  DTM::BrowseRidgeLines (RidgeLinesBrowsingCriteria^ criteria, DynamicFeatur
 
     CheckIsTriangulated();
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.BrowseDrainageFeatures (featType, NULL, criteria ? ::DTMFenceParams (::DTMFenceType::Block, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize) : ::DTMFenceParams ()));
+    DTMException::CheckForErrorStatus (cache.BrowseDrainageFeatures (featType, nullptr, criteria ? ::DTMFenceParams (::DTMFenceType::Block, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize) : ::DTMFenceParams ()));
 
     }
 
@@ -2574,7 +2566,7 @@ void  DTM::BrowseSumpLines (SumpLinesBrowsingCriteria^ criteria, DynamicFeatures
     DTMHelpers::Copy (featType, DTMDynamicFeatureType::SumpLine);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2584,7 +2576,7 @@ void  DTM::BrowseSumpLines (SumpLinesBrowsingCriteria^ criteria, DynamicFeatures
     CheckIsTriangulated();
 
     DTMFeatureCache cache (Handle, criteria ? criteria->CacheSize : 1000, &DynamicFeaturesBrowsingCacheCallbackForwarderDelegate, &forwarder);
-    DTMException::CheckForErrorStatus (cache.BrowseDrainageFeatures (featType, NULL, criteria ? ::DTMFenceParams (::DTMFenceType::Block, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize) : ::DTMFenceParams ()));
+    DTMException::CheckForErrorStatus (cache.BrowseDrainageFeatures (featType, nullptr, criteria ? ::DTMFenceParams (::DTMFenceType::Block, (::DTMFenceOption)criteria->FenceOption, (DPoint3d*)tPoint, fenceSize) : ::DTMFenceParams ()));
     }
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack      1/2011
@@ -2649,7 +2641,7 @@ void DTM::AnalyzeElevation (ElevationAnalyzingBrowsingCriteria^ criteria, Dynami
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2679,7 +2671,7 @@ void  DTM::AnalyzeSlope (SlopeAnalyzingBrowsingCriteria^ criteria, DynamicFeatur
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint=nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2710,7 +2702,7 @@ void  DTM::AnalyzeAspect (AspectAnalyzingBrowsingCriteria^ criteria, DynamicFeat
     int  nInterval = DTMHelpers::Copy (&targetP, criteria->DoubleRange);
 
     pin_ptr<BGEO::DPoint3d const> tPoint = nullptr;
-    int fenceSize;
+    int fenceSize = 0;
     if (criteria->FencePoints)
         {
         fenceSize = criteria->FencePoints->Length;
@@ -2811,9 +2803,8 @@ void  DTM::BrowseTriangleEdges (TriangleEdgesBrowsingCriteria^ criteria, Dynamic
 Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
     {
     CheckIsTriangulated();
-    long firstCallLong = firstCall ? TRUE : FALSE;
 
-    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCallLong, maxMeshSize, NULL, 0);
+    BcDTMMeshPtr unmanagedMesh = Handle->GetMesh(firstCall, maxMeshSize, nullptr, 0);
 
     if (!unmanagedMesh.IsValid())
         return nullptr;
@@ -2821,22 +2812,6 @@ Mesh^ DTM::GetMesh (bool firstCall, int maxMeshSize)
     Mesh^ mesh = gcnew Mesh(unmanagedMesh.get());
 
     return mesh;
-    }
-
-//=======================================================================================
-// @bsimethod                                               Sylvain.Pucci      5/2007
-//=======================================================================================
-Edges^ DTM::GetEdges()
-    {
-    CheckIsTriangulated();
-    BcDTMEdgesPtr unmanagedEdges = Handle->GetEdges (NULL, 0);
-
-    if (!unmanagedEdges.IsValid())
-        return nullptr;
-
-    Edges^ edges = gcnew Edges(unmanagedEdges.get());
-
-    return edges;
     }
 
 //=======================================================================================
@@ -3088,22 +3063,20 @@ void DTM::DeleteFeatureById (DTMFeatureId id)
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack       8/2011
 //=======================================================================================
-void DTM::BulkDeleteFeaturesByFeatureId(array<DTMFeatureId>^ featureIds )
-{
-    ::DTMFeatureId *featureIdsP = nullptr ;
-    int            numFeatureIds=featureIds->Length ;
-    if( numFeatureIds > 0 )
+void DTM::BulkDeleteFeaturesByFeatureId(array<DTMFeatureId>^ featureIds)
     {
-        featureIdsP = new ::DTMFeatureId[numFeatureIds];
-        for( int n = 0 ; n < numFeatureIds ; ++n )
+    int numFeatureIds = featureIds->Length;
+    if (numFeatureIds > 0)
         {
-            featureIdsP[n] = featureIds[n].Id ;
-        }
-        DTMException::CheckForErrorStatus (Handle->BulkDeleteFeaturesByFeatureId(featureIdsP,numFeatureIds));
+        bvector<::DTMFeatureId> featureIdsP;
+        featureIdsP.resize(numFeatureIds);
+        for (int n = 0; n < numFeatureIds; ++n)
+            featureIdsP[n] = featureIds[n].Id;
+
+        DTMException::CheckForErrorStatus(Handle->BulkDeleteFeaturesByFeatureId(featureIdsP.data(), numFeatureIds));
         CheckMemoryPressure();
-        delete [] featureIdsP ;
+        }
     }
-}
 
 //=======================================================================================
 // @bsimethod                                               Rob.Cormack       8/2011
@@ -3145,9 +3118,8 @@ void DTM::DeleteFeaturesByType (DTMFeatureType featureType)
 void DTM::JoinFeatures (DTMFeatureType featureType, double tolerance)
     {
     ::DTMFeatureType ftType;
-    CheckIsTriangulated();
     DTMHelpers::Copy (ftType, featureType);
-    DTMException::CheckForErrorStatus (Handle->JoinFeatures(ftType, NULL, NULL, tolerance));
+    DTMException::CheckForErrorStatus (Handle->JoinFeatures(ftType, nullptr, nullptr, tolerance));
     CheckMemoryPressure();
     }
 
@@ -3532,7 +3504,7 @@ bool DTM::PointVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d Point )
     bool pointVisible = false ;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->PointVisibility(&pointVisible,Eye.X,Eye.Y,Eye.Z,Point.X,Point.Y,Point.Z));
+    DTMException::CheckForErrorStatus (Handle->PointVisibility(pointVisible,Eye.X,Eye.Y,Eye.Z,Point.X,Point.Y,Point.Z));
     CheckMemoryPressure();
 
     return pointVisible  ;
@@ -3543,11 +3515,11 @@ bool DTM::PointVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d Point )
 //=======================================================================================
 VisibilityResult^ DTM::LineVisibility ( BGEO::DPoint3d Eye , BGEO::DPoint3d linePoint1 , BGEO::DPoint3d linePoint2  )
     {
-    long lineVisible=0 ;
+    bool lineVisible= false;
     DTMDynamicFeatureArray visibilityFeaturesArray;
 
     CheckIsTriangulated();
-    DTMException::CheckForErrorStatus (Handle->LineVisibility(&lineVisible,Eye.X,Eye.Y,Eye.Z,linePoint1.X,linePoint1.Y,linePoint1.Z,linePoint2.X,linePoint2.Y,linePoint2.Z,visibilityFeaturesArray));
+    DTMException::CheckForErrorStatus (Handle->LineVisibility(lineVisible,Eye.X,Eye.Y,Eye.Z,linePoint1.X,linePoint1.Y,linePoint1.Z,linePoint2.X,linePoint2.Y,linePoint2.Z,visibilityFeaturesArray));
     CheckMemoryPressure();
 
     array<DTMDynamicFeatureInfo^>^ visibilityFeatures = nullptr ;
@@ -3673,7 +3645,7 @@ StockPileResult^  DTM::CreateStockPile (StockPileCriteria^ stockPileCriteria )
     {
      BcDTMPtr  stockPileDtm;
      BcDTMPtr  mergedDtm;
-     DPoint3d  headPoint,*headPointsP=NULL ;
+     DPoint3d  headPoint,*headPointsP=nullptr ;
      double    stockPileSlope,volume=0.0 ;
      DTM^      stockPileTM ;
      DTM^      mergedTM ;
@@ -3852,6 +3824,18 @@ void DTM::FilterPoints (long numPointsToRemove, double percentageToRemove, long%
     pointsAfter = _pointsAfter;
     }
 
+DTM^ DTM::GetTransformedDTM(BGEO::DTransform3d transform)
+    {
+    ::Transform nativeTransform;
+    pin_ptr<BGEO::DTransform3d> pTransform = &transform;
+
+    nativeTransform = *(::Transform*)pTransform;
+    DTMPtr dtm = nullptr;
+    DTMException::CheckForErrorStatus(Handle->GetTransformDTM(dtm, nativeTransform));
+    if (dtm.IsValid())
+        return gcnew DTM(dynamic_cast<BcDTMP>(dtm.get()));
+    return nullptr;
+    }
 END_BENTLEY_TERRAINMODELNET_NAMESPACE
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/InroadsImporter.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -37,4 +37,3 @@ struct InroadsImporter : SingleTerrainImporter
     };
 
 END_BENTLEY_TERRAINMODEL_NAMESPACE
-    

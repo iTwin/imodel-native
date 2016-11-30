@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* srfuti.c                                            tmi    10-Apr-1990     */
@@ -15,11 +15,11 @@
 #include "TimeStampUtils.h"
 
 static int aecDTM_removeChildlessFtrsProc ( void *, struct CIVdtmsrf *, int, struct CIVdtmftr * );
-static int aecDTM_updateCorridorCtrlGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcor*);
-static int aecDTM_assignNewComponentGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmp*);
-static int aecDTM_updateMemberParentGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmpmem*);
-static int aecDTM_updateMemberGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmpmem*);
-static int aecDTM_assignNewFeatureGuidsProc (void*,struct CIVdtmsrf*,int,struct CIVdtmftr*);
+//static int aecDTM_updateCorridorCtrlGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcor*);
+//static int aecDTM_assignNewComponentGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmp*);
+//static int aecDTM_updateMemberParentGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmpmem*);
+//static int aecDTM_updateMemberGuidsProc (void*,struct CIVdtmsrf*,struct CIVdtmcmpmem*);
+//static int aecDTM_assignNewFeatureGuidsProc (void*,struct CIVdtmsrf*,int,struct CIVdtmftr*);
 
 
 
@@ -254,7 +254,8 @@ static int aecDTM_removeChildlessFtrsProc
   return ( SUCCESS );
 }
 
-static int aecDTM_updateCorridorCtrlGuidsProc
+  #ifdef NOTUSED
+  static int aecDTM_updateCorridorCtrlGuidsProc
 (
   void *dat,
   struct CIVdtmsrf *srfP,
@@ -376,3 +377,4 @@ static int aecDTM_assignNewFeatureGuidsProc
     return SUCCESS;
 }
 
+#endif

@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMDataRefXAttribute.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,11 +51,12 @@ public:
     public: virtual StatusInt _GetDTMReferenceStorage (RefCountedPtr<IDTM>& outDtm) override;
 #ifndef GRAPHICCACHE
     private: mutable bvector<RefCountedPtr<DTMQvCacheTileDetails>> m_tiles;
-    private: mutable int64_t m_tileLastModified;
+    private: mutable Int64 m_tileLastModified;
     private: bvector<RefCountedPtr<DTMQvCacheTileDetails>> const& GetTiles (BcDTMP dtm) const;
     public: virtual DTMQvCacheDetails* _GetDTMDetails (ElementHandleCR element, DTMDataRefPurpose purpose, ViewContextR context, DTMDrawingInfo& drawingInfo) override;
 #endif
     public: StatusInt ReplaceDTM(BcDTMR bcDTM, bool disposeDTM);   // Shouldn't be needed
+    public: bool IsSameDTM(BcDTMR bcDTM);
     virtual ElementHandleCR GetGraphicalElement (void) const override
         {
         return m_graphicalElement;

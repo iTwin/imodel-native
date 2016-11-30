@@ -6,7 +6,7 @@
 #       $Date: 2012/11/15 20:19:18 $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include  mdl.mki
@@ -65,12 +65,6 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
         |  -------- --------
 
-
-#NEEDS_WORK_David Croom
-CCompOpts + -wd4302
-CCompOpts + -wd4311
-CCompOpts + -wd4312
-
 %include MultiCppCompileRule.mki
 
 $(o)actprj$(oext) : $(baseDir)actprj.cpp  ${MultiCompileDepends}
@@ -78,8 +72,6 @@ $(o)actprj$(oext) : $(baseDir)actprj.cpp  ${MultiCompileDepends}
 $(o)addftr$(oext) : $(baseDir)addftr.cpp  ${MultiCompileDepends}
 
 $(o)addpnt$(oext) : $(baseDir)addpnt.cpp  ${MultiCompileDepends}
-
-$(o)addtin$(oext) : $(baseDir)addtin.cpp  ${MultiCompileDepends}
 
 $(o)allftr$(oext) : $(baseDir)allftr.cpp  ${MultiCompileDepends}
 
@@ -131,8 +123,6 @@ $(o)filuti$(oext) : $(baseDir)filuti.cpp  ${MultiCompileDepends}
 
 $(o)fixtol$(oext) : $(baseDir)fixtol.cpp  ${MultiCompileDepends}
 
-$(o)fncpnt$(oext) : $(baseDir)fncpnt.cpp  ${MultiCompileDepends}
-
 $(o)fndfil$(oext) : $(baseDir)fndfil.cpp  ${MultiCompileDepends}
 
 $(o)fndftr$(oext) : $(baseDir)fndftr.cpp  ${MultiCompileDepends}
@@ -161,8 +151,6 @@ $(o)intsct$(oext) : $(baseDir)intsct.cpp  ${MultiCompileDepends}
 
 $(o)intuti$(oext) : $(baseDir)intuti.cpp  ${MultiCompileDepends}
 
-$(o)jonuti$(oext) : $(baseDir)jonuti.cpp  ${MultiCompileDepends}
-
 $(o)lcluti$(oext) : $(baseDir)lcluti.cpp  ${MultiCompileDepends}
 
 $(o)linlst$(oext) : $(baseDir)linlst.cpp  ${MultiCompileDepends}
@@ -175,9 +163,8 @@ $(o)mrkuti$(oext) : $(baseDir)mrkuti.cpp  ${MultiCompileDepends}
 
 $(o)msguti$(oext) : $(baseDir)msguti.cpp  ${MultiCompileDepends}
 
-$(o)paruti$(oext) : $(baseDir)paruti.cpp  ${MultiCompileDepends}
-
 $(o)patch$(oext) : $(baseDir)patch.cpp  ${MultiCompileDepends}
+
 
 $(o)plyuti$(oext) : $(baseDir)plyuti.cpp  ${MultiCompileDepends}
 
@@ -199,7 +186,7 @@ $(o)rnguti$(oext) : $(baseDir)rnguti.cpp  ${MultiCompileDepends}
 
 $(o)rotpnt$(oext) : $(baseDir)rotpnt.cpp  ${MultiCompileDepends}
 
-$(o)savdtm$(oext) : $(baseDir)savdtm.cpp  ${MultiCompileDepends}
+$(o)paruti$(oext) : $(baseDir)paruti.cpp  ${MultiCompileDepends}
 
 $(o)srfflg$(oext) : $(baseDir)srfflg.cpp  ${MultiCompileDepends}
 
@@ -213,13 +200,21 @@ $(o)tckuti$(oext) : $(baseDir)tckuti.cpp  ${MultiCompileDepends}
 
 $(o)TimeStampUtils$(oext) : $(baseDir)TimeStampUtils.cpp ${MultiCompileDepends}
 
-$(o)tinstk$(oext) : $(baseDir)tinstk.cpp  ${MultiCompileDepends}
-
 $(o)tinuti$(oext) : $(baseDir)tinuti.cpp  ${MultiCompileDepends}
 
 $(o)trisrf$(oext) : $(baseDir)trisrf.cpp  ${MultiCompileDepends}
 
 $(o)vecuti$(oext) : $(baseDir)vecuti.cpp  ${MultiCompileDepends}
+
+$(o)TinToDTM$(oext)         : $(baseDir)TinToDTM.cpp  ${MultiCompileDepends}
+
+$(o)addtin$(oext)           : $(baseDir)addtin.cpp  ${MultiCompileDepends}
+
+$(o)tinstk$(oext)           : $(baseDir)tinstk.cpp  ${MultiCompileDepends}
+
+$(o)savdtm$(oext)           : $(baseDir)savdtm.cpp  ${MultiCompileDepends}
+
+$(o)DTMToGPKTin$(oext)      : $(baseDir)DTMToGPKTin.cpp  ${MultiCompileDepends}
 
 $(o)xngchk$(oext) : $(baseDir)xngchk.cpp  ${MultiCompileDepends}
 

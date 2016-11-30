@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__BENTLEY_INTERNAL_ONLY__
 
 #if !defined(__midl) /* During a MIDL compile, there's nothing herein that we care about. */
 
@@ -46,11 +47,11 @@
 
 #define BEGIN_BENTLEY_MRDTM_NAMESPACE
 #define END_BENTLEY_MRDTM_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_MRDTM   
+#define USING_NAMESPACE_BENTLEY_MRDTM
 
-#define BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE 
-#define END_BENTLEY_MRDTM_IMPORT_NAMESPACE  
-#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT 
+#define BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
+#define END_BENTLEY_MRDTM_IMPORT_NAMESPACE
+#define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT
 
 #define TERRAINMODEL_TYPEDEFS(_name_)   typedef struct _name_ * _name_##P; typedef struct _name_ const* _name_##CP; typedef struct _name_ & _name_##R; typedef struct _name_ const& _name_##CR;
 #define TERRAINMODEL_ENUM(t,tEnum)   typedef enum  t tEnum;
@@ -64,7 +65,6 @@ TERRAINMODEL_TYPEDEFS (DTMContourParams)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
 TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
 //__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (BcDTMEdges)
 TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
 TERRAINMODEL_TYPEDEFS (BcDTMMesh)
 TERRAINMODEL_TYPEDEFS (IBcDtmStream)
@@ -91,7 +91,6 @@ typedef RefCountedPtr<BcDTM> BcDTMPtr;
 typedef RefCountedPtr<BcDTMDrapedLine> BcDTMDrapedLinePtr;
 typedef RefCountedPtr<BcDTMDrapedLinePoint> BcDTMDrapedLinePointPtr;
 //__PUBLISH_SECTION_END__
-typedef RefCountedPtr<BcDTMEdges> BcDTMEdgesPtr;
 typedef RefCountedPtr<BcDTMMeshFace> BcDTMMeshFacePtr;
 typedef RefCountedPtr<BcDTMMesh> BcDTMMeshPtr;
 typedef RefCountedPtr<IBcDtmStream> BcDtmStreamPtr;
@@ -156,7 +155,7 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 #define BENTLEYDTM_Private static
 #if defined (CREATE_STATIC_LIBRARIES) || defined (TERRAINMODEL_STATICLIB)
 #define BENTLEYDTM_Public
-#define BENTLEYDTM_EXPORT 
+#define BENTLEYDTM_EXPORT
 #elif defined (__BENTLEYDTM_BUILD__)
 #define BENTLEYDTM_Public EXPORT_ATTRIBUTE
 #define BENTLEYDTM_EXPORT EXPORT_ATTRIBUTE
@@ -321,7 +320,7 @@ enum class DTMDrapePointCode
 /*
 ** DTM Null Values
 */
-// RobC 17-Dec-1010 Modified DTM_NULL_PNT and DTM_NULL_PTR 
+// RobC 17-Dec-1010 Modified DTM_NULL_PNT and DTM_NULL_PTR
 // For 64 Bit . Both These Constants Have to Be A Minimum Of
 // 6 Times Larger Than the Maximum Number Of Points That Can Be Triangulated
 // The New Values Have Been set To Allow A Maximum Of 350 M Triangulation Points
@@ -498,15 +497,17 @@ template <typename APPDATA, typename KEY, typename HOST> struct DTMAppDataList
 
 
 // Callbacks
-typedef int (*DTMFeatureCallback)(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg);
-typedef int (*DTMTransformPointsCallback)(DPoint3dP points, size_t numPoints, void * userArg);
-typedef int (*DTMBrowseSinglePointFeatureCallback)(DTMFeatureType featureType, DPoint3d& point, void *userP);
-typedef int (*DTMBrowseSlopeIndicatorCallback)(bool major, DPoint3d& point1, DPoint3d& point2, void *userP);
-typedef int (*DTMDuplicatePointsCallback)(double x, double y, DTM_DUPLICATE_POINT_ERROR *dupErrorsP, long numDupErrors, void *userP);
-typedef int (*DTMCrossingFeaturesCallback)(DTM_CROSSING_FEATURE_ERROR& crossError, void *userP);
-typedef int (*DTMTriangleMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP);
-typedef int (*DTMTriangleShadeMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, DPoint3d*, int numMeshFaces, long* meshFacesP, void* userP);
-typedef int (*DTMTriangleHillShadeMeshCallback)(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, long* meshReflectance, int numMeshFaces, long* meshFacesP, void* userP);
+typedef std::function <int(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg)> DTMFeatureCallback;
+//typedef int(*DTMFeatureCallback)(DTMFeatureType dtmFeatureType, DTMUserTag userTag, DTMFeatureId featureId, DPoint3d *points, size_t numPoints, void* userArg);
+typedef std::function <void(int newPointNumber, DPoint3dCR pt, double& elevation, bool onEdge, const int existingPointsNumbers[])> DTMInsertPointCallback;
+typedef std::function <int(DPoint3dP points, size_t numPoints, void * userArg)> DTMTransformPointsCallback;
+typedef std::function <int(DTMFeatureType featureType, DPoint3d& point, void *userP)> DTMBrowseSinglePointFeatureCallback;
+typedef std::function <int(bool major, DPoint3d& point1, DPoint3d& point2, void *userP)> DTMBrowseSlopeIndicatorCallback;
+typedef std::function <int(double x, double y, DTM_DUPLICATE_POINT_ERROR *dupErrorsP, long numDupErrors, void *userP)> DTMDuplicatePointsCallback;
+typedef std::function <int(DTM_CROSSING_FEATURE_ERROR& crossError, void *userP)> DTMCrossingFeaturesCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d *meshPointsP, int numMeshFaces, long *meshFacesP, void *userP)> DTMTriangleMeshCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, DPoint3d*, int numMeshFaces, long* meshFacesP, void* userP)> DTMTriangleShadeMeshCallback;
+typedef std::function <int(DTMFeatureType featureType, int numTriangles, int numMeshPoints, DPoint3d* meshPointsP, long* meshReflectance, int numMeshFaces, long* meshFacesP, void* userP)> DTMTriangleHillShadeMeshCallback;
 
 #endif /* !defined(__midl) */
 

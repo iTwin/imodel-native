@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMException.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -55,6 +55,7 @@ public ref class DTMException : public Bentley::Exceptions::ProgrammerException
 
             System::String^ errorMessage = gcnew System::String(errorMessageP);
             bcMem_free(errorMessageP);
+            if (errorStatus == 2)
             throw ThrowingPolicy::Apply(gcnew DTMException(errorStatus, errorNumber, errorMessage));
             }
     }

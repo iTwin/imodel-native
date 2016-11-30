@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 // stdafx.h : include file for standard system include files,
 //  or project specific include files that are used frequently, but
@@ -33,7 +33,6 @@
 #include "dtmfndfnc.h"
 #include "dtmiofnc.h"
 #include "dtmmemfnc.h"
-#include "dtmmsg.h"
 #include "dtmpnt.h"
 #include "dtmsnd.h"
 #include "dtmtin.h"

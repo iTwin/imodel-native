@@ -36,7 +36,7 @@ struct DTMFenceParams
         points = 0;
         numPoints = 0;
         }
-    DTMFenceParams (DTMFenceType fenceType, DTMFenceOption fenceOption, DPoint3dCP points, int numPoints)
+    DTMFenceParams (DTMFenceType fenceType, DTMFenceOption fenceOption, const DPoint3d points[], int numPoints)
         {
         this->fenceType = fenceType;
         this->fenceOption = fenceOption;
@@ -58,7 +58,7 @@ struct IDTMDrapedLinePoint abstract : IRefCounted
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
     virtual DTMStatusInt _GetPointCoordinates (DPoint3d& coordP) const = 0;
-    virtual double _GetDistanceAlong () const = 0;        
+    virtual double _GetDistanceAlong () const = 0;
     virtual DTMDrapedLineCode _GetCode () const = 0;
 
 /*__PUBLISH_SECTION_START__*/
@@ -85,7 +85,7 @@ struct IDTMDrapedLine abstract : IRefCounted
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
     virtual DTMStatusInt _GetPointByIndex (DTMDrapedLinePointPtr& ret, unsigned int index) const = 0;
-    virtual DTMStatusInt _GetPointByIndex (DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const = 0;
+    virtual DTMStatusInt _GetPointByIndex (DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const = 0;
     virtual unsigned int _GetPointCount () const = 0;
 
 /*__PUBLISH_SECTION_START__*/
@@ -101,7 +101,7 @@ public:
     //! @param[out] codeP       The draped line code, can be null.
     //! @param[in]  index       The index of the point to get.
     //! @return error status.
-    BENTLEYDTM_EXPORT DTMStatusInt GetPointByIndex (DPoint3dP ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const;
+    BENTLEYDTM_EXPORT DTMStatusInt GetPointByIndex (DPoint3dR ptP, double* distanceP, DTMDrapedLineCode* codeP, unsigned int index) const;
     //! Gets the number of draped line points.
     //! @return the number of points.
     BENTLEYDTM_EXPORT unsigned int GetPointCount() const;
@@ -116,8 +116,9 @@ struct IDTMDraping abstract
 /*__PUBLISH_SECTION_END__*/
 /*__OPUBLISH_CLASS_VIRTUAL__*/
 protected:
-virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int* drapedTypeP, DPoint3dCR point) = 0;
-virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _DrapePoint (double* elevationP, double* slopeP, double* aspectP, DPoint3d triangle[3], int& drapedType, DPoint3dCR point) = 0;
+
+virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], int numPoints) = 0;
 
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
@@ -125,23 +126,24 @@ virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR 
 
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
 
+
 /*__PUBLISH_SECTION_START__*/
 public:
 //! Drapes a point onto the DTM.
-//! @param[out] elevation       Elevation of the point. Can be null.     
-//! @param[out] slope           Slope on the point. Can be null.     
-//! @param[out] aspect          Aspect on the point. Can be null.     
-//! @param[out] triangle        Triangle around the point. Can be null.     
-//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).    
+//! @param[out] elevation       Elevation of the point. Can be null.
+//! @param[out] slope           Slope on the point. Can be null.
+//! @param[out] aspect          Aspect on the point. Can be null.
+//! @param[out] triangle        Triangle around the point. Can be null.
+//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).
 //! @param[in]  point           The point to drape.
 //! @return DTM status.
-BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int* drapedType, DPoint3dCR point);
+BENTLEYDTM_EXPORT DTMStatusInt DrapePoint (double* elevation, double* slope, double* aspect, DPoint3d triangle[3], int& drapedType, DPoint3dCR point);
 //! Drapes a linear feature on to the DTM.
 //! @param[out] ret         The DTMDrapedLine result.
 //! @param[in]  pts         The points of the linear feature.
 //! @param[in] numPoints   The number of points.
 //! @return DTM status.
-BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints);
+BENTLEYDTM_EXPORT DTMStatusInt DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], int numPoints);
 
 //! Projects point on the DTM
 //! @param[out]  pointOnDTM           Projected point.
@@ -156,17 +158,18 @@ BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
 BENTLEYDTM_EXPORT bool IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint);
 
 //! Drapes a point onto the DTM along a vector.
-//! @param[out] endPt           Projected point.   
-//! @param[out] slope           Slope on the point. Can be null.     
-//! @param[out] aspect          Aspect on the point. Can be null.     
-//! @param[out] triangle        Triangle around the point. Can be null.     
-//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).    
+//! @param[out] endPt           Projected point.
+//! @param[out] slope           Slope on the point. Can be null.
+//! @param[out] aspect          Aspect on the point. Can be null.
+//! @param[out] triangle        Triangle around the point. Can be null.
+//! @param[out] drapeType       Type of draping. Can be null. (should be declared as an DTMEnum !!!).
 //! @param[in]  point           The point to drape.
 //! @param[in]  directionOfVector           Direction of vector.
 //! @param[in]  slopeOfVector           Slope of vector.
 //! @return true if there is an intersection with the mesh.
 BENTLEYDTM_EXPORT bool DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector);
-};
+
+    };
 
 /*=================================================================================**//**
 * Interface implemented by DTM engines.
@@ -212,7 +215,7 @@ BENTLEYDTM_EXPORT DTMStatusInt GetPoints (DTMPointArray& ret, int index);
 virtual DTMStatusInt _GetDescentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth) = 0;
 virtual DTMStatusInt _GetAscentTrace (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double minDepth) = 0;
 virtual DTMStatusInt _TraceCatchmentForPoint (DTMDrainageFeaturePtr& ret, DPoint3dCR pt, double maxPondDepth) = 0;
- 
+
  /*__PUBLISH_SECTION_START__*/
  public:
 //! Gets the DescentTrace.
@@ -286,27 +289,27 @@ protected:
 /*__PUBLISH_SECTION_START__*/
 public:
 //! Compute volume between DTM and mesh.
-//! @param[out] cut       Cut volume. Can be null.     
-//! @param[out] fill           Fill volume. Can be null.     
-//! @param[out] volume          Total volume. Can be null.        
+//! @param[out] cut       Cut volume. Can be null.
+//! @param[out] fill           Fill volume. Can be null.
+//! @param[out] volume          Total volume. Can be null.
 //! @param[in]  mesh           Compute volume between DTM and this surface mesh.
 //! @return DTM status.
     BENTLEYDTM_EXPORT DTMStatusInt ComputeCutFillVolume(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
 
 //! Compute volume between DTM and closed mesh.
-//! @param[out] cut       Cut volume. Can be null.     
-//! @param[out] fill           Fill volume. Can be null.     
-//! @param[out] volume          Total volume. Can be null.        
+//! @param[out] cut       Cut volume. Can be null.
+//! @param[out] fill           Fill volume. Can be null.
+//! @param[out] volume          Total volume. Can be null.
 //! @param[in]  mesh           Compute volume between DTM and this surface mesh.
 //! @return DTM status.
     BENTLEYDTM_EXPORT DTMStatusInt ComputeCutFillVolumeClosed(double* cut, double* fill, double* volume, PolyfaceHeaderCP mesh);
 
-//! Clips volume computations to a given region.     
+//! Clips volume computations to a given region.
 //! @param[in]  regionId        ID of the region to consider
 //! @return true if the region is found within the DTM.
 BENTLEYDTM_EXPORT bool RestrictVolumeToRegion(uint64_t regionId);
 
-//! Use the whole DTM for further computations.     
+//! Use the whole DTM for further computations.
 BENTLEYDTM_EXPORT void RemoveAllRestrictions();
 };
 /*__PUBLISH_SECTION_END__*/
@@ -316,11 +319,14 @@ BENTLEYDTM_EXPORT void RemoveAllRestrictions();
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
+
+typedef std::function<void(DTMStatusInt status,double flatArea, double slopeArea)> DTMAreaValuesCallback;
+typedef std::function<bool()> DTMCancelProcessCallback;
 struct IDTM abstract : IRefCounted
 {
 //__PUBLISH_SECTION_END__
 //__PUBLISH_CLASS_VIRTUAL__
-protected: 
+protected:
 virtual int64_t _GetPointCount () = 0;
 virtual IDTMDraping* _GetDTMDraping () = 0;
 virtual IDTMVolume* _GetDTMVolume() = 0;
@@ -330,6 +336,7 @@ virtual DTMStatusInt _GetRange(DRange3dR range) = 0;
 virtual BcDTMP _GetBcDTM() = 0;
 virtual DTMStatusInt _GetBoundary(DTMPointArray& ret) = 0;
 virtual DTMStatusInt _CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints) = 0;
+virtual DTMStatusInt _CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback) = 0;
 virtual DTMStatusInt _GetTransformDTM (DTMPtr& transformedDTM, TransformCR transformation) = 0;
 virtual bool         _GetTransformation (TransformR transformation) = 0;
 virtual DTMStatusInt _ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation) = 0;
@@ -376,6 +383,8 @@ BENTLEYDTM_EXPORT DTMStatusInt GetBoundary (DTMPointArray& ret);
 //! @param[in] numPoints     The number of points of the area.
 //! @return error status.
 BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea (double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints);
+
+BENTLEYDTM_EXPORT DTMStatusInt CalculateSlopeArea(double& flatArea, double& slopeArea, DPoint3dCP pts, int numPoints, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback);
 //__PUBLISH_SECTION_START__
 
 //! Gets a Transformed copy of the DTM.

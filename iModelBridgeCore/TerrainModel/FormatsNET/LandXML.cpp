@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/LandXML.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ void LandXMLImporter::Options::set (LandXMLOptions value)
 
 LandXMLExporter::LandXMLExporter ()
     {
-    LandXMLExporterPtr exporter = BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLExporter::Create ();
+    LandXMLExporterPtr exporter = Bentley::TerrainModel::LandXMLExporter::Create ();
     m_exporter = exporter.get ();
     SetTerrainExporter (m_exporter);
     }
@@ -49,7 +49,7 @@ LandXMLOptions LandXMLExporter::Options::get ()
 
 void LandXMLExporter::Options::set (LandXMLOptions value)
     {
-    m_exporter->SetExportType ((Bentley::TerrainModel::LandXMLExporter::LandXMLExportTypes)value);
+    m_exporter->SetOptions ((Bentley::TerrainModel::LandXMLOptions)value);
     }
 
 System::String^ LandXMLExporter::ApplicationName::get ()

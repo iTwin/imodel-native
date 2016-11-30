@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
-/* 
-** macros, globals & functions used by bcdtmDrape_getCoordiantesFromLength 
+#include "bcdtminlines.h"
+/*
+** macros, globals & functions used by bcdtmDrape_getCoordiantesFromLength
 */
 #define SIGN_OF(_x)  (_x >= 0 ? 1 : -1)
 static const double fc_zero      = 0.0    ;
@@ -24,41 +24,9 @@ static const double fc_360       = 360.0  ;
 static const double fc_pi        = 3.14159265359    ;
 static const double fc_180overpi = 57.295779513082  ;
 static const double fc_piover180 = 0.017453292520 ;
-static const double SMALL        = 0.0000001 ; 
+static const double SMALL        = 0.0000001 ;
 static const int    FAIL         = 1  ;
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmDrape_freeDrapePointMemory
-(
- DTM_DRAPE_POINT **drapePtsPP,       /* <== Pointer To Drape Points  */
- long            *numDrapePtsP       /* <== Number Of Drape Points   */
-)
-{
- DTM_DRAPE_POINT *dpP ;
-/*
-** Scan Drape Points Array And Free Memory
-*/
- if( *drapePtsPP != NULL && *numDrapePtsP > 0 )
-   { 
-    for( dpP = *drapePtsPP ; dpP < *drapePtsPP + *numDrapePtsP ; ++dpP )
-      {
-       if( dpP->drapeFeaturesP != NULL ) free(dpP->drapeFeaturesP) ;
-      } 
-   }
-/*
-** Free Drape Points Array
-*/
-  if( *drapePtsPP != NULL ) free(*drapePtsPP) ;
-  *drapePtsPP = NULL ;
-  *numDrapePtsP = 0  ;
-/*
-** Return
-*/
- return(DTM_SUCCESS) ;
-}
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -71,18 +39,19 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
 **
 **    <==  0  Point Outside Tin Object
 **    <==  1  Point Inside  Tin Object
-**    <==  2  Point In Void  
-**     
+**    <==  2  Point In Void
+**
 **  Return Values
 **
 **     ==> 0  Success
-**     ==> 1  Error 
-**     
+**     ==> 1  Error
+**
 */
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long pnt1,pnt2,pnt3,fndType,voidFlag ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+ long pnt1, pnt2, pnt3, fndType;
+ bool voidFlag;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
@@ -92,9 +61,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
     bcdtmWrite_message(0,0,0,"dtmP = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"x    = %12.5lf",x) ;
     bcdtmWrite_message(0,0,0,"y    = %12.5lf",y) ;
-   } 
+   }
 /*
-** Initialise 
+** Initialise
 */
  *z = 0.0  ;
  *drapeFlagP = 0 ;
@@ -117,7 +86,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
  if( ! fndType )
    {
     bcdtmDrape_findClosestHullLineDtmObject(dtmP,x,y,&pnt1,&pnt2) ;
-    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt ) 
+    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt )
       {
        pnt1P = pointAddrP(dtmP,pnt1) ;
        pnt2P = pointAddrP(dtmP,pnt2) ;
@@ -125,10 +94,10 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
        else if( bcdtmMath_distance(x,y,pnt2P->x,pnt2P->y) <= dtmP->ppTol ) { fndType = 1 ; pnt1 = pnt2 ; pnt2 = dtmP->nullPnt ; *z = pnt2P->z ; }
        else if( bcdtmMath_normalDistanceToLineDtmObject(dtmP,pnt1,pnt2,x,y) <= dtmP->ppTol )
          {
-          fndType = 3 ; 
+          fndType = 3 ;
           bcdtmMath_interpolatePointOnLineDtmObject(dtmP,x,y,z,pnt1,pnt2) ;
          }
-      }   
+      }
    }
 /*
 ** Test For Point In Void
@@ -137,17 +106,17 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointDtmObject(BC_DTM_OBJ *dtmP,double x,double
    {
     *drapeFlagP = 1 ;
     if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) *drapeFlagP = 2 ;
-    if( fndType == 2 || fndType == 3 ) 
+    if( fndType == 2 || fndType == 3 )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-    if( fndType == 4 ) 
+    if( fndType == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-   }  
+   }
 /*
 ** Set z To Zero For Point In Void
 */
@@ -179,7 +148,7 @@ BENTLEYDTM_Private int bcdtmDrape_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,
 {
  long   p1,p2,isw,lf ;
  double d1,d2,d3,d4,dn=0.0,Xn,Yn  ;
- DTM_TIN_POINT *p1P,*p2P ;
+ DPoint3d *p1P,*p2P ;
 /*
 ** Initialiase
 */
@@ -201,28 +170,28 @@ BENTLEYDTM_Private int bcdtmDrape_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,
        d3 = bcdtmMath_distance((p1P->x+p2P->x) / 2.0,(p1P->y+p2P->y)/2.0,x,y) ;
        d4 = bcdtmMath_distanceOfPointFromLine(&lf,p1P->x,p1P->y,p2P->x,p2P->y,x,y,&Xn,&Yn) ;
        if( isw )
-         { 
+         {
           *pnt1P = p1 ;
-          *pnt2P = p2 ; 
+          *pnt2P = p2 ;
           dn = d1 ;
           if( d2 < dn ) dn = d2 ;
           if( d3 < dn ) dn = d3 ;
-          if( lf && d4 < dn ) dn = d4 ;  
+          if( lf && d4 < dn ) dn = d4 ;
           isw = 0 ;
          }
        else
          {
-          if( d1 < dn || d2 < dn || d3 < dn || ( lf && d4 < dn ) ) 
+          if( d1 < dn || d2 < dn || d3 < dn || ( lf && d4 < dn ) )
             {
              *pnt1P = p1 ;
-             *pnt2P = p2 ; 
+             *pnt2P = p2 ;
              if( d1 < dn ) dn = d1 ;
              if( d2 < dn ) dn = d2 ;
              if( d3 < dn ) dn = d3 ;
-             if( lf && d4 < dn ) dn = d4 ;  
+             if( lf && d4 < dn ) dn = d4 ;
             }
          }
-      } 
+      }
     p1  = p2 ;
     p1P = p2P ;
    } while ( p1 != dtmP->hullPoint ) ;
@@ -235,33 +204,32 @@ BENTLEYDTM_Private int bcdtmDrape_findClosestHullLineDtmObject(BC_DTM_OBJ *dtmP,
 * @memo   Drapes A User String On The Tin And Optionally Returns The Dtm Features At The Drape Points
 * @doc    Drapes A User String On The Tin And Optionally Returns The Dtm Features At The Drape Points
 * @author Rob Cormack 14 December 2005 rob.cormack@bentley.com
-* @param  dtmP                  ==> Pointer To Dtm Object                   
-* @param  stringPtsP            ==> DPoint3d User Drape String     
-* @param  numStringPts          ==> Number Of String Points               
-* @param  dtmFeatureOption      ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE>            
-* @param  drapePtsPP            <== Pointer To Drape Points               
-* @param  numDrapePtsP          <== Number Of Drape Points 
-* @param                  
+* @param  dtmP                  ==> Pointer To Dtm Object
+* @param  stringPtsP            ==> DPoint3d User Drape String
+* @param  numStringPts          ==> Number Of String Points
+* @param  dtmFeatureOption      ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE>
+* @param  drapePtsPP            <== Pointer To Drape Points
+* @param  numDrapePtsP          <== Number Of Drape Points
+* @param
 * @return DTM_SUCCESS or DTM_ERROR
-* @version 
+* @version
 * @see None
 *===============================================================================*/
 BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 (
- BC_DTM_OBJ      *dtmP,              /* ==> Pointer To DTM Object                                        */
- DPoint3d             *stringPtsP,        /* ==> Pointer To String Points                                     */ 
- long            numStringPts,       /* ==> Number Of String Points                                      */
- long            dtmFeatureOption,   /* ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE> */ 
- DTM_DRAPE_POINT **drapePtsPP,       /* <== Pointer To Drape Points                                      */
- long            *numDrapePtsP       /* <== Number Of Drape Points                                       */
+ BC_DTM_OBJ*             dtmP,              /* ==> Pointer To DTM Object                                        */
+ DPoint3dCP              stringPtsP,        /* ==> Pointer To String Points                                     */
+ long                    numStringPts,       /* ==> Number Of String Points                                      */
+ bool                    dtmFeatureOption,   /* ==> Optionally Return Dtm Features For Drape Points <TRUE,FALSE> */
+ bvector<DTMDrapePoint>& drapePts       /* <== Pointer To Drape Points                                      */
 )
 /*
 **
-** drapeType Values   ==  0  Drape Point External To Tin 
+** drapeType Values   ==  0  Drape Point External To Tin
 **                    ==  1  Drape Point In Triangle
-**                    ==  2  Drape Point On Break Line  
+**                    ==  2  Drape Point On Break Line
 **                    ==  3  Drape Point On Break Triangle Edge
-**                    ==  4  Drape Point In Void     
+**                    ==  4  Drape Point In Void
 **                    ==  5  Drape Point On Triangle Point
 **                    ==  6  Drape Point On Triangle Edge
 **
@@ -271,26 +239,23 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    p1,p2,p3,np1,np2,np3,fndType,processDrape ;
  long    drapeType = 0,lineNum,onLine ;
- long    memDrapePts=0,memDrapePtsInc=100 ;
  double  nd,dz,xi,yi,zi,xls,yls,zls,xle,yle  ;
- DPoint3d     *p3dP ;
- DTM_DRAPE_POINT *dpP=NULL ;
+ DPoint3dCP p3dP ;
+ DTMDrapePoint *dpP=NULL ;
  DTM_DAT_OBJ     *dataP=NULL ;
- DTM_TIN_POINT   *pnt1P,*pnt2P ;
+ DPoint3d   *pnt1P,*pnt2P ;
 // long    removeOn ;
  DTM_GUID nullGuid=DTM_NULL_GUID ;
 /*
 ** Write Entry Message
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"Draping String On DTM Object") ;
-    bcdtmWrite_message(0,0,0,"dtmP             = %p",dtmP) ; 
+    bcdtmWrite_message(0,0,0,"dtmP             = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"stringPtsP       = %p",stringPtsP) ;
     bcdtmWrite_message(0,0,0,"numStringPts     = %8ld",numStringPts) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureOption = %8ld",dtmFeatureOption) ;
-    bcdtmWrite_message(0,0,0,"drapePtsPP       = %p",*drapePtsPP) ;
-    bcdtmWrite_message(0,0,0,"numDrapePts      = %8ld",*numDrapePtsP) ; 
     if( dbg == 2 )
       {
        bcdtmWrite_message(0,0,0,"**** String Points") ;
@@ -303,14 +268,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 ** Validate Arguments
 */
- if( stringPtsP == NULL || numStringPts < 2 || *drapePtsPP != NULL ) 
+ if( stringPtsP == NULL || numStringPts < 2  )
    {
     if( dbg )
       {
        bcdtmWrite_message(0,0,0,"stringPtsP   =  %p",stringPtsP) ;
        bcdtmWrite_message(0,0,0,"numStringPts =  %8ld",numStringPts) ;
-       bcdtmWrite_message(0,0,0,"*drapePtsPP  =  %p",*drapePtsPP) ;
-      } 
+      }
     bcdtmWrite_message(1,0,0,"Invalid Drape String Arguments") ;
     goto errexit ;
    }
@@ -323,14 +287,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
 /*
 ** Initialise
 */
- *numDrapePtsP = 0 ;
- *drapePtsPP   = NULL ;
+ drapePts.clear() ;
 /*
 ** Process Each String Section
 */
@@ -341,7 +304,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
     xls = (p3dP-1)->x ; yls = (p3dP-1)->y ;
     xle =  p3dP->x    ; yle = p3dP->y     ;
 /*
-**  Write Out Line To Be Drapped 
+**  Write Out Line To Be Drapped
 */
     if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Drape Line [%4ld] = %10.4lf %10.4lf ** %10.4lf %10.4lf",lineNum-1,xls,yls,xle,yle) ;
 /*
@@ -378,30 +341,30 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
                 fndType = 2 ;
                 xls = xi ;
                 yls = yi ;
-               } 
-            }           
+               }
+            }
          }
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Hull Line ** FndType = %2ld ** p1 = %8ld p2 = %8ld",fndType,p1,p2) ;
 /*
 **     Find Closest Intersection With Tin Hull
 */
        if( fndType == 0 )
-         { 
-          if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xls,yls,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+         {
+         if (bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP, lineNum, 0, xls, yls, dtmP->zMin, dtmP->nullPnt, dtmP->nullPnt, dtmP->nullPnt, dtmFeatureOption, drapePts)) goto errexit;
           p1 = p2 = dtmP->nullPnt ;
           if( bcdtmDrape_findClosestLineInterceptWithHullDtmObject(dtmP,xls,yls,xle,yle,&fndType,&p1,&p2,&xls,&yls,&zls) ) goto errexit ;
           if( fndType == 3 ) fndType = 1 ;
           if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Hull Intercept ** fndType = %2ld ** p1 = %8ld p2 = %8ld p3 = %8ld",fndType,p1,p2,p3) ;
-         } 
-       if( fndType == 0 ) 
-         { 
-          processDrape = 0 ; 
-          if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xle,yle,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
          }
-       if( fndType == 2 )   
-         { 
-          p3 = p1 ; 
-          p1 = p2 ; 
+       if( fndType == 0 )
+         {
+          processDrape = 0 ;
+          if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xle,yle,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePts) ) goto errexit ;
+         }
+       if( fndType == 2 )
+         {
+          p3 = p1 ;
+          p1 = p2 ;
           p2 = p3 ;
           if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
          }
@@ -409,7 +372,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 **  Point In Triangle - Test Snap To Triangle Verices Or Triangle Edges
 */
-    else if( fndType == 2 ) 
+    else if( fndType == 2 )
       {
        fndType = 3 ;
        if     ( bcdtmMath_distance(xls,yls,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) < dtmP->ppTol ) { fndType = 1 ; p2 = p3 = dtmP->nullPnt ; }
@@ -418,30 +381,30 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p3 = dtmP->nullPnt ; }
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p1 = p2 ; p2 = p3 ; p3 = dtmP->nullPnt ; }
        else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,xls,yls) < dtmP->plTol ) { fndType = 2 ; p2 = p1 ; p1 = p3 ; p3 = dtmP->nullPnt ; }
-       if( fndType == 2 )   
-         { 
+       if( fndType == 2 )
+         {
           if( bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,xle,yle) > 0 )
             {
-             p3 = p1 ; 
-             p1 = p2 ; 
+             p3 = p1 ;
+             p1 = p2 ;
              p2 = p3 ;
             }
           if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
-         } 
-      } 
+         }
+      }
 /*
 **  Plot Start of Profile Line on Surface
 */
     if( processDrape )
       {
        drapeType = fndType ;
-       if( drapeType == 1 ) 
-         { 
+       if( drapeType == 1 )
+         {
           p2 = p3 = dtmP->nullPnt ;
           zls = pointAddrP(dtmP,p1)->z ;
          }
        else bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,xls,yls,&zls,p1,p2,p3) ;
-       if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+       if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
        if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Drape Start Point ** drapeType = %2ld p1 = %8ld p2 = %8ld p3 = %8ld ** %10.4lf %10.4lf %10.4lf",drapeType,p1,p2,p3,xls,yls,zls) ;
       }
 /*
@@ -479,7 +442,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
               else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,xls,yls) < dtmP->plTol ) { drapeType = 2 ; p1 = p2 ; p2 = p3 ; p3 = dtmP->nullPnt ; }
               else if( bcdtmMath_normalDistanceToCordLine(pointAddrP(dtmP,p3)->x,pointAddrP(dtmP,p3)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,xls,yls) < dtmP->plTol ) { drapeType = 2 ; p2 = p1 ; p1 = p3 ; p3 = dtmP->nullPnt ; }
              }
-          if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+          if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
           if( fndType == 1 ) processDrape = 0 ;
          }
 /*
@@ -508,17 +471,17 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
                 if( fndType )
                   {
                    drapeType = 1 ;
-                   xls = pnt1P->x ; 
-                   yls = pnt1P->y ; 
+                   xls = pnt1P->x ;
+                   yls = pnt1P->y ;
                    p1 = np1 ;
                    p2 = dtmP->nullPnt ; p3 = dtmP->nullPnt ;
-                   if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,np1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+                   if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,np1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
                    processDrape = 0 ;
-                  } 
+                  }
                }
              else if( fndType == 2 )     // Hull Line
                {
-                fndType = 0 ; 
+                fndType = 0 ;
                 if( p2 == dtmP->nullPnt && ( np1 == p1 || np2 == p1 ) ) fndType = 2 ;
                 if( p2 != dtmP->nullPnt && ( np1 != p1 || np2 != p2 ) && ( np1 != p2 || np2 != p1 ) ) fndType = 0 ;
                 if( fndType )
@@ -527,19 +490,19 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
                    pnt2P = pointAddrP(dtmP,np2) ;
                    nd = bcdtmMath_distanceOfPointFromLine(&onLine,pnt1P->x,pnt1P->y,pnt2P->x,pnt2P->y,xle,yle,&xi,&yi) ;
                    if( ! onLine || nd > dtmP->ppTol ) fndType = 0 ;
-                   if( fndType ) 
+                   if( fndType )
                      {
                       drapeType = 2 ;
                       xls = xi ;
                       yls = yi ;
                       p1 = np1 ;
-                      p2 = np2 ; 
+                      p2 = np2 ;
                       p3 = dtmP->nullPnt ;
-                      if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+                      if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
                       processDrape = 0 ;
-                     } 
+                     }
                   }
-               }           
+               }
             }
 /*
 **        Look For Intercept With Tin Hull
@@ -551,26 +514,26 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 **           No Further Intersections Of Drape Line With Tin Hull
 */
-             if( drapeType == 0 ) 
-               { 
+             if( drapeType == 0 )
+               {
 /*
 **              Check If Last Point Is Within Point To Point Tolerance Of Tin Hull
 */
                 if( bcdtmMath_distance(xls,yls,xle,yle) > dtmP->ppTol )
                   {
-                   if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xle,yle,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ; 
+                   if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xle,yle,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePts) ) goto errexit ;
                   }
                 processDrape = 0 ;
                }
 /*
 **           Drape Line Coincident With Tin Hull
-*/ 
+*/
              if( drapeType == 3 )
                {
                 drapeType = 1 ;
-                xls = xi ; yls = yi ; 
+                xls = xi ; yls = yi ;
                 p2 = dtmP->nullPnt ; p3 = dtmP->nullPnt ;
-                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
                }
 /*
 **           Drape Line Crosses Gulf In Tin Hull
@@ -580,19 +543,19 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
 /*
 **              Store Dummy Drape Point At Mid Point In Gulf
 */
-                xls = ( xls + xi ) / 2.0 ; 
+                xls = ( xls + xi ) / 2.0 ;
                 yls = ( yls + yi ) / 2.0 ;
-                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xls,yls,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ; 
+                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,0,xls,yls,dtmP->zMin,dtmP->nullPnt,dtmP->nullPnt,dtmP->nullPnt,dtmFeatureOption,drapePts) ) goto errexit ;
 /*
 **              Store Drape Point At Hull Intersection
 */
                 xls =  xi ; yls = yi  ;
                 if( drapeType == 2 )
-                  { 
+                  {
                    p3 = p1 ; p1 = p2 ; p2 = p3 ;
                    if( ( p3 = bcdtmList_nextClkDtmObject(dtmP,p1,p2)) < 0 ) goto errexit ;
-                  } 
-                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePtsPP,numDrapePtsP,&memDrapePts,memDrapePtsInc) ) goto errexit ;
+                  }
+                if( bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject(dtmP,lineNum,drapeType,xls,yls,zls,p1,p2,p3,dtmFeatureOption,drapePts) ) goto errexit ;
                }
             }
          }
@@ -606,15 +569,15 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
  for( dpP = *drapePtsPP ; dpP < *drapePtsPP + *numDrapePtsP ; ++dpP )
    {
     if( dpP->drapeType == 3 && removeOn ) dpP->drapeType = 1 ;
-    if( dpP->drapeType == 1 ) removeOn = 1 ; 
-    if( dpP->drapeType == 2 ) removeOn = 0 ; 
+    if( dpP->drapeType == 1 ) removeOn = 1 ;
+    if( dpP->drapeType == 2 ) removeOn = 0 ;
    }
  removeOn = 1 ;
  for( dpP = *drapePtsPP + *numDrapePtsP - 1 ; dpP >= *drapePtsPP ; --dpP )
    {
     if( dpP->drapeType == 3 && removeOn ) dpP->drapeType = 1 ;
-    if( dpP->drapeType == 1 ) removeOn = 1 ; 
-    if( dpP->drapeType == 2 ) removeOn = 0 ; 
+    if( dpP->drapeType == 1 ) removeOn = 1 ;
+    if( dpP->drapeType == 2 ) removeOn = 0 ;
    }
 */
 /*
@@ -624,16 +587,16 @@ BENTLEYDTM_EXPORT int bcdtmDrape_stringDtmObject
    {
     bcdtmObject_createDataObject(&dataP) ;
     bcdtmObject_setMemoryAllocationParametersDataObject(dataP,1000,1000) ;
-    bcdtmWrite_message(0,0,0,"Number Of Drape Points = %6ld",*numDrapePtsP) ;
-    for( dpP = *drapePtsPP ; dpP < *drapePtsPP + *numDrapePtsP ; ++dpP )
+    bcdtmWrite_message(0, 0, 0, "Number Of Drape Points = %6ld", drapePts.size());
+    for (dpP = drapePts.data(); dpP < drapePts.data() + drapePts.size(); ++dpP)
       {
-       bcdtmDrape_pointDtmObject(dtmP,dpP->drapeX,dpP->drapeY,&zls,&drapeType) ;
-       dz = fabs(zls-dpP->drapeZ) ;
-       if( dz < 0.00001 ) bcdtmWrite_message(0,0,0,"[%4ld] %4ld %4ld %12.6lf %12.6lf %12.6lf ** Type = %2ld  %12.6lf",(long)(dpP-*drapePtsPP),dpP->drapeLine,dpP->drapeType,dpP->drapeX,dpP->drapeY,dpP->drapeZ,drapeType,zls) ; 
-       else               bcdtmWrite_message(0,0,0,"[%4ld] %4ld %4ld %12.6lf %12.6lf %12.6lf ** Type = %2ld  %12.6lf ** DTM_ERROR **",(long)(dpP-*drapePtsPP),dpP->drapeLine,dpP->drapeType,dpP->drapeX,dpP->drapeY,dpP->drapeZ,drapeType,zls) ;
-       if( dpP == *drapePtsPP ) bcdtmObject_storePointInDataObject(dataP,2,DTM_NULL_USER_TAG,nullGuid,dpP->drapeX,dpP->drapeY,dpP->drapeZ) ;
-       else                     bcdtmObject_storePointInDataObject(dataP,3,DTM_NULL_USER_TAG,nullGuid,dpP->drapeX,dpP->drapeY,dpP->drapeZ) ;
-      } 
+      bcdtmDrape_pointDtmObject(dtmP, dpP->drapePt.x, dpP->drapePt.y, &zls, &drapeType);
+       dz = fabs(zls-dpP->drapePt.z) ;
+       if (dz < 0.00001) bcdtmWrite_message(0, 0, 0, "[%4ld] %4ld %4ld %12.6lf %12.6lf %12.6lf ** Type = %2ld  %12.6lf", (long)(dpP - drapePts.data()), dpP->drapeLine, dpP->drapeType, dpP->drapePt.x, dpP->drapePt.y, dpP->drapePt.z, drapeType, zls);
+       else               bcdtmWrite_message(0,0,0,"[%4ld] %4ld %4ld %12.6lf %12.6lf %12.6lf ** Type = %2ld  %12.6lf ** DTM_ERROR **",(long)(dpP-drapePts.data()),dpP->drapeLine,dpP->drapeType,dpP->drapePt.x,dpP->drapePt.y,dpP->drapePt.z,drapeType,zls) ;
+       if( dpP == drapePts.data() ) bcdtmObject_storePointInDataObject(dataP,2,DTM_NULL_USER_TAG,nullGuid,dpP->drapePt.x,dpP->drapePt.y,dpP->drapePt.z) ;
+       else                     bcdtmObject_storePointInDataObject(dataP,3,DTM_NULL_USER_TAG,nullGuid,dpP->drapePt.x,dpP->drapePt.y,dpP->drapePt.z) ;
+      }
     bcdtmWrite_dataFileFromDataObject(dataP,L"drapePts.dat") ;
     bcdtmObject_deleteDataObject(&dataP) ;
    }
@@ -700,31 +663,31 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromTriangleDtmObject(BC_DTM_
 /*
 ** Test For Last Point Equal To One Of The Triangle Points
 */
- if( x2 == pointAddrP(dtmP,pnt1)->x && y2 == pointAddrP(dtmP,pnt1)->y ) 
-   { 
-    *drapeTypeP = 1 ; 
-    *nxtPnt1P = pnt1 ;  
-    *xdP = pointAddrP(dtmP,pnt1)->x ; 
-    *ydP = pointAddrP(dtmP,pnt1)->y ; 
-    *zdP = pointAddrP(dtmP,pnt1)->z ; 
+ if( x2 == pointAddrP(dtmP,pnt1)->x && y2 == pointAddrP(dtmP,pnt1)->y )
+   {
+    *drapeTypeP = 1 ;
+    *nxtPnt1P = pnt1 ;
+    *xdP = pointAddrP(dtmP,pnt1)->x ;
+    *ydP = pointAddrP(dtmP,pnt1)->y ;
+    *zdP = pointAddrP(dtmP,pnt1)->z ;
     return(1) ;
    }
- if( x2 == pointAddrP(dtmP,pnt2)->x && y2 == pointAddrP(dtmP,pnt2)->y ) 
-   { 
-    *drapeTypeP = 1 ; 
-    *nxtPnt1P = pnt2 ; 
-    *xdP = pointAddrP(dtmP,pnt2)->x ; 
-    *ydP = pointAddrP(dtmP,pnt2)->y ; 
-    *zdP = pointAddrP(dtmP,pnt2)->z ; 
+ if( x2 == pointAddrP(dtmP,pnt2)->x && y2 == pointAddrP(dtmP,pnt2)->y )
+   {
+    *drapeTypeP = 1 ;
+    *nxtPnt1P = pnt2 ;
+    *xdP = pointAddrP(dtmP,pnt2)->x ;
+    *ydP = pointAddrP(dtmP,pnt2)->y ;
+    *zdP = pointAddrP(dtmP,pnt2)->z ;
     return(1) ;
    }
- if( x2 == pointAddrP(dtmP,pnt3)->x && y2 == pointAddrP(dtmP,pnt3)->y ) 
-   { 
-    *drapeTypeP = 1 ; 
-    *nxtPnt1P = pnt3 ; 
-    *xdP = pointAddrP(dtmP,pnt3)->x ; 
-    *ydP = pointAddrP(dtmP,pnt3)->y ; 
-    *zdP = pointAddrP(dtmP,pnt3)->z ; 
+ if( x2 == pointAddrP(dtmP,pnt3)->x && y2 == pointAddrP(dtmP,pnt3)->y )
+   {
+    *drapeTypeP = 1 ;
+    *nxtPnt1P = pnt3 ;
+    *xdP = pointAddrP(dtmP,pnt3)->x ;
+    *ydP = pointAddrP(dtmP,pnt3)->y ;
+    *zdP = pointAddrP(dtmP,pnt3)->z ;
     return(1) ;
    }
 /*
@@ -733,10 +696,10 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromTriangleDtmObject(BC_DTM_
  if( bcdtmMath_pointInTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,x2,y2) )
    {
     *drapeTypeP = 3 ;
-    *nxtPnt1P = pnt1 ; 
-    *nxtPnt2P = pnt2 ; 
+    *nxtPnt1P = pnt1 ;
+    *nxtPnt2P = pnt2 ;
     *nxtPnt3P = pnt3 ;
-    *xdP = x2  ; 
+    *xdP = x2  ;
     *ydP = y2  ;
     bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,x2,y2,zdP,*nxtPnt1P,*nxtPnt2P,*nxtPnt3P) ;
     return(1) ;
@@ -759,13 +722,13 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromTriangleDtmObject(BC_DTM_
    {
     if( pointAddrP(dtmP,pnt1)->x >= xmin && pointAddrP(dtmP,pnt1)->x <= xmax &&
         pointAddrP(dtmP,pnt1)->y >= ymin && pointAddrP(dtmP,pnt1)->y <= ymax    )
-      { 
-       *xdP = pointAddrP(dtmP,pnt1)->x ; 
-       *ydP = pointAddrP(dtmP,pnt1)->y ; 
-       *zdP = pointAddrP(dtmP,pnt1)->z ; 
+      {
+       *xdP = pointAddrP(dtmP,pnt1)->x ;
+       *ydP = pointAddrP(dtmP,pnt1)->y ;
+       *zdP = pointAddrP(dtmP,pnt1)->z ;
        *nxtPnt1P = pnt1 ;
-       *drapeTypeP = 1  ; 
-       return(0) ; 
+       *drapeTypeP = 1  ;
+       return(0) ;
       }
    }
 /*
@@ -775,11 +738,11 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromTriangleDtmObject(BC_DTM_
    {
     if( pointAddrP(dtmP,pnt2)->x >= xmin && pointAddrP(dtmP,pnt2)->x <= xmax &&
         pointAddrP(dtmP,pnt2)->y >= ymin && pointAddrP(dtmP,pnt2)->y <= ymax    )
-      { 
+      {
        *xdP = pointAddrP(dtmP,pnt2)->x ;
-       *ydP = pointAddrP(dtmP,pnt2)->y ; 
-       *zdP = pointAddrP(dtmP,pnt2)->z ; 
-       *nxtPnt1P = pnt2 ; 
+       *ydP = pointAddrP(dtmP,pnt2)->y ;
+       *zdP = pointAddrP(dtmP,pnt2)->z ;
+       *nxtPnt1P = pnt2 ;
        *drapeTypeP = 1  ;
        return(0) ;
       }
@@ -791,13 +754,13 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromTriangleDtmObject(BC_DTM_
    {
     if( pointAddrP(dtmP,pnt3)->x >= xmin && pointAddrP(dtmP,pnt3)->x <= xmax &&
         pointAddrP(dtmP,pnt3)->y >= ymin && pointAddrP(dtmP,pnt3)->y <= ymax    )
-      { 
-       *xdP = pointAddrP(dtmP,pnt3)->x ; 
-       *ydP = pointAddrP(dtmP,pnt3)->y ; 
-       *zdP = pointAddrP(dtmP,pnt3)->z ; 
+      {
+       *xdP = pointAddrP(dtmP,pnt3)->x ;
+       *ydP = pointAddrP(dtmP,pnt3)->y ;
+       *zdP = pointAddrP(dtmP,pnt3)->z ;
        *nxtPnt1P = pnt3 ;
        *drapeTypeP = 1 ;
-       return(0) ; 
+       return(0) ;
       }
    }
 /*
@@ -890,11 +853,11 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromLineDtmObject(BC_DTM_OBJ 
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Testing For Last Point Equal To Triangle Point") ;
  *nxtPnt1P = *nxtPnt2P = *nxtPnt3P = dtmP->nullPnt ;
- if( x2 == pointAddrP(dtmP,pnt1)->x && y2 == pointAddrP(dtmP,pnt1)->y ) 
+ if( x2 == pointAddrP(dtmP,pnt1)->x && y2 == pointAddrP(dtmP,pnt1)->y )
    { *Type = 1 ; *nxtPnt1P = pnt1 ; *xdP = pointAddrP(dtmP,pnt1)->x ; *ydP = pointAddrP(dtmP,pnt1)->y ; *zdP = pointAddrP(dtmP,pnt1)->z ; return(1) ; }
- if( x2 == pointAddrP(dtmP,pnt2)->x && y2 == pointAddrP(dtmP,pnt2)->y ) 
+ if( x2 == pointAddrP(dtmP,pnt2)->x && y2 == pointAddrP(dtmP,pnt2)->y )
    { *Type = 1 ; *nxtPnt1P = pnt2 ; *xdP = pointAddrP(dtmP,pnt2)->x ; *ydP = pointAddrP(dtmP,pnt2)->y ; *zdP = pointAddrP(dtmP,pnt2)->z ; return(1) ; }
- if( x2 == pointAddrP(dtmP,pnt3)->x && y2 == pointAddrP(dtmP,pnt3)->y ) 
+ if( x2 == pointAddrP(dtmP,pnt3)->x && y2 == pointAddrP(dtmP,pnt3)->y )
    { *Type = 1 ; *nxtPnt1P = pnt3 ; *xdP = pointAddrP(dtmP,pnt3)->x ; *ydP = pointAddrP(dtmP,pnt3)->y ; *zdP = pointAddrP(dtmP,pnt3)->z ; return(1) ; }
 /*
 ** Test For Last Point In Triangle
@@ -903,10 +866,10 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromLineDtmObject(BC_DTM_OBJ 
  if( bcdtmMath_pointInTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,x2,y2) )
    {
     *Type = 3 ;
-    *nxtPnt1P = pnt1 ; 
-    *nxtPnt2P = pnt2 ; 
+    *nxtPnt1P = pnt1 ;
+    *nxtPnt2P = pnt2 ;
     *nxtPnt3P = pnt3 ;
-    *xdP = x2  ; 
+    *xdP = x2  ;
     *ydP = y2  ;
     bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,x2,y2,zdP,*nxtPnt1P,*nxtPnt2P,*nxtPnt3P) ;
     return(1) ;
@@ -918,7 +881,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromLineDtmObject(BC_DTM_OBJ 
  if( bcdtmMath_sideOf(x1,y1,x2,y2,pointAddrP(dtmP,pnt3)->x,pointAddrP(dtmP,pnt3)->y) == 0 )
    { *xdP = pointAddrP(dtmP,pnt3)->x ; *ydP = pointAddrP(dtmP,pnt3)->y ; *zdP = pointAddrP(dtmP,pnt3)->z ; *nxtPnt1P = pnt3 ; *Type = 1 ; return(0) ; }
 /*
- if( bcdtmMath_normalDistanceToCordLine(x1,y1,x2,y2,pointAddrP(dtmP,pnt3)->x,pointAddrP(dtmP,pnt3)->y) < dtmP->PLTOL / 10.0 ) 
+ if( bcdtmMath_normalDistanceToCordLine(x1,y1,x2,y2,pointAddrP(dtmP,pnt3)->x,pointAddrP(dtmP,pnt3)->y) < dtmP->PLTOL / 10.0 )
    { *xdP = pointAddrP(dtmP,pnt3)->x ; *ydP = pointAddrP(dtmP,pnt3)->y ; *zdP = pointAddrP(dtmP,pnt3)->z ; *nxtPnt1P = pnt3 ; *Type = 1 ; return(0) ; }
 */
 /*
@@ -978,8 +941,8 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromLineDtmObject(BC_DTM_OBJ 
     *ydP = pointAddrP(dtmP,closestPoint)->y ;
     *zdP = pointAddrP(dtmP,closestPoint)->z ;
     *nxtPnt1P = closestPoint ;
-    *Type = 1 ; 
-    return(0) ;     
+    *Type = 1 ;
+    return(0) ;
    }
 /*
 ** Job Completed
@@ -998,7 +961,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromPointDtmObject
  long   *drapeTypeP,
  long   pnt1,
  long   *nxtPnt1P,long *nxtPnt2P,long *nxtPnt3P,
- double *xdP,double *ydP,double *zdP 
+ double *xdP,double *ydP,double *zdP
 )
 {
  long   p1,p2,clc ;
@@ -1011,19 +974,19 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromPointDtmObject
 /*
 ** Test For End Of Drape Line
 */
- if( x1 == x2 && y1 == y2 ) 
-   { 
+ if( x1 == x2 && y1 == y2 )
+   {
     *drapeTypeP = 1 ;
     *nxtPnt1P = pnt1 ;
-    *xdP = pointAddrP(dtmP,pnt1)->x ; 
-    *ydP = pointAddrP(dtmP,pnt1)->y ; 
-    *zdP = pointAddrP(dtmP,pnt1)->z ; 
-    return(1) ; 
+    *xdP = pointAddrP(dtmP,pnt1)->x ;
+    *ydP = pointAddrP(dtmP,pnt1)->y ;
+    *zdP = pointAddrP(dtmP,pnt1)->z ;
+    return(1) ;
    }
 /*
 ** Calculate Drape Parameters
 */
- d1 = bcdtmMath_distance(x1,y1,x2,y2) ; 
+ d1 = bcdtmMath_distance(x1,y1,x2,y2) ;
  drapeAng = bcdtmMath_getAngle(x1,y1,x2,y2) ;
 /*
 **  Find Points connected to pnt1 that are either side of x1y1 x2y2
@@ -1041,26 +1004,26 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromPointDtmObject
     pnt2Ang = bcdtmMath_getAngle(pointAddrP(dtmP,pnt1)->x,pointAddrP(dtmP,pnt1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
     if( nodeAddrP(dtmP,pnt1)->hPtr != p1 )
       {
-       if( pnt1Ang == drapeAng ) 
-         { 
+       if( pnt1Ang == drapeAng )
+         {
           d2 = bcdtmMath_distance(x1,y1,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
           if( d1 <= d2 ) { *drapeTypeP = 2 ; *nxtPnt1P = pnt1 ; *nxtPnt2P = p1 ;*xdP = x2 ; *ydP = y2 ; bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*xdP,*ydP,zdP,pnt1,p1) ; return(1) ; }
           else           { *drapeTypeP = 1 ; *nxtPnt1P = p1 ; *xdP = pointAddrP(dtmP,p1)->x ; *ydP = pointAddrP(dtmP,p1)->y ; *zdP = pointAddrP(dtmP,p1)->z ; return(0) ; }
          }
-       else if( pnt2Ang == drapeAng ) 
-         { 
+       else if( pnt2Ang == drapeAng )
+         {
           d2 = bcdtmMath_distance(x1,y1,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
           if( d1 <= d2 ) { *drapeTypeP = 2 ; *nxtPnt1P = pnt1 ; *nxtPnt2P = p2 ; *xdP = x2 ; *ydP = y2 ; bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*xdP,*ydP,zdP,pnt1,p2) ; return(1) ; }
           else           { *drapeTypeP = 1 ; *nxtPnt1P = p2 ; *xdP = pointAddrP(dtmP,p2)->x ; *ydP = pointAddrP(dtmP,p2)->y ; *zdP = pointAddrP(dtmP,p2)->z ; return(0) ; }
-         }  
+         }
 
-       else 
+       else
          {
-          a1 = pnt1Ang  ; 
-          a2 = drapeAng ; 
+          a1 = pnt1Ang  ;
+          a2 = drapeAng ;
           a3 = pnt2Ang  ;
-          if( a3 > a1 ) a1 = a1 + DTM_2PYE ; 
-          if( a3 > a2 ) a2 = a2 + DTM_2PYE ; 
+          if( a3 > a1 ) a1 = a1 + DTM_2PYE ;
+          if( a3 > a2 ) a2 = a2 + DTM_2PYE ;
           if( a2 <= a1 && a2 >= a3 )
             {
 /*
@@ -1075,7 +1038,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromPointDtmObject
                 *zdP = z ;
                 return(1) ;
                }
-            
+
 /*
 **           Intersect x1y1-x2y2 with p1,p2
 */
@@ -1095,7 +1058,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextDrapePointFromPointDtmObject
    pnt1Ang = pnt2Ang ;
   }
 /*
-** Line Goes External To Tin Hull 
+** Line Goes External To Tin Hull
 */
  return(2) ;
 }
@@ -1116,19 +1079,18 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
  long   pnt2,
  long   pnt3,
  long   dtmFeatureOption,
- DTM_DRAPE_POINT **drapePtsPP, 
- long   *numDrapePtsP,
- long   *memDrapePtsP,
- long   memDrapePtsInc
-) 
+ bvector<DTMDrapePoint>& drapePts
+)
 /*
-** This Function Stores A Drape Point Into the DTM_DRAPE_POINT structure
+** This Function Stores A Drape Point Into the DTMDrapePoint structure
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long voidFlag = 0, numDrapeFeatures = 0, dtmFeature, breakPoint = 0;
+ bool voidFlag = false;
+ long dtmFeature, breakPoint = 0;
+ long numDrapeFeatures = 0;
  DTMDrapedLineCode newDrapeType = DTMDrapedLineCode::External;
- DTM_TIN_POINT_FEATURES *drapeFeaturesP=NULL,*dfP ;
+ bvector<DTMTinPointFeatures> drapeFeatures;
 /*
 ** Write Entry Message
 */
@@ -1140,17 +1102,17 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
 /*
 **  Input Drape Type Values
 **
-**  drapeType == 0  Drape Point External To Tin 
+**  drapeType == 0  Drape Point External To Tin
 **  drapeType == 1  Drape Point On Tin Point
 **  drapeType == 2  Drape Point On Tin Line
 **  drapeType == 3  Drape Point In Triangle
 **
-** 
-** DTM_DRAPE_POINT drapeType Values   ==  0  Drape Point External To Tin 
+**
+** DTMDrapePoint drapeType Values   ==  0  Drape Point External To Tin
 **                                    ==  1  Drape Point In Triangle
-**                                    ==  2  Drape Point On Break Line  
+**                                    ==  2  Drape Point On Break Line
 **                                    ==  3  Drape Point On Break Triangle Edge
-**                                    ==  4  Drape Point In Void     
+**                                    ==  4  Drape Point In Void
 **                                    ==  5  Drape Point On Triangle Point
 **                                    ==  6  Drape Point On Triangle Edge
 */
@@ -1163,36 +1125,22 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
  else if (drapeType == 2) newDrapeType = DTMDrapedLineCode::Edge;
  else if (drapeType == 3) newDrapeType = DTMDrapedLineCode::Tin;
 /*
-** Check For Sufficient Heap Space
-*/
- if( *numDrapePtsP == *memDrapePtsP )
-   {
-    *memDrapePtsP = *memDrapePtsP + memDrapePtsInc ;
-    if( *drapePtsPP == NULL ) *drapePtsPP  = ( DTM_DRAPE_POINT  * )  malloc  ( *memDrapePtsP * sizeof(DTM_DRAPE_POINT)) ;
-    else                      *drapePtsPP  = ( DTM_DRAPE_POINT  * )  realloc ( *drapePtsPP , *memDrapePtsP * sizeof(DTM_DRAPE_POINT)) ;
-    if( *drapePtsPP == NULL )
-      {
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
-       goto errexit ; 
-      }
-   }
-/*
 ** Check For Drape Point In Void
 */
  if (newDrapeType != DTMDrapedLineCode::External)
    {
    if (drapeType == 1 && bcdtmFlag_testVoidBitPCWD (&nodeAddrP (dtmP, pnt1)->PCWD)) newDrapeType = DTMDrapedLineCode::Void;
-    if( drapeType == 2 ) 
+    if( drapeType == 2 )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit ;
-       if (voidFlag) newDrapeType = DTMDrapedLineCode::Void;
-      } 
-    if( drapeType == 3 )
-      {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit ;
        if (voidFlag) newDrapeType = DTMDrapedLineCode::Void;
       }
-   } 
+    if( drapeType == 3 )
+      {
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit ;
+       if (voidFlag) newDrapeType = DTMDrapedLineCode::Void;
+      }
+   }
 /*
 ** If Drape Point Not External To Tin Or In Void Then Get Features And Point Type
 */
@@ -1205,12 +1153,13 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
       {
        if( drapeType == 1 )
          {
-          if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt1,&drapeFeaturesP,&numDrapeFeatures)) goto errexit ; 
+          if( bcdtmList_getDtmFeaturesForPointDtmObject(dtmP,pnt1,drapeFeatures)) goto errexit ;
          }
        if( drapeType == 2 )
          {
-          if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,pnt1,pnt2,&drapeFeaturesP,&numDrapeFeatures)) goto errexit ; 
-         } 
+          if( bcdtmList_getDtmFeaturesForLineDtmObject(dtmP,pnt1,pnt2,drapeFeatures)) goto errexit ;
+         }
+       numDrapeFeatures = (long)drapeFeatures.size();
       }
 /*
 **  Check If Drape Point Is A Break Point
@@ -1218,10 +1167,14 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
     breakPoint = 0 ;
     if( dtmFeatureOption == TRUE )
       {
-       for( dfP = drapeFeaturesP ; dfP < drapeFeaturesP + numDrapeFeatures && ! breakPoint ; ++dfP )
-         {
-          if( dfP->dtmFeatureType == DTMFeatureType::Breakline ) breakPoint = 1 ;
-         }
+        for (const auto& feature : drapeFeatures)
+            {
+            if (feature.dtmFeatureType == DTMFeatureType::Breakline)
+                {
+                breakPoint = 1;
+                break;
+                }
+            }
       }
     if( dtmFeatureOption == FALSE )
       {
@@ -1239,7 +1192,7 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
       {
        if( bcdtmList_testForPointOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,pnt1,&dtmFeature) &&
            bcdtmList_testForPointOnDtmFeatureTypeDtmObject(dtmP,DTMFeatureType::Breakline,pnt2,&dtmFeature)     )
-         { 
+         {
           if(( pnt3 = bcdtmList_nextClkDtmObject(dtmP,pnt1,pnt2)) < 0 ) goto errexit ;
           if( bcdtmList_testLineDtmObject(dtmP,pnt3,pnt2) )
             {
@@ -1253,26 +1206,25 @@ BENTLEYDTM_Private int bcdtmDrape_storeDrapePointWithDtmFeaturesDtmObject
                if (bcdtmList_testForPointOnDtmFeatureTypeDtmObject (dtmP, DTMFeatureType::Breakline, pnt3, &dtmFeature)) newDrapeType = DTMDrapedLineCode::BetweenBreaklines;
                }
             }
-         } 
+         }
       }
    }
 /*
 ** Store Drape Point
 */
- (*drapePtsPP+*numDrapePtsP)->drapeLine = lineNum ;
- (*drapePtsPP+*numDrapePtsP)->drapeType = newDrapeType ;
- (*drapePtsPP+*numDrapePtsP)->drapeX = x   ;
- (*drapePtsPP+*numDrapePtsP)->drapeY = y   ;
- (*drapePtsPP+*numDrapePtsP)->drapeZ = z   ;
- (*drapePtsPP+*numDrapePtsP)->drapeFeaturesP   = drapeFeaturesP  ;
- drapeFeaturesP = NULL ;
- (*drapePtsPP+*numDrapePtsP)->numDrapeFeatures = numDrapeFeatures   ;
- ++*numDrapePtsP ;
+ size_t numDrapePts = drapePts.size();
+ drapePts.resize(numDrapePts + 1);
+ auto& drapePt = drapePts[numDrapePts];
+ drapePt.drapeLine = lineNum ;
+ drapePt.drapeType = newDrapeType ;
+ drapePt.drapePt.x = x   ;
+ drapePt.drapePt.y = y   ;
+ drapePt.drapePt.z = z   ;
+ drapePt.drapeFeatures.swap(drapeFeatures) ;
 /*
 ** Clean Up
 */
  cleanup :
- if( drapeFeaturesP != NULL ) free( drapeFeaturesP ) ;
 /*
 ** Return
 */
@@ -1311,8 +1263,8 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
 **
 ** fndTypeP == 0  No Intercept
 **          == 1  Intesects With Hull Point pnt1P
-**          == 2  Intesects With Hull Line  pnt1P-pnt2P 
-**          == 3  Pulled Onto Next Hull Point 
+**          == 2  Intesects With Hull Line  pnt1P-pnt2P
+**          == 3  Pulled Onto Next Hull Point
 **
 */
 {
@@ -1325,14 +1277,14 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Finding Closest Line Intercept With Tin Hull") ;
-    bcdtmWrite_message(0,0,0,"dtmP       = %P",dtmP) ; 
+    bcdtmWrite_message(0,0,0,"dtmP       = %P",dtmP) ;
     bcdtmWrite_message(0,0,0,"startX     = %14.6lf startY = %14.6lf",startX,startY) ;
     bcdtmWrite_message(0,0,0,"endX       = %14.6lf endY   = %14.6lf",endX,endY) ;
-    bcdtmWrite_message(0,0,0,"*fndTypeP  = %8ld",*fndTypeP) ; 
-    bcdtmWrite_message(0,0,0,"*pnt1P     = %8ld",*pnt1P) ; 
-    bcdtmWrite_message(0,0,0,"*pnt2P     = %8ld",*pnt2P) ; 
-    if( *pnt1P != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"pnt1P = %9ld  fTableP = %8ld ** %10.4lf %10.4lf %10.4lf",*pnt1P,nodeAddrP(dtmP,*pnt1P)->hPtr,pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,pointAddrP(dtmP,*pnt1P)->z) ; 
-    if( *pnt2P != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"pnt2P = %9ld  fTableP = %8ld ** %10.4lf %10.4lf %10.4lf",*pnt2P,nodeAddrP(dtmP,*pnt2P)->hPtr,pointAddrP(dtmP,*pnt2P)->x,pointAddrP(dtmP,*pnt2P)->y,pointAddrP(dtmP,*pnt2P)->z) ; 
+    bcdtmWrite_message(0,0,0,"*fndTypeP  = %8ld",*fndTypeP) ;
+    bcdtmWrite_message(0,0,0,"*pnt1P     = %8ld",*pnt1P) ;
+    bcdtmWrite_message(0,0,0,"*pnt2P     = %8ld",*pnt2P) ;
+    if( *pnt1P != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"pnt1P = %9ld  fTableP = %8ld ** %10.4lf %10.4lf %10.4lf",*pnt1P,nodeAddrP(dtmP,*pnt1P)->hPtr,pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,pointAddrP(dtmP,*pnt1P)->z) ;
+    if( *pnt2P != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"pnt2P = %9ld  fTableP = %8ld ** %10.4lf %10.4lf %10.4lf",*pnt2P,nodeAddrP(dtmP,*pnt2P)->hPtr,pointAddrP(dtmP,*pnt2P)->x,pointAddrP(dtmP,*pnt2P)->y,pointAddrP(dtmP,*pnt2P)->z) ;
    }
 /*
 ** Initialiase
@@ -1355,8 +1307,8 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
     else { p1 = sp1 ; p2 = sp2 ; }
     n1 = bcdtmMath_distanceOfPointFromLine(&onLine1,startX,startY,endX,endY,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&xc,&yc) ;
     n2 = bcdtmMath_distanceOfPointFromLine(&onLine2,startX,startY,endX,endY,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,&xc,&yc) ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"onLine1 = %2ld n1 = %20.15lf",onLine1,n1) ;    
-    if( dbg ) bcdtmWrite_message(0,0,0,"onLine2 = %2ld n2 = %20.15lf",onLine2,n2) ;    
+    if( dbg ) bcdtmWrite_message(0,0,0,"onLine1 = %2ld n1 = %20.15lf",onLine1,n1) ;
+    if( dbg ) bcdtmWrite_message(0,0,0,"onLine2 = %2ld n2 = %20.15lf",onLine2,n2) ;
     if( onLine1 && n1 <= dtmP->plTol ) { *fndTypeP = 3 ; *pnt1P = p1 ; *xIntP = pointAddrP(dtmP,p1)->x ; *yIntP = pointAddrP(dtmP,p1)->y ;*zIntP = pointAddrP(dtmP,p1)->z ; }
     if( onLine2 && n2 <= dtmP->plTol ) { *fndTypeP = 3 ; *pnt1P = p2 ; *xIntP = pointAddrP(dtmP,p2)->x ; *yIntP = pointAddrP(dtmP,p2)->y ;*zIntP = pointAddrP(dtmP,p2)->z ; }
     if( *fndTypeP != 0 )
@@ -1364,15 +1316,15 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
        if( dbg ) bcdtmWrite_message(0,0,0,"fndTypeP = %2ld ** pnt1P = %6ld",*fndTypeP,*pnt1P) ;
        n1 = bcdtmMath_distance(startX,startY,endX,endY) ;
        n2 = bcdtmMath_distance(pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,endX,endY) ;
-       if( dbg ) 
+       if( dbg )
          {
-          bcdtmWrite_message(0,0,0,"n1 = %20.12lf",n1) ;    
-          bcdtmWrite_message(0,0,0,"n2 = %20.12lf",n2) ; 
-          bcdtmWrite_message(0,0,0,"Included Angle = %15.12lf",bcdtmMath_calculateIncludedAngle(startX,startY,pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,endX,endY)) ;  
+          bcdtmWrite_message(0,0,0,"n1 = %20.12lf",n1) ;
+          bcdtmWrite_message(0,0,0,"n2 = %20.12lf",n2) ;
+          bcdtmWrite_message(0,0,0,"Included Angle = %15.12lf",bcdtmMath_calculateIncludedAngle(startX,startY,pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,endX,endY)) ;
          }
        if( n1 <= n2 || bcdtmMath_calculateIncludedAngle(startX,startY,pointAddrP(dtmP,*pnt1P)->x,pointAddrP(dtmP,*pnt1P)->y,endX,endY) < DTM_PYE / 2.0 ) *fndTypeP = 0 ;
        if( *fndTypeP != 0 ) return(0) ;
-      } 
+      }
    }
 /*
 ** Set Scan Parameters
@@ -1395,7 +1347,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
 ** Scan Hull Looking For Closest Line Intercept
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Hull Intercept For Closest Intercept") ;
- p1 = dtmP->hullPoint ; 
+ p1 = dtmP->hullPoint ;
  do
    {
     process = 0 ;
@@ -1409,11 +1361,11 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
        else                                                   { xmin = pointAddrP(dtmP,p2)->x ; xmax = pointAddrP(dtmP,p1)->x ; }
        if( pointAddrP(dtmP,p1)->y <= pointAddrP(dtmP,p2)->y ) { ymin = pointAddrP(dtmP,p1)->y ; ymax = pointAddrP(dtmP,p2)->y ; }
        else                                                   { ymin = pointAddrP(dtmP,p2)->y ; ymax = pointAddrP(dtmP,p1)->y ; }
-       if( xmin <= xlmax && xmax >= xlmin && ymin <= ylmax && ymax >= ylmin ) 
+       if( xmin <= xlmax && xmax >= xlmin && ymin <= ylmax && ymax >= ylmin )
          {
           sdof1 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
           sdof2 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
-          if( sdof1 != sdof2 ) 
+          if( sdof1 != sdof2 )
             {
              sdof1 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,startX,startY) ;
              sdof2 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,endX,endY) ;
@@ -1453,7 +1405,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
 /*
 **  Scan Hull Points
 */
-    p1 = dtmP->hullPoint ; 
+    p1 = dtmP->hullPoint ;
     do
       {
 /*
@@ -1463,15 +1415,15 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
          {
           n1 = bcdtmMath_distanceOfPointFromLine(&onLine1,startX,startY,endX,endY,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,&xc,&yc) ;
           if( n1 <= dtmP->ppTol )
-            {  
+            {
              dist = bcdtmMath_distance(startX,startY,xc,yc) ;
              if( firstFound || dist < tolerance  )
                {
                 firstFound = 0 ;
                 tolerance = dist ;
-                *xIntP = pointAddrP(dtmP,p1)->x ; 
+                *xIntP = pointAddrP(dtmP,p1)->x ;
                 *yIntP = pointAddrP(dtmP,p1)->y ;
-                *pnt1P = p1 ; *pnt2P = dtmP->nullPnt ; 
+                *pnt1P = p1 ; *pnt2P = dtmP->nullPnt ;
                 *fndTypeP = 1 ;
                }
             }
@@ -1485,12 +1437,12 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
  if( *fndTypeP )
    {
     if( *fndTypeP == 1 ) *zIntP = pointAddrP(dtmP,*pnt1P)->z ;
-    else                 bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*xIntP,*yIntP,zIntP,*pnt1P,*pnt2P) ; 
-   } 
+    else                 bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*xIntP,*yIntP,zIntP,*pnt1P,*pnt2P) ;
+   }
 /*
 ** Clean Up
 */
- cleanup :   
+ cleanup :
 /*
 ** Job Completed
 */
@@ -1500,7 +1452,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithHullDtmObject
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
+ goto cleanup ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -1526,14 +1478,14 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmFile
 **
 **    <==  0  Point Outside Tin Object
 **    <==  1  Point Inside  Tin Object
-**    <==  2  Point In Void  
+**    <==  2  Point In Void
 **    <==  3  Point On Tin Line Or Point
-**     
+**
 **  Return Values
 **
 **     ==> 0  Success
-**     ==> 1  Error 
-**     
+**     ==> 1  Error
+**
 */
 {
  int ret=DTM_SUCCESS ;
@@ -1541,8 +1493,8 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmFile
 /*
 ** Test If Requested Dtm File Is Current Dtm Object
 */
- if( bcdtmUtility_testForAndSetCurrentDtmObject(&dtmP,dtmFileP)) 
-   { 
+ if( bcdtmUtility_testForAndSetCurrentDtmObject(&dtmP,dtmFileP))
+   {
     if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
     goto errexit ;
    }
@@ -1584,36 +1536,37 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
  double *heightP
 )
 /*
-**  Note That Triangle Attribute Are Only Set For 
+**  Note That Triangle Attribute Are Only Set For
 **
 **  drapeFlagP
 **
 **    <==  0  Point Outside Tin Object
 **    <==  1  Point Inside  Tin Object - In Triangle
-**    <==  2  Point In Void  
+**    <==  2  Point In Void
 **    <==  3  Point On Tin Line Or Point
-** 
-**  Note That Triangle Attribute Are Only Set For drapeFlagP = 1 
-**    
+**
+**  Note That Triangle Attribute Are Only Set For drapeFlagP = 1
+**
 */
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long P1,P2,P3,fndType,voidFlag=0,startTime=0 ;
- DTM_TIN_POINT *pnt1P,*pnt2P ;
+ long P1,P2,P3,fndType,startTime=0 ;
+ bool voidFlag = false;
+ DPoint3d *pnt1P,*pnt2P ;
 /*
 ** Write Entry Message
 */
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Draping Point Returning Attributes") ;
-    bcdtmWrite_message(0,0,0,"Dtm Object      = %p",dtmP) ; 
-    bcdtmWrite_message(0,0,0,"x               = %12.5lf",x) ; 
-    bcdtmWrite_message(0,0,0,"y               = %12.5lf",y) ; 
+    bcdtmWrite_message(0,0,0,"Dtm Object      = %p",dtmP) ;
+    bcdtmWrite_message(0,0,0,"x               = %12.5lf",x) ;
+    bcdtmWrite_message(0,0,0,"y               = %12.5lf",y) ;
     bcdtmWrite_message(0,0,0,"dtmP->dtmState  = %12ld",dtmP->dtmState) ;
     startTime = bcdtmClock() ;
    }
 /*
-** Initialise 
+** Initialise
 */
  *z = 0.0  ;
  *drapeFlagP = 0 ;
@@ -1653,7 +1606,7 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
  if( fndType == 0 )
    {
     bcdtmDrape_findClosestHullLineDtmObject(dtmP,x,y,&P1,&P2) ;
-    if( P1 != dtmP->nullPnt && P2 != dtmP->nullPnt ) 
+    if( P1 != dtmP->nullPnt && P2 != dtmP->nullPnt )
       {
        pnt1P = pointAddrP(dtmP,P1) ;
        pnt2P = pointAddrP(dtmP,P2) ;
@@ -1661,49 +1614,49 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
        else if( bcdtmMath_distance(x,y,pnt2P->x,pnt2P->y) <= dtmP->ppTol ) { fndType = 1 ; P1 = P2 ; P2 = dtmP->nullPnt ; *z = pnt2P->z ; }
        else if( bcdtmMath_normalDistanceToLineDtmObject(dtmP,P1,P2,x,y) <= dtmP->ppTol )
          {
-          fndType = 3 ; 
+          fndType = 3 ;
           bcdtmMath_interpolatePointOnLineDtmObject(dtmP,x,y,z,P1,P2) ;
          }
-      }   
+      }
    }
 /*
 ** If Point Internal To Tin Hull Set Attributes
 */
- if( fndType ) 
+ if( fndType )
    {
 /*
 **  Test For Point In Void
 */
     *drapeFlagP = 1 ;
     if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,P1)->PCWD) ) *drapeFlagP = 2 ;
-    if( fndType == 2 || fndType == 3 ) 
+    if( fndType == 2 || fndType == 3 )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,&voidFlag)) goto errexit  ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,P1,P2,voidFlag)) goto errexit  ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-    if( fndType == 4 ) 
+    if( fndType == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,&voidFlag)) goto errexit  ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,P1,P2,P3,voidFlag)) goto errexit  ;
        if( voidFlag ) *drapeFlagP = 2 ;
-      } 
+      }
 /*
 **  Set Return Values In Drape Point Not In A Void
 */
-    if( ! voidFlag ) 
+    if( ! voidFlag )
       {
 /*
 **     Drape Point On Tin Line Or Tin Point
 */
-       if( fndType >= 1 &&  fndType <= 3 ) 
+       if( fndType >= 1 &&  fndType <= 3 )
          {
           dtmPoints[0].x = pointAddrP(dtmP,P1)->x ;
           dtmPoints[0].y = pointAddrP(dtmP,P1)->y ;
           dtmPoints[0].z = pointAddrP(dtmP,P1)->z ;
-          if( P2 != dtmP->nullPnt ) 
-            { 
+          if( P2 != dtmP->nullPnt )
+            {
              dtmPoints[1].x = pointAddrP(dtmP,P2)->x ;
              dtmPoints[1].y = pointAddrP(dtmP,P2)->y ;
-             dtmPoints[1].z = pointAddrP(dtmP,P2)->z ; 
+             dtmPoints[1].z = pointAddrP(dtmP,P2)->z ;
             }
           *drapeFlagP = 3 ;
          }
@@ -1718,8 +1671,8 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
           dtmPoints[2].x = pointAddrP(dtmP,P3)->x ; dtmPoints[2].y =pointAddrP(dtmP,P3)->y ; dtmPoints[2].z = pointAddrP(dtmP,P3)->z ;
           *drapeFlagP = 1 ;
          }
-      } 
-   } 
+      }
+   }
 /*
 ** Clean Up
 */
@@ -1727,7 +1680,7 @@ BENTLEYDTM_EXPORT int  bcdtmDrape_pointReturnAttributesDtmObject
 /*
 ** Job Completed
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Time To Drape Point = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Time To Drape Point = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
  if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Draping Point Returning Attributes Completed") ;
  if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Draping Point Returning Attributes Error") ;
  return(ret) ;
@@ -1762,11 +1715,11 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
 ** Joining  <startX,startY> To <endX,endY>
 **
 ** Return Values == 0  Success
-**               == 1  Error 
+**               == 1  Error
 **
 ** findTypeP == 0  No Intercept
 **           == 1  Intesects With Void Hull Point pnt1P
-**           == 2  Intesects With Void Hull Line  pnt1P-pnt2P 
+**           == 2  Intesects With Void Hull Line  pnt1P-pnt2P
 **
 */
 {
@@ -1809,7 +1762,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Void Hulls For Closest Intercept") ;
  for( dtmFeature = 0 ; dtmFeature < dtmP->numFeatures ; ++dtmFeature )
    {
-    fP = ftableAddrP(dtmP,dtmFeature) ; 
+    fP = ftableAddrP(dtmP,dtmFeature) ;
     if( fP->dtmFeatureState == DTMFeatureState::Tin && fP->dtmFeatureType == DTMFeatureType::Void )
       {
        sp = fP->dtmFeaturePts.firstPoint ;
@@ -1817,11 +1770,11 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
 **     Scan Void Hull Looking For Intersection
 */
        do
-         { 
+         {
           if( bcdtmList_getNextPointForDtmFeatureDtmObject(dtmP,dtmFeature,sp,&np)) goto errexit ;
 /*
 **        Set Bounding Rectangle For Void Hull Line
-*/ 
+*/
           if( dbg == 2 )
             {
              bcdtmWrite_message(0,0,0,"spX = %12.5lf spY = %12.5lf",pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y) ;
@@ -1839,7 +1792,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
 /*
 **        Check If Bounding Rectangles For Intersect And Void Hull Lines Overlap
 */
-          if( xmin <= xlmax && xmax >= xlmin && ymin <= ylmax && ymax >= ylmin ) 
+          if( xmin <= xlmax && xmax >= xlmin && ymin <= ylmax && ymax >= ylmin )
             {
              if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Bounding Rectangles Overlap") ;
 /*
@@ -1850,7 +1803,7 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
              sd2 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y) ;
 /*
 **           Colinear Lines - Check For Overlap
-*/ 
+*/
              if( sd1 == 0 && sd2 == 0 )
                {
                 dd = bcdtmMath_distance(startX,startY,endX,endY) ;
@@ -1874,13 +1827,13 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
 /*
 **           Lines May Intersect
 */
-             else if( sd1 != sd2 ) 
+             else if( sd1 != sd2 )
                {
                 sd1 = bcdtmMath_sideOf(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,startX,startY) ;
                 sd2 = bcdtmMath_sideOf(pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,endX,endY) ;
 /*
 **              Colinear Lines - Check For Overlap
-*/ 
+*/
                 if( sd1 == 0 && sd2 == 0 )
                   {
                    dd = bcdtmMath_distance(startX,startY,endX,endY) ;
@@ -1900,11 +1853,11 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
                       y  = pointAddrP(dtmP,np)->y ;
                       intersectFnd = 1 ;
                      }
-                  } 
+                  }
 /*
 **              Lines Intersect
 */
-                else if( sd1 != sd2 ) 
+                else if( sd1 != sd2 )
                   {
                    bcdtmMath_normalIntersectCordLines(startX,startY,endX,endY,pointAddrP(dtmP,sp)->x,pointAddrP(dtmP,sp)->y,pointAddrP(dtmP,np)->x,pointAddrP(dtmP,np)->y,&x,&y) ;
                    dd = bcdtmMath_distance(startX,startY,x,y) ;
@@ -1920,19 +1873,19 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
                   {
                    firstIntersect  = 0  ;
                    closestDistance = dd ;
-                   *intXP = x ; 
+                   *intXP = x ;
                    *intYP = y ;
-                   *pnt1P = sp ; 
-                   *pnt2P = np ; 
+                   *pnt1P = sp ;
+                   *pnt2P = np ;
                    *findTypeP = 2 ;
-                   if( *intXP == pointAddrP(dtmP,sp)->x && *intYP == pointAddrP(dtmP,sp)->y ) 
-                     { 
-                      *findTypeP = 1 ; 
-                      *pnt2P = dtmP->nullPnt ; 
+                   if( *intXP == pointAddrP(dtmP,sp)->x && *intYP == pointAddrP(dtmP,sp)->y )
+                     {
+                      *findTypeP = 1 ;
+                      *pnt2P = dtmP->nullPnt ;
                      }
-                   if( *intXP == pointAddrP(dtmP,np)->x && *intYP == pointAddrP(dtmP,np)->y ) 
-                     { 
-                      *findTypeP = 1 ; 
+                   if( *intXP == pointAddrP(dtmP,np)->x && *intYP == pointAddrP(dtmP,np)->y )
+                     {
+                      *findTypeP = 1 ;
                       *pnt1P = *pnt2P ;
                       *pnt2P = dtmP->nullPnt ;
                      }
@@ -1949,8 +1902,8 @@ BENTLEYDTM_Public int bcdtmDrape_findClosestLineInterceptWithVoidHullDtmObject
  if( *findTypeP )
    {
     if( *findTypeP == 1 ) *intZP = pointAddrP(dtmP,*pnt1P)->z ;
-    else                 bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*intXP,*intYP,intZP,*pnt1P,*pnt2P) ; 
-   } 
+    else                 bcdtmMath_interpolatePointOnLineDtmObject(dtmP,*intXP,*intYP,intZP,*pnt1P,*pnt2P) ;
+   }
 /*
 ** Clean Up
 */
@@ -1978,17 +1931,18 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointWithOffHullToleranceDtmObject(BC_DTM_OBJ *
 **
 **    <==  0  Point Outside Tin Object
 **    <==  1  Point Inside  Tin Object
-**    <==  2  Point In Void  
-**     
+**    <==  2  Point In Void
+**
 **  Return Values
 **
 **     ==> 0  Success
-**     ==> 1  Error 
-**     
+**     ==> 1  Error
+**
 */
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long pnt1,pnt2,pnt3,fndType,voidFlag ;
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+ long pnt1, pnt2, pnt3, fndType;
+ bool voidFlag;
 /*
 ** Write Entry Message
 */
@@ -1998,9 +1952,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointWithOffHullToleranceDtmObject(BC_DTM_OBJ *
     bcdtmWrite_message(0,0,0,"dtmP = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"x    = %12.5lf",x) ;
     bcdtmWrite_message(0,0,0,"y    = %12.5lf",y) ;
-   } 
+   }
 /*
-** Initialise 
+** Initialise
 */
  *z = 0.0  ;
  *drapeFlagP = 0 ;
@@ -2009,19 +1963,19 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointWithOffHullToleranceDtmObject(BC_DTM_OBJ *
 */
  if( bcdtmFind_triangleForPointDtmObject(dtmP,x,y,z,&fndType,&pnt1,&pnt2,&pnt3 ) ) goto errexit ;
 /*
-** If Point External Test If Point Within ppTol Of Hull Line 
+** If Point External Test If Point Within ppTol Of Hull Line
 */
  if( ! fndType )
    {
     bcdtmDrape_findClosestHullLineDtmObject(dtmP,x,y,&pnt1,&pnt2) ;
-    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt ) 
+    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt )
       {
        if( bcdtmMath_normalDistanceToLineDtmObject(dtmP,pnt1,pnt2,x,y) <= offHullTolerance )
          {
           fndType = 1 ; *drapeFlagP = 1 ;
           bcdtmMath_interpolatePointOnLineDtmObject(dtmP,x,y,z,pnt1,pnt2) ;
          }
-      }   
+      }
    }
 /*
 ** Test For Point In Void
@@ -2030,17 +1984,17 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointWithOffHullToleranceDtmObject(BC_DTM_OBJ *
    {
     *drapeFlagP = 1 ;
     if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) *drapeFlagP = 2 ;
-    if( fndType == 2 || fndType == 3 ) 
+    if( fndType == 2 || fndType == 3 )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-    if( fndType == 4 ) 
+    if( fndType == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-   }  
+   }
 /*
 ** Clean Up
 */
@@ -2065,23 +2019,24 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointCopyParallelDtmObject(BC_DTM_OBJ *dtmP,dou
 /*
 **
 **  Special Drape Function For Site Modeler Copy Parallel Operation
-**  If The Point is External To Tin Will Snap To Closest Tin Hull Line 
+**  If The Point is External To Tin Will Snap To Closest Tin Hull Line
 **
 **  DrapeFlag
 **
 **    <==  0  Point Outside Tin Object
 **    <==  1  Point Inside  Tin Object
-**    <==  2  Point In Void  
-**     
+**    <==  2  Point In Void
+**
 **  Return Values
 **
 **     ==> 0  Success
-**     ==> 1  Error 
-**     
+**     ==> 1  Error
+**
 */
 {
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ; 
- long pnt1,pnt2,pnt3,fndType,voidFlag ;
+ int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+ long pnt1, pnt2, pnt3, fndType;
+ bool voidFlag;
 /*
 ** Write Entry Message
 */
@@ -2091,9 +2046,9 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointCopyParallelDtmObject(BC_DTM_OBJ *dtmP,dou
     bcdtmWrite_message(0,0,0,"dtmP = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"x    = %12.5lf",x) ;
     bcdtmWrite_message(0,0,0,"y    = %12.5lf",y) ;
-   } 
+   }
 /*
-** Initialise 
+** Initialise
 */
  *z = 0.0  ;
  *drapeFlagP = 0 ;
@@ -2102,12 +2057,12 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointCopyParallelDtmObject(BC_DTM_OBJ *dtmP,dou
 */
  if( bcdtmFind_triangleForPointDtmObject(dtmP,x,y,z,&fndType,&pnt1,&pnt2,&pnt3 ) ) goto errexit ;
 /*
-** If Point External Test If Point Within ppTol Of Hull Line 
+** If Point External Test If Point Within ppTol Of Hull Line
 */
  if( ! fndType )
    {
     bcdtmEdit_findClosestHullLineDtmObject(dtmP,x,y,&pnt1,&pnt2) ;
-    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt ) 
+    if( pnt1 != dtmP->nullPnt && pnt2 != dtmP->nullPnt )
       {
        fndType = 1 ; *drapeFlagP = 1 ;
        bcdtmMath_interpolatePointOnLineDtmObject(dtmP,x,y,z,pnt1,pnt2) ;
@@ -2121,17 +2076,17 @@ BENTLEYDTM_EXPORT int bcdtmDrape_pointCopyParallelDtmObject(BC_DTM_OBJ *dtmP,dou
    {
     *drapeFlagP = 1 ;
     if( fndType == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) *drapeFlagP = 2 ;
-    if( fndType == 2 || fndType == 3 ) 
+    if( fndType == 2 || fndType == 3 )
       {
-       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-    if( fndType == 4 ) 
+    if( fndType == 4 )
       {
-       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit ;
+       if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit ;
        if( voidFlag ) *drapeFlagP = 2 ;
       }
-   }  
+   }
 /*
 ** Clean Up
 */
@@ -2162,7 +2117,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmFile (WCharCP dtmFileP, double R1, d
 /*
 ** Test If Requested dtmP File Is Current dtmP Object
 */
- if( bcdtmUtility_testForAndSetCurrentDtmObject(&dtmP,dtmFileP)) goto errexit ; 
+ if( bcdtmUtility_testForAndSetCurrentDtmObject(&dtmP,dtmFileP)) goto errexit ;
 /*
 ** Call Object Module
 */
@@ -2198,10 +2153,11 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
  long   numSpiralPts=0,memSpiralPts=0,memSpiralPtsInc=1000,numDrapePts ;
  double Sx,Sy,Nx,Ny,spiralInc,spiralLen,spiralStrokeTolerance=1000.0 ;
  DPoint3d    *p3dP,*spiralPtsP=NULL ;
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ DTMDrapePoint *drapeP;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
 ** Write Status Message
-*/ 
+*/
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Draping Spiral On Dtm Object") ;
@@ -2301,7 +2257,8 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
 /*
 **  Drape Stroked Spiral Points On Tin
 */
- if( bcdtmDrape_stringDtmObject(dtmP,spiralPtsP,numSpiralPts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,spiralPtsP,numSpiralPts,false,drapePtsP)) goto errexit ;
+ numDrapePts = (long)drapePtsP.size();
 /*
 ** Allocate Memory For Return Arrays
 */
@@ -2316,11 +2273,11 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
 /*
 ** Copy Drape Points To Return Arrays
 */
- for( ofs = 0 , drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++ofs , ++drapeP )
+ for( ofs = 0 , drapeP = drapePtsP.data() ; drapeP < drapePtsP.data() + numDrapePts ; ++ofs , ++drapeP )
    {
-    (*spiralPointsPP+ofs)->x  = drapeP->drapeX ;
-    (*spiralPointsPP+ofs)->y  = drapeP->drapeY ;
-    (*spiralPointsPP+ofs)->z  = drapeP->drapeZ ;
+    (*spiralPointsPP+ofs)->x  = drapeP->drapePt.x ;
+    (*spiralPointsPP+ofs)->y  = drapeP->drapePt.y ;
+    (*spiralPointsPP+ofs)->z  = drapeP->drapePt.z ;
     *(*spiralPointTypePP+ofs) = drapeP->drapeType ;
    }
 /*
@@ -2328,22 +2285,21 @@ BENTLEYDTM_EXPORT int bcdtmDrape_spiralOnDtmObject (BC_DTM_OBJ *dtmP, double R1,
 */
  if( dbg )
    {
-    bcdtmWrite_message(0,0,0,"Spirallength = %10.4lf Interpolated Length = %10.4lf",spiralLength,spiralLen) ; 
+    bcdtmWrite_message(0,0,0,"Spirallength = %10.4lf Interpolated Length = %10.4lf",spiralLength,spiralLen) ;
     spiralLen = 0.0 ;
     bcdtmWrite_message(0,0,0,"Number Of Spiral Drape Points = %4ld",*numSpiralPointsP) ;
     for( pp1 = *spiralPointTypePP , p3dP = *spiralPointsPP ; pp1 < *spiralPointTypePP + *numSpiralPointsP ; ++pp1 , ++p3dP )
       {
-       if( p3dP < *spiralPointsPP + *numSpiralPointsP - 1 ) spiralLen = spiralLen + bcdtmMath_distance(p3dP->x,p3dP->y,(p3dP+1)->x,(p3dP+1)->y) ; 
+       if( p3dP < *spiralPointsPP + *numSpiralPointsP - 1 ) spiralLen = spiralLen + bcdtmMath_distance(p3dP->x,p3dP->y,(p3dP+1)->x,(p3dP+1)->y) ;
        bcdtmWrite_message(0,0,0,"Type = %2ld  x = %12.4lf y = %12.4lf  z = %10.4lf",*pp1,p3dP->x,p3dP->y,p3dP->z) ;
-      } 
-    bcdtmWrite_message(0,0,0,"Spiral Length = %10.4lf",spiralLen) ; 
+      }
+    bcdtmWrite_message(0,0,0,"Spiral Length = %10.4lf",spiralLen) ;
    }
 /*
 ** Clean Up
 */
  cleanup :
  if( spiralPtsP != NULL ) free(spiralPtsP) ;
- if( drapePtsP  != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;  
 /*
 ** Job Completed
 */
@@ -2413,7 +2369,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 **   Cx,Cy   = Centre Coordinates Of Arc
 **   A1,A2   = Start Angle And Sweep Angle
 **   Ap,As   = Primary And Secondary Axis Of Arc
-**   Ra      = Rotation Angle 
+**   Ra      = Rotation Angle
 **
 */
 {
@@ -2423,7 +2379,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
  double  A3,Aa,Rs,Px,Py,Tx,Ty,Nx,Ny  ;
  long    numArcPts=0,memArcPts=0,memArcPtsInc=1000 ;
  DPoint3d    *p3dP,*arcPtsP=NULL ;
- DTM_DRAPE_POINT   *drapeP,*drapePtsP=NULL ;
+ bvector<DTMDrapePoint> drapePtsP;
 /*
  double d1,dn,ang,angn,Ix,Iy;
  long isw ;
@@ -2472,12 +2428,12 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
  As = As * 2.0   ;
  A1 = A1 / 360.0 * DTM_2PYE ;
  A2 = A2 / 360.0 * DTM_2PYE ;
- Ra = Ra / 360.0 * DTM_2PYE ; 
+ Ra = Ra / 360.0 * DTM_2PYE ;
 /*
 ** Set Arc Stroking Tolerance
 */
  if( A2 >= 0.0 ) Rs =  0.001 ;
- else            Rs = -0.001 ; 
+ else            Rs = -0.001 ;
 /*
 ** Set Translation Constants
 */
@@ -2489,7 +2445,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
  ArcDirection = 0 ;
  bcdtmInterpolate_getPointOnArc(&Px,&Py,Ap,As,A1) ;
  bcdtmInterpolate_rotateAndTranslatePoint(Px,Py,Tx,Ty,Ra,&Nx,&Ny) ;
- if( bcdtmMath_distance(Nx,Ny,Sx,Sy) > 0.001 ) ArcDirection = 1 ; 
+ if( bcdtmMath_distance(Nx,Ny,Sx,Sy) > 0.001 ) ArcDirection = 1 ;
  if( dbg )
    {
     bcdtmWrite_message(0,0,0,"** Sx = %10.4lf Sy = %10.4lf ** Nx = %10.4lf Ny = %10.4lf",Sx,Sy,Nx,Ny) ;
@@ -2507,7 +2463,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 /*
 ** Negate Arc Parameters If Necessary
 */
- if( ArcDirection )  { Ra = -Ra ; Rs = - Rs ; A2 = -A2 ; } 
+ if( ArcDirection )  { Ra = -Ra ; Rs = - Rs ; A2 = -A2 ; }
 /*
 ** Allocate Memory For Stroked Arc Points
 */
@@ -2529,7 +2485,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 /*
 ** Get Stroked Arc Points
 */
- Aa = A1 ; 
+ Aa = A1 ;
  A3 = A1 +  A2  ;
  while ( Aa != A3  )
    {
@@ -2537,7 +2493,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 **  Get Coordinates Of Next Arc Stoke Point
 */
     if( fabs(A3 - (Aa + Rs)) > fabs(Rs) ) Aa = Aa + Rs ;
-    else                                  Aa = A3 ; 
+    else                                  Aa = A3 ;
     bcdtmInterpolate_getPointOnArc(&Px,&Py,Ap,As,Aa) ;
     bcdtmInterpolate_rotateAndTranslatePoint(Px,Py,Tx,Ty,Ra,&Nx,&Ny) ;
 /*
@@ -2564,7 +2520,8 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 /*
 **  Drape Stroked Arc Points On Tin
 */
- if( bcdtmDrape_stringDtmObject(dtmP,arcPtsP,numArcPts,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+ if( bcdtmDrape_stringDtmObject(dtmP,arcPtsP,numArcPts,false,drapePtsP)) goto errexit ;
+ numDrapePts = (long)drapePtsP.size();
 /*
 ** Allocate Memory For Return Arrays
 */
@@ -2579,12 +2536,14 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 /*
 ** Copy Drape Points To Return Arrays
 */
- for( ofs = 0 , drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts ; ++ofs , ++drapeP )
+ ofs = 0;
+ for( auto& drapeP : drapePtsP)
    {
-    (*arcPointsPP+ofs)->x = drapeP->drapeX ;
-    (*arcPointsPP+ofs)->y = drapeP->drapeY ;
-    (*arcPointsPP+ofs)->z = drapeP->drapeZ ;
-    *(*arcPointTypePP+ofs) = drapeP->drapeType ;
+    (*arcPointsPP+ofs)->x = drapeP.drapePt.x ;
+    (*arcPointsPP+ofs)->y = drapeP.drapePt.y ;
+    (*arcPointsPP+ofs)->z = drapeP.drapePt.z ;
+    *(*arcPointTypePP+ofs) = drapeP.drapeType ;
+    ofs++;
    }
 /*
 ** Write Out Drape Points For Development Purpose
@@ -2595,14 +2554,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
     for( pp1 = *arcPointTypePP , p3dP = *arcPointsPP ; pp1 < *arcPointTypePP + *numArcPointsP ; ++pp1 , ++p3dP )
       {
        bcdtmWrite_message(0,0,0,"Type = %2ld  x = %12.4lf y = %12.4lf  z = %10.4lf",*pp1,p3dP->x,p3dP->y,p3dP->z) ;
-      } 
+      }
    }
 /*
 ** Clean Up
 */
  cleanup :
  if( arcPtsP   != NULL ) free(arcPtsP) ;
- if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;  
 /*
 ** Job Completed
 */
@@ -2624,14 +2582,14 @@ BENTLEYDTM_EXPORT int bcdtmDrape_arcOnDtmObject (BC_DTM_OBJ *dtmP, double Sx, do
 BENTLEYDTM_Private int bcdtmDrape_testForPointInBoundingCubeDtmObject
 (
  BC_DTM_OBJ *dtmP,              // ==> Pointer To DTM Object
- DPoint3d        *pointP             // ==> Point 
+ DPoint3d        *pointP             // ==> Point
 )
 {
  if( pointP->x < dtmP->xMin || pointP->x > dtmP->xMax ) return(0) ;
  if( pointP->y < dtmP->yMin || pointP->y > dtmP->yMax ) return(0) ;
  if( pointP->z < dtmP->zMin || pointP->z > dtmP->zMax ) return(0) ;
  return(1) ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2640,28 +2598,28 @@ BENTLEYDTM_Private int bcdtmDrape_testForPointInBoundingCubeDtmObject
 BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 (
  BC_DTM_OBJ *dtmP,                   // ==> Pointer To DTM Object
- DPoint3d    *startPointP,                // ==> Vector Start Point 
+ DPoint3d    *startPointP,                // ==> Vector Start Point
  DPoint3d    *endPointP,                  // ==> Vector End Point
  long   *intersectTypeP,             // <== Intersect Type ** 0 = No Intersection, 1=Tin Point, 2= Tin Line , 3 = Triangle
- DPoint3d    *surfacePointP,              // <== Surface Point 
+ DPoint3d    *surfacePointP,              // <== Surface Point
  long   *trgPnt1P,                   // <== Tin Point Index
  long   *trgPnt2P,                   // <== Tin Point Index
  long   *trgPnt3P,                   // <== Tin Point Index
- long   *voidFlagP                   // <== Set To One If Surface Point In Void Otherwise Zero
-) 
+ bool&   voidFlag                    // <== Set To One If Surface Point In Void Otherwise Zero
+)
 /*
 ** This Function Intersects A Vector Defind By A Start Point And End Point With The Tin Surface
 */
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long pnt1,pnt2,pnt3,process,fndType,voidFlag ;
+ long pnt1, pnt2, pnt3, process, fndType;
  double nx,ny,xls,yls,zls,xle,yle,xMin,yMin,xMax,yMax ;
  double dx,dy,dz,nzs,nzl,pzs,pzl,zdn,zdp ;
  DPoint3d vectorPoint ;
 /*
 ** Write Entry Message
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Intersecting Surface With Vector") ;
     bcdtmWrite_message(0,0,0,"dtmP            = %p",dtmP) ;
@@ -2671,7 +2629,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
     bcdtmWrite_message(0,0,0,"endPointP->x    = %12.5lf",endPointP->x) ;
     bcdtmWrite_message(0,0,0,"endPointP->y    = %12.5lf",endPointP->y) ;
     bcdtmWrite_message(0,0,0,"endPointP->z    = %12.5lf",endPointP->z) ;
-   } 
+   }
 /*
 ** Initialise
 */
@@ -2682,20 +2640,20 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
  *trgPnt1P = DTM_NULL_PNT ;
  *trgPnt2P = DTM_NULL_PNT ;
  *trgPnt3P = DTM_NULL_PNT ;
- *voidFlagP = 0 ;
+ voidFlag = false ;
  zdn = 1.0 ;
  zdp = 1.0 ;
 /*
 ** Test For Valid DTM Object
 */
  if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
-    
+
 /*
 ** Check DTM Is In Tin State
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
  /*
@@ -2745,7 +2703,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 **  Write Modified Start Points
 */
  if( dbg == 1 )
-   {  
+   {
     bcdtmWrite_message(0,0,0,"Extended Vector End Points") ;
     bcdtmWrite_message(0,0,0,"startPointP->x  = %12.5lf",startPointP->x) ;
     bcdtmWrite_message(0,0,0,"startPointP->y  = %12.5lf",startPointP->y) ;
@@ -2759,10 +2717,10 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 */
  xMin = xMax = startPointP->x ;
  yMin = yMax = startPointP->y ;
- if( endPointP->x < xMin ) xMin = endPointP->x ; 
- if( endPointP->x > xMax ) xMax = endPointP->x ; 
- if( endPointP->y < yMin ) yMin = endPointP->y ; 
- if( endPointP->y > yMax ) yMax = endPointP->y ; 
+ if( endPointP->x < xMin ) xMin = endPointP->x ;
+ if( endPointP->x > xMax ) xMax = endPointP->x ;
+ if( endPointP->y < yMin ) yMin = endPointP->y ;
+ if( endPointP->y > yMax ) yMax = endPointP->y ;
 /*
 ** Only Calculate If Line Is Internal Or Overlaps Bounding Rectangle
 */
@@ -2781,7 +2739,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 /*
 **  If Start Point Not Inside Tin Hull Find Intersect Of Line With Tin Hull
 */
-    if( ! fndType  ) 
+    if( ! fndType  )
       {
        if( bcdtmDrape_findClosestLineInterceptWithHullDtmObject(dtmP,xls,yls,xle,yle,&fndType,&pnt1,&pnt2,&xls,&yls,&zls) ) goto errexit ;
        if( fndType == 3 ) fndType = 1 ;
@@ -2803,7 +2761,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 /*
 **       Shot Vector Goes External To Tin Hull
 */
-         if( fndType == 5 ) 
+         if( fndType == 5 )
            {
             if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Shot Vector Goes External To Tin Hull") ;
             if( nodeAddrP(dtmP,pnt1)->hPtr != pnt2 )
@@ -2822,20 +2780,20 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
                process = 1 ;
                bcdtmMath_interpolatePointOnLine(startPointP->x,startPointP->y,startPointP->z,endPointP->x,endPointP->y,endPointP->z,xls,yls,&pzl) ;
                zdp = zdn = 1.0 ;
-              } 
+              }
             else fndType = 5 ;
            }
 /*
 **       Shot Vector End Point In Triangle
 */
-         else if( fndType == 4 ) 
+         else if( fndType == 4 )
            {
             zdp = pzl - pzs ;            
-            zdn = endPointP->z - nzs;   
+            zdn = endPointP->z - nzs;
             process = 0 ;
-           } 
+           }
 /*
-**       Shot Vector Intersects Triangle Point Or Edge 
+**       Shot Vector Intersects Triangle Point Or Edge
 */
          else
            {
@@ -2843,62 +2801,60 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
             zdp = pzl - pzs ;
             zdn = nzl - nzs ;
             if( zdp == 0.0 || zdn == 0.0 || ( zdp > 0.0 && zdn < 0.0 ) || ( zdp < 0.0 && zdn > 0.0 )) process = 0 ;
-            else 
-              { 
-               xls = nx ; 
-               yls = ny ; 
+            else
+              {
+               xls = nx ;
+               yls = ny ;
                zls = nzs ;
                pzs = nzs ;
-               pzl = nzl ; 
-              } 
+               pzl = nzl ;
+              }
            }
         }
 /*
 **    Calculate Surface Intersection Point
 */
       if( fndType != 5 )    //  Terminates On Tin Hull
-        { 
+        {
          if( dbg == 2  ) bcdtmWrite_message(0,0,0,"zdp = %12.5lf zdn = %12.5lf",zdp,zdn) ;
-         if( zdp == 0.0 || zdn == 0.0 || ( zdp > 0.0 && zdn < 0.0 ) || ( zdp < 0.0 && zdn > 0.0 )) 
-           { 
-            if( zdp == 0.0 ) 
+         if( zdp == 0.0 || zdn == 0.0 || ( zdp > 0.0 && zdn < 0.0 ) || ( zdp < 0.0 && zdn > 0.0 ))
+           {
+            if( zdp == 0.0 )
               {
-               surfacePointP->x = xls ; 
-               surfacePointP->y = yls ; 
-               surfacePointP->z = zls ; 
+               surfacePointP->x = xls ;
+               surfacePointP->y = yls ;
+               surfacePointP->z = zls ;
               }
-            else if( zdn == 0.0 ) 
-              { 
+            else if( zdn == 0.0 )
+              {
                surfacePointP->x = nx ;
-               surfacePointP->y = ny ; 
+               surfacePointP->y = ny ;
                surfacePointP->z = nzl ;
               }
             else
-              { 
+              {
                if( zdn < 0.0 ) zdn = -zdn ;
                if( zdp < 0.0 ) zdp = -zdp ;
                surfacePointP->x = xls + ( nx  - xls  ) * zdp / (zdp+zdn) ;
                surfacePointP->y = yls + ( ny  - yls  ) * zdp / (zdp+zdn) ;
                surfacePointP->z = zls + ( nzs - zls  ) * zdp / (zdp+zdn) ;
-              } 
+              }
 /*
 **          Get Triangle For Surface Point
 */
-            if( bcdtmFind_triangleForPointDtmObject(dtmP,surfacePointP->x,surfacePointP->y,&nzs,intersectTypeP,trgPnt1P,trgPnt2P,trgPnt3P)) goto errexit ; 
+            if( bcdtmFind_triangleForPointDtmObject(dtmP,surfacePointP->x,surfacePointP->y,&nzs,intersectTypeP,trgPnt1P,trgPnt2P,trgPnt3P)) goto errexit ;
             if( *intersectTypeP >= 3 ) *intersectTypeP = *intersectTypeP - 1 ;
 /*
 **          Set Void Flag For Surface Point
 */
-            if( *intersectTypeP == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*trgPnt1P)->PCWD) ) *voidFlagP = 1 ;
-            if( *intersectTypeP == 2 ) 
+            if( *intersectTypeP == 1 && bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,*trgPnt1P)->PCWD) ) voidFlag = true ;
+            if( *intersectTypeP == 2 )
               {
-               if( bcdtmList_testForVoidLineDtmObject(dtmP,*trgPnt1P,*trgPnt2P,&voidFlag)) goto errexit ;
-               if( voidFlag ) *voidFlagP = 1 ;
+               if( bcdtmList_testForVoidLineDtmObject(dtmP,*trgPnt1P,*trgPnt2P,voidFlag)) goto errexit ;
               }
-            if( *intersectTypeP == 3 ) 
+            if( *intersectTypeP == 3 )
               {
-               if( bcdtmList_testForVoidTriangleDtmObject(dtmP,*trgPnt1P,*trgPnt2P,*trgPnt3P,&voidFlag)) goto errexit ;
-               if( voidFlag ) *voidFlagP = 1 ;
+               if( bcdtmList_testForVoidTriangleDtmObject(dtmP,*trgPnt1P,*trgPnt2P,*trgPnt3P,voidFlag)) goto errexit ;
               }
            }
         }
@@ -2937,13 +2893,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectSurfaceDtmObject
 BENTLEYDTM_EXPORT int bcdtmDrape_intersectTriangleDtmObject
 (
  BC_DTM_OBJ *dtmP,                   // ==> Pointer To DTM Object
- DPoint3d    *startPoint,                 // ==> Vector Start Point 
+ DPoint3d    *startPoint,                 // ==> Vector Start Point
  DPoint3d    *endPoint,                   // ==> Vector End Point
  long   *intersectTypeP,             // <== Intersect Type ** 0 = No Intersection, 1=Tin Point, 2= Tin Line , 3 = Triangle
- DPoint3d    *surfacePointP,              // <== Surface Point 
+ DPoint3d    *surfacePointP,              // <== Surface Point
  DPoint3d    tinPoints[],                 // <== Triangle Points
- long   *voidFlagP                   // <== Set To One If Surface Point In Void Otherwise Zero
-) 
+ bool& voidFlag                   // <== Set To One If Surface Point In Void Otherwise Zero
+)
 {
  int  ret=DTM_SUCCESS ;
  long trgPnt1;
@@ -2952,7 +2908,7 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectTriangleDtmObject
 /*
 ** Intersect Surface
 */
- if( bcdtmDrape_intersectSurfaceDtmObject(dtmP, startPoint, endPoint, intersectTypeP, surfacePointP, &trgPnt1, &trgPnt2, &trgPnt3, voidFlagP) != DTM_SUCCESS ) goto errexit ;
+ if( bcdtmDrape_intersectSurfaceDtmObject(dtmP, startPoint, endPoint, intersectTypeP, surfacePointP, &trgPnt1, &trgPnt2, &trgPnt3, voidFlag) != DTM_SUCCESS ) goto errexit ;
 /*
 ** Set Triangle Coordinates
 */
@@ -2991,19 +2947,19 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
  long   *trgPnt2P,
  long   *trgPnt3P,
  double *nextXP,
- double *nextYP, 
- double *nextZP 
+ double *nextYP,
+ double *nextZP
 )
 /*
 ** This Function Gets The Next Triangle Intercept with Line startX-startY  endX-endY
 ** Return Values For Intersect Type
-** 
+**
 **      1  -  Intersects Tin Point
 **      2  -  Intersects Tin Line
 **      3  -  Intersects Tin Triangle
 **      4  -  Terminates In Triangle
 **      5  -  Terminates On Tin Hull
-**  
+**
 */
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
@@ -3020,7 +2976,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
     bcdtmWrite_message(0,0,0,"endX           = %12.5lf",endX) ;
     bcdtmWrite_message(0,0,0,"endY           = %12.5lf",endY) ;
     bcdtmWrite_message(0,0,0,"intersectTypeP = %8ld",*intersectTypeP) ;
-   } 
+   }
 /*
 ** Initialise Varaibles
 */
@@ -3054,8 +3010,8 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
                *trgPnt3P = clkPnt ;
                bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,*nextXP,*nextYP,nextZP,*trgPnt1P,*trgPnt2P,*trgPnt3P) ;
                *intersectTypeP =  4 ;
-               goto cleanup ;  
-              }  
+               goto cleanup ;
+              }
            }
 /*
 **       Get Intersection On Triangle Edge
@@ -3081,7 +3037,7 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
            }
          antPnt = clkPnt ;
         }
-      *intersectTypeP = 5 ; 
+      *intersectTypeP = 5 ;
       goto cleanup   ;
     break  ;
 
@@ -3094,21 +3050,21 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
       if( nodeAddrP(dtmP,sp1)->hPtr == sp2 )
         {
          sp3 = bcdtmMath_sideOf(pointAddrP(dtmP,sp1)->x,pointAddrP(dtmP,sp1)->y,pointAddrP(dtmP,sp2)->x,pointAddrP(dtmP,sp2)->y,endX,endY) ;
-         if( sp3 <  0 ) 
+         if( sp3 <  0 )
            {
-            *intersectTypeP = 5 ; 
+            *intersectTypeP = 5 ;
             goto cleanup   ;
            }
-        } 
+        }
       if( nodeAddrP(dtmP,sp2)->hPtr == sp1 )
         {
          sp3 = bcdtmMath_sideOf(pointAddrP(dtmP,sp2)->x,pointAddrP(dtmP,sp2)->y,pointAddrP(dtmP,sp1)->x,pointAddrP(dtmP,sp1)->y,endX,endY) ;
-         if( sp3 <  0 ) 
+         if( sp3 <  0 )
            {
-            *intersectTypeP = 5 ; 
+            *intersectTypeP = 5 ;
             goto cleanup   ;
            }
-        } 
+        }
 /*
 **    Calculate Intersection On Opposite Side Of Triangle
 */
@@ -3118,23 +3074,23 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
       if( ! bcdtmList_testLineDtmObject(dtmP,antPnt,*trgPnt2P) ) antPnt = dtmP->nullPnt ;
       if( ! bcdtmList_testLineDtmObject(dtmP,clkPnt,*trgPnt2P) ) clkPnt = dtmP->nullPnt ;
       sp1 = bcdtmMath_sideOf(pointAddrP(dtmP,*trgPnt1P)->x,pointAddrP(dtmP,*trgPnt1P)->y,pointAddrP(dtmP,*trgPnt2P)->x,pointAddrP(dtmP,*trgPnt2P)->y,endX,endY) ;
-      if( sp1 == 0 ) 
+      if( sp1 == 0 )
         {
          if( bcdtmMath_distance(endX,endY,pointAddrP(dtmP,*trgPnt1P)->x,pointAddrP(dtmP,*trgPnt1P)->y) <= bcdtmMath_distance(endX,endY,pointAddrP(dtmP,*trgPnt2P)->x,pointAddrP(dtmP,*trgPnt2P)->y) )
-           { 
-            *intersectTypeP = 1 ; 
-            *trgPnt2P = *trgPnt3P = dtmP->nullPnt ; 
-            *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ; 
-            *nextYP = pointAddrP(dtmP,*trgPnt1P)->y ; 
+           {
+            *intersectTypeP = 1 ;
+            *trgPnt2P = *trgPnt3P = dtmP->nullPnt ;
+            *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ;
+            *nextYP = pointAddrP(dtmP,*trgPnt1P)->y ;
             *nextZP = pointAddrP(dtmP,*trgPnt1P)->z ;
-            goto cleanup  ; 
-           }  
-         else 
-           { 
-            *intersectTypeP = 1 ; 
-            *trgPnt1P = *trgPnt2P ; 
-            *trgPnt2P = *trgPnt3P = dtmP->nullPnt ; 
-            *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ; 
+            goto cleanup  ;
+           }
+         else
+           {
+            *intersectTypeP = 1 ;
+            *trgPnt1P = *trgPnt2P ;
+            *trgPnt2P = *trgPnt3P = dtmP->nullPnt ;
+            *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ;
             *nextYP = pointAddrP(dtmP,*trgPnt1P)->y ;
             *nextZP = pointAddrP(dtmP,*trgPnt1P)->z ;
             goto cleanup  ;
@@ -3154,11 +3110,11 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
          *nextYP = endY ;
          bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,*nextXP,*nextYP,nextZP,*trgPnt1P,*trgPnt2P,*trgPnt3P) ;
          *intersectTypeP =  4 ;
-         goto cleanup ;  
-        }  
+         goto cleanup ;
+        }
 /*
 **    Determine Intersection On Triangle Edge
-*/      
+*/
       sp3 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,*trgPnt3P)->x,pointAddrP(dtmP,*trgPnt3P)->y) ;
       if( sp3 == 0 ) { *intersectTypeP = 1 ; *trgPnt1P = *trgPnt3P ; *trgPnt2P = *trgPnt3P = dtmP->nullPnt ; *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ; *nextYP = pointAddrP(dtmP,*trgPnt1P)->y ; *nextZP = pointAddrP(dtmP,*trgPnt1P)->z ; goto cleanup  ; }
       sp1 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,*trgPnt1P)->x,pointAddrP(dtmP,*trgPnt1P)->y) ;
@@ -3202,11 +3158,11 @@ BENTLEYDTM_Private int bcdtmDrape_getNextSurfaceInterceptDtmObject
          *nextYP = endY ;
          bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,*nextXP,*nextYP,nextZP,*trgPnt1P,*trgPnt2P,*trgPnt3P) ;
          *intersectTypeP =  4 ;
-         goto cleanup ;  
+         goto cleanup ;
         }
 /*
 **    Calculate Intesect With Triangle
-*/      
+*/
       if( bcdtmMath_pointSideOfDtmObject(dtmP,*trgPnt1P,*trgPnt2P,*trgPnt3P) > 0 ) { pnt = *trgPnt2P ; *trgPnt2P = *trgPnt3P ; *trgPnt3P = pnt ; }
       sp1 = bcdtmMath_sideOf(startX,startY,endX,endY,pointAddrP(dtmP,*trgPnt1P)->x,pointAddrP(dtmP,*trgPnt1P)->y) ;
       if( sp1 == 0 ) { *intersectTypeP = 1 ; *trgPnt1P = *trgPnt1P ; *trgPnt2P = *trgPnt3P = dtmP->nullPnt ; *nextXP = pointAddrP(dtmP,*trgPnt1P)->x ; *nextYP = pointAddrP(dtmP,*trgPnt1P)->y ; *nextZP = pointAddrP(dtmP,*trgPnt1P)->z ; goto cleanup  ; }
@@ -3288,11 +3244,11 @@ BENTLEYDTM_Private int  bcdtmDrape_intersectContourCallBackFunction
 /*
 ** Write Entry Message
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
     bcdtmData_getDtmFeatureTypeNameFromDtmFeatureType(dtmFeatureType,dtmFeatureTypeName) ;
     bcdtmWrite_message(0,0,0,"DTM Feature = %s userTag = %10I64d featureId = %10I64d featurePtsP = %p numFeaturePts = %6ld userP = %p",dtmFeatureTypeName,userTag,featureId,featurePtsP,numFeaturePts,userP) ;
-   } 
+   }
 /*
 ** Copy Contour Points To Point Array
 */
@@ -3333,30 +3289,32 @@ BENTLEYDTM_Private int  bcdtmDrape_intersectContourCallBackFunction
 BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
 (
  BC_DTM_OBJ *dtmP,                   // ==> Pointer To DTM Object
- DPoint3d    *startPointP,                // ==> Vector Start Point 
+ DPoint3d    *startPointP,                // ==> Vector Start Point
  DPoint3d    *endPointP,                  // ==> Vector End Point
  double contourInterval,             // ==> Contour Interval
  double contourRegistration,         // ==> Contour Registration
- DTMContourSmoothing smoothOption,                // ==> Contour Smoothing Option<NONE(0),VERTEX(1),SPLINE(2),SPLINE(3)> 
- double smoothFactor,                // ==> Contour Smoothing Factor                               
- long   smoothDensity,               // ==> Point Densification For Spline Smoothing          
+ DTMContourSmoothing smoothOption,                // ==> Contour Smoothing Option<NONE(0),VERTEX(1),SPLINE(2),SPLINE(3)>
+ double smoothFactor,                // ==> Contour Smoothing Factor
+ long   smoothDensity,               // ==> Point Densification For Spline Smoothing
  double snapTolerance,               // ==> Snap Tolerance
  long   *contourFoundP,              // <== Contour Found < 1 = TRUE > < 0 = FALSE >
  DPoint3d    **conPtsPP,                  // <== Contour Points
  long   *numConPtsP                  // <== Number Of Contour Points
-) 
+)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   pnt1,pnt2,pnt3,fndType,conType,voidFlag,surfaceType,offset,numDrapePts,contourPointFound=FALSE;
+ long   pnt1, pnt2, pnt3, fndType, conType, surfaceType, offset, numDrapePts;
+ bool voidFlag, contourPointFound = false;
  double dx,dy,dz,dl,zMin,zMax,minContourPointDistance = 0.0;
  double contourLow,contourHigh,startAngle,drapeAngle=0.0,drapeAngleInc=0.0 ;
  DPoint3d    surfacePoint, contourPoint, closestContourPoint{0,0,0}, drapeLine[2];
- DTM_DRAPE_POINT *drapeP,*drapePtsP=NULL ;
+ DTMDrapePoint *drapeP, *drapePtsP;
+ bvector<DTMDrapePoint> drapePts;
  DTM_POINT_ARRAY contourPoints ;
 /*
 ** Write Entry Message
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"Intersecting Contour With Vector") ;
     bcdtmWrite_message(0,0,0,"dtmP                = %p",dtmP) ;
@@ -3372,13 +3330,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
     bcdtmWrite_message(0,0,0,"Smooth Factor       = %8.2lf",smoothFactor) ;
     bcdtmWrite_message(0,0,0,"Smooth Density      = %8ld",smoothDensity) ;
     bcdtmWrite_message(0,0,0,"snapTolerance       = %12.5lf",snapTolerance) ;
-   } 
+   }
 /*
 ** Initialise
-*/ 
+*/
  *contourFoundP = FALSE ;
  *numConPtsP    = 0 ;
- if( *conPtsPP != NULL ) { free(*conPtsPP) ; *conPtsPP = NULL ; }  
+ if( *conPtsPP != NULL ) { free(*conPtsPP) ; *conPtsPP = NULL ; }
  contourPoints.pointsP = NULL ;
  contourPoints.numPoints = 0 ;
 /*
@@ -3390,13 +3348,13 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
 */
  if( dtmP->dtmState != DTMState::Tin )
    {
-    bcdtmWrite_message(2,0,0,"Method Requires Triangulated DTM") ;
+    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
     goto errexit ;
    }
 /*
 ** Find Triangle For Vector
 */
- voidFlag = 0 ;
+ voidFlag = false;
  surfaceType = 0 ;
  if( startPointP->x == endPointP->x )    // Top View
    {
@@ -3413,22 +3371,22 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
          {
           surfaceType = 1 ;
           if( bcdtmFlag_testVoidBitPCWD(&nodeAddrP(dtmP,pnt1)->PCWD) ) voidFlag = 1 ;
-         } 
-       if( fndType == 2 || fndType == 3 ) 
-         {
-          surfaceType = 2 ;
-          if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,&voidFlag)) goto errexit ;
          }
-       if( fndType == 4 ) 
+       if( fndType == 2 || fndType == 3 )
          {
           surfaceType = 2 ;
-          if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,&voidFlag)) goto errexit ;
+          if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt1,pnt2,voidFlag)) goto errexit ;
+         }
+       if( fndType == 4 )
+         {
+          surfaceType = 2 ;
+          if( bcdtmList_testForVoidTriangleDtmObject(dtmP,pnt1,pnt2,pnt3,voidFlag)) goto errexit ;
          }
       }
    }
  else                                    // Not A Top View
    {
-    if( bcdtmDrape_intersectSurfaceDtmObject(dtmP,startPointP,endPointP,&surfaceType,&surfacePoint,&pnt1,&pnt2,&pnt3,&voidFlag)) goto errexit ;
+    if( bcdtmDrape_intersectSurfaceDtmObject(dtmP,startPointP,endPointP,&surfaceType,&surfacePoint,&pnt1,&pnt2,&pnt3,voidFlag)) goto errexit ;
    }
 /*
 ** Look For Contour In Snapping Distance
@@ -3456,76 +3414,78 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
       {
        drapeLine[1].x  = surfacePoint.x + snapTolerance * cos(drapeAngle) ;
        drapeLine[1].y  = surfacePoint.y + snapTolerance * sin(drapeAngle) ;
-       if( bcdtmDrape_stringDtmObject(dtmP,drapeLine,2,FALSE,&drapePtsP,&numDrapePts)) goto errexit ;
+       if( bcdtmDrape_stringDtmObject(dtmP,drapeLine,2,false,drapePts)) goto errexit ;
+       numDrapePts = (long)drapePts.size();
+       drapePtsP = drapePts.data();
 /*
 **     Scan Drape Points For Contour Start Point
 */
        for( drapeP = drapePtsP ; drapeP < drapePtsP + numDrapePts - 1 && ! contourPointFound  ; ++drapeP )
          {
-         if (drapeP->drapeType != DTMDrapedLineCode::External && (drapeP + 1)->drapeType != DTMDrapedLineCode::External && drapeP->drapeZ != (drapeP + 1)->drapeZ)
+         if (drapeP->drapeType != DTMDrapedLineCode::External && (drapeP + 1)->drapeType != DTMDrapedLineCode::External && drapeP->drapePt.z != (drapeP + 1)->drapePt.z)
             {
-             zMin = zMax = drapeP->drapeZ ;
-             if( (drapeP+1)->drapeZ < zMin ) zMin = (drapeP+1)->drapeZ ;
-             if( (drapeP+1)->drapeZ > zMax ) zMax = (drapeP+1)->drapeZ ;
+             zMin = zMax = drapeP->drapePt.z ;
+             if( (drapeP+1)->drapePt.z < zMin ) zMin = (drapeP+1)->drapePt.z ;
+             if( (drapeP+1)->drapePt.z > zMax ) zMax = (drapeP+1)->drapePt.z ;
              if( contourLow >= zMin && contourLow <= zMax )
                {
-                dx = (drapeP+1)->drapeX - drapeP->drapeX ;
-                dy = (drapeP+1)->drapeY - drapeP->drapeY ;
-                dz = (drapeP+1)->drapeZ - drapeP->drapeZ ;
-                dl = contourLow - drapeP->drapeZ ;
-                contourPoint.x = drapeP->drapeX + dx * dl / dz ;
-                contourPoint.y = drapeP->drapeY + dy * dl / dz ;
+                dx = (drapeP+1)->drapePt.x - drapeP->drapePt.x ;
+                dy = (drapeP+1)->drapePt.y - drapeP->drapePt.y ;
+                dz = (drapeP+1)->drapePt.z - drapeP->drapePt.z ;
+                dl = contourLow - drapeP->drapePt.z ;
+                contourPoint.x = drapeP->drapePt.x + dx * dl / dz ;
+                contourPoint.y = drapeP->drapePt.y + dy * dl / dz ;
                 contourPoint.z = contourLow ;
                 dl = bcdtmMath_distance(surfacePoint.x,surfacePoint.y,contourPoint.x,contourPoint.y) ;
                 if( contourPointFound == FALSE || dl < minContourPointDistance )
-                  { 
+                  {
                    contourPointFound = TRUE ;
-                   minContourPointDistance = dl ; 
+                   minContourPointDistance = dl ;
                    closestContourPoint.x = contourPoint.x ;
                    closestContourPoint.y = contourPoint.y ;
                    closestContourPoint.z = contourPoint.z ;
                   }
-               }  
+               }
              if( contourHigh >= zMin && contourHigh <= zMax )
                {
-                dx = (drapeP+1)->drapeX - drapeP->drapeX ;
-                dy = (drapeP+1)->drapeY - drapeP->drapeY ;
-                dz = (drapeP+1)->drapeZ - drapeP->drapeZ ;
-                dl = contourHigh  - drapeP->drapeZ ;
-                contourPoint.x = drapeP->drapeX + dx * dl / dz ;
-                contourPoint.y = drapeP->drapeY + dy * dl / dz ;
+                dx = (drapeP+1)->drapePt.x - drapeP->drapePt.x ;
+                dy = (drapeP+1)->drapePt.y - drapeP->drapePt.y ;
+                dz = (drapeP+1)->drapePt.z - drapeP->drapePt.z ;
+                dl = contourHigh  - drapeP->drapePt.z ;
+                contourPoint.x = drapeP->drapePt.x + dx * dl / dz ;
+                contourPoint.y = drapeP->drapePt.y + dy * dl / dz ;
                 contourPoint.z = contourHigh ;
                 if( contourPointFound == FALSE || dl < minContourPointDistance )
-                  { 
+                  {
                    contourPointFound = TRUE ;
-                   minContourPointDistance = dl ; 
+                   minContourPointDistance = dl ;
                    closestContourPoint.x = contourPoint.x ;
                    closestContourPoint.y = contourPoint.y ;
                    closestContourPoint.z = contourPoint.z ;
                   }
-               }  
+               }
             }
          }
 /*
 **     Increment Drape Angle
 */
        drapeAngle = drapeAngle + drapeAngleInc ;
-       if( drapePtsP != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
       }
-   } 
+   }
 /*
 ** Write Contour Point
 */
- if( dbg == 1 ) 
+ if( dbg == 1 )
    {
     if( ! contourPointFound ) bcdtmWrite_message(0,0,0,"Contour Point Not Found") ;
-    else 
+    else
       {
        bcdtmWrite_message(0,0,0,"Contour Point Found ** %12.5lf %12.5lf %12.5lf",closestContourPoint.x,closestContourPoint.y,closestContourPoint.z) ;
-       bcdtmDrape_pointDtmObject(dtmP,closestContourPoint.x,closestContourPoint.y,&closestContourPoint.z,&voidFlag) ;
+       long drapeFlag;
+       bcdtmDrape_pointDtmObject(dtmP, closestContourPoint.x, closestContourPoint.y, &closestContourPoint.z, &drapeFlag);
        bcdtmWrite_message(0,0,0,"Contour Point Drape ** %12.5lf %12.5lf %12.5lf",closestContourPoint.x,closestContourPoint.y,closestContourPoint.z) ;
-      }  
-   } 
+      }
+   }
 /*
 **  Trace Contour At Contour Point
 */
@@ -3557,12 +3517,11 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
           if( conType ) *contourFoundP = 2 ;
          }
       }
-   }  
+   }
 /*
 ** Cleanup
 */
  cleanup :
- if( drapePtsP              != NULL ) bcdtmDrape_freeDrapePointMemory(&drapePtsP,&numDrapePts) ;
  if( contourPoints.pointsP  != NULL ) free(contourPoints.pointsP) ;
 /*
 ** Return
@@ -3584,10 +3543,10 @@ BENTLEYDTM_EXPORT int bcdtmDrape_intersectContourDtmObject
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public void bcdtmDrape_locatePoint(	double xa,double ya,double distance,double direction,double *xb,double *yb)
 /*
-** xa,*ya     => beginning point A            
-** distance   => distance                     
-** direction  => direction in azimuth degrees 
-** xb,*yb     <=  ending point B               
+** xa,*ya     => beginning point A
+** distance   => distance
+** direction  => direction in azimuth degrees
+** xb,*yb     <=  ending point B
 */
 {
  double x;
@@ -3604,15 +3563,15 @@ BENTLEYDTM_Public void bcdtmDrape_locatePoint(	double xa,double ya,double distan
 BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,double r1,double r2,double spiralLength,double dl,double offset,double x1,double y1,double xi,double yi,double x2,double y2)
 /*
 **
-** *xs,*ys      <= spiral coordinates 
-** r1           => beginning radius 
-** r2           => ending radius 
-** spiralLength => spiral length 
-** dl           => length along spiral curve (0 < dl < spiralLength) 
-** offset       => signed offset (+ to the right, - to the left) 
-** x1,y1        => beginning point of spiral 
-** xi,yi        => PIS point of spiral 
-** x2,y2        => ending point of spiral 
+** *xs,*ys      <= spiral coordinates
+** r1           => beginning radius
+** r2           => ending radius
+** spiralLength => spiral length
+** dl           => length along spiral curve (0 < dl < spiralLength)
+** offset       => signed offset (+ to the right, - to the left)
+** x1,y1        => beginning point of spiral
+** xi,yi        => PIS point of spiral
+** x2,y2        => ending point of spiral
 **
 */
 {
@@ -3623,17 +3582,17 @@ BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,
     double dir, dis;
     double r;
     double da;
-    
+
     double dx,dy,xn,yn;
     double xp, yp;
     double departure;
-    
+
     bcdtmDrape_inverseIgds(y1,x1,yi,xi,&dis,&dir);
     backDirection   = bcdtmDrape_angleToAzimuth(dir);
     departure = bcdtmDrape_offset(x1, y1, xi, yi, x2, y2);
     offsetDirection = backDirection + 90.00 * SIGN_OF(departure);
     offsetDirection = bcdtmDrape_normalizeAngle(offsetDirection);
-    
+
     if      (r1 < fc_epsilon)
     {
         entrance = 1;
@@ -3643,7 +3602,7 @@ BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,
     {
         entrance = 0;
         l0 = fc_zero;
-    } 
+    }
     else if (r1 > r2)
     {
         entrance = 1;
@@ -3654,7 +3613,7 @@ BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,
         entrance = 0;
         l0 = spiralLength * r1 / (r2 - r1);
     }
-    
+
     /* to compute coordinates of a spiral given length dl */
     if (entrance)
     {
@@ -3669,7 +3628,7 @@ BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,
     bcdtmDrape_coord(r1, r, dl, &dx, &dy);
     bcdtmDrape_locatePoint(x1, y1, dx, backDirection, &xn, &yn);
     bcdtmDrape_locatePoint(xn, yn, dy, offsetDirection, &xp, &yp);
-    
+
     if (fabs(offset) > fc_epsilon)
     {
         if (entrance)
@@ -3694,7 +3653,7 @@ BENTLEYDTM_Public int bcdtmDrape_getCoordiantesFromLength(double *xs,double *ys,
         *xs = xp;
         *ys = yp;
     }
-    
+
     /*
     ** Job Completed
     */
@@ -3740,9 +3699,9 @@ BENTLEYDTM_Public int bcdtmDrape_traverseIgds (double p1y,double  p1x,double  di
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public double bcdtmDrape_azimuthToAngle(double angle)
-/* 
- angle  => azimuth angle measured CW from north   
- Description     This function converts a north azimuth CW angle 
+/*
+ angle  => azimuth angle measured CW from north
+ Description     This function converts a north azimuth CW angle
  to a mathematical angle measured CCW from the x-axis
 */
 {
@@ -3756,58 +3715,58 @@ BENTLEYDTM_Public double bcdtmDrape_azimuthToAngle(double angle)
 BENTLEYDTM_Public int bcdtmDrape_coord( double r1,double r2,double l,double *xs,double *ys)
 /*
 **
- double r1,        => beginning radius of spiral (0 if tangent) 
- double r2,        => ending radius of spiral (0 if tangent)    
- double l,         => spiral length from r1 to r2               
- double *xs,       <=  distance along  long x-axis from 1 to 2   
- double *ys        <=  distance offset from x-axis from 1 to 2   
+ double r1,        => beginning radius of spiral (0 if tangent)
+ double r2,        => ending radius of spiral (0 if tangent)
+ double l,         => spiral length from r1 to r2
+ double *xs,       <=  distance along  long x-axis from 1 to 2
+ double *ys        <=  distance offset from x-axis from 1 to 2
 
- Description     
+ Description
  This function returns the local coordinates (xs, ys)
  where xs and ys are distances along and offset from
  the local x-axis resectively.  The local x-axis
  origin is at the spiral beginning point (at r = r1)
  in the direction equal to the spiral back tangent.
- 
+
   The computation of xs and ys is by Taylor series
   expansion up to j=4:
-  
-               j=3  (-1^j) * (u^(2j)) * F(2j) 
+
+               j=3  (-1^j) * (u^(2j)) * F(2j)
     Xs = Ls * Sigma -------------------------
                j=0            (2j)!
-   
+
                j=3  (-i^j) * (u^(2j+1)) * F(2j+1)
     Ys = Ls * Sigma -----------------------------
                j=0            (2j+1)!
-    
+
     where F(n) is the following finite sum:
-     
+
             i=n    n! (m^(n-i))
     F(n) = Sigma ----------------- => function bcdtmDrape_fn(n,m)
-            i=0  (n+1+1) i! (n-i)! 
-      
+            i=0  (n+1+1) i! (n-i)!
+
 **
 */
-       
+
 {
     int i;
     int j;
     int k;
     double d1, d2;
     double m, u;
-    
+
     *xs = fc_zero;
     *ys = fc_zero;
-    
+
     /* compute degrees of curvature */
     d1 = (r1 < fc_epsilon) ? fc_zero : fc_100 / r1;
     d2 = (r2 < fc_epsilon) ? fc_zero : fc_100 / r2;
-    
+
     if (fabs(d1 - d2) < fc_epsilon) return FAIL;
-    
+
     m = 2.0 * d1 / (d2 - d1);
     u = l * (d2 - d1) / 200.0;
-    
+
     /*
     the highest power term for x is u^2i, and for y is u^(2i+1)
     */
@@ -3830,7 +3789,7 @@ BENTLEYDTM_Public int bcdtmDrape_coord( double r1,double r2,double l,double *xs,
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public double bcdtmDrape_normalizeAngle( double angle )
 /*
-  angle => angle to be normalized                    
+  angle => angle to be normalized
 
  Description     This function normalize an angle to be bounded between
  0 and 2pi
@@ -3854,7 +3813,7 @@ Description     This function returns n! as type double
 {
     int i;
     unsigned long f;
-    
+
     f = 1uL;
     if (n > 1) for (i = n; i > 1; i--) f = f * i;
     return ((double)f);
@@ -3866,20 +3825,20 @@ Description     This function returns n! as type double
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public double bcdtmDrape_fn (int n, double m )
 /*
- Description     
+ Description
  This function computes the finite sum f expressed as:
- 
+
           i=n    n! (m^(n-i))
   F(n) = Sigma -----------------   Fresnel Integral
-          i=0  (n+1+1) i! (n-i)! 
-  
-  called by bcdtmDrape_coord 
-   
+          i=0  (n+1+1) i! (n-i)!
+
+  called by bcdtmDrape_coord
+
 */
 {
     int i;
     double f;
-    
+
     f = fc_zero;
     for (i = 0; i <= n; i++)
     {
@@ -3901,8 +3860,8 @@ BENTLEYDTM_Public double bcdtmDrape_fn (int n, double m )
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public double bcdtmDrape_angleToAzimuth(double angle)
 
-/* 
- angle => horizontal angle measured CCW from x-axis 
+/*
+ angle => horizontal angle measured CCW from x-axis
 
  Description     This function converts a mathematical angle measured
  CCW from the x-axis to a north azimuth CW angle
@@ -3919,7 +3878,7 @@ BENTLEYDTM_Public double bcdtmDrape_offset(double xa,double ya,double xb,double 
 /*
 ** Description     This function computes the signed offset of (xc, yc)
 **                 with respect to the line (xa, ya) to (xb, yb).
-** Return Value    Offset distance (- for left, + for right). 
+** Return Value    Offset distance (- for left, + for right).
 */
 {
  double d;
@@ -3941,7 +3900,7 @@ BENTLEYDTM_Public double bcdtmDrape_facdiv( int a, int b )
 {
     int i;
     long f;
-    
+
     f = 1;
     if (a > b)
     {
@@ -3951,7 +3910,7 @@ BENTLEYDTM_Public double bcdtmDrape_facdiv( int a, int b )
     else if (b > a)
     {
         for (i = b; i > a; i--) f = f * i;
-        return ((double)(fc_1 / f)); 
+        return ((double)(fc_1 / f));
     }
 /*
 ** Job Completed

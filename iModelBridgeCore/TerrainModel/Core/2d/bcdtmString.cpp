@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmString.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1724,7 +1724,7 @@ BENTLEYDTM_Public int  bcdtmString_buildFeatureIntersectionTableDtmObject
  DTMFeatureType *featureP;
  long   memIntTable=0,memIntTableInc=10000  ;
  double cord ; 
- DTM_TIN_POINT *pnt1P ;
+ DPoint3d *pnt1P ;
  BC_DTM_FEATURE *dtmFeatureP ;
  DTM_STRING_INTERSECT_TABLE *intP  ;
 /*

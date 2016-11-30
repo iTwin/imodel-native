@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* rotpnt.c                                            tmi    19-Oct-1990     */
@@ -14,8 +14,6 @@
 /*----------------------------------------------------------------------------*/
 #include "stdafx.h"
 
-
-
 /*----------------------------------------------------------------------------*/
 /* Constants and macros                                                       */
 /*----------------------------------------------------------------------------*/
@@ -27,10 +25,6 @@
 /*----------------------------------------------------------------------------*/
 static int aecDTM_getPointNeighborsAllocate(long *,long **,long **,long **);
 
-
-
-
-
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_rotateAroundPoint
  DESC: Given a point and a triangle which has as one of its vertices the
@@ -115,7 +109,6 @@ int aecDTM_rotateAroundPoint /* <= TRUE if error                   */
 }
 
 
-
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_getPointNeighbors
@@ -167,9 +160,9 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
               return ( sts );
 
           num++;
-          if ( npntlstP ) (*pntlstPP)[(*npntlstP)++] = (long) npntP;
-          if ( ntinlstP ) (*tinlstPP)[(*ntinlstP)++] = (long) ntinP;
-          if ( nnbrlstP ) (*nbrlstPP)[(*nnbrlstP)++] = (long) ((pind == 0) ? ntinP->n31 : *(&ntinP->n12 + pind - 1));
+          if ( npntlstP ) (*pntlstPP)[(*npntlstP)++] = (long)(size_t) npntP;
+          if ( ntinlstP ) (*tinlstPP)[(*ntinlstP)++] = (long)(size_t)ntinP;
+          if ( nnbrlstP ) (*nbrlstPP)[(*nnbrlstP)++] = (long)(size_t)((pind == 0) ? ntinP->n31 : *(&ntinP->n12 + pind - 1));
 
           sts = aecDTM_rotateAroundPoint ( &npntP, &ntinP, &pind, (int *)0, pntP, ntinP, dir );
 
@@ -177,7 +170,7 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
           {
             for ( int i = 0; i < *ntinlstP && !bFinished; i++ )
             {
-                if ( (*tinlstPP)[i] == (long)ntinP )
+                if ( (*tinlstPP)[i] == (long)(size_t)ntinP )
                     bFinished = TRUE;
             }
           }
@@ -194,7 +187,6 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
 
   return ( sts );
 }
-
 
 
 

@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmPolygon.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -173,7 +173,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 /*
 **     Intersect Polygon And Tin Hull
 */ 
-        *intersectFlagP = 0;
+       *intersectFlagP = 0;
        if( bcdtmPolygon_intersectPolygons(hullPtsP,numHullPts,polyPtsP,numPolyPts,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
        if( *intersectFlagP == 0 ) 
          { 

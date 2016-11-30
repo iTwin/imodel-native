@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmiofnc.h                                         aec    07-Feb-1994      */
@@ -39,7 +39,7 @@ int aecDTM_loadDTM          /* <= TRUE if error                    */
 int aecDTM_save             /* <= TRUE if error                    */
 (
   struct CIVdtmsrf *srfP,              /* => surface to save                  */
-  wchar_t *fileNameP,                  /* => file name to save to             */
+  WCharCP fileNameP,                  /* => file name to save to             */
   unsigned long version                /* => version to save (0 = latest)     */
 );
 

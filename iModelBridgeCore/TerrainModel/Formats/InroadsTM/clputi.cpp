@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* clputi.c                                           tmi    28-Feb-1994      */
@@ -1050,7 +1050,7 @@ static void freply
         frevrt ( v );
         v = nxt_v;
        } while ( v != p->vrts) ;
-  
+
     free ( (void *)p );
   }
 }
