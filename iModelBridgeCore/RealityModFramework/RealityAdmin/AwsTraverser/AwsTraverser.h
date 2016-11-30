@@ -23,12 +23,12 @@ struct AwsPinger
     Utf8String m_certificatePath;
     CURL* m_curl;
 
-    void ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize);
+    void ReadPage(Utf8CP url, uint64_t& redSize, uint64_t& greenSize, uint64_t& blueSize, uint64_t& panSize);
 public:
 
     AwsPinger();
     ~AwsPinger();
-    float m_redSize, m_blueSize, m_greenSize, m_panSize;
+    uint64_t m_redSize, m_blueSize, m_greenSize, m_panSize;
     static AwsPinger& GetInstance();
     };
 

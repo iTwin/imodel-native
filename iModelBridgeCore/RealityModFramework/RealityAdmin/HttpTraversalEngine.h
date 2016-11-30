@@ -15,6 +15,7 @@
 #include <curl/curl.h>
 #include <RealityPlatform/SpatialEntityData.h>
 #include "SpatialEntityClient.h"
+#include "ISpatialEntityTraversalObserver.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 

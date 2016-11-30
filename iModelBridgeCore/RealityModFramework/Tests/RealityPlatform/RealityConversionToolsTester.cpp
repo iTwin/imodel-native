@@ -44,7 +44,7 @@ TEST_F(RealityConversionTestFixture, JsonToSpatialEntityData)
     DateTime date;
     DateTime::FromString(date, "2005-07-05T00:00:00");
     ASSERT_EQ(spatialData->GetDate(), date);
-    ASSERT_EQ(spatialData->GetSize(), 7066);
+    ASSERT_EQ(spatialData->GetApproximateFileSize(), 7066);
     ASSERT_EQ(spatialData->GetResolution(), "24.2x30.922");
     bvector<DPoint2d> footprint = bvector<DPoint2d>();
     footprint.push_back(DPoint2d::From(-92, 39));

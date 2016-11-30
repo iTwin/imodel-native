@@ -124,7 +124,7 @@ SpatialEntityStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fi
 
             // Process listed data.
             if (GetObserver() != NULL)
-                GetObserver()->OnFileListed(fileList, fileFullPath.c_str());
+                GetObserver()->OnFileListed(fileList, fileFullPath.c_str(), GetDataset().c_str());
             else
                 fileList.push_back(fileFullPath);
             }
@@ -249,33 +249,43 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     pExtractedData->SetName(name.erase(name.find_last_of('.')).c_str());
 
     // Url.
-    pExtractedData->SetUrl(fileList[0].GetNameUtf8().c_str());
+    SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
+    newDataSource->SetUrl(fileList[0].GetNameUtf8().c_str());
 
     // Compound type.
 
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
-    pExtractedData->SetCompoundType(compoundType.c_str());
+    newDataSource->SetCompoundType(compoundType.c_str());
 
     // Size.
     uint64_t size;
     compoundFilePath.GetFileSize(size);
     size /= 1024; // GetFileSize returns a size in bytes. Convert to kilobytes.
-    pExtractedData->SetSize(size);
+    newDataSource->SetSize(size);
 
     // Type.
     Utf8String fileType(fileList[0].GetExtension().c_str());
-    pExtractedData->SetDataType(fileType.c_str());
-
-    // Classification
-    // &&AR Since we currently only process rasters the file is bound to be imagery
-    pExtractedData->SetClassification("Imagery");
+    newDataSource->SetDataType(fileType.c_str());
 
     // Location. 
     //&&JFC TODO: Construct path from compound.
     WString locationW = fileList[0].GetFileNameAndExtension();
     Utf8String location(locationW);
-    pExtractedData->SetLocationInCompound(location.c_str());
+    newDataSource->SetLocationInCompound(location.c_str());
+
+    // Server.
+    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
+    if (pServer != NULL)
+        newDataSource->SetServer(*pServer);
+
+    pExtractedData->AddDataSource(*newDataSource);
+
+    // Classification
+    // &&AR Since we currently only process rasters the file is bound to be imagery
+    pExtractedData->SetClassification("Imagery");
+
+
 
     // Date.
     time_t lastModifiedTime;
@@ -305,6 +315,7 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     pExtractedData->SetFootprint(shape);
     pExtractedData->SetFootprintExtents(extents);
 
+#if (0)
     // Thumbnail.
     if (extractThumbnail)
         {
@@ -322,11 +333,9 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
         if (pThumbnail != NULL)
             pExtractedData->SetThumbnail(*pThumbnail);
         }
+#endif
 
-    // Server.
-    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
-    if (pServer != NULL)
-        pExtractedData->SetServer(*pServer);
+
 
     return pExtractedData; 
     }

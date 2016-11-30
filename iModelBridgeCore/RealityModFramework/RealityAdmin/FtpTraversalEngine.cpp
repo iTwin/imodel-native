@@ -91,7 +91,7 @@ SpatialEntityStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fil
             // &&AR ... Apply filePattern yet keep on adding ZIP files.
             // Process listed data.
             if (GetObserver() != NULL)
-                GetObserver()->OnFileListed(fileList, fileFullPath.c_str());
+                GetObserver()->OnFileListed(fileList, fileFullPath.c_str(), GetDataset().c_str());
             else
                 fileList.push_back(fileFullPath);
             }
@@ -195,42 +195,30 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     pExtractedData->SetName(name.erase(name.find_last_of('.')).c_str());
 
     // Url.
-    pExtractedData->SetUrl(fileList[0].GetNameUtf8().c_str());
+    SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
+    newDataSource->SetUrl((fileList[0].GetNameUtf8().c_str()));
 
     // Compound type.
-
     BeFileName compoundFilePath(inputDirPath);
     Utf8String compoundType(compoundFilePath.GetExtension().c_str());
-    pExtractedData->SetCompoundType(compoundType.c_str());
+    newDataSource->SetCompoundType(compoundType.c_str());
 
     // Size.
     uint64_t size;
     compoundFilePath.GetFileSize(size);
     size /= 1024; // GetFileSize returns a size in bytes. Convert to kilobytes.
-    pExtractedData->SetSize(size);
+    newDataSource->SetSize(size);
 
     // Type.
     Utf8String fileType(fileList[0].GetExtension().c_str());
-    pExtractedData->SetDataType(fileType.c_str());
+    newDataSource->SetDataType(fileType.c_str());
 
-    // Classification
-    // &&AR Since we currently only process rasters the file is bound to be imagery
-    pExtractedData->SetClassification("Imagery");
 
     // Location. 
     //&&JFC TODO: Construct path from compound.
     WString locationW = fileList[0].GetFileNameAndExtension();
     Utf8String location(locationW);
-    pExtractedData->SetLocationInCompound(location.c_str());
-
-    // Date.
-    time_t lastModifiedTime;
-    fileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
-    DateTime date = DateTime();
-    if (NULL != lastModifiedTime)
-        DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
-
-    pExtractedData->SetDate(date);
+    newDataSource->SetLocationInCompound(location.c_str());
 
     // Metadata.    
     BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
@@ -255,11 +243,12 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
                 resolution = pRasterData->ComputeResolutionInMeters();
 
                 // Save geocoding
-                pExtractedData->SetGeoCS(geocoding.c_str());
+                newDataSource->SetGeoCS(geocoding.c_str());
                 }
             }
         pExtractedData->SetResolution(resolution.c_str());
         }
+
 
     // Footprint.
     bvector<DPoint2d> shape = bvector<DPoint2d>();
@@ -276,13 +265,38 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
             pData->GetFootprint(&shape, &extents);
 			
             // Save geocoding
-            pExtractedData->SetGeoCS(geocoding.c_str());
+            newDataSource->SetGeoCS(geocoding.c_str());
         }
 
     }
     pExtractedData->SetFootprint(shape);
     pExtractedData->SetFootprintExtents(extents);
 
+    // Server.
+    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
+    if (pServer != NULL)
+        newDataSource->SetServer(*pServer);
+
+    pExtractedData->AddDataSource(*newDataSource);
+
+    // Classification
+    // &&AR Since we currently only process rasters the file is bound to be imagery
+    pExtractedData->SetClassification("Imagery");
+
+    // Date.
+    time_t lastModifiedTime;
+    fileList[0].GetFileTime(NULL, NULL, &lastModifiedTime);
+    DateTime date = DateTime();
+    if (NULL != lastModifiedTime)
+        DateTime::FromUnixMilliseconds(date, lastModifiedTime*1000);
+
+    pExtractedData->SetDate(date);
+
+
+
+
+
+#if (0)
     // Thumbnail.
     if (extractThumbnail)
         {
@@ -300,11 +314,6 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
         if (pThumbnail != NULL)
             pExtractedData->SetThumbnail(*pThumbnail);
         }
-
-    // Server.
-    SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
-    if (pServer != NULL)
-        pExtractedData->SetServer(*pServer);
-
+#endif
     return pExtractedData; 
     }

@@ -223,10 +223,10 @@
                     <xs:documentation>
                     This element specifies the geographic coordinate system keyname to be used as default for the source given the 
                     geographic coordinate system cannot be stored in the source format, is not stored or cannot be interpreted by the application.
-		    This keyname can be composed of two distinct sections separated by a semi-comma where the first part indicates
-		    the horizontal geographic coordinate system key and the optional second portion indicating the vertical datum in use.
-		    Vertical datums supported are ELLIPSOID, GEOID, NAVD88 and NGVD29 where some restrictions may apply concerning application such
-		    as, for the sake of illustrating, the NGVD29 can be only be used with GCS based on the NAD27 datum in the USA.
+		            This keyname can be composed of two distinct sections separated by a semi-comma where the first part indicates
+		            the horizontal geographic coordinate system key and the optional second portion indicating the vertical datum in use.
+		            Vertical datums supported are ELLIPSOID, GEOID, NAVD88 and NGVD29 where some restrictions may apply concerning application such
+		            as, for the sake of illustrating, the NGVD29 can be only be used with GCS based on the NAD27 datum in the USA.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
             std::cout << "Retrieving data" << std::endl;
             std::cout << "*****************" << std::endl << std::endl;
 
-            client->SetObserver(new WebTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str()));
+            client->SetObserver(new WebTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str(), true));
             status = client->GetData();
             if (status != SpatialEntityStatus::Success)
                 {
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-WebTraversalObserver::WebTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr) : ISpatialEntityTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode)
+WebTraversalObserver::WebTraversalObserver(bool updateMode, bool dualMode, const char* dbName, const char* pwszConnStr, bool verbose) : ISpatialEntityTraversalObserver(), m_updateMode(updateMode), m_dualMode(dualMode), m_verbose(verbose)
     {
     ServerConnection::GetInstance().SetStrings(dbName, pwszConnStr);
     }
@@ -251,32 +251,37 @@ WebTraversalObserver::WebTraversalObserver(bool updateMode, bool dualMode, const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file)
+void WebTraversalObserver::OnFileListed(bvector<Utf8String>& fileList, Utf8CP file, Utf8CP dataset)
     {
     if (nullptr == file)
         {
-        std::cout << "Status: Failed, file is null." << std::endl;
+        if (m_verbose)
+            std::cout << "Status: Failed, file is null." << std::endl;
         return;
         }
 
     if (m_updateMode)
         {
-        if (!ServerConnection::GetInstance().IsDuplicate(file))
+        if (!ServerConnection::GetInstance().IsDuplicate(file, dataset))
             {
-            std::cout << "Status: Skipped " << file << std::endl;
+            if (m_verbose)
+                std::cout << "Status: Skipped " << file << std::endl;
             return;
             }
         }
     else
         {
-        if (ServerConnection::GetInstance().IsDuplicate(file))
+        if (ServerConnection::GetInstance().IsDuplicate(file, dataset))
             {
-            std::cout << "Status: Skipped " << file << std::endl;
+            if (m_verbose)
+                std::cout << "Status: Skipped " << file << std::endl;
             return;
             }
         }
 
-    std::cout << "Status: Added " << file << " to queue." << std::endl;
+    if (m_verbose)
+        std::cout << "Status: Added " << file << " to queue." << std::endl;
+
     fileList.push_back(file);
     }
 
@@ -288,7 +293,8 @@ void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
     if (nullptr == file)
         return;
 
-    std::cout << "Status: Downloaded " << file << std::endl;
+    if (m_verbose)
+        std::cout << "Status: Downloaded " << file << std::endl;
     }
 
 //-------------------------------------------------------------------------------------
@@ -296,11 +302,21 @@ void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
     {
-    data.SetServerId(ServerConnection::GetInstance().SaveServer(data.GetServer()));
+    for (size_t index = 0 ; index < data.GetDataSourceCount() ; index++)
+        data.GetDataSource(index).SetServerId(ServerConnection::GetInstance().SaveServer(data.GetDataSource(index).GetServer()));
+    
     if (m_updateMode)
+        {
         ServerConnection::GetInstance().Update(data);
+        if (m_verbose)
+            std::cout << "Status: Database Updated " << data.GetName() << std::endl;
+        }
     else
-        ServerConnection::GetInstance().Save(data, m_dualMode);
+        {
+        ServerConnection::GetInstance().SaveSpatialEntity(data, m_dualMode);
+        if (m_verbose)
+            std::cout << "Status: Database Saved " << data.GetName() << std::endl;
+        }
     }
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

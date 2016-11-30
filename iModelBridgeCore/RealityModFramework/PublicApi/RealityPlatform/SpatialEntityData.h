@@ -47,28 +47,9 @@ enum class SpatialEntityStatus
     UnknownError = ERROR,   // The operation failed with an unspecified error.
     };
 
-//=====================================================================================
-//! @bsiclass                                   Jean-Francois.Cote              5/2016
-// Defines the traversal observer interface as an abstract class.
-// The traversal observer that must inherit from the present one must implement
-// a behavior for the OnFileListed, OnFileDownloaded and OnDataExtracted method.
-//=====================================================================================
-struct ISpatialEntityTraversalObserver
-{
-public:
-    //! OnFileListed is called whenever a file was listed for download. It is up to
-    //! the effective traversal observer to do whatever process is required on the data.
-    virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file) = 0;
 
-    //! OnFileDownloaded is called whenever a download is completed. It is up to
-    //! the effective traversal observer to do whatever process is required on the data.
-    virtual void OnFileDownloaded(Utf8CP file) = 0;
-
-    //! OnDataExtracted is called whenever an extraction is completed by the 
-    //! data handler. The data object given defines the data discovered. It is up to
-    //! the effective traversal observer to do whatever process is required on the data.
-    virtual void OnDataExtracted(SpatialEntityDataCR data) = 0;
-};
+#if (0)
+// Temporarily disabled ... to be kept
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
@@ -78,6 +59,10 @@ struct SpatialEntityThumbnail : public RefCountedBase
 public:
     //! Create invalid thumbnail.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityThumbnailPtr Create();
+
+    //! IsEmpty
+    //! Indicates if the metadata is empty and had no fields set.
+    REALITYDATAPLATFORM_EXPORT bool IsEmpty() const;    
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvenance() const;
@@ -121,8 +106,12 @@ protected:
     bvector<Byte> m_data;
     Utf8String m_generationDetails;
     Utf8String m_thumbnailUrl;
+
+
+    bool m_isEmpty;
 };
 
+#endif
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
@@ -135,6 +124,10 @@ public:
 
     //! Create from xml file.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr CreateFromFile(Utf8CP filePath);
+
+    //! IsEmpty
+    //! Indicates if the metadata is empty and had no fields set.
+    REALITYDATAPLATFORM_EXPORT bool IsEmpty() const;
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvenance() const;
@@ -174,6 +167,8 @@ protected:
     Utf8String m_format;
     Utf8String m_data;
     Utf8String m_metadataUrl;
+
+    bool m_isEmpty;
 };
 
 
@@ -254,15 +249,11 @@ protected:
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
-struct SpatialEntityData : public RefCountedBase
+struct SpatialEntityDataSource : public RefCountedBase
 {
 public:
     //! Create invalid data.
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr Create();
-
-    //! Get/Set
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
-    REALITYDATAPLATFORM_EXPORT void SetName(Utf8CP name);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create();
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetUrl() const;
@@ -273,6 +264,10 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetGeoCS(Utf8CP geoCS);
 
     //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOriginalId() const;
+    REALITYDATAPLATFORM_EXPORT void SetOriginalId(Utf8CP originalId);
+
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCompoundType() const;
     REALITYDATAPLATFORM_EXPORT void SetCompoundType(Utf8CP type);
 
@@ -280,8 +275,81 @@ public:
     REALITYDATAPLATFORM_EXPORT uint64_t GetSize() const; // in bytes.
     REALITYDATAPLATFORM_EXPORT void SetSize(uint64_t size); // in bytes.
 
-    REALITYDATAPLATFORM_EXPORT uint64_t GetNoDataValue() const;
-    REALITYDATAPLATFORM_EXPORT void SetNoDataValue(uint64_t value); // in bytes.
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetNoDataValue() const;
+    REALITYDATAPLATFORM_EXPORT void SetNoDataValue(Utf8CP value); 
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataType() const;
+    REALITYDATAPLATFORM_EXPORT void SetDataType(Utf8CP type);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocationInCompound() const;
+    REALITYDATAPLATFORM_EXPORT void SetLocationInCompound(Utf8CP location);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT SpatialEntityServerCR GetServer() const;
+    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerR server);
+
+    REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
+    REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
+
+    REALITYDATAPLATFORM_EXPORT void GetMultibandUrls( Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl ) const;
+    REALITYDATAPLATFORM_EXPORT void SetMultibandUrls( Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl );
+    
+    REALITYDATAPLATFORM_EXPORT uint64_t GetRedBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetRedBandSize( uint64_t size );
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetBlueBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetBlueBandSize( uint64_t size );
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetGreenBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetGreenBandSize( uint64_t size );
+
+    REALITYDATAPLATFORM_EXPORT uint64_t GetPanchromaticBandSize() const;
+    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( uint64_t size );
+
+    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetServerId() const;
+    //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
+    REALITYDATAPLATFORM_EXPORT void SetServerId( SQLINTEGER id ) const;
+
+protected:
+    SpatialEntityDataSource();
+
+    Utf8String m_url;
+    Utf8String m_geoCS;
+    Utf8String m_compoundType;
+    uint64_t m_size;
+    Utf8String m_dataType;
+    Utf8String m_locationInCompound;
+    SpatialEntityServerPtr m_pServer;
+    Utf8String m_noDataValue;
+    Utf8String m_originalId;
+
+    bool m_isMultiband = false;
+    Utf8String m_redDownloadUrl;
+    Utf8String m_blueDownloadUrl;
+    Utf8String m_greenDownloadUrl;
+    Utf8String m_panchromaticDownloadUrl;
+    uint64_t m_redSize;
+    uint64_t m_blueSize;
+    uint64_t m_greenSize;
+    uint64_t m_panchromaticSize;
+
+    mutable SQLINTEGER m_serverId = -1;
+}; 
+
+//=====================================================================================
+//! @bsiclass                                   Jean-Francois.Cote              4/2016
+//=====================================================================================
+struct SpatialEntityData : public RefCountedBase
+{
+public:
+    //! Create invalid data.
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityDataPtr Create();
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
+    REALITYDATAPLATFORM_EXPORT void SetName(Utf8CP name);
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetResolution() const; // in meters.
@@ -303,12 +371,22 @@ public:
     REALITYDATAPLATFORM_EXPORT void SetClassification(Utf8CP classification);
 
     //! Get/Set
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocationInCompound() const;
-    REALITYDATAPLATFORM_EXPORT void SetLocationInCompound(Utf8CP location);
-
-    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDataset() const;
     REALITYDATAPLATFORM_EXPORT void SetDataset(Utf8CP dataset);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetThumbnailURL() const;
+    REALITYDATAPLATFORM_EXPORT void SetThumbnailURL(Utf8CP thumbnailURL);
+
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetThumbnailLoginKey() const;
+    REALITYDATAPLATFORM_EXPORT void SetThumbnailLoginKey(Utf8CP thumbnailLoginKey);
+
+    //! Get/Set
+    //! The approximate file size is not stored in data model but returned as an indication 
+    //! based on the file size of the first data source. Informative field only.
+    REALITYDATAPLATFORM_EXPORT uint64_t GetApproximateFileSize() const; // in bytes.
+    REALITYDATAPLATFORM_EXPORT void SetApproximateFileSize(uint64_t size); // in bytes.
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT DateTimeCR GetDate() const;
@@ -318,79 +396,53 @@ public:
     REALITYDATAPLATFORM_EXPORT const bvector<DPoint2d>& GetFootprint() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprint(bvector<DPoint2d>& footprint);
 
+    //! Get/Set
+    REALITYDATAPLATFORM_EXPORT bool HasApproximateFootprint() const;
+    REALITYDATAPLATFORM_EXPORT void SetApproximateFootprint(bool approximateFootprint);
+
     REALITYDATAPLATFORM_EXPORT DRange2dCR GetFootprintExtents() const;
     REALITYDATAPLATFORM_EXPORT void SetFootprintExtents(DRange2dCR footprintExtents);
 
     //! Get/Set
-    REALITYDATAPLATFORM_EXPORT SpatialEntityThumbnailCR GetThumbnail() const;
-    REALITYDATAPLATFORM_EXPORT void SetThumbnail(SpatialEntityThumbnailR thumbnail);
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceCR GetDataSource(size_t index) const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityDataSourceR GetDataSource(size_t index);
+    REALITYDATAPLATFORM_EXPORT void AddDataSource(SpatialEntityDataSourceR dataSource);
+    REALITYDATAPLATFORM_EXPORT size_t GetDataSourceCount() const;
+
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCR GetMetadata() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataR metadata);
-
-    //! Get/Set
-    REALITYDATAPLATFORM_EXPORT SpatialEntityServerCR GetServer() const;
-    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerR server);
-
-    REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
-    REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
-
-    REALITYDATAPLATFORM_EXPORT void GetMultibandUrls( Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl ) const;
-    REALITYDATAPLATFORM_EXPORT void SetMultibandUrls( Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl );
-    
+  
     REALITYDATAPLATFORM_EXPORT float GetCloudCover() const;
     REALITYDATAPLATFORM_EXPORT void SetCloudCover( float cover );
-
-    REALITYDATAPLATFORM_EXPORT float GetRedBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetRedBandSize( float size );
-
-    REALITYDATAPLATFORM_EXPORT float GetBlueBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetBlueBandSize( float size );
-
-    REALITYDATAPLATFORM_EXPORT float GetGreenBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetGreenBandSize( float size );
-
-    REALITYDATAPLATFORM_EXPORT float GetPanchromaticBandSize() const;
-    REALITYDATAPLATFORM_EXPORT void SetPanchromaticBandSize( float size );
-
-    REALITYDATAPLATFORM_EXPORT SQLINTEGER GetServerId() const;
-    //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
-    REALITYDATAPLATFORM_EXPORT void SetServerId( SQLINTEGER id ) const;
 
 protected:
     SpatialEntityData();
 
     Utf8String m_name;
-    Utf8String m_url;
-    Utf8String m_geoCS;
-    Utf8String m_compoundType;
-    uint64_t m_size;
     Utf8String m_resolution;
     Utf8String m_provider;
     Utf8String m_providerName;
     Utf8String m_dataType;
     Utf8String m_classification;
-    Utf8String m_locationInCompound;
     DateTime m_date;
     Utf8String m_dataset;
+    Utf8String m_thumbnailURL;
+    Utf8String m_thumbnailLoginKey;
     bvector<DPoint2d> m_footprint;
     DRange2d m_footprintExtents;
-    SpatialEntityThumbnailPtr m_pThumbnail;
+    bool m_approximateFootprint;
+    uint64_t m_approximateFileSize;
+    // SpatialEntityThumbnailPtr m_pThumbnail;
     SpatialEntityMetadataPtr m_pMetadata;
-    SpatialEntityServerPtr m_pServer;
-    uint64_t m_noDataValue;
+    bvector<SpatialEntityDataSourcePtr> m_DataSources;
 
-    bool m_isMultiband = false;
-    Utf8String m_redDownloadUrl;
-    Utf8String m_blueDownloadUrl;
-    Utf8String m_greenDownloadUrl;
-    Utf8String m_panchromaticDownloadUrl;
     float m_cloudCover = -1.0f;
-    float m_redSize;
-    float m_blueSize;
-    float m_greenSize;
-    float m_panchromaticSize;
+    //uint64_t m_redSize;
+    //uint64_t m_blueSize;
+    //uint64_t m_greenSize;
+    //uint64_t m_panchromaticSize;
 
     mutable SQLINTEGER m_serverId = -1;
 }; 
