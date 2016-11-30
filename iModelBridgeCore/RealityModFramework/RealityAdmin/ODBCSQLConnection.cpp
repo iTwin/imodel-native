@@ -18,7 +18,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>  
-#include "ODBCSQLConnection.h"
+#include <RealityAdmin/ODBCSQLConnection.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -884,7 +884,7 @@ ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityDataCR dat
     sprintf(existingEntityBaseQuery, "SELECT [Id] FROM [%s].[dbo].[SpatialEntities] WHERE [Name] = '%s' AND [Dataset] = '%s'", m_dbName.c_str(), data.GetName().c_str(), data.GetDataset().c_str());
     retCode = ExecuteSQL(existingEntityBaseQuery);
     bool hasExisting = false;
-    SQLINTEGER entityId;
+    SQLINTEGER entityId = 0;
     if (retCode == SQL_SUCCESS || retCode == SQL_SUCCESS_WITH_INFO)
     {
         SQLBindCol(hStmt, 1, SQL_INTEGER, &entityId, 2, &len);

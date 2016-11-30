@@ -15,6 +15,7 @@
 #----------------------------------------------------------
 RealityPlatformPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPlatform/
 RealityPackagePublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityPackage/
+RealityAdminPublicAPISrc = $(SrcRoot)RealityModFramework/PublicAPI/RealityAdmin/
 
 #----------------------------------------------------------
 # outdirs

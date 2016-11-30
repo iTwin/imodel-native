@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RealityPackageNet;
+using System.Data;
 
 namespace IndexECPlugin.Source
     {
@@ -668,6 +669,21 @@ namespace IndexECPlugin.Source
         /// 
         /// </summary>
         public RelationalOperator Operator
+            {
+            get;
+            set;
+            }
+        }
+
+    internal class ColumnNameTypePair
+        {
+        public String ColumnName
+            {
+            get;
+            set;
+            }
+
+        public SqlDbType SqlDbType
             {
             get;
             set;

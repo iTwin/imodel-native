@@ -75,23 +75,26 @@ REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerV1)
 REALITYPACKAGE_TYPEDEFS(RealityDataSerializerV2)
 REALITYPACKAGE_REF_COUNTED_PTR(RealityDataSerializerV2)
 
+
 BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
-//! Status codes for RealityPackageStatus operations
+//=====================================================================================
+//! Status codes for RealityPackage operations
+//=====================================================================================
 enum class RealityPackageStatus
     {
-    Success                 = SUCCESS,  //!< The operation was successful
-    UnsupportedVersion,                 //!< Version is either undefined or we can't handle it.
-    XmlReadError,                       //!< File access error or invalid xml stream.
-    PolygonParsingError,                //!< Polygon must be a space delimited list of x y double values.
-    InvalidDateFormat,                  //!< The date format is invalid. It must utc time.
-    InvalidLongitudeLatitude,           //!< Longitude[-180, 180] Latitude [-90, 90]
-    MissingSourceAttribute,             //!< Data source must have an 'uri' and a 'type' attribute.
-    MissingDataSource,                  //!< Each RealityData must have a data source.
-    WriteToFileError,                   //!< Make sure path is valid and you have write permission.
-    UnknownElementType,                 //!< internal
-    // *** Add new here.
-    UnknownError            = ERROR,    //!< The operation failed with an unspecified error
+    Success                     = SUCCESS,  // The operation was successful.
+    UnsupportedVersion,                     // Version is either undefined or we can't handle it.
+    XmlReadError,                           // File access error or invalid xml stream.
+    PolygonParsingError,                    // Polygon must be a space delimited list of x y double values.
+    InvalidDateFormat,                      // The date format is invalid. It must utc time.
+    InvalidLongitudeLatitude,               // Longitude[-180, 180] Latitude [-90, 90].
+    MissingSourceAttribute,                 // Data source must have an 'uri' and a 'type' attribute.
+    MissingDataSource,                      // Each RealityData must have a data source.
+    WriteToFileError,                       // Make sure path is valid and you have write permission.
+    UnknownElementType,                     // Element type is unknown.
+    //*** Add new here.
+    UnknownError                = ERROR,    // The operation failed with an unspecified error.
     };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

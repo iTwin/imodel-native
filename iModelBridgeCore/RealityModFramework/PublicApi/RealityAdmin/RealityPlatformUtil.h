@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityAdmin/RealityPlatformUtil.h $
+|     $Source: PublicApi/RealityAdmin/RealityPlatformUtil.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -18,22 +18,23 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
 typedef uint32_t PtHandle;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Jean-Francois.Cote              03/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-//&&JFC TODO: Create a mechanism that will initialize the libraries only once per session.
-// Init GCS
-// Init Pointools
-// Init IPP
-// ...
+//=====================================================================================
+//! //&&JFC TODO: Create a mechanism that will initialize the libraries only once per session.
+//! Init GCS
+//! Init Pointools
+//! Init IPP
+//! ...
+//!
+//! @bsiclass                                   Jean-Francois.Cote              03/2015
+//=====================================================================================
 struct SessionManager
     {
     static bool InitBaseGCS();
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsiclass                                     Marc.Bedard                     04/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
+//=====================================================================================
+//! @bsiclass                                   Marc.Bedard                     04/2013
+//=====================================================================================
 struct RasterFacility
     {
     REALITYDATAPLATFORM_EXPORT static void ConvertThePixels(size_t pi_Width, 

@@ -37,7 +37,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceComplement instanceComplement = new InstanceComplement(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             IECInstance originalInstance = SetupHelpers.CreateSDS(true, m_schema);
             List<IECInstance> instances = new List<IECInstance>() { originalInstance };
@@ -60,13 +60,13 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(complementInstances);
                 }
             using ( m_mock.Playback() )
                 {
-                instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceComplement.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(originalURL + ", " + complementURL, instances.First()["MainURL"].StringValue);
 
@@ -78,7 +78,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceComplement instanceComplement = new InstanceComplement(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             IECInstance originalInstance = SetupHelpers.CreateOsmSource(m_schema);
             List<IECInstance> instances = new List<IECInstance>() { originalInstance };
@@ -101,13 +101,13 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(complementInstances);
                 }
             using ( m_mock.Playback() )
                 {
-                instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceComplement.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(originalURL + ", " + complementURL, instances.First()["MainURL"].StringValue);
 
@@ -119,7 +119,7 @@ namespace IndexECPlugin.Tests
             {
 
             InstanceComplement instanceComplement = new InstanceComplement(m_querierMock);
-            SqlConnection sqlConnection = new SqlConnection();
+            string connectionString = null;
 
             IECInstance originalInstance = SetupHelpers.CreateWMSSource(m_schema);
             List<IECInstance> instances = new List<IECInstance>() { originalInstance };
@@ -142,13 +142,13 @@ namespace IndexECPlugin.Tests
                                                               Arg<IParamNameValueMap>.Is.Anything,
                                                               Arg<IECClass>.Is.Anything,
                                                               Arg<IEnumerable<IECProperty>>.Is.Anything,
-                                                              Arg<IDbConnection>.Is.Anything,
+                                                              Arg<string>.Is.Anything,
                                                               Arg<IEnumerable<string>>.Is.Anything,
                                                               Arg<bool>.Is.Anything)).Repeat.Once().Return(complementInstances);
                 }
             using ( m_mock.Playback() )
                 {
-                instanceComplement.Modify(instances, DataSource.USGS, sqlConnection);
+                instanceComplement.Modify(instances, DataSource.USGS, connectionString);
 
                 Assert.AreEqual(originalURL + ", " + complementURL, instances.First()["MainURL"].StringValue);
 

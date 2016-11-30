@@ -273,7 +273,7 @@ void WmsMapSettings::ToXml(Utf8StringR xmlFragment) const
 //-------------------------------------------------------------------------------------
 WmsMapSettings::WmsMapSettings(Utf8CP uri, DRange2dCR bbox, Utf8CP version, Utf8CP layers, Utf8CP csType, Utf8CP csLabel)
     : m_uri(uri),
-      m_boundingBox(bbox), 
+      m_boundingBox(bbox),      //&&JFC Reproject bbox in cs unit.
       m_metaWidth(10),          // Default.
       m_metaHeight(10),         // Default.
       m_version(version), 

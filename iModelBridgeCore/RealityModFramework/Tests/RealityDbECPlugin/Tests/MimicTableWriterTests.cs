@@ -87,14 +87,26 @@ namespace IndexECPlugin.Tests
 
             string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
 
-            // BEGIN TRY INSERT INTO dbo.CacheSpatialEntityBases (IdStr,Footprint,Name,Keywords,AssociateFile,ProcessingDescription,DataSourceTypesAvailable,AccuracyResolutionDensity,Date,Classification) VALUES (@p1,geometry::STGeomFromText('POLYGON((-90 34, -89 34, -89 35, -90 35, -90 34))',4326),@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10); END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW END CATCH;
-            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, new SQLServerInsertStatementBuilder(), out paramNameValueMap);
+            string onStatement = "conditional statement 1";
+            string whenMatchedString = "conditional statement 2";
+            ISQLMergeUpsertStatementBuilder builder = new SQLServerMergeUpsertStatementBuilder();
+            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, builder, out paramNameValueMap, onStatement, whenMatchedString);
             SqlServerParamNameValueMap sqlServerMap = paramNameValueMap as SqlServerParamNameValueMap;
 
             Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");
 
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.Append(@".*MERGE.*" + Regex.Escape(tableString) + ".*AS.*" + builder.TargetTableAlias);
+            stringBuilder.Append(".*USING.*VALUES.*AS.*" + builder.SourceTableAlias);
+            stringBuilder.Append(".*ON.*" + onStatement);
+            stringBuilder.Append(".*WHEN.*MATCHED.*" + whenMatchedString + ".*THEN.*");
+            stringBuilder.Append("UPDATE.*SET.*");
+            stringBuilder.Append("WHEN.*NOT.*MATCHED.*THEN.*");
+            stringBuilder.Append("INSERT.*VALUES.*");
+
             //Unfinished regex... to complete?
-            Regex reg = new Regex(@".*BEGIN.*TRY.*INSERT.*INTO.*" + Regex.Escape(tableString) + @".*END.*TRY.*BEGIN.*CATCH.*IF.*ERROR_NUMBER().*<>.*2627.*THROW.*END.*CATCH.*;.*");
+            Regex reg = new Regex(stringBuilder.ToString());
             Assert.IsTrue(reg.IsMatch(sqlQuery), "The statement does not have the required form.");
             int count = 0;
             foreach(IECProperty prop in sebClass)
@@ -139,53 +151,13 @@ namespace IndexECPlugin.Tests
             additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("TestColumn1234", Bentley.ECObjects.ECObjects.StringType, inst => "TestColVal1234"));
 
             // BEGIN TRY INSERT INTO dbo.CacheSpatialEntityBases (IdStr,Footprint,Name,Keywords,AssociateFile,ProcessingDescription,DataSourceTypesAvailable,AccuracyResolutionDensity,Date,Classification) VALUES (@p1,geometry::STGeomFromText('POLYGON((-90 34, -89 34, -89 35, -90 35, -90 34))',4326),@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10); END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW END CATCH;
-            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, new SQLServerInsertStatementBuilder(), out paramNameValueMap, additionalColumns);
+            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, new SQLServerMergeUpsertStatementBuilder(), out paramNameValueMap, "on statement", null, additionalColumns);
             SqlServerParamNameValueMap sqlServerMap = paramNameValueMap as SqlServerParamNameValueMap;
 
             Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");
 
             Assert.IsTrue(sqlQuery.Contains("TestColumn1234"), "The statement does not contain the name of the added column.");
             Assert.IsTrue(sqlServerMap.Any(p => p.Value.Item1.ToString() == "TestColVal1234"), "The map does not contain the value of the added column.");
-
-            }
-
-        [Test]
-        public void CreateMimicSEBTestWithDelete ()
-            {
-
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
-
-            IECInstance spatialEntityBase = GetInstanceFilledWithTestData(sebClass);
-
-            List<IECInstance> instanceList = new List<IECInstance>() { spatialEntityBase };
-            IParamNameValueMap paramNameValueMap;
-
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
-
-            Func<IECInstance, WhereStatementManager> deleteStatementConstructor;
-
-            deleteStatementConstructor = inst =>
-            {
-                WhereStatementManager deleteStatementManager;
-                deleteStatementManager = new WhereStatementManager();
-                deleteStatementManager.WhereStatement = "TestCol1234 = @testParam1234@; ";
-                deleteStatementManager.AddParameter("@testParam1234@", Bentley.ECObjects.ECObjects.StringType, "TestVal4561");
-                //    //If the data is not complete, we delete the cache only if it is outdated or is not complete
-                //     return idColumnName + " = " + inst.InstanceId + " AND (Complete = 'false' OR DateCacheCreated <= '" + (DateTime.UtcNow.AddDays(m_daysCacheIsValid*-1) + "'); ");
-                
-            return deleteStatementManager;
-            };
-
-            // BEGIN TRY INSERT INTO dbo.CacheSpatialEntityBases (IdStr,Footprint,Name,Keywords,AssociateFile,ProcessingDescription,DataSourceTypesAvailable,AccuracyResolutionDensity,Date,Classification) VALUES (@p1,geometry::STGeomFromText('POLYGON((-90 34, -89 34, -89 35, -90 35, -90 34))',4326),@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10); END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW END CATCH;
-            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, new SQLServerInsertStatementBuilder(), out paramNameValueMap, null, deleteStatementConstructor);
-            SqlServerParamNameValueMap sqlServerMap = paramNameValueMap as SqlServerParamNameValueMap;
-
-            Regex reg = new Regex(@".*DELETE.*FROM.*" + Regex.Escape(tableString) + @".*WHERE.*TestCol1234 =.*");
-            Assert.IsTrue(reg.IsMatch(sqlQuery), "The statement does not have the required form.");
-
-            Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");
-
-            Assert.IsTrue(sqlServerMap.Any(p => (string) p.Value.Item1 == "TestVal4561"), "The parameter from the delete statement was not added in the map.");
 
             }
         }

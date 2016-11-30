@@ -62,9 +62,9 @@ namespace IndexECPlugin.Source.Helpers
         /// </summary>
         /// <param name="instances"></param>
         /// <param name="source"></param>
-        /// <param name="sqlConnection"></param>
+        /// <param name="connectionString"></param>
         /// <returns></returns>
-        public void Modify (IEnumerable<IECInstance> instances, DataSource source, IDbConnection sqlConnection/*, ECQuerySettings ecQuerySettings*/)
+        public void Modify (IEnumerable<IECInstance> instances, DataSource source, string connectionString/*, ECQuerySettings ecQuerySettings*/)
             {
             m_mimicTableAccessor.GetStream = false;
 
@@ -93,7 +93,7 @@ namespace IndexECPlugin.Source.Helpers
                     throw new UserFriendlyException("The request returned too much data. Please refine the search filters.");
                     }
 
-                List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), sqlConnection, null, false);
+                List<IECInstance> modifyInstances = m_dbQuerier.QueryDbForInstances(query, drh, paramNameValueMap, ecClass, drh.GetProperties(), connectionString, null, false);
 
                 //For each instance in the 
                 //If there is data and stream data (such as thumbnail data) set in instances, replace it if there is an override

@@ -74,4 +74,5 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
 $(BuildContext)xsd/RealityPackage.1.0.xsd : $(_MakeFilePath)RealityPackage.1.0.xsd
     $(LinkFirstDepToFirstTarget)
 
-
+$(BuildContext)xsd/RealityPackage.2.0.xsd : $(_MakeFilePath)RealityPackage.2.0.xsd
+    $(LinkFirstDepToFirstTarget)

@@ -108,11 +108,20 @@ namespace IndexECPlugin.Source.Helpers
                 {
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
-            if((selectedRegion.Count % 2) != 0)
+            if((selectedRegion.Count % 2) != 0 || selectedRegion.Count < 6)
                 {
                 //We need an even number of coordinates
                 throw new UserFriendlyException("The given polygon's format was not correct.");
                 }
+            for(int i = 0; i < selectedRegion.Count; i = i+2)
+                {
+                //We verify if the lat/long bounds are correct.
+                if(selectedRegion[i] < -180.0 || selectedRegion[i] > 180.0 || selectedRegion[i + 1] < -90.0 || selectedRegion[i + 1] > 90.0)
+                    {
+                    throw new UserFriendlyException("The given polygon's format was not correct.");
+                    }
+                }
+
             // Create data source.
             //List<WmsSourceNet> wmsSourceList;// = WmsPackager(sender, connection, queryModule, coordinateSystem, wmsRequestedEntities);
 
@@ -682,7 +691,9 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Name"));
-            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "Name"), "OpenStreetMap"));
+            query.WhereClause.Add(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.WhereClause.SetLogicalOperatorAfter(0, LogicalOperator.AND);
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 

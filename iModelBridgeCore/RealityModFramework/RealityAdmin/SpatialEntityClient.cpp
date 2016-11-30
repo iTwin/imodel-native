@@ -11,7 +11,7 @@
 
 #include <RealityPlatform/SpatialEntityData.h>
 #include <RealityPlatform/RealityDataDownload.h>
-#include "SpatialEntityClient.h"
+#include <RealityAdmin/SpatialEntityClient.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 

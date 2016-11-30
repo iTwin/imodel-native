@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
-#include "WMSCapabilities.h"
+#include <RealityAdmin/WMSCapabilities.h>
 #include "WMSTag.h"
 
 #ifndef BENTLEY_WINRT

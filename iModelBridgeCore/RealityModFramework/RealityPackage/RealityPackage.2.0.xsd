@@ -67,7 +67,7 @@
         </xs:annotation>
         <xs:complexContent>
             <xs:extension base="SourceType">
-                <xs:attribute name="type" type="xs:string">
+                <xs:attribute name="typeKey" type="xs:string">
                     <xs:annotation>
                         <xs:documentation>
                             The type of the metadata referenced. This type can be ISO-19115 or FGDC or anyother string but usually 'text' indicating
@@ -158,7 +158,7 @@
                 <xs:annotation>
                     <xs:documentation>
                     The presence of this element necessarily indicates that the server requires authentication to access the data through the URI.
-                    The key string additionaly provides a hint about the login/password required. 
+                    The key string additionally provides a hint about the login/password required. 
                     For example the key 'EarthExplorer' would indicate that a USGS Earth Explorer username/password combination is required to access the data.
                     There is no definite list of possible keys; if unknown the client application may attempt to use the element 'ServerRegistrationPage' content
                     to guide the user toward obtention of the correct username password.
@@ -233,7 +233,7 @@
             <xs:element name="NoDataValue" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                    This element specifies the no data value if it is not integraly part of the format. This will occur for example with
+                    This element specifies the no data value if it is not integrally part of the format. This will occur for example with
                     some raster files originating from Landsat data. Rasters are captured rotated but the file is not imposing a no-data padding
                     which is color zero (0) for Landsat images.
                     This element is a string. It is usually numeric but may of another format appropriate to the type of the data.
@@ -282,7 +282,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="streamed" use="optional" type="xs:bool">
+        <xs:attribute name="streamed" use="optional" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
                 Indicates if the URI refers to a streamed source. If streamed then the client application should not attempt to download it

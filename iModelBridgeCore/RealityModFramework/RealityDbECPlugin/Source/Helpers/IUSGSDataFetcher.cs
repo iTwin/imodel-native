@@ -282,7 +282,6 @@ namespace IndexECPlugin.Source.Helpers
 
                                     foreach ( JProperty subEntry in entry["tags"] )
                                         {
-                                        System.Console.Out.Write(subEntry.Value["title"]);
                                         foreach ( var category in CategoryTable )
                                             {
                                             if ( entry["title"].Value<string>() == category.Title &&

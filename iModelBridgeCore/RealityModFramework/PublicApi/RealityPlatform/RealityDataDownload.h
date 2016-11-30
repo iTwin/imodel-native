@@ -33,6 +33,11 @@ typedef std::function<int(int index, void *pClient, size_t ByteCurrent, size_t B
 //! @param[out] pMsg        Curl English message.
 typedef std::function<void(int index, void *pClient, int ErrorCode, const char* pMsg)> RealityDataDownload_StatusCallBack;
 
+//! Callback function to follow the download progression.
+//! @return If RealityDataDownload_ProgressCallBack returns 0   All downloads continue.
+//! @return If RealityDataDownload_ProgressCallBack returns any other value The download is canceled for all files.
+typedef std::function<int()> RealityDataDownload_HeartbeatCallBack;
+
 //Special Error codes
 #define REALITYDATADOWNLOAD_RETRY_TENTATIVE     -2
 #define REALITYDATADOWNLOAD_MIRROR_CHANGE       -3
@@ -90,6 +95,7 @@ public:
         BeFile                  fileStream;
         size_t                  iAppend;
         RealityDataDownload_ProgressCallBack pProgressFunc;
+        RealityDataDownload_HeartbeatCallBack pHeartbeatFunc;
         size_t                  filesize;
         size_t                  downloadedSizeStep;
         float                   progressStep;
@@ -183,7 +189,7 @@ public:
                 writer->ToString(report);
             }
         };
-
+    
     //{{url, file},{url, file}}
     typedef bvector<url_file_pair>    UrlLink_UrlFile;
     //{{mirror set:{url, file}, {url, file}}, {mirror set: ...}} 
@@ -220,6 +226,10 @@ public:
     //! Set callback to follow progression of the download.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataDownload_ProgressCallBack pi_func, float pi_step = 0.01) 
                                                                    {m_pProgressFunc = pi_func; m_progressStep = pi_step;};
+    //! Set callback to allow the user to mass cancel all downloads
+    REALITYDATAPLATFORM_EXPORT void SetHeartbeatCallBack(RealityDataDownload_HeartbeatCallBack pi_func)
+                                                                   {m_pHeartbeatFunc = pi_func;};
+
     //! Set callback to know to status, download done or error.
     REALITYDATAPLATFORM_EXPORT void SetStatusCallBack(RealityDataDownload_StatusCallBack pi_func) { m_pStatusFunc = pi_func; };
 
@@ -249,6 +259,7 @@ private:
     Utf8String                              m_proxyUrl;
     Utf8String                              m_proxyCreds;
     RealityDataDownload_ProgressCallBack    m_pProgressFunc;
+    RealityDataDownload_HeartbeatCallBack   m_pHeartbeatFunc;
     float                                   m_progressStep = 0.01;
     RealityDataDownload_StatusCallBack      m_pStatusFunc;
     DownloadReport                          m_dlReport;

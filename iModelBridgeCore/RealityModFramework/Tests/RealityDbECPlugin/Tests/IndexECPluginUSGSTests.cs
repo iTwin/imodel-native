@@ -75,12 +75,12 @@ namespace IndexECPlugin.Tests
                 //Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Return(instanceList);
                 //Expect.Call(delegate
                     //{
-                        //m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                        //m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                         //LastCall.On(m_instanceCacheManager).Repeat.Any();
                     //});
                 //SetupResult.For(delegate
                 //    {
-                //        m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                //        m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 //    });
                 //}
             }
@@ -193,9 +193,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
-                //}).Repeat.Times(3);
-                }).Repeat.Never();
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Times(3);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -251,8 +254,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
 
@@ -284,7 +291,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -338,7 +349,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -391,7 +406,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -434,7 +453,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -480,7 +503,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -524,7 +551,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -575,8 +606,13 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
+
 
                 }
             using ( m_mock.Playback() )
@@ -611,8 +647,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -647,8 +687,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -683,8 +727,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -719,8 +767,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -754,8 +806,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -789,7 +845,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -825,7 +885,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -860,7 +924,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -895,7 +963,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -931,7 +1003,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -966,8 +1042,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -1002,8 +1082,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
 
@@ -1048,8 +1132,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
 
@@ -1094,8 +1182,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Times(3);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
 
@@ -1142,8 +1234,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Once().Return(cachedInstanceList);
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Times(1);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
 
@@ -1189,8 +1285,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Never();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )
@@ -1237,7 +1337,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -1288,7 +1392,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -1339,7 +1447,11 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                }).Repeat.Once();
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
                 }).Repeat.Once();
 
                 }
@@ -1390,8 +1502,12 @@ namespace IndexECPlugin.Tests
                 Expect.Call(m_instanceCacheManager.QuerySpatialInstancesFromCache(Arg<PolygonDescriptor>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<SelectCriteria>.Is.Anything, Arg<List<SingleWhereCriteriaHolder>>.Is.Anything)).Repeat.Never();
                 Expect.Call(delegate
                 {
-                    m_instanceCacheManager.InsertInstancesInCache(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
+                    m_instanceCacheManager.PrepareCacheInsertStatement(Arg<IEnumerable<IECInstance>>.Is.Anything, Arg<IECClass>.Is.Anything, Arg<IEnumerable<Tuple<string, IECType, Func<IECInstance, string>>>>.Is.Anything);
                 }).Repeat.Times(2);
+                Expect.Call(delegate
+                {
+                    m_instanceCacheManager.SendAllPreparedCacheInsertStatements();
+                }).Repeat.Once();
 
                 }
             using ( m_mock.Playback() )

@@ -20,9 +20,10 @@ BEGIN_BENTLEY_REALITYPACKAGE_NAMESPACE
 
 struct RealityDataSerializer;
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
+//=====================================================================================
+//!
+//! @bsiclass                                     Mathieu.Marchand              03/2015
+//=====================================================================================
 struct BoundingPolygon : public RefCountedBase
 {
 public:    
@@ -121,12 +122,10 @@ public:
     REALITYPACKAGE_EXPORT DateTimeCR GetCreationDate() const;
     REALITYPACKAGE_EXPORT void SetCreationDate(DateTimeCR date);
 
-    //! Package bounding polygon in latitude/longitude.
-    //! The bounding polygon for the RealityDataPackage represents the region of interest selected by the user in the RealityModelingNavigator. 
-    //! This can be seen as the clipping shape for all the data that the package will contain.
-    REALITYPACKAGE_EXPORT BoundingPolygonCR GetBoundingPolygon() const;
-    //! Package object will increment ref count of 'polygon'.
-    REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);
+    //! The bounding polygon, in latitude/longitude, defines the location of the package, the region of interest. 
+    //! Note that individual sources of data may not be fully contained in the package bounding polygon.
+    REALITYPACKAGE_EXPORT BoundingPolygonCR GetBoundingPolygon() const;    
+    REALITYPACKAGE_EXPORT void SetBoundingPolygon(BoundingPolygonR polygon);    // Package object will increment ref count of 'polygon'.
 
     //! A read-only access to data source container. Might be empty.
     REALITYPACKAGE_EXPORT ImageryGroup const& GetImageryGroup() const;
@@ -161,7 +160,7 @@ private:
 
     static RealityDataPackagePtr CreateFromDom(RealityPackageStatus& status, BeXmlDomR xmlDom, Utf8CP defaultName, WStringP pParseError);
 
-    WString BuildCreationDateUTC();   // May update m_creationDate.
+    Utf8String BuildCreationDateUTC();   // May update m_creationDate.
 
 
     uint32_t m_majorVersion;
@@ -188,167 +187,179 @@ private:
 //! @bsiclass
 //=======================================================================================
 struct RealityData : public RefCountedBase
-{
-public:      
-    REALITYPACKAGE_EXPORT Utf8StringCR GetDataId() const;
-    REALITYPACKAGE_EXPORT void SetDataId(Utf8CP dataId);
+    {
+    public:      
+        REALITYPACKAGE_EXPORT Utf8StringCR GetDataId() const;
+        REALITYPACKAGE_EXPORT void SetDataId(Utf8CP dataId);
 
-    REALITYPACKAGE_EXPORT Utf8StringCR GetDataName() const;
-    REALITYPACKAGE_EXPORT void SetDataName(Utf8CP dataName);
+        REALITYPACKAGE_EXPORT Utf8StringCR GetDataName() const;
+        REALITYPACKAGE_EXPORT void SetDataName(Utf8CP dataName);
 
-    REALITYPACKAGE_EXPORT Utf8StringCR GetDataset() const;
-    REALITYPACKAGE_EXPORT void SetDataset(Utf8CP dataset);
+        REALITYPACKAGE_EXPORT Utf8StringCR GetDataset() const;
+        REALITYPACKAGE_EXPORT void SetDataset(Utf8CP dataset);
 
-    //! Data can contain many sources (at least one). This returns the number of sources.
-    REALITYPACKAGE_EXPORT size_t GetNumSources() const;
+        //! Data can contain many sources (at least one). This returns the number of sources.
+        REALITYPACKAGE_EXPORT size_t GetNumSources() const;
 
-    //! Returns the source. index start at 0 up to GetNumSource()-1
-    REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR(size_t index);
-    REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource(size_t index) const;
+        //! Returns the source. index start at 0 up to GetNumSource()-1
+        REALITYPACKAGE_EXPORT RealityDataSourceR GetSourceR(size_t index);
+        REALITYPACKAGE_EXPORT RealityDataSourceCR GetSource(size_t index) const;
 
-    //! Adds an alternate source to the data.
-    REALITYPACKAGE_EXPORT void AddSource(RealityDataSourceR dataSource);
-protected:
-    explicit RealityData(){}; // for persistence.
-    RealityData(RealityDataSourceR dataSource);
-    virtual ~RealityData();
+        //! Adds an alternate source to the data.
+        REALITYPACKAGE_EXPORT void AddSource(RealityDataSourceR dataSource);
+
+    protected:
+        explicit RealityData(){}; // for persistence.
+        RealityData(RealityDataSourceR dataSource);
+        virtual ~RealityData();
       
-private:
-    bvector<RealityDataSourcePtr> m_Sources;
-    Utf8String m_id;
-    Utf8String m_name;
-    Utf8String m_dataset;
-};
+    private:
+        bvector<RealityDataSourcePtr> m_Sources;
+        Utf8String m_id;
+        Utf8String m_name;
+        Utf8String m_dataset;
+    };
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
+//=====================================================================================
+//! Imagery data type specify the data type for imagery data. It extends the generic 
+//! data type by adding the optional footprint of the imagery.
+//! @bsiclass                                     Mathieu.Marchand               3/2015
+//=====================================================================================
 struct ImageryData: public RealityData
-{
+    {
     DEFINE_T_SUPER(RealityData)
-public:
-    friend RealityDataSerializer;
-
-    //! Imagery corners.
-    enum Corners
-        {
-        LowerLeft   = 0,    // (0,0)
-        LowerRight  = 1,    // (1,0)
-        UpperLeft   = 2,    // (0,1)
-        UpperRight  = 3     // (1,1)
-        };
-
-    //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
-    //! the pointer given must point to 4 consecutive DPoint2d structures in an array
-    REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
     
-    //! Imagery corners in lat/long.
-    //! May return NULL. In such a case the corners should be read from the file header. The pointer returned is the 
-    //! start of a 4 DPoint2d array.
-    REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
+    public:
+        friend RealityDataSerializer;
 
-    //! Set Imagery corners. nullptr can be passed to remove corners. If corners are provided then
-    //! the pointer given must point to 4 consecutive DPoint2d structures in an array
-    REALITYPACKAGE_EXPORT void SetCorners(DPoint2dCP pCorners);
+        //! Indicate the footprint extent of the Imagery. All four corners are specified allowing
+        //! specification of a rotated square footprint.
+        enum Corners
+            {
+            LowerLeft   = 0,    // (0,0)
+            LowerRight  = 1,    // (1,0)
+            UpperLeft   = 2,    // (0,1)
+            UpperRight  = 3     // (1,1)
+            };
+
+        //! Create a new ImageryData. Optionally imagery corners in lat/long. If corners are provided then
+        //! the pointer given must point to 4 consecutive DPoint2d structures in an array.
+        REALITYPACKAGE_EXPORT static ImageryDataPtr Create(RealityDataSourceR dataSource, DPoint2dCP pCorners);
+    
+        //! Imagery corners in lat/long.
+        //! May return NULL. In such case the corners should be read from the file header. The pointer returned is the 
+        //! start of a 4 DPoint2d array.
+        REALITYPACKAGE_EXPORT DPoint2dCP GetCornersCP() const;
+
+        //! Set Imagery corners. nullptr can be passed to remove corners. If corners are provided then
+        //! the pointer given must point to 4 consecutive DPoint2d structures in an array.
+        REALITYPACKAGE_EXPORT void SetCorners(DPoint2dCP pCorners);
        
-    static Utf8CP ElementName; 
-private:
-    explicit ImageryData(){InvalidateCorners();}; // for persistence.
-    ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners);
-    virtual ~ImageryData();
+        static Utf8CP ElementName; 
 
-    static bool HasValidCorners(DPoint2dCP pCorners);
-    void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
+    private:
+        explicit ImageryData(){InvalidateCorners();}; // for persistence.
+        ImageryData(RealityDataSourceR dataSource, DPoint2dCP pCorners);
+        virtual ~ImageryData();
 
-    DPoint2d m_corners[4];
-};
+        static bool HasValidCorners(DPoint2dCP pCorners);
+        void InvalidateCorners() {memset(m_corners, 0, sizeof(m_corners));}
 
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
+        DPoint2d m_corners[4];
+    };
+
+//=====================================================================================
+//! Model data type specify the data type for model data.
+//! @bsiclass                                     Mathieu.Marchand               3/2015
+//=====================================================================================
 struct ModelData: public RealityData
-{
+    {
     DEFINE_T_SUPER(RealityData)
-public:
-    friend RealityDataSerializer;
 
-    //! Create a new ModelData.
-    REALITYPACKAGE_EXPORT static ModelDataPtr Create(RealityDataSourceR dataSource);
+    public:
+        friend RealityDataSerializer;
 
-    //&&MM add table mapping.
+        //! Create a new ModelData.
+        REALITYPACKAGE_EXPORT static ModelDataPtr Create(RealityDataSourceR dataSource);
 
-    static Utf8CP ElementName;
-private:
-    explicit ModelData(){}; // for persistence
-    ModelData(RealityDataSourceR dataSource);
-    virtual ~ModelData();
-};
+        //&&MM add table mapping.
+
+        static Utf8CP ElementName;
+
+    private:
+        explicit ModelData(){}; // for persistence
+        ModelData(RealityDataSourceR dataSource);
+        virtual ~ModelData();
+    };
 
 
-//=======================================================================================
-//!
-//! @bsiclass
-//=======================================================================================
+//=====================================================================================
+//! Pinned data type specify the data type for pinned data. It extends the generic data 
+//! type by adding a mandatory pin position applicable to the non-geospatially located data.
+//! @bsiclass                                     Mathieu.Marchand               3/2015
+//=====================================================================================
 struct PinnedData : public RealityData
-{
+    {
     DEFINE_T_SUPER(RealityData)
 
-public:
-    friend RealityDataSerializer;
+    public:
+        friend RealityDataSerializer;
 
-    //! Create a new PinnedData.
-    REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
+        //! Create a new PinnedData with required position.
+        REALITYPACKAGE_EXPORT static PinnedDataPtr Create(RealityDataSourceR dataSource, double longitude, double latitude);
 
-    //! Get the object location in long/lat coordinate. 
-    REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
+        //! Get the object location in long/lat coordinate. 
+        REALITYPACKAGE_EXPORT DPoint2dCR GetLocation() const; 
+ 
+        //! Set the position of the pin. It is expressed as pair of numbers longitude/latitude.
+        //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
+        //! False is returned if location is invalid.
+        REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location);
 
-    //! Set the object location in long/lat coordinate. 
-    //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
-    //! False is returned if location is invalid.
-    REALITYPACKAGE_EXPORT bool SetLocation(DPoint2dCR location);
+        //! Returns true if the location has a defined area (a polygon).
+        REALITYPACKAGE_EXPORT bool HasArea() const;
 
-    //! Returns true if the location has a defined area (a polygon)
-    REALITYPACKAGE_EXPORT bool HasArea() const;
+        //! Get the object polygon location in long/lat coordinate. If the location is not defined by a polygon 
+        //! a nullptr is returned. First check with HasArea() before calling this method.
+        REALITYPACKAGE_EXPORT BoundingPolygonCP GetAreaCP() const;
 
-    //! Get the object polygon location in long/lat coordinate. If the location is not defined by a polygon 
-    //! a nullptr is returned. First check with HasPolygonLocation() before calling this method.
-    REALITYPACKAGE_EXPORT BoundingPolygonCP GetAreaCP() const;
+        //! Set the object location as a polygon in a sequence long/lat coordinate. 
+        //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
+        //! The polygon can be convex or not but it must not be auto contiguous or auto crossing.
+        //! False is returned if polygon is invalid.
+        REALITYPACKAGE_EXPORT bool SetArea(BoundingPolygonR polygon); 
 
-    //! Set the object location as a polygon in a sequence long/lat coordinate. 
-    //! Longitudes range from -180 to 180. Latitudes range from -90 to 90.
-    //! The polygon can be convex or not but it must not be autocontiguous or auto crossing
-    //! False is returned if polygon is invalid.
-    REALITYPACKAGE_EXPORT bool SetArea(BoundingPolygonR polygon); 
+        static Utf8CP ElementName;
 
-    static Utf8CP ElementName;
-private:
-    explicit PinnedData(){m_location.Zero();}; // for persistence
-    PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
-    virtual ~PinnedData();
+    private:
+        explicit PinnedData(){m_location.Zero();}; // for persistence
+        PinnedData(RealityDataSourceR dataSource, double longitude, double latitude);
+        virtual ~PinnedData();
 
-    DPoint2d            m_location;        //!spatial location in long/lat
-    BoundingPolygonPtr  m_area;
-};
+        DPoint2d            m_location;
+        BoundingPolygonPtr  m_area;
+    };
 
-//=======================================================================================
-//!
-//! @bsiclass
-//=======================================================================================
+//=====================================================================================
+//! Terrain data type specify the data type for terrain data.
+//! @bsiclass                                     Mathieu.Marchand               3/2015
+//=====================================================================================
 struct TerrainData: public RealityData
-{
+    {
     DEFINE_T_SUPER(RealityData)
-public:
-    friend RealityDataSerializer;
 
-    //! Create a new TerrainData.
-    REALITYPACKAGE_EXPORT static TerrainDataPtr Create(RealityDataSourceR dataSource);
+    public:
+        friend RealityDataSerializer;
 
-    static Utf8CP ElementName;
+        //! Create a new TerrainData.
+        REALITYPACKAGE_EXPORT static TerrainDataPtr Create(RealityDataSourceR dataSource);
 
-private:
-    explicit TerrainData(){}; // for persistence
-    TerrainData(RealityDataSourceR dataSource);
-    virtual ~TerrainData();
-};
+        static Utf8CP ElementName;
+
+    private:
+        explicit TerrainData(){}; // for persistence
+        TerrainData(RealityDataSourceR dataSource);
+        virtual ~TerrainData();
+    };
 
 END_BENTLEY_REALITYPACKAGE_NAMESPACE

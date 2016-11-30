@@ -7,12 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
-#include "PointCloudVortex.h"
+#include <RealityAdmin/PointCloudVortex.h>
 
 #include <atlimage.h>
 
-#include "RealityDataHandler.h"
-#include "RealityPlatformUtil.h"
+#include <RealityAdmin/RealityDataHandler.h>
+#include <RealityAdmin/RealityPlatformUtil.h>
 
 #define THUMBNAIL_WIDTH     256
 #define THUMBNAIL_HEIGHT    256

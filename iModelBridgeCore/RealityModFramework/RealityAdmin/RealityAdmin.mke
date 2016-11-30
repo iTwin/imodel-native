@@ -12,7 +12,8 @@ baseDir         = $(_MakeFilePath)
 
 %include $(SrcRoot)RealityModFramework/mki/RealityModFrameworkCommon.mki
 
-PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
+PlatformPublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityPlatform/
+PublicApiDir    = $(OutBuildContexts)RealityModFramework/PublicAPI/RealityAdmin/
 
 
 #----------------------------------------------------------------------
@@ -40,29 +41,31 @@ nameToDefine=__WMSPARSER_BUILD__
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)SpatialEntityClient$(oext) : $(baseDir)SpatialEntityClient.cpp $(baseDir)SpatialEntityClient.h ${MultiCompileDepends}
+$(o)SpatialEntityClient$(oext) : $(baseDir)SpatialEntityClient.cpp $(PublicApiDir)SpatialEntityClient.h ${MultiCompileDepends}
 
-$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(baseDir)RealityPlatformUtil.h ${MultiCompileDepends}
+$(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(PublicApiDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
-$(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(baseDir)RealityDataHandler.h ${MultiCompileDepends}
+$(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(PublicApiDir)RealityDataHandler.h ${MultiCompileDepends}
 
 $(o)RasterDataHandler$(oext) : $(baseDir)RasterDataHandler.cpp ${MultiCompileDepends}
 
 $(o)PointCloudDataHandler$(oext) : $(baseDir)PointCloudDataHandler.cpp ${MultiCompileDepends}
 
-$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(baseDir)RealityPlatformAdmins.h $(PublicApiDir)RealityPlatformAPI.h ${MultiCompileDepends}
+$(o)RealityPlatformAdmins$(oext) : $(baseDir)RealityPlatformAdmins.cpp $(PublicApiDir)RealityPlatformAdmins.h $(PlatformPublicApiDir)RealityPlatformAPI.h ${MultiCompileDepends}
 
-$(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(baseDir)PointCloudVortex.h ${MultiCompileDepends}
+$(o)PointCloudVortex$(oext) : $(baseDir)PointCloudVortex.cpp $(PublicApiDir)PointCloudVortex.h ${MultiCompileDepends}
 
 $(o)WMSDataHandler$(oext) : $(baseDir)WMSDataHandler.cpp ${MultiCompileDepends}
 
-$(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(baseDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
+$(o)WMSCapabilities$(oext) : $(baseDir)WMSCapabilities.cpp $(PublicApiDir)WMSCapabilities.h $(baseDir)WMSTag.h ${MultiCompileDepends}
 
-$(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(baseDir)FtpTraversalEngine.h ${MultiCompileDepends}
+$(o)FtpTraversalEngine$(oext) : $(baseDir)FtpTraversalEngine.cpp $(PublicApiDir)FtpTraversalEngine.h ${MultiCompileDepends}
 
-$(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(baseDir)HttpTraversalEngine.h ${MultiCompileDepends}
+$(o)HttpTraversalEngine$(oext) : $(baseDir)HttpTraversalEngine.cpp $(PublicApiDir)HttpTraversalEngine.h ${MultiCompileDepends}
 
-$(o)ODBCSQLConnection$(oext) : $(baseDir)ODBCSQLConnection.cpp $(baseDir)ODBCSQLConnection.h ${MultiCompileDepends}
+$(o)ODBCSQLConnection$(oext) : $(baseDir)ODBCSQLConnection.cpp $(PublicApiDir)ODBCSQLConnection.h ${MultiCompileDepends}
+
+$(o)ContextServicesWorkbench$(oext) : $(baseDir)ContextServicesWorkbench.cpp $(PublicApiDir)ContextServicesWorkbench.h ${MultiCompileDepends}
 
 #
 # Compile the above uniform set of dependency blocks in a single invocation of the Visual C compiler.
@@ -91,10 +94,15 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPackage$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
                        odbc32$(libext)
+                       #$(ContextSubpartsLibs)WebServicesClient$(libext) \
 
 # windows specific for Unzipfile
 LINKER_LIBRARIES   +  $(ntPlatformLib)OleAut32.lib                       
 
 %include dlmlink.mki
 
-
+#---------------------------------------------------------------------------------------+
+#   Deliver assets
+#---------------------------------------------------------------------------------------+
+$(OutputRootDir)BuildContexts/BeHttp/Delivery/http/ContextServices.pem : $(baseDir)ContextServices.pem
+    $(LinkFirstDepToFirstTarget)

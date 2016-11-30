@@ -18,9 +18,9 @@
 #include <iostream>
 #include <vector>
 #include "WebTraverser.h"
-#include "../ODBCSQLConnection.h"
-#include "../FtpTraversalEngine.h"
-#include "../HttpTraversalEngine.h"
+#include <RealityAdmin/ODBCSQLConnection.h>
+#include <RealityAdmin/FtpTraversalEngine.h>
+#include <RealityAdmin/HttpTraversalEngine.h>
 
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE

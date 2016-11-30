@@ -138,9 +138,11 @@
     <Compile Include="Source\SQLQueryBuilder\IParamNameValueMap.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLDeleteStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLInsertStatementBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\ISQLMergeUpsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\PagedSQLQueryBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLQueryBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\SQLServerInsertStatementBuilder.cs" />
+    <Compile Include="Source\SQLQueryBuilder\SQLServerMergeUpsertStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\StandardSQLQueryBuilder.cs" />
     <Compile Include="Source\QueryProviders\UsgsAPIQueryProvider.cs" />
   </ItemGroup>

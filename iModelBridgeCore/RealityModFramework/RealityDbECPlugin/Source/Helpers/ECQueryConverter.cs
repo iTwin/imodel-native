@@ -62,20 +62,53 @@ namespace IndexECPlugin.Source.Helpers
         /// <param name="sqlCountString">The SQL count query command string if requested</param>
         /// <param name="dataReadingHelper">The helper for reading the data from the DataReader</param>
         /// <param name="paramNameValueMap">The mapping of the parameters names and values for the parameterized query</param>
-        public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString, out DataReadingHelper dataReadingHelper, 
-                                                     out IParamNameValueMap paramNameValueMap)
+        /// <param name="propertyList">The list of properties that are included in the query</param>
+        public void CreateSqlCommandStringFromQuery (out string sqlCommandString, out string sqlCountString, out DataReadingHelper dataReadingHelper,
+                                                     out IParamNameValueMap paramNameValueMap, out List<IECProperty> propertyList)
             {
             //For now, we only query on one class. To be completed one day
             SearchClass searchClass = m_query.SearchClasses.First();
             IECClass queriedClass = searchClass.Class;
-
             //We can only query SQLEntities. We verify that the custom attribute is set correctly.
             if ( queriedClass.GetCustomAttributes("SQLEntity") == null )
                 {
                 throw new UserFriendlyException(String.Format("It is not permitted to query instances of the {0} class", queriedClass.Name));
                 }
 
-            TableDescriptor tableToJoin = extractFromSelectAndJoin(m_query.SelectClause, queriedClass);
+            propertyList = new List<IECProperty>();
+            if ( m_query.SelectClause.SelectAllProperties )
+                {
+                propertyList.AddRange(queriedClass);
+                }
+            else
+                {
+                propertyList.AddRange(m_query.SelectClause.SelectedProperties);
+                }
+
+            try
+                {
+                //We add the instanceIdProperty to the selected properties. It is necessary to fetch this property to set the instance ID later
+                string InstanceIDPropertyName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
+                IECProperty InstanceIDProperty = queriedClass.FindProperty(InstanceIDPropertyName);
+
+                if ( !propertyList.Contains(InstanceIDProperty) )
+                    {
+                    propertyList.Add(InstanceIDProperty);
+                    }
+                }
+            catch ( Bentley.ECObjects.ECObjectsException.NullValue )
+                {
+                throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
+                }
+
+#if BBOXQUERY
+            if ( m_polygonDescriptor != null && !propertyList.Any(prop => prop.IsSpatial()) )
+                {
+                propertyList.Add(queriedClass.First(prop => prop.IsSpatial()));
+                }
+#endif
+
+            TableDescriptor tableToJoin = extractFromSelectAndJoin(propertyList, queriedClass);
 
             extractOrderByClause(queriedClass, tableToJoin);
 
@@ -106,35 +139,13 @@ namespace IndexECPlugin.Source.Helpers
             paramNameValueMap = m_sqlQueryBuilder.paramNameValueMap;
             }
 
-        private TableDescriptor extractFromSelectAndJoin (SelectCriteria selectCriteria, IECClass queriedClass)
+        private TableDescriptor extractFromSelectAndJoin (List<IECProperty> propertyList, IECClass queriedClass)
             {
             string primaryTableName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("FromTableName").StringValue;
 
             TableDescriptor table = new TableDescriptor(primaryTableName, m_tac.GetNewTableAlias());
 
             m_sqlQueryBuilder.SpecifyFromClause(table);
-
-            try
-                {
-                //We add the instanceIdProperty to the selected properties. It is necessary to fetch this property to set the instance ID later
-                string InstanceIDPropertyName = queriedClass.GetCustomAttributes("SQLEntity").GetPropertyValue("InstanceIDProperty").StringValue;
-                IECProperty InstanceIDProperty = queriedClass.FindProperty(InstanceIDPropertyName);
-
-                if ( (selectCriteria.SelectedProperties != null) && (!selectCriteria.SelectedProperties.Contains(InstanceIDProperty)) )
-                    {
-                    selectCriteria.SelectedProperties.Add(InstanceIDProperty);
-                    }
-                }
-            catch ( Bentley.ECObjects.ECObjectsException.NullValue )
-                {
-                throw new ProgrammerException(String.Format("Error in class {0} of the ECSchema. The custom attribute InstanceIDProperty is not set", queriedClass.Name));
-                }
-
-            IEnumerable<IECProperty> propList = selectCriteria.SelectedProperties;
-            if ( propList == null )
-                {
-                propList = queriedClass;
-                }
 
             //Special case for thumbnails and file 
             if ( (m_querySettings != null) && ((m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None) && queriedClass.Name == "Thumbnail" )
@@ -147,7 +158,7 @@ namespace IndexECPlugin.Source.Helpers
                     }
                 }
 
-            foreach ( IECProperty property in propList )
+            foreach ( IECProperty property in propertyList )
                 {
                 if ( !queriedClass.Contains(property.Name) )
                     {

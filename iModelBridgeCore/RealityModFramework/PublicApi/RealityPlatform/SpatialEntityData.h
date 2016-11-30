@@ -22,7 +22,7 @@ BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct CurlHolder
-{
+    {
 public:
     CurlHolder() : m_curl(curl_easy_init()) {}
     ~CurlHolder() { if (NULL != m_curl) curl_easy_cleanup(m_curl); }
@@ -30,7 +30,7 @@ public:
 
 private:
     CURL* m_curl;
-};
+    };
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
@@ -55,7 +55,7 @@ enum class SpatialEntityStatus
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityThumbnail : public RefCountedBase
-{
+    {
 public:
     //! Create invalid thumbnail.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityThumbnailPtr Create();
@@ -109,7 +109,7 @@ protected:
 
 
     bool m_isEmpty;
-};
+    };
 
 #endif
 
@@ -117,7 +117,7 @@ protected:
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityMetadata : public RefCountedBase
-{
+    {
 public:
     //! Create empty metadata.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityMetadataPtr Create();
@@ -169,14 +169,14 @@ protected:
     Utf8String m_metadataUrl;
 
     bool m_isEmpty;
-};
+    };
 
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
 //=====================================================================================
 struct SpatialEntityServer : public RefCountedBase
-{
+    {
 public:
     //! Create invalid server.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityServerPtr Create();
@@ -243,14 +243,14 @@ protected:
     double m_latency;
     Utf8String m_state;
     Utf8String m_type;
-};
+    };
 
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct SpatialEntityDataSource : public RefCountedBase
-{
+    {
 public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityDataSourcePtr Create();
@@ -263,9 +263,6 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGeoCS() const;
     REALITYDATAPLATFORM_EXPORT void SetGeoCS(Utf8CP geoCS);
 
-    //! Get/Set
-    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetOriginalId() const;
-    REALITYDATAPLATFORM_EXPORT void SetOriginalId(Utf8CP originalId);
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCompoundType() const;
@@ -323,7 +320,7 @@ protected:
     Utf8String m_locationInCompound;
     SpatialEntityServerPtr m_pServer;
     Utf8String m_noDataValue;
-    Utf8String m_originalId;
+
 
     bool m_isMultiband = false;
     Utf8String m_redDownloadUrl;
@@ -445,7 +442,7 @@ protected:
     //uint64_t m_panchromaticSize;
 
     mutable SQLINTEGER m_serverId = -1;
-}; 
+    }; 
    
 
 //=====================================================================================
@@ -454,7 +451,7 @@ protected:
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //=====================================================================================
 struct SpatialEntityDataHandler
-{
+    {
 public:
     //! Unzip files.
     REALITYDATAPLATFORM_EXPORT static SpatialEntityStatus UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath);
@@ -465,6 +462,6 @@ protected:
 
     //! Geocoding lookup.
     REALITYDATAPLATFORM_EXPORT static Utf8String RetrieveGeocodingFromMetadata(BeFileNameCR filename);
-};
+    };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

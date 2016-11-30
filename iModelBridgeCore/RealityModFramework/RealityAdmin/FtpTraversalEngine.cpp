@@ -10,9 +10,9 @@
 #include <BeXml/BeXml.h>
 
 #include <RealityPlatform/RealityDataDownload.h>
-#include "FtpTraversalEngine.h"
-#include "RealityDataHandler.h"
-#include "RealityPlatformUtil.h"
+#include <RealityAdmin/FtpTraversalEngine.h>
+#include <RealityAdmin/RealityDataHandler.h>
+#include <RealityAdmin/RealityPlatformUtil.h>
 
 
 #define THUMBNAIL_WIDTH     512
