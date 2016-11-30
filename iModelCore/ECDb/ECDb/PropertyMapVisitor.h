@@ -126,9 +126,11 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
 
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
-        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap const&) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&, NavigationPropertyMap::IdPropertyMap const*) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ECClassIdPropertyMap const&) const;

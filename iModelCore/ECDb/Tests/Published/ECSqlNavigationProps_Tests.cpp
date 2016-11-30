@@ -970,7 +970,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
 
     ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
-    ASSERT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql();
+    //when specified directly, the RelECClassId is not null in this case
+    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
 
     ASSERT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql();
     relClassId.Invalidate();
@@ -1012,7 +1013,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
 
     ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
-    ASSERT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql();
+    //when specified directly, the RelECClassId is not null in this case
+    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
 
     relClassId.Invalidate();
     ASSERT_EQ(element1Key.GetECInstanceId(), stmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << stmt.GetECSql();
@@ -1315,8 +1317,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             ASSERT_FALSE(v.IsNull()) << "Model is not expected to be null in the read ECInstance";
             ECValue::NavigationInfo const& navInfo = v.GetNavigationInfo();
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navInfo.GetIdAsLong()) << "Model via ECInstance";
-            ASSERT_TRUE(navInfo.GetRelationshipClass() != nullptr);
-            ASSERT_EQ(relClass.GetId().GetValue(), navInfo.GetRelationshipClass()->GetId().GetValue()) << "Model via ECInstance";
+            //WIP_ECOBJECTS_RELCLASSID
+            ASSERT_EQ(relClass.GetId().GetValue(), navInfo.GetRelationshipClassId()) << "Model via ECInstance";
             }
         else
             {
