@@ -41,12 +41,12 @@ bool FitContext::IsRangeContained(RangeIndex::FBoxCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop FitContext::_CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) 
+ScanCriteria::Reject FitContext::_CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) 
     {
-    if (ScanCriteria::Stop::Yes == T_Super::_CheckNodeRange(range, is3d))
-        return ScanCriteria::Stop::Yes;
+    if (ScanCriteria::Reject::Yes == T_Super::_CheckNodeRange(range, is3d))
+        return ScanCriteria::Reject::Yes;
 
-    return IsRangeContained(range) ? ScanCriteria::Stop::Yes : ScanCriteria::Stop::No;
+    return IsRangeContained(range) ? ScanCriteria::Reject::Yes : ScanCriteria::Reject::No;
     }
 
 /*---------------------------------------------------------------------------------**//**

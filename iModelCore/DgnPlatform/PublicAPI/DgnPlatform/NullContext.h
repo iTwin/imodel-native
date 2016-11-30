@@ -84,7 +84,8 @@ protected:
     virtual StatusInt _InitContextForView() override;
     virtual StatusInt _VisitGeometry(GeometrySourceCR source) override;
     virtual bool _ScanRangeFromPolyhedron() override;
-    virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) override;
+    enum Reject {Yes=1, No=0};
+    virtual ScanCriteria::Reject _CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) override;
 
 public:
     DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
