@@ -20,77 +20,152 @@ uint32_t s_max_group_common_ancestor = 2;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 {
-    unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
-    auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
-    if (!lk.try_lock() || m_isLoading)
-    {
-        // Someone else is loading the group
-        if (nodeHeader.offset == (uint32_t)-1)
-            {
-            // Data not ready yet, wait until it becomes ready
-            if (lk.owns_lock()) lk.unlock();
-            this->WaitFor(nodeHeader);
-            }
-        }
-    else 
-    {
+    if (m_strategyType == CESIUM)
+        {
         assert(m_isLoading == false);
         m_isLoading = true;
-        if (m_strategyType == VIRTUAL)
+        std::unique_ptr<DataSource::Buffer[]>       dest;
+        DataSource                              *   dataSource;
+        DataSource::DataSize                        readSize;
+
+        DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
+
+        dataSource = this->InitializeDataSource(dest, destSize);
+        if (dataSource == nullptr)
             {
-            this->LoadGroupParallel();
-
-            if (lk.owns_lock()) lk.unlock();
-
-            this->WaitFor(nodeHeader);
-            }
-        else 
-        {
-            std::unique_ptr<DataSource::Buffer[]>       dest;
-            DataSource                              *   dataSource;
-            DataSource::DataSize                        readSize;
-
-            DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
-
-            dataSource = this->InitializeDataSource(dest, destSize);
-            if (dataSource == nullptr)
-            {
-                m_isLoading = false;
-                m_groupCV.notify_all();
-                return ERROR;
+            m_isLoading = false;
+            return ERROR;
             }
 
-            this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
+        this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
 
-            if (readSize > 0)
+        if (readSize > 0)
             {
-                size_t position = 0;
-                uint32_t id;
-                memcpy(&id, dest.get(), sizeof(id));
-                assert(m_groupHeader->GetID() == id);
-                position += sizeof(id);
+            Json::Reader    reader;
+            char* jsonBlob = reinterpret_cast<char *>(dest.get());
+            reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
 
-                size_t numNodes;
-                memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
-                assert(m_groupHeader->size() == numNodes);
-                position += sizeof(numNodes);
+            if (!(m_RootTileTreeNode.isMember("root") && m_RootTileTreeNode["root"].isMember("SMHeader")))
+                {
+                assert(!"error reading Cesium 3D tiles header");
+                return 0;
+                }
 
-                memcpy(m_groupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
-                position += (uint32_t)numNodes * sizeof(SMNodeHeader);
-
-                const auto headerSectionSize = readSize - position;
-                m_rawHeaders.resize(headerSectionSize);
-                memcpy(m_rawHeaders.data(), dest.get() + position, headerSectionSize);
+            // Generate tile tree map
+            std::function<void(Json::Value&)> tileTreeMapGenerator = [this, &tileTreeMapGenerator](Json::Value& jsonNode)
+                {
+                if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
+                    {
+                    uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
+                    this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
+                    if (jsonNode.isMember("children"))
+                        {
+                        for (auto& child : jsonNode["children"])
+                            {
+                            tileTreeMapGenerator(child);
+                            }
+                        }
+                    }
+                else
+                    {
+                    assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
+                    BeFileName groupURL(jsonNode["content"]["url"].asString());
+                    WString groupIDStr = groupURL.GetFileNameWithoutExtension();
+                    WString prefix = groupIDStr.substr(0, 2);
+                    WString extension = groupURL.GetExtension();
+                    groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
+                    uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
+                    assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
+                    SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
+                    newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                    newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                    this->m_tileTreeChildrenGroups[groupID] = newGroup;
+                    }
+                };
+            tileTreeMapGenerator(m_RootTileTreeNode["root"]);
             }
-            else
+        else
             {
-                m_isLoading = false;
-                m_groupCV.notify_all();
-                return ERROR;
+            m_isLoading = false;
+            return ERROR;
             }
+        m_isLoading = false;
+        m_isLoaded = true;
         }
-    }
-    assert(nodeHeader.offset != (uint32_t)-1);
+    else
+        {
+        unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
+        auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
+        if (!lk.try_lock() || m_isLoading)
+            {
+            // Someone else is loading the group
+            if (nodeHeader.offset == (uint32_t)-1)
+                {
+                // Data not ready yet, wait until it becomes ready
+                if (lk.owns_lock()) lk.unlock();
+                this->WaitFor(nodeHeader);
+                }
+            }
+        else
+            {
+            assert(m_isLoading == false);
+            m_isLoading = true;
+            if (m_strategyType == VIRTUAL)
+                {
+                this->LoadGroupParallel();
+
+                if (lk.owns_lock()) lk.unlock();
+
+                this->WaitFor(nodeHeader);
+                }
+            else
+                {
+                std::unique_ptr<DataSource::Buffer[]>       dest;
+                DataSource                              *   dataSource;
+                DataSource::DataSize                        readSize;
+
+                DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
+
+                dataSource = this->InitializeDataSource(dest, destSize);
+                if (dataSource == nullptr)
+                    {
+                    m_isLoading = false;
+                    m_groupCV.notify_all();
+                    return ERROR;
+                    }
+
+                this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
+
+                if (readSize > 0)
+                    {
+                    size_t position = 0;
+                    uint32_t id;
+                    memcpy(&id, dest.get(), sizeof(id));
+                    assert(m_groupHeader->GetID() == id);
+                    position += sizeof(id);
+
+                    size_t numNodes;
+                    memcpy(&numNodes, dest.get() + position, sizeof(numNodes));
+                    assert(m_groupHeader->size() == numNodes);
+                    position += sizeof(numNodes);
+
+                    memcpy(m_groupHeader->data(), dest.get() + position, numNodes * sizeof(SMNodeHeader));
+                    position += (uint32_t)numNodes * sizeof(SMNodeHeader);
+
+                    const auto headerSectionSize = readSize - position;
+                    m_rawHeaders.resize(headerSectionSize);
+                    memcpy(m_rawHeaders.data(), dest.get() + position, headerSectionSize);
+                    }
+                else
+                    {
+                    m_isLoading = false;
+                    m_groupCV.notify_all();
+                    return ERROR;
+                    }
+                }
+            }
+        assert(nodeHeader.offset != (uint32_t)-1);
+        }
     return SUCCESS;
 }
 

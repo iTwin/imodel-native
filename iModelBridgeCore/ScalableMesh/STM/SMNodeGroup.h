@@ -269,10 +269,12 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         uint64_t m_progress = 0;
         bvector<uint8_t> m_rawHeaders;
         unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
+        map<uint64_t, SMNodeGroup::Ptr> m_tileTreeChildrenGroups;
         SMNodeGroup::Ptr m_ParentGroup;
         Json::Value m_RootTileTreeNode;
         WString m_outputDirPath;
-        WString m_dataSourceName;
+        WString m_dataSourcePrefix;
+        WString m_dataSourceExtension = L".bin";
         HFCPtr<SMGroupHeader> m_groupHeader;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_nodeDistributorPtr;
         condition_variable m_groupCV;
@@ -281,7 +283,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
     public:
         // Constructor for reading a group
-        SMNodeGroup(DataSourceAccount *dataSourceAccount, const uint32_t& pi_pID, StrategyType strategyType, const size_t& pi_pSize, const uint64_t& pi_pTotalSizeOfHeaders)
+        SMNodeGroup(DataSourceAccount *dataSourceAccount, const uint32_t& pi_pID, StrategyType strategyType, size_t pi_pSize = 0, uint64_t pi_pTotalSizeOfHeaders = 0)
             : m_dataSourceAccount(dataSourceAccount),
               m_groupHeader(new SMGroupHeader(pi_pID, pi_pSize)),
               m_rawHeaders(pi_pTotalSizeOfHeaders),
@@ -305,6 +307,11 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_totalSize = 2 * sizeof(size_t);
             }
 
+        static SMNodeGroup::Ptr CreateCesium3DTilesGroup(DataSourceAccount *dataSourceAccount, const uint32_t groupID)
+            {
+            return new SMNodeGroup(dataSourceAccount, groupID, StrategyType::CESIUM);
+            }
+
         void AppendHeader(const uint64_t& nodeID, const uint8_t* headerData, const uint64_t& size)
             {
             size_t oldSize, offset;
@@ -314,6 +321,12 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             m_rawHeaders.resize(oldSize + size);
             memmove(&m_rawHeaders[oldSize], headerData, size);
             m_totalSize += size + sizeof(SMNodeHeader);
+            }
+
+        void AppendHeader(const uint64_t& nodeID, Json::Value& jsonHeader)
+            {
+            assert(m_tileTreeMap.count(nodeID) == 0);
+            m_tileTreeMap[nodeID] = &jsonHeader;
             }
 
         uint32_t GetLevel() { return m_level; }
@@ -328,13 +341,21 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         void SetAncestor(const uint32_t& pi_pNewAncestor) { m_ancestor = pi_pNewAncestor; }
 
-        void SetDataSource(const WString& pi_pDataSourceName) { m_dataSourceName = pi_pDataSourceName; }
+        void SetDataSourcePrefix(const WString& pi_pDataSourcePrefix) { m_dataSourcePrefix = pi_pDataSourcePrefix; }
+
+        void SetDataSourceExtension(const WString& pi_pDataSourceExtension) { m_dataSourceExtension = pi_pDataSourceExtension; }
 
         size_t GetNumberNodes() { return m_groupHeader->size(); }
 
         size_t GetSizeOfHeaders() { return m_rawHeaders.size(); }
 
         bvector<Byte>::pointer GetRawHeaders(const size_t& offset) { return m_rawHeaders.data() + offset; }
+
+        Json::Value GetJsonHeader(const uint64_t& id) 
+            {
+            assert(m_tileTreeMap.count(id) == 1);
+            return *m_tileTreeMap[id];
+            }
 
         size_t GetTotalSize() { return m_totalSize; }
 
@@ -407,6 +428,21 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
         DataSourceAccount *GetDataSourceAccount(void)
             {
             return m_dataSourceAccount;
+            }
+
+        bool HasChildGroups()
+            {
+            return !m_tileTreeChildrenGroups.empty();
+            }
+
+        map<uint64_t, SMNodeGroup::Ptr>& GetChildGroups()
+            {
+            return m_tileTreeChildrenGroups;
+            }
+
+        void ClearChildGroups()
+            {
+            m_tileTreeChildrenGroups.clear();
             }
 
         template<class EXTENT> SMGroupingStrategy<EXTENT>* GetStrategy()
@@ -542,12 +578,20 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         bool ContainsNode(const uint64_t& pi_pNodeID)
             {
-            assert(!m_groupHeader->empty());
-            auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+            if (m_strategyType == CESIUM)
                 {
-                return nodeId.blockid == pi_pNodeID;
-                });
-            return node != m_groupHeader->end();
+                if (!m_isLoaded) this->Load(pi_pNodeID);
+                return m_tileTreeMap.count(pi_pNodeID) == 1;
+                }
+            else
+                {
+                assert(!m_groupHeader->empty());
+                auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+                    {
+                    return nodeId.blockid == pi_pNodeID;
+                    });
+                return node != m_groupHeader->end();
+                }
             }
 
         SMNodeHeader& GetNodeHeader(const uint64_t& pi_pNodeHeaderID)
@@ -589,18 +633,27 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 return;
 
             wchar_t buffer[10000];
-            swprintf(buffer, L"%s%lu.bin", m_dataSourceName.c_str(), this->GetID());
+            swprintf(buffer, L"%s%lu%s", m_dataSourcePrefix.c_str(), this->GetID(), m_dataSourceExtension.c_str());
 
             DataSourceURL dataSourceURL(buffer);
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                assert(!"Couldn't open data source.");
                 return;
+                }
 
             if (dataSource->read(dest, destSize, readSize, 0).isFailed())
+                {
+                assert(!"Couldn't read data source.");
                 return;
+                }
 
             if (dataSource->close().isFailed())
+                {
+                assert(!"Couldn't close data source.");
                 return;
+                }
             }
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData)
@@ -611,8 +664,8 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             DataSource::DataSize                 readSize;
             DataSourceBuffer::BufferSize         destSize = 5 * 1024 * 1024;
 
-            DataSourceURL dataSourceURL(m_dataSourceName.c_str());
-            dataSourceURL.append(L"n_" + std::to_wstring(pi_pNodeID) + L".bin");
+            DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
+            dataSourceURL.append(std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str());
 
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)

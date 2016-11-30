@@ -252,7 +252,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
     if (indexHeader != NULL)
         {
-        if (m_use_node_header_grouping || s_stream_from_grouped_store)
+        if (!s_stream_using_cesium_3d_tiles_format && (m_use_node_header_grouping || s_stream_from_grouped_store))
             {
             wchar_t buffer[10000];
 
@@ -343,7 +343,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                                                                      group_numNodes, 
                                                                      group_totalSizeOfHeaders));
                     // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSource(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
+                    group->SetDataSourcePrefix(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
                     group->SetDistributor(*m_NodeHeaderFetchDistributor);
                     m_nodeHeaderGroups.push_back(group);
 
@@ -414,6 +414,12 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                 HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
                 }
 */
+            if (s_stream_using_cesium_3d_tiles_format)
+                {
+                m_nodeHeaderGroups.push_back(SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), 0));
+                m_nodeHeaderGroups.back()->SetDataSourcePrefix(L"data\\n_");
+                m_nodeHeaderGroups.back()->SetDataSourceExtension(L".json");
+                }
             }
 
         return headerSize;
@@ -690,11 +696,13 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToJSON(con
     block["nbIndiceID"] = (int)header->m_ptsIndiceID.size();
 
     auto& indiceID = block["indiceID"];
-    for (size_t i = 0; i < header->m_ptsIndiceID.size(); i++)
-        {
-        Json::Value& indice = (uint32_t)i >= indiceID.size() ? indiceID.append(Json::Value()) : indiceID[(uint32_t)i];
-        indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : ISMStore::GetNullNodeID();
-        }
+    Json::Value& indice = indiceID.append(Json::Value());
+    indice = header->m_ptsIndiceID[0].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[0]) : ISMStore::GetNullNodeID();
+    //for (size_t i = 0; i < header->m_ptsIndiceID.size(); i++)
+    //    {
+    //    Json::Value& indice = (uint32_t)i >= indiceID.size() ? indiceID.append(Json::Value()) : indiceID[(uint32_t)i];
+    //    indice = header->m_ptsIndiceID[i].IsValid() ? ConvertBlockID(header->m_ptsIndiceID[i]) : ISMStore::GetNullNodeID();
+    //    }
 
     if (header->m_isTextured /*&& !header->m_textureID.empty() && IsValidID(header->m_textureID[0])*/)
         {
@@ -825,11 +833,19 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     {
     if (s_stream_from_grouped_store)
         {
-        auto group = this->GetGroup(blockID);
-        auto node_header = group->GetNodeHeader(blockID.m_integerID);
-        ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
-        header->m_id = blockID;
-        //group->removeNodeData(blockID.m_integerID);
+        if (s_stream_using_cesium_3d_tiles_format)
+            {
+            auto group = this->GetGroup(blockID);
+            ReadNodeHeaderFromJSON(header, group->GetJsonHeader(blockID.m_integerID));
+            }
+        else
+            {
+            auto group = this->GetGroup(blockID);
+            auto node_header = group->GetNodeHeader(blockID.m_integerID);
+            ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+            header->m_id = blockID;
+            //group->removeNodeData(blockID.m_integerID);
+            }
         }
     else if (s_stream_using_cesium_3d_tiles_format)
         {
@@ -875,6 +891,14 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(
         {
         if (group->ContainsNode(nodeIDToFind))
             {
+            if (group->HasChildGroups())
+                {
+                for (auto childGroupIDPair : group->GetChildGroups())
+                    {
+                    m_nodeHeaderGroups.push_back(childGroupIDPair.second);
+                    }
+                group->ClearChildGroups();
+                }
             return group;
             }
         }
