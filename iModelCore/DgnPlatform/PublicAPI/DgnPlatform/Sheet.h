@@ -111,7 +111,7 @@ public:
     DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(str_Template());}
 
     //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v);}
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v, ECN::ECClassId());}
 
     //! Get the sheet border, if any.
     //! @return an invalid ID if the sheet has no border.
@@ -119,7 +119,7 @@ public:
 
         //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v, ECN::ECClassId());}
 };
 
 //=======================================================================================
@@ -132,7 +132,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
 
 protected:
-    static Utf8CP str_ViewId() {return "ViewId";}
+    static Utf8CP str_View() {return "View";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     virtual DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
@@ -150,9 +150,9 @@ public:
         SetCode(GenerateDefaultCode());
         }
 
-    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
+    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_View());} //!< Get the Id of the view definition to be drawn by this attachment
     ClipVectorPtr GetClips() const;
-    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
     };
 
 //=======================================================================================

@@ -1564,10 +1564,13 @@ public:
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
 
+    //! Return the NavigationInfo for an ECNavigationProperty of the specified name
+    DGNPLATFORM_EXPORT ECN::ECValue::NavigationInfo GetNavigationInfo(Utf8CP propertyName) const;
+
     //! Return the value of an ECNavigationProperty by name
-    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
+    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
-        return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
+        return TBeInt64Id(static_cast<uint64_t>(GetNavigationInfo(propertyName).GetIdAsLong()));
         }
 
     //! Return the value of a string ECProperty by name
@@ -1577,38 +1580,22 @@ public:
     DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a DPoint3d ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a DPoint2d ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a boolean ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a double ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set an integer ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, ECN::ECClassId relClassId);
     //! Set a string ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
@@ -2170,7 +2157,9 @@ protected:
 
 public:
     //! Set the PhysicalType for this PhysicalElement
-    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId) {return SetPropertyValue("PhysicalType", physicalTypeId);}
+    //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
+    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("PhysicalType", physicalTypeId, relClassId);}
 
     //! Get the DgnElementId of the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
@@ -2209,7 +2198,9 @@ protected:
 
 public:
     //! Set the GraphicalType for this GraphicalElement2d
-    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId) {return SetPropertyValue("GraphicalType", graphicalTypeId);}
+    //! @param[in] graphicalTypeId The DgnElementId of the GraphicalType to be associated with this GraphicalElement2d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of GraphicalElement2dIsOfType
+    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("GraphicalType", graphicalTypeId, relClassId);}
 
     //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d

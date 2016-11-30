@@ -1175,6 +1175,18 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArray
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECValue::NavigationInfo DgnElement::GetNavigationInfo(Utf8CP propertyName) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetPropertyValue(value, propertyName);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+    return value.GetNavigationInfo();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx)
@@ -1237,13 +1249,15 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECClassId relClassId)
     {
-    ECValue value(id.GetValueUnchecked());
-    if (!id.IsValid())
+    ECValue value;
+    if (id.IsValid())
+        relClassId.IsValid() ? value.SetNavigationInfo(relClassId.GetValue(), id.GetValue()) : value.SetNavigationInfo(id.GetValue());
+    else
         value.SetToNull();
 
-    DgnDbStatus status = SetPropertyValue(propertyName, value, arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, value);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }

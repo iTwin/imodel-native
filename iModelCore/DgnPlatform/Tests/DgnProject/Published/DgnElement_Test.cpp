@@ -1890,6 +1890,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     {
     SetupSeedProject();
 
+    DgnClassId physicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
+    ASSERT_TRUE(physicalTypeRelClassId.IsValid());
+
     DgnElementId physicalTypeId[3];
     DgnElementId elementId;
 
@@ -1942,7 +1945,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        element->SetPhysicalType(physicalTypeId[0]);
+        element->SetPhysicalType(physicalTypeId[0], physicalTypeRelClassId);
         ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
@@ -1957,7 +1960,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1]));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1], physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1969,7 +1972,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId()));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId(), physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1989,6 +1992,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 TEST_F(DgnElementTests, GraphicalType2dCRUD)
     {
     SetupSeedProject();
+
+    DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
+    ASSERT_TRUE(graphicalTypeRelClassId.IsValid());
 
     DgnElementId graphicalTypeId[3];
     DgnElementId elementId;
@@ -2044,7 +2050,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        element->SetGraphicalType(graphicalTypeId[0]);
+        element->SetGraphicalType(graphicalTypeId[0], graphicalTypeRelClassId);
         ASSERT_TRUE(element->GetGraphicalTypeId().IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
@@ -2059,7 +2065,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1]));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1], graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2071,7 +2077,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId()));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId(), graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 

@@ -35,6 +35,8 @@ DGNPLATFORM_REF_COUNTED_PTR(FunctionalType)
 #define FUNC_CLASS_FunctionalPortion            "FunctionalPortion"
 #define FUNC_CLASS_FunctionalType               "FunctionalType"
 
+#define FUNC_REL_FunctionalElementIsOfType      "FunctionalElementIsOfType"
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace func_ModelHandler 
@@ -132,7 +134,9 @@ protected:
 
 public:
     //! Set the FunctionalType for this FunctionalElement
-    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId) {return SetPropertyValue("FunctionalType", functionalTypeId);}
+    //! @param[in] functionalTypeId The DgnElementId of the FunctionalType to be associated with this FunctionalElement
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of FunctionalElementIsOfType
+    DgnDbStatus SetFunctionalType(DgnElementId functionalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("FunctionalType", functionalTypeId, relClassId);}
     //! Get the DgnElementId of the FunctionalType for this FunctionalElement
     //! @return Will be invalid if there is no FunctionalType associated with this FunctionalElement
     DgnElementId GetFunctionalTypeId() const {return GetPropertyValueId<DgnElementId>("FunctionalType");}

@@ -105,6 +105,7 @@
 //-----------------------------------------------------------------------------------------
 // ECRelationshipClass names (combine with BIS_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
+#define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
 #define BIS_REL_ElementDrivesElement        "ElementDrivesElement"
 #define BIS_REL_ElementUsesGeometryParts    "ElementUsesGeometryParts"
 #define BIS_REL_ElementGroupsMembers        "ElementGroupsMembers"
@@ -113,11 +114,11 @@
 #define BIS_REL_ElementOwnsUniqueAspect     "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementOwnsMultiAspects     "ElementOwnsMultiAspects"
 #define BIS_REL_ElementRefersToElements     "ElementRefersToElements"
+#define BIS_REL_GraphicalElement2dIsOfType  "GraphicalElement2dIsOfType"
 #define BIS_REL_ModelContainsElements       "ModelContainsElements"
 #define BIS_REL_ModelModelsElement          "ModelModelsElement"
-#define BIS_REL_InstantiationOfTemplate     "InstantiationOfTemplate"
 #define BIS_REL_ModelSelectorRefersToModels "ModelSelectorRefersToModels"
-#define BIS_REL_BaseModelForView2d          "BaseModelForView2d"
+#define BIS_REL_PhysicalElementIsOfType     "PhysicalElementIsOfType"
 
 //-----------------------------------------------------------------------------------------
 // DgnDb table names
