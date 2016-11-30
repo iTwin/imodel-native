@@ -133,6 +133,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
 
 protected:
     static Utf8CP str_ViewId() {return "ViewId";}
+    static Utf8CP str_DisplayPriority() {return "DisplayPriority";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     virtual DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
@@ -153,6 +154,8 @@ public:
     DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
     ClipVectorPtr GetClips() const;
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    int32_t GetDisplayPriority() const {return GetPropertyValueInt32(str_DisplayPriority());}
+    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(str_DisplayPriority(), v);}
     };
 
 //=======================================================================================

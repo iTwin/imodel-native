@@ -270,6 +270,14 @@ static bool getRange(TextStringCR text, DRange3dR range, TransformCP transform)
     range.low.Init(textRange.low);
     range.high.Init(textRange.high);
 
+    // TextString::GetRange will report the cell box, which typically does /not/ encompass descenders or fancy adornments.
+    // The range being computed here directly affects element range, and elements cannot draw outside of their stated range.
+    // As such, similar to olden days, artificially pad our reported range to encourage glyph geometry to fit inside of it.
+    // This simple padding is a tradeoff between performance and actually computing this specific string's glyph geometry for a tight box.
+    double yPad = (text.GetStyle().GetSize().y / 2.0);
+    range.low.y -= yPad;
+    range.high.y += yPad;
+
     Transform textTransform = text.ComputeTransform();
     textTransform.Multiply(&range.low, 2);
 

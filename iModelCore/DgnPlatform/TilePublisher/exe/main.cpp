@@ -404,7 +404,7 @@ private:
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
 
-    virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
+    virtual TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
@@ -463,10 +463,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
+TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
     {
     if (Status::Success != m_acceptTileStatus || tile.GetDepth() > m_publishedTileDepth)
-        return TileGenerator::Status::Aborted;
+        return TileGeneratorStatus::Aborted;
 
     TilePublisher publisher(tile, *this);
     auto publisherStatus = publisher.Publish();
@@ -607,9 +607,8 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
-    TileModelCategoryFilter filter(GetDgnDb(), &m_allModels, &m_allCategories);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), &filter, &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), nullptr, &progressMeter);
 
     DRange3d            range;
 
