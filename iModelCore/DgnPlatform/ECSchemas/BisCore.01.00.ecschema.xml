@@ -1269,6 +1269,7 @@
         <BaseClass>GraphicalElement2d</BaseClass>
         <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
         <ECProperty propertyName="Details" typeName="string" />
+        <ECProperty propertyName="DisplayPriority" typeName="int" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
