@@ -227,18 +227,6 @@ static const double s_minToleranceRatio = 100.0;
 
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
-#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
-static const Utf8CP s_geometrySource2dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
-#else
-static const Utf8CP s_geometrySource3dNativeSql =
-    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
-    BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
-static const Utf8CP s_geometrySource2dNativeSql =
-    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
-    BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
-#endif
-
 END_UNNAMED_NAMESPACE
 
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
@@ -1857,12 +1845,8 @@ struct TileGeometrySource
         GeomBlob(void const* blob, int size) : m_blob(blob), m_size(size) { }
         template<typename T> GeomBlob(T& stmt, int columnIndex)
             {
-#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-            m_blob = stmt.GetValueBinary(columnIndex, &m_size);
-#else
             m_blob = stmt.GetValueBlob(columnIndex);
             m_size = stmt.GetColumnBytes(columnIndex);
-#endif
             }
     };
 protected:
@@ -1911,26 +1895,65 @@ public:
         }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct GeometrySelector3d
+{
+    static Utf8CP GetSql()
+        {
+        return "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+                BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+        }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct TileGeometryProcessorContext : NullContext
+    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
+        {
+        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
+
+        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7)),
+                 boxLo  = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10)),
+                 boxHi  = DPoint3d::From(stmt.GetValueDouble(11), stmt.GetValueDouble(12), stmt.GetValueDouble(13));
+
+        Placement3d placement(origin,
+                YawPitchRollAngles(Angle::FromDegrees(stmt.GetValueDouble(2)), Angle::FromDegrees(stmt.GetValueDouble(3)), Angle::FromDegrees(stmt.GetValueDouble(4))),
+                ElementAlignedBox3d(boxLo.x, boxLo.y, boxLo.z, boxHi.x, boxHi.y, boxHi.z));
+
+        return TileGeometrySource3d::Create(categoryId, db, geomBlob, placement);
+        }
+};
+
+#ifdef WIP_2D_TILES
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct GeometrySelector2d
+{
+    static Utf8CP GetSql()
+        {
+        return "SELECT CategoryId,GeometryStream,Rotation,Origin_X,Origin_Y,BBoxLow_X,BBoxLow_Y,BBoxHigh_X,BBoxHigh_Y FROM "
+                BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
+        }
+
+    static Placement3d ExtractPlacement(BeSQLite::CachedStatement& stmt)
+        {
+        double rotation = 
+        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble
+        }
+};
+#endif
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+template<typename T> struct TileGeometryProcessorContext : NullContext
 {
 private:
-    IGeometryProcessorR     m_processor;
-    TileGenerationCacheCR   m_cache;
-
-
-#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-    BeSQLite::EC::CachedECSqlStatementPtr   m_statement;
-
-    bool IsValueNull(int index) { return m_statement->IsValueNull(index); }
-#else
-    BeSQLite::CachedStatementPtr            m_statement;
+    IGeometryProcessorR             m_processor;
+    TileGenerationCacheCR           m_cache;
+    BeSQLite::CachedStatementPtr    m_statement;
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
-#endif
 
     virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
         {
@@ -1941,11 +1964,7 @@ private:
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
 public:
     TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
-#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-    m_statement(db.GetPreparedECSqlStatement(m_cache.GetModel().Is2dModel() ? s_geometrySource2dECSql : s_geometrySource3dECSql))
-#else
-    m_statement(db.GetCachedStatement(m_cache.GetModel().Is2dModel() ? s_geometrySource2dNativeSql : s_geometrySource3dNativeSql))
-#endif
+    m_statement(db.GetCachedStatement(T::GetSql()))
         {
         SetDgnDb(db);
         }
@@ -1954,7 +1973,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bool allowLoad)
+template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
     {
     GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
     if (nullptr != pSrc)
@@ -1979,24 +1998,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
 
     if (BeSQLite::BE_SQLITE_ROW == stmt.Step() && !IsValueNull(1))
         {
-        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
-        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
-
-#if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-        DPoint3d origin = stmt.GetValuePoint3d(5),
-                 boxLo  = stmt.GetValuePoint3d(6),
-                 boxHi  = stmt.GetValuePoint3d(7);
-#else
-        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7)),
-                 boxLo  = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10)),
-                 boxHi  = DPoint3d::From(stmt.GetValueDouble(11), stmt.GetValueDouble(12), stmt.GetValueDouble(13));
-#endif
-
-        Placement3d placement(origin,
-                YawPitchRollAngles(Angle::FromDegrees(stmt.GetValueDouble(2)), Angle::FromDegrees(stmt.GetValueDouble(3)), Angle::FromDegrees(stmt.GetValueDouble(4))),
-                ElementAlignedBox3d(boxLo.x, boxLo.y, boxLo.z, boxHi.x, boxHi.y, boxHi.z));
-
-        auto geomSrcPtr = TileGeometrySource3d::Create(categoryId, GetDgnDb(), geomBlob, placement);
+        auto geomSrcPtr = T::ExtractGeometrySource(stmt, GetDgnDb());
 
         stmt.Reset();
         m_cache.GetDbMutex().Leave();
@@ -2018,7 +2020,7 @@ StatusInt TileGeometryProcessorContext::_VisitElement(DgnElementId elementId, bo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr TileGeometryProcessorContext::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
     {
     Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
     return WasAborted() ? nullptr : graphic;
@@ -2386,7 +2388,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
     // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold);
-    TileGeometryProcessorContext    context(processor, db, cache);
+    TileGeometryProcessorContext<GeometrySelector3d> context(processor, db, cache);
 
     return processor.OutputGraphics(context);
     }
