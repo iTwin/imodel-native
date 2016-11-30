@@ -387,7 +387,7 @@ TEST_F(DirectoryObserverTests, GetObservedDirectories)
     //removing added directories
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveObservedDirectories(newDirList));
     ASSERT_EQ(m_filesList, m_testObserver->GetObservedDirectories());
-    tempDirs.empty();
+    tempDirs.clear();
     ASSERT_TRUE(m_testObserver->GetObserverStatus());
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->AddObservedDirectories(newDirList));
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveAllObservedDirectories());
@@ -415,11 +415,9 @@ TEST_F(DirectoryObserverTests, GetObservedDirectories_CallbackOnly)
     newDirList.insert(testDir2);
     newDirList.insert(testDir3);
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->AddObservedDirectories(newDirList));
-    ASSERT_EQ(FileChanges::FileAdded, m_changeStatus);
     ASSERT_EQ(newDirList, m_testObserver->GetObservedDirectories());
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveAllObservedDirectories());
-    ASSERT_EQ(FileChanges::FileRemoved, m_changeStatus);
-    newDirList.empty();
+    newDirList.clear();
     ASSERT_EQ(newDirList, m_testObserver->GetObservedDirectories());
     StopBasicObservation();
     }
