@@ -172,7 +172,7 @@ private:
     void AddBinaryData (void const* data, size_t size);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     void AddMeshIndices(Json::Value& rootNode, Json::Value& primitive, bvector<uint32_t> const& indices, Utf8StringCR idStr);
-    void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, TileMeshR mesh, Utf8StringCR idStr);
+    void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
 
     BeFileName  GetBinaryDataFileName() const;
 

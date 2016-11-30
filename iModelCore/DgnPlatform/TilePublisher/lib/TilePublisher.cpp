@@ -13,6 +13,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
 
+static double   s_testWidth = 1.0;        // Temporary...
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -674,7 +675,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
         techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
 
         techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
-        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (aphla)
+        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (alpha)
     
         techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
         techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
@@ -772,7 +773,7 @@ Utf8String TilePublisher::AddMeshMaterial (Json::Value& rootNode, bool& isTextur
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
@@ -795,6 +796,8 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
     Utf8String      s_techniqueName = "polylineTechnique";
 
+    materialValue["values"]["width"] = s_testWidth;
+
     if (!rootNode.isMember("techniques") ||
         !rootNode["techniques"].isMember(s_techniqueName.c_str()))
         {
@@ -803,10 +806,10 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "mv", GLTF_FLOAT_MAT4, "CESIUM_RTC_MODELVIEW");
         AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
         AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
-        AddTechniqueParameter(technique, "previous", GLTF_FLOAT_VEC3, "PREVIOUS");
-        AddTechniqueParameter(technique, "next", GLTF_FLOAT_VEC3, "NEXT");
+        AddTechniqueParameter(technique, "direction", GLTF_FLOAT_VEC3, "DIRECTION");
+        AddTechniqueParameter(technique, "texture", GLTF_FLOAT_VEC2, "TEXTURE");
+        AddTechniqueParameter(technique, "length", GLTF_FLOAT_VEC2, "LENGTH");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
-        AddTechniqueParameter(technique, "width", GLTF_FLOAT, "WIDTH");
 
         static char         *s_programName                    = "polylineProgram",
                             *s_vertexShaderName               = "polylineVertexShader",
@@ -825,10 +828,9 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         techniqueAttributes["a_next"] = "next";
         techniqueAttributes["a_batchId"] = "batch";
         techniqueAttributes["a_pos"]  = "pos";
-        techniqueAttributes["a_previous"] = "previous";
-        techniqueAttributes["a_next"] = "next";
-        techniqueAttributes["a_width"] = "width";
-
+        techniqueAttributes["a_direction"]  = "direction";
+        techniqueAttributes["a_texture"] = "texture";
+        techniqueAttributes["a_length"] = "length";
 
         auto& techniqueUniforms = technique["uniforms"];
         techniqueUniforms["u_mv"] = "mv";
@@ -837,9 +839,9 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         auto& rootProgramNode = (rootNode["programs"][s_programName] = Json::objectValue);
         rootProgramNode["attributes"] = Json::arrayValue;
         AppendProgramAttribute(rootProgramNode, "a_pos");
-        AppendProgramAttribute(rootProgramNode, "a_previous");
-        AppendProgramAttribute(rootProgramNode, "a_next");
-        AppendProgramAttribute(rootProgramNode, "a_width");
+        AppendProgramAttribute(rootProgramNode, "a_direction");
+        AppendProgramAttribute(rootProgramNode, "a_texture");
+        AppendProgramAttribute(rootProgramNode, "a_length");
         AppendProgramAttribute(rootProgramNode, "a_batchId");
 
         rootProgramNode["vertexShader"]   = s_vertexShaderName;
@@ -856,6 +858,27 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
         AddTechniqueParameter(technique, "color", GLTF_FLOAT_VEC4, nullptr);
         techniqueUniforms["u_color"] = "color";
+        AddTechniqueParameter(technique, "width", GLTF_FLOAT, nullptr);
+        techniqueUniforms["u_width"] = "width";
+
+
+
+        technique["states"]["enable"].append (3042);  // BLEND
+
+        auto&   techniqueFunctions =    technique["states"]["functions"] = Json::objectValue;
+
+        techniqueFunctions["blendEquationSeparate"] = Json::arrayValue;
+        techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
+
+        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
+        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (alpha)
+    
+        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
+        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
+        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
+        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
+        
+        techniqueFunctions["depthMask"] = "false";
 
         rootNode["techniques"][s_techniqueName.c_str()] = technique;
         }
@@ -950,35 +973,32 @@ void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const*
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, TileMeshR mesh, Utf8StringCR idStr)
+void TilePublisher::AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr)
     {
     Utf8String  bvBatchId        = Concat("bvBatch_", idStr),
                 accBatchId       = Concat("accBatch_", idStr);
 
-    if (mesh.ValidIdsPresent())
-        {
-        bvector<uint16_t>   batchIds;
+    bvector<uint16_t>   batchIds;
 
-        for (auto const& elemId : mesh.EntityIds())
-            batchIds.push_back(m_batchIds.GetBatchId(elemId));
+    for (auto const& elemId : entityIds)
+        batchIds.push_back(m_batchIds.GetBatchId(elemId));
 
-        primitive["attributes"]["BATCHID"] = accBatchId;
+    primitive["attributes"]["BATCHID"] = accBatchId;
 
-        auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
-        rootNode["bufferViews"][bvBatchId] = Json::objectValue;
-        rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
-        rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
-        rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
-        rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
+    auto nBatchIdBytes = batchIds.size() * sizeof(uint16_t);
+    rootNode["bufferViews"][bvBatchId] = Json::objectValue;
+    rootNode["bufferViews"][bvBatchId]["buffer"] = "binary_glTF";
+    rootNode["bufferViews"][bvBatchId]["byteOffset"] = m_binaryData.size();
+    rootNode["bufferViews"][bvBatchId]["byteLength"] = nBatchIdBytes;
+    rootNode["bufferViews"][bvBatchId]["target"] = GLTF_ARRAY_BUFFER;
 
-        AddBinaryData (batchIds.data(), nBatchIdBytes);
-        rootNode["accessors"][accBatchId] = Json::objectValue;
-        rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
-        rootNode["accessors"][accBatchId]["byteOffset"] = 0;
-        rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
-        rootNode["accessors"][accBatchId]["count"] = batchIds.size();
-        rootNode["accessors"][accBatchId]["type"] = "SCALAR";
-        }
+    AddBinaryData (batchIds.data(), nBatchIdBytes);
+    rootNode["accessors"][accBatchId] = Json::objectValue;
+    rootNode["accessors"][accBatchId]["bufferView"] = bvBatchId;
+    rootNode["accessors"][accBatchId]["byteOffset"] = 0;
+    rootNode["accessors"][accBatchId]["componentType"] = GLTF_UNSIGNED_SHORT;
+    rootNode["accessors"][accBatchId]["count"] = batchIds.size();
+    rootNode["accessors"][accBatchId]["type"] = "SCALAR";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1074,7 +1094,8 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
 
     Json::Value         primitive = Json::objectValue;
 
-    AddMeshBatchIds(rootNode, primitive, mesh, idStr);
+    if (mesh.ValidIdsPresent())
+        AddMeshBatchIds(rootNode, primitive, mesh.EntityIds(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     static bool     s_doQuantize = true;
@@ -1114,7 +1135,7 @@ void TilePublisher::AddMesh(Json::Value& rootNode, TileMeshR mesh, size_t index)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     08/2016
+* @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t index)
     {
@@ -1124,20 +1145,23 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     Utf8String idStr(std::to_string(index).c_str());
 
     Utf8String bvPositionId     = Concat("bvPosition_", idStr),
-               bvPreviousId     = Concat("bvPrev_", idStr),
-               bvNextId         = Concat("bvNext_", idStr),
-               bvWidthId        = Concat("bvWidth_", idStr),
+               bvDirectionId    = Concat("bvDirection_", idStr),
+               bvTextureId      = Concat("bvTexture_", idStr),
+               bvLengthId       = Concat("bvLength_", idStr),
                accPositionId    = Concat("accPosition_", idStr),
-               accPreviousId    = Concat("accPrevious_", idStr),
-               accNextId        = Concat("accNext_", idStr),
-               accWidthId       = Concat("accWidth_", idStr);
+               accTextureId     = Concat("accTexture_", idStr),
+               accLengthId      = Concat("accLength_", idStr),
+               accBatchId       = Concat("accBatch_", idStr),
+               accDirectionId   = Concat("accDirection_", idStr);
 
-    bvector<double>             widths;
-    bvector<DPoint3d>           points, previous, next;
+    bvector<DPoint3d>           points, directions;
+    bvector<DPoint2d>           texture;
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
-    static double               s_degenerateSegmentTolerance = 1.0E-5;
-    static double               s_testWidth = 5;
+    bvector<DgnElementId>       entityIds;
     bvector<uint32_t>           indices;
+    bvector<double>             lengths;
+    double                      width = s_testWidth;
+    static double               s_degenerateSegmentTolerance = 1.0E-5;
 
     BeAssert (mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
 
@@ -1151,6 +1175,22 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             if (p0.IsEqual(p1, s_degenerateSegmentTolerance))
                 continue;
 
+            DVec3d          direction;
+            double          length = direction.NormalizedDifference(p1, p0);
+            DPoint2d        textureMin = DPoint2d::From(0.0, -1.0), textureMax = DPoint2d::From(1.0, 1.0);
+           
+            if (i > 0)
+                {
+                p0 = DPoint3d::FromSumOf (p0, direction, -width);
+                textureMin.x = - width / length;
+                }
+
+            if (i < polyline.m_indices.size() - 2)
+                {
+                p1 = DPoint3d::FromSumOf (p1, direction, width);
+                textureMax.x = 1.0 +  width / length;
+                }
+
             indices.push_back(points.size());
             indices.push_back(points.size() + 2);
             indices.push_back(points.size() + 1);
@@ -1159,38 +1199,37 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             indices.push_back(points.size() + 2);
             indices.push_back(points.size() + 3);
 
-            widths.push_back(-s_testWidth);
-            widths.push_back(s_testWidth);
-            widths.push_back(-s_testWidth);
-            widths.push_back(s_testWidth);
-
             points.push_back(p0);
             points.push_back(p0);
             points.push_back(p1);
             points.push_back(p1);
 
-            DPoint3d    previousPoint = (i == 0) ? DPoint3d::FromSumOf (p0, 2.0, p1, -1.0) : meshPoints[polyline.m_indices[i-1]];
-            DPoint3d    nextPoint     = (i == polyline.m_indices.size() - 2) ? DPoint3d::FromSumOf(p1, 2.0, p0, -1.0) : meshPoints[polyline.m_indices[i+2]];
+            for (size_t j=0; j<4; j++)
+                {
+                directions.push_back(direction);
+                lengths.push_back (length);
+                }
+            texture.push_back(DPoint2d::From(textureMin.x, textureMin.y));
+            texture.push_back(DPoint2d::From(textureMin.x, textureMax.y));
+            texture.push_back(DPoint2d::From(textureMax.x, textureMin.y));
+            texture.push_back(DPoint2d::From(textureMax.x, textureMax.y));
 
-            previous.push_back (previousPoint);
-            previous.push_back (previousPoint);
-            previous.push_back (p0);
-            previous.push_back (p0);
+            if (mesh.ValidIdsPresent())
+                {
+                auto&   entityId0 = mesh.EntityIds().at(polyline.m_indices[i]);
+                auto&   entityId1 = mesh.EntityIds().at(polyline.m_indices[i+1]);
 
-            next.push_back (p1);
-            next.push_back (p1);
-            next.push_back (nextPoint);
-            next.push_back (nextPoint);
+                entityIds.push_back (entityId0);
+                entityIds.push_back (entityId0);
+                entityIds.push_back (entityId1);
+                entityIds.push_back (entityId1);
+                }
             }
         }
 
-    Json::Value         primitive = Json::objectValue;
-    AddMeshBatchIds(rootNode, primitive, mesh, idStr);
-
-    DRange3d        pointRange = DRange3d::From(points);
-
-    pointRange.Extend (previous.front());
-    pointRange.Extend (next.back());
+    Json::Value     primitive = Json::objectValue;
+    DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
+    DRange2d        textureRange = DRange2d::From(texture);
 
     static bool     s_doQuantize = false;
 
@@ -1198,21 +1237,21 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     primitive["mode"] = GLTF_TRIANGLES;
 
     primitive["attributes"]["POSITION"] = accPositionId;
-    primitive["attributes"]["PREVIOUS"] = accPreviousId;
-    primitive["attributes"]["NEXT"] = accNextId;
-    primitive["attributes"]["WIDTH"] = accWidthId;
+    primitive["attributes"]["DIRECTION"] = accDirectionId;
+    primitive["attributes"]["TEXTURE"] = accTextureId;
+    primitive["attributes"]["LENGTH"] = accLengthId;
+    primitive["attributes"]["BATCH"] = accBatchId;
     AddMeshVertexAttribute (rootNode, &points.front().x, bvPositionId, accPositionId, 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
-    AddMeshVertexAttribute (rootNode, &previous.front().x, bvPreviousId, accPreviousId, 3,previous.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
-    AddMeshVertexAttribute (rootNode, &next.front().x, bvNextId, accNextId, 3, next.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
-    AddMeshVertexAttribute (rootNode, &widths.front(), bvWidthId, accWidthId, 1, widths.size(), "SCALAR", false, nullptr, nullptr);
-
+    AddMeshVertexAttribute (rootNode, &directions.front().x, bvDirectionId, accDirectionId, 3, directions.size(), "VEC3", s_doQuantize, &directionRange.low.x, &directionRange.high.x);
+    AddMeshVertexAttribute (rootNode, &texture.front().x, bvTextureId, accTextureId, 3, texture.size(), "VEC2", s_doQuantize, &textureRange.low.x, &textureRange.high.x);
+    AddMeshVertexAttribute (rootNode, &lengths.front(), bvLengthId, accLengthId, 1, lengths.size(), "SCALAR", false, nullptr, nullptr);
+    AddMeshBatchIds(rootNode, primitive, entityIds, idStr);
     AddMeshIndices (rootNode, primitive, indices, idStr);
     AddMeshPointRange(rootNode["accessors"][accPositionId], pointRange);
 
     rootNode["meshes"]["mesh_0"]["primitives"].append(primitive);
     rootNode["buffers"]["binary_glTF"]["byteLength"] = m_binaryData.size();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
@@ -1240,8 +1279,6 @@ static DPoint3d  cartesianFromRadians (double longitude, double latitude, double
     return DPoint3d::FromSumOf (earthPoint, heightDelta);
     };
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1250,8 +1287,6 @@ bool PublisherContext::IsGeolocated () const
     return nullptr != GetDgnDb().Units().GetDgnGCS();
     }
     
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
