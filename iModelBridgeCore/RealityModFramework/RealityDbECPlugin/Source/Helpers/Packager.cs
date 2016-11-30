@@ -691,7 +691,9 @@ namespace IndexECPlugin.Source.Helpers
             query.SelectClause.SelectAllProperties = false;
             query.SelectClause.SelectedProperties = new List<IECProperty>();
             query.SelectClause.SelectedProperties.Add(spatialEntityClass.First(prop => prop.Name == "Name"));
-            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "Name"), "OpenStreetMap"));
+            query.WhereClause.Add(new PropertyExpression(RelationalOperator.EQ, spatialEntityClass.Properties(true).First(p => p.Name == "DataSourceTypesAvailable"), "OSM"));
+            query.WhereClause.SetLogicalOperatorAfter(0, LogicalOperator.AND);
             query.SelectClause.SelectedRelatedInstances.Add(dataSourceRelCrit);
             query.SelectClause.SelectedRelatedInstances.Add(metadataRelCrit);
 
