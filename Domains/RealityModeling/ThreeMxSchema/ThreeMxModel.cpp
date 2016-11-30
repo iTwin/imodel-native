@@ -628,12 +628,11 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
+TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
     {
     ScenePtr  scene = new Publish3mxScene(m_dgndb, m_location, m_sceneFile.c_str(), nullptr);
-    
-    if (SUCCESS != scene->LoadScene())                                                                                                                                                                
-        return TileGenerator::Status::NoGeometry;
+    if (SUCCESS != scene->LoadScene())
+        return TileGeneratorStatus::NoGeometry;
 
     ClipVectorPtr       tileClip;
 
@@ -654,5 +653,6 @@ TileGenerator::Status ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tr
     while (publishContext.ProcessingRemains())
         BeThreadUtilities::BeSleep(s_sleepMillis);
 
-    return progressMeter._WasAborted() ? TileGenerator::Status::Aborted : TileGenerator::Status::Success;
+    return progressMeter._WasAborted() ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;
     }
+
