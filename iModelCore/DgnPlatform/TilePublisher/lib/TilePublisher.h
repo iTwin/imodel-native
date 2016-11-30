@@ -95,8 +95,8 @@ protected:
 
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
-    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _BeginProcessModel(DgnModelCR model) override;
-    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status) override;
+    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
 
@@ -112,8 +112,8 @@ public:
     bool WantPolylines() const { return m_publishPolylines; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
 
-    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
-    TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
+    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
+    TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
@@ -265,14 +265,3 @@ public:
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 
-
-
-
-
-
-
-
-
-
-
-                                         
