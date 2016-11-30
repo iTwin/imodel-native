@@ -481,3 +481,51 @@ TEST_F(DataCaptureTests, QueryPhotosFromCamera)
     //All photos was deleted from this camera
     ASSERT_EQ(photoCount5, 0);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(DataCaptureTests, ImportXMLFile)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"ImportXMLFile.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr modelPtr = projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(modelPtr.IsValid());
+    ASSERT_TRUE(modelPtr->IsSpatialModel());
+    SpatialModelPtr spatialModelPtr =  modelPtr->ToSpatialModelP();
+
+
+    BeFileName assetsDirectory = GetHost().GetDgnPlatformAssetsDirectory();
+    BeFileName xmlFileName = assetsDirectory;
+    xmlFileName.AppendToPath(L"TestFiles/BLOCK_DEF_SOL_AERIEN.xml");
+
+    XmlReader myReader(*spatialModelPtr);
+    ASSERT_EQ(SUCCESS, myReader.ReadXml(xmlFileName));
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CCPhotoPlannerTests, ImportXMLFileFormat2)
+    {
+    DgnDbPtr projectPtr = CreateProject(L"ImportXMLFile.dgndb");
+    ASSERT_TRUE(projectPtr.IsValid());
+
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
+    DgnModelPtr modelPtr = projectPtr->Models().GetModel(spatialModelId);
+    ASSERT_TRUE(modelPtr.IsValid());
+    ASSERT_TRUE(modelPtr->IsSpatialModel());
+    SpatialModelPtr spatialModelPtr =  modelPtr->ToSpatialModelP();
+
+
+    BeFileName assetsDirectory = GetHost().GetDgnPlatformAssetsDirectory();
+    BeFileName xmlFileName = assetsDirectory;
+    xmlFileName.AppendToPath(L"TestFiles/myBlock.xml");
+
+    XmlReader myReader(*spatialModelPtr);
+    ASSERT_EQ(SUCCESS, myReader.ReadXml(xmlFileName));
+
+    }

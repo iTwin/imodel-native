@@ -76,22 +76,26 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         }
 
     BeXmlStatus status(BEXML_Success);
-    // Required elements
     Utf8String              cameraModelType;
-    double                  focalLengthPixels;
-    int                     ImgDimWidth;
-    int                     ImgDimHeight;
-    if (BEXML_Success != (status = sourceNodeRef.GetContent(cameraModelType,                "CameraModelType")) ||
-        BEXML_Success != (status =sourceNodeRef.GetContentDoubleValue(focalLengthPixels,    "FocalLengthPixels")) ||
-        BEXML_Success != (status =sourceNodeRef.GetContentInt32Value(ImgDimWidth,           "ImageDimensions/Width")) ||
-        BEXML_Success != (status =sourceNodeRef.GetContentInt32Value(ImgDimHeight,          "ImageDimensions/Height")))
+    if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraModelType, "CameraModelType")))
         {
-        return status;
+        //NEEDSWORK: Not Yet
+        //cameraInfo.SetCameraModel(focalLengthPixels);
         }
-    cameraInfo.SetFocalLenghtPixels(focalLengthPixels);
-    ImageDimensionType ImgDim(ImgDimWidth,ImgDimHeight);
-    cameraInfo.SetImageDimension(ImgDim);
+    double                  focalLengthPixels;
+    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLengthPixels, "FocalLengthPixels")))
+        {
+        cameraInfo.SetFocalLenghtPixels(focalLengthPixels);
+        }
 
+    int                     ImgDimWidth(0);
+    int                     ImgDimHeight(0);
+    if (BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimWidth,           "ImageDimensions/Width")) &&
+        BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimHeight,          "ImageDimensions/Height")))
+        {
+        ImageDimensionType ImgDim(ImgDimWidth, ImgDimHeight);
+        cameraInfo.SetImageDimension(ImgDim);
+        }
 
     // if Principal Point not specified, use center of pixel array
     DPoint2d principalPoint;
@@ -173,35 +177,26 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, PhotoR photo)
     BeXmlStatus status(BEXML_Success);
 
     int id;
-    if (BEXML_Success != (status = sourceNodeRef.GetContentInt32Value(id,"Id")))
-        return status;
+    if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id,"Id")))
+        photo.SetPhotoId(id);
 
     Utf8String imagePath;
-    if (BEXML_Success != (status = sourceNodeRef.GetContent(imagePath,"ImagePath")))
+    if (BEXML_Success == (status = sourceNodeRef.GetContent(imagePath,"ImagePath")))
         {
-        return status;
+        //NEEDSWORK: not now
         }
 
     DPoint3d  poseCenter;
-    if (BEXML_Success != (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) ||
-        BEXML_Success != (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) ||
-        BEXML_Success != (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")))
-        {
-//         WPrintfString msg(L"Pose information for photo id %d has bad 'Center' element", info.id);
-//         mdlOutput_messageCenter(OutputMessagePriority::Warning, msg, NULL, OutputMessageAlert::None);
-        return status;
-        }                                                                                                           
-
     RotationMatrixType rotation;
-    if (BEXML_Success != (status = ReadRotationFromCameraPose(sourceNodeRef, rotation)))
+    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) &&
+        BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) &&
+        BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")) &&
+        BEXML_Success == (status = ReadRotationFromCameraPose(sourceNodeRef, rotation)))
         {
-//         WPrintfString msg(L"Pose information for photo id %d has bad 'Rotation' element", info.id);
-//         mdlOutput_messageCenter(OutputMessagePriority::Warning, msg, NULL, OutputMessageAlert::None);
-        return status;
-        }
-    //set pose in photo
-    PoseType pose(poseCenter, rotation);
-    photo.SetPose(pose);
+        //set pose in photo
+        PoseType pose(poseCenter, rotation);
+        photo.SetPose(pose);
+        }                                                                                                           
 
     return BEXML_Success;
     }
@@ -224,8 +219,6 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
     CameraPtr pCameraInfo(Camera::Create(m_model));
     if (BEXML_Success != (status = ReadCameraInfo(photoGroupNode, *pCameraInfo, m_photoGroupNumber)))
         {
-//         WPrintfString msg(L"Error reading camera info for photo group %s", photoGroupName);
-//         mdlOutput_messageCenter(OutputMessagePriority::Warning, msg, NULL, OutputMessageAlert::None);
         return status;
         }
 
