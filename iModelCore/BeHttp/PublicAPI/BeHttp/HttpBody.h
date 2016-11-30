@@ -270,4 +270,45 @@ public:
     BEHTTP_EXPORT Utf8String AsString() const;
 };
 
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpCompressedBody> HttpCompressedBodyPtr;
+struct EXPORT_VTABLE_ATTRIBUTE HttpCompressedBody : HttpBody
+{
+private:
+    std::shared_ptr<bvector<char>>  m_data;
+    HttpBodyPtr                     m_dataBody;
+    HttpBodyPtr                     m_contentBody;
+
+private:
+    BentleyStatus Compress();
+
+protected:
+    HttpCompressedBody(HttpBodyPtr httpBody);
+    virtual ~HttpCompressedBody() {}
+
+public:
+    BEHTTP_EXPORT static HttpCompressedBodyPtr Create(HttpBodyPtr content);
+
+    //! Calling Open() compresses the content body
+    BEHTTP_EXPORT void Open() override;
+
+    BEHTTP_EXPORT void Close() override;
+
+    //! Uses binary body for interacting with data
+    BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+    BEHTTP_EXPORT BentleyStatus GetPosition(uint64_t& position) override;
+
+    //! Uses binary body for interacting with data
+    BEHTTP_EXPORT BentleyStatus Reset() override;
+    //! Not supported
+    BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+    BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+    BEHTTP_EXPORT uint64_t GetLength() override;
+
+    //! Not supported
+    BEHTTP_EXPORT Utf8String AsString() const override;
+};
+
 END_BENTLEY_HTTP_NAMESPACE
