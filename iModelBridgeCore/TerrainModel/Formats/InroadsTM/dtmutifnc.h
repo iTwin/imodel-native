@@ -122,7 +122,7 @@ void aecDTM_setFeatureFlag
 (
     struct CIVdtmftr *ftrP,
     struct CIVdtmsrf *srfP,
-    byte *flagP
+    unsigned char *flagP
 );
 
 int aecDTM_getFeatureInfo
@@ -141,7 +141,7 @@ int aecDTM_getFeatureInfo
     long      *numStylesP,                /* <=  number of styles (or NULL)   */
     CIVdtmpaynam **payItemsPP,            /* <=  feature's pay items (or NULL)*/
     long         *numPayItemsP,           /* <=  number of pay items (or NULL)*/
-    byte   *flagP                      /* <=  feature's flag (or NULL)     */
+    unsigned char   *flagP                      /* <=  feature's flag (or NULL)     */
 );
 
 int aecDTM_setFeatureInfo
@@ -161,7 +161,7 @@ int aecDTM_setFeatureInfo
     long         numStyles,               /*  => number of styles (or NULL)   */
     CIVdtmpaynam *payItemsP,              /*  => pay items (or NULL)          */
     long         numPayItems,             /*  => # of pay items               */
-    byte      *flagP,                  /*  => feature's flag (or NULL)     */
+    unsigned char      *flagP,                  /*  => feature's flag (or NULL)     */
     BOOL         bReTin                   /*  => retriangulate (usually TRUE) */
 );
 

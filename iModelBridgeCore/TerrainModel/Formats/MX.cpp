@@ -60,7 +60,8 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                     MXModelObjectPtr<ModelTableRecord> modelTableRecord;
                     if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                         {
-                        WString modelName (modelTableRecord->modelName());
+                        WString modelName;
+                        modelName.AssignA (modelTableRecord->modelName ());
                         if (modelTableRecord->modelType() == 0 || asLong(modelTableRecord->modelType()) == asLong ("    "))
                             {
                             // normal string model add this name.
@@ -80,7 +81,8 @@ const TerrainInfoList& MXFilImporter::_GetTerrains () const
                                     if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                         {
                                         // triangulation string
-                                        WString stringName (stringTableRecord->stringName());
+                                        WString stringName;
+                                        stringName.AssignA (stringTableRecord->stringName ());
                                         WString name = stringName + modelName;
                                         m_surfaces.push_back (TerrainInfo (name.GetWCharCP(), nullptr, true));
                                         }
@@ -114,7 +116,8 @@ void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& n
                 MXModelObjectPtr<ModelTableRecord> modelTableRecord;
                 if (iter->getRecord(modelTableRecord.GetR(), ModelObject::Read) == eOk)
                     {
-                    WString modelName (modelTableRecord->modelName());
+                    WString modelName;
+                    modelName.AssignA (modelTableRecord->modelName ());
                     if (modelTableRecord->modelType() == 0 || asLong(modelTableRecord->modelType()) == asLong ("    "))
                         {
                         // normal string model add this name.
@@ -135,7 +138,8 @@ void MXFilImporter::DoImport (bmap <WString, Bentley::TerrainModel::BcDTMPtr>& n
                                 if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                                     {
                                     // triangulation string
-                                    WString stringName (stringTableRecord->stringName());
+                                    WString stringName;
+                                    stringName.AssignA (stringTableRecord->stringName ());
                                     WString name = stringName + modelName;
                                     if (importAll || nameDtms.find (name) != nameDtms.end())
                                         nameDtms[name] = ImportTriangulation (stringTableRecord.get(), name.GetWCharCP());
@@ -191,7 +195,8 @@ ImportedTerrainList MXFilImporter::_ImportTerrains (bvector<WString>& names) con
 
 BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) const
     {
-    WString modelName (modelTableRecord->modelName ());
+    WString modelName;
+    modelName.AssignA (modelTableRecord->modelName ());
 
     BcDTMPtr dtm;
     if (m_callback && !m_callback->StartTerrain (modelName.GetWCharCP (), L"", dtm))
@@ -213,7 +218,8 @@ BcDTMPtr MXFilImporter::ImportStringModel (ModelTableRecord* modelTableRecord) c
             MXModelObjectPtr<StringTableRecord> stringTableRecord;
             if (iter->getRecord(stringTableRecord.GetR(), ModelObject::Read) == eOk)
                 {
-                WString stringName(stringTableRecord->stringName());
+                WString stringName;
+                stringName.AssignA (stringTableRecord->stringName ());
                 int numDims = stringTableRecord->type() % 100;
                 bool isPointString = (((numDims == 3) || (numDims == 4)) && (stringTableRecord->stringName()[0] == 'P'));
                 if (stringTableRecord->stringName()[0] != '*') // If we aren't a text straing
@@ -445,11 +451,11 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
     if (hasTransform)
         {
         DPoint3d fixedPoint;
-        DPoint3d directionVector;
+        DVec3d directionVector;
         double scale;
         double aspectFix;
 
-        if (!transform.isUniformScaleAndRotateAroundLine(&fixedPoint, &directionVector, &aspectFix, &scale))
+        if (!transform.IsUniformScaleAndRotateAroundLine(fixedPoint, directionVector, aspectFix, scale))
             {
             return MXExportError::Error;
             }
@@ -470,7 +476,7 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
         }
 
     WString wModelName(inModelName);
-    
+
     wModelName.ToUpper();
     if (!IsValidModelName(wModelName.c_str()))
         return MXExportError::Error;
@@ -502,7 +508,7 @@ MXFilExporter::MXExportError MXFilExporter::Export(WCharCP filename, WCharCP inM
 
         modelTableRecord = newModelTableRecord.release();
         }
-    
+
     if (asLong(modelTableRecord->modelType()) != asLong("TRIA"))
         return MXExportError::Error;
 

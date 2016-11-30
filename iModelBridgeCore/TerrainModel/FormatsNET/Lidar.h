@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/Lidar.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -36,7 +36,7 @@ public ref class LidarImporter : TerrainImporter
     ref class ClassificationInfo
         {
         public: property LidarImporter::Classification Classification;
-        public: property UInt64 Count;
+        public: property uint64_t Count;
         };
 
     private: LidarImporterP m_importer;

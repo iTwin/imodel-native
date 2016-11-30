@@ -386,8 +386,8 @@ BENTLEYDTM_EXPORT int bcdtmObject_rollBackDtmObject
  DTMFeatureId dtmFeatureId=dtmP->nullFeatureId ;
  DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
  DPoint3d *pointP;
- long numCleanUpFeatures,numTinFeaturesRolledBack,numTinFeatureErrorsRolledBack ;
- long numNewFeaturesRolledBack,numRandomPointsRolledBack,totalCleanUpFeatures, markSize ;
+ long numCleanUpFeatures = 0,numTinFeaturesRolledBack = 0,numTinFeatureErrorsRolledBack = 0;
+ long numNewFeaturesRolledBack = 0,numRandomPointsRolledBack = 0,totalCleanUpFeatures, markSize ;
  unsigned char *markFlagP=nullptr ;
 
 
@@ -4443,7 +4443,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_placeVoidsAroundNullValuesDtmObject(BC_DTM_OBJ
  DTMFeatureType dtmFeatureType;
  long offset1,offset2,voidHull,numNullPoints ;
  DTMDirection direction;
- long startPnt,nextPnt,endPnt,scanPnt,numVoids=0,numIslands=0 ;
+ long startPnt,nextPnt = 0,endPnt,scanPnt,numVoids=0,numIslands=0 ;
  unsigned char *charP,*voidLineP=nullptr ;
  double area ;
  DPoint3d *pointP ;
@@ -4773,7 +4773,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_slopeModifyDemTriangulationDtmObject(BC_DTM_OB
 /*
 **              Check For Void Line
 */
-                voidLine = FALSE ;
+                voidLine = false ;
                 if( voidsInDtm )if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidLine)) goto errexit ;
                 if( ! voidLine )
                   {

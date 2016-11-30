@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 #include "bcDTMStream.h"
 
 BENTLEYDTM_EXPORT bool sOutputToConsole = false;
@@ -24,7 +24,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
 **                    =  1 - User    Error Message
 **                    =  2 - System  Error Message
 **                    =  3 - Warning Message
-**                    = 10 - Status  Message Write In MicroStation Error Message Field 
+**                    = 10 - Status  Message Write In MicroStation Error Message Field
 **  ==> MessageLevel  = Message Level
 **  ==> MessageNumber = Message Number
 **  ==> DtmMessage    = Message To Be Displayed
@@ -52,7 +52,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
        va_start(arg_ptr,DtmMessage) ;
        vsprintf(Message,DtmMessage,arg_ptr) ;
        va_end(arg_ptr) ;
-      }  
+      }
 /*
 ** Write To Log File If Opened
 */
@@ -60,7 +60,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
       {
        bcdtmUtl_getDateAndTime(Dstr,Tstr) ;
        fprintf(fpLOG,"%s %s\n",Tstr,Message) ;
-       fflush(fpLOG) ; 
+       fflush(fpLOG) ;
       }
 /*
 **  Write to Standard Out
@@ -79,13 +79,13 @@ BENTLEYDTM_EXPORT int bcdtmWrite_message(long MessageType,long MessageLevel,long
    /*
 **  Update Global DTM Error Register
 */
-    if( MessageType >= 1 && MessageType <= 2 ) 
+    if( MessageType >= 1 && MessageType <= 2 )
       {
-       Message[255] = 0 ; 
+       Message[255] = 0 ;
        DTM_DTM_ERROR_STATUS = MessageType ;
        DTM_DTM_ERROR_NUMBER = MessageNumber ;
        strcpy(DTM_DTM_ERROR_MESSAGE,Message) ;
-      }    
+      }
    }
 /*
 ** Job Completed
@@ -122,7 +122,7 @@ BENTLEYDTM_Public int bcdtmWrite_logMessage(long Status,char *DtmMessage,...)
        va_start(arg_ptr,DtmMessage) ;
        vsprintf(Message,DtmMessage,arg_ptr) ;
        va_end(arg_ptr) ;
-      }  
+      }
     fprintf(fpLOG,"%s %s\n",Tstr,Message) ;
     fflush(fpLOG) ;
    }
@@ -152,7 +152,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_toFileDtmObject(BC_DTM_OBJ *dtmP,WCharCP dtmFil
  if( dtmFP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Error Opening Dtm File %s For Writing",dtmFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Write DTM Object At Zero File Position
@@ -205,7 +205,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing At File Position Dtm Object") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
@@ -223,7 +223,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
    {
     if( dbg ) bcdtmWrite_message(0,0,0,"Writing Geopak Object") ;
     if( bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(dtmP,dtmStreamP,filePosition) ) goto errexit ;
-    goto cleanup ; 
+    goto cleanup ;
    }
 /*
 ** Test For None NULL File Pointer
@@ -249,7 +249,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
  if( bcdtmStream_fseek(dtmStreamP,filePosition,SEEK_SET))
    {
     bcdtmWrite_message(1,0,0,"File Seek Error") ;
-    goto errexit ; 
+    goto errexit ;
    }
  if( dbg ) bcdtmWrite_message(0,0,0,"Seeking To File Position Completed") ;
 /*
@@ -260,7 +260,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 **  If this is a DTMElement Make Changes For A DTM Object.
 */
  memcpy(&dtmHeader,dtmP,BCDTMSize) ;
- if( dtmType == BC_DTM_ELM_TYPE) 
+ if( dtmType == BC_DTM_ELM_TYPE)
    {
     dtmHeader.dtmObjType = BC_DTM_OBJ_TYPE ;
     dtmHeader.DTMAllocationClass = NULL ;
@@ -269,7 +269,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
  if( bcdtmStream_fwrite(&dtmHeader,DTMIOHeaderSize,1,dtmStreamP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Write Feature Table Array
@@ -280,7 +280,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **  Write Features
 */
-    numPartition = 0 ; 
+    numPartition = 0 ;
     remPartition = 0 ;
     dtmFeatureP  = dtmP->fTablePP[numPartition] ;
     for( n = 0 ; n < dtmP->numFeatures ; ++n )
@@ -291,7 +291,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmFeatureP,sizeof(BC_DTM_FEATURE),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature Header") ;
-          goto errexit ; 
+          goto errexit ;
          }
 /*
 **     Write Feature Points
@@ -304,7 +304,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
           if( bcdtmStream_fwrite(bcdtmMemory_getPointerP3D(dtmP,dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature Points") ;
-             goto errexit ; 
+             goto errexit ;
             }
           break   ;
 
@@ -312,9 +312,9 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
           if( bcdtmStream_fwrite(bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI),dtmFeatureP->numDtmFeaturePts*sizeof(long),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-             goto errexit ; 
+             goto errexit ;
             }
-          break ; 
+          break ;
 
           default :
           break   ;
@@ -341,7 +341,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = dtmP->numPoints / dtmP->pointPartitionSize ; 
+    numPartition = dtmP->numPoints / dtmP->pointPartitionSize ;
     remPartition = dtmP->numPoints % dtmP->pointPartitionSize ;
 /*
 **  Write Full Partitions
@@ -351,7 +351,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -362,7 +362,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
    }
@@ -376,7 +376,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = dtmP->numNodes / dtmP->nodePartitionSize ; 
+    numPartition = dtmP->numNodes / dtmP->nodePartitionSize ;
     remPartition = dtmP->numNodes % dtmP->nodePartitionSize ;
 /*
 **  Write Full Partitions
@@ -386,7 +386,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * dtmP->nodePartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -397,7 +397,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
    }
@@ -411,7 +411,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = dtmP->numClist / dtmP->clistPartitionSize ; 
+    numPartition = dtmP->numClist / dtmP->clistPartitionSize ;
     remPartition = dtmP->numClist % dtmP->clistPartitionSize ;
 /*
 **  Write Full Partitions
@@ -421,7 +421,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * dtmP->clistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -432,7 +432,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
    }
@@ -445,7 +445,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = dtmP->numFlist / dtmP->flistPartitionSize ; 
+    numPartition = dtmP->numFlist / dtmP->flistPartitionSize ;
     remPartition = dtmP->numFlist % dtmP->flistPartitionSize ;
 /*
 **  Write Full Partitions
@@ -455,7 +455,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->fListPP[n],sizeof(DTM_FEATURE_LIST) * dtmP->flistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -466,7 +466,7 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionDtmObject(BC_DTM_OBJ *dtmP,
        if( bcdtmStream_fwrite(dtmP->fListPP[n],sizeof(DTM_FEATURE_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm File") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
    }
@@ -507,13 +507,13 @@ BENTLEYDTM_EXPORT int bcdtmRead_fromFileDtmObject(BC_DTM_OBJ **dtmPP,WCharCP dtm
  if( dtmFP == NULL )
    {
     bcdtmWrite_message(1,0,0,"Error Opening Dtm File %ws For Reading",dtmFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Read DTM Object At Zero File Position
 */
  if( bcdtmRead_atFilePositionDtmObject(dtmPP,dtmFP,0)) goto errexit ;
-    
+
  if( dbg == 1 )
    {
     bcdtmWrite_message(0,0,0,"After Read ** dtmP = %p",*dtmPP) ;
@@ -524,7 +524,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_fromFileDtmObject(BC_DTM_OBJ **dtmPP,WCharCP dtm
     bcdtmWrite_message(0,0,0,"dtmP->fListPP  = %p ** numFlist    = %8ld memFlist    = %8ld",(*dtmPP)->fListPP,(*dtmPP)->numFlist,(*dtmPP)->memFlist ) ;
     bcdtmWrite_message(0,0,0,"dtmP->cListPtr = %10ld ** dtmP->cListDelPtr  = %10ld ** dtmP->fListDelPtr = %10ld",(*dtmPP)->cListPtr,(*dtmPP)->cListDelPtr,(*dtmPP)->fListDelPtr ) ;
    }
- 
+
 /*
 ** Clean Up
 */
@@ -570,7 +570,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
  DTM_DAT_OBJ      *dataP=NULL ;
  DTM_TIN_OBJ      *tinP=NULL ;
  DTM_CIR_LIST     *clistP ;
- DTM_FEATURE_LIST *flistP ; 
+ DTM_FEATURE_LIST *flistP ;
  DTM_TIN_NODE     *nodeP ;
 /*
 ** Write Entry Message
@@ -606,7 +606,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
  if( bcdtmStream_fseek(dtmStreamP,filePosition,SEEK_SET))
    {
     bcdtmWrite_message(1,0,0,"File Seek Error") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Read File Type And Version Number
@@ -620,27 +620,27 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
 /*
 ** Reposition File Pointer
 */
- bcdtmStream_fseek(dtmStreamP,-8,SEEK_CUR) ; 
+ bcdtmStream_fseek(dtmStreamP,-8,SEEK_CUR) ;
 /*
 ** Get Object Type And Version Number ;
-*/  
+*/
  memcpy(&objType,&buffer[0],4) ;
  memcpy(&verNum,&buffer[4],4) ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Dtm Object Type ** %8x",objType) ;
 /*
 ** Check For Early Version Geopak Tin Type
 */
- if( objType != DTM_DAT_TYPE     && objType != DTM_TIN_TYPE    && 
-     objType != BC_DTM_OBJ_TYPE  && objType != BC_DTM_ELM_TYPE && 
+ if( objType != DTM_DAT_TYPE     && objType != DTM_TIN_TYPE    &&
+     objType != BC_DTM_OBJ_TYPE  && objType != BC_DTM_ELM_TYPE &&
      objType != BC_DTM_MRES_TYPE && objType != BC_DTMFeatureType  )
    {
-    if( bcdtmStream_fseek(dtmStreamP,filePosition,SEEK_SET)  ) 
-      { 
+    if( bcdtmStream_fseek(dtmStreamP,filePosition,SEEK_SET)  )
+      {
        bcdtmWrite_message(2,0,0,"File Seek Error ** fseek  = %s",strerror(errno))   ;
-       goto errexit  ; 
+       goto errexit  ;
       }
-    if( bcdtmStream_fread(buffer,48,1,dtmStreamP) != 1 ) 
-      { 
+    if( bcdtmStream_fread(buffer,48,1,dtmStreamP) != 1 )
+      {
        bcdtmWrite_message(1,0,0,"Error Reading Tin Object") ;
        goto errexit  ;
       }
@@ -648,12 +648,12 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
     memcpy(&ident,&buffer[11],4) ;
     memcpy(&fileType,&buffer[ 1],4) ;
     if( dbg ) bcdtmWrite_message(0,0,0,"ident ** %8x",ident) ;
-    if( ident == 0x124c300 ) 
+    if( ident == 0x124c300 )
       {
        objType = DTM_TIN_TYPE ;
        verNum  = 3 ;
       }
-    else if( ( verNumber == 10 || verNumber == 20 ) && fileType == 1 ) 
+    else if( ( verNumber == 10 || verNumber == 20 ) && fileType == 1 )
       {
        objType = DTM_TIN_TYPE ;
        verNum  = verNumber ;
@@ -661,7 +661,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
     else
       {
        objType = DTM_TIN_TYPE ;
-      }  
+      }
    }
 /*
 ** Write Object Type
@@ -702,7 +702,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
              goto errexit ;
             }
           bcdtmWrite_message(2,0,0,"Checking DTM Object %p Completed",*dtmPP) ;
-         } 
+         }
     break ;
 
     case BC_DTM_OBJ_TYPE :
@@ -710,7 +710,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
       if( bcdtmObject_createDtmObject(dtmPP)) goto errexit ;
       switch( verNum )
         {
-         case  BC_DTM_OBJ_VERSION_100 : 
+         case  BC_DTM_OBJ_VERSION_100 :
            if( dbg ) bcdtmWrite_message(0,0,0,"BC_DTM_OBJ_VERSION_100") ;
            if( bcdtmReadStream_version100DtmObject(*dtmPP,dtmStreamP)) goto errexit ;
          break ;
@@ -742,7 +742,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
              goto errexit ;
             }
           bcdtmWrite_message(2,0,0,"Checking DTM Object %p Completed",*dtmPP) ;
-         } 
+         }
     break ;
 
     default :
@@ -755,7 +755,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
 */
  if( (*dtmPP)->nullPnt != DTM_NULL_PNT || (*dtmPP)->nullPtr != DTM_NULL_PTR )
    {
-    if( dbg ) 
+    if( dbg )
       {
        bcdtmWrite_message(0,0,0,"Resetting DTM Null Pnt and Null Ptr Values") ;
        bcdtmWrite_message(0,0,0,"(*dtmPP)->nullPnt = %10ld DTM_NULL_PNT = %10ld",(*dtmPP)->nullPnt,DTM_NULL_PNT) ;
@@ -820,7 +820,7 @@ BENTLEYDTM_Public int bcdtmReadStream_atFilePositionDtmObject(BC_DTM_OBJ **dtmPP
        goto errexit ;
       }
     bcdtmWrite_message(2,0,0,"Checking DTM Object %p Completed",*dtmPP) ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -866,7 +866,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition,headerSize ;
- long numFeatures,numPoints,numNodes,numClist,numFlist,flist ;
+ long numFeatures = 0,numPoints = 0,numNodes,numClist,numFlist = 0,flist ;
  BC_DTM_OBJ_VER_100 dtmHeader ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_FEATURE_VER100 oldFeature;
@@ -892,7 +892,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
  if( bcdtmStream_fread(&dtmHeader,headerSize,1,dtmStreamP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Reading Dtm Header") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Write Stats On Arrays
@@ -953,9 +953,9 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
  dtmP->modifiedTime         =  dtmHeader.modifiedTime ;
  dtmP->userTime             =  dtmHeader.userTime ;
  dtmP->ppTol                =  dtmHeader.ppTol ;
- dtmP->plTol                =  dtmHeader.plTol ; 
- dtmP->mppTol               =  dtmHeader.mppTol ; 
- dtmP->maxSide              =  1000.0 ; 
+ dtmP->plTol                =  dtmHeader.plTol ;
+ dtmP->mppTol               =  dtmHeader.mppTol ;
+ dtmP->maxSide              =  1000.0 ;
  dtmP->xMin                 =  dtmHeader.xMin   ;
  dtmP->yMin                 =  dtmHeader.yMin   ;
  dtmP->zMin                 =  dtmHeader.zMin   ;
@@ -1036,7 +1036,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Read Features
 */
-    numPartition = 0 ; 
+    numPartition = 0 ;
     remPartition = 0 ;
     dtmFeatureP  = dtmP->fTablePP[numPartition] ;
     for( n = 0 ; n < numFeatures ; ++n )
@@ -1047,7 +1047,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(&oldFeature,sizeof(BC_DTM_FEATURE_VER100),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
 
        dtmFeatureP->dtmFeatureState = oldFeature.dtmFeatureState;
@@ -1074,7 +1074,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
           if( bcdtmStream_fread(bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
           break   ;
 
@@ -1088,9 +1088,9 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
           if( bcdtmStream_fread(bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI),dtmFeatureP->numDtmFeaturePts*sizeof(long),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
-          break ; 
+          break ;
 
           default :
           break   ;
@@ -1110,7 +1110,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Set Number Of Features
 */
-    dtmP->numFeatures = numFeatures ;  
+    dtmP->numFeatures = numFeatures ;
    }
 /*
 ** Read Points Array
@@ -1121,7 +1121,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = numPoints / dtmP->pointPartitionSize ; 
+    numPartition = numPoints / dtmP->pointPartitionSize ;
     remPartition = numPoints % dtmP->pointPartitionSize ;
 /*
 **  Read Full Partitions
@@ -1131,7 +1131,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1142,14 +1142,14 @@ BENTLEYDTM_Public int bcdtmReadStream_version100DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Points
 */
-    dtmP->numPoints = numPoints ; 
-/* 
+    dtmP->numPoints = numPoints ;
+/*
 n=0 ;
 pntP = pointAddrP(dtmP,n) ;
 bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP->y,pntP->z) ;
@@ -1167,8 +1167,8 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
-*/ 
-    numPartition = numNodes / dtmP->nodePartitionSize ; 
+*/
+    numPartition = numNodes / dtmP->nodePartitionSize ;
     remPartition = numNodes % dtmP->nodePartitionSize ;
 /*
 **  Read Full Partitions
@@ -1178,7 +1178,7 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * dtmP->nodePartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1189,13 +1189,13 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Nodes
 */
-    dtmP->numNodes = numNodes ;  
+    dtmP->numNodes = numNodes ;
   }
 /*
 ** Read Circular List
@@ -1207,7 +1207,7 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
 **  Determine Number Of Partitions
 */
     numClist = dtmP->cListPtr ;
-    numPartition = numClist / dtmP->clistPartitionSize ; 
+    numPartition = numClist / dtmP->clistPartitionSize ;
     remPartition = numClist % dtmP->clistPartitionSize ;
 /*
 **  Read Full Partitions
@@ -1217,7 +1217,7 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * dtmP->clistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1228,13 +1228,13 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Clist
 */
-    dtmP->numClist = numClist ;  
+    dtmP->numClist = numClist ;
    }
 /*
 ** Read Feature List Array
@@ -1249,12 +1249,12 @@ bcdtmWrite_message(0,0,0,"point[%8ld] = %12.5lf %12.5lf %10.4lf",n,pntP->x,pntP-
        flistP->nextPnt = oldFeatureList.nextPnt ;
        flistP->nextPtr = oldFeatureList.nextPtr ;
        flistP->dtmFeature = oldFeatureList.dtmFeature ;
-       flistP->pntType = 1 ; 
+       flistP->pntType = 1 ;
       }
 /*
 **  Set Number Of Flist
 */
-    dtmP->numFlist = numFlist ;  
+    dtmP->numFlist = numFlist ;
   }
 /*
 ** Clean Up
@@ -1282,7 +1282,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition,flist,headerSize;
- long numFeatures,numPoints,numNodes,numClist,numFlist ;
+ long numFeatures = 0,numPoints = 0,numNodes,numClist,numFlist = 0;
  BC_DTM_OBJ_VER_200 dtmHeader ;
  BC_DTM_FEATURE  *dtmFeatureP ;
  BC_DTM_FEATURE_VER100 oldFeature;
@@ -1307,7 +1307,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
  if( bcdtmStream_fread(&dtmHeader,headerSize,1,dtmStreamP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Reading Dtm Header") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Copy header Values To DTM Object
@@ -1345,7 +1345,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
  dtmP->dtmCleanUp           =  DTMCleanupFlags::None;
  dtmP->obsolete_dtmRestoreTriangles = 0;
  dtmP->hullPoint            =  dtmHeader.hullPoint ;
- dtmP->nextHullPoint        =  dtmHeader.nextHullPoint ;    
+ dtmP->nextHullPoint        =  dtmHeader.nextHullPoint ;
  dtmP->nullPnt              =  dtmHeader.nullPnt ;
  dtmP->nullPtr              =  dtmHeader.nullPtr ;
  dtmP->nullUserTag          =  dtmHeader.nullUserTag ;
@@ -1360,9 +1360,9 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
  dtmP->modifiedTime         =  dtmHeader.modifiedTime ;
  dtmP->userTime             =  dtmHeader.userTime ;
  dtmP->ppTol                =  dtmHeader.ppTol ;
- dtmP->plTol                =  dtmHeader.plTol ; 
- dtmP->mppTol               =  dtmHeader.mppTol ; 
- dtmP->maxSide              =  dtmHeader.maxSide ; 
+ dtmP->plTol                =  dtmHeader.plTol ;
+ dtmP->mppTol               =  dtmHeader.mppTol ;
+ dtmP->maxSide              =  dtmHeader.maxSide ;
  dtmP->xMin                 =  dtmHeader.xMin   ;
  dtmP->yMin                 =  dtmHeader.yMin   ;
  dtmP->zMin                 =  dtmHeader.zMin   ;
@@ -1455,7 +1455,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Read Features
 */
-    numPartition = 0 ; 
+    numPartition = 0 ;
     remPartition = 0 ;
     dtmFeatureP  = dtmP->fTablePP[numPartition] ;
 
@@ -1467,7 +1467,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(&oldFeature,sizeof(BC_DTM_FEATURE_VER100),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
 
        dtmFeatureP->dtmFeatureState = oldFeature.dtmFeatureState;
@@ -1495,7 +1495,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
           if( bcdtmStream_fread(bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
           break   ;
 
@@ -1509,9 +1509,9 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
           if( bcdtmStream_fread(bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI),dtmFeatureP->numDtmFeaturePts*sizeof(long),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
-          break ; 
+          break ;
 
           default :
           break   ;
@@ -1531,7 +1531,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Set Number Of Features
 */
-    dtmP->numFeatures = numFeatures ;  
+    dtmP->numFeatures = numFeatures ;
    }
 /*
 ** Read Points Array
@@ -1542,7 +1542,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = numPoints / dtmP->pointPartitionSize ; 
+    numPartition = numPoints / dtmP->pointPartitionSize ;
     remPartition = numPoints % dtmP->pointPartitionSize ;
 /*
 **  Read Full Partitions
@@ -1552,7 +1552,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1563,13 +1563,13 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Points
 */
-    dtmP->numPoints = numPoints ;  
+    dtmP->numPoints = numPoints ;
    }
 /*
 ** Read Nodes Array
@@ -1580,8 +1580,8 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
-*/ 
-    numPartition = numNodes / dtmP->nodePartitionSize ; 
+*/
+    numPartition = numNodes / dtmP->nodePartitionSize ;
     remPartition = numNodes % dtmP->nodePartitionSize ;
 /*
 **  Read Full Partitions
@@ -1591,7 +1591,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * dtmP->nodePartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1602,13 +1602,13 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Nodes
 */
-    dtmP->numNodes = numNodes ;  
+    dtmP->numNodes = numNodes ;
   }
 /*
 ** Read Circular List
@@ -1620,7 +1620,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
 **  Determine Number Of Partitions
 */
     numClist = dtmP->cListPtr ;
-    numPartition = numClist / dtmP->clistPartitionSize ; 
+    numPartition = numClist / dtmP->clistPartitionSize ;
     remPartition = numClist % dtmP->clistPartitionSize ;
 /*
 **  Read Full Partitions
@@ -1630,7 +1630,7 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * dtmP->clistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Circular List Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1641,13 +1641,13 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Circular List Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Clist
 */
-    dtmP->numClist = numClist ;  
+    dtmP->numClist = numClist ;
    }
 /*
 ** Read Feature List Array
@@ -1662,12 +1662,12 @@ BENTLEYDTM_Public int bcdtmReadStream_version200DtmObject(BC_DTM_OBJ *dtmP,Bentl
        flistP->nextPnt = oldFeatureList.nextPnt ;
        flistP->nextPtr = oldFeatureList.nextPtr ;
        flistP->dtmFeature = oldFeatureList.dtmFeature ;
-       flistP->pntType = 1 ; 
+       flistP->pntType = 1 ;
       }
 /*
 **  Set Number Of Flist
 */
-    dtmP->numFlist = numFlist ;  
+    dtmP->numFlist = numFlist ;
    }
 /*
 ** Clean Up
@@ -1727,12 +1727,12 @@ BENTLEYDTM_Public int bcdtmRead_dtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP)
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Private void bcdtmObject_checkLastModifiedDate (BC_DTM_OBJ *dtmP)
     {
-    const Int64 date1Jan1970 = 116444736000000000;
-    Int64 lastModifiedTime = date1Jan1970 + ((Int64)dtmP->modifiedTime) * 10000000;
+    const int64_t date1Jan1970 = 116444736000000000;
+    int64_t lastModifiedTime = date1Jan1970 + ((int64_t)dtmP->modifiedTime) * 10000000;
 
     if (dtmP->lastModifiedTime != 0)
         {
-        Int64 timeDiff = dtmP->lastModifiedTime - lastModifiedTime;
+        int64_t timeDiff = dtmP->lastModifiedTime - lastModifiedTime;
         // Strip of nanoseconds and days.
         timeDiff /= 10000000;
         timeDiff /= 60 * 60 * 24;
@@ -1754,7 +1754,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long n,numPartition,remPartition ;
- long numFeatures,numPoints,numNodes,numClist,numFlist ;
+ long numFeatures = 0,numPoints = 0,numNodes,numClist,numFlist = 0;
  BC_DTM_FEATURE  *dtmFeatureP ;
 /*
 ** Write Entry Message
@@ -1768,7 +1768,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
  if( bcdtmStream_fread(dtmP,DTMIOHeaderSize,1,dtmStreamP) != 1 )
    {
     bcdtmWrite_message(1,0,0,"Error Reading Header Dtm Object %p ",dtmP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 
  bcdtmObject_checkLastModifiedDate(dtmP);
@@ -1854,7 +1854,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 /*
 **  Read Features
 */
-    numPartition = 0 ; 
+    numPartition = 0 ;
     remPartition = 0 ;
     dtmFeatureP  = dtmP->fTablePP[numPartition] ;
     for( n = 0 ; n < numFeatures ; ++n )
@@ -1865,7 +1865,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmFeatureP,sizeof(BC_DTM_FEATURE),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
 /*
 **     Read Feature Points
@@ -1884,7 +1884,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
           if( bcdtmStream_fread(bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI),dtmFeatureP->numDtmFeaturePts*sizeof(DPoint3d),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
           break   ;
 
@@ -1898,9 +1898,9 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
           if( bcdtmStream_fread(bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI),dtmFeatureP->numDtmFeaturePts*sizeof(long),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-             goto errexit ; 
+             goto errexit ;
             }
-          break ; 
+          break ;
 
           default :
           break   ;
@@ -1920,7 +1920,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 /*
 **  Set Number Of Features
 */
-    dtmP->numFeatures = numFeatures ;  
+    dtmP->numFeatures = numFeatures ;
    }
 /*
 ** Read Points Array
@@ -1931,7 +1931,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = numPoints / dtmP->pointPartitionSize ; 
+    numPartition = numPoints / dtmP->pointPartitionSize ;
     remPartition = numPoints % dtmP->pointPartitionSize ;
 /*
 **  Read Full Partitions
@@ -1941,7 +1941,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * dtmP->pointPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1952,13 +1952,13 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->pointsPP[n],sizeof(DPoint3d) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Points
 */
-    dtmP->numPoints = numPoints ;  
+    dtmP->numPoints = numPoints ;
    }
 /*
 ** Read Nodes Array
@@ -1969,8 +1969,8 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Dtm Nodes Array    ** Memory Size = %9ld",sizeof(DPoint3d) * numNodes) ;
 /*
 **  Determine Number Of Partitions
-*/ 
-    numPartition = numNodes / dtmP->nodePartitionSize ; 
+*/
+    numPartition = numNodes / dtmP->nodePartitionSize ;
     remPartition = numNodes % dtmP->nodePartitionSize ;
 /*
 **  Read Full Partitions
@@ -1980,7 +1980,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * dtmP->nodePartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -1991,13 +1991,13 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->nodesPP[n],sizeof(DTM_TIN_NODE) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Nodes
 */
-    dtmP->numNodes = numNodes ;  
+    dtmP->numNodes = numNodes ;
   }
 /*
 ** Read Circular List
@@ -2009,7 +2009,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 **  Determine Number Of Partitions
 */
     numClist = dtmP->cListPtr ;
-    numPartition = numClist / dtmP->clistPartitionSize ; 
+    numPartition = numClist / dtmP->clistPartitionSize ;
     remPartition = numClist % dtmP->clistPartitionSize ;
 /*
 **  Read Full Partitions
@@ -2019,7 +2019,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * dtmP->clistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -2030,13 +2030,13 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->cListPP[n],sizeof(DTM_CIR_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Clist
 */
-    dtmP->numClist = numClist ;  
+    dtmP->numClist = numClist ;
    }
 /*
 ** Read Feature List Array
@@ -2047,7 +2047,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
 /*
 **  Determine Number Of Partitions
 */
-    numPartition = numFlist / dtmP->flistPartitionSize ; 
+    numPartition = numFlist / dtmP->flistPartitionSize ;
     remPartition = numFlist % dtmP->flistPartitionSize ;
 /*
 **  Read Full Partitions
@@ -2057,7 +2057,7 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->fListPP[n],sizeof(DTM_FEATURE_LIST) * dtmP->flistPartitionSize,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
@@ -2068,13 +2068,13 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
        if( bcdtmStream_fread(dtmP->fListPP[n],sizeof(DTM_FEATURE_LIST) * remPartition,1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Reading Dtm Object %p ",dtmP) ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
 /*
 **  Set Number Of Flist
 */
-    dtmP->numFlist = numFlist ;  
+    dtmP->numFlist = numFlist ;
    }
 /*
 ** Clean Up
@@ -2111,23 +2111,23 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToDtmObject(BC_DTM_OBJ **dtmPP,WCharCP xy
 */
  if( *dtmPP != NULL )
    {
-    if( ! bcdtmObject_testForValidDtmObject(*dtmPP)) 
+    if( ! bcdtmObject_testForValidDtmObject(*dtmPP))
       {
        if( bcdtmObject_destroyDtmObject(dtmPP)) goto errexit ;
-      }  
+      }
     *dtmPP = NULL ;
-   } 
+   }
 /*
 ** Auto Detect XYZ File Type
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Detecting XYZ File Type") ;
  if( bcdtmUtl_detectXYZFileType(xyzFileName,&fileType,&numFileRecs) != DTM_SUCCESS ) goto errexit ;
  if( dbg )
-   { 
+   {
     if( fileType == 1 ) bcdtmWrite_message(0,0,0,"ASCII XYZ File Detected") ;
     if( fileType == 2 ) bcdtmWrite_message(0,0,0,"Binary XYZ File Detected") ;
     bcdtmWrite_message(0,0,0,"Estimated XYZ Record Entries = %6ld",numFileRecs) ;
-   } 
+   }
 /*
 ** Determine Memory Allocation Values For DTMFeatureState::Tin
 */
@@ -2141,7 +2141,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToDtmObject(BC_DTM_OBJ **dtmPP,WCharCP xy
 */
  if( bcdtmObject_createDtmObject(dtmPP)) goto errexit ;
 /*
-** Set Dtm Object Memory Allocation Parameters 
+** Set Dtm Object Memory Allocation Parameters
 */
  (*dtmPP)->iniPoints = iniPts ;
  (*dtmPP)->incPoints = incPts ;
@@ -2163,7 +2163,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToDtmObject(BC_DTM_OBJ **dtmPP,WCharCP xy
    {
     bcdtmObject_destroyDtmObject(dtmPP) ;
     bcdtmWrite_message(1,0,0,"No Data In %s",xyzFileName) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Print XYZ Ranges
@@ -2211,9 +2211,9 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToDtmObject(BC_DTM_OBJ *dtmP,WCharC
 ** Open XYZ File
 */
  if( ( xyzFP = bcdtmFile_open(xyzFile,L"r")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFile) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Read ASCII XYZ File
@@ -2267,7 +2267,7 @@ BENTLEYDTM_Private int bcdtmRead_xyzBinaryFileToDtmObject(BC_DTM_OBJ *dtmP,WChar
 ** Open XYZ File
 */
  if( ( xyzFP = bcdtmFile_open(xyzFile,L"rb")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFile) ;
     goto errexit ;
    }
@@ -2309,7 +2309,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_geopakDatFileToDtmObject(BC_DTM_OBJ **dtmPP,WCha
 /*
 ** Write Status Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Reading Geopak Dat File") ;
     bcdtmWrite_message(0,0,0,"*dtmPP           = %p",*dtmPP) ;
@@ -2320,12 +2320,12 @@ BENTLEYDTM_EXPORT int bcdtmRead_geopakDatFileToDtmObject(BC_DTM_OBJ **dtmPP,WCha
 */
  if( *dtmPP != NULL )
    {
-    if( ! bcdtmObject_testForValidDtmObject(*dtmPP)) 
+    if( ! bcdtmObject_testForValidDtmObject(*dtmPP))
       {
        if( bcdtmObject_destroyDtmObject(dtmPP)) goto errexit ;
-      }  
+      }
     *dtmPP = NULL ;
-   } 
+   }
 /*
 ** Create Data Object
 */
@@ -2380,7 +2380,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_geopakDatFileToDtmObject(BC_DTM_OBJ **dtmPP,WCha
 BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCharCP datFileNameP,long numDecPts)
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   dtmFeature,fCode,fsCode,fnCode,spotSize ;
+ long   dtmFeature,fCode = 0,fsCode,fnCode,spotSize ;
  long   point,lastPoint,*pntOfsP ;
  unsigned char   *cP,*spotMarkP=NULL ;
  char   formatString[40],outBuffer[100] ;
@@ -2398,7 +2398,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
 */
  if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
 /*
-** Initialise Output Format String 
+** Initialise Output Format String
 */
  if( numDecPts < 0 ) numDecPts = 0 ;
  if( numDecPts > 9 ) numDecPts = 9 ;
@@ -2430,8 +2430,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
 */
  switch( dtmP->dtmState )
    {
-    case DTMState::Data : 
-    case DTMState::PointsSorted   : 
+    case DTMState::Data :
+    case DTMState::PointsSorted   :
     case DTMState::DuplicatesRemoved :
 /*
 **  Allocate Mark Array For Random Spots
@@ -2460,7 +2460,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
             {
              bcdtmWrite_message(2,0,0,"Unknown Feature Start And Next Codes") ;
              goto errexit ;
-            } 
+            }
 /*
 **        Switch Depending Of Feature State
 */
@@ -2474,24 +2474,24 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
                  {
                   sprintf(outBuffer,formatString,fCode,pointP->x,pointP->y,pointP->z) ;
                   bcdtmConvert_eliminateBlanks(outBuffer) ;
-                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 ) 
+                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 )
                     {
                      bcdtmWrite_message(1,0,0,"Error Writing Data File %s",datFileNameP) ;
                      goto errexit ;
                     }
                   bcdtmFlag_setFlag(spotMarkP,point);
                   fCode = fnCode ;
-                 }   
+                 }
              break ;
 
              case DTMFeatureState::PointsArray :
              case DTMFeatureState::TinError :
              case DTMFeatureState::Rollback     :
-               for( p3dP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) ; p3dP < bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) + dtmFeatureP->numDtmFeaturePts ; ++p3dP ) 
+               for( p3dP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) ; p3dP < bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) + dtmFeatureP->numDtmFeaturePts ; ++p3dP )
                  {
                   sprintf(outBuffer,formatString,fCode,p3dP->x,p3dP->y,p3dP->z) ;
                   bcdtmConvert_eliminateBlanks(outBuffer) ;
-                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 ) 
+                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 )
                     {
                      bcdtmWrite_message(1,0,0,"Error Writing Data File %s",datFileNameP) ;
                      goto errexit ;
@@ -2502,12 +2502,12 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
              break ;
 
              case DTMFeatureState::OffsetsArray :
-               for( pntOfsP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) ; pntOfsP < bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) + dtmFeatureP->numDtmFeaturePts ; ++pntOfsP ) 
+               for( pntOfsP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) ; pntOfsP < bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) + dtmFeatureP->numDtmFeaturePts ; ++pntOfsP )
                  {
                   pointP = pointAddrP(dtmP,*pntOfsP) ;
                   sprintf(outBuffer,formatString,fCode,pointP->x,pointP->y,pointP->z) ;
                   bcdtmConvert_eliminateBlanks(outBuffer) ;
-                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 ) 
+                  if( fprintf(dataFP,"%s\n",outBuffer) < 0 )
                     {
                      bcdtmWrite_message(1,0,0,"Error Writing Data File %s",datFileNameP) ;
                      goto errexit ;
@@ -2522,7 +2522,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
                 goto errexit ;
              break ;
             } ;
-         }  
+         }
       }
 /*
 **  Write Random Points - ( Those Not On any Features )
@@ -2535,7 +2535,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
           pointP = pointAddrP(dtmP,point) ;
           sprintf(outBuffer,formatString,fCode,pointP->x,pointP->y,pointP->z) ;
           bcdtmConvert_eliminateBlanks(outBuffer) ;
-          if( fprintf(dataFP,"%s\n",outBuffer) < 0 ) 
+          if( fprintf(dataFP,"%s\n",outBuffer) < 0 )
             {
              bcdtmWrite_message(1,0,0,"Error Writing Data File %s",datFileNameP) ;
              goto errexit ;
@@ -2543,12 +2543,12 @@ BENTLEYDTM_EXPORT int bcdtmWrite_asciiGeopakDatFileFromDtmObject(BC_DTM_OBJ *dtm
         }
       }
     break ;
- 
+
     case DTMState::Tin :
       bcdtmWrite_message(2,0,0,"Write Geopak Dat File From Tin State Not Yet Implemented") ;
       goto errexit ;
-    break ;                 
- 
+    break ;
+
     default :
     break ;
    } ;
@@ -2619,8 +2619,8 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
 */
  switch( dtmP->dtmState )
    {
-    case DTMState::Data : 
-    case DTMState::PointsSorted   : 
+    case DTMState::Data :
+    case DTMState::PointsSorted   :
     case DTMState::DuplicatesRemoved :
 /*
 **  Allocate Mark Array For Random Spots
@@ -2649,7 +2649,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
             {
              bcdtmWrite_message(2,0,0,"Unknown Feature Start And Next Codes") ;
              goto errexit ;
-            } 
+            }
 /*
 **        Switch Depending Of Feature State
 */
@@ -2674,14 +2674,14 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
                   bcdtmFlag_setFlag(spotMarkP,point);
                   fCode = fnCode ;
                   ++point ;
-                 }   
+                 }
              break ;
 
              case DTMFeatureState::PointsArray :
              case DTMFeatureState::TinError :
              case DTMFeatureState::Rollback     :
                fCode     = fsCode ;
-               for( p3dP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) ; p3dP < bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) + dtmFeatureP->numDtmFeaturePts ; ++p3dP ) 
+               for( p3dP = bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) ; p3dP < bcdtmMemory_getPointerP3D(dtmP, dtmFeatureP->dtmFeaturePts.pointsPI) + dtmFeatureP->numDtmFeaturePts ; ++p3dP )
                  {
                   memcpy(writeBuffer,&fCode,4) ;
                   memcpy(writeBuffer+4,&p3dP->x,8) ;
@@ -2699,7 +2699,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
 
              case DTMFeatureState::OffsetsArray :
                fCode     = fsCode ;
-               for( pntOfsP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) ; pntOfsP < bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) + dtmFeatureP->numDtmFeaturePts ; ++pntOfsP ) 
+               for( pntOfsP = bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) ; pntOfsP < bcdtmMemory_getPointerOffset(dtmP,dtmFeatureP->dtmFeaturePts.offsetPI) + dtmFeatureP->numDtmFeaturePts ; ++pntOfsP )
                  {
                   pointP = pointAddrP(dtmP,*pntOfsP) ;
                   memcpy(writeBuffer,&fCode,4) ;
@@ -2721,7 +2721,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
                 goto errexit ;
              break ;
             } ;
-         }  
+         }
       }
 /*
 **  Write Random Points - ( Those Not On any Features )
@@ -2744,12 +2744,12 @@ BENTLEYDTM_EXPORT int bcdtmWrite_geopakDatFileFromDtmObject(BC_DTM_OBJ *dtmP,WCh
          }
       }
     break ;
- 
+
     case DTMState::Tin :
       bcdtmWrite_message(2,0,0,"Write Geopak Dat File From Tin State Not Yet Implemented") ;
       goto errexit ;
-    break ;                 
- 
+    break ;
+
     default :
     break ;
    } ;
@@ -2814,7 +2814,7 @@ goto cleanup ;
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP,long filePosition) 
+BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,FILE *dtmFP,long filePosition)
     {
     Bentley::TerrainModel::IBcDtmStream* dtmStreamP = NULL;
     int status;
@@ -2830,13 +2830,13 @@ BENTLEYDTM_EXPORT int bcdtmWrite_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ 
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition) 
+BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(BC_DTM_OBJ *dtmP,Bentley::TerrainModel::IBcDtmStream* dtmStreamP,long filePosition)
 {
  int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing At File Position Geopak Object") ;
     bcdtmWrite_message(0,0,0,"dtmP         = %p",dtmP) ;
@@ -2869,11 +2869,11 @@ BENTLEYDTM_EXPORT int bcdtmWriteStream_atFilePositionGeopakObjectDtmObject(BC_DT
  if( bcdtmStream_fseek(dtmStreamP,filePosition,SEEK_SET))
    {
     bcdtmWrite_message(1,0,0,"File Seek Error") ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Test DTM Data State To Write Either A Geopak Dat Object Or Tin Object
-*/   
+*/
  if( dtmP->dtmState == DTMState::Data ) if( bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObject(dtmP,dtmStreamP,filePosition)) goto errexit ;
  if( dtmP->dtmState == DTMState::Tin  ) if( bcdtmWriteStream_writeAtFilePositionGeopakTinObjectDtmObject(dtmP,dtmStreamP,filePosition)) goto errexit ;
 /*
@@ -2892,7 +2892,7 @@ return(ret) ;
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2935,10 +2935,10 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
  geopakDat.refCount           = dtmP->refCount   ;
  geopakDat.userStatus         = dtmP->userStatus ;
  geopakDat.numDecDigits       = 4 ;
- geopakDat.stateFlag          = 0 ; 
+ geopakDat.stateFlag          = 0 ;
  geopakDat.xMin               = dtmP->xMin ;
  geopakDat.yMin               = dtmP->yMin ;
- geopakDat.zMin               = dtmP->zMin ; 
+ geopakDat.zMin               = dtmP->zMin ;
  geopakDat.xMax               = dtmP->xMax ;
  geopakDat.yMax               = dtmP->yMax ;
  geopakDat.zMax               = dtmP->zMax ;
@@ -2984,7 +2984,7 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
           goto errexit ;
          }
       }
-  } 
+  }
 /*
 ** Write Feature Code Array
 */
@@ -3005,13 +3005,13 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
 /*
 **        Write Random Point Feature Codes Until First Point Of Feature
 */
-          fcode = (int)DTMFeatureType::RandomSpots ; 
+          fcode = (int)DTMFeatureType::RandomSpots ;
           firstPoint = dtmFeatureP->dtmFeaturePts.firstPoint ;
           while( currentPoint < firstPoint )
             {
              if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Writing DTMFeatureType::RandomSpots currentPoint = %8ld firstPoint = %8ld",currentPoint,firstPoint) ;
              if( bcdtmStream_fwrite(&fcode,sizeof(long),1,dtmStreamP) != 1 )
-               { 
+               {
                 bcdtmWrite_message(0,0,0,"Error Writing Geopak Feature Code") ;
                 goto errexit ;
                }
@@ -3041,12 +3041,12 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
     while( currentPoint <  geopakDat.numPts )
       {
        if( bcdtmStream_fwrite(&fcode,sizeof(long),1,dtmStreamP) != 1 )
-         { 
+         {
           bcdtmWrite_message(0,0,0,"Error Writing Geopak Feature Code") ;
           goto errexit ;
          }
        ++currentPoint ;
-      } 
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"**** currentPoint = %8ld ** dataP->numPts = %8ld",currentPoint,geopakDat.numPts) ;
    }
 /*
@@ -3073,7 +3073,7 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
           while( currentPoint < firstPoint )
             {
              if( bcdtmStream_fwrite(&nullUserTag,sizeof(DTMUserTag),1,dtmStreamP) != 1 )
-               { 
+               {
                 bcdtmWrite_message(0,0,0,"Error Writing Geopak User Tag") ;
                 goto errexit ;
                }
@@ -3099,12 +3099,12 @@ BENTLEYDTM_Private int bcdtmWriteStream_writeAtFilePositionGeopakDatObjectDtmObj
     while( currentPoint <  geopakDat.numPts )
       {
        if( bcdtmStream_fwrite(&nullUserTag,sizeof(DTMUserTag),1,dtmStreamP) != 1 )
-         { 
+         {
           bcdtmWrite_message(0,0,0,"Error Writing Geopak User Tag") ;
           goto errexit ;
          }
        ++currentPoint ;
-      } 
+      }
     if( dbg ) bcdtmWrite_message(0,0,0,"==== currentPoint = %8ld ** dataP->numPts = %8ld",currentPoint,geopakDat.numPts) ;
    }
 /*
@@ -3189,7 +3189,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
  geopakTin.dtmFileVersion     = DTM_TIN_FILE_VERSION ;
  geopakTin.xMin               = dtmP->xMin ;
  geopakTin.yMin               = dtmP->yMin ;
- geopakTin.zMin               = dtmP->zMin ; 
+ geopakTin.zMin               = dtmP->zMin ;
  geopakTin.xMax               = dtmP->xMax ;
  geopakTin.yMax               = dtmP->yMax ;
  geopakTin.zMax               = dtmP->zMax ;
@@ -3230,11 +3230,11 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
    {
     geopakTin.cListLastDelPtr = clPtr ;
     clPtr = clistAddrP(dtmP,clPtr)->nextPtr ;
-   } 
+   }
  geopakTin.featureListDelPtr  = dtmP->fListDelPtr ;
  geopakTin.nullPnt            = dtmP->nullPnt ;
  geopakTin.nullUserTag        = dtmP->nullUserTag ;
- geopakTin.nullGuid           = nullGuid    ; 
+ geopakTin.nullGuid           = nullGuid    ;
  geopakTin.creationTime       = dtmP->creationTime ;
  geopakTin.modifiedTime       = dtmP->modifiedTime ;
  geopakTin.userTime           = dtmP->userTime ;
@@ -3254,13 +3254,13 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
     if( dtmP->fTablePP != NULL ) geopakTin.fTableP = ( DTM_FEATURE_TABLE * ) dtmP->fTablePP[0] ;
     if( dtmP->fListPP  != NULL ) geopakTin.fListP  = ( DTM_FEATURE_LIST_VER200 *)dtmP->fListPP[0] ;
    }
- geopakTin.fMapP       = NULL ; 
+ geopakTin.fMapP       = NULL ;
  strcpy(geopakTin.userName,"") ;
  strcpy(geopakTin.tinObjectFileName,"") ;
  strcpy(geopakTin.userMessage,"") ;
 /*
 ** Set Header Values For Backwards Comptability With Geopak SS2
-*/ 
+*/
  if( geopakTin.cListDelPtr       == geopakTin.nullPtr ) geopakTin.cListDelPtr       = TIN_NULL_PTR ;
  if( geopakTin.cListLastDelPtr   == geopakTin.nullPtr ) geopakTin.cListLastDelPtr   = TIN_NULL_PTR ;
  if( geopakTin.featureListDelPtr == geopakTin.nullPtr ) geopakTin.featureListDelPtr = TIN_NULL_PTR ;
@@ -3305,11 +3305,11 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
       {
        nodeP = nodeAddrP(dtmP,point) ;
        memcpy(&node,nodeP,sizeof(DTM_TIN_NODE)) ;
-       if( node.tPtr  == DTM_NULL_PNT ) node.tPtr  = TIN_NULL_PNT ;         
-       if( node.sPtr  == DTM_NULL_PNT ) node.sPtr  = TIN_NULL_PNT ;         
-       if( node.hPtr  == DTM_NULL_PNT ) node.hPtr  = TIN_NULL_PNT ;         
-       if( node.cPtr  == DTM_NULL_PTR ) node.cPtr  = TIN_NULL_PTR ;         
-       if( node.fPtr  == DTM_NULL_PTR ) node.fPtr  = TIN_NULL_PTR ;         
+       if( node.tPtr  == DTM_NULL_PNT ) node.tPtr  = TIN_NULL_PNT ;
+       if( node.sPtr  == DTM_NULL_PNT ) node.sPtr  = TIN_NULL_PNT ;
+       if( node.hPtr  == DTM_NULL_PNT ) node.hPtr  = TIN_NULL_PNT ;
+       if( node.cPtr  == DTM_NULL_PTR ) node.cPtr  = TIN_NULL_PTR ;
+       if( node.fPtr  == DTM_NULL_PTR ) node.fPtr  = TIN_NULL_PTR ;
        if( bcdtmStream_fwrite(&node,sizeof(DTM_TIN_NODE),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(0,0,0,"Error Writing Geopak Tin Point") ;
@@ -3374,7 +3374,7 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
           if( bcdtmStream_fwrite(&geopakFeature,sizeof(DTM_FEATURE_TABLE),1,dtmStreamP) != 1 )
             {
              bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature") ;
-             goto errexit ; 
+             goto errexit ;
             }
          }
       }
@@ -3393,13 +3393,13 @@ if( dbg ) bcdtmWrite_message(0,0,0,"Writing Tin  Object At File Position %8ld Fr
        flistP = flistAddrP(dtmP,n) ;
        fList.nextPnt = flistP->nextPnt ;
        fList.nextPtr = flistP->nextPtr ;
-       fList.dtmFeature = *(featureMapP+flistP->dtmFeature) ; 
+       fList.dtmFeature = *(featureMapP+flistP->dtmFeature) ;
        if( fList.nextPnt == DTM_NULL_PNT ) fList.nextPnt = TIN_NULL_PNT ;
        if( fList.nextPtr == DTM_NULL_PTR ) fList.nextPtr = TIN_NULL_PTR ;
        if( bcdtmStream_fwrite(&fList,sizeof(DTM_FEATURE_LIST_VER200),1,dtmStreamP) != 1 )
          {
           bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature List") ;
-          goto errexit ; 
+          goto errexit ;
          }
       }
    }
@@ -3431,20 +3431,20 @@ return(ret) ;
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
-( 
+(
  WCharCP dtmFileNameP                                 //  Dtm Feature File Name
 )
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    numPoints=0,numFeatures=0 ;
- Int64 featureFileOffset ;
+ int64_t featureFileOffset ;
  BC_DTM_FEATURE_HEADER dtmHeader ;
  BC_DTM_FEATURE_RECORD dtmFeature ;
  FILE  *dtmFP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Checking Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"dtmFileNameP = %s",dtmFileNameP) ;
@@ -3473,7 +3473,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
    {
     bcdtmWrite_message(0,0,0,"Not A Bentley Civil DTM File Feature File") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Check Version Number
 */
@@ -3486,7 +3486,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
 **  Write File Header Variables
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"DTM Feature File Header Variables") ;
     bcdtmWrite_message(0,0,0,"**** dtmFileType        = %p",dtmHeader.dtmFileType)  ;
     bcdtmWrite_message(0,0,0,"**** dtmVersionNumber   = %10ld",dtmHeader.dtmVersionNumber)  ;
@@ -3499,7 +3499,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
     bcdtmWrite_message(0,0,0,"**** yMax               = %12.5lf",dtmHeader.yMax)  ;
     bcdtmWrite_message(0,0,0,"**** zMin               = %12.5lf",dtmHeader.zMin)  ;
     bcdtmWrite_message(0,0,0,"**** zMax               = %12.5lf",dtmHeader.zMax)  ;
-   } 
+   }
 /*
 ** Scan DTM Feature File And Count Points And DTM Features
 */
@@ -3507,7 +3507,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
   _fseeki64(dtmFP,featureFileOffset,SEEK_SET) ;
   while( fread( &dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) == 1 )
     {
-     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeatureType = %4ld numFeaturePts = %8ld",dtmFeature.dtmFeatureType,dtmFeature.numFeaturePoints) ; 
+     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"dtmFeatureType = %4ld numFeaturePts = %8ld",dtmFeature.dtmFeatureType,dtmFeature.numFeaturePoints) ;
      ++numFeatures ;
      numPoints = numPoints + dtmFeature.numFeaturePoints ;
      featureFileOffset = featureFileOffset + sizeof(BC_DTM_FEATURE_RECORD) + dtmFeature.numFeaturePoints * sizeof(DPoint3d) ;
@@ -3527,12 +3527,12 @@ BENTLEYDTM_EXPORT int bcdtmWrite_checkDtmFeatureFile
  if( numPoints !=  dtmHeader.numPoints )
    {
     bcdtmWrite_message(1,0,0,"Inconsistent Number Of Points In DTM Feature File") ;
-    ret = DTM_ERROR ; 
+    ret = DTM_ERROR ;
    }
  if( numFeatures !=  dtmHeader.numFeatures )
    {
     bcdtmWrite_message(1,0,0,"Inconsistent Number Of Features In DTM Feature File") ;
-    ret = DTM_ERROR ; 
+    ret = DTM_ERROR ;
    }
 /*
 ** Clean Up
@@ -3559,7 +3559,7 @@ return(ret) ;
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_xyzFileToDtmFeatureFile
-( 
+(
  WCharCP xyzFileNameP,                                //  XYZ File Name
  WCharCP dtmFileNameP                                 //  Dtm Feature File Name
 )
@@ -3576,23 +3576,23 @@ BENTLEYDTM_EXPORT int bcdtmWrite_xyzFileToDtmFeatureFile
  if( dbg ) bcdtmWrite_message(0,0,0,"Detecting XYZ File Type") ;
  if( bcdtmUtl_detectXYZFileType(xyzFileNameP,&fileType,&numFileRecs) != DTM_SUCCESS ) goto errexit ;
  if( dbg )
-   { 
+   {
     if( fileType == 1 ) bcdtmWrite_message(0,0,0,"ASCII XYZ File Detected") ;
     if( fileType == 2 ) bcdtmWrite_message(0,0,0,"Binary XYZ File Detected") ;
     bcdtmWrite_message(0,0,0,"Estimated XYZ Record Entries = %6ld",numFileRecs) ;
-   } 
+   }
 /*
 ** Write To Dtm Feature File
 */
- if( fileType == 1 ) 
-   { 
+ if( fileType == 1 )
+   {
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading ASCII XYZ File") ;
     if( bcdtmWrite_xyzASCIIFileToDtmFeatureFile(xyzFileNameP,dtmFileNameP,maxPointSize)) goto errexit ;
    }
- if( fileType == 2 ) 
-   { 
+ if( fileType == 2 )
+   {
     if( dbg ) bcdtmWrite_message(0,0,0,"Reading Binary XYZ File") ;
-    if( bcdtmWrite_xyzBinaryFileToDtmFeatureFile(xyzFileNameP,dtmFileNameP,maxPointSize)) goto errexit ; 
+    if( bcdtmWrite_xyzBinaryFileToDtmFeatureFile(xyzFileNameP,dtmFileNameP,maxPointSize)) goto errexit ;
    }
 /*
 ** Clean Up
@@ -3636,28 +3636,28 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing ASCII XYZ File To Dtm Feature File Completed") ;
     bcdtmWrite_message(0,0,0,"xyzFileNameP    = %s",*xyzFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFileNameP    = %s",*dtmFileNameP) ;
     bcdtmWrite_message(0,0,0,"maxPointSize    = %ld",maxPointSize) ;
-   } 
+   }
 /*
 ** Open XYZ File
 */
  if( ( xyzFP = bcdtmFile_open(xyzFileNameP,L"r")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Open DTM Feature File
 */
  if( ( dtmFP = bcdtmFile_open(dtmFileNameP,L"wb+")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 **  Initialise DTM Feature Record
@@ -3709,11 +3709,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
          {
           if( firstPoint )
             {
-             firstPoint      = 0 ; 
+             firstPoint      = 0 ;
              dtmHeader.xMin = dtmHeader.xMax = x ;
              dtmHeader.yMin = dtmHeader.yMax = y ;
              dtmHeader.zMin = dtmHeader.zMax = z ;
-            } 
+            }
           else
             {
              if( x < dtmHeader.xMin ) dtmHeader.xMin = x ;
@@ -3733,7 +3733,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 **           Write DTM Feature Record
 */
              ++dtmHeader.numFeatures ;
-             dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;  
+             dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;
              dtmFeature.numFeaturePoints = dtmP->numPoints ;
              if( fwrite(&dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) != 1 )
                {
@@ -3767,7 +3767,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzASCIIFileToDtmFeatureFile
 **  Write DTM Feature Record
 */
     ++dtmHeader.numFeatures ;
-    dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;  
+    dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;
     dtmFeature.numFeaturePoints = dtmP->numPoints ;
     if( fwrite(&dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) != 1 )
       {
@@ -3839,28 +3839,28 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing Binary XYZ File To Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"xyzFileNameP    = %s",xyzFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFileNameP    = %s",dtmFileNameP) ;
     bcdtmWrite_message(0,0,0,"maxPointSize    = %ld",maxPointSize) ;
-   } 
+   }
 /*
 ** Open XYZ File
 */
  if( ( xyzFP = bcdtmFile_open(xyzFileNameP,L"rb")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening XYZ File %s",xyzFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** Open DTM Feature File
 */
  if( ( dtmFP = bcdtmFile_open(dtmFileNameP,L"wb+")) == NULL )
-   { 
+   {
     bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 **  Initialise DTM Feature Record
@@ -3908,11 +3908,11 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 */
     if( firstPoint )
       {
-       firstPoint = 0 ; 
+       firstPoint = 0 ;
        dtmHeader.xMin = dtmHeader.xMax = dtmPoint.x ;
        dtmHeader.yMin = dtmHeader.yMax = dtmPoint.y ;
        dtmHeader.zMin = dtmHeader.zMax = dtmPoint.z ;
-      } 
+      }
     else
       {
        if( dtmPoint.x < dtmHeader.xMin ) dtmHeader.xMin = dtmPoint.x ;
@@ -3929,7 +3929,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 **     Write DTM Feature Record
 */
        ++dtmHeader.numFeatures ;
-       dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;  
+       dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;
        dtmFeature.numFeaturePoints = dtmP->numPoints ;
        if( fwrite(&dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) != 1 )
          {
@@ -3946,7 +3946,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
              bcdtmWrite_message(1,0,0,"Error Writing DTM Feature File") ;
              goto errexit ;
             }
-         }  
+         }
        dtmP->numPoints = 0 ;
       }
    }
@@ -3959,7 +3959,7 @@ BENTLEYDTM_Private int bcdtmWrite_xyzBinaryFileToDtmFeatureFile
 **  Write DTM Feature Record
 */
     ++dtmHeader.numFeatures ;
-    dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;  
+    dtmHeader.numPoints = dtmHeader.numPoints + dtmP->numPoints ;
     dtmFeature.numFeaturePoints = dtmP->numPoints ;
     if( fwrite(&dtmFeature,sizeof(BC_DTM_FEATURE_RECORD),1,dtmFP) != 1 )
       {
@@ -4021,9 +4021,9 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  DPoint3d  *p3dP ;
  BC_DTM_FEATURE_RECORD dtmFeatureRecord ;
- struct DtmFeatureLoad 
+ struct DtmFeatureLoad
  {
-   FILE *dtmFP ; 
+   FILE *dtmFP ;
    long numPoints , numFeatures ;
    double xMin,yMin,zMin,xMax,yMax,zMax ;
  } *dtmFeatureLoadP   ;
@@ -4032,7 +4032,7 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"dtmFeatureType = %4ld ** numFeaturePoints = %8ld",dtmFeatureType,numFeaturePts) ;
 /*
-** Set Points 
+** Set Points
 */
  dtmFeatureLoadP = ( struct DtmFeatureLoad *) userP ;
 /*
@@ -4043,7 +4043,7 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
     dtmFeatureLoadP->xMin = dtmFeatureLoadP->xMax = featurePtsP->x ;
     dtmFeatureLoadP->yMin = dtmFeatureLoadP->yMax = featurePtsP->y ;
     dtmFeatureLoadP->zMin = dtmFeatureLoadP->zMax = featurePtsP->z ;
-   } 
+   }
  for( p3dP = featurePtsP ; p3dP < featurePtsP + numFeaturePts ; ++p3dP )
    {
     if( p3dP->x < dtmFeatureLoadP->xMin ) dtmFeatureLoadP->xMin = p3dP->x ;
@@ -4069,7 +4069,7 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
    {
     bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature Record") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Write Dtm Feature Points To Dtm Feature File
 */
@@ -4077,7 +4077,7 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
    {
     bcdtmWrite_message(1,0,0,"Error Writing Dtm Feature Record") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -4102,7 +4102,7 @@ BENTLEYDTM_Private int  bcdtmWrite_loadDtmFeatureFunction(DTMFeatureType dtmFeat
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmFile
-( 
+(
  WCharCP dtmFileNameP,                                // ==> Dtm File Name
  WCharCP dtmFeatureFileNameP,                         // ==> Dtm Feature File Name
  DTMFeatureType dtmFeatureType,                               // ==> Dtm Feature Type
@@ -4110,26 +4110,26 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmFile
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ; 
+ BC_DTM_OBJ *dtmP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing Dtm Feature From Dtm File To Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"dtmFileNameP         = %s",dtmFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureFileNameP  = %s",dtmFeatureFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType       = %4ld",dtmFeatureType) ;
     bcdtmWrite_message(0,0,0,"fileOption           = %4ld",fileOption) ;
-   } 
+   }
 /*
 ** Read DTM File
 */
  if( bcdtmRead_fromFileDtmObject(&dtmP,dtmFileNameP)) goto errexit ;
 /*
 ** Call Object Version
-*/ 
- if( bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject(dtmP,dtmFeatureFileNameP,dtmFeatureType,fileOption)) goto errexit ;  
+*/
+ if( bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject(dtmP,dtmFeatureFileNameP,dtmFeatureType,fileOption)) goto errexit ;
 /*
 ** Clean Up
 */
@@ -4154,7 +4154,7 @@ return(ret) ;
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
-( 
+(
  BC_DTM_OBJ *dtmP,                                  // ==> Dtm Object
  WCharCP dtmFeatureFileNameP,                      // ==> Dtm Feature File Name
  DTMFeatureType dtmFeatureType,                               // ==> Dtm Feature Type
@@ -4163,24 +4163,24 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  FILE *dtmFP=NULL ;
- BC_DTM_FEATURE_HEADER dtmHeader ;
- struct DtmFeatureLoad 
+ BC_DTM_FEATURE_HEADER dtmHeader{0,0,0,0,0,0,0,0,0,0,0};
+ struct DtmFeatureLoad
  {
-   FILE *dtmFP ; 
+   FILE *dtmFP ;
    long numPoints , numFeatures ;
    double xMin,yMin,zMin,xMax,yMax,zMax ;
  } dtmFeatureLoad   ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing Dtm Feature From Dtm Object To Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"dtmP                 = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureFileNameP  = %s",dtmFeatureFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureType       = %4ld",dtmFeatureType) ;
     bcdtmWrite_message(0,0,0,"fileOption           = %4ld",fileOption) ;
-   } 
+   }
 /*
 ** Check File Option
 */
@@ -4188,7 +4188,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
    {
     bcdtmWrite_message(1,0,0,"Invalid File Open Option") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Test For Valid Dtm Object
 */
@@ -4198,19 +4198,19 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 */
  bcdtmWrite_message(0,0,0,"Checking For Valid Dtm Object Feature Type") ;
  if( bcdtmData_testForValidDtmObjectExportFeatureType(dtmFeatureType) == DTM_ERROR  )
-   { 
+   {
     bcdtmWrite_message(2,0,0,"Invalid Dtm Feature Type %4ld",dtmFeatureType) ;
-    goto errexit ; 
-   } 
+    goto errexit ;
+   }
 /*
 ** Open New Dtm Feature File
 */
- if( fileOption == 1 ) 
+ if( fileOption == 1 )
    {
     if( ( dtmFP = bcdtmFile_open(dtmFeatureFileNameP,L"wb+")) == NULL )
-      { 
+      {
        bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFeatureFileNameP) ;
-       goto errexit ; 
+       goto errexit ;
       }
 /*
 **  Initialise DTM Header
@@ -4242,7 +4242,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 /*
 ** Open Existing Dtm Feature File
 */
- if( fileOption == 2 ) 
+ if( fileOption == 2 )
    {
 /*
 **  Open File
@@ -4268,7 +4268,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
       {
        bcdtmWrite_message(0,0,0,"Not A Bentley Civil DTM File Feature File") ;
        goto errexit ;
-      } 
+      }
 /*
 **  Check Version Number
 */
@@ -4281,7 +4281,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 **  Write File Header Variables
 */
     if( dbg )
-      { 
+      {
        bcdtmWrite_message(0,0,0,"DTM Feature File Header Variables") ;
        bcdtmWrite_message(0,0,0,"**** dtmFileType        = %p",dtmHeader.dtmFileType)  ;
        bcdtmWrite_message(0,0,0,"**** dtmVersionNumber   = %10ld",dtmHeader.dtmVersionNumber)  ;
@@ -4294,7 +4294,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
        bcdtmWrite_message(0,0,0,"**** yMax               = %12.5lf",dtmHeader.yMax)  ;
        bcdtmWrite_message(0,0,0,"**** zMin               = %12.5lf",dtmHeader.zMin)  ;
        bcdtmWrite_message(0,0,0,"**** zMax               = %12.5lf",dtmHeader.zMax)  ;
-      } 
+      }
 /*
 **  Go To End Of DTM Feature File
 */
@@ -4331,7 +4331,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
 **  Write File Header Variables
 */
  if( dbg == 1 )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"DTM Feature File Header Variables") ;
     bcdtmWrite_message(0,0,0,"**** dtmFileType        = %p",dtmHeader.dtmFileType)  ;
     bcdtmWrite_message(0,0,0,"**** dtmVersionNumber   = %10ld",dtmHeader.dtmVersionNumber)  ;
@@ -4344,7 +4344,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_dtmFeatureTypeToDtmFeatureFileDtmObject
     bcdtmWrite_message(0,0,0,"**** yMax               = %12.5lf",dtmHeader.yMax)  ;
     bcdtmWrite_message(0,0,0,"**** zMin               = %12.5lf",dtmHeader.zMin)  ;
     bcdtmWrite_message(0,0,0,"**** zMax               = %12.5lf",dtmHeader.zMax)  ;
-   } 
+   }
 /*
 ** Rewite Header
 */
@@ -4378,7 +4378,7 @@ return(ret) ;
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmFile
-( 
+(
  WCharCP dtmFileNameP,                                // ==> Dtm File Name
  WCharCP dtmFeatureFileNameP,                         // ==> Dtm Feature File Name
  long fileOption,                                   // ==> File Option <1=Create,2=Append>
@@ -4386,26 +4386,26 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmFile
 )
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- BC_DTM_OBJ *dtmP=NULL ; 
+ BC_DTM_OBJ *dtmP=NULL ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing Dtm Feature From Dtm File To Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"dtmFileNameP         = %s",dtmFileNameP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureFileNameP  = %s",dtmFeatureFileNameP) ;
     bcdtmWrite_message(0,0,0,"fileOption           = %4ld",fileOption) ;
     bcdtmWrite_message(0,0,0,"contourInterval      = %8.3lf",contourInterval) ;
-   } 
+   }
 /*
 ** Read DTM File
 */
  if( bcdtmRead_fromFileDtmObject(&dtmP,dtmFileNameP)) goto errexit ;
 /*
 ** Call Object Version
-*/ 
- if( bcdtmWrite_contoursToDtmFeatureFileDtmObject(dtmP,dtmFeatureFileNameP,fileOption,contourInterval)) goto errexit ;  
+*/
+ if( bcdtmWrite_contoursToDtmFeatureFileDtmObject(dtmP,dtmFeatureFileNameP,fileOption,contourInterval)) goto errexit ;
 /*
 ** Clean Up
 */
@@ -4430,7 +4430,7 @@ return(ret) ;
 |                                                                    |
 +-------------------------------------------------------------------*/
 BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
-( 
+(
  BC_DTM_OBJ *dtmP,                                  // ==> Dtm Object
  WCharCP dtmFeatureFileNameP,                      // ==> Dtm Feature File Name
  long fileOption,                                   // ==> File Option <1=Create,2=Append>
@@ -4439,24 +4439,24 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  FILE *dtmFP=NULL ;
- BC_DTM_FEATURE_HEADER dtmHeader ;
- struct DtmFeatureLoad 
+ BC_DTM_FEATURE_HEADER dtmHeader {0,0,0,0,0,0,0,0,0,0,0};
+ struct DtmFeatureLoad
  {
-   FILE *dtmFP ; 
+   FILE *dtmFP ;
    long numPoints , numFeatures ;
    double xMin,yMin,zMin,xMax,yMax,zMax ;
  } dtmFeatureLoad   ;
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Writing Dtm Feature From Dtm Object To Dtm Feature File") ;
     bcdtmWrite_message(0,0,0,"dtmP                 = %p",dtmP) ;
     bcdtmWrite_message(0,0,0,"dtmFeatureFileNameP  = %s",dtmFeatureFileNameP) ;
     bcdtmWrite_message(0,0,0,"fileOption           = %4ld",fileOption) ;
     bcdtmWrite_message(0,0,0,"contourInterval      = %8.3lf",contourInterval) ;
-   } 
+   }
 /*
 ** Check File Option
 */
@@ -4464,7 +4464,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
    {
     bcdtmWrite_message(1,0,0,"Invalid File Open Option") ;
     goto errexit ;
-   } 
+   }
 /*
 ** Test For Valid Dtm Object
 */
@@ -4476,12 +4476,12 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 /*
 ** Open New Dtm Feature File
 */
- if( fileOption == 1 ) 
+ if( fileOption == 1 )
    {
     if( ( dtmFP = bcdtmFile_open(dtmFeatureFileNameP,L"wb+")) == NULL )
-      { 
+      {
        bcdtmWrite_message(1,0,0,"Error Opening DTM Feature File %s",dtmFeatureFileNameP) ;
-       goto errexit ; 
+       goto errexit ;
       }
 /*
 **  Initialise DTM Header
@@ -4513,7 +4513,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 /*
 ** Open Existing Dtm Feature File
 */
- if( fileOption == 2 ) 
+ if( fileOption == 2 )
    {
 /*
 **  Open File
@@ -4539,7 +4539,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
       {
        bcdtmWrite_message(0,0,0,"Not A Bentley Civil DTM File Feature File") ;
        goto errexit ;
-      } 
+      }
 /*
 **  Check Version Number
 */
@@ -4552,7 +4552,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 **  Write File Header Variables
 */
     if( dbg )
-      { 
+      {
        bcdtmWrite_message(0,0,0,"DTM Feature File Header Variables") ;
        bcdtmWrite_message(0,0,0,"**** dtmFileType        = %p",dtmHeader.dtmFileType)  ;
        bcdtmWrite_message(0,0,0,"**** dtmVersionNumber   = %10ld",dtmHeader.dtmVersionNumber)  ;
@@ -4565,7 +4565,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
        bcdtmWrite_message(0,0,0,"**** yMax               = %12.5lf",dtmHeader.yMax)  ;
        bcdtmWrite_message(0,0,0,"**** zMin               = %12.5lf",dtmHeader.zMin)  ;
        bcdtmWrite_message(0,0,0,"**** zMax               = %12.5lf",dtmHeader.zMax)  ;
-      } 
+      }
 /*
 **  Go To End Of DTM Feature File
 */
@@ -4603,7 +4603,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
 **  Write File Header Variables
 */
  if( dbg )
-   { 
+   {
     bcdtmWrite_message(0,0,0,"DTM Feature File Header Variables") ;
     bcdtmWrite_message(0,0,0,"**** dtmFileType        = %p",dtmHeader.dtmFileType)  ;
     bcdtmWrite_message(0,0,0,"**** dtmVersionNumber   = %10ld",dtmHeader.dtmVersionNumber)  ;
@@ -4616,7 +4616,7 @@ BENTLEYDTM_EXPORT int bcdtmWrite_contoursToDtmFeatureFileDtmObject
     bcdtmWrite_message(0,0,0,"**** yMax               = %12.5lf",dtmHeader.yMax)  ;
     bcdtmWrite_message(0,0,0,"**** zMin               = %12.5lf",dtmHeader.zMin)  ;
     bcdtmWrite_message(0,0,0,"**** zMax               = %12.5lf",dtmHeader.zMax)  ;
-   } 
+   }
 /*
 ** Rewite Header
 */
@@ -4661,8 +4661,8 @@ BENTLEYDTM_EXPORT size_t bcdtmFwrite
  ** This Function was written to overcome problems with writing large
  ** packets to a network file
  **
- ** Author : Rob Cormack 
- ** email  : rob.cormack@bentley.com 
+ ** Author : Rob Cormack
+ ** email  : rob.cormack@bentley.com
  ** date   : 21 January 2007
  **
  */
@@ -4683,7 +4683,7 @@ BENTLEYDTM_EXPORT size_t bcdtmFwrite
     /*
     ** Only Write One Packet If Packet Size Is Less Than The Maximum Packet Size
     */
-    if( packetSize <= maxPacketSize ) return( fwrite(fromP,numBytes,numRecs,fileP) )  ; 
+    if( packetSize <= maxPacketSize ) return( fwrite(fromP,numBytes,numRecs,fileP) )  ;
     /*
     ** Determine Number Of Packets To Write
     */
@@ -4701,7 +4701,7 @@ BENTLEYDTM_EXPORT size_t bcdtmFwrite
             return(0) ;
         }
         bufferP = bufferP + maxPacketSize  ;
-    } 
+    }
     /*
     ** Write Remaining Packet
     */
@@ -4735,8 +4735,8 @@ BENTLEYDTM_EXPORT size_t bcdtmFread
  ** This Function was written to overcome problems with reading large
  ** packets from a network file
  **
- ** Author : Rob Cormack 
- ** email  : rob.cormack@bentley.com 
+ ** Author : Rob Cormack
+ ** email  : rob.cormack@bentley.com
  ** date   : 21 January 2007
  **
  */
@@ -4757,7 +4757,7 @@ BENTLEYDTM_EXPORT size_t bcdtmFread
     /*
     ** Only Read One Packet If Packet Size Is Less Than The Maximum Packet Size
     */
-    if( packetSize <= maxPacketSize ) return( fread(toP,numBytes,numRecs,fileP) )  ; 
+    if( packetSize <= maxPacketSize ) return( fread(toP,numBytes,numRecs,fileP) )  ;
     /*
     ** Determine Number Of Packets To Read
     */
@@ -4776,7 +4776,7 @@ BENTLEYDTM_EXPORT size_t bcdtmFread
             return(0) ;
         }
         bufferP = bufferP + maxPacketSize  ;
-    } 
+    }
     /*
     ** Read Remaining Packet
     */
@@ -4813,7 +4813,7 @@ BENTLEYDTM_EXPORT FILE* bcdtmFile_open(WCharCP fileNameP, WCharCP openTypeP)
         bcFileWC_ProjectWise_ConvertPWpathToDMS(dmsFileName, fileNameP);
         if (pwFP) bcFileWC_fclose(pwFP);
     }
-    else 
+    else
         wcscpy(dmsFileName, fileNameP);
     fileFP = _wfopen(dmsFileName, openTypeP) ;
 #else
@@ -4853,13 +4853,13 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToPointArray(WCharCP xyzFileNameP,DPoint3
  if( dbg ) bcdtmWrite_message(0,0,0,"Detecting XYZ File Type") ;
  if( bcdtmUtl_detectXYZFileType(xyzFileNameP,&fileType,&fileEntries) != DTM_SUCCESS ) goto errexit ;
  if( dbg )
-   { 
+   {
     if( fileType == 1 ) bcdtmWrite_message(0,0,0,"ASCII XYZ File Detected") ;
     if( fileType == 2 ) bcdtmWrite_message(0,0,0,"Binary XYZ File Detected") ;
     bcdtmWrite_message(0,0,0,"Estimated XYZ Record Entries = %6ld",fileEntries) ;
-   } 
+   }
 /*
-** Determine Memory Allocation Values 
+** Determine Memory Allocation Values
 */
  if( fileType == 1 ) memIniPts = fileEntries + fileEntries / 1000 ;
  else                memIniPts = fileEntries ;
@@ -4877,7 +4877,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToPointArray(WCharCP xyzFileNameP,DPoint3
    {
     if( *ptsPP != NULL ) free(*ptsPP) ;
     bcdtmWrite_message(1,0,0,"No Points In %s",xyzFileNameP) ;
-    goto errexit ; 
+    goto errexit ;
    }
 /*
 ** All Done Return
@@ -4887,7 +4887,7 @@ BENTLEYDTM_EXPORT int bcdtmRead_xyzFileToPointArray(WCharCP xyzFileNameP,DPoint3
 ** Error Exit
 */
  errexit :
- *numPtsP = 0 ; ; 
+ *numPtsP = 0 ; ;
  if( *ptsPP != NULL ) { free(*ptsPP) ; ptsPP = NULL ; }
  return(DTM_ERROR) ;
 }
@@ -4906,13 +4906,13 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToPointArray(WCharCP xyzFileP,DPoin
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Reading XYZ ASCII File To Point Array") ;
     bcdtmWrite_message(0,0,0,"xyzFileP  = %s",xyzFileP) ;
     bcdtmWrite_message(0,0,0,"memIniPts = %8ld",memIniPts) ;
     bcdtmWrite_message(0,0,0,"memIncPts = %8ld",memIncPts) ;
-   } 
+   }
 /*
 ** Initialise
 */
@@ -4928,7 +4928,7 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToPointArray(WCharCP xyzFileP,DPoin
 ** Read ASCII XYZ File
 */
  bP = bufferP ;
- *bP = 0 ; 
+ *bP = 0 ;
  bTopP = bufferP + 510 ;
  while( fscanf(fpXYZ,"%c",bP) != EOF )
    {
@@ -4941,7 +4941,7 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToPointArray(WCharCP xyzFileP,DPoin
 /*
 **        Test For Memory Allocation
 */
-          if( *numPtsP == memPts )  
+          if( *numPtsP == memPts )
             {
              if( memPts == 0 ) memPts = memIniPts ;
              else              memPts = memPts + memIncPts ;
@@ -4950,14 +4950,14 @@ BENTLEYDTM_Private int bcdtmRead_xyzASCIIFileToPointArray(WCharCP xyzFileP,DPoin
 */
              if( *ptsPP == NULL ) *ptsPP = ( DPoint3d * ) malloc ( memPts * sizeof(DPoint3d)) ;
              else                 *ptsPP = ( DPoint3d * ) realloc ( *ptsPP , memPts * sizeof(DPoint3d)) ;
-             if( *ptsPP == NULL ) 
-               { 
+             if( *ptsPP == NULL )
+               {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
                }
-            } 
+            }
 /*
-**        Store Point 
+**        Store Point
 */
           (*ptsPP+*numPtsP)->x = x  ;
           (*ptsPP+*numPtsP)->y = y  ;
@@ -5026,20 +5026,20 @@ BENTLEYDTM_Private int bcdtmRead_xyzBinaryFileToPointArray(WCharCP xyzFileP,DPoi
 /*
 **  Test For Memory Allocation
 */
-    if( *numPtsP == memPts )  
+    if( *numPtsP == memPts )
       {
        if( memPts == 0 ) memPts = memIniPts ;
        else              memPts = memPts * memIncPts ;
        if( *ptsPP == NULL ) *ptsPP = ( DPoint3d * ) malloc ( memPts * sizeof(DPoint3d)) ;
        else                 *ptsPP = ( DPoint3d * ) realloc (*ptsPP,memPts * sizeof(DPoint3d)) ;
-       if( *ptsPP == NULL ) 
-         { 
+       if( *ptsPP == NULL )
+         {
           bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
           goto errexit ;
          }
       }
 /*
-**     Store Point 
+**     Store Point
 */
     (*ptsPP+*numPtsP)->x = x  ;
     (*ptsPP+*numPtsP)->y = y  ;
@@ -5097,7 +5097,7 @@ BENTLEYDTM_Public int bcdtmWrite_binaryFileP3D(WCharCP FileName, DPoint3d *DataP
 /*
 ** Write Binary Data File
 */
- for( p3d = DataPts ; p3d < DataPts + numPts ; ++p3d ) 
+ for( p3d = DataPts ; p3d < DataPts + numPts ; ++p3d )
    {
     if( bcdtmFwrite(p3d,sizeof(DPoint3d),1,fpBIN) != 1 )
       {

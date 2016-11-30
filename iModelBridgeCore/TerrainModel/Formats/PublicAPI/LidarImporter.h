@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/PublicAPI/LidarImporter.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -18,7 +18,6 @@
 #include <TerrainModel/Core/bcDTMClass.h>
 
 TERRAINMODEL_TYPEDEFS (LidarImporter)
-ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, LidarImporter);
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
@@ -26,7 +25,7 @@ typedef RefCountedPtr<LidarImporter> LidarImporterPtr;
 
 struct LidarImporter : SingleTerrainImporter
     {
-    public: enum class Classification : byte
+    public: enum class Classification : unsigned char
         {
         Created = 0,
         UnClassified = 1,
@@ -50,7 +49,7 @@ struct LidarImporter : SingleTerrainImporter
     public: struct ClassificationInfo
         {
         Classification classification;
-        UInt64 count;
+        uint64_t count;
         };
 
     /*__PUBLISH_SECTION_END__*/

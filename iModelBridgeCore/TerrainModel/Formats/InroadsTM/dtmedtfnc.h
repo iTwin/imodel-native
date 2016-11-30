@@ -73,13 +73,13 @@ int aecDTM_addFeature /* <= TRUE if error                  */
   long numPnts,                         /* => # of points being added         */
   CIVdtmpnt *ftrPntsP,                  /* => list of feature points          */
   DPoint3d *pntsP,                      /* => list of point coordinates       */
-  byte *pntFlgsP,                    /* => list of point properties        */
+  unsigned char *pntFlgsP,                    /* => list of point properties        */
   double density,                       /* => density interval                */
   CIVdtmstynam *stylesP,                /* => feature's styles (or NULL)      */
   long numStyles,                       /* => # of styles                     */
   CIVdtmpaynam *payItemsP,              /* => pay items (or NULL)             */
   long numPayItems,                     /* => # of pay items                  */
-  byte flag,                          /* => feature's flags                 */
+  unsigned char flag,                          /* => feature's flags                 */
   BOOL bRemoveDuplicates = TRUE,        /* => should almost always be TRUE    */
   BOOL bCloseString = TRUE              /* => should almost always be TRUE    */
 );

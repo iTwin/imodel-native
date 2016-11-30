@@ -140,7 +140,7 @@ class DTMFeatureBuffer
 //__PUBLISH_SECTION_START__
 struct DTMFeatureStatisticsInfo
     {
-    Int64 numPoints;
+    int64_t numPoints;
     long numTinLines;
     long numTriangles;
     long numDtmFeatures;
@@ -168,7 +168,7 @@ struct BcDTMVolumeAreaResult
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
+struct BcDTM : RefCounted<TerrainModel::IDTM>
 //__PUBLISH_SECTION_END__
     , Bentley::TerrainModel::IDTMDraping, Bentley::TerrainModel::IDTMDrainage, Bentley::TerrainModel::IDTMContouring
 //__PUBLISH_SECTION_START__
@@ -230,7 +230,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         virtual ~BcDTM (void);
 
         // IDTM Implementation
-        virtual Int64 _GetPointCount () override;
+        virtual int64_t _GetPointCount () override;
         virtual DTMStatusInt _GetRange (DRange3d& range) override;
         virtual BcDTMP _GetBcDTM () override;
         virtual Bentley::TerrainModel::IDTMDraping* _GetDTMDraping () override;
@@ -288,7 +288,6 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double    direction,
             double    slope
             );
-        virtual bool _GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint);
         // Concrete functions
     public:
         BENTLEYDTM_EXPORT  DTMStatusInt GetMemoryUsed (size_t& memoryUsed);
@@ -485,6 +484,19 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             double      slope
             );
 
+        BENTLEYDTM_EXPORT  DTMStatusInt ShotVector
+            (
+            double        *endSlopeP,
+            double        *endAspectP,
+            DPoint3d    endTriangle[3],
+            int            *endDrapedTypeP,
+            long        *startFlag,
+            long        *endFlag,
+            DPoint3d    *endPtP,
+            DPoint3d    *startPtP,
+            double      direction,
+            double      slope
+            );
         BENTLEYDTM_EXPORT  DTMStatusInt ComputePlanarPrismoidalVolume
             (
             BcDTMVolumeAreaResult& result,
@@ -644,7 +656,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
         BENTLEYDTM_EXPORT  DTMStatusInt BrowseContours
             (
             DTMContourParamsCR contourParams,
-            const DTMFenceParams& fence, 
+            const DTMFenceParams& fence,
             void        *userArgP,
             DTMFeatureCallback callBackFunctP
             );
@@ -706,7 +718,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
             void         *userP,
             DTMFeatureCallback callBackFunctP
             );
-        
+
         BENTLEYDTM_EXPORT  DTMStatusInt TracePath
             (
             double        pointX,
@@ -799,7 +811,7 @@ struct BcDTM : Bentley::RefCounted<Bentley::TerrainModel::IDTM>
 
         BENTLEYDTM_EXPORT DTMStatusInt GetReadOnlyDTM (Bentley::TerrainModel::BcDTMPtr& readonlyDTM);
         //__PUBLISH_SECTION_START__
-        BENTLEYDTM_EXPORT DTMStatusInt GetLastModifiedTime (Int64& lastModifiedTime);
+        BENTLEYDTM_EXPORT DTMStatusInt GetLastModifiedTime (int64_t& lastModifiedTime);
 
         BENTLEYDTM_EXPORT DTMStatusInt AddPoint (DPoint3dCR point);
         BENTLEYDTM_EXPORT DTMStatusInt AddPoints (DPoint3dCP pointsP, int nPoint);
@@ -952,7 +964,7 @@ struct BcDTMDrapedLinePoint : RefCounted<Bentley::TerrainModel::IDTMDrapedLinePo
 struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine>
     {
     // => Type of defintion for a draped line
-   // ===================================== 
+   // =====================================
     enum class DTMDrapedLineFlag
         {
         // Void and outside parts
@@ -1106,7 +1118,7 @@ struct BcDTMDrapedLine : public RefCounted<Bentley::TerrainModel::IDTMDrapedLine
 
     private:
         bvector<RefCountedPtr<BcDTMDrapedLinePoint>>     _drapedPoints;
-        Bentley::RefCountedPtr<Bentley::IRefCounted> _linearElP;
+        RefCountedPtr<IRefCounted> _linearElP;
         int                     _containsVoid;
 
         DTMStatusInt AddPointInTable (int index, bvector<RefCountedPtr<BcDTMDrapedLinePoint>>& selPoint);
@@ -1245,7 +1257,7 @@ struct BcDTMSpot : BcDTMFeature
 * @author   Sylvain Pucci --  15/01/02 -- sylvain.pucci@bentley.com
 * @see
 */
-struct BcDTMFeatureEnumerator : Bentley::RefCountedBase
+struct BcDTMFeatureEnumerator : RefCountedBase
     {
     struct FeatureDescr
         {
