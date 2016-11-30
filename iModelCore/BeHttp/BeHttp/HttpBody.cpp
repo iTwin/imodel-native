@@ -277,6 +277,88 @@ size_t HttpStringBody::Read(char* bufferOut, size_t bufferSize)
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpBinaryBody::HttpBinaryBody(std::shared_ptr<bvector<char>> data) :
+m_data(data)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpBinaryBodyPtr HttpBinaryBody::Create(std::shared_ptr<bvector<char>> data)
+    {
+    return new HttpBinaryBody(data);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpBinaryBody::SetPosition(uint64_t position)
+    {
+    uint64_t currentLength = GetLength();
+    if (position > currentLength)
+        return ERROR;
+
+    m_position = position;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpBinaryBody::Write(const char* buffer, size_t bufferSize)
+    {
+    if (bufferSize == 0)
+        return 0;
+
+    uint64_t currentLength = GetLength();
+
+    if (currentLength < m_position + bufferSize)
+        m_data->resize(m_position + bufferSize, '\0');
+
+    memcpy(m_data->data() + m_position, buffer, bufferSize);
+    m_position += bufferSize;
+
+    return bufferSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpBinaryBody::Read(char* bufferOut, size_t bufferSize)
+    {
+    size_t copyBytesCount = bufferSize;
+
+    if (GetLength() - m_position < copyBytesCount)
+        copyBytesCount = (size_t) GetLength() - m_position;
+
+    if (0 == copyBytesCount)
+        return 0;
+
+    memcpy(bufferOut, m_data->data() + m_position, copyBytesCount);
+    m_position += copyBytesCount;
+    return copyBytesCount;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t HttpBinaryBody::GetLength()
+    {
+    return m_data->size();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpBinaryBody::Reset()
+    {
+    m_data->clear();
+    return SetPosition(0);
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus HttpByteStreamBody::SetPosition(uint64_t position)

@@ -119,11 +119,40 @@ public:
     Utf8String AsString() const {return *m_string;}
 };
 
-typedef RefCountedPtr<struct HttpByteStreamBody> HttpByteStreamBodyPtr;
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               julius.cepuekenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpBinaryBody> HttpBinaryBodyPtr;
+struct EXPORT_VTABLE_ATTRIBUTE HttpBinaryBody : HttpBody
+    {
+    private:
+        uint64_t m_position = 0;
+        std::shared_ptr<bvector<char>> m_data;
+
+    protected:
+        HttpBinaryBody(std::shared_ptr<bvector<char>> data);
+        virtual ~HttpBinaryBody() {}
+
+    public:
+        BEHTTP_EXPORT static HttpBinaryBodyPtr Create(std::shared_ptr<bvector<char>> data);
+
+        void Open() override {}
+        void Close() override {}
+
+        BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+        BentleyStatus GetPosition(uint64_t& position) override {position = m_position; return SUCCESS;}
+        BEHTTP_EXPORT BentleyStatus Reset() override;
+        BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+        BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+        BEHTTP_EXPORT uint64_t GetLength() override;
+
+        Utf8String AsString() const override {BeAssert(false && "Not supported"); return "";}
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpByteStreamBody> HttpByteStreamBodyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE HttpByteStreamBody : public HttpBody
 {
 protected:
