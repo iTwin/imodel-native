@@ -34,8 +34,8 @@ TEST_F(GlobalHandleContainerTest, AllocateHandle)
     {
     uint32_t handle = offset;
     ASSERT_TRUE(0 == GlobalHandleContainer::IsHandleValid(handle));
-    GlobalHandleContainer::ReleaseHandle(offset+1);
-    EXPECT_EQ(NULL, GlobalHandleContainer::GetPointer(offset+3));
+    GlobalHandleContainer::ReleaseHandle(offset + 1);
+    EXPECT_EQ(NULL, GlobalHandleContainer::GetPointer(offset + 3));
 
     uint32_t dum1 = 21;//dum* give dummy values, they mean nothing, just giving a reference to pointers
     ptr = &dum1;
@@ -55,9 +55,6 @@ TEST_F(GlobalHandleContainerTest, AllocateHandle)
     handlein = offset + 3;
     received = GlobalHandleContainer::GetPointer(handlein);
     EXPECT_EQ(ptr3, received);
-
-    
-
     ASSERT_TRUE(1 == GlobalHandleContainer::IsHandleValid((uint32_t)(offset + 1)));
 
     }
