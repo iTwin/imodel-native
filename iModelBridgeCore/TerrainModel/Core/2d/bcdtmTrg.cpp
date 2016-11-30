@@ -7956,6 +7956,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
         goto errexit;
         }
     dtmP->ppTol /= 100;
+    dtmP->ppTol /= 100;
     dtmP->plTol /= 100;
 
     for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
@@ -8018,7 +8019,7 @@ BENTLEYDTM_EXPORT int bcdtmObject_triangulateStmTrianglesDtmObject
     bcdtmList_removeNoneFeatureHullLinesDtmObject (dtmP);
 
     // Add internal voids.
-        bcdtmObject_addVoidsToInternalDtmObject (dtmP);
+    bcdtmObject_addVoidsToInternalDtmObject (dtmP);
 
 
     // Delete all breaklines.
