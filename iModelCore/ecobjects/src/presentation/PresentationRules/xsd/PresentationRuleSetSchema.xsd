@@ -297,7 +297,8 @@
             <xs:complexContent>
                 <xs:extension base="NavigationSpecificationDef">
                     <xs:choice minOccurs="0" maxOccurs="unbounded">
-                        <xs:element name="Query" type="SearchQueryDef" />
+                        <xs:element name="StringQuery" type="StringQueryDef" />
+                        <xs:element name="PropertyValueQuery" type="ECPropertyValueQueryDef" />
                     </xs:choice>
                     <xs:attribute default="true" name="GroupByClass" type="xs:boolean"/>
                     <xs:attribute default="true" name="GroupByLabel" type="xs:boolean"/>
@@ -306,13 +307,20 @@
             </xs:complexContent>
         </xs:complexType>
     </xs:element>
-    <xs:complexType name="SearchQueryDef">
+    <xs:attributeGroup name="QueryAttributesDef">
+        <xs:attribute name="SchemaName" type="xs:string" use="required" />
+        <xs:attribute name="ClassName" type="xs:string" use="required" />
+    </xs:attributeGroup>
+    <xs:complexType name="StringQueryDef">
         <xs:simpleContent>
             <xs:extension base="RequiredStringContentDef">
-                <xs:attribute name="SchemaName" type="xs:string" use="required" />
-                <xs:attribute name="ClassName" type="xs:string" use="required" />
+                <xs:attributeGroup ref="QueryAttributesDef" />
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="ECPropertyValueQueryDef">
+        <xs:attributeGroup ref="QueryAttributesDef" />
+        <xs:attribute name="ParentPropertyName" type="xs:string" use="required"/>
     </xs:complexType>
     <xs:element name="RelatedInstances">
         <xs:complexType>
