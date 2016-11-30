@@ -269,6 +269,7 @@ ECSqlStatus ECSqlUpdatePreparer::CheckForReadonlyProperties(ECSqlPrepareContext&
 //static
 ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& snippets, ECSqlPrepareContext& ctx, AssignmentListExp const* assignmentListExp)
     {
+    //! Like SELECT we like to prepare leave nodes
     ctx.PushScope(*assignmentListExp);
     BeAssert(snippets.m_propertyNamesNativeSqlSnippets.empty());
     BeAssert(snippets.m_valuesNativeSqlSnippets.empty());
@@ -280,9 +281,20 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
         auto assignmentExp = static_cast<AssignmentExp const*> (childExp);
         if (assignmentExp->GetPropertyNameExp()->GetPropertyMap().IsData())
             {
-            if (static_cast<DataPropertyMap const&>(assignmentExp->GetPropertyNameExp()->GetPropertyMap()).IsOverflow())
-                snippets.m_overflowPropertyIndexes.push_back(index);
+            size_t component = 0;
+            SearchPropertyMapVisitor visitor(PropertyMap::Type::All, true);
+            for (auto childPropertyMap : visitor.Results())
+                {               
+                if (static_cast<DataPropertyMap const*>(childPropertyMap)->GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+                    {
+                    if (static_cast<DataPropertyMap const&>(assignmentExp->GetPropertyNameExp()->GetPropertyMap()).GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+                        snippets.m_overflowPropertyIndexes[index].insert(component);
+                    }
+
+                component++;
+                }
             }
+
         
         NativeSqlBuilder::List propertyNamesNativeSqlSnippets;
         auto stat = ECSqlPropertyNameExpPreparer::Prepare(propertyNamesNativeSqlSnippets, ctx, assignmentExp->GetPropertyNameExp());

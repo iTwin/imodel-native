@@ -191,7 +191,45 @@ ECN::ECClass const& PropertyMapContainer::GetClass() const { return m_classMap.G
 ECDbCR PropertyMapContainer::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //************************************CompoundDataPropertyMap::Collection********
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//--------------------------------------------------------------------------------------
+DataPropertyMap::OverflowState CompoundDataPropertyMap::_GetOverflowState() const
+    {
+    Nullable<OverflowState> state;
+    for (DataPropertyMap const* child : m_list)
+        {
+        OverflowState childState = child->GetOverflowState();
+        if (childState == OverflowState::Mix)
+            return  OverflowState::Mix;
 
+        if (childState == OverflowState::Yes)
+            {
+            if (state.IsValid())
+                {
+                if (state == OverflowState::No)
+                    return   OverflowState::Mix;
+                }
+            else
+                state = OverflowState::Yes;
+            }
+        else
+            {
+            if (state.IsValid())
+                {
+                if (state == OverflowState::Yes)
+                    return   OverflowState::Mix;
+                }
+            else
+                state = OverflowState::No;
+            }
+        }
+
+    if (state.IsNull())
+        return OverflowState::No;
+
+    return state.Value();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------

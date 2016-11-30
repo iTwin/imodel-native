@@ -1257,7 +1257,7 @@ BentleyStatus ViewGenerator::SqlVisitor::ToNativeSql(SingleColumnDataPropertyMap
         return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
 
     Result& result = Record(propertyMap);
-    if (propertyMap.IsOverflow())
+    if (propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::Yes)
         {
         DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
         BeAssert(overFlowColumn != nullptr);

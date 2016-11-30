@@ -220,7 +220,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
 
         if (propNameExp->GetPropertyMap().IsData())
             {
-            if (static_cast<DataPropertyMap const&>(propNameExp->GetPropertyMap()).IsOverflow())
+            if (static_cast<DataPropertyMap const&>(propNameExp->GetPropertyMap()).GetOverflowState() == DataPropertyMap::OverflowState::Yes)
                 insertSqlSnippets.m_overflowPropertyIndexes.push_back(index);
             }
         index++;

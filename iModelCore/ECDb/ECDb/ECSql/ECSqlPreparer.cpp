@@ -1592,7 +1592,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
         PropertyNameExp const* targetPropertyExp = targetExp->GetPropertyNameExp(index);
         bool isOverFlowPropertyMap = false;
         if (targetPropertyExp->GetPropertyMap().IsData())
-            isOverFlowPropertyMap = static_cast<DataPropertyMap const&>(targetPropertyExp->GetPropertyMap()).IsOverflow();
+            isOverFlowPropertyMap = static_cast<DataPropertyMap const&>(targetPropertyExp->GetPropertyMap()).GetOverflowState() == DataPropertyMap::OverflowState::Yes;
 
 
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)

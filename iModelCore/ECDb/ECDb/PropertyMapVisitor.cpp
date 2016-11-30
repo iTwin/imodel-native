@@ -233,7 +233,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenLeft();
 
-    if (propertyMap.IsOverflow())
+    if (propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::Yes)
         {
         DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
         BeAssert(overFlowColumn != nullptr);
