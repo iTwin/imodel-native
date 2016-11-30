@@ -1312,7 +1312,7 @@ m_levelForDrapeLinear(scMesh->GetTerrainDepth())
 DTMStatusInt Tile3dTM::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP pts, int numPoints)
     {
    bvector<DPoint3d> drapedLine;
-    for (size_t i = 0; i < numPoints; ++i)
+    for (size_t i = 0; i < numPoints-1; ++i)
         {
         bvector<DPoint3d> lineTemp;
         DrapeLine3d(lineTemp, m_node, pts[i], pts[i + 1]);
