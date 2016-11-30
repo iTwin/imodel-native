@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
-#include <Geom/XYZRangeTree.h>
+#include <DgnPlatform/RangeIndex.h>
 #if defined (BENTLEYCONFIG_PARASOLID) 
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
@@ -221,53 +221,6 @@ ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark 
 static ITileGenerationProgressMonitor   s_defaultProgressMeter;
 // unused - static UnconditionalTileGenerationFilter s_defaultFilter;
 
-struct RangeTreeNode
-{
-#if defined(BENTLEYCONFIG_64BIT_HARDWARE)
-    static void FreeAll(XYZRangeTreeRoot& tree) { }
-
-    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
-        {
-        tree.Add(reinterpret_cast<void*>(elemId.GetValueUnchecked()), range);
-        }
-
-    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
-        {
-        return DgnElementId(reinterpret_cast<uint64_t>(leaf.GetData()));
-        }
-#else
-    DgnElementId    m_elementId;
-
-    RangeTreeNode(DgnElementId elemId) : m_elementId(elemId) { }
-
-    struct FreeLeafDataTreeHandler : XYZRangeTreeHandler
-    {
-        virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP pRoot, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-            {
-            delete reinterpret_cast<RangeTreeNode*>(pLeaf->GetData());
-            return true;
-            }
-    };
-
-    static void FreeAll(XYZRangeTreeRoot& tree)
-        {
-        FreeLeafDataTreeHandler handler;
-        tree.Traverse(handler);
-        }
-
-    static void Add(XYZRangeTreeRoot& tree, DgnElementId elemId, DRange3dCR range)
-        {
-        tree.Add(new RangeTreeNode(elemId), range);
-        }
-
-    static DgnElementId GetElementId(XYZRangeTreeLeaf& leaf)
-        {
-        auto const& node = *reinterpret_cast<RangeTreeNode const*>(leaf.GetData());
-        return node.m_elementId;
-        }
-#endif
-};
-
 static const int    s_splitCount         = 3;       // 3 splits per parent (oct-trees).
 static const double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 static const size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
@@ -417,7 +370,7 @@ bool TileModelDelta::DoIncremental (TileNodeCR tile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerationCache::TileGenerationCache(Options options) : m_tree(XYZRangeTreeRoot::Allocate()), m_options(options),
+TileGenerationCache::TileGenerationCache(Options options) : m_range(DRange3d::NullRange()), m_options(options),
     m_dbMutex(BeSQLite::BeDbMutex::MutexType::Recursive)
     {
     // Caller will populate...
@@ -495,35 +448,47 @@ GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemI
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::~TileGenerationCache()
     {
-    RangeTreeNode::FreeAll(*m_tree);
-
-    XYZRangeTreeRoot::Free(m_tree);
+    //
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d TileGenerationCache::GetRange() const
-    {
-    return GetTree().Range();
-    }
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct RangeAccumulator : RangeIndex::Traverser
+{
+    DRange3dR       m_range;
+
+    RangeAccumulator(DRange3dR range) : m_range(range) { m_range = DRange3d::NullRange(); }
+
+    virtual bool _AbortOnWriteRequest() const override { return true; }
+    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return true; }
+    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        {
+        m_range.Extend(entry.m_range.ToRange3d());
+        return Stop::No;
+        }
+
+    TileGenerator::Status Accumulate(RangeIndex::Tree& tree)
+        {
+        if (Stop::Yes == tree.Traverse(*this))
+            return TileGenerator::Status::Aborted;
+        else
+            return m_range.IsNull() ? TileGenerator::Status::NoGeometry : TileGenerator::Status::Success;
+        }
+};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGenerationCache::Populate(DgnDbR db, DgnModelId modelId)       
     {
-    Statement stmt(db,  "SELECT ElementId,MinX,MinY,MinZ,MaxX,MaxY,MaxZ FROM " DGN_VTABLE_SpatialIndex " r, " BIS_TABLE(BIS_CLASS_Element) " e WHERE r.ElementId=e.Id AND e.ModelId=?");
-    stmt.BindId(1, modelId);
+    m_modelId = modelId;
+    auto model = db.Models().Get<GeometricModel>(modelId);
+    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+        return;
 
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        auto elemId = stmt.GetValueId<DgnElementId>(0);
-        DRange3d elRange = DRange3d::From(stmt.GetValueDouble(1), stmt.GetValueDouble(2), stmt.GetValueDouble(3),
-                                          stmt.GetValueDouble(4), stmt.GetValueDouble(5), stmt.GetValueDouble(6));
-
-        RangeTreeNode::Add(*m_tree, elemId, elRange);
-        }
+    RangeAccumulator accum(m_range);
+    accum.Accumulate(*model->GetRangeIndex());  // ###TODO: Return the resultant status
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1701,11 +1666,6 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]                                                         
         {
-    #if defined (BENTLEYCONFIG_PARASOLID) 
-        ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
-        ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
-    #endif
-
         context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId());
         bool emptyRange = context.m_cache->GetRange().IsNull();
         return emptyRange ? Status::NoGeometry : Status::Success;
@@ -2119,7 +2079,10 @@ public:
         }
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
-    virtual void _OutputGraphics(ViewContextR context) override;
+    void OutputGraphics(ViewContextR context);
+
+    DgnDbR GetDgnDb() const { return m_dgndb; }
+    TileGenerationCacheCR GetCache() const { return m_cache; }
 
     bool BelowMinRange(DRange3dCR range) const
         {
@@ -2346,38 +2309,51 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
     }
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   09/16
+// @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
-struct GatherGeometryHandler : XYZRangeTreeHandler
+struct GeometryCollector : RangeIndex::Traverser
 {
     TileGeometryProcessor&  m_processor;
     ViewContextR            m_context;
-    DRange3d                m_range;
-    double                  m_tolerance;
+    RangeIndex::FBox        m_range;
 
-    GatherGeometryHandler(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR viewContext)
-        : m_range(range), m_processor(proc), m_context(viewContext) { }
+    GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR context)
+        : m_range(range), m_processor(proc), m_context(context) { }
 
-    virtual bool ShouldRecurseIntoSubtree(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior) override
+    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
         {
-        return pInterior->Range().IntersectsWith(m_range);
+        return box.IntersectsWith(m_range);
         }
-    virtual bool ShouldContinueAfterLeaf(XYZRangeTreeRootP, XYZRangeTreeInteriorP pInterior, XYZRangeTreeLeafP pLeaf) override
-        {
-        if (pLeaf->Range().IntersectsWith(m_range) && !m_processor.BelowMinRange(pLeaf->Range()))
-            m_processor.ProcessElement(m_context, RangeTreeNode::GetElementId(*pLeaf), pLeaf->Range());
 
-        return true;
+    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        {
+        if (entry.m_range.IntersectsWith(m_range))
+            {
+            auto entryRange = entry.m_range.ToRange3d();
+            if (!m_processor.BelowMinRange(entryRange))
+                m_processor.ProcessElement(m_context, entry.m_id, entryRange);
+            }
+
+        return Stop::No;
+        }
+
+    TileGenerator::Status Collect()
+        {
+        auto model = m_processor.GetDgnDb().Models().Get<GeometricModel>(m_processor.GetCache().GetModelId());
+        if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+            return TileGenerator::Status::NoGeometry;
+
+        return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGenerator::Status::Aborted : TileGenerator::Status::Success;
         }
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::_OutputGraphics(ViewContextR context)
+void TileGeometryProcessor::OutputGraphics(ViewContextR context)
     {
-    GatherGeometryHandler handler(m_range, *this, context);
-    m_cache.GetTree().Traverse(handler);
+    GeometryCollector collector(m_range, *this, context);
+    collector.Collect();    // ###TODO: Return resultant status...
 
     // We sort by size in order to ensure the largest geometries are assigned batch IDs
     // If the number of geometries does not exceed the max number of batch IDs, they will all get batch IDs so sorting is unnecessary
@@ -2403,7 +2379,7 @@ void ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, T
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold);
     TileGeometryProcessorContext    context(processor, db, cache);
 
-    processor._OutputGraphics(context);
+    processor.OutputGraphics(context);
     }
 
 /*---------------------------------------------------------------------------------**//**

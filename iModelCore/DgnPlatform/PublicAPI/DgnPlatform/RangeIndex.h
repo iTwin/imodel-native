@@ -50,6 +50,11 @@ struct FBox
     FBox() {Invalidate();}
     bool IsNull() const {return m_low.x>m_high.x || m_low.y>m_high.y || m_low.z>m_high.z;}
     DRange3d ToRange3d() const {return DRange3d::From(m_low.x, m_low.y, m_low.z, m_high.x, m_high.y, m_high.z);}
+    bool IntersectsWith(FBox const& rhs) const
+        {
+        return m_low.x <= rhs.m_high.x && m_low.y <= rhs.m_high.y && m_low.z <= rhs.m_high.z
+            && rhs.m_low.x <= m_high.x && rhs.m_low.y <= m_high.y && rhs.m_low.z <= m_high.z;
+        }
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FBox);

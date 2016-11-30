@@ -16,10 +16,6 @@
 
 #include <DgnPlatform/DgnPlatformLib.h>
 
-BEGIN_BENTLEY_GEOMETRY_NAMESPACE
-class XYZRangeTreeRoot;
-END_BENTLEY_GEOMETRY_NAMESPACE
-
 BENTLEY_RENDER_TYPEDEFS(TileTriangle);
 BENTLEY_RENDER_TYPEDEFS(TilePolyline);
 BENTLEY_RENDER_TYPEDEFS(TileMesh);
@@ -537,7 +533,7 @@ struct TileGenerationCache : RefCountedBase
     // The following options are mutually exclusive
     enum class Options
     {
-        None = 0,               // cache nothin
+        None = 0,               // cache nothing
         CacheGeometrySources,   // cache GeometrySources by element ID
         CacheGeometryLists,     // cache TileGeometryLists by element ID
     };
@@ -545,12 +541,13 @@ private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
     typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
 
-    XYZRangeTreeRoot*           m_tree;
+    DRange3d                    m_range;
     mutable GeometryListMap     m_geometry;
     mutable GeometrySourceMap   m_geometrySources;
     mutable BeMutex             m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
     Options                     m_options;
+    DgnModelId                  m_modelId;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
     TileGenerationCache(Options options);
@@ -560,8 +557,8 @@ private:
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
-    XYZRangeTreeRoot& GetTree() const { return *m_tree; }
-    DGNPLATFORM_EXPORT DRange3d GetRange() const;
+    DRange3dCR GetRange() const { return m_range; }
+    DgnModelId GetModelId() const { return m_modelId; }
 
     bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
     GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
