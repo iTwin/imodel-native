@@ -12,8 +12,6 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-#define WIP_2D_SUPPORT
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1545,10 +1543,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     auto spatialView = m_viewController._ToSpatialView();
     auto drawingView = m_viewController._ToDrawingView();
 
-#ifndef WIP_2D_SUPPORT
-    drawingView = nullptr;
-#endif
-    
     if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
@@ -1663,15 +1657,6 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
 
-#ifndef WIP_2D_SUPPORT
-    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
-    if (nullptr == cameraView && nullptr == orthographicView)
-        {
-        BeAssert(false && "unsupported view type");
-        return;
-        }
-#endif
-
     json["name"] = view.GetName();
 
     auto spatialView = view.ToSpatialView();
@@ -1756,12 +1741,6 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
             continue;
 
         auto spatialView = viewDefinition->ToSpatialView();
-
-#ifndef WIP_2D_SUPPORT
-        if (nullptr == spatialView)
-            continue;
-#endif
-    
         auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(viewDefinition.get()) : nullptr;
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());

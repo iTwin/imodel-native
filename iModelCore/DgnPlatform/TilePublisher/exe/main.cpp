@@ -398,8 +398,6 @@ struct TilesetPublisher : PublisherContext
 {
 private:
     TileGeneratorP              m_generator = nullptr;
-    DgnModelIdSet               m_allModels;
-    DgnCategoryIdSet            m_allCategories;
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
@@ -435,24 +433,6 @@ public:
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
-
-        auto& db = viewController.GetDgnDb();
-        for (auto& view : ViewDefinition::MakeIterator(db))
-            {
-            auto viewDefinition = ViewDefinition::Get(db, view.GetId());
-            auto spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
-            if (nullptr == spatialView)
-                continue;
-
-            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
-            auto& modelSelector = spatial->GetModelSelector();
-            auto viewModels = modelSelector.GetModels();
-            m_allModels.insert(viewModels.begin(), viewModels.end());
-
-            auto& categorySelector = spatial->GetCategorySelector();
-            auto viewCats = categorySelector.GetCategories();
-            m_allCategories.insert(viewCats.begin(), viewCats.end());
-            }
         }
 
     Status Publish(PublisherParams const& params);
