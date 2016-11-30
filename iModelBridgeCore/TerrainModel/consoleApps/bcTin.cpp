@@ -170,7 +170,7 @@ void test()
     long numPoints;
     long numTinLines;
     long numTriangles;
-    long numDtmFeatures;
+    long numDtmFeatures_;
     long numBreaks;
     long numContourLines;
     long numVoids;
@@ -180,7 +180,7 @@ void test()
     bool hasHull;
 
     DTMStatusInt status = (DTMStatusInt)bcdtmUtility_getStatisticsDtmObject(dtmP, dummyState, numPoints, numTinLines, numTriangles, dummy,
-        dummy, numDtmFeatures, numBreaks, numContourLines, numVoids, numIslands, numHoles, numGroupSpots, hasHull, dummy);
+        dummy, numDtmFeatures_, numBreaks, numContourLines, numVoids, numIslands, numHoles, numGroupSpots, hasHull, dummy);
     
     bcdtmWrite_toFileDtmObject(dtmP, L"d:\\test.bcdtm");
     printf("Took %ld\n", took);
