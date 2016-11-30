@@ -176,32 +176,6 @@ struct CallbackQueue
         Http::Request::ProgressCallbackCR NewCallback();
     };
 
-//=======================================================================================
-//@bsiclass                                      Karolis.Dziedzelis             11/2015
-//=======================================================================================
-struct DgnDbServerHost : public Dgn::DgnPlatformLib::Host
-    {
-    DEFINE_T_SUPER(Dgn::DgnPlatformLib::Host);
-    private:
-        bool m_initialized;
-        bool m_terminated;
-        static BeFileName s_temp;
-        static BeFileName s_assets;
-    public:
-        DgnDbServerHost();
-        ~DgnDbServerHost();
-
-        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("DgnDb Server"); }
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-        virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
-
-        static void Initialize(BeFileNameCR temp, BeFileNameCR assets);
-        static void Adopt(std::shared_ptr<DgnDbServerHost> const& host);
-        static void Forget(std::shared_ptr<DgnDbServerHost> const& host, bool terminate = true);
-
-        static bool IsInitialized();
-    };
-
 bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
 bool GetCodeFromServerJson (JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);

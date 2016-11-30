@@ -30,19 +30,6 @@ BriefcaseFileNameCallback DgnDbClient::DefaultFileNameCallback = [](BeFileName b
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-void DgnDbClient::Initialize()
-    {
-    auto host = Dgn::DgnPlatformLib::QueryHost();
-    BeAssert(host);
-
-    BeFileName temp = host->GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
-    BeFileName assets = host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    DgnDbServerHost::Initialize(temp, assets);
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2016
 //---------------------------------------------------------------------------------------
 DgnDbRepositoryConnectionResult DgnDbClient::CreateRepositoryConnection(RepositoryInfoCR repositoryInfo) const
@@ -57,7 +44,6 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(RepositoryInfo
     {
     const Utf8String methodName = "DgnDbClient::ConnectToRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty() || m_serverUrl != repositoryInfo.GetServerURL())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -79,7 +65,6 @@ DgnDbRepositoryConnectionTaskPtr DgnDbClient::ConnectToRepository(Utf8StringCR r
     {
     const Utf8String methodName = "DgnDbClient::ConnectToRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -250,7 +235,6 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
     {
     const Utf8String methodName = "DgnDbClient::GetRepositories";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -298,7 +282,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryByName(Utf8StringCR repos
     {
     const Utf8String methodName = "DgnDbClient::GetRepositoryByName";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -346,7 +329,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryById(Utf8StringCR reposit
     {
     const Utf8String methodName = "DgnDbClient::GetRepositoryById";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (m_serverUrl.empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Server URL is invalid.");
@@ -535,7 +517,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, U
     const Utf8String methodName = "DgnDbClient::CreateNewRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.GetFileName().DoesPathExist())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -620,7 +601,6 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, b
     ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::CreateNewRepository";
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.GetFileName().DoesPathExist())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -644,7 +624,6 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
     const Utf8String methodName = "DgnDbClient::OpenBriefcase";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -732,7 +711,6 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
     const Utf8String methodName = "DgnDbClient::RefreshBriefcase";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!db.IsValid() || !db->GetFileName().DoesPathExist())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -796,8 +774,7 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
                 double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
 
-                std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-                DgnDbServerHost::Adopt(host);
+                //NEEDSWORK: has to be on client thread
                 db->CloseDb();
                 
                 BeFileName backupPath(originalFilePath.GetName());
@@ -871,8 +848,6 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
 
         BeSQLite::DbResult status;
-        std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-        DgnDbServerHost::Adopt(host);
         Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
         if (BeSQLite::DbResult::BE_SQLITE_OK == status)
             {
@@ -895,8 +870,8 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
 #if defined (ENABLE_BIM_CRASH_TESTS)
             DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
 #endif
+            //NEEDSWORK: has to be on client thread
             db->CloseDb();
-            DgnDbServerHost::Forget(host);
 
             if (RevisionStatus::Success == mergeStatus)
                 {
@@ -910,7 +885,6 @@ DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectio
         else
             {
             DgnDbServerStatusResult result = DgnDbServerStatusResult::Error(DgnDbServerError(*db, status));
-            DgnDbServerHost::Forget(host);
             if (!result.IsSuccess())
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return result;
@@ -927,8 +901,6 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
     const Utf8String methodName = "DgnDbClient::AcquireBriefcaseToDir";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
-    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
     if (repositoryInfo.GetId().empty())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository name.");
@@ -1014,7 +986,6 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR r
     {
     const Utf8String methodName = "DgnDbClient::AcquireBriefcase";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (localFileName.DoesPathExist() && !localFileName.IsDirectory())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
