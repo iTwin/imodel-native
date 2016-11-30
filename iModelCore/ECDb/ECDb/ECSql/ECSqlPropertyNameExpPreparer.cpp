@@ -178,24 +178,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
-    if (propMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        {
-        NavigationPropertyMap::RelECClassIdPropertyMap const& classIdPm = static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap);
-        if (classIdPm.IsVirtual())
-            {
-            if (exp.FindParent(Exp::Type::Where) != nullptr)
-                {
-                NativeSqlBuilder sql;
-                sql.Append(classIdPm.GetDefaultClassId());
-                nativeSqlSnippets.push_back(sql);
-                return;
-                }
-            }
-        }
-
-    ClassMap const& classMap = propMap.GetClassMap();
-
-    ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(),
+    ToSqlPropertyMapVisitor sqlVisitor(propMap.GetClassMap().GetJoinedTable(),
                                         ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::SelectView : ToSqlPropertyMapVisitor::SqlTarget::Table, 
                                        classIdentifier, exp.HasParentheses(), exp.IsLhsAssignmentOperandExpression());
 
