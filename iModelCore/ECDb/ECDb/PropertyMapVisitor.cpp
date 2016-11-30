@@ -233,46 +233,48 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenLeft();
 
-    if (propertyMap.IsOverflow())
+    if (!propertyMap.IsOverflow())
         {
-        DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
-        BeAssert(overFlowColumn != nullptr);
-        //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
-        if (m_isForAssignmentExpression)
-            {
-            //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
-            result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
-            }
-        else
-            {
-            if (m_target == SqlTarget::Table)
-                {
-                bool addBlobToBase64Func = false;
-                if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
-                    {
-                    addBlobToBase64Func = true;
-                    }
+        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        if (m_wrapInParentheses)
+            result.GetSqlBuilderR().AppendParenRight();
 
-                if (addBlobToBase64Func)
-                    result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
-                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                    .AppendComma().Append("'$.")
-                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
-                else
-                    result.GetSqlBuilderR().Append("json_extract(")
-                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                    .AppendComma().Append("'$.")
-                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-                }
-            else
-                {
-                result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-                }
-            }
+        return SUCCESS;
+        }
+
+    DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
+    BeAssert(overFlowColumn != nullptr);
+    //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
+    if (m_isForAssignmentExpression)
+        {
+        //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
+        result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
         }
     else
         {
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        if (m_target == SqlTarget::Table)
+            {
+            bool addBlobToBase64Func = false;
+            if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                {
+                addBlobToBase64Func = true;
+                }
+
+            if (addBlobToBase64Func)
+                result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
+                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                .AppendComma().Append("'$.")
+                .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
+            else
+                result.GetSqlBuilderR().Append("json_extract(")
+                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                .AppendComma().Append("'$.")
+                .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+            }
+        else
+            {
+            result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+            }
         }
 
     if (m_wrapInParentheses)
@@ -281,23 +283,43 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     return SUCCESS;
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const
     {
     Result& result = Record(propertyMap);
-    if (!propertyMap.IsVirtual())
+
+    if (m_isForAssignmentExpression)
         {
+        if (propertyMap.IsVirtual()) //ignore completely, no-op binders will be
+            return SUCCESS;
+
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         return SUCCESS;
         }
 
-    if (m_target == SqlTarget::SelectView)
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-    else
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultClassId());
+    BeAssert(propertyMap.GetParent() != nullptr && propertyMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
+    NavigationPropertyMap const& navPropMap = static_cast<NavigationPropertyMap const&> (*propertyMap.GetParent());
+    NavigationPropertyMap::IdPropertyMap const& idPropMap = navPropMap.GetIdPropertyMap();
 
+    Utf8CP sqlFormat = "CASE WHEN %s IS NULL THEN NULL ELSE %s END";
+    if (!propertyMap.IsVirtual() || m_target == SqlTarget::SelectView)
+        {
+        NativeSqlBuilder idColSql;
+        idColSql.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+
+        NativeSqlBuilder relClassIdColSql;
+        relClassIdColSql.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+
+        result.GetSqlBuilderR().AppendFormatted(sqlFormat, idColSql.ToString(), relClassIdColSql.ToString());
+        return SUCCESS;
+        }
+
+    BeAssert(m_target == SqlTarget::Table && propertyMap.IsVirtual());
+
+    result.GetSqlBuilderR().AppendFormatted(sqlFormat, idPropMap.GetColumn().GetName().c_str(), propertyMap.GetDefaultClassId().ToString().c_str());
     return SUCCESS;
     }
 

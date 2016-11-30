@@ -430,7 +430,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                     return ERROR;
                     }
 
-                if (column->IsOverflow())
+                if (column->IsOverflowSlave())
                     {
                     Issues().Report(ECDbIssueSeverity::Error,
                                     "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "

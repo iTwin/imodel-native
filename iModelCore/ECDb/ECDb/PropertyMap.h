@@ -24,8 +24,10 @@ struct IPropertyMapVisitor
     {
     private:
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const { return SUCCESS; }
-        virtual BentleyStatus _Visit(CompoundDataPropertyMap const& propertyMap) const;
         virtual BentleyStatus _Visit(SystemPropertyMap const& propertyMap) const { return SUCCESS; }
+
+    protected:
+        virtual BentleyStatus _Visit(CompoundDataPropertyMap const& propertyMap) const;
 
     public:
         ~IPropertyMapVisitor() {}

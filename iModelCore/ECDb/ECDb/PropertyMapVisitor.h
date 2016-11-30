@@ -90,7 +90,7 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 //+===============+===============+===============+===============+===============+======
 struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
     {
-    enum SqlTarget
+    enum class SqlTarget
         {
         SelectView, //!SELECT view instead of table (used by view generator).
         Table, //!Direct query against a table

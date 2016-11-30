@@ -171,7 +171,7 @@ public:
     bool IsOnlyColumnOfPrimaryKeyConstraint() const;
     Kind GetKind() const { return m_kind; }
     bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
-    bool IsOverflow() const { return GetPhysicalOverflowColumn() != nullptr; }
+    bool IsOverflowSlave() const { return Enum::Intersects(m_kind, Kind::OverflowSlave); }
 
     DbTable& GetTableR() const { return m_table; }
     Constraints& GetConstraintsR() { return m_constraints; };
