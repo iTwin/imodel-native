@@ -367,45 +367,47 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             //JSON structure for nav props:
             //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
-            if (!navProp->IsMultiple())
+            if (navProp->IsMultiple())
                 {
-                if (!childJsonValue.isObject() || !childJsonValue.isMember("Id"))
-                    {
-                    status = ERROR;
-                    continue;
-                    }
-
-                //WIP_NAV_PROP Need to process RelECClassId member
-                const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["Id"], INT64_C(0));
-                if (navId == INT64_C(0))
-                    {
-                    status = ERROR;
-                    continue;
-                    }
-
-                //WIP_NAV_PROP this is wrong. We need to find the correct rel class from the RelECClassId entry in the JSON
-                //This needs changes in ECObjects though
-                ECRelationshipClassCP navRelClass = navProp->GetRelationshipClass();
-                if (childJsonValue.isMember("RelECClassId"))
-                    {
-                    const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["RelECClassId"], INT64_C(0));
-                    if (relClassId == INT64_C(0))
-                        {
-                        status = ERROR;
-                        continue;
-                        }
-                    //WIP_NAV_PROP: to populate a nav prop ECValue we need an ECRelationshipClassCP. How to get to it?
-                    }
-
-                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ECValue(*navRelClass, navId));
-                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
-                    status = ERROR;
-
+                LOG.error("NavigationECProperties with IsMultiple == true not supported by ECJsonUtilities");
+                status = ERROR;
                 continue;
                 }
 
-            LOG.error("NavigationECProperties with IsMultiple == true not supported by ECJsonUtilities");
-            status = ERROR;
+            if (!childJsonValue.isObject() || !childJsonValue.isMember("Id"))
+                {
+                status = ERROR;
+                continue;
+                }
+
+            const int64_t navId = BeJsonUtilities::Int64FromValue(childJsonValue["Id"], INT64_C(0));
+            if (navId == INT64_C(0))
+                {
+                status = ERROR;
+                continue;
+                }
+
+            ECValue v;
+            if (!childJsonValue.isMember("RelECClassId"))
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                    status = ERROR;
+                }
+            else
+                {
+                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["RelECClassId"], INT64_C(0));
+                //WIP_ECOBJECTS_RELCLASSID
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(ECClassId(relClassId).GetValue(), navId))
+                    status = ERROR;
+                }
+
+            if (SUCCESS == status)
+                {
+                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ecStatus != ECObjectsStatus::Success && ecStatus != ECObjectsStatus::PropertyValueMatchesNoChange)
+                    status = ERROR;
+                }
+
             continue;
             }
         }
@@ -803,46 +805,49 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             //JSON structure for nav props:
             //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = propertyP->GetAsNavigationProperty();
-            if (!navProp->IsMultiple())
+            if (navProp->IsMultiple())
                 {
-                RapidJsonValueCR json = it->value;
-
-                if (!json.IsObject() || !json.HasMember("Id"))
-                    {
-                    status = ERROR;
-                    continue;
-                    }
-
-                const uint64_t navId = (uint64_t) Int64FromJson(json["Id"], INT64_C(0));
-                if (navId == INT64_C(0))
-                    {
-                    status = ERROR;
-                    continue;
-                    }
-
-                //WIP_NAV_PROP this is wrong. We need to find the correct rel class from the RelECClassId entry in the JSON
-                //This needs changes in ECObjects though
-                ECRelationshipClassCP navRelClass = navProp->GetRelationshipClass();
-                if (json.HasMember("RelECClassId"))
-                    {
-                    const uint64_t relClassId = (uint64_t) Int64FromJson(json["RelECClassId"], INT64_C(0));
-                    if (relClassId == INT64_C(0))
-                        {
-                        status = ERROR;
-                        continue;
-                        }
-                    //WIP_NAV_PROP: to populate a nav prop ECValue we need an ECRelationshipClassCP. How to get to it?
-                    }
-
-                ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), ECValue(*navRelClass, navId));
-                if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
-                    status = ERROR;
-
+                LOG.error("NavigationECProperties with IsMultiple == true not supported by ECRapidJsonUtilities");
+                status = ERROR;
                 continue;
                 }
 
-            LOG.error("NavigationECProperties with IsMultiple == true not supported by ECRapidJsonUtilities");
-            status = ERROR;
+            RapidJsonValueCR json = it->value;
+
+            if (!json.IsObject() || !json.HasMember("Id"))
+                {
+                status = ERROR;
+                continue;
+                }
+
+            const int64_t navId = Int64FromJson(json["Id"], INT64_C(0));
+            if (navId == INT64_C(0))
+                {
+                status = ERROR;
+                continue;
+                }
+
+            ECValue v;
+            if (!json.HasMember("RelECClassId"))
+                {
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                    status = ERROR;
+                }
+            else
+                {
+                const uint64_t relClassId = (uint64_t) Int64FromJson(json["RelECClassId"], INT64_C(0));
+                //WIP_ECOBJECTS_RELCLASSID
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(ECClassId(relClassId).GetValue(), navId))
+                    status = ERROR;
+                }
+
+            if (SUCCESS == status)
+                {
+                const ECObjectsStatus ecStatus = instance.SetInternalValue(accessString.c_str(), v);
+                if (ECObjectsStatus::Success != ecStatus && ECObjectsStatus::PropertyValueMatchesNoChange != ecStatus)
+                    status = ERROR;
+                }
+
             continue;
             }
         }
