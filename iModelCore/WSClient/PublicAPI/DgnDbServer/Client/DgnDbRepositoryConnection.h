@@ -205,8 +205,8 @@ private:
     DgnDbServerFileTaskPtr GetBriefcaseFileInfo(BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the master file from the repository and initialize it as briefcase
-    DgnDbServerStatusTaskPtr DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
-                                                     Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerStatusResult DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
+        Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download the file for this revision from server.
     DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, Http::Request::ProgressCallbackCR callback = nullptr,

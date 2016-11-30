@@ -620,28 +620,25 @@ BeBriefcaseId                  briefcaseId
     const Utf8String methodName = "DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile";
     BeSQLite::DbResult status;
 
-    //NEEDSWORK: has to be on client thread
-
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-    DgnDbServerStatusResult result;
     if (BeSQLite::DbResult::BE_SQLITE_OK == status && db.IsValid())
         {
-        result = m_repositoryInfo.WriteRepositoryInfo (*db, briefcaseId);
+        DgnDbServerStatusResult result = m_repositoryInfo.WriteRepositoryInfo (*db, briefcaseId);
 #if defined (ENABLE_BIM_CRASH_TESTS)
         DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbRepositoryConnection_AfterWriteRepositoryInfo);
 #endif
-        db->CloseDb ();
+        db->CloseDb();
+        return result;
         }
     else
         {
         auto error = DgnDbServerError(db, status);
-        result = DgnDbServerStatusResult::Error(error);
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
         if (db.IsValid())
             db->CloseDb();
+        return DgnDbServerStatusResult::Error(error);
         }
 
-    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -681,7 +678,7 @@ ICancellationTokenPtr           cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadBriefcaseFile
+DgnDbServerStatusResult DgnDbRepositoryConnection::DownloadBriefcaseFile
 (
 BeFileName                      localFile,
 BeBriefcaseId                   briefcaseId,
@@ -696,33 +693,24 @@ ICancellationTokenPtr           cancellationToken
         Utf8String instanceId;
         instanceId.Sprintf("%u", briefcaseId.GetValue());
         ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, instanceId);
-        return m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)
-            ->Then<DgnDbServerStatusResult>([=] (const WSFileResult& fileResult)
+        auto fileResult = m_wsRepositoryClient->SendGetFileRequest(fileObject, localFile, nullptr, callback, cancellationToken)->GetResult();
+        if (!fileResult.IsSuccess())
             {
-            if (fileResult.IsSuccess())
-                return WriteBriefcaseIdIntoFile(fileResult.GetValue().GetFilePath(), briefcaseId);
-            else
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
-                return DgnDbServerStatusResult::Error(fileResult.GetError());
-                }
-            });
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+            return DgnDbServerStatusResult::Error(fileResult.GetError());
+            }
         }
     else
         {
         // Download file directly from the url.
-        return m_azureClient->SendGetFileRequest(url, localFile, callback, cancellationToken)
-            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+        auto azureResult = m_azureClient->SendGetFileRequest(url, localFile, callback, cancellationToken)->GetResult();
+        if (!azureResult.IsSuccess())
             {
-            if (result.IsSuccess())
-                return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
-            else
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-                return DgnDbServerStatusResult::Error(DgnDbServerError(result.GetError()));
-                }
-            });
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, azureResult.GetError().GetMessage().c_str());
+            return DgnDbServerStatusResult::Error(DgnDbServerError(azureResult.GetError()));
+            }
         }
+    return WriteBriefcaseIdIntoFile(localFile, briefcaseId);
     }
 
 //---------------------------------------------------------------------------------------
