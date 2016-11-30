@@ -8,8 +8,6 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/TileTree.h>
 
-USING_NAMESPACE_TILETREE
-
 BEGIN_SHEET_NAMESPACE
 namespace Handlers
 {
@@ -19,6 +17,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 }
 END_SHEET_NAMESPACE
 
+USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
 
@@ -88,6 +87,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
     auto sheet = new Element(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
+
 #ifdef WIP_SHEETS
     sheet->SetHeight(sheetTemplateElem->GetHeight());
     sheet->SetWidth(sheetTemplateElem->GetWidth());
@@ -193,6 +193,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
+#define DEBUG_TILES 1
 #if defined (DEBUG_TILES)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);  // debugging
     graphic->AddRangeBox(tile.m_range);                              // debugging
@@ -283,8 +284,8 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
         env.m_skybox.m_enabled = false;
         }
 
-    // max pixel size is the length of the diagonal. This allows tiles to be twice their natural size.
-    m_maxPixelSize = .5* DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    // max pixel size is half the length of the diagonal. 
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
 
     auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();

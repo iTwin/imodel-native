@@ -32,7 +32,7 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
         return;
 
     CreateDgnDbParams createDgnDbParams;
-    createDgnDbParams.SetRootSubjectLabel("ChangeTestFixture");
+    createDgnDbParams.SetRootSubjectName("ChangeTestFixture");
     createDgnDbParams.SetOverwriteExisting(true);
 
     DbResult createStatus;

@@ -32,37 +32,18 @@ typedef struct ::FT_LibraryRec_* FreeType_LibraryP;
 
 /*=================================================================================**//**
 @addtogroup DgnPlatformHost
-DgnPlatformLib defines interfaces that a "host" application can or must implement to use the DgnPlatform dlls.
+
+DgnPlatformLib defines interfaces that a "host" application must implement to use the DgnPlatform dlls.
 To supply these services, a host must define a class that derives from DgnPlatformLib::Host.
 The host may also define classes that derive from each of the admin base classes returned by the host.
-The application must call DgnPlatformLib::Initialize before using any DgnPlatform services.
+The application must call DgnPlatformLib::Initialize once and only once before using any DgnPlatform services.
 
 The application controls the lifetime of the DgnPlatformLib::Host object. The application must call DgnPlatformLib::Host::Terminate
-before deleting a host object.
+before deleting the host object.
 
 Beyond supplying services, the application-supplied DgnPlatformLib::Host object also holds context data such as fonts that are used by DgnPlatform functions.
 
-\section HostsAndThreads Hosts and Threads
-
-The application must associate a Host with a thread before using DgnPlatform in that thread. This rule applies to all threads, including the main thread.
-
-Most functions in DgnPlatform are <em>not</em> thread-safe. DgnPlatform can safely be used by multiple threads concurrently,
-provided that each thread is associated with its own DgnPlatformLib::Host. The Host object holds the context data and
-owns the DgnDb that the thread can use. (Host sharing is discussed below.)
-
-There are several options for associating a Host with a thread:
-\li The simplest option is to create a Host and then call DgnPlatformLib::Initialize in a thread before calling any other DgnPlatform functions in that thread. The thread should call DgnPlatformLib::Host::Terminate before it exits.
-\li You can move a Host from one thread to another. Initialize the Host in thread A. Then call call DgnPlatformLib::ForgetHost in thread A and DgnPlatformLib::AdoptHost in thread B. Thread B should call DgnPlatformLib::Host::Terminate before it exits.
-\li A related option is to initialize a Host in one thread for use by another thread. In this case, thread A would call DgnPlatformLib::Intialize on a Host and pass false for the argument to adopt the host. Thread B would then call DgnPlatformLib::AdoptHost to take ownership of the host and should call DgnPlatformLib::Host::Terminate before it exits.
-
-Note that a DgnDb may be used only in a thread that is associated with the Host that was used to open it. So, you cannot open a file in
-one thread and then try to use it in another thread, unless both threads are associated with the same host.
-
-Host Sharing. You can share a single host among multiple threads, but only if you are prepared to synchronize access to it.
-For example, you could initialize a Host in thread A and then call AdoptHost in several other threads, passing them the same host.
-Each thread would have to enter a critical section before calling DgnPlatform methods, to ensure
-that none of the other threads could use the host concurrently. When all threads were finished, thread A (only) would call
-DgnPlatformLib::Host::Terminate before it exits.
+The thread on which the application calls DgnPlatformLib::Initialize becomes the "client" thread. Many operations are only valid from the client thread.
 
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
@@ -639,7 +620,6 @@ public:
 
         //! Terminate this Host.
         //! This method should be called when the application is done with this host. After this method is called, no further DgnPlatform methods can ever be called on this host again (including Initialize).
-        //! If other threads are sharing this host, be sure to terminate those threads first and/or call ForgetHost in them before calling Terminate on this host.
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
         DGNPLATFORM_EXPORT void Terminate(bool onProgramExit);
         };
@@ -647,28 +627,16 @@ public:
     static void StaticInitialize();
 
 public:
-    //! Must be called before DgnPlatform services can be used on a thread.
-    //! Optionally associates the host with the curent thread. See \ref HostsAndThreads.
-    //! @param host         The host to associate with this thread.
+    //! Must be called before DgnPlatform services can be used.
+    //! @param host The host to associate with this process.
     //! @param loadResources You may pass false for this only if you know your application will never require any fonts or linestyles.
-    //! @param adoptHost    Should \a host be associated with the current thread? If true, this function calls AdoptHost(host) for you. If false, this
-    //!                     function initializes \a host but does not adopt it. This option is useful if you want to initialize a host for later use for use by another thread.
-    //! See StaticInitialize, AdoptHost
-    DGNPLATFORM_EXPORT static void Initialize(Host& host, bool loadResources, bool adoptHost=true);
+    DGNPLATFORM_EXPORT static void Initialize(Host& host, bool loadResources);
 
-    //! Associate a host with the current thread, allowing it to call DgnPlatform functions. The host must have been initialized already.
-    //! This function can be used to move a Host between threads or to sharea Host among multiple threads. See \ref HostsAndThreads
-    //! Note that, before you call DgnPlatformLib::Host::Terminate on a host object, you must call ForgetHost in any thread that is sharing it.
-    static void AdoptHost(Host&) {}
-
-    //! Break the association between the curent thread and its host. See \ref HostsAndThreads
-    static void ForgetHost() {}
-
-    //! Query if a Host is associated with the current thread
-    //! @return nullptr if not Host is associated with the current thread. Otherwise, a pointer to the Host object.
+    //! Query whether Initialize has been called.
+    //! @return nullptr if not Host is associated with the current process. Otherwise, a pointer to the Host object.
     DGNPLATFORM_EXPORT static Host* QueryHost();
 
-    //! Get the Host that associated with the current thread
+    //! Get the Host 
     //! @return a reference to the Host object. WARNING: Do not call this function unless you know that there is a Host.
     DGNPLATFORM_EXPORT static Host& GetHost();
 
@@ -676,6 +644,7 @@ public:
     //! @param configFileName Optional. The name of the logging configuration file to parse. Pass nullptr for logging to the console with default severities.
     //! If configFileName is specified, then the log4cxx provider will be used. Note that this provider comes from log4cxx.dll, and both the Graphite and Vancouver
     //! code will use the same log4cxx.dll. 
+    //! @private
     DGNPLATFORM_EXPORT static void InitializeBentleyLogging(WCharCP configFileName);
 
     //! Forward assertion failures to the specified handler.

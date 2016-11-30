@@ -40,7 +40,7 @@ struct CreateDgnDbParams : BeSQLite::Db::CreateParams
 {
 public:
     bool m_overwriteExisting;
-    Utf8String m_rootSubjectLabel;
+    Utf8String m_rootSubjectName;
     Utf8String m_rootSubjectDescription;
     Utf8String m_client;
     BeFileName m_seedDb;
@@ -52,20 +52,20 @@ public:
     CreateDgnDbParams(BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid) {}
 
     //! Constructor for CreateDgnDbParams
-    //! @param[in] label The (required) value to be stored as the UserLabel property of the root Subject
+    //! @param[in] name The (required) value to be stored as the CodeValue property of the root Subject
     //! @param[in] description The (optional) value to be stored as the Description property of the root Subject
     //! @param[in] guid The BeSQLite::BeGuid to store in the newly created DgnDb. If not supplied, a new BeSQLite::BeGuid value is created.
     //! @note The new BeSQLite::BeGuid can be obtained via GetGuid.
-    CreateDgnDbParams(Utf8CP label, Utf8CP description=nullptr, BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid)
+    CreateDgnDbParams(Utf8CP name, Utf8CP description=nullptr, BeSQLite::BeGuid guid=BeSQLite::BeGuid(true)) : BeSQLite::Db::CreateParams(), m_guid(guid)
         {
-        SetRootSubjectLabel(label);
+        SetRootSubjectName(name);
         SetRootSubjectDescription(description);
         }
 
-    //! Set the value to be stored as the UserLabel property of the root Subject for the new DgnDb created using this CreateDgnDbParams.
-    //! @note The (required) UserLabel of the root Subject should indicate what the DgnDb contains.
+    //! Set the name to be stored as the CodeValue property of the root Subject for the new DgnDb created using this CreateDgnDbParams.
+    //! @note The (required) CodeValue of the root Subject should indicate what the DgnDb contains.
     //! @see DgnElements::GetRootSubject
-    void SetRootSubjectLabel(Utf8CP label) {m_rootSubjectLabel.AssignOrClear(label);}
+    void SetRootSubjectName(Utf8CP name) {m_rootSubjectName.AssignOrClear(name);}
 
     //! Set the value to be stored as the Description property of the root Subject for the new DgnDb created using this CreateDgnDbParams.
     //! @note The (optional) Description property of the root Subject can be a longer description of what the DgnDb contains.
@@ -194,11 +194,11 @@ public:
     //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully created, error code otherwise. May be NULL.
     //! @param[in] filename The name of the file for the new DgnDb. Must be a valid filename on the local
     //! filesystem. It is not legal to create a DgnDb over a network share.
-    //! @param[in] params Parameters that control aspects of the newly created DgnDb. Must include a valid root Subject label.
+    //! @param[in] params Parameters that control aspects of the newly created DgnDb. Must include a valid root Subject name.
     //! @return a reference counted pointer to the newly created DgnDb. Its IsValid() method will return false if the open failed for any reason.
     //! @note If this method succeeds, it will return a valid DgnDbPtr. The DgnDb will be automatically closed when the last reference
     //! to it is released. There is no way to hold a pointer to a "closed project".
-    //! @see CreateDgnDbParams::SetRootSubjectLabel
+    //! @see CreateDgnDbParams::SetRootSubjectName
     DGNPLATFORM_EXPORT static DgnDbPtr CreateDgnDb(BeSQLite::DbResult* status, BeFileNameCR filename, CreateDgnDbParams const& params);
 
     DgnModels& Models() const {return const_cast<DgnModels&>(m_models);}                 //!< The DgnModels of this DgnDb
@@ -260,15 +260,17 @@ public:
 /** @name DgnPlatform Threads */
 /** @{ */
     //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, RealityData=103};
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, IoPool=103, CpuPool=104};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();    //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName(); //!< For debugging purposes, get the current ThreadId as a string
-    static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
+    DGNPLATFORM_EXPORT static void SetThreadId(ThreadId);    //!< Set the ThreadId for the current thread
     static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
     static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
     static void VerifyQueryThread()  {VerifyThread(ThreadId::Query);}      //!< assert that this is the Query thread
+    static void VerifyIoPoolThread() {VerifyThread(ThreadId::IoPool);}     //!< assert that this is one of the IoPool threads
+    static void VerifyCpuPoolThread() {VerifyThread(ThreadId::CpuPool);}   //!< assert that this is one of the CpuPool threads
 /** @} */
 
 #if !defined (DOCUMENTATION_GENERATOR)

@@ -12,8 +12,6 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 
-#define BIS_CLASS_LightDefinition "LightDefinition"
-
 DGNPLATFORM_TYPEDEFS(LightDefinition);
 DGNPLATFORM_REF_COUNTED_PTR(LightDefinition);
 

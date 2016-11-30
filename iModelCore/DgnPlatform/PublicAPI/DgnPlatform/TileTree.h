@@ -82,7 +82,7 @@ DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 
 typedef std::chrono::steady_clock::time_point TimePoint;
-typedef std::shared_ptr<struct LoadState> LoadStatePtr;
+typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 
 //=======================================================================================
 //! A ByteStream with a "current position". Used for reading tiles
@@ -101,14 +101,14 @@ struct StreamBuffer : ByteStream
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/16
 //=======================================================================================
-struct LoadState : Tasks::ICancellationToken, NonCopyableClass
+struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
 {
     BeAtomic<bool> m_canceled;
     BeAtomic<int> m_requested;
     BeAtomic<int> m_fromHttp;
     BeAtomic<int> m_fromFile;
     BeAtomic<int> m_fromDb;
-    DGNPLATFORM_EXPORT ~LoadState();
+    DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
@@ -177,7 +177,7 @@ public:
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
-    virtual TileLoaderPtr _CreateTileLoader(LoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
 
     //! Get the name of this Tile.
     virtual Utf8String _GetTileName() const = 0;
@@ -214,7 +214,7 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, LoadStatePtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
     void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
@@ -277,7 +277,7 @@ struct TileLoader : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_fileName;      // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
-    LoadStatePtr m_loads;
+    TileLoadStatePtr m_loads;
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -291,7 +291,7 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR fileName, TileR tile, LoadStatePtr& loads, Utf8StringCR cacheKey)
+    TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
         :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
 public:
@@ -324,9 +324,9 @@ struct HttpDataQuery
     Http::HttpByteStreamBodyPtr m_responseBody;
     Http::Request m_request;
     Http::Response m_response;
-    LoadStatePtr m_loads;
+    TileLoadStatePtr m_loads;
 
-    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, LoadStatePtr loads);
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads);
 
     bool WasCanceled() const {return m_response.GetConnectionStatus() == Http::ConnectionStatus::Canceled;}
 
@@ -350,9 +350,9 @@ struct HttpDataQuery
 struct FileDataQuery
 {
     Utf8String m_fileName;
-    LoadStatePtr m_loads;
+    TileLoadStatePtr m_loads;
 
-    FileDataQuery(Utf8StringCR fileName, LoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
+    FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
 
     //! Read the entire file in a single chunk of memory.
     DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);
@@ -389,7 +389,7 @@ struct DrawArgs
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
     DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, LoadStatePtr);
+    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
 };
 
 //=======================================================================================
@@ -469,11 +469,11 @@ struct ProgressiveTask : Dgn::ProgressiveTask
     Root& m_root;
     DrawArgs::MissingNodes m_missing;
     TimePoint m_nextShow;
-    LoadStatePtr m_loads;
+    TileLoadStatePtr m_loads;
     Utf8String m_name;
 
     Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, LoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
+    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
     ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
 };
     

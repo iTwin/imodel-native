@@ -222,7 +222,7 @@ StatusInt ScanCriteria::Scan()
 
     m_model->FillRangeIndex();
 
-    TreeP rangeIndex = m_model->GetRangeIndex();
+    auto rangeIndex = m_model->GetRangeIndex();
     if (nullptr == rangeIndex)
         {
         BeAssert(false);
