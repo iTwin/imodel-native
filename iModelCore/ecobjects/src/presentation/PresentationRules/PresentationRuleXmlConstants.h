@@ -155,6 +155,12 @@
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME                          "SchemaName"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME                           "ClassName"
 
+#define RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME                                  "RelatedInstance"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                        "ClassName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME                 "RelationshipName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION            "RelationshipDirection"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS                            "Alias"
+
 //ContentSpecifications
 #define CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES                                "ShowImages"
 

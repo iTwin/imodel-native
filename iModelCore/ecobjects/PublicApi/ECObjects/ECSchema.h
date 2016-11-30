@@ -1541,7 +1541,7 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
-    virtual bool Verify(bool resolveIssues = false) const;
+    virtual bool _Verify(bool resolveIssues = false) const;
 
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (Utf8StringCR name);
@@ -2148,7 +2148,7 @@ protected:
     virtual ECInterfaceClassP _GetInterfaceClassP() override { return this; }
     virtual ECObjectsStatus _AddInterface(ECInterfaceClassCR interfaceClass, bool validate = true) override;
 
-    bool Verify(bool resolveIssues = false) const override;
+    virtual bool _Verify(bool resolveIssues = false) const override;
     ECObjectsStatus ValidateAppliesTo() const;
     ECObjectsStatus ValidateAppliesTo(ECEntityClassCP ecClass) const;
 
@@ -2695,7 +2695,7 @@ protected:
     virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
 
-    bool                                Verify(bool resolveIssues) const override;
+    virtual bool                        _Verify(bool resolveIssues = false) const override;
 
 //__PUBLISH_SECTION_START__
 public:

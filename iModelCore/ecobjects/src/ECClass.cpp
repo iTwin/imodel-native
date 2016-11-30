@@ -1388,7 +1388,7 @@ ECObjectsStatus ECClass::_AddInterface(ECInterfaceClassCR interfaceClass, bool v
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::Verify(bool resolveIssues) const
+bool ECClass::_Verify(bool resolveIssues) const
     {
     if (m_interfaces.size() == 0)
         return true;
@@ -2450,7 +2450,7 @@ ECInterfaceClass::ECInterfaceClass(ECSchemaCR schema) : ECClass(schema), m_appli
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECInterfaceClass::Verify(bool resolveIssues) const
+bool ECInterfaceClass::_Verify(bool resolveIssues) const
     {
     bool valid = true;
 
@@ -4607,18 +4607,18 @@ bool ECRelationshipClass::GetIsVerified()
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipClass::Verify()
     {
-    m_verified = Verify(false);
+    m_verified = _Verify(false);
     return m_verified;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECRelationshipClass::Verify (bool resolveIssues) const
+bool ECRelationshipClass::_Verify (bool resolveIssues) const
     {
     bool isValid = true;
 
-    if (!T_Super::Verify(resolveIssues))
+    if (!T_Super::_Verify(resolveIssues))
         isValid = false;
 
     ECRelationshipConstraintP source = &GetSource();

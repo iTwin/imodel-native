@@ -35,6 +35,7 @@ EC_TYPEDEFS (PropertyRangeGroupSpecification);
 EC_TYPEDEFS (LocalizationResourceKeyDefinition);
 EC_TYPEDEFS (UserSettingsGroup);
 EC_TYPEDEFS (UserSettingsItem);
+EC_TYPEDEFS (RelatedInstanceSpecification);
 EC_TYPEDEFS (ChildNodeSpecification);
 EC_TYPEDEFS (AllInstanceNodesSpecification);
 EC_TYPEDEFS (AllRelatedInstanceNodesSpecification);
