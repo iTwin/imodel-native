@@ -36,8 +36,8 @@ struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStruc
         // IECSqlPrimitiveBinder
         virtual ECSqlStatus _BindBoolean(bool value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy) override { return m_errorStatus; }
-        virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const* metadata) override { return m_errorStatus; }
-        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const* metadata) override { return m_errorStatus; }
+        virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const&) override { return m_errorStatus; }
+        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override { return m_errorStatus; }
         virtual ECSqlStatus _BindDouble(double value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindGeometryBlob(void const* value, int blobSize, IECSqlBinder::MakeCopy) override { return m_errorStatus; }
         virtual ECSqlStatus _BindInt(int value) override { return m_errorStatus; }
@@ -87,7 +87,7 @@ struct NoopECSqlValue : public IECSqlValue, IECSqlPrimitiveValue, IECSqlStructVa
         virtual void const* _GetBinary(int* binarySize) const override;
 
         virtual bool _GetBoolean() const override { return false; }
-        virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const override { return INT64_C(0); }
+        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override { return INT64_C(0); }
         virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override { return 0.0; }
         virtual double _GetDouble() const override { return 0.0; }
         virtual int _GetInt() const override { return 0; }

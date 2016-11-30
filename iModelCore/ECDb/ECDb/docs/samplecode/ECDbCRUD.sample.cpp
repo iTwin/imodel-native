@@ -39,7 +39,7 @@ BentleyStatus ECDb_ECSqlSelect()
         Utf8CP lastName = statement.GetValueText(1);
         DateTime birthday = statement.GetValueDateTime(2);
         // do something with the retrieved data of this row
-        printf("%s, %s - Born %s\n", lastName, firstName, birthday.ToUtf8String().c_str());
+        printf("%s, %s - Born %s\n", lastName, firstName, birthday.ToString().c_str());
         }
 
     //__PUBLISH_EXTRACT_END__
@@ -212,7 +212,7 @@ BentleyStatus ECDb_ECSqlSelectStructArrayProps()
                             printf("%d", certMember.GetInt());
                             break;
                         case PRIMITIVETYPE_DateTime:
-                            printf("%s", certMember.GetDateTime().ToUtf8String().c_str());
+                            printf("%s", certMember.GetDateTime().ToString().c_str());
                             break;
                         default:
                             //For the sake of simplicity the struct in this example has only properties of type String, Integer,
@@ -243,17 +243,10 @@ BentleyStatus ECDb_ECSqlStatementAndDateTime()
 
     while (BE_SQLITE_ROW == statement.Step())
         {
-        DateTime birthday = statement.GetValueDateTime(0); //dt.GetInfo ().GetComponent () will amount to DateTime::Component::Date
-        DateTime lastModified = statement.GetValueDateTime(1); //dt.GetInfo ().GetKind () will amount to DateTime::Kind::Utc
-
-        DateTime::Info const& birthdayInfo = birthday.GetInfo();
-        DateTime::Info const& lastModifiedInfo = lastModified.GetInfo();
-        printf("Birthday: Kind %s, Component %s\n",
-               DateTime::Info::KindToString(birthdayInfo.GetKind()).c_str(),
-               DateTime::Info::ComponentToString(birthdayInfo.GetComponent()).c_str());
-        printf("LastModified: Kind %s, Component %s\n",
-               DateTime::Info::KindToString(lastModifiedInfo.GetKind()).c_str(),
-               DateTime::Info::ComponentToString(lastModifiedInfo.GetComponent()).c_str());
+        DateTime birthday = statement.GetValueDateTime(0); //birthday.GetInfo().GetComponent() will amount to DateTime::Component::Date
+        DateTime lastModified = statement.GetValueDateTime(1); //lastModified.GetInfo().GetKind() will amount to DateTime::Kind::Utc
+        printf("Birthday: %s\n", birthday.ToString().c_str());
+        printf("LastModified: %s\n", lastModified.ToString().c_str());
         }
 
     //__PUBLISH_EXTRACT_END__

@@ -23,7 +23,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECSqlTypeInfo::Kind kind)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-ECSqlTypeInfo::ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, DateTimeInfo const* dateTimeInfo /*= nullptr*/)
+ECSqlTypeInfo::ECSqlTypeInfo(ECN::PrimitiveType primitiveType, bool isArray, DateTime::Info const* dateTimeInfo /*= nullptr*/)
     : m_structType(nullptr), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr)
     {
     Populate(isArray, &primitiveType, nullptr, -1, -1, dateTimeInfo);
@@ -114,7 +114,7 @@ ECSqlTypeInfo& ECSqlTypeInfo::operator= (ECSqlTypeInfo&& rhs)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ECSqlTypeInfo::Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP structType, int minOccurs, int maxOccurs, DateTimeInfo const* dateTimeInfo)
+void ECSqlTypeInfo::Populate(bool isArray, ECN::PrimitiveType const* primitiveType, ECN::ECStructClassCP structType, int minOccurs, int maxOccurs, DateTime::Info const* dateTimeInfo)
     {
     if (primitiveType != nullptr)
         {
@@ -223,46 +223,19 @@ bool ECSqlTypeInfo::CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessag
     }
 
 //-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     08/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches(DateTimeInfo const& rhs) const
-    {
-    DateTime::Info rhsMetadata = rhs.GetInfo(true);
-    const auto rhsKind = rhsMetadata.GetKind();
-    const auto rhsComponent = rhsMetadata.GetComponent();
-    return DateTimeInfoMatches(rhs.IsKindNull() ? nullptr : &rhsKind,
-                               rhs.IsComponentNull() ? nullptr : &rhsComponent);
-    }
-
-//-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Info const* rhs) const
+bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Info const& rhs) const
     {
-    if (rhs == nullptr)
-        return DateTimeInfoMatches(nullptr, nullptr);
-
-    const auto rhsKind = rhs->GetKind();
-    const auto rhsComponent = rhs->GetComponent();
-    return DateTimeInfoMatches(&rhsKind, &rhsComponent);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     07/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::DateTimeInfoMatches(DateTime::Kind const* rhsKind, DateTime::Component const* rhsComponent) const
-    {
-    auto const& lhsDtInfo = GetDateTimeInfo();
-    auto lhsRawDtInfo = lhsDtInfo.GetInfo(true);
-
-    //We allow date-only to interact with datetimes of any kind
-    if ((!lhsDtInfo.IsComponentNull() && lhsRawDtInfo.GetComponent() == DateTime::Component::Date) ||
-        (rhsComponent != nullptr && *rhsComponent == DateTime::Component::Date))
+    if (!m_dateTimeInfo.IsValid() || !rhs.IsValid())
         return true;
 
-    //if kind (or component) is null on one side, the kind (or component) on the other side is ignored
-    return (lhsDtInfo.IsKindNull() || rhsKind == nullptr || lhsRawDtInfo.GetKind() == *rhsKind) &&
-        (lhsDtInfo.IsComponentNull() || rhsComponent == nullptr || lhsRawDtInfo.GetComponent() == *rhsComponent);
+    //We allow date-only to interact with datetimes of any kind
+    if (m_dateTimeInfo.GetComponent() == DateTime::Component::Date ||
+        rhs.GetComponent() == DateTime::Component::Date)
+        return true;
+
+    return m_dateTimeInfo.GetKind() == rhs.GetKind();
     }
 
 //-----------------------------------------------------------------------------------------
@@ -313,7 +286,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
 
     if (primitiveType == ECN::PRIMITIVETYPE_DateTime)
         {
-        DateTimeInfo dateTimeInfo;
+        DateTime::Info dateTimeInfo;
         StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty);
         Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, &dateTimeInfo);
         }

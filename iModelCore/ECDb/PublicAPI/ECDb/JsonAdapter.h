@@ -164,6 +164,7 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
     private:
         ECSqlStatementCR m_ecsqlStatement;
         FormatOptions m_formatOptions;
+        bool m_structArrayAsString;
 
         static bool PrioritySortPredicate(const ECN::IECInstancePtr& priorityCA1, const ECN::IECInstancePtr& priorityCA2);
         static bool PropertySortPredicate(PropertyTreeNodeCP propertyNode1, PropertyTreeNodeCP propertyNode2);
@@ -373,6 +374,9 @@ struct JsonECSqlSelectAdapter : NonCopyableClass
         //! @param [out] ecJsonRow JSON representation of the row as an ordered array of values
         //! @return false if there was an error in retrieving/formatting values. true otherwise.
         ECDB_EXPORT bool GetRowAsIs(JsonValueR ecJsonRow) const;
+
+        //! Tell the adapter to set the value of struct array properties as a string representation of the Json array value.
+        void SetStructArrayAsString(bool flag) { m_structArrayAsString = flag; }
     };
 
 //=================================================================================

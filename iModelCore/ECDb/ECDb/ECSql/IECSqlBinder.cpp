@@ -42,28 +42,28 @@ ECSqlStatus IECSqlBinder::BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value)
     {
-    uint64_t jd = 0ULL;
+    uint64_t jd = INT64_C(0);
     if (SUCCESS != value.ToJulianDay(jd))
         {
         BeAssert(false && "ECSqlStatement::BindDateTime> Could not convert DateTime into Julian Day.");
         return ECSqlStatus::Error;
         }
 
-    return BindDateTime(jd, &value.GetInfo());
+    return BindDateTime(jd, value.GetInfo());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus IECSqlBinder::BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
-    return _BindPrimitive()._BindDateTime(julianDayHns, metadata);
+    return _BindPrimitive()._BindDateTime(julianDayMsec, metadata);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus IECSqlBinder::BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     return _BindPrimitive()._BindDateTime(julianDay, metadata);
     }

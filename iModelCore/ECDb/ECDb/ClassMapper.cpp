@@ -151,9 +151,9 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
     return relClassMap.GetConstraintMap(GetConstraintEnd(navProp, end));
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 //static 
 BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
     {
@@ -206,9 +206,9 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     return SUCCESS;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 //static 
 DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf8CP accessString, DbColumn::Type colType)
     {
@@ -229,18 +229,17 @@ DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf
     return col;
     }
 
-//=======================================================================================
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
-//+===============+===============+===============+===============+===============+======
+//---------------------------------------------------------------------------------------
 //static 
-RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, StructPropertyMapBuilder* parentBuilder)
+RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::PrimitiveECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
     if (property.GetType() != PRIMITIVETYPE_Point2d)
         return nullptr;
 
-    StructPropertyMap const* parentPropMap = parentBuilder != nullptr ? &parentBuilder->GetPropertyMapUnderConstruction() : nullptr;
     const DbColumn* x = nullptr, *y = nullptr;
-    Utf8String accessString = ComputeAccessString(property, parentPropMap);
+    Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
@@ -287,20 +286,19 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
             }
         }
 
-    return Point2dPropertyMap::CreateInstance(m_classMap, parentPropMap, property, *x, *y);
+    return Point2dPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *x, *y);
     }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, StructPropertyMapBuilder* parentBuilder)
+RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::PrimitiveECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
     if (property.GetType() != PRIMITIVETYPE_Point3d)
         return nullptr;
     const DbColumn *x = nullptr, *y = nullptr, *z = nullptr;
-    StructPropertyMap const* parentPropMap = parentBuilder != nullptr ? &parentBuilder->GetPropertyMapUnderConstruction() : nullptr;
-    Utf8String accessString = ComputeAccessString(property, parentPropMap);
+    Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
@@ -364,7 +362,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
         }
 
     BeAssert(x != nullptr && y != nullptr && z != nullptr);
-    return Point3dPropertyMap::CreateInstance(m_classMap, parentPropMap, property, *x, *y, *z);
+    return Point3dPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *x, *y, *z);
     }
 
 
@@ -372,16 +370,15 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, StructPropertyMapBuilder* parentStructPropMapBuilder)
+RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
     if (property.GetType() == PRIMITIVETYPE_Point2d)
-        return MapPoint2dProperty(property, parentStructPropMapBuilder);
+        return MapPoint2dProperty(property, compoundPropMap);
 
     if (property.GetType() == PRIMITIVETYPE_Point3d)
-        return MapPoint3dProperty(property, parentStructPropMapBuilder);
+        return MapPoint3dProperty(property, compoundPropMap);
 
-    CompoundDataPropertyMap const* parentPropMap = parentStructPropMapBuilder != nullptr ? &parentStructPropMapBuilder->GetPropertyMapUnderConstruction() : nullptr;
-    Utf8String accessString = ComputeAccessString(property, parentPropMap);
+    Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     DbColumn const*  column = nullptr;
     if (m_loadContext)
         {
@@ -405,17 +402,16 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
             }
         }
 
-    return PrimitivePropertyMap::CreateInstance(m_classMap, parentPropMap, property, *column);
+    return PrimitivePropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
     }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::PrimitiveArrayECPropertyCR property, StructPropertyMapBuilder* parentStructPropMapBuilder)
+RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(ECN::PrimitiveArrayECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
-    StructPropertyMap const* parentPropMap = parentStructPropMapBuilder != nullptr ? &parentStructPropMapBuilder->GetPropertyMapUnderConstruction() : nullptr;
-    Utf8String accessString = ComputeAccessString(property, parentPropMap);
+    Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     DbColumn const* column = nullptr;
     if (m_loadContext)
         {
@@ -439,18 +435,17 @@ RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(
             }
         }
 
-    return PrimitiveArrayPropertyMap::CreateInstance(m_classMap, parentPropMap, property, *column);
+    return PrimitiveArrayPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
     }
 
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, StructPropertyMapBuilder* parentStructPropMapBuilder)
+RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::StructArrayECPropertyCR property, CompoundDataPropertyMap const* compoundPropMap)
     {
     //TODO: Create column or map to existing column
-    StructPropertyMap const* parentPropMap = parentStructPropMapBuilder != nullptr ? &parentStructPropMapBuilder->GetPropertyMapUnderConstruction() : nullptr;
-    Utf8String accessString = ComputeAccessString(property, parentPropMap);
+    Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     DbColumn const* column = nullptr;
     if (m_loadContext)
         {
@@ -474,7 +469,7 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
             }
         }
 
-    return StructArrayPropertyMap::CreateInstance(m_classMap, parentPropMap, property, *column);
+    return StructArrayPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
     }
 
 //=======================================================================================
@@ -518,27 +513,20 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-RefCountedPtr<StructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, StructPropertyMapBuilder* parentBuilder)
+RefCountedPtr<StructPropertyMap> ClassMapper::MapStructProperty(ECN::StructECPropertyCR property, StructPropertyMap const* parentPropMap)
     {
-    if (parentBuilder != nullptr && !parentBuilder->IsValid())
-        {
-        BeAssert(false && "Parent StructPropertyMapBuilder must be valid");
-        return nullptr;
-        }
-
-
-    StructPropertyMapBuilder builder(m_classMap, parentBuilder, property);
+    StructPropertyMapBuilder builder(m_classMap, parentPropMap, property);
     for (ECN::ECPropertyCP property : property.GetType().GetProperties())
         {
         RefCountedPtr<DataPropertyMap> propertyMap;
         if (auto typedProperty = property->GetAsPrimitiveProperty())
-            propertyMap = MapPrimitiveProperty(*typedProperty, &builder);
+            propertyMap = MapPrimitiveProperty(*typedProperty, &builder.GetPropertyMapUnderConstruction());
         else if (auto typedProperty = property->GetAsPrimitiveArrayProperty())
-            propertyMap = MapPrimitiveArrayProperty(*typedProperty, &builder);
+            propertyMap = MapPrimitiveArrayProperty(*typedProperty, &builder.GetPropertyMapUnderConstruction());
         else if (auto typedProperty = property->GetAsStructProperty())
-            propertyMap = MapStructProperty(*typedProperty, &builder);
+            propertyMap = MapStructProperty(*typedProperty, &builder.GetPropertyMapUnderConstruction());
         else if (auto typedProperty = property->GetAsStructArrayProperty())
-            propertyMap = MapStructArrayProperty(*typedProperty, &builder);
+            propertyMap = MapStructArrayProperty(*typedProperty, &builder.GetPropertyMapUnderConstruction());
         else
             {
             BeAssert(false && "Unhandled case");
@@ -635,13 +623,13 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static 
-Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, DataPropertyMap const* parent)
+Utf8String ClassMapper::ComputeAccessString(ECN::ECPropertyCR ecProperty, CompoundDataPropertyMap const* parentPropMap)
     {
-    Utf8String accessString;
-    if (parent)
-        accessString.append(parent->GetAccessString()).append(".");
+    if (parentPropMap == nullptr)
+        return ecProperty.GetName();
 
-    accessString.append(ecProperty.GetName());
+    Utf8String accessString(parentPropMap->GetAccessString());
+    accessString.append(".").append(ecProperty.GetName());
     return accessString;
     }
 END_BENTLEY_SQLITE_EC_NAMESPACE

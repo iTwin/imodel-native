@@ -205,22 +205,22 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindGeometry
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(double julianDay, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
-    const uint64_t jdHns = DateTime::RationalDayToHns(julianDay);
-    return _BindDateTime(jdHns, metadata);
+    const uint64_t jdMsec = DateTime::RationalDayToMsec(julianDay);
+    return _BindDateTime(jdMsec, metadata);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          01/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(uint64_t julianDayHns, DateTime::Info const* metadata)
+ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
-    auto status = VerifyType(PrimitiveType::PRIMITIVETYPE_DateTime);
+    ECSqlStatus status = VerifyType(PrimitiveType::PRIMITIVETYPE_DateTime);
     if (!status.IsSuccess())
         return status;
 
-    if (metadata != nullptr && metadata->GetKind() == DateTime::Kind::Local)
+    if (metadata.IsValid() && metadata.GetKind() == DateTime::Kind::Local)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECDb does not support to bind local date times.");
         return ECSqlStatus::Error;
@@ -232,13 +232,9 @@ ECSqlStatus PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder::_BindDateTime
         return ECSqlStatus::Error;
         }
 
-    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayHns);
+    const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(julianDayMsec);
     ECValue v;
-    if (metadata == nullptr)
-        v.SetDateTimeTicks(ceTicks);
-    else
-        v.SetDateTimeTicks(ceTicks, *metadata);
-
+    v.SetDateTimeTicks(ceTicks, metadata);
     return SetValue(v);
     }
 

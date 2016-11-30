@@ -122,7 +122,11 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         bool m_wrapInParentheses;
         mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
         mutable std::vector<Result> m_resultSet;
-        bool m_writeData;
+        bool m_isForAssignmentExpression;
+
+        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
+        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
         BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
@@ -131,17 +135,15 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         BentleyStatus ToNativeSql(ECInstanceIdPropertyMap const&) const;
         Result& Record(SingleColumnDataPropertyMap const&) const;
 
-    private:
-        virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
-        virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false);
+        ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false, bool forAssignmentExpression = false);
         ~ToSqlPropertyMapVisitor() {}
-        void EnableSqlForInsertOrUpdate() { m_writeData = true; }
         std::vector<Result> const& GetResultSet() const { return m_resultSet; }
         const Result* Find(Utf8CP accessString) const;
         void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
+
+        bool IsForAssignmentExpression() const { return m_isForAssignmentExpression; }
     };
 
 struct DbClassMapSaveContext;

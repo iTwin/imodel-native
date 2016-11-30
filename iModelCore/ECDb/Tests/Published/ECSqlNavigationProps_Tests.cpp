@@ -860,6 +860,79 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+                            SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                       "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                       "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                       "    <ECEntityClass typeName='Model'>"
+                                       "        <ECProperty propertyName='Name' typeName='string' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+                                       "        <ECCustomAttributes>"
+                                       "         <ClassMap xmlns='ECDbMap.02.00'>"
+                                       "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                       "            </ClassMap>"
+                                       "        </ECCustomAttributes>"
+                                       "        <ECProperty propertyName='Code' typeName='string' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' />"
+                                       "    </ECEntityClass>"
+                                       "    <ECEntityClass typeName='SubElement'>"
+                                       "        <BaseClass>Element</BaseClass>"
+                                       "        <ECProperty propertyName='SubProp1' typeName='int' />"
+                                       "    </ECEntityClass>"
+                                       "   <ECRelationshipClass typeName='ModelHasElement' strength='Embedding'  modifier='Sealed'>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
+                                       "          <Class class ='Model' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsChildElement' strength='Embedding'  modifier='Abstract'>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Child Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsSubElement' strength='Embedding'  modifier='Sealed'>"
+                                       "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                                       "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
+                                       "          <Class class ='Element' />"
+                                       "      </Source>"
+                                       "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Owned SubElement'>"
+                                       "          <Class class ='SubElement' />"
+                                       "      </Target>"
+                                       "   </ECRelationshipClass>"
+                                       "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECInstanceKey modelKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Model(Name) VALUES('Main')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(modelKey));
+    stmt.Finalize();
+    }
+
+    ECInstanceKey elementNoModelNoParent;
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubElement(Code, Model, Parent) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementNoModelNoParent));
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ts.SubElement WHERE Model IS NULL"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetNativeSql();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 12/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, CRUD)

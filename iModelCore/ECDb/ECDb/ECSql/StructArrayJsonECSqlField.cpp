@@ -27,24 +27,22 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, 
     if (dataType.IsPrimitive())
         {
         DateTime::Info dateTimeMetadata;
-        bool hasDateTimeMetadata = false;
         if (dataType.GetPrimitiveType() == PRIMITIVETYPE_DateTime)
             {
             ECPropertyCP property = columnInfo.GetProperty();
             BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
-            DateTimeInfo dateTimeInfo;
-            if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *property) != ECObjectsStatus::Success)
+            if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeMetadata, *property) != ECObjectsStatus::Success)
                 {
                 ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
                 BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
                 return nullptr;
                 }
 
-            dateTimeMetadata = dateTimeInfo.GetInfo(true);
-            hasDateTimeMetadata = true;
+            if (!dateTimeMetadata.IsValid())
+                dateTimeMetadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified); //default
             }
 
-        return std::unique_ptr<JsonECSqlValue>(new PrimitiveJsonECSqlValue(ecdb, json, columnInfo, hasDateTimeMetadata ? &dateTimeMetadata : nullptr));
+        return std::unique_ptr<JsonECSqlValue>(new PrimitiveJsonECSqlValue(ecdb, json, columnInfo, dateTimeMetadata));
         }
 
     if (dataType.IsStruct())
@@ -66,7 +64,7 @@ std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateValue(ECDbCR ecdb, 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const* dateTimeMetadata, ECN::ECStructClassCP structClass)
+std::unique_ptr<JsonECSqlValue> JsonECSqlValueFactory::CreateArrayElementValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata, ECN::ECStructClassCP structClass)
     {
     if (columnInfo.GetDataType().IsStruct())
         {
@@ -126,12 +124,9 @@ IECSqlArrayValue const& JsonECSqlValue::_GetArray() const
 //************************************************
 // PrimitiveJsonECSqlValue
 //************************************************
-PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const* dateTimeMetadata) 
-    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlPrimitiveValue()
-    {
-    if (dateTimeMetadata != nullptr)
-        m_datetimeMetadata = *dateTimeMetadata;
-    }
+PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, ECSqlColumnInfo const& columnInfo, DateTime::Info const& dateTimeMetadata) 
+    : JsonECSqlValue(ecdb, json, columnInfo), IECSqlPrimitiveValue(), m_datetimeMetadata(dateTimeMetadata)
+    {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
@@ -167,15 +162,15 @@ bool PrimitiveJsonECSqlValue::_GetBoolean() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t PrimitiveJsonECSqlValue::_GetDateTimeJulianDaysHns(DateTime::Info& metadata) const
+uint64_t PrimitiveJsonECSqlValue::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     metadata = m_datetimeMetadata;
 
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_DateTime))
-        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysHns(metadata);
+        return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
 
     const double jd = _GetDateTimeJulianDays(metadata);
-    return DateTime::RationalDayToHns(jd);
+    return DateTime::RationalDayToMsec(jd);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -391,7 +386,6 @@ ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, E
     BeAssert(GetJson().isArray());
 
     ECTypeDescriptor const& dataType = GetColumnInfo().GetDataType();
-    DateTime::Info dateTimeMetadata;
     if (dataType.IsStructArray())
         {
         BeAssert(GetColumnInfo().GetProperty() != nullptr && "ColumnInfo::GetProperty should not return null for array property");
@@ -399,16 +393,16 @@ ArrayJsonECSqlValue::ArrayJsonECSqlValue(ECDbCR ecdb, Json::Value const& json, E
         }
     else if (dataType.IsPrimitiveArray() && dataType.GetPrimitiveType() == PRIMITIVETYPE_DateTime)
         {
-        DateTimeInfo dateTimeInfo;
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, *GetColumnInfo().GetProperty()) == ECObjectsStatus::Success)
-            m_primitiveArrayDatetimeMetadata = dateTimeInfo.GetInfo(true);
-        else
+        if (StandardCustomAttributeHelper::GetDateTimeInfo(m_primitiveArrayDatetimeMetadata, *GetColumnInfo().GetProperty()) != ECObjectsStatus::Success)
             {
             Utf8String msg;
             msg.Sprintf("IECSqlValue::GetArray failed for '%s': Could not read DateTimeInfo custom attribute from the corresponding primitive array ECProperty. DateTimeInfo will be ignored.",
                         GetColumnInfo().GetPropertyPath().ToString().c_str());
             ReportError(msg.c_str());
             }
+
+        if (!m_primitiveArrayDatetimeMetadata.IsValid())
+            m_primitiveArrayDatetimeMetadata = DateTime::Info::CreateForDateTime(DateTime::Kind::Unspecified); // default
         }
     }
 
@@ -432,7 +426,7 @@ void ArrayJsonECSqlValue::_MoveNext(bool onInitializingIterator) const
     ECSqlColumnInfo elementColumnInfo = ECSqlColumnInfo::CreateForArrayElement(GetColumnInfo(), (int) m_jsonIterator.index());
     
 
-    m_currentElement = JsonECSqlValueFactory::CreateArrayElementValue(GetECDb(), *m_jsonIterator, elementColumnInfo, &m_primitiveArrayDatetimeMetadata, m_structArrayElementType);
+    m_currentElement = JsonECSqlValueFactory::CreateArrayElementValue(GetECDb(), *m_jsonIterator, elementColumnInfo, m_primitiveArrayDatetimeMetadata, m_structArrayElementType);
     BeAssert(m_currentElement != nullptr);
     }
 

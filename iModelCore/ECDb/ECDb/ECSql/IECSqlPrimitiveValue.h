@@ -20,21 +20,21 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct IECSqlPrimitiveValue
     {
-public:
-    virtual ~IECSqlPrimitiveValue () {}
+    public:
+        virtual ~IECSqlPrimitiveValue() {}
 
-    virtual void const* _GetBinary (int* binarySize) const = 0;
-    virtual bool _GetBoolean () const = 0;
-    virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const = 0;
-    virtual uint64_t _GetDateTimeJulianDaysHns(DateTime::Info& metadata) const = 0;
-    virtual double _GetDouble () const = 0;
-    virtual int _GetInt () const = 0;
-    virtual int64_t _GetInt64 () const = 0;
-    virtual IGeometryPtr _GetGeometry() const = 0;
-    virtual void const* _GetGeometryBlob(int* blobSize) const = 0;
-    virtual DPoint2d _GetPoint2d() const = 0;
-    virtual DPoint3d _GetPoint3d () const = 0;
-    virtual Utf8CP _GetText () const = 0;
+        virtual void const* _GetBinary(int* binarySize) const = 0;
+        virtual bool _GetBoolean() const = 0;
+        virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const = 0;
+        virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const = 0;
+        virtual double _GetDouble() const = 0;
+        virtual int _GetInt() const = 0;
+        virtual int64_t _GetInt64() const = 0;
+        virtual IGeometryPtr _GetGeometry() const = 0;
+        virtual void const* _GetGeometryBlob(int* blobSize) const = 0;
+        virtual DPoint2d _GetPoint2d() const = 0;
+        virtual DPoint3d _GetPoint3d() const = 0;
+        virtual Utf8CP _GetText() const = 0;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

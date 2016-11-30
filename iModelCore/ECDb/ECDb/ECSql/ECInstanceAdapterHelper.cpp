@@ -291,13 +291,10 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
 
             case ECN::PRIMITIVETYPE_DateTime:
             {
-            bool hasMetadata = false;
             DateTime::Info metadata;
-            const int64_t ceTicks = value.GetDateTimeTicks(hasMetadata, metadata);
-            const uint64_t jdHns = DateTime::CommonEraTicksToJulianDay(ceTicks);
-
-            DateTime::Info const* actualMetadata = hasMetadata ? &metadata : nullptr;
-            stat = binder.BindDateTime(jdHns, actualMetadata);
+            const int64_t ceTicks = value.GetDateTimeTicks(metadata);
+            const uint64_t jdMsec = DateTime::CommonEraTicksToJulianDay(ceTicks);
+            stat = binder.BindDateTime(jdMsec, metadata);
             break;
 
             }

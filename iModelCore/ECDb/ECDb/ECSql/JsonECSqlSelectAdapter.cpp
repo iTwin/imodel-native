@@ -184,7 +184,7 @@ JsonECSqlSelectAdapter::JsonECSqlSelectAdapter
 (
     ECSqlStatementCR ecsqlStatement,
     FormatOptions formatOptions /* = FormatOptions (ECValueFormat::FormattedStrings) */
-) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions)
+) : m_ecsqlStatement(ecsqlStatement), m_formatOptions(formatOptions), m_structArrayAsString(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,7 +651,7 @@ bool JsonECSqlSelectAdapter::JsonFromDateTime(JsonValueR jsonValue, IECSqlValue 
     DateTime dateTime = ecsqlValue.GetDateTime();
     if (m_formatOptions.m_format == ECValueFormat::RawNativeValues)
         {
-        jsonValue = dateTime.ToUtf8String();
+        jsonValue = dateTime.ToString();
         return true;
         }
     else
@@ -880,13 +880,16 @@ bool JsonECSqlSelectAdapter::JsonFromStructArray(JsonValueR jsonValue, IECSqlVal
     IECSqlArrayValue const&  structArrayValue = ecsqlValue.GetArray();
 
     int ii = 0;
-    jsonValue = Json::Value(Json::arrayValue);
+    auto temp = Json::Value(Json::arrayValue);
     for (IECSqlValue const* arrayElementValue : structArrayValue)
         {
-        if (!JsonFromStruct(jsonValue[ii++], *arrayElementValue))
+        if (!JsonFromStruct(temp[ii++], *arrayElementValue))
             status = false;
         }
-
+    if (m_structArrayAsString)
+        jsonValue = temp.toStyledString().c_str();
+    else
+        jsonValue = temp;
     return status;
     }
 

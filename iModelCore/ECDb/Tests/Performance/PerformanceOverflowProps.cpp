@@ -511,7 +511,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectRegularProperty(PrimitiveT
                 case PRIMITIVETYPE_DateTime:
                 {
                 DateTime actualDt;
-                if (SUCCESS != DateTime::FromJulianDay(actualDt, stmt.GetValueDouble(0), DateTime::Info(DateTime::Kind::Utc)))
+                if (SUCCESS != DateTime::FromJulianDay(actualDt, stmt.GetValueDouble(0), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)))
                     return ERROR;
 
                 if (!actualDt.Equals(GetTestDate()))
@@ -688,7 +688,7 @@ BentleyStatus PerformanceOverflowPropsTests::RunSelectOverflowProperty(Primitive
                 case PRIMITIVETYPE_DateTime:
                 {
                 DateTime actualDt;
-                if (SUCCESS != DateTime::FromJulianDay(actualDt, stmt.GetValueDouble(0), DateTime::Info(DateTime::Kind::Utc)))
+                if (SUCCESS != DateTime::FromJulianDay(actualDt, stmt.GetValueDouble(0), DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)))
                     return ERROR;
 
                 if (!actualDt.Equals(GetTestDate()))
