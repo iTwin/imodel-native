@@ -88,7 +88,7 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors);
+    void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
     void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);

@@ -12,9 +12,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-
 static double   s_testWidth = 1.0;        // Temporary...
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1163,7 +1161,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     double                      width = s_testWidth;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
-    BeAssert (mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+    BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
 
     for (auto const& polyline : mesh.Polylines())
         {
@@ -1580,10 +1578,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     auto spatialView = m_viewController._ToSpatialView();
     auto drawingView = m_viewController._ToDrawingView();
 
-#ifndef WIP_2D_SUPPORT
-    drawingView = nullptr;
-#endif
-    
     if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
@@ -1697,19 +1691,22 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
-    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
-
-    if (nullptr == cameraView && nullptr == orthographicView)
-        {
-        BeAssert(false && "unsupported view type");
-        return;
-        }
 
     json["name"] = view.GetName();
 
     auto spatialView = view.ToSpatialView();
+    auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(&view) : nullptr;
     if (nullptr != spatialView)
-        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
+        {
+        auto selectorId = spatialView->GetModelSelectorId().ToString();
+        json["modelSelector"] = selectorId;
+        }
+    else if (nullptr != view2d)
+        {
+        auto fakeModelSelectorId = view2d->GetBaseModelId().ToString();
+        fakeModelSelectorId.append("_2d");
+        json["modelSelector"] = fakeModelSelectorId;
+        }
 
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
@@ -1769,6 +1766,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
+    DgnModelIdSet all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
@@ -1778,17 +1776,13 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
             continue;
 
         auto spatialView = viewDefinition->ToSpatialView();
-
-#ifndef WIP_2D_SUPPORT
-        if (nullptr == spatialView)
-            continue;
-#endif
-    
+        auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(viewDefinition.get()) : nullptr;
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
+        else if (nullptr != view2d)
+            all2dModelIds.insert(view2d->GetBaseModelId());
 
         Json::Value entry(Json::objectValue);
-
  
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
@@ -1806,7 +1800,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 
     json["defaultView"] = defaultViewId.ToString();
 
-    WriteModelsJson(json, allModelSelectors);
+    WriteModelsJson(json, allModelSelectors, all2dModelIds);
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
@@ -1821,9 +1815,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors)
+void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels)
     {
-    DgnModelIdSet allModels;
+    DgnModelIdSet allModels = all2dModels;
     Json::Value& selectorsJson = (json["modelSelectors"] = Json::objectValue);
     for (auto const& selectorId : allModelSelectors)
         {
@@ -1834,6 +1828,14 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
             selectorsJson[selectorId.ToString()] = IdSetToJson(models);
             allModels.insert(models.begin(), models.end());
             }
+        }
+
+    // create a fake model selector for each 2d model
+    for (auto const& modelId : all2dModels)
+        {
+        DgnModelIdSet modelIdSet;
+        modelIdSet.insert(modelId);
+        selectorsJson[modelId.ToString()+"_2d"] = IdSetToJson(modelIdSet);
         }
 
     json["models"] = GetModelsJson(allModels);
