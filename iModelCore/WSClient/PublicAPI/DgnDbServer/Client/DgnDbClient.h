@@ -73,10 +73,6 @@ public:
 public:
     DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback                       DefaultFileNameCallback;
 
-    //! Set up the DgnDbServer Client library. Initialization is required for most of the library functions to work.
-    //! Needs to be called from the work thread where DgnPlatform is initialized.
-    DGNDBSERVERCLIENT_EXPORT static void Initialize();
-
     //! Create new user. Use just for basic authorisation
     //! @param[in] credentials of the new user
     //! @param[in] cancellationToken

@@ -43,7 +43,6 @@ DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallback
     const Utf8String methodName = "DgnDbBriefcase::Pull";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
@@ -92,7 +91,6 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(bvector<DgnDbServerRevisionPtr> c
     const Utf8String methodName = "DgnDbBriefcase::Merge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
@@ -146,7 +144,6 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
     const Utf8String methodName = "DgnDbBriefcase::Push";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
@@ -238,7 +235,6 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
     const Utf8String methodName = "DgnDbBriefcase::PullAndMerge";
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
 
     auto result = Pull(callback, cancellationToken)->GetResult();
 
@@ -336,7 +332,6 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
     Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushInternal";
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -389,7 +384,6 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
     const Utf8String methodName = "DgnDbBriefcase::IsBriefcaseUpToDate";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -432,7 +426,6 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEv
     {
     const Utf8String methodName = "DgnDbBriefcase::SubscribeToEvents";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         return nullptr;
     if (!m_repositoryConnection)
@@ -447,7 +440,6 @@ DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents()
     {
     const Utf8String methodName = "DgnDbBriefcase::UnsubscribeToEvents";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
@@ -468,7 +460,6 @@ DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellatio
     {
     const Utf8String methodName = "DgnDbBriefcase::GetEvent";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");

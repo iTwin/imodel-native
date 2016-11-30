@@ -620,8 +620,7 @@ BeBriefcaseId                  briefcaseId
     const Utf8String methodName = "DgnDbRepositoryConnection::WriteBriefcaseIdIntoFile";
     BeSQLite::DbResult status;
 
-    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-    DgnDbServerHost::Adopt (host);
+    //NEEDSWORK: has to be on client thread
 
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb (&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
     DgnDbServerStatusResult result;
@@ -642,7 +641,6 @@ BeBriefcaseId                  briefcaseId
             db->CloseDb();
         }
 
-    DgnDbServerHost::Forget(host, true);
     return result;
     }
 
@@ -1942,12 +1940,9 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbRepositoryConnection::AcquireNewBriefcase(I
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionPtr ParseRevision (JsonValueCR jsonValue)
     {
-    std::shared_ptr<DgnDbServerHost> host = std::make_shared<DgnDbServerHost>();
-    DgnDbServerHost::Adopt(host);
     RevisionStatus status;
     DgnDbServerRevisionPtr indexedRevision = DgnDbServerRevision::Create(DgnRevision::Create(&status, jsonValue[ServerSchema::Property::Id].asString(),
     jsonValue[ServerSchema::Property::ParentId].asString(), jsonValue[ServerSchema::Property::MasterFileId].asString()));
-    DgnDbServerHost::Forget(host);
     if (RevisionStatus::Success == status)
         {
         indexedRevision->GetRevision()->SetSummary(jsonValue[ServerSchema::Property::Description].asCString());
@@ -1968,7 +1963,6 @@ DgnDbServerRevisionsTaskPtr DgnDbRepositoryConnection::GetAllRevisions (ICancell
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetAllRevisions";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert (DgnDbServerHost::IsInitialized ());
     WSQuery query (ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
     return RevisionsFromQuery (query, cancellationToken);
     }
@@ -1984,7 +1978,6 @@ ICancellationTokenPtr cancellationToken
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionById";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    BeAssert(DgnDbServerHost::IsInitialized());
     if (revisionId.empty())
         {
         // Don't log error here since this is a valid case then there are no revisions locally.
@@ -2494,7 +2487,6 @@ ICancellationTokenPtr       cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::RevisionsFromQuery";
-    BeAssert(DgnDbServerHost::IsInitialized());
     return m_wsRepositoryClient->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<DgnDbServerRevisionsResult>
         ([=](const WSObjectsResult& revisionsInfoResult)
         {
@@ -2530,7 +2522,6 @@ ICancellationTokenPtr cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionsAfterId";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    BeAssert(DgnDbServerHost::IsInitialized());
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
     return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
         {
