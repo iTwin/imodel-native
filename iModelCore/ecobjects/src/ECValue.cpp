@@ -410,7 +410,7 @@ int64_t ECValue::NavigationInfo::GetRelationshipClassId() const
     if (m_isPointer && nullptr != m_relClass)
         {
         ECClassId relId = m_relClass->GetId();
-        return relId.IsValid() ? relId.GetValue() : -1;
+        return relId.IsValid() ? relId.GetValue() : 0;
         }
     return m_relClassId;
     }
@@ -793,6 +793,7 @@ void            ECValue::SetToNull()
 void            ECValue::SetNavigationToNull()
     {
     m_valueKind = VALUEKIND_Navigation;
+    m_navigationInfo.Set(0);
     SetToNull();
     }
 
