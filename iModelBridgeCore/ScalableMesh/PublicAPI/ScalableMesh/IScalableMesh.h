@@ -59,6 +59,7 @@ enum DTMAnalysisType
     Precise =0,
     Fast,
     RawDataOnly,
+    ViewOnly,
     Qty
     };
 
@@ -69,11 +70,25 @@ enum SMCloudServerType
     WSG
     };
 
+struct IScalableMeshMemoryCounts
+{
+
+public:
+    BENTLEY_SM_EXPORT static void SetMaximumMemoryUsage(size_t maxNumberOfBytes);
+    BENTLEY_SM_EXPORT static void SetMaximumVideoMemoryUsage(size_t maxNumberOfBytes);
+
+    BENTLEY_SM_EXPORT static size_t GetAmountOfUsedMemory();
+    BENTLEY_SM_EXPORT static size_t GetAmountOfUsedVideoMemory();
+
+    BENTLEY_SM_EXPORT static size_t GetMaximumMemoryUsage();
+    BENTLEY_SM_EXPORT static size_t GetMaximumVideoMemoryUsage();
+};
+
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
+struct IScalableMesh abstract:  IRefCounted 
     {
     private:
         

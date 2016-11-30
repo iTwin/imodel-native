@@ -701,6 +701,7 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         bool     m_isProgressiveDisplay;
         double   m_minScreenPixelsPerPoint;
+        double   m_maxPixelError;
         double   m_rootToViewMatrix[4][4];
         
 
@@ -730,6 +731,11 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_minScreenPixelsPerPoint;
             } 
 
+        virtual double        _GetMaxPixelError() const override
+        {
+            return m_maxPixelError;
+        }
+
         virtual StopQueryCallbackFP _GetStopQueryCallback() const
             {
             return m_stopQueryCallbackFP;
@@ -754,6 +760,11 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             {
             m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
             }
+
+        virtual void          _SetMaxPixelError(double errorInPixels) override
+        {
+            m_maxPixelError = errorInPixels;
+        }
 
         virtual void          _SetProgressiveDisplay(bool isProgressiveDisplay) override
             {
@@ -797,7 +808,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         ScalableMeshViewDependentMeshQueryParams()
             {            
-            m_minScreenPixelsPerPoint = 100;      
+            m_minScreenPixelsPerPoint = 100;  
+            m_maxPixelError = 1.0;
             m_isProgressiveDisplay = false;
             m_stopQueryCallbackFP = 0;
             }

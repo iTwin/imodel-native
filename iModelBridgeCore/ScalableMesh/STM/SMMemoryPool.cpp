@@ -159,7 +159,7 @@ SMMemoryPool::SMMemoryPool(SMMemoryPoolType type)
 
     for (size_t itemId = 0; itemId < m_memPoolItemMutex[0].size(); itemId++)
         {
-        m_memPoolItemMutex[0][itemId] = new recursive_mutex;
+        m_memPoolItemMutex[0][itemId] = new Spinlock;
         }
     }
 
@@ -184,7 +184,7 @@ bool SMMemoryPool::GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItem
     assert(binId < m_nbBins);
 
     if (binId >= m_nbBins) return false;
-    std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     m_lastAccessTime[binId][itemId] = clock();
     memItemPtr = m_memPoolItems[binId][itemId];
     return memItemPtr.IsValid();
@@ -203,7 +203,7 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDat
 
     if (binId >= m_nbBins) return false;
 
-    std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType, smId))
@@ -226,7 +226,7 @@ void SMMemoryPool::ReplaceItem(SMMemoryPoolItemBasePtr& poolItem, SMMemoryPoolIt
     size_t itemId = id % s_binSize;
     assert(binId < m_nbBins);
 
-    std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
     SMMemoryPoolItemBasePtr memItemPtr(m_memPoolItems[binId][itemId]);
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType,smId))
@@ -266,7 +266,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
         for (itemInd = 0; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
             {
                 {   
-                std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binInd][itemInd]);
+                std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binInd][itemInd]);
 
                 if (!m_memPoolItems[binInd][itemInd].IsValid())
                     {
@@ -299,7 +299,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
             {
             for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
                 {     
-                std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
+                std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
 
                 if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_lastAccessTime[binIndToDelete][itemIndToDelete] < flushTimeThreshold && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)                    
                     {
@@ -318,7 +318,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
             {
             for (size_t itemIndToDelete = 0; itemIndToDelete < m_memPoolItems[binIndToDelete].size() && m_currentPoolSizeInBytes > m_maxPoolSizeInBytes; itemIndToDelete++)
                 {  
-                std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
+                std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binIndToDelete][itemIndToDelete]);
 
                 if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)
                     {
@@ -346,7 +346,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
             for (size_t itemId = 0; itemId < m_memPoolItemMutex[m_nbBins].size(); itemId++)
                 {
-                m_memPoolItemMutex[m_nbBins][itemId] = new recursive_mutex;
+                m_memPoolItemMutex[m_nbBins][itemId] = new Spinlock;
                 }
                          
             m_nbBins++;
@@ -358,7 +358,7 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
         for (; itemInd < (uint64_t)m_memPoolItems[binInd].size(); itemInd++)
             {                   
-            std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binInd][itemInd]);
+            std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binInd][itemInd]);
 
             if (!m_memPoolItems[binInd][itemInd].IsValid())
                 {
@@ -410,7 +410,7 @@ void SMMemoryPool::NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int6
     size_t itemId = poolItem->GetPoolItemId() % s_binSize;
     assert(binId < m_nbBins);
     
-    std::lock_guard<std::recursive_mutex> lock(*m_memPoolItemMutex[binId][itemId]);
+    std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
 
     if (m_memPoolItems[binId][itemId].get() == poolItem)
         {

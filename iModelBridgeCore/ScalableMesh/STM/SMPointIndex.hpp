@@ -525,6 +525,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
     m_wasBalanced = true;
 
     SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS =  const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
+    if (this == m_SMIndex->GetRootNode())
+        {
+
+        CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(GetBlockID().m_integerID));
+
+        if (nodeIter == m_createdNodeMap->end())
+            {
+            m_createdNodeMap->insert(std::pair<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(GetBlockID().m_integerID, UNCONSTTHIS));
+            }
+        }
     
     UNCONSTTHIS->m_apSubNodes.resize(UNCONSTTHIS->m_nodeHeader.m_numberOfSubNodesOnSplit);
 

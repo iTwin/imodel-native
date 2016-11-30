@@ -1447,7 +1447,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
             if (res != 0.0)
                 {
                 double unitsPerPixel = maxDimension / distance;
-                IsCorrect = unitsPerPixel < res;
+                IsCorrect = unitsPerPixel * m_maxPixelError < res;
                 }
             else
                 {

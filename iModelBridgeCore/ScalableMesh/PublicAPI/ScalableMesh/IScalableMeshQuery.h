@@ -677,6 +677,8 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         virtual double              _GetMinScreenPixelsPerPoint() const = 0;        
 
+        virtual double              _GetMaxPixelError() const = 0;
+
         virtual StopQueryCallbackFP _GetStopQueryCallback() const = 0;
                
         virtual const double*       _GetRootToViewMatrix() const = 0;
@@ -686,6 +688,8 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         virtual bool                _IsProgressiveDisplay() const = 0;
 
         virtual void            _SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint) = 0;
+
+        virtual void            _SetMaxPixelError(double errorInPixels) = 0;
 
         virtual void            _SetProgressiveDisplay(bool isProgressiveDisplay) = 0;
 
@@ -701,6 +705,8 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         const DPoint3d*     GetViewBox() const;
                                         
         double              GetMinScreenPixelsPerPoint() const;
+
+        double              GetMaxPixelError() const;
 
         StopQueryCallbackFP GetStopQueryCallback() const;
 
@@ -720,6 +726,8 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
         BENTLEY_SM_EXPORT void      SetViewBox(const DPoint3d viewBox[]);        
 
         BENTLEY_SM_EXPORT void      SetMinScreenPixelsPerPoint(double minScreenPixelsPerPoint);
+
+        BENTLEY_SM_EXPORT void      SetMaxPixelError(double errorInPixels);
 
         BENTLEY_SM_EXPORT void      SetProgressiveDisplay(bool isProgressiveDisplay);
 

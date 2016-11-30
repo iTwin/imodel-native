@@ -488,5 +488,6 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
            
     };
 
+
 /*__PUBLISH_SECTION_START__*/
 END_BENTLEY_SCALABLEMESH_NAMESPACE
