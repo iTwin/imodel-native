@@ -229,10 +229,14 @@ static Render::GraphicSet s_unusedDummyGraphicSet;
 
 #if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
 static const Utf8CP s_geometrySource3dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement3d) " WHERE ECInstanceId=?";
+static const Utf8CP s_geometrySource2dECSql = "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE ECInstanceId=?";
 #else
 static const Utf8CP s_geometrySource3dNativeSql =
     "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
     BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+static const Utf8CP s_geometrySource2dNativeSql =
+    "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+    BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
 #endif
 
 END_UNNAMED_NAMESPACE
@@ -479,15 +483,15 @@ struct RangeAccumulator : RangeIndex::Traverser
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelId modelId)       
+TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)       
     {
-    m_modelId = modelId;
-    auto model = db.Models().Get<GeometricModel>(modelId);
-    if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+    m_model = &model;
+    auto geomModel = model.ToGeometricModelP();
+    if (nullptr == geomModel || DgnDbStatus::Success != geomModel->FillRangeIndex())
         return TileGeneratorStatus::NoGeometry;
 
     RangeAccumulator accum(m_range);
-    return accum.Accumulate(*model->GetRangeIndex());
+    return accum.Accumulate(*geomModel->GetRangeIndex());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1665,7 +1669,7 @@ TileGenerator::FutureStatus TileGenerator::PopulateCache(ElementTileContext cont
     {
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]                                                         
         {
-        return context.m_cache->Populate(GetDgnDb(), context.m_model->GetModelId());
+        return context.m_cache->Populate(GetDgnDb(), *context.m_model);
         });
     }
 
@@ -1938,9 +1942,9 @@ private:
 public:
     TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
 #if defined(MESHTILE_SELECT_GEOMETRY_USING_ECSQL)
-    m_statement(db.GetPreparedECSqlStatement(s_geometrySource3dECSql))
+    m_statement(db.GetPreparedECSqlStatement(m_cache.GetModel().Is2dModel() ? s_geometrySource2dECSql : s_geometrySource3dECSql))
 #else
-    m_statement(db.GetCachedStatement(s_geometrySource3dNativeSql))
+    m_statement(db.GetCachedStatement(m_cache.GetModel().Is2dModel() ? s_geometrySource2dNativeSql : s_geometrySource3dNativeSql))
 #endif
         {
         SetDgnDb(db);
@@ -2336,8 +2340,8 @@ struct GeometryCollector : RangeIndex::Traverser
 
     TileGeneratorStatus Collect()
         {
-        auto model = m_processor.GetDgnDb().Models().Get<GeometricModel>(m_processor.GetCache().GetModelId());
-        if (model.IsNull() || DgnDbStatus::Success != model->FillRangeIndex())
+        auto model = m_processor.GetCache().GetModel().ToGeometricModelP();
+        if (nullptr == model || DgnDbStatus::Success != model->FillRangeIndex())
             return TileGeneratorStatus::NoGeometry;
 
         return Stop::Yes == model->GetRangeIndex()->Traverse(*this) ? TileGeneratorStatus::Aborted : TileGeneratorStatus::Success;

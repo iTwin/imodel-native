@@ -498,18 +498,18 @@ private:
     mutable BeMutex             m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
     Options                     m_options;
-    DgnModelId                  m_modelId;
+    DgnModelPtr                 m_model;
 
     friend struct TileGenerator; // Invokes Populate() from ctor
     TileGenerationCache(Options options);
-    TileGeneratorStatus Populate(DgnDbR db, DgnModelId modelId);
+    TileGeneratorStatus Populate(DgnDbR db, DgnModelR model);
 
     static TileGenerationCachePtr Create(Options options = Options::CacheGeometrySources) { return new TileGenerationCache(options); }
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
     DRange3dCR GetRange() const { return m_range; }
-    DgnModelId GetModelId() const { return m_modelId; }
+    DgnModelR GetModel() const { return *m_model; }
 
     bool WantCacheGeometrySources() const { return Options::CacheGeometrySources == m_options; }
     GeometrySourceCP GetCachedGeometrySource(DgnElementId elementId) const;
@@ -694,14 +694,14 @@ private:
         {
         DgnPlatformLib::Host&   m_host;
         TileGenerationCachePtr  m_cache;
-        DgnModelCPtr            m_model;
+        DgnModelPtr             m_model;
         ITileCollector*         m_collector;
         double                  m_leafTolerance;
         size_t                  m_maxPointsPerTile;
         TileModelDeltaP         m_modelDelta;
 
 
-        ElementTileContext(TileGenerationCacheR cache, DgnModelCR model, TileModelDeltaP modelDelta, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
+        ElementTileContext(TileGenerationCacheR cache, DgnModelR model, TileModelDeltaP modelDelta, ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile)
             : m_host(T_HOST), m_cache(&cache), m_model(&model), m_collector(&collector), m_leafTolerance(leafTolerance), m_maxPointsPerTile(maxPointsPerTile), m_modelDelta(modelDelta) { }
         };
 

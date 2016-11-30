@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-
+#define WIP_2D_SUPPORT
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
@@ -1662,13 +1662,15 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
     CameraViewDefinitionCP          cameraView = view.ToCameraView();
-    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
 
+#ifndef WIP_2D_SUPPORT
+    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
     if (nullptr == cameraView && nullptr == orthographicView)
         {
         BeAssert(false && "unsupported view type");
         return;
         }
+#endif
 
     json["name"] = view.GetName();
 
