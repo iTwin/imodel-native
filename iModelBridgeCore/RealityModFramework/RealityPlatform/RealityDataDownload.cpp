@@ -74,15 +74,16 @@ static int callback_progress_func(void *pClient,
 
     struct RealityDataDownload::FileTransfer *pFileTrans = (struct RealityDataDownload::FileTransfer *)pClient;
 
-    if (NULL != pFileTrans->pProgressFunc)
+    int statusCode = 0;
+    if (NULL != pFileTrans->pHeartbeatFunc)
+        statusCode = pFileTrans->pHeartbeatFunc();
+
+    if (0 == statusCode)
         {
-        if (dltotal > 0)
+        if (pFileTrans->filesize == 0 && dltotal > 0)
             {
-            if (pFileTrans->filesize == 0)
-                {
-                pFileTrans->filesize = (size_t)dltotal;
-                pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
-                }
+            pFileTrans->filesize = (size_t)dltotal;
+            pFileTrans->downloadedSizeStep = (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
             }
 
         if (dlnow > pFileTrans->downloadedSizeStep)
@@ -92,16 +93,9 @@ static int callback_progress_func(void *pClient,
             else
                 pFileTrans->downloadedSizeStep += (size_t)(pFileTrans->filesize * pFileTrans->progressStep);
 
-            int statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
-            if (0 != statusCode)
-                {
-                // An error occurred, delete incomplete file.
-                pFileTrans->fileStream.Close();
-                BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
-                }
-                
-
-            return statusCode;
+            
+            if (NULL != pFileTrans->pProgressFunc)
+                statusCode = (pFileTrans->pProgressFunc)((int) pFileTrans->index, pClient, (size_t) dlnow, pFileTrans->filesize);
             }
         }
 
@@ -109,7 +103,14 @@ static int callback_progress_func(void *pClient,
     fprintf(stderr, "callback_progress_func total:%llu now: %llu\n", (size_t)dltotal, (size_t)dlnow);
 #endif
 
-    return 0;
+    if (0 != statusCode)
+        {
+        // An error occurred, delete incomplete file.
+        pFileTrans->fileStream.Close();
+        BeFileName::BeDeleteFile(pFileTrans->filename.c_str());
+    }
+
+    return statusCode;
 }
 
 
@@ -152,6 +153,7 @@ RealityDataDownload::RealityDataDownload(const UrlLink_UrlFile& pi_Link_FileName
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -179,6 +181,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors& pi_Link_File_
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -228,6 +231,7 @@ RealityDataDownload::RealityDataDownload(const Link_File_wMirrors_wSisters& pi_L
 
     m_pCurlHandle = curl_multi_init();
     m_pProgressFunc = nullptr;
+    m_pHeartbeatFunc = nullptr;
     m_pStatusFunc = nullptr;
     m_certPath = WString();
 
@@ -274,11 +278,9 @@ RealityDataDownload::~RealityDataDownload()
         delete[] m_pEntries;
     };
 
-
-
-bool RealityDataDownload::Perform()
+RealityDataDownload::DownloadReport* RealityDataDownload::Perform()
     {
-
+    m_dlReport = DownloadReport();
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
 
@@ -294,7 +296,7 @@ bool RealityDataDownload::Perform()
 
     // if everything already downloaded, exit with success.
     if (atLeast1Download == false)
-        return true;
+        return nullptr;
 
     int still_running; /* keep number of running handles */
     int repeats = 0;
@@ -311,8 +313,7 @@ bool RealityDataDownload::Perform()
 
         if (mc != CURLM_OK)
             {
-            if (m_pStatusFunc)
-                m_pStatusFunc(-1, NULL, mc, "curl_multi_wait() failed");
+            ReportStatus(-1, NULL, mc, "curl_multi_wait() failed");
 #ifdef TRACE_DEBUG
                fprintf(stderr, "curl_multi_wait() failed, code %d.\n", mc);
 #endif
@@ -353,36 +354,27 @@ bool RealityDataDownload::Perform()
                         { 
                         ++pFileTrans->nbRetry;
                         pFileTrans->iAppend = 0;
-                        if (m_pStatusFunc)            // Send status retry ? Application should know or not ?
-                            m_pStatusFunc((int)pFileTrans->index, pClient, REALITYDATADOWNLOAD_RETRY_TENTATIVE, "Trying again...");
+                        ReportStatus((int)pFileTrans->index, pClient, REALITYDATADOWNLOAD_RETRY_TENTATIVE, "Trying again...");
 #ifdef TRACE_DEBUG
                         fprintf(stderr, "R: %d - Retry(%d) <%ls>\n", REALITYDATADOWNLOAD_RETRY_TENTATIVE, pFileTrans->nbRetry, pFileTrans->filename.c_str());
 #endif
-                        SetupCurlandFile(&m_pEntries[pFileTrans->index]);
+                        SetupCurlandFile(&m_pEntries[pFileTrans->index], true);
                         still_running++;
                         }
                     else
                         {   
                         if(SetupMirror(pFileTrans->index, 56))
-                            {
                             still_running++;
-                            }
                         else
                             {
-                                // Maximun retry done, return error.
-                            if (m_pStatusFunc)
-                                m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                            // Maximun retry done, return error.
+                            ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
                             }
                         }
                     }
-                else if ((msg->data.result != CURLE_OK) && SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
-                    {
-                    still_running++;
-                    }
                 else if (msg->data.result == CURLE_OK)
                     {
-                    if (m_pStatusFunc)
-                        m_pStatusFunc((int) pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                    ReportStatus((int) pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
 #ifdef TRACE_DEBUG
                     fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 #endif
@@ -398,13 +390,18 @@ bool RealityDataDownload::Perform()
                             }
                         }
                     }
-                else
-                    {
-                    if (m_pStatusFunc)
-                        m_pStatusFunc((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
+                else if (msg->data.result != CURLE_OK)
+                    { 
+                    if(SetupMirror(pFileTrans->index, msg->data.result)) //if there's an error, try next mirror
+                        still_running++;
+
+                    else
+                        {
+                        ReportStatus((int)pFileTrans->index, pClient, msg->data.result, curl_easy_strerror(msg->data.result));
 #ifdef TRACE_DEBUG
                     fprintf(stderr, "R: %d - %s <%ls>\n", msg->data.result, curl_easy_strerror(msg->data.result), pFileTrans->filename.c_str());
 #endif
+                        }
                     }
 
                 curl_multi_remove_handle(m_pCurlHandle, msg->easy_handle);
@@ -412,8 +409,7 @@ bool RealityDataDownload::Perform()
                 }
             else
                 {
-                if (m_pStatusFunc)
-                    m_pStatusFunc(-1, NULL, msg->msg, "CurlMsg failed");
+                ReportStatus(-1, NULL, msg->msg, "CurlMsg failed");
 #ifdef TRACE_DEBUG
                     fprintf(stderr, "E: CURLMsg (%d)\n", msg->msg);
 #endif
@@ -429,24 +425,27 @@ bool RealityDataDownload::Perform()
 
         } while (still_running);
 
-    return true;
+    return &m_dlReport;
     }
-    
 
 //
 // false --> Curl error or file already there, skip download.
 //
-SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft)
+SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft, bool isRetry)
     {
+    // If cancel requested, don't queue new files
+    if(NULL != m_pHeartbeatFunc && m_pHeartbeatFunc() != 0)
+        return SetupCurlStatus::Success;
+
     // If file already there, consider the download completed.
     while (ft != nullptr && ft->fromCache && BeFileName::DoesPathExist(ft->filename.c_str()))
         {
-        if (m_pStatusFunc)
+        if(m_pStatusFunc)
             m_pStatusFunc((int) ft->index, ft, 0, nullptr);
 
         ft = ft->mirrors[0].nextSister;
 
-        if (m_pStatusFunc && nullptr != ft)
+        if (nullptr != ft && m_pStatusFunc)
             m_pStatusFunc((int)ft->index, ft, REALITYDATADOWNLOAD_CONTACTING_SISTER, "File already in cache, attempting to retrieve next sister if exists");
         }
     if (ft == nullptr)
@@ -495,13 +494,24 @@ SetupCurlStatus RealityDataDownload::SetupCurlandFile(FileTransfer* ft)
         curl_easy_setopt(pCurl, CURLOPT_PRIVATE, ft);
 
         ft->pProgressFunc = m_pProgressFunc;
+        ft->pHeartbeatFunc = m_pHeartbeatFunc;
         ft->progressStep = m_progressStep;
+
+        ft->mirrors[0].DownloadStart = std::time(nullptr);
 
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         }
         
     if (pCurl != NULL)
+        {
+        if(!isRetry)
+            {
+            TransferReport* tr = new TransferReport();
+            tr->url = ft->mirrors[0].url;
+            m_dlReport.results.Insert(ft->filename, tr);
+            }
         return SetupCurlStatus::Success;
+        }
     else
         return SetupCurlStatus::Error;
     }
@@ -511,16 +521,13 @@ bool RealityDataDownload::SetupMirror(size_t index, int errorCode)
     if(m_pEntries[index].mirrors.size() <= 1)
         return false;
 
-    if(m_pStatusFunc)
-        {
-        char errorMsg[512];
-        sprintf(errorMsg, "could not download %ls, error code %d. Attempting to retrieve mirror file %ls",
-            m_pEntries[index].mirrors[0].filename.c_str(),
-            errorCode,
-            m_pEntries[index].mirrors[1].filename.c_str());
-        m_pStatusFunc((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_MIRROR_CHANGE, errorMsg);
-        }
-
+    char errorMsg[512];
+    sprintf(errorMsg, "could not download %ls, error code %d. Attempting to retrieve mirror file %ls",
+        m_pEntries[index].mirrors[0].filename.c_str(),
+        errorCode,
+        m_pEntries[index].mirrors[1].filename.c_str());
+    ReportStatus((int)m_pEntries[index].index, &(m_pEntries[index]), REALITYDATADOWNLOAD_MIRROR_CHANGE, errorMsg);
+        
     m_pEntries[index].mirrors.erase(m_pEntries[index].mirrors.begin());
     m_pEntries[index].filename = m_pEntries[index].mirrors.front().filename;
     m_pEntries[index].iAppend = 0;
@@ -653,3 +660,30 @@ bool RealityDataDownload::UnZipFile(const char* pi_strSrc, const char* pi_strDes
     return (unzClose (uf) == 0);
     }
 
+void RealityDataDownload::ReportStatus(int index, void *pClient, int ErrorCode, const char* pMsg)
+    {
+    if(m_pStatusFunc)
+        m_pStatusFunc(index, pClient, ErrorCode, pMsg);
+
+    RealityDataDownload::FileTransfer* pEntry = (RealityDataDownload::FileTransfer*)pClient;
+        
+    bmap<WString, TransferReport*>::iterator it = m_dlReport.results.find(pEntry->filename);
+    if(it == m_dlReport.results.end())
+        return;//something went wrong
+
+    TransferReport* tr = it->second;
+    tr->filesize = pEntry->filesize;
+
+    DownloadResult dr = DownloadResult();
+    dr.errorCode = ErrorCode;
+    dr.downloadProgress = pEntry->downloadedSizeStep;
+    if(pEntry->filesize != 0)
+        dr.downloadProgress /= pEntry->filesize;
+
+    tr->retries.push_back(dr);
+
+    if (ErrorCode != REALITYDATADOWNLOAD_RETRY_TENTATIVE)
+        {
+        tr->timeSpent = time(nullptr) - pEntry->mirrors[0].DownloadStart;
+        }
+    }
