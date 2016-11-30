@@ -151,9 +151,11 @@
 
 #define SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                      "SearchResultInstances"
 
-#define SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME                                      "Query"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME                          "SchemaName"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME                           "ClassName"
+#define STRING_QUERY_SPECIFICATION_XML_NODE_NAME                                      "StringQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME                            "PropertyValueQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME       "ParentPropertyName"
 
 #define RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME                                  "RelatedInstance"
 #define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                        "ClassName"
