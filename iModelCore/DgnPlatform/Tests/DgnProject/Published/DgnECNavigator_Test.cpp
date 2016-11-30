@@ -95,7 +95,7 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
 };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Ridha.                   11/2016
+* @bsimethod                                   Ridha.Malik                   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECNavigatorTest, GetElemtmentInfo)
     {
