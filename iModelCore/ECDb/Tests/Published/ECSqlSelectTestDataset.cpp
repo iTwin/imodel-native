@@ -1933,11 +1933,11 @@ ECSqlTestDataset ECSqlSelectTestDataset::MiscTests (int rowCountPerClass)
     ecsql = "SELECT L, B FROM ecsql.PSA Z";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 2, rowCountPerClass);
 
-    //ecsql = "SELECT DISTINCT Dt_Array FROM ecsql.PSA";
-    //ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "DISTINCT not supported with prim arrays.");
+    ecsql = "SELECT DISTINCT Dt_Array FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
 
-    //ecsql = "SELECT DISTINCT MyPSA FROM ecsql.P";
-    //ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid, "DISTINCT not supported with nav props.");
+    ecsql = "SELECT DISTINCT MyPSA FROM ecsql.P";
+    ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
 
     ecsql = "SELECT DISTINCT MyPSA.Id FROM ecsql.P";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 1);
