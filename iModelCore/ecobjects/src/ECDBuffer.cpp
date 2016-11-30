@@ -2774,7 +2774,7 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
             if (nullptr != relClass && isPointerFlag) // Set the relationship class pointer
                 v.SetNavigationInfo(*relClass, value);
             else if (!isPointerFlag) // Sets the relationship class id
-                v.SetNavigationInfo(relClassValue, value);
+                v.SetNavigationInfo(ECClassId((uint64_t) relClassValue), value);
             else  // Sets the relationship to nullptr
                 v.SetNavigationInfo(value);
             }
@@ -3211,7 +3211,7 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
             relClassValue = (int64_t) relClass;
         }
     else
-        relClassValue = v.GetNavigationInfo().GetRelationshipClassId();
+        relClassValue = v.GetNavigationInfo().GetRelationshipClassId().GetValue();
 
     if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &isPointerFlag, sizeof(isPointerFlag)))
         return ECObjectsStatus::PropertyValueMatchesNoChange;

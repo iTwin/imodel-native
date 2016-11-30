@@ -10,6 +10,7 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/BeAssert.h>
+#include <Bentley/BeId.h>
 
 #ifdef __ECOBJECTS_BUILD__
     #define ECOBJECTS_EXPORT EXPORT_ATTRIBUTE
@@ -512,5 +513,45 @@ enum class CustomAttributeContainerType
 
 ENUM_IS_FLAGS(CustomAttributeContainerType)
 /** @endGroup */
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECSchemaId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECSchemaId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECClassId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECClassId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECPropertyId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct ECEnumerationId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct KindOfQuantityId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
+    };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

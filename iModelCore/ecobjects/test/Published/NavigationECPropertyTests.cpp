@@ -295,7 +295,7 @@ void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP
     */
     }
 
-void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int64_t expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, int64_t expectedRelClassId = 0)
+void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int64_t expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, ECClassId expectedRelClassId = ECClassId())
     {
     ECValueAccessor accessor;
     ECValueAccessor::PopulateValueAccessor(accessor, instance, propertyAccessor);
@@ -305,18 +305,19 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
     EXPECT_TRUE(myTarget.IsNavigation()) << "Expected Navigation Property '" << propertyAccessor << "' to be ValueKind Navigation but it was not.";
     EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetIdAsLong()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
-    if (expectedRelClassId == 0)
+    if (!expectedRelClassId.IsValid())
         {
         ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
         EXPECT_EQ(expectedRelClass, relClass) << "The relationship class pointer of '" << propertyAccessor << "' is not as expected.";
 
         if (nullptr != expectedRelClass)
             {
-            EXPECT_EQ(expectedRelClass->GetId().GetValue(), myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id value of '" << propertyAccessor << "' is different than expected.";
+
+            EXPECT_EQ(expectedRelClass->GetId(), myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id of '" << propertyAccessor << "' is different than expected.";
             EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str()) << "The relationship for '" << propertyAccessor << "' was not the expected relationship.";
             }
         else
-            EXPECT_EQ(0, myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id value of '" << propertyAccessor << "' is different than expected.";
+            EXPECT_FALSE(myTarget.GetNavigationInfo().GetRelationshipClassId().IsValid()) << "The relationship class id of '" << propertyAccessor << "' should be invalid but is valid.";
         }
     else
         {
@@ -362,13 +363,15 @@ void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipCl
 
 void TestSettingNavPropLongValuesWithId(IECInstanceR instance)
     {
+    ECClassId relClassId((uint64_t) 25);
     ECValue myTargetValue;
-    myTargetValue.SetNavigationInfo(25LL, 42LL);
+    myTargetValue.SetNavigationInfo(relClassId, 42LL);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetWithRelId", myTargetValue)) << "Failed to set the value of MyTargetWithRelId nav prop to a long";
     EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetWithRelId nav property not as expected";
-    EXPECT_EQ(25LL, myTargetValue.GetNavigationInfo().GetRelationshipClassId()) << "Relationship Class Id of MyTargetWithRelId nav property not as expected";
+    EXPECT_TRUE(myTargetValue.GetNavigationInfo().GetRelationshipClassId().IsValid());
+    EXPECT_EQ(relClassId, myTargetValue.GetNavigationInfo().GetRelationshipClassId()) << "Relationship Class Id of MyTargetWithRelId nav property not as expected";
 
-    VerifyNavPropLongValue(instance, "MyTargetWithRelId", 42LL, nullptr, 25LL);
+    VerifyNavPropLongValue(instance, "MyTargetWithRelId", 42LL, nullptr, relClassId);
     }
 
 void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml, PrimitiveType navPropType)

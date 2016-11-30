@@ -16,7 +16,6 @@
 /*__PUBLISH_SECTION_START__*/
 #include <ECObjects/ECEnabler.h>
 #include <Bentley/RefCounted.h>
-#include <Bentley/BeId.h>
 #include <Bentley/bvector.h>
 #include <Bentley/bmap.h>
 #include <Bentley/bset.h>
@@ -201,46 +200,6 @@ public:
     inline PrimitiveType        GetPrimitiveType() const    { return m_primitiveType; }
     inline short                GetTypeKindQualifier() const   { return m_primitiveType; }
 };
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECSchemaId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ECSchemaId, BeInt64Id)
-    };
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECClassId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ECClassId, BeInt64Id)
-    };
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECPropertyId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ECPropertyId, BeInt64Id)
-    };
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct ECEnumerationId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(ECEnumerationId, BeInt64Id)
-    };
-
-//=======================================================================================
-//! @bsiclass
-//=======================================================================================
-struct KindOfQuantityId : BeInt64Id
-    {
-    BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
-    };
 
 typedef bvector<IECInstancePtr> ECCustomAttributeCollection;
 struct ECCustomAttributeInstanceIterable;
