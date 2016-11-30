@@ -1137,7 +1137,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     static double               s_testWidth = 5;
     bvector<uint32_t>           indices;
 
-    BeAssert (mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+    BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
 
     for (auto const& polyline : mesh.Polylines())
         {

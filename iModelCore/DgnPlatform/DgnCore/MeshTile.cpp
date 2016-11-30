@@ -1898,6 +1898,38 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
+struct TileGeometrySource2d : TileGeometrySource, GeometrySource2d
+{
+private:
+    Placement2d     m_placement;
+
+    TileGeometrySource2d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    virtual DgnElementCP _ToElement() const override { return nullptr; }
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override { return this; }
+    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    virtual Placement2dCR _GetPlacement() const override { return m_placement; }
+
+    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    virtual DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+public:
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+        {
+        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource2d(categoryId, db, geomBlob, placement));
+        if (!static_cast<TileGeometrySource2d const&>(*pSrc).IsGeometryValid())
+            return nullptr;
+
+        return pSrc;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
 struct GeometrySelector3d
 {
     static Utf8CP GetSql()
@@ -1923,7 +1955,6 @@ struct GeometrySelector3d
         }
 };
 
-#ifdef WIP_2D_TILES
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================
@@ -1935,13 +1966,19 @@ struct GeometrySelector2d
                 BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
         }
 
-    static Placement3d ExtractPlacement(BeSQLite::CachedStatement& stmt)
+    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
         {
-        double rotation = 
-        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble
+        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
+
+        auto rotation = AngleInDegrees::FromDegrees(stmt.GetValueDouble(2));
+        DPoint2d origin = DPoint2d::From(stmt.GetValueDouble(3), stmt.GetValueDouble(4));
+        ElementAlignedBox2d bbox(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7), stmt.GetValueDouble(8));
+
+        Placement2d placement(origin, rotation, bbox);
+        return TileGeometrySource2d::Create(categoryId, db, geomBlob, placement);
         }
 };
-#endif
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -2388,9 +2425,17 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
     // Collect geometry from elements in this node, sorted by size
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
     TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold);
-    TileGeometryProcessorContext<GeometrySelector3d> context(processor, db, cache);
 
-    return processor.OutputGraphics(context);
+    if (cache.GetModel().Is2dModel())
+        {
+        TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
+        return processor.OutputGraphics(context);
+        }
+    else
+        {
+        TileGeometryProcessorContext<GeometrySelector3d> context(processor, db, cache);
+        return processor.OutputGraphics(context);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
