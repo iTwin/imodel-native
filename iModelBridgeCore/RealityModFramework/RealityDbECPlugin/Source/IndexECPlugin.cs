@@ -237,23 +237,23 @@ namespace IndexECPlugin.Source
                             {
                             case "index":
                                     {
-                                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                                     IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
-                                    instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
+                                    //instanceOverrider.Modify(instances, DataSource.Index, ConnectionString);
+                                    //instanceComplement.Modify(instances, DataSource.Index, ConnectionString);
                                     return instances;
                                     }
 
                             case "usgsapi":
                                     {
-                                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                                     IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
-                                    instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
-                                    instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
+                                    //instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
+                                    //instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
                                     return instances;
                                     }
                             case "all":
@@ -308,12 +308,12 @@ namespace IndexECPlugin.Source
             {
                 try
                     {
-                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                     IECQueryProvider helper = new SqlQueryProvider(query, querySettings, ConnectionString, schema);
                     indexInstances = helper.CreateInstanceList().ToList();
-                    instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
-                    instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
+                    //instanceOverrider.Modify(indexInstances, DataSource.Index, ConnectionString);
+                    //instanceComplement.Modify(indexInstances, DataSource.Index, ConnectionString);
                     }
                 catch ( Exception e )
                     {
@@ -331,12 +331,12 @@ namespace IndexECPlugin.Source
             {
                 try
                     {
-                    InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
-                    InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
+                    //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
+                    //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
                     IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
                     usgsInstances = helper.CreateInstanceList();
-                    instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
-                    instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                    //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
+                    //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
                     }
                 catch ( Exception e )
                     {
