@@ -19,92 +19,100 @@ uint32_t s_max_group_depth = 2;
 uint32_t s_max_group_common_ancestor = 2;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
-{
-    if (m_strategyType == CESIUM)
+    {
+    unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
+    auto nodeHeader = this->GetNodeHeader(priorityNodeID);
+    assert(nodeHeader != nullptr);
+    if (!lk.try_lock() || m_isLoading)
         {
-        assert(m_isLoading == false);
-        m_isLoading = true;
-        std::unique_ptr<DataSource::Buffer[]>       dest;
-        DataSource                              *   dataSource;
-        DataSource::DataSize                        readSize;
-
-        DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
-
-        dataSource = this->InitializeDataSource(dest, destSize);
-        if (dataSource == nullptr)
+        // Someone else is loading the group
+        if (nodeHeader->offset == (uint32_t)-1)
             {
-            m_isLoading = false;
-            return ERROR;
+            // Data not ready yet, wait until it becomes ready
+            if (lk.owns_lock()) lk.unlock();
+            this->WaitFor(*nodeHeader);
             }
-
-        this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
-
-        if (readSize > 0)
-            {
-            Json::Reader    reader;
-            char* jsonBlob = reinterpret_cast<char *>(dest.get());
-            reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
-
-            if (!(m_RootTileTreeNode.isMember("root") && m_RootTileTreeNode["root"].isMember("SMHeader")))
-                {
-                assert(!"error reading Cesium 3D tiles header");
-                return 0;
-                }
-
-            // Generate tile tree map
-            std::function<void(Json::Value&)> tileTreeMapGenerator = [this, &tileTreeMapGenerator](Json::Value& jsonNode)
-                {
-                if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
-                    {
-                    uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
-                    this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
-                    if (jsonNode.isMember("children"))
-                        {
-                        for (auto& child : jsonNode["children"])
-                            {
-                            tileTreeMapGenerator(child);
-                            }
-                        }
-                    }
-                else
-                    {
-                    assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
-                    BeFileName groupURL(jsonNode["content"]["url"].asString());
-                    WString groupIDStr = groupURL.GetFileNameWithoutExtension();
-                    WString prefix = groupIDStr.substr(0, 2);
-                    WString extension = groupURL.GetExtension();
-                    groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
-                    uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
-                    assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
-                    SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
-                    newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
-                    newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
-                    this->m_tileTreeChildrenGroups[groupID] = newGroup;
-                    }
-                };
-            tileTreeMapGenerator(m_RootTileTreeNode["root"]);
-            }
-        else
-            {
-            m_isLoading = false;
-            return ERROR;
-            }
-        m_isLoading = false;
-        m_isLoaded = true;
         }
     else
         {
-        unique_lock<mutex> lk(m_groupMutex, std::defer_lock);
-        auto& nodeHeader = this->GetNodeHeader(priorityNodeID);
-        if (!lk.try_lock() || m_isLoading)
+        if (m_strategyType == CESIUM)
             {
-            // Someone else is loading the group
-            if (nodeHeader.offset == (uint32_t)-1)
+            assert(m_isLoading == false);
+            m_isLoading = true;
+            std::unique_ptr<DataSource::Buffer[]>       dest;
+            DataSource                              *   dataSource;
+            DataSource::DataSize                        readSize;
+
+            DataSourceBuffer::BufferSize                destSize = 5 * 1024 * 1024;
+
+            dataSource = this->InitializeDataSource(dest, destSize);
+            if (dataSource == nullptr)
                 {
-                // Data not ready yet, wait until it becomes ready
-                if (lk.owns_lock()) lk.unlock();
-                this->WaitFor(nodeHeader);
+                m_isLoading = false;
+                return ERROR;
                 }
+
+            this->LoadFromDataSource(dataSource, dest.get(), destSize, readSize);
+
+            if (readSize > 0)
+                {
+                Json::Reader    reader;
+                char* jsonBlob = reinterpret_cast<char *>(dest.get());
+                reader.parse(jsonBlob, jsonBlob + readSize, m_RootTileTreeNode);
+
+                if (!(m_RootTileTreeNode.isMember("root") && m_RootTileTreeNode["root"].isMember("SMHeader")))
+                    {
+                    assert(!"error reading Cesium 3D tiles header");
+                    return 0;
+                    }
+
+                // Generate tile tree map
+                std::function<void(Json::Value&)> tileTreeMapGenerator = [this, &tileTreeMapGenerator](Json::Value& jsonNode)
+                    {
+                    if (jsonNode.isMember("SMHeader") && jsonNode["SMHeader"].isMember("id"))
+                        {
+                        uint32_t nodeID = jsonNode["SMHeader"]["id"].asUInt();
+                        this->m_tileTreeMap[nodeID] = &jsonNode["SMHeader"];
+                        {
+                        // Indicate that the header for the node with id nodeID is ready to be consumed
+                        // This is to unblock other threads that might be waiting for this group to complete loading.
+                        auto nodeHeader = this->GetNodeHeader(nodeID);
+                        assert(nodeHeader != nullptr);
+                        nodeHeader->offset = 0;
+                        }
+                        if (jsonNode.isMember("children"))
+                            {
+                            for (auto& child : jsonNode["children"])
+                                {
+                                tileTreeMapGenerator(child);
+                                }
+                            }
+                        }
+                    else
+                        {
+                        assert(jsonNode.isMember("content") && jsonNode["content"].isMember("url"));
+                        BeFileName groupURL(jsonNode["content"]["url"].asString());
+                        WString groupIDStr = groupURL.GetFileNameWithoutExtension();
+                        WString prefix = groupIDStr.substr(0, 2);
+                        WString extension = groupURL.GetExtension();
+                        groupIDStr = groupIDStr.substr(2, groupIDStr.size()); // remove prefix
+                        uint64_t groupID = std::wcstoull(groupIDStr.begin(), nullptr, 10);
+                        assert(this->m_tileTreeChildrenGroups.count(groupID) == 0);
+                        SMNodeGroup::Ptr newGroup = SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), groupID);
+                        newGroup->SetDataSourcePrefix(this->m_dataSourcePrefix);
+                        newGroup->SetDataSourceExtension(this->m_dataSourceExtension);
+                        this->m_tileTreeChildrenGroups[groupID] = newGroup;
+                        }
+                    };
+                tileTreeMapGenerator(m_RootTileTreeNode["root"]);
+                }
+            else
+                {
+                m_isLoading = false;
+                return ERROR;
+                }
+            m_isLoading = false;
+            m_isLoaded = true;
             }
         else
             {
@@ -116,7 +124,7 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
 
                 if (lk.owns_lock()) lk.unlock();
 
-                this->WaitFor(nodeHeader);
+                this->WaitFor(*nodeHeader);
                 }
             else
                 {
@@ -163,15 +171,15 @@ StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
                     return ERROR;
                     }
                 }
+            assert(nodeHeader->offset != (uint32_t)-1);
             }
-        assert(nodeHeader.offset != (uint32_t)-1);
         }
     return SUCCESS;
-}
+    }
 
 void SMNodeGroup::LoadGroupParallel()
     {
-    HFCPtr<SMNodeGroup> group(this);
+    SMNodeGroup::Ptr group(this);
     std::thread thread([group]()
         {
 #ifdef DEBUG_GROUPS
@@ -184,7 +192,7 @@ void SMNodeGroup::LoadGroupParallel()
         assert(group->m_nodeDistributorPtr != nullptr);
         for (auto nodeHeader : *group->m_groupHeader)
             {
-            group->m_nodeDistributorPtr->AddWorkItem(DistributeData(nodeHeader.blockid, group.GetPtr()));
+            group->m_nodeDistributorPtr->AddWorkItem(DistributeData(nodeHeader.blockid, group.get()));
             }
 #ifdef DEBUG_GROUPS
         {
@@ -213,11 +221,11 @@ void SMNodeGroup::LoadGroupParallel()
 void SMNodeGroup::SetHeaderDataAtCurrentPosition(const uint64_t& nodeID, const uint8_t* rawHeader, const uint64_t& headerSize)
     {
     std::lock_guard<std::mutex> lock(m_groupMutex);
-    auto& nodeHeader = this->GetNodeHeader(nodeID);
-    nodeHeader.size = headerSize;
-    nodeHeader.offset = m_currentPosition;
-    memmove(m_rawHeaders.data() + m_currentPosition, rawHeader, nodeHeader.size);
-    m_currentPosition += nodeHeader.size;
+    auto nodeHeader = this->GetNodeHeader(nodeID);
+    nodeHeader->size = headerSize;
+    nodeHeader->offset = m_currentPosition;
+    memmove(m_rawHeaders.data() + m_currentPosition, rawHeader, nodeHeader->size);
+    m_currentPosition += nodeHeader->size;
     }
 
 void SMNodeGroup::WaitFor(SMNodeHeader& pi_pNode)
@@ -268,7 +276,7 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
         m_RootTileTreeNode = tile;
         m_tileTreeMap[nodeID] = &m_RootTileTreeNode;
 
-        if (m_ParentGroup)
+        if (m_ParentGroup.IsValid())
             {
             assert(m_ParentGroup->m_tileTreeMap.count(parentNodeID) == 1);
 

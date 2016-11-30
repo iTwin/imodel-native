@@ -66,7 +66,7 @@ public:
     uint32_t GetID() { return m_groupID; }
     void   SetID(const uint32_t& pi_pGroupID) { m_groupID = pi_pGroupID; }
 
-    void AddNode(const SMNodeHeader& pi_pNodeHeader) { this->push_back(pi_pNodeHeader); }
+    SMNodeHeader* AddNode(const SMNodeHeader& pi_pNodeHeader) { this->push_back(pi_pNodeHeader); return &this->back(); }
 
 private:
     uint32_t m_groupID;
@@ -238,7 +238,7 @@ FORWARD_DECL_GROUPING_STRATEGY(SMCesium3DTileStrategy);
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMBentleyGroupingStrategy) \
     CREATE_GROUPING_STRATEGY_FRIENDSHIP(SMCesium3DTileStrategy)
 
-class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
+class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     {
     ADD_GROUPING_STRATEGY_FRIENDSHIPS
 
@@ -251,7 +251,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
             CESIUM
             };
         typedef std::pair<uint64_t, SMNodeGroup*> DistributeData;
-        typedef HFCPtr<SMNodeGroup> Ptr;
+        typedef BENTLEY_NAMESPACE_NAME::RefCountedPtr<SMNodeGroup> Ptr;
 
         template<class EXTENT>
         static SMGroupingStrategy<EXTENT>* s_groupingStrategy;
@@ -578,25 +578,17 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
         bool ContainsNode(const uint64_t& pi_pNodeID)
             {
-            if (m_strategyType == CESIUM)
+            assert(!m_groupHeader->empty());
+            auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
                 {
-                if (!m_isLoaded) this->Load(pi_pNodeID);
-                return m_tileTreeMap.count(pi_pNodeID) == 1;
-                }
-            else
-                {
-                assert(!m_groupHeader->empty());
-                auto node = std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
-                    {
-                    return nodeId.blockid == pi_pNodeID;
-                    });
-                return node != m_groupHeader->end();
-                }
+                return nodeId.blockid == pi_pNodeID;
+                });
+            return node != m_groupHeader->end();
             }
 
-        SMNodeHeader& GetNodeHeader(const uint64_t& pi_pNodeHeaderID)
+        SMNodeHeader* GetNodeHeader(const uint64_t& pi_pNodeHeaderID)
             {
-            return *(std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
+            return (std::find_if(begin(*m_groupHeader), end(*m_groupHeader), [&](SMNodeHeader& nodeId)
                 {
                 return pi_pNodeHeaderID == nodeId.blockid;
                 }));
@@ -654,6 +646,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 assert(!"Couldn't close data source.");
                 return;
                 }
+            //this->GetDataSourceAccount()->destroyDataSource(dataSource);
             }
 
         uint64_t GetSingleNodeFromStore(const uint64_t& pi_pNodeID, bvector<uint8_t>& pi_pData)
@@ -718,7 +711,29 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
 
                                                 // NEEDS_WORK_SM_STREAMING : use new CloudDataSource
             wchar_t buffer[10000];
-            swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), (pi_pGroupMode == SMNodeGroup::StrategyType::VIRTUAL ? L"Virtual" : L""));
+            switch (pi_pGroupMode)
+                {
+                case SMNodeGroup::StrategyType::NORMAL:
+                    {
+                    swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"");
+                    break;
+                    }
+                case SMNodeGroup::StrategyType::VIRTUAL:
+                    {
+                    swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Virtual");
+                    break;
+                    }
+                case SMNodeGroup::StrategyType::CESIUM:
+                    {
+                    swprintf(buffer, L"%s/MasterHeaderWith%sGroups.bin", pi_pOutputDirPath.c_str(), L"Cesium");
+                    break;
+                    }
+                default:
+                    {
+                    assert(!"Unknown grouping type");
+                    return;
+                    }
+                }
             std::wstring group_header_filename(buffer);
             BeFile file;
             if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
@@ -807,7 +822,6 @@ class SMGroupingStrategy
         virtual void                _ApplyPostChildNodeProcess  (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup) = 0;
         virtual uint32_t            _AddNodeToGroup             (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_Group) = 0;
         virtual void                _AddGroup                   (SMNodeGroup* pi_pNodeGroup) = 0;
-        virtual void                _SetOldMasterHeader         (SMIndexMasterHeader<EXTENT>& oldMasterHeader) = 0;
         virtual void                _SaveMasterHeader           (const WString pi_pOutputDirPath) const = 0;
         virtual void                _SaveNodeGroup              (SMNodeGroup::Ptr pi_Group) const = 0;
 
@@ -815,12 +829,13 @@ class SMGroupingStrategy
         uint32_t m_GroupID = 0;
         std::map<uint32_t, SMNodeGroup::Ptr> m_OpenGroups;
         SMIndexMasterHeader<EXTENT> m_oldMasterHeader;
+        SMNodeGroupMasterHeader m_GroupMasterHeader;
     };
 
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
     {
     m_oldMasterHeader = oldMasterHeader;
-    this->_SetOldMasterHeader(oldMasterHeader);
+    m_GroupMasterHeader.SetOldMasterHeaderData(oldMasterHeader);
     }
 
 /**----------------------------------------------------------------------------
@@ -908,13 +923,11 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
         virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
-        virtual void                _SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
 
     private:
 
-        SMNodeGroupMasterHeader m_GroupMasterHeader;
         SMNodeGroup::StrategyType m_Mode;
     };
 
@@ -956,22 +969,22 @@ template<class EXTENT>
 SMNodeGroup::Ptr SMBentleyGroupingStrategy<EXTENT>::_GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup)
     {
     SMNodeGroup::Ptr nextGroup = pi_CurrentGroup->IsMaxDepthAchieved() ? nullptr : pi_CurrentGroup;
-    if (!nextGroup)
+    if (!nextGroup.IsValid())
         {
         const uint32_t nextLevel = (uint32_t)pi_NodeHeader.m_level + 1;
         nextGroup = m_OpenGroups.count(nextLevel) > 0 ? m_OpenGroups[nextLevel] : nullptr;
-        if (!nextGroup)
+        if (!nextGroup.IsValid())
             {
             nextGroup = new SMNodeGroup(pi_CurrentGroup->GetDataSourceAccount(),
                                         pi_CurrentGroup->GetFilePath(),
                                         ++m_GroupID);
             nextGroup->SetLevel(nextLevel);
-            this->AddGroup(nextGroup);
+            this->AddGroup(nextGroup.get());
             m_GroupMasterHeader.AddGroup(m_GroupID);
             }
         }
-    assert((nextGroup == pi_CurrentGroup) || (nextGroup != nullptr));
-    return nextGroup.GetPtr();
+    assert((nextGroup == pi_CurrentGroup) || (nextGroup.IsValid()));
+    return nextGroup;
     }
 
 template<class EXTENT>
@@ -992,12 +1005,6 @@ template<class EXTENT>
 void SMBentleyGroupingStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup)
     {
 
-    }
-
-template<class EXTENT>
-void SMBentleyGroupingStrategy<EXTENT>::_SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
-    {
-    m_GroupMasterHeader.SetOldMasterHeaderData(oldMasterHeader);
     }
 
 template<class EXTENT>
@@ -1056,7 +1063,6 @@ class SMCesium3DTileStrategy : public SMGroupingStrategy<EXTENT>
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pGroup);
         virtual void                _ApplyPostChildNodeProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_pParentGroup, SMNodeGroup::Ptr& pi_pChildGroup);
         virtual SMNodeGroup::Ptr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup);
-        virtual void                _SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader);
         virtual void                _SaveMasterHeader(const WString pi_pOutputDirPath) const;
         virtual void                _SaveNodeGroup(SMNodeGroup::Ptr pi_Group) const;
 
@@ -1081,6 +1087,7 @@ uint32_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(const SMIndexNodeHeader
     Json::Value nodeTile;
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(&pi_NodeHeader, pi_NodeHeader.m_id, nodeTile);
     pi_Group->Append3DTile(pi_NodeHeader.m_id.m_integerID, pi_NodeHeader.m_parentNodeID.m_integerID, nodeTile);
+    m_GroupMasterHeader.AddNodeToGroup(pi_Group->GetID(), (uint64_t)pi_NodeHeader.m_id.m_integerID, 0);
     return 0;
     }
 
@@ -1088,17 +1095,17 @@ template<class EXTENT>
 SMNodeGroup::Ptr SMCesium3DTileStrategy<EXTENT>::_GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroup::Ptr pi_CurrentGroup)
     {
     SMNodeGroup::Ptr nextGroup = pi_CurrentGroup->IsMaxDepthAchieved() ? nullptr : pi_CurrentGroup;
-    if (!nextGroup)
+    if (!nextGroup.IsValid())
         {
         nextGroup = new SMNodeGroup(pi_CurrentGroup->GetDataSourceAccount(),
                                     pi_CurrentGroup->GetFilePath(),
                                     ++m_GroupID,
                                     pi_CurrentGroup,
                                     SMNodeGroup::StrategyType::CESIUM);
-        this->AddGroup(nextGroup);
+        this->AddGroup(nextGroup.get());
         }
-    assert((nextGroup == pi_CurrentGroup) || (nextGroup != nullptr));
-    return nextGroup.GetPtr();
+    assert((nextGroup == pi_CurrentGroup) || (nextGroup.IsValid()));
+    return nextGroup;
     }
 
 template<class EXTENT>
@@ -1119,14 +1126,12 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNod
     }
 
 template<class EXTENT>
-void SMCesium3DTileStrategy<EXTENT>::_SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
-    {
-    }
-
-template<class EXTENT>
 void SMCesium3DTileStrategy<EXTENT>::_SaveMasterHeader(const WString pi_pOutputDirPath) const
     {
+    // Save SM master header
+    m_GroupMasterHeader.SaveToFile(pi_pOutputDirPath, SMNodeGroup::StrategyType::CESIUM);
 
+    // NEEDS_WORK_SM_STREAMING: Save Cesium master header 
     }
 
 template<class EXTENT>

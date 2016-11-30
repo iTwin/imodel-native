@@ -7748,7 +7748,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
-    HFCPtr<SMNodeGroup> group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode));
+    SMNodeGroup::Ptr group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode));
 
     auto strategy = group->GetStrategy<EXTENT>();
 

@@ -245,189 +245,213 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::StoreMasterHeader(SMIndex
     
 template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMIndexMasterHeader<EXTENT>* indexHeader, size_t headerSize)
     {
+    if (indexHeader == NULL || !m_nodeHeaderGroups.empty()) return 0;
+
+    SMNodeGroup::StrategyType groupMode = SMNodeGroup::StrategyType::NONE;
+    if (s_stream_from_grouped_store) groupMode = SMNodeGroup::StrategyType::NORMAL;
+    if (m_use_virtual_grouping) groupMode = SMNodeGroup::StrategyType::VIRTUAL;
+    if (s_stream_using_cesium_3d_tiles_format) groupMode = SMNodeGroup::StrategyType::CESIUM;
+    bool isGrouped = true;
+    wchar_t buffer[10000];
+    switch (groupMode)
+        {
+        case SMNodeGroup::StrategyType::NONE:
+            {
+            swprintf(buffer, L"MasterHeader.sscm");
+            isGrouped = false;
+            break;
+            }
+        case SMNodeGroup::StrategyType::NORMAL:
+            {
+            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"");
+            break;
+            }
+        case SMNodeGroup::StrategyType::VIRTUAL:
+            {
+            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Virtual");
+            break;
+            }
+        case SMNodeGroup::StrategyType::CESIUM:
+            {
+            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Cesium");
+            break;
+            }
+        default:
+            {
+            assert(!"Unknown grouping type");
+            return 0;
+            }
+        }
+
     std::unique_ptr<DataSource::Buffer[]>            dest;
     DataSource                                *      dataSource;
     DataSource::DataSize                             readSize;
     DataSourceBuffer::BufferSize                     destSize = 20 * 1024 * 1024;
+    DataSourceURL dataSourceURL(buffer);
 
-    if (indexHeader != NULL)
+    dataSource = this->InitializeDataSource(dest, destSize);
+    if (dataSource == nullptr)
         {
-        if (!s_stream_using_cesium_3d_tiles_format && (m_use_node_header_grouping || s_stream_from_grouped_store))
-            {
-            wchar_t buffer[10000];
-
-            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", (m_use_virtual_grouping ? L"Virtual" : L""));
-            //swprintf(buffer, L"Production_Graz_3MX.3mx");
-
-            DataSourceURL    dataSourceURL(buffer);
-                                
-
-            if (m_nodeHeaderGroups.empty())
-                {
-                dataSource = this->InitializeDataSource(dest, destSize);
-                if (dataSource == nullptr)
-                    return 0;
-
-                if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-                    return 0;
-
-                if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-                    return 0;
-
-                assert(destSize >= readSize); 
-
-                dataSource->close();
-
-                this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
-                headerSize = readSize;
-
-                size_t position = 0;
-
-                uint32_t sizeOfOldMasterHeaderPart;
-                memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
-                position += sizeof(sizeOfOldMasterHeaderPart);
-                assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
-
-                SQLiteIndexHeader oldMasterHeader;
-                memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
-                position += sizeof(SQLiteIndexHeader);
-                indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
-                indexHeader->m_balanced = oldMasterHeader.m_balanced;
-                indexHeader->m_depth = oldMasterHeader.m_depth;
-                indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
-                indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
-                assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-
-                auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
-                indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-
-                short groupMode = m_use_virtual_grouping;
-                memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
-                if (s_is_legacy_dataset) groupMode += 1;
-                assert((groupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
-                position += sizeof(groupMode);
-
-
-                // Parse rest of file -- group information
-                while (position < headerSize)
-                    {
-                    uint64_t group_id;
-                    if (s_is_legacy_dataset)
-                        {
-                        memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
-                        position += sizeof(group_id);
-                        }
-                    else
-                        {
-                        uint32_t group_id_tmp;
-                        memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
-                        position += sizeof(group_id_tmp);
-                        group_id = group_id_tmp;
-                        }
-
-                    uint64_t group_totalSizeOfHeaders(0);
-                    if (groupMode == SMNodeGroup::StrategyType::VIRTUAL)
-                        {
-                        memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
-                        position += sizeof(group_totalSizeOfHeaders);
-                        }
-
-                    size_t group_numNodes;
-                    memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
-                    position += sizeof(group_numNodes);
-
-                    auto group = HFCPtr<SMNodeGroup>(new SMNodeGroup(this->GetDataSourceAccount(), 
-                                                                     (uint32_t)group_id, 
-                                                                     SMNodeGroup::StrategyType(groupMode),
-                                                                     group_numNodes, 
-                                                                     group_totalSizeOfHeaders));
-                    // NEEDS_WORK_SM : group datasource doesn't need to depend on type of grouping
-                    group->SetDataSourcePrefix(groupMode == SMNodeGroup::VIRTUAL ? m_pathToHeaders.c_str() : (m_pathToHeaders + L"\\g\\g_").c_str());
-                    group->SetDistributor(*m_NodeHeaderFetchDistributor);
-                    m_nodeHeaderGroups.push_back(group);
-
-                    vector<uint64_t> nodeIds(group_numNodes);
-                    memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes*sizeof(uint64_t));
-                    position += group_numNodes*sizeof(uint64_t);
-
-                    group->GetHeader()->resize(group_numNodes);
-                    transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
-                        {
-                        return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
-                        });
-                    }
-                }
-            }
-        else
-            {
-            Json::Reader    reader;
-            Json::Value     masterHeader;
-
-            DataSourceURL dataSourceURL(L"MasterHeader.sscm");
-            
-            dataSource = this->InitializeDataSource(dest, destSize);
-            if (dataSource == nullptr)
-                {
-                assert(false); // problem initializing a datasource
-                return 0;
-                }
-
-            if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
-                {
-                assert(false); // problem opening a datasource
-                return 0;
-                }
-
-            if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
-                {
-                assert(false); // problem reading a datasource
-                return 0;
-                }
-
-            dataSource->close();
-
-            this->GetDataSourceAccount()->destroyDataSource(dataSource);
-
-            headerSize = readSize;
-
-            reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
-
-            if (!masterHeader.isMember("rootNodeBlockID"))
-                {
-                assert(false); // error reading Master Header
-                return 0;
-                }
-            indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
-            indexHeader->m_balanced = masterHeader["balanced"].asBool();
-            indexHeader->m_depth = masterHeader["depth"].asUInt();
-            // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
-            indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool(); 
-
-            auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
-            indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
-            indexHeader->m_isCesiumFormat = masterHeader.isMember("fileFormat") && masterHeader["fileFormat"].asString() == "Cesium3DTiles";
-/* Needed?
-            if (masterHeader.isMember("singleFile"))
-                {
-                indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
-                HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
-                }
-*/
-            if (s_stream_using_cesium_3d_tiles_format)
-                {
-                m_nodeHeaderGroups.push_back(SMNodeGroup::CreateCesium3DTilesGroup(this->GetDataSourceAccount(), 0));
-                m_nodeHeaderGroups.back()->SetDataSourcePrefix(L"data\\n_");
-                m_nodeHeaderGroups.back()->SetDataSourceExtension(L".json");
-                }
-            }
-
-        return headerSize;
+        assert(false); // problem initializing a datasource
+        return 0;
         }
 
-    return 0;
-    }
+    if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+        {
+        assert(false); // problem opening a datasource
+        return 0;
+        }
 
+    if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+        {
+        assert(false); // problem reading a datasource
+        return 0;
+        }
+
+    dataSource->close();
+
+    this->GetDataSourceAccount()->destroyDataSource(dataSource);
+
+
+    if (isGrouped)
+        {
+        headerSize = readSize;
+
+        size_t position = 0;
+
+        uint32_t sizeOfOldMasterHeaderPart;
+        memcpy(&sizeOfOldMasterHeaderPart, dest.get() + position, sizeof(sizeOfOldMasterHeaderPart));
+        position += sizeof(sizeOfOldMasterHeaderPart);
+        assert(sizeOfOldMasterHeaderPart == sizeof(SQLiteIndexHeader));
+
+        SQLiteIndexHeader oldMasterHeader;
+        memcpy(&oldMasterHeader, dest.get() + position, sizeof(SQLiteIndexHeader));
+        position += sizeof(SQLiteIndexHeader);
+        indexHeader->m_SplitTreshold = oldMasterHeader.m_SplitTreshold;
+        indexHeader->m_balanced = oldMasterHeader.m_balanced;
+        indexHeader->m_depth = oldMasterHeader.m_depth;
+        indexHeader->m_isTerrain = oldMasterHeader.m_isTerrain;
+        indexHeader->m_singleFile = oldMasterHeader.m_singleFile;
+        assert(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+        indexHeader->m_isCesiumFormat = groupMode == SMNodeGroup::StrategyType::CESIUM;
+
+        auto rootNodeBlockID = oldMasterHeader.m_rootNodeBlockID;
+        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+
+        short groupMode = m_use_virtual_grouping;
+        memcpy(&groupMode, reinterpret_cast<char *>(dest.get()) + position, sizeof(groupMode));
+        if (s_is_legacy_dataset) groupMode += 1;
+        assert((groupMode == SMNodeGroup::StrategyType::VIRTUAL) == s_is_virtual_grouping); // Trying to load streaming master header with incoherent grouping strategies
+        position += sizeof(groupMode);
+
+
+        // Parse rest of file -- group information
+        while (position < headerSize)
+            {
+            uint64_t group_id;
+            if (s_is_legacy_dataset)
+                {
+                memcpy(&group_id, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id));
+                position += sizeof(group_id);
+                }
+            else
+                {
+                uint32_t group_id_tmp;
+                memcpy(&group_id_tmp, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_id_tmp));
+                position += sizeof(group_id_tmp);
+                group_id = group_id_tmp;
+                }
+
+            uint64_t group_totalSizeOfHeaders(0);
+            if (groupMode == SMNodeGroup::StrategyType::VIRTUAL)
+                {
+                memcpy(&group_totalSizeOfHeaders, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_totalSizeOfHeaders));
+                position += sizeof(group_totalSizeOfHeaders);
+                }
+
+            size_t group_numNodes;
+            memcpy(&group_numNodes, reinterpret_cast<char *>(dest.get()) + position, sizeof(group_numNodes));
+            position += sizeof(group_numNodes);
+
+            auto group = SMNodeGroup::Ptr(new SMNodeGroup(this->GetDataSourceAccount(),
+                                                             (uint32_t)group_id,
+                                                             SMNodeGroup::StrategyType(groupMode),
+                                                             group_numNodes,
+                                                             group_totalSizeOfHeaders));
+
+            // NEEDS_WORK_SM_STREAMING : group datasource doesn't need to depend on type of grouping
+            switch (groupMode)
+                {
+                case SMNodeGroup::StrategyType::NORMAL:
+                    {
+                    group->SetDataSourcePrefix((m_pathToHeaders + L"\\g\\g_").c_str());
+                    break;
+                    }
+                case SMNodeGroup::StrategyType::VIRTUAL:
+                    {
+                    group->SetDataSourcePrefix(m_pathToHeaders.c_str());
+                    break;
+                    }
+                case SMNodeGroup::StrategyType::CESIUM:
+                    {
+                    group->SetDataSourcePrefix(L"data\\n_");
+                    group->SetDataSourceExtension(L".json");
+                    break;
+                    }
+                default:
+                    {
+                    assert(!"Unknown grouping type");
+                    return 0;
+                    }
+                }
+            group->SetDistributor(*m_NodeHeaderFetchDistributor);
+            m_nodeHeaderGroups.push_back(group);
+
+            vector<uint64_t> nodeIds(group_numNodes);
+            memcpy(nodeIds.data(), reinterpret_cast<char *>(dest.get()) + position, group_numNodes * sizeof(uint64_t));
+            position += group_numNodes * sizeof(uint64_t);
+
+            group->GetHeader()->resize(group_numNodes);
+            transform(begin(nodeIds), end(nodeIds), begin(*group->GetHeader()), [](const uint64_t& nodeId)
+                {
+                return SMNodeHeader{ nodeId, uint32_t(-1), 0 };
+                });
+            }
+        }
+    else
+        {
+        Json::Reader    reader;
+        Json::Value     masterHeader;
+
+        headerSize = readSize;
+
+        reader.parse(reinterpret_cast<char *>(dest.get()), reinterpret_cast<char *>(&(dest.get()[readSize])), masterHeader);
+
+        if (!masterHeader.isMember("rootNodeBlockID"))
+            {
+            assert(false); // error reading Master Header
+            return 0;
+            }
+        indexHeader->m_SplitTreshold = masterHeader["splitThreshold"].asUInt();
+        indexHeader->m_balanced = masterHeader["balanced"].asBool();
+        indexHeader->m_depth = masterHeader["depth"].asUInt();
+        // NEW_SSTORE_RB Temporary fix until terrain is correctly implemented for streaming
+        indexHeader->m_isTerrain = masterHeader["isTerrain"].asBool();
+
+        auto rootNodeBlockID = masterHeader["rootNodeBlockID"].asUInt();
+        indexHeader->m_rootNodeBlockID = rootNodeBlockID != ISMStore::GetNullNodeID() ? HPMBlockID(rootNodeBlockID) : HPMBlockID();
+        indexHeader->m_isCesiumFormat = masterHeader.isMember("fileFormat") && masterHeader["fileFormat"].asString() == "Cesium3DTiles";
+        /* Needed?
+                    if (masterHeader.isMember("singleFile"))
+                        {
+                        indexHeader->m_singleFile = masterHeader["singleFile"].asBool();
+                        HASSERT(indexHeader->m_singleFile == false); // cloud is always multifile. So if we use streamingTileStore without multiFile, there are problem
+                        }
+        */
+        }
+
+    return headerSize;
+    }
 
 template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToBinary(const SMIndexNodeHeader<EXTENT>* pi_pHeader, std::unique_ptr<Byte>& po_pBinaryData, uint32_t& po_pDataSize)
     {
@@ -842,7 +866,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
             {
             auto group = this->GetGroup(blockID);
             auto node_header = group->GetNodeHeader(blockID.m_integerID);
-            ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header.offset), node_header.size);
+            ReadNodeHeaderFromBinary(header, group->GetRawHeaders(node_header->offset), node_header->size);
             header->m_id = blockID;
             //group->removeNodeData(blockID.m_integerID);
             }
@@ -874,8 +898,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
         this->GetNodeHeaderBinary(blockID, headerData, headerSize);
         if (!headerData && headerSize == 0) return 0;
         ReadNodeHeaderFromBinary(header, headerData.get(), headerSize);
-        header->m_id = blockID;
         }
+    header->m_id = blockID;
     return 1;
     }
 
@@ -884,21 +908,13 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFil
     return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
     }
 
-template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
+template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)
     {
     auto nodeIDToFind = ConvertBlockID(blockID);
     for (auto& group : m_nodeHeaderGroups)
         {
         if (group->ContainsNode(nodeIDToFind))
             {
-            if (group->HasChildGroups())
-                {
-                for (auto childGroupIDPair : group->GetChildGroups())
-                    {
-                    m_nodeHeaderGroups.push_back(childGroupIDPair.second);
-                    }
-                group->ClearChildGroups();
-                }
             return group;
             }
         }
@@ -906,7 +922,7 @@ template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(
     return nullptr;
     }
 
-template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
+template <class EXTENT> SMNodeGroup::Ptr SMStreamingStore<EXTENT>::GetGroup(HPMBlockID blockID)
     {
     auto group = this->FindGroup(blockID);
     if (group == nullptr) return group;
@@ -1248,6 +1264,7 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
     else
         {
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
+        assert(nodeGroup.IsValid());
         dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
         }
 
@@ -1342,7 +1359,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SetDataFormatType(FormatT
 
 
 //------------------SMStreamingNodeDataStore--------------------------------------------
-template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup, bool compress = true)
+template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTENT>::SMStreamingNodeDataStore(DataSourceAccount* dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, SMNodeGroup::Ptr nodeGroup, bool compress = true)
     : m_dataSourceAccount(dataSourceAccount),
       m_nodeHeader(nodeHeader),
       m_nodeGroup(nodeGroup),

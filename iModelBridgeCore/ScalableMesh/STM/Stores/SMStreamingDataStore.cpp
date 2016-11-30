@@ -20,7 +20,7 @@ bool s_stream_from_azure_using_curl = false;
 bool s_stream_using_cesium_3d_tiles_format = true;
 bool s_stream_using_curl = false;
 bool s_stream_enable_caching = false;
-bool s_is_virtual_grouping = true;
+bool s_is_virtual_grouping = false;
 bool s_is_legacy_dataset = false;
 
 

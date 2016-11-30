@@ -54,14 +54,14 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
         WString m_rootDirectory;        
         DataSourceURL m_pathToHeaders;
         SMNodeDistributor<SMNodeGroup::DistributeData>::Ptr m_NodeHeaderFetchDistributor;
-        bvector<HFCPtr<SMNodeGroup>> m_nodeHeaderGroups;
+        bvector<SMNodeGroup::Ptr> m_nodeHeaderGroups;
 
     protected : 
 
 
-        HFCPtr<SMNodeGroup> FindGroup(HPMBlockID blockID);
+        SMNodeGroup::Ptr FindGroup(HPMBlockID blockID);
             
-        HFCPtr<SMNodeGroup> GetGroup(HPMBlockID blockID);
+        SMNodeGroup::Ptr GetGroup(HPMBlockID blockID);
             
         void ReadNodeHeaderFromBinary(SMIndexNodeHeader<EXTENT>* header, uint8_t* headerData, uint64_t& maxCountData) const;
         void GetNodeHeaderBinary(const HPMBlockID& blockID, std::unique_ptr<uint8_t>& po_pBinaryData, uint64_t& po_pDataSize);
@@ -222,7 +222,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     public:
 
-        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, HFCPtr<SMNodeGroup> nodeGroup = nullptr, bool compress = true);
+        SMStreamingNodeDataStore(DataSourceAccount *dataSourceAccount, SMStoreDataType type, SMIndexNodeHeader<EXTENT>* nodeHeader, SMNodeGroup::Ptr nodeGroup = nullptr, bool compress = true);
 
         virtual ~SMStreamingNodeDataStore();
 
@@ -255,7 +255,7 @@ template <class DATATYPE, class EXTENT> class SMStreamingNodeDataStore : public 
 
     private:
         
-        HFCPtr<SMNodeGroup>           m_nodeGroup;
+        SMNodeGroup::Ptr           m_nodeGroup;
         SMStoreDataType               m_dataType;
 
         uint64_t GetBlockSizeFromNodeHeader() const;
