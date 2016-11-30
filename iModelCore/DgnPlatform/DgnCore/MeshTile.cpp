@@ -2085,6 +2085,7 @@ private:
     bool*                       m_leafThresholdExceeded;
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
+    bool                        m_is2d;
 
 
     void PushGeometry(TileGeometryR geom);
@@ -2106,9 +2107,9 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold) 
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold, bool is2d) 
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_modelDelta(modelDelta),
-          m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0)
+          m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
         {
         static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
@@ -2240,7 +2241,7 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
     auto tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     tf.Multiply(range, range);
     
-    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(geom, tf, range, m_curElemId, displayParams, isCurved, m_dgndb));
     return true;
@@ -2299,7 +2300,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 
     DRange3d range = clone->PointRange();
 
-    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     IGeometryPtr geom = IGeometry::Create(clone);
     AddElementGeometry(*TileGeometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, displayParams, false, m_dgndb));
@@ -2318,7 +2319,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 
     localToTile.Multiply(range, range);
 
-    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams());
+    TileDisplayParamsPtr displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     AddElementGeometry(*TileGeometry::Create(*clone, localToTile, range, m_curElemId, displayParams, m_dgndb));
 
@@ -2423,10 +2424,11 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
 TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
+    auto is2d = cache.GetModel().Is2dModel();
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold, is2d);
 
-    if (cache.GetModel().Is2dModel())
+    if (is2d)
         {
         TileGeometryProcessorContext<GeometrySelector2d> context(processor, db, cache);
         return processor.OutputGraphics(context);
