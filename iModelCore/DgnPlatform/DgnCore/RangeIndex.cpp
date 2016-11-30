@@ -199,25 +199,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::Node::ValidateRange()
-    {
-    if (!m_sloppy)
-        return;
-
-    DRTLeafNodeP leaf = ToLeaf();
-    if (leaf)
-        leaf->ValidateLeafRange();
-    else
-        ((DRTInternalNodeP) this)->ValidateInternalRange();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-Traverser::Stop Tree::Node::Traverse(Traverser& traverser, bool is3d)
+Traverser::Stop Tree::Node::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
     DRTLeafNodeP leaf = ToLeaf();
-    return leaf ? leaf->Traverse(traverser, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, is3d);
+    return leaf ? leaf->Traverse(traverser, tree, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, tree, is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,10 +210,6 @@ Traverser::Stop Tree::Node::Traverse(Traverser& traverser, bool is3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void Tree::InternalNode::ValidateInternalRange()
     {
-    if (!m_sloppy)
-        return;
-
-    m_sloppy = false;
     ClearRange();
     for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         extendRange(m_nodeRange, (*curr)->GetRange());
@@ -239,12 +220,7 @@ inline void Tree::InternalNode::ValidateInternalRange()
 +---------------+---------------+---------------+---------------+---------------+------*/
 inline void Tree::LeafNode::ValidateLeafRange()
     {
-    if (!m_sloppy)
-        return;
-
-    m_sloppy = false;
     ClearRange();
-
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         extendRange(m_nodeRange, curr->m_range);
     }
@@ -372,7 +348,6 @@ DRTNodeP Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::InternalNode::AddEntry(Entry const& entry, TreeR root)
     {
-    ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
     DRTNodeP node = ChooseBestNode(&entry.m_range, root);
 
@@ -393,7 +368,8 @@ void Tree::InternalNode::DropRange(FBoxCR range)
     if (CompletelyContains(range))
         return;
 
-    m_sloppy = true;
+    ValidateInternalRange();
+
     if (m_parent)
         m_parent->DropRange(range);
     }
@@ -464,18 +440,18 @@ size_t Tree::InternalNode::GetElementCount()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, bool is3d)
+Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
-            if (Traverser::Stop::Yes == (*curr)->Traverse(traverser, is3d))
+            if (Traverser::Stop::Yes == (*curr)->Traverse(traverser, tree, is3d))
                 return Traverser::Stop::Yes;
             }
         }
 
-    return  Traverser::Stop::No;
+    return Traverser::Stop::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -483,7 +459,6 @@ Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, bool is3d)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Tree::LeafNode::AddEntryToLeaf(Entry const& entry, TreeR root)
     {
-    ValidateRange();
     extendRange(m_nodeRange, entry.m_range);
 
     *m_endChild = entry;
@@ -543,7 +518,7 @@ bool Tree::LeafNode::DropElement(DgnElementId id, TreeR root)
 
         if (!CompletelyContains(range))
             {
-            m_sloppy = true;
+            ValidateLeafRange();
             if (m_parent)
                 m_parent->DropRange(range);
             }
@@ -613,13 +588,16 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Traverser::Stop Tree::LeafNode::Traverse(Traverser& traverser, bool is3d)
+Traverser::Stop Tree::LeafNode::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
             if (Traverser::Stop::Yes == traverser._VisitRangeTreeEntry(*curr))
+                return Traverser::Stop::Yes;
+
+            if (tree.m_writeRequest && traverser._AbortOnWriteRequest())
                 return Traverser::Stop::Yes;
             }
         }
@@ -648,9 +626,12 @@ void Tree::AddEntry(Entry const& entry)
     if (!rangeIsValid(entry.m_range, m_is3d))
         return;
 
+    WriteLock lock(*this);
     if (nullptr == m_root)
         m_root = AllocateLeafNode();
     
+    BeAssert(m_leafIdx.find(entry.m_id) == m_leafIdx.end());
+
     DRTLeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
         leaf->AddEntryToLeaf(entry, *this);
@@ -665,6 +646,8 @@ StatusInt Tree::RemoveElement(DgnElementId id)
     {
     if (nullptr == m_root)
         return ERROR;
+
+    WriteLock lock(*this);
 
     auto it = m_leafIdx.find(id);
     if (it == m_leafIdx.end())
@@ -683,6 +666,7 @@ StatusInt Tree::RemoveElement(DgnElementId id)
 +---------------+---------------+---------------+---------------+---------------+------*/
 EntryCP Tree::FindElement(DgnElementId id) const
     {
+    ReadLock lock(*this);
     auto it = m_leafIdx.find(id);
     return it == m_leafIdx.end() ? nullptr : it->second->FindElement(id);
     }
@@ -704,5 +688,6 @@ void Tree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop Tree::Traverse(Traverser& traverser)
     {
-    return (nullptr == m_root) ? Traverser::Stop::No : m_root->Traverse(traverser, Is3d());
+    ReadLock lock(*this);
+    return (nullptr == m_root) ? Traverser::Stop::No : m_root->Traverse(traverser, *this, Is3d());
     }

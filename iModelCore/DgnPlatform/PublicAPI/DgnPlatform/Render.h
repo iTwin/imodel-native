@@ -1704,8 +1704,9 @@ struct System
 struct FrameRateAdjuster
 {
 private:
-    uint32_t        m_drawCount = 0;
-    uint32_t        m_abortCount = 0;
+    uint32_t m_drawCount = 0;
+    uint32_t m_abortCount = 0;
+
 public:
     static uint32_t const FRAME_RATE_MIN = 1;
     static uint32_t const FRAME_RATE_MAX = 30;

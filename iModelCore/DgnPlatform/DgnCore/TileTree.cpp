@@ -11,8 +11,7 @@
 
 USING_NAMESPACE_TILETREE
 
-//#define TABLE_NAME_TileTree "TileTree"    // Initial version with "Filename, Data, DataSize, Created"
-#define TABLE_NAME_TileTree "TileTree_v2"   // Added 'ContentType' and 'Expires'.
+#define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -190,7 +189,7 @@ BentleyStatus TileLoader::_SaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)
@@ -400,7 +399,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
     DgnDb::VerifyClientThread();
 
@@ -421,6 +420,8 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [loader,loads,&tile]() 
         {
+        DgnDb::SetThreadId(DgnDb::ThreadId::IoPool); // for debugging
+
         return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
             {
             if (status != SUCCESS)
@@ -620,7 +621,7 @@ int Tile::CountTiles() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-LoadState::~LoadState()
+TileLoadState::~TileLoadState()
     {
     DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
     }
@@ -671,7 +672,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 * Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
+void DrawArgs::RequestMissingTiles(RootR root, TileLoadStatePtr loads)
     {
     // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
     for (auto const& tile : m_missing)
@@ -795,7 +796,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, GetLocation(), now, now-GetExpirationTime());
     Draw(args);
-    DEBUG_PRINTF("SheetView draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
     args.DrawGraphics(context);
 
@@ -803,7 +804,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
     if (!args.m_missing.empty())
         {
         // yes, request them and schedule a progressive task to draw them as they arrive.
-        LoadStatePtr loads = std::make_shared<LoadState>();
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
         }

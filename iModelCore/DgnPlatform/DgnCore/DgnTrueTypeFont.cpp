@@ -385,8 +385,7 @@ static void convertNativeGlyphToGraphicsPoints(GraphicsPointArrayR gpa, TTPOLYGO
                 //  The bytes immediately preceding a POLYCURVE structure contain a valid POINTFX.
                 //  If this is first curve, this points to the pfxStart of the POLYGONHEADER. Otherwise, this points to the last point of the previous POLYCURVE.
                 //  In either case, this is representative of the previous curve's last point.
-
-                if (TT_PRIM_LINE == lpCurve->wType)
+                             if (TT_PRIM_LINE == lpCurve->wType)
                     {
                     DPoint4d pt;
                     toDPoint4d(&pt, (POINTFX*)((char*)lpCurve - sizeof(POINTFX)), npcScale);
