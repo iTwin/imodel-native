@@ -107,7 +107,22 @@ public:
 
         m_testObserver->StartObserving();
         }
+    /*--------------------------------------------------------------------------------------+
+    * @bsimethod                                                  Farhad.Kabir      11/16
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void StartBasicObservationOnObserverCallbackOnly()
+        {
+        m_testObserver = DirectoryObserver::Create([&](BeFileName changedDir, FileChanges changeStatus) 
+            {
+            LOG_OBSERVER("[Callback called]: %llu", BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+            m_isCallbackWorking = true;
+            m_fileNameChanged = changedDir;
+            m_changeStatus = changeStatus;
+            m_cv.notify_all();
+            });
 
+        m_testObserver->StartObserving();
+        }
     /*--------------------------------------------------------------------------------------+
     * @bsimethod                                                 Mantas.Ragauskas    07/2015
     +---------------+---------------+---------------+---------------+---------------+------*/

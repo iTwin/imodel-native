@@ -338,10 +338,11 @@ TEST_F(DirectoryObserverTests, ModificationInObservedDirectory_WorkThread)
 //---------------------------------------------------------------------------------------
 TEST_F (DirectoryObserverTests, GetObservedDirectory)
     {
+    
     StartBasicObservation();
 
     ASSERT_EQ(m_filesList, m_testObserver->GetObservedDirectories());   //Check if initialization value is returned correctly
-
+    ASSERT_TRUE(m_testObserver->GetObserverStatus());
     BeFileName testDir2 = m_rootDir;
     testDir2.AppendToPath(L"TestDir2");
     CreateFolder(testDir2);
@@ -353,8 +354,73 @@ TEST_F (DirectoryObserverTests, GetObservedDirectory)
     
     ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveObservedDirectory(testDir2));
     ASSERT_EQ(m_filesList, m_testObserver->GetObservedDirectories());  //Check if removed value is returned correctly
-
+    ASSERT_TRUE(m_testObserver->GetObserverStatus());
     StopBasicObservation();
+    ASSERT_FALSE(m_testObserver->GetObserverStatus());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Farhad.Kabir      11/16
+//---------------------------------------------------------------------------------------
+TEST_F(DirectoryObserverTests, GetObservedDirectories)
+    {
+    StartBasicObservation();
+
+    ASSERT_EQ(m_filesList, m_testObserver->GetObservedDirectories());
+    ASSERT_TRUE(m_testObserver->GetObserverStatus());
+    BeFileName testDir2 = m_rootDir;
+    testDir2.AppendToPath(L"TestDir2");
+    CreateFolder(testDir2);
+
+    BeFileName testDir3 = m_rootDir;
+    testDir3.AppendToPath(L"TestDir3");
+    CreateFolder(testDir3);
+    bset<BeFileName> newDirList;
+    newDirList.insert(testDir2);
+    newDirList.insert(testDir3);
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->AddObservedDirectories(newDirList));
+    bset<BeFileName> tempDirs = m_filesList;
+    tempDirs.insert(testDir2);
+    tempDirs.insert(testDir3);
+    ASSERT_EQ(tempDirs, m_testObserver->GetObservedDirectories());
+
+    //removing added directories
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveObservedDirectories(newDirList));
+    ASSERT_EQ(m_filesList, m_testObserver->GetObservedDirectories());
+    tempDirs.empty();
+    ASSERT_TRUE(m_testObserver->GetObserverStatus());
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->AddObservedDirectories(newDirList));
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveAllObservedDirectories());
+
+    ASSERT_EQ(0, m_testObserver->GetObservedDirectories().size());
+    ASSERT_FALSE(m_testObserver->GetObserverStatus());
+    StopBasicObservation();
+    ASSERT_FALSE(m_testObserver->GetObserverStatus());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Farhad.Kabir      11/16
+//---------------------------------------------------------------------------------------
+TEST_F(DirectoryObserverTests, GetObservedDirectories_CallbackOnly)
+    {
+    StartBasicObservationOnObserverCallbackOnly();
+    bset<BeFileName> newDirList;
+    ASSERT_EQ(newDirList, m_testObserver->GetObservedDirectories());
+    BeFileName testDir2 = m_rootDir;
+    testDir2.AppendToPath(L"TestDir2");
+    CreateFolder(testDir2);
+    BeFileName testDir3 = m_rootDir;
+    testDir2.AppendToPath(L"TestDir3");
+    CreateFolder(testDir2);
+    newDirList.insert(testDir2);
+    newDirList.insert(testDir3);
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->AddObservedDirectories(newDirList));
+    ASSERT_EQ(FileChanges::FileAdded, m_changeStatus);
+    ASSERT_EQ(newDirList, m_testObserver->GetObservedDirectories());
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_testObserver->RemoveAllObservedDirectories());
+    ASSERT_EQ(FileChanges::FileRemoved, m_changeStatus);
+    newDirList.empty();
+    ASSERT_EQ(newDirList, m_testObserver->GetObservedDirectories());
+    StopBasicObservation();
+    }
 #endif
