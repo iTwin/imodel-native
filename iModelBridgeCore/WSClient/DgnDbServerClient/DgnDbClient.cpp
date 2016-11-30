@@ -731,165 +731,145 @@ DgnDbServerStatusTaskPtr DgnDbClient::RecoverBriefcase(Dgn::DgnDbPtr db, Http::R
     RepositoryInfoPtr repositoryInfo = readResult.GetValue();
     BeFileName originalFilePath = db->GetFileName();
 
-    std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo->GetName().c_str());
-    return ConnectToRepository(*repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+    auto connectionResult = CreateRepositoryConnection(*repositoryInfo);
+    if (!connectionResult.IsSuccess())
         {
-        if (!connectionResult.IsSuccess())
-            {
-            finalResult->SetError(connectionResult.GetError());
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
-            return;
-            }
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(connectionResult.GetError()));
+        }
 
-        auto connection = connectionResult.GetValue();
+    DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
         
-        connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken)->Then([=] (DgnDbServerFileResultCR fileResult)
-            {
-            if (!fileResult.IsSuccess())
-                {
-                finalResult->SetError(fileResult.GetError());
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
-                return;
-                }
+    auto fileResult = connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken)->GetResult();
+    if (!fileResult.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, fileResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(fileResult.GetError()));
+        }
 
-            auto newFileInfo = fileResult.GetValue();
-            BeFileName downloadPath = originalFilePath.GetDirectoryName();
-            downloadPath = downloadPath.AppendToPath(BeFileName(newFileInfo->GetFileId().ToString()));
-            downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
+    auto newFileInfo = fileResult.GetValue();
+    BeFileName downloadPath = originalFilePath.GetDirectoryName();
+    downloadPath = downloadPath.AppendToPath(BeFileName(newFileInfo->GetFileId().ToString()));
+    downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
 
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
-            connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
-                {
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
+    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, newFileInfo->GetFileURL(), callback, cancellationToken);
 #if defined (ENABLE_BIM_CRASH_TESTS)
-                DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDownloadBriefcaseFile);
+    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDownloadBriefcaseFile);
 #endif
 
-                if (!downloadResult.IsSuccess())
-                    {
-                    finalResult->SetError(downloadResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-                    return;
-                    }
-                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
+    if (!downloadResult.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(downloadResult.GetError()));
+        }
 
-                //NEEDSWORK: has to be on client thread
-                db->CloseDb();
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
+
+    db->CloseDb();
                 
-                BeFileName backupPath(originalFilePath.GetName());
-                backupPath.AppendExtension(L"back");
+    BeFileName backupPath(originalFilePath.GetName());
+    backupPath.AppendExtension(L"back");
 
-                BeFileNameStatus status = BeFileName::BeMoveFile(originalFilePath, backupPath);
+    BeFileNameStatus status = BeFileName::BeMoveFile(originalFilePath, backupPath);
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
-                try {
-                    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDeleteBriefcase);
-                    }
-                catch (...)
-                    {
-                    BeFileName::BeMoveFile(backupPath, originalFilePath);
-                    throw;
-                    }
+    try {
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterDeleteBriefcase);
+        }
+    catch (...)
+        {
+        BeFileName::BeMoveFile(backupPath, originalFilePath);
+        throw;
+        }
 #endif 
-                if (BeFileNameStatus::Success != status)
-                    {
-                    finalResult->SetError(DgnDbServerError::Id::Unknown);
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-                    return;
-                    }
-                status = BeFileName::BeMoveFile(downloadPath, originalFilePath);
-                if (BeFileNameStatus::Success != status)
-                    {
-                    BeFileName::BeMoveFile(backupPath, originalFilePath);
-                    finalResult->SetError(DgnDbServerError::Id::Unknown);
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-                    return;
-                    }
+    if (BeFileNameStatus::Success != status)
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::Unknown));
+        }
+    status = BeFileName::BeMoveFile(downloadPath, originalFilePath);
+    if (BeFileNameStatus::Success != status)
+        {
+        BeFileName::BeMoveFile(backupPath, originalFilePath);
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::Unknown));
+        }
 
-                backupPath.BeDeleteFile();
-                finalResult->SetSuccess();
-                });
-            });
-        })->Then<DgnDbServerStatusResult>([=] ()
-            {
-            return *finalResult;
-            });
+    backupPath.BeDeleteFile();
+    return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
+DgnDbServerStatusResult DgnDbClient::DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
                                                         bool doSync, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::DownloadBriefcase";
-    auto briefcaseTask = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
     if (!doSync)
-        return briefcaseTask;
+        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
 
-    auto pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
-    bset<std::shared_ptr<AsyncTask>> tasks;
-    tasks.insert(briefcaseTask);
-    tasks.insert(pullTask);
-    return AsyncTask::WhenAll(tasks)->Then<DgnDbServerStatusResult>([=] ()
+    DgnDbServerRevisionsTaskPtr pullTask = connection->DownloadRevisionsAfterId(fileInfo.GetMergedRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
+    DgnDbServerStatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileURL(), callback, cancellationToken);
+    DgnDbServerRevisionsResult pullResult = pullTask->GetResult();
+
+    if (!briefcaseResult.IsSuccess())
         {
-        if (!briefcaseTask->GetResult().IsSuccess())
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseTask->GetResult().GetError().GetMessage().c_str());
-            return DgnDbServerStatusResult::Error(briefcaseTask->GetResult().GetError());
-            }
-        if (!pullTask->GetResult().IsSuccess())
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullTask->GetResult().GetError().GetMessage().c_str());
-            return DgnDbServerStatusResult::Error(pullTask->GetResult().GetError());
-            }
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
+        return briefcaseResult;
+        }
+    if (!pullResult.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullResult.GetError().GetMessage().c_str());
+        return DgnDbServerStatusResult::Error(pullResult.GetError());
+        }
 
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and revisions after revision %s downloaded successfully.", fileInfo.GetMergedRevisionId().c_str());
 
-        BeSQLite::DbResult status;
-        Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
-        if (BeSQLite::DbResult::BE_SQLITE_OK == status)
-            {
-            db->Txns().EnableTracking(true);
+    BeSQLite::DbResult status;
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    if (BeSQLite::DbResult::BE_SQLITE_OK == status)
+        {
+        db->Txns().EnableTracking(true);
 #if defined (ENABLE_BIM_CRASH_TESTS)
-            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterOpenBriefcaseForMerge);
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterOpenBriefcaseForMerge);
 #endif
-            bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
-            RevisionStatus mergeStatus = RevisionStatus::Success;
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging revisions.");
-            if (!revisions.empty())
-                {
-                for (auto revision : revisions)
-                    {
-                    mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
-                    if (mergeStatus != RevisionStatus::Success)
-                        break; // TODO: Use the information on the revision that actually failed. 
-                    }
-                }
-#if defined (ENABLE_BIM_CRASH_TESTS)
-            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
-#endif
-            //NEEDSWORK: has to be on client thread
-            db->CloseDb();
-
-            if (RevisionStatus::Success == mergeStatus)
-                {
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-                return DgnDbServerStatusResult::Success();
-                }
-
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
-            return DgnDbServerStatusResult::Error(mergeStatus);
-            }
-        else
+        bvector<DgnDbServerRevisionPtr> revisions = pullTask->GetResult().GetValue();
+        RevisionStatus mergeStatus = RevisionStatus::Success;
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging revisions.");
+        if (!revisions.empty())
             {
-            DgnDbServerStatusResult result = DgnDbServerStatusResult::Error(DgnDbServerError(*db, status));
-            if (!result.IsSuccess())
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return result;
+            for (auto revision : revisions)
+                {
+                mergeStatus = db->Revisions().MergeRevision(*(revision->GetRevision()));
+                if (mergeStatus != RevisionStatus::Success)
+                    break; // TODO: Use the information on the revision that actually failed. 
+                }
             }
-        });
+#if defined (ENABLE_BIM_CRASH_TESTS)
+        DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterMergeRevisions);
+#endif
+        db->CloseDb();
+
+        if (RevisionStatus::Success == mergeStatus)
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+            return DgnDbServerStatusResult::Success();
+            }
+
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+        return DgnDbServerStatusResult::Error(mergeStatus);
+        }
+    else
+        {
+        DgnDbServerStatusResult result = DgnDbServerStatusResult::Error(DgnDbServerError(*db, status));
+        if (!result.IsSuccess())
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return result;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -911,71 +891,56 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Credentials are not set.");
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::CredentialsNotSet));
         }
-    std::shared_ptr<DgnDbServerBriefcaseInfoResult> finalResult = std::make_shared<DgnDbServerBriefcaseInfoResult>();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to repository %s.", repositoryInfo.GetName().c_str());
-    return ConnectToRepository(repositoryInfo, cancellationToken)->Then([=] (const DgnDbRepositoryConnectionResult& connectionResult)
+
+    auto connectionResult = CreateRepositoryConnection(repositoryInfo);
+    if (!connectionResult.IsSuccess())
         {
-        if (!connectionResult.IsSuccess())
-            {
-            finalResult->SetError(connectionResult.GetError());
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
-            return;
-            }
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(connectionResult.GetError()));
+        }
 
-        DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
-        connection->CreateBriefcaseInstance(cancellationToken)->Then([=] (const WSCreateObjectResult& briefcaseResult)
-            {
+    DgnDbRepositoryConnectionPtr connection = connectionResult.GetValue();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquiring briefcase ID.");
+    auto briefcaseResult = connection->CreateBriefcaseInstance(cancellationToken)->GetResult();
 #if defined (ENABLE_BIM_CRASH_TESTS)
-            DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateBriefcaseInstance);
+    DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::DgnDbClient_AfterCreateBriefcaseInstance);
 #endif
-            if (!briefcaseResult.IsSuccess())
-                {
-                finalResult->SetError(briefcaseResult.GetError());
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
-                return;
-                }
+    if (!briefcaseResult.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(briefcaseResult.GetError()));
+        }
 
-            JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::FromJson(instance);
-            FileInfoPtr fileInfo = FileInfo::FromJson(instance);
+    JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+    DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::FromJson(instance);
+    FileInfoPtr fileInfo = FileInfo::FromJson(instance);
 
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
-            BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), connection->GetRepositoryInfo(), *fileInfo);
-            if (filePath.DoesPathExist())
-                {
-                finalResult->SetError(DgnDbServerError::Id::FileAlreadyExists);
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
-                return;
-                }
-            if (!filePath.GetDirectoryName().DoesPathExist())
-                {
-                BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
-                }
+    BeFileName filePath = fileNameCallback(baseDirectory, briefcaseInfo->GetId(), connection->GetRepositoryInfo(), *fileInfo);
+    if (filePath.DoesPathExist())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(DgnDbServerError::Id::FileAlreadyExists));
+        }
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        {
+        BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
+        }
 
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseInfo->GetId());
-            DownloadBriefcase(connection, filePath, briefcaseInfo->GetId(), *fileInfo, doSync, callback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR downloadResult)
-                {
-                if (downloadResult.IsSuccess())
-                    {
-                    briefcaseInfo->SetLocalPath(filePath);
-                    finalResult->SetSuccess(briefcaseInfo);
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Download successful.");
-                    }
-                else
-                    {
-                    finalResult->SetError(downloadResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
-                    }
-                });
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseInfo->GetId());
+    DgnDbServerStatusResult downloadResult = DownloadBriefcase(connection, filePath, briefcaseInfo->GetId(), *fileInfo, doSync, callback, cancellationToken);
+    if (!downloadResult.IsSuccess())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, downloadResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(downloadResult.GetError()));
+        }
 
-            });
-        })->Then<DgnDbServerBriefcaseInfoResult>([=] ()
-            {
-            return *finalResult;
-            });
+    briefcaseInfo->SetLocalPath(filePath);
+    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Download successful.");
+    return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Success(briefcaseInfo));
     }
 
 //---------------------------------------------------------------------------------------
