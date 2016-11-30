@@ -686,6 +686,7 @@ DgnDbStatus DgnModel::_OnUpdate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel3d::_FillRangeIndex()
     {
+    BeMutexHolder lock(m_mutex);
     if (nullptr != m_rangeIndex)
         return DgnDbStatus::Success;
 
@@ -719,6 +720,7 @@ DgnDbStatus GeometricModel3d::_FillRangeIndex()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricModel2d::_FillRangeIndex()
     {
+    BeMutexHolder lock(m_mutex);
     if (nullptr != m_rangeIndex)
         return DgnDbStatus::Success;
 
@@ -726,12 +728,13 @@ DgnDbStatus GeometricModel2d::_FillRangeIndex()
 
     auto stmt = m_dgndb.GetPreparedECSqlStatement("SELECT ECInstanceId,Category.Id,Origin,Rotation,BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometricElement2d) " WHERE Model.Id=?");
     stmt->BindId(1, GetModelId());
+
     while (BE_SQLITE_ROW == stmt->Step())
         {
         if (stmt->IsValueNull(2)) // has no placement
             continue;
 
-        DPoint2d low = stmt->GetValuePoint2d(4);
+        DPoint2d low  = stmt->GetValuePoint2d(4);
         DPoint2d high = stmt->GetValuePoint2d(5);
 
         Placement2d placement(stmt->GetValuePoint2d(2),

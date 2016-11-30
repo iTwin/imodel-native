@@ -175,6 +175,7 @@ protected:
     DgnClassId m_modeledElementRelClassId;
     bool m_inGuiList;
     bool m_isTemplate;
+    BeMutex m_mutex;
     mutable bool m_persistent;   // true if this DgnModel is in the DgnModels "loaded models" list.
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -765,7 +766,6 @@ protected:
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
     DGNPLATFORM_EXPORT virtual AxisAlignedBox3d _QueryModelRange() const = 0;//!< @private
-    void _OnLoadedElement(DgnElementCR element) override {T_Super::_OnLoadedElement(element); AddToRangeIndex(element);}
     void _OnInsertedElement(DgnElementCR element) override {T_Super::_OnInsertedElement(element); AddToRangeIndex(element);}
     void _OnReversedDeleteElement(DgnElementCR element) override {T_Super::_OnReversedDeleteElement(element); AddToRangeIndex(element);}
     void _OnDeletedElement(DgnElementCR element) override {RemoveFromRangeIndex(element); T_Super::_OnDeletedElement(element);}

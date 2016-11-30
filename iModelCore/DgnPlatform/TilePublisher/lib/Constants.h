@@ -169,6 +169,44 @@ static std::string s_unlitFragmentShader =
 "uniform vec4 u_color;\n"
 "void main(void) {gl_FragColor = vec4(u_color);}\n";
 
+// Polyline shaders.
+static std::string s_polylineVertexShader =
+"precision highp float;\n" 
+"attribute vec3 a_pos;\n"
+"attribute vec3 a_next;\n"
+"attribute vec3 a_previous;\n"
+"attribute float a_width;\n"
+"attribute float a_batchId;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"void main(void) {\n"
+"vec2 direction;\n"
+"float expandWidth = 1.0;\n"
+"vec2 prevDir = normalize(a_previous.xy - a_pos.xy);\n"
+"vec2 nextDir = normalize(a_next.xy - a_pos.xy);\n"
+"if (czm_equalsEpsilon(prevDir, -nextDir, czm_epsilon1))\n"
+"   direction = vec2(-nextDir.y, nextDir.x);\n"
+"else\n"
+"   {\n"
+"   vec2 normal = vec2(-nextDir.y, nextDir.x);\n"
+"   direction = normalize((nextDir + prevDir) * 0.5);\n"
+"   if (dot(direction, normal) < 0.0)\n"
+"       direction = -direction;\n"
+"   float sinAngle = abs(direction.x * nextDir.y - direction.y * nextDir.x);\n"
+"   expandWidth = clamp(expandWidth / sinAngle, 0.0, 2.0);\n"
+"   }\n"
+"vec2 offset;\n"
+"offset.x = direction.x * a_width * expandWidth;\n"
+"offset.y = direction.y * a_width * expandWidth;\n"
+"vec3 pos = vec3(a_pos.x + offset.x, a_pos.y + offset.y, a_pos.z);\n"
+"gl_Position = u_proj * u_mv * vec4(pos, 1.0);\n"
+"}\n";
+
+static std::string s_polylineFragmentShader =
+"precision highp float;\n"
+"uniform vec4 u_color;\n"
+"void main(void) {gl_FragColor = vec4(u_color);}\n";
+
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,
                     s_qvAmbient             = 1.0,
@@ -181,4 +219,9 @@ static double const s_qvExponentMultiplier  = 48.0,
 
 static const WCharCP s_metadataExtension    = L"json";
 static const WCharCP s_binaryDataExtension  = L"b3dm";
+
+
+
+
+
 

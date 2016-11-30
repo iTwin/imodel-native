@@ -254,6 +254,59 @@ BentleyStatus   PSolidUtil::ConvertSolidBodyToSheet (PK_BODY_t body)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ImprintCurves(PK_ENTITY_t targetTag, bvector<PK_CURVE_t> const& toolCurves, bvector<PK_INTERVAL_t> const& toolIntervals, DVec3dCP direction, bool extend, bool connectSides)
+    {
+    if (PK_ENTITY_null == targetTag)
+        return ERROR;
+
+    if (toolCurves.empty() || (toolCurves.size() != toolIntervals.size()))
+        return ERROR;
+
+    PK_CURVE_project_o_t options;
+    PK_CURVE_project_r_t results;
+    PK_ENTITY_track_r_t  tracking;
+
+    PK_CURVE_project_o_m(options);
+
+    options.function = PK_proj_function_imprint_c;
+    options.complete = extend ? PK_proj_complete_edge_c : PK_proj_complete_no_c;
+
+    if (nullptr != direction)
+        {
+        direction->GetComponents(options.direction.coord[0], options.direction.coord[1], options.direction.coord[2]);
+        options.have_direction = PK_LOGICAL_true;
+        options.bidirectional = PK_LOGICAL_true;
+        options.connect = connectSides ? PK_proj_connect_side_c : PK_proj_connect_none_c;
+        }
+
+    memset(&results, 0, sizeof(results));
+    memset(&tracking, 0, sizeof(tracking));
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    BentleyStatus status = (SUCCESS == PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &targetTag, &options, &results, &tracking)) ? SUCCESS : ERROR;
+
+    // NOTE: I don't think a "feature" should add it's node id to anything but the new edges. PSolidTopoId::AddNodeIdAttributes will resolve the
+    //       duplicate face ids after a split and id the new edges. Trying to have the feature "own" a face as per SmartFeatures is problematic 
+    //       when an open element is used to split a face. Another option might be to add the new node id (don't overwrite) to all the modified
+    //       faces...but that's problematic for assigning robust node ids when the target is a body and the faces split come from multiple features.
+
+    PK_ENTITY_track_r_f(&tracking);
+    PK_CURVE_project_r_f(&results);
+    
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  01/01
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   PSolidUtil::SweepBodyVector (PK_BODY_t bodyTag, DVec3dCR direction, double distance)

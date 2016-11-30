@@ -221,6 +221,8 @@ public:
     void SetPriority(uint32_t val) {m_priority=val;}
     uint32_t GetPriority() const {return m_priority;}
     AbortFlags const& GetAbortFlags() const {return m_abortFlags;}
+    void ClearAbortFlags() {m_abortFlags.m_stopEvents = StopEvents::None;}
+    void SetAbortFlags(AbortFlags const& flags) {m_abortFlags=flags;}
     AbortFlags& GetAbortFlagsR() {return m_abortFlags;}
     void SetCreateSceneTimeoutMillis(uint32_t milliseconds) { m_timeout = milliseconds; m_timeoutIsPct=false;}
     void SetCreateSceneTimeoutPct(uint32_t pct) {m_timeout= pct; m_timeoutIsPct=true;}
