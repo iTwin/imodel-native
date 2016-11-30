@@ -168,8 +168,8 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSqlPermissionPolicyAssertion const& 
     if (ecdb.IsReadonly())
         return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE on a file opened in read-only mode");
 
-    if (ecdb.GetECDbImplR().RequiresECSqlWriteToken() && assertion.GetToken() == nullptr)
-        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlStatement::WriteToken.");
+    if (!ecdb.GetECDbImplR().IsECSqlWriteTokenValid(assertion.GetToken()))
+        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlWriteToken.");
 
     return ECDbPolicy::CreateSupported();
     }
