@@ -114,6 +114,15 @@ struct EXPORT_VTABLE_ATTRIBUTE IECDbAdapter
             ICancellationTokenPtr ct = nullptr
             ) = 0;
 
+        virtual BentleyStatus ExtractECInstanceKeys
+            (
+            ECSqlStatement& statement,
+            ECInstanceKeyMultiMap& keysOut,
+            ICancellationTokenPtr ct = nullptr,
+            int ecClassIdColumn = 0,
+            int ecInstanceIdcolumn = 1
+            ) = 0;
+
         virtual int  CountClassInstances(ECClassCP ecClass) = 0;
         virtual ECInstanceId FindInstance(ECClassCP ecClass, Utf8CP whereClause = nullptr) = 0;
         virtual bset<ECInstanceId> FindInstances(ECClassCP ecClass, Utf8CP whereClause = nullptr) = 0;

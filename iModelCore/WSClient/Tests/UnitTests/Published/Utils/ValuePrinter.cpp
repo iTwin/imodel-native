@@ -67,8 +67,10 @@ std::ostream& operator << (std::ostream &o, FileCache location)
     {
     static std::map<FileCache, Utf8String> names
         {
+        TO_VALUE_STRING_PAIR(FileCache::Auto),
         TO_VALUE_STRING_PAIR(FileCache::Persistent),
-        TO_VALUE_STRING_PAIR(FileCache::Temporary)
+        TO_VALUE_STRING_PAIR(FileCache::Temporary),
+        TO_VALUE_STRING_PAIR(FileCache::External)
         };
 
     Utf8String name = names[location];

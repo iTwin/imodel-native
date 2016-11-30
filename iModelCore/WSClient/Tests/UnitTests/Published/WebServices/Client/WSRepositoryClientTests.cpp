@@ -618,7 +618,7 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24ETagSetAndReceivedAz
         EXPECT_STREQ("RequestETag", request.GetHeaders().GetIfNoneMatch());
         return StubHttpResponse(HttpStatus::TemporaryRedirect, "", {
                 {"Location", "https://foo.com/boo"},
-                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}}); 
+                {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
         });
     GetHandler().ForRequest(3, [=] (Http::RequestCR request)
         {
@@ -878,6 +878,51 @@ TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV2AndHttpResponseHasSkipT
     EXPECT_TRUE(result.IsSuccess());
     EXPECT_FALSE(result.GetValue().IsFinal());
     EXPECT_EQ("ServerSkipToken", result.GetValue().GetSkipToken());
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV23_CapsWebApiToV23)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 3}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.3/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV24_CapsWebApiToV24)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 4}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendQueryRequest_WebApiV25_CapsWebApiToV24)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi({2, 5}));
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_EQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass", request.GetUrl());
+        return StubHttpResponse();
+        });
+
+    client->SendQueryRequest(StubWSQuery(), nullptr, nullptr)->Wait();
     }
 
 TEST_F(WSRepositoryClientTests, SendCreateObjectRequest_WebApiV11_ErrorNotSupported)
@@ -1800,9 +1845,59 @@ TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV2ResponseIsOK_Suc
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
     GetHandler().ForRequest(2, StubHttpResponse(HttpStatus::OK));
 
-    auto result = client->SendUpdateObjectRequest({"TestSchema.TestClass", "TestId"}, Json::objectValue)->GetResult();
+    auto result = client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue)->GetResult();
     EXPECT_TRUE(result.IsSuccess());
     }
+
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV1WithFile_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi11());
+
+    BeTest::SetFailOnAssert(false);
+    auto result = client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue, nullptr, StubFilePath())->GetResult();
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV23WithFile_ErrorNotSupported)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi23());
+
+    BeTest::SetFailOnAssert(false);
+    auto result = client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue, nullptr, StubFilePath())->GetResult();
+    BeTest::SetFailOnAssert(true);
+
+    EXPECT_FALSE(result.IsSuccess());
+    EXPECT_EQ(WSError::Id::NotSupported, result.GetError().GetId());
+    }
+
+#ifdef USE_GTEST
+TEST_F(WSRepositoryClientTests, SendUpdateObjectRequest_WebApiV24WithFilePath_AddsFileNameToContentDisposition)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    auto filePath = StubFile();
+    auto fileName = Utf8String(filePath.GetFileNameAndExtension());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_THAT(request.GetHeaders().GetContentDisposition(), HasSubstr(fileName.c_str()));
+        return StubHttpResponse();
+        });
+
+    client->SendUpdateObjectRequest(StubObjectId(), Json::objectValue, nullptr, filePath)->Wait();
+    }
+#endif
 
 TEST_F(WSRepositoryClientTests, SendDeleteObjectRequest_WebApiV1_SendsDeleteRequest)
     {

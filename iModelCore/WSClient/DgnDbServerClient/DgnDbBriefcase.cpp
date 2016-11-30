@@ -250,7 +250,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
 #if defined (ENABLE_BIM_CRASH_TESTS)
         DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforePushRevisionToServer);
 #endif
-        m_repositoryConnection->Push(revision, m_db->GetBriefcaseId(), relinquishCodesLocks, uploadCallback, cancellationToken)->Then
+        m_repositoryConnection->Push(revision, *m_db, relinquishCodesLocks, uploadCallback, cancellationToken)->Then
             ([=] (DgnDbServerStatusResultCR pushResult)
             {
 #if defined (ENABLE_BIM_CRASH_TESTS)

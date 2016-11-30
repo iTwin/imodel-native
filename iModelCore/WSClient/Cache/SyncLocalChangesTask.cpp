@@ -543,7 +543,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectModification(CacheChangeGroup
         auto properties = revision->GetChangedProperties();
 
         ResponseGuardPtr guard = CreateResponseGuard(objectLabel, false);
-        m_ds->GetClient()->SendUpdateObjectRequest(revision->GetObjectId(), *properties, eTag, guard->GetProgressCallback(), guard)
+        m_ds->GetClient()->SendUpdateObjectRequest(revision->GetObjectId(), *properties, eTag, BeFileName(), guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSUpdateObjectResult& result)
             {
             if (!result.IsSuccess())

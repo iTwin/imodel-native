@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Persistence/RepositoryInfoStore.cpp $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -31,9 +31,7 @@ m_infoListener(std::make_shared<InfoListener>(this)),
 m_thread(thread)
     {
     if (m_client)
-        {
         m_client->GetWSClient()->RegisterServerInfoListener(m_infoListener);
-        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -42,9 +40,7 @@ m_thread(thread)
 RepositoryInfoStore::~RepositoryInfoStore()
     {
     if (m_client)
-        {
         m_client->GetWSClient()->UnregisterServerInfoListener(m_infoListener);
-        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -56,9 +52,7 @@ void RepositoryInfoStore::CacheServerInfo(WSInfoCR info)
         {
         auto txn = m_cacheTxnManager->StartCacheTransaction();
         if (SUCCESS != CacheServerInfo(txn.GetCache(), info))
-            {
             return;
-            }
         txn.Commit();
         });
     }
@@ -68,10 +62,11 @@ void RepositoryInfoStore::CacheServerInfo(WSInfoCR info)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus RepositoryInfoStore::CacheServerInfo(IDataSourceCache& cache, WSInfoCR info)
     {
-    m_cachedInfo = info;
+    BeMutexHolder lock(m_infoMutex);
+    m_info = info;
 
     PropertySpec prop(ECDbProperty_ServerInfo, ECDbProperty_NAMESPACE);
-    if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, m_cachedInfo.ToString()))
+    if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, m_info.ToString()))
         {
         BeAssert(false);
         return ERROR;
@@ -82,13 +77,23 @@ BentleyStatus RepositoryInfoStore::CacheServerInfo(IDataSourceCache& cache, WSIn
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    04/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSInfoCR RepositoryInfoStore::GetServerInfo(IDataSourceCache& cache)
+WSInfo RepositoryInfoStore::GetServerInfo()
     {
-    if (!m_cachedInfo.IsValid())
-        {
-        m_cachedInfo = ReadServerInfo(cache);
-        }
-    return m_cachedInfo;
+    BeMutexHolder lock(m_infoMutex);
+    BeAssert(m_info.IsValid());
+    return m_info;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    11/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus RepositoryInfoStore::PrepareServerInfo(IDataSourceCache& cache)
+    {
+    BeMutexHolder lock(m_infoMutex);
+    m_info = ReadServerInfo(cache);
+    if (!m_info.IsValid())
+        return ERROR;
+    return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -109,9 +114,7 @@ BentleyStatus RepositoryInfoStore::SetCacheInitialized(IDataSourceCache& cache)
     {
     PropertySpec prop(ECDbProperty_Initialized, ECDbProperty_NAMESPACE);
     if (DbResult::BE_SQLITE_OK != cache.GetAdapter().GetECDb().SavePropertyString(prop, ""))
-        {
         return ERROR;
-        }
     return SUCCESS;
     }
 

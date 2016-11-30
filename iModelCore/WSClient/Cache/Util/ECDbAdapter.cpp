@@ -377,7 +377,7 @@ ECRelationshipClassCP ECDbAdapter::FindRelationshipClassWithSource(ECClassId sou
 
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward 
+        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
             && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, false)
             || candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
             && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, false))
@@ -445,12 +445,16 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
         {
         ECConstraintClassesList candidateClasses;
 
-        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward 
-                    && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
-            candidateClasses = candidateRelClass->GetSource().GetClasses();           
-        else if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward 
-                    && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
+        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
+            && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
+            {
+            candidateClasses = candidateRelClass->GetSource().GetClasses();
+            }
+        else if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
+                 && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
+            {
             candidateClasses = candidateRelClass->GetTarget().GetClasses();
+            }
 
         for (auto candClass : candidateClasses)
             {
@@ -556,11 +560,13 @@ ICancellationTokenPtr ct
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (ct && ct->IsCanceled())
-            {
             return ERROR;
-            }
         ecIdsOut.push_back(statement.GetValueId<ECInstanceId>(ecInstanceIdcolumn));
         }
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
     return SUCCESS;
     }
 
@@ -580,11 +586,43 @@ ICancellationTokenPtr ct
     while (BE_SQLITE_ROW == (status = statement.Step()))
         {
         if (ct && ct->IsCanceled())
-            {
             return ERROR;
-            }
+
         keysOut.Insert(classId, statement.GetValueId<ECInstanceId>(ecInstanceIdcolumn));
         }
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::ExtractECInstanceKeys
+(
+ECSqlStatement& statement,
+ECInstanceKeyMultiMap& keysOut,
+ICancellationTokenPtr ct,
+int ecClassIdColumn,
+int ecInstanceIdcolumn
+)
+    {
+    DbResult status;
+    while (BE_SQLITE_ROW == (status = statement.Step()))
+        {
+        if (ct && ct->IsCanceled())
+            return ERROR;
+
+        auto ecClassId = statement.GetValueId<ECClassId>(ecClassIdColumn);
+        auto ecInstanceId = statement.GetValueId<ECInstanceId>(ecInstanceIdcolumn);
+        keysOut.Insert(ecClassId, ecInstanceId);
+        }
+
+    if (BE_SQLITE_DONE != status)
+        return ERROR;
+
     return SUCCESS;
     }
 

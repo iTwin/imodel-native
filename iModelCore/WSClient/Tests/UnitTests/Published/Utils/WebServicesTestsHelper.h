@@ -121,6 +121,8 @@ Response StubWSInfoHttpResponseWebApi20();
 Response StubWSInfoHttpResponseWebApi21();
 //! Stub WebApi 2.2 and BWSG server
 Response StubWSInfoHttpResponseWebApi22();
+//! Stub WebApi 2.3 and BWSG server
+Response StubWSInfoHttpResponseWebApi23();
 //! Stub WebApi 2.4 and BWSG server
 Response StubWSInfoHttpResponseWebApi24();
 //! Stub WebApi version and BWSG server
@@ -157,5 +159,7 @@ BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFil
 BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
 Utf8String SimpleReadFile(BeFileNameCR filePath);
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
+
+std::set<Utf8String> GetFolderContent(BeFileNameCR dir);
 
 END_WSCLIENT_UNITTESTS_NAMESPACE
