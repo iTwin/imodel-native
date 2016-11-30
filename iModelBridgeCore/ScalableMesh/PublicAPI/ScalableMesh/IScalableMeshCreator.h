@@ -116,6 +116,10 @@ public:
 
         BENTLEY_SM_EXPORT  void                   SetBaseExtraFilesPath(const WString& path);
 
+        BENTLEY_SM_EXPORT  bool                   IsCanceled();
+
+
+        BENTLEY_SM_EXPORT  void                   Cancel();
 
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath,

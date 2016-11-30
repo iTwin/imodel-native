@@ -1482,6 +1482,15 @@ public:
         if (m_pRootNode != nullptr) m_pRootNode->SetGenerating(isGenerating);
         }
 
+    void SetCanceled(bool isCanceled)
+        {
+        m_isCanceled = isCanceled;
+        }
+
+    bool IsCanceled() const
+        {
+        return m_isCanceled;
+        }
 
     HFCPtr<SMPointIndexNode<POINT, EXTENT>> FindLoadedNode(uint64_t id) const;
 
@@ -1528,7 +1537,9 @@ protected:
 
     bool                    m_needsBalancing;
 
-    bool                    m_propagatesDataDown;    
+    bool                    m_propagatesDataDown; 
+
+    std::atomic<bool>       m_isCanceled;
     };
 
 

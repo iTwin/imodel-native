@@ -7325,6 +7325,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
         Load();
 
     HINVARIANTS;
+    if (m_SMIndex->IsCanceled()) return;
 
     if (pi_levelToFilter == -1 || (int)this->m_nodeHeader.m_level <= pi_levelToFilter)
         {
@@ -7401,7 +7402,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
                         subNodes[indexNodes] = static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_apSubNodes[indexNodes]);
                     if (s_useThreadsInFiltering)
                         {
-                        RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<POINT, EXTENT>* node, vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>& subNodes, size_t threadId) ->void
+                        if (!m_SMIndex->IsCanceled())
+                            RunOnNextAvailableThread(std::bind([] (SMPointIndexNode<POINT, EXTENT>* node, vector<HFCPtr<SMPointIndexNode<POINT, EXTENT>>>& subNodes, size_t threadId) ->void
                             {
                             node->m_filter->Filter(node, subNodes, node->m_nodeHeader.m_numberOfSubNodesOnSplit);
                             node->m_nodeHeader.m_filtered = true;
@@ -7641,6 +7643,7 @@ template<class POINT, class EXTENT> SMPointIndex<POINT, EXTENT>::SMPointIndex(IS
   : m_dataStore(dataStore),
     m_filter (filter)
     {
+    m_isCanceled = false;
     m_nextNodeID = 0;
     m_propagatesDataDown = propagatesDataDown;
     m_indexHeader.m_numberOfSubNodesOnSplit = 8;
