@@ -1346,26 +1346,26 @@ void PublisherContext::CleanDirectories(BeFileNameCR dataDir)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::ConvertStatus(TileGenerator::Status input)
+PublisherContext::Status PublisherContext::ConvertStatus(TileGeneratorStatus input)
     {
     switch (input)
         {
-        case TileGenerator::Status::Success:        return Status::Success;
-        case TileGenerator::Status::NoGeometry:     return Status::NoGeometry;
-        default: BeAssert(TileGenerator::Status::Aborted == input); return Status::Aborted;
+        case TileGeneratorStatus::Success:        return Status::Success;
+        case TileGeneratorStatus::NoGeometry:     return Status::NoGeometry;
+        default: BeAssert(TileGeneratorStatus::Aborted == input); return Status::Aborted;
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status PublisherContext::ConvertStatus(Status input)
+TileGeneratorStatus PublisherContext::ConvertStatus(Status input)
     {
     switch (input)
         {
-        case Status::Success:       return TileGenerator::Status::Success;
-        case Status::NoGeometry:    return TileGenerator::Status::NoGeometry;
-        default:                    return TileGenerator::Status::Aborted;
+        case Status::Success:       return TileGeneratorStatus::Success;
+        case Status::NoGeometry:    return TileGeneratorStatus::NoGeometry;
+        default:                    return TileGeneratorStatus::Aborted;
         }
     }
 
@@ -1497,23 +1497,23 @@ bool PublisherContext::_DoIncrementalModelPublish (BeFileNameR dataDirectory, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status PublisherContext::_BeginProcessModel(DgnModelCR model)
+TileGeneratorStatus PublisherContext::_BeginProcessModel(DgnModelCR model)
     {
-    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGenerator::Status::Success : TileGenerator::Status::Aborted;
+    return Status::Success == InitializeDirectories(GetDataDirForModel(model)) ? TileGeneratorStatus::Success : TileGeneratorStatus::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status)
+TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
     {
-    if (TileGenerator::Status::Success == status)
+    if (TileGeneratorStatus::Success == status)
         {
         BeAssert(nullptr != rootTile);
         BeMutexHolder lock(m_mutex);
         m_modelRoots.push_back(rootTile);
-         }
-    else if (!m_publishIncremental || TileGenerator::Status::NoChanges != status)
+        }
+    else if (!m_publishIncremental)
         {
         CleanDirectories(GetDataDirForModel(model));
         }
@@ -1584,7 +1584,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
-    if (TileGenerator::Status::Success != status)
+    if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
 
     if (m_modelRoots.empty())
