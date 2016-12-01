@@ -862,7 +862,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
+TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     {
     ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -878,14 +878,14 @@ TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
                                        "            </ClassMap>"
                                        "        </ECCustomAttributes>"
                                        "        <ECProperty propertyName='Code' typeName='string' />"
-                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElement' direction='Backward' />"
-                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElement' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+                                       "        <ECNavigationProperty propertyName='Parent' relationshipName='ElementOwnsChildElements' direction='Backward' />"
                                        "    </ECEntityClass>"
                                        "    <ECEntityClass typeName='SubElement'>"
                                        "        <BaseClass>Element</BaseClass>"
                                        "        <ECProperty propertyName='SubProp1' typeName='int' />"
                                        "    </ECEntityClass>"
-                                       "   <ECRelationshipClass typeName='ModelHasElement' strength='Embedding'  modifier='Sealed'>"
+                                       "   <ECRelationshipClass typeName='ModelHasElements' strength='Embedding'  modifier='Sealed'>"
                                        "      <Source multiplicity='(0..1)' polymorphic='False' roleLabel='Model'>"
                                        "          <Class class ='Model' />"
                                        "      </Source>"
@@ -893,7 +893,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
                                        "          <Class class ='Element' />"
                                        "      </Target>"
                                        "   </ECRelationshipClass>"
-                                       "   <ECRelationshipClass typeName='ElementOwnsChildElement' strength='Embedding'  modifier='Abstract'>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsChildElements' strength='Embedding'  modifier='Abstract'>"
                                        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Element'>"
                                        "          <Class class ='Element' />"
                                        "      </Source>"
@@ -901,8 +901,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
                                        "          <Class class ='Element' />"
                                        "      </Target>"
                                        "   </ECRelationshipClass>"
-                                       "   <ECRelationshipClass typeName='ElementOwnsSubElement' strength='Embedding'  modifier='Sealed'>"
-                                       "        <BaseClass>ElementOwnsChildElement</BaseClass>"
+                                       "   <ECRelationshipClass typeName='ElementOwnsSubElements' strength='Embedding'  modifier='Sealed'>"
+                                       "        <BaseClass>ElementOwnsChildElements</BaseClass>"
                                        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Owner Element'>"
                                        "          <Class class ='Element' />"
                                        "      </Source>"
@@ -913,6 +913,12 @@ TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
                                        "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
+    ECClassId modelHasElementslementRelClassId = ecdb.Schemas().GetECClassId("TestSchema", "ModelHasElements");
+    ASSERT_TRUE(modelHasElementslementRelClassId.IsValid());
+
+    ECClassId elementOwnsSubElementRelClassId = ecdb.Schemas().GetECClassId("TestSchema", "ElementOwnsSubElements");
+    ASSERT_TRUE(elementOwnsSubElementRelClassId.IsValid());
+
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;
@@ -921,15 +927,100 @@ TEST_F(ECSqlNavigationPropertyTestFixture, IsNull)
     stmt.Finalize();
     }
 
-    ECInstanceKey elementNoModelNoParent;
+    ECInstanceKey element1Key, element2Key, element3Key;
+    {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.SubElement(Code, Model, Parent) VALUES(?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "1", IECSqlBinder::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(elementNoModelNoParent));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element1Key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetECInstanceId(), ECClassId()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element2Key));
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, element1Key.GetECInstanceId(), elementOwnsSubElementRelClassId));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element3Key));
+    }
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.SubElement WHERE Model IS NULL"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT * FROM ts.SubElement WHERE Model IS NULL"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetNativeSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.SubElement WHERE Parent IS NULL"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(2, stmt.GetValueInt(0)) << stmt.GetECSql();
+    stmt.Finalize();
+
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Model, Model.Id ModelId, Model.RelECClassId ModelRelECClassId, Parent, Parent.Id ParentId, Parent.RelECClassId ParentRelECClassId FROM ts.SubElement WHERE ECInstanceId=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, element1Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << "Element1";
+
+    ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    ECClassId relClassId;
+    ASSERT_FALSE(stmt.GetValueNavigation<ECInstanceId>(0, &relClassId).IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
+    ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
+
+    ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
+    //when specified directly, the RelECClassId is not null in this case
+    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
+
+    ASSERT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql();
+    relClassId.Invalidate();
+    ASSERT_FALSE(stmt.GetValueNavigation<ECInstanceId>(3, &relClassId).IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
+    ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
+
+    ASSERT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(5)) << stmt.GetECSql();
+
+
+    
+    stmt.ClearBindings();
+    stmt.Reset();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, element2Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << "Element2";
+
+    relClassId.Invalidate();
+    ASSERT_EQ(modelKey.GetECInstanceId(), stmt.GetValueNavigation<ECInstanceId>(0, &relClassId)) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementslementRelClassId, relClassId) << stmt.GetECSql();
+    ASSERT_EQ(modelKey.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(1)) << stmt.GetECSql();
+    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
+
+    ASSERT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(4)) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(5)) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.GetValueNavigation<ECInstanceId>(3, &relClassId).IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
+    ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
+
+    stmt.ClearBindings();
+    stmt.Reset();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, element3Key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql() << "Element3";
+
+    relClassId.Invalidate();
+    ASSERT_TRUE(stmt.IsValueNull(0)) << stmt.GetECSql();
+    ASSERT_FALSE(stmt.GetValueNavigation<ECInstanceId>(0, &relClassId).IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
+    ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
+
+    ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
+    //when specified directly, the RelECClassId is not null in this case
+    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
+
+    relClassId.Invalidate();
+    ASSERT_EQ(element1Key.GetECInstanceId(), stmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsSubElementRelClassId, relClassId) << stmt.GetECSql();
+    ASSERT_EQ(element1Key.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(4)) << stmt.GetECSql();
+    ASSERT_EQ(elementOwnsSubElementRelClassId, stmt.GetValueId<ECClassId>(5)) << stmt.GetECSql();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1226,8 +1317,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             ASSERT_FALSE(v.IsNull()) << "Model is not expected to be null in the read ECInstance";
             ECValue::NavigationInfo const& navInfo = v.GetNavigationInfo();
             ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navInfo.GetIdAsLong()) << "Model via ECInstance";
-            ASSERT_TRUE(navInfo.GetRelationshipClass() != nullptr);
-            ASSERT_EQ(relClass.GetId().GetValue(), navInfo.GetRelationshipClass()->GetId().GetValue()) << "Model via ECInstance";
+            //WIP_ECOBJECTS_RELCLASSID
+            ASSERT_EQ(relClass.GetId(), navInfo.GetRelationshipClassId()) << "Model via ECInstance";
             }
         else
             {

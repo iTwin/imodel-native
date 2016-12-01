@@ -213,12 +213,6 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf("%s WHERE B IS TRUE", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
-        ecsql.Sprintf("%s WHERE B = NULL", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
-
-        ecsql.Sprintf("%s WHERE B <> NULL", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
-
         ecsql.Sprintf ("%s WHERE L < 3.14", pClassECSqlStub.c_str ());
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), 0);
 
@@ -335,15 +329,148 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid, "The only equality operator supported in SQL is the single =.");
 
         ecsql.Sprintf ("%s WHERE Garbage = 'bla'", pClassECSqlStub.c_str ());
-        ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid,
-            "One of the properties does not exist in the target class.");
+        ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid, "One of the properties does not exist in the target class.");
+
+        //NULL tests
+        ecsql.Sprintf("%s WHERE NULL IS NULL", pClassECSqlStub.c_str()); // NULL IS NULL is always true
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NULL = NULL", pClassECSqlStub.c_str()); // NULL = NULL returns NULL
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE NULL <> NULL", pClassECSqlStub.c_str()); // NULL <> NULL returns NULL
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE NULL IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE NULL IS 123", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE NULL IS NOT 123", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE NULL <> 123", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); // Comparing NULL with non-NULL values are always false
+
+        ecsql.Sprintf("%s WHERE B = NULL", pClassECSqlStub.c_str()); // = NULL always returns NULL
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE B <> NULL", pClassECSqlStub.c_str());  // <> NULL always returns NULL
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE L IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE L IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE L IS NULL OR I IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE L IS NULL AND I IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE S IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE S IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE B IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE B IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE I IS ?", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE I IS NOT ?", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        {
+        ecsql.Sprintf("%s WHERE ? = NULL", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+        }
+
+        {
+        ecsql.Sprintf("%s WHERE NULL = ?", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+        }
+
+        {
+        ecsql.Sprintf("%s WHERE ? <> NULL", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+        }
+
+        {
+        ecsql.Sprintf("%s WHERE NULL <> ?", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue()));
+        }
+
+        {
+        ecsql.Sprintf("%s WHERE NULL <> ?", pClassECSqlStub.c_str());
+        auto& testItem = AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        testItem.AddParameterValue(ECSqlTestItem::ParameterValue(ECValue(123)));
+        }
+
+        //points
+        ecsql.Sprintf("%s WHERE P2D = 11", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P2D = D", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P2D IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE P2D IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P2D = ?", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE P3D = 11", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P3D = D", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P3D IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+
+        ecsql.Sprintf("%s WHERE P3D IS NOT NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P3D = ?", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
 
         //nav props
         ecsql.Sprintf("%s WHERE MyPSA = 11", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
+        ecsql.Sprintf("%s WHERE MyPSA = L", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE MyPSA = MyPSA", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //because MyPSA is null and NULL=NULL is false
+
+        ecsql.Sprintf("%s WHERE MyPSA IS NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE MyPSA = ?", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); //because MyPSA is null and NULL=NULL is false
+
         ecsql.Sprintf("%s WHERE MyPSA.Id IS NULL", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE MyPSA.Id = NULL", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); // = NULL returns NULL, so even if LHS is null, this will evaluate to false
 
         ecsql.Sprintf("%s WHERE MyPSA.RelECClassId IS NULL", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
@@ -809,7 +936,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
     {
     ECSqlTestDataset dataset;
 
-    auto psaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ECClassCP psaClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
     Utf8String psaClassECSqlStub;
     if (ToECSql (psaClassECSqlStub, ecsqlType, *psaClass, false))
         {
@@ -834,7 +961,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereStructTests (ECSqlType ecsqlType, 
         AddTestItem (dataset, ecsqlType, ecsql.c_str (), rowCountPerClass);
         }
 
-    auto saClass = ecdb.Schemas().GetECClass("ECSqlTest", "SA");
+    ECClassCP saClass = ecdb.Schemas().GetECClass("ECSqlTest", "SA");
     Utf8String saClassECSqlStub;
     if (ToECSql (saClassECSqlStub, ecsqlType, *saClass, false))
         {

@@ -201,6 +201,17 @@ ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, Sql
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle       11/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ToSqlPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
+    {
+    if (propertyMap.GetType() == PropertyMap::Type::Navigation)
+        return ToNativeSql(static_cast<NavigationPropertyMap const&> (propertyMap));
+
+    return IPropertyMapVisitor::_Visit(propertyMap);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyMap) const
@@ -227,52 +238,54 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
+        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap), nullptr);
 
     Result& result = Record(propertyMap);
     if (m_wrapInParentheses)
         result.GetSqlBuilderR().AppendParenLeft();
 
-    if (propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+    if (propertyMap.GetOverflowState() != DataPropertyMap::OverflowState::Yes)
         {
-        DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
-        BeAssert(overFlowColumn != nullptr);
-        //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
-        if (m_isForAssignmentExpression)
-            {
-            //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
-            result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
-            }
-        else
-            {
-            if (m_target == SqlTarget::Table)
-                {
-                bool addBlobToBase64Func = false;
-                if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
-                    {
-                    addBlobToBase64Func = true;
-                    }
+        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        if (m_wrapInParentheses)
+            result.GetSqlBuilderR().AppendParenRight();
 
-                if (addBlobToBase64Func)
-                    result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
-                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                    .AppendComma().Append("'$.")
-                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
-                else
-                    result.GetSqlBuilderR().Append("json_extract(")
-                    .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                    .AppendComma().Append("'$.")
-                    .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-                }
-            else
-                {
-                result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
-                }
-            }
+        return SUCCESS;
+        }
+
+    DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
+    BeAssert(overFlowColumn != nullptr);
+    //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
+    if (m_isForAssignmentExpression)
+        {
+        //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
+        result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
         }
     else
         {
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        if (m_target == SqlTarget::Table)
+            {
+            bool addBlobToBase64Func = false;
+            if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
+                {
+                addBlobToBase64Func = true;
+                }
+
+            if (addBlobToBase64Func)
+                result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
+                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                .AppendComma().Append("'$.")
+                .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
+            else
+                result.GetSqlBuilderR().Append("json_extract(")
+                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
+                .AppendComma().Append("'$.")
+                .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+            }
+        else
+            {
+            result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+            }
         }
 
     if (m_wrapInParentheses)
@@ -282,25 +295,66 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle       11/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap const& propertyMap) const
+    {
+    NavigationPropertyMap::IdPropertyMap const& idPropMap = propertyMap.GetIdPropertyMap();
+    if (SUCCESS != _Visit(idPropMap))
+        return ERROR;
+
+    NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propertyMap.GetRelECClassIdPropertyMap();
+    return ToNativeSql(relClassIdPropMap, &idPropMap);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& propertyMap) const
+BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap, NavigationPropertyMap::IdPropertyMap const* idPropMap) const
     {
-    Result& result = Record(propertyMap);
-    if (!propertyMap.IsVirtual())
+    Result& result = Record(relClassIdPropMap);
+
+    if (m_isForAssignmentExpression)
         {
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
+            return SUCCESS;
+
+        result.GetSqlBuilderR().Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
         return SUCCESS;
         }
 
-    if (m_target == SqlTarget::SelectView)
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+    //if the id prop map is passed it means that entire nav prop is specified in the ECSQL, not just the rel class id
+    //in that case we can inject the rule that a rel class id is always null if the id is null.
+    //if the entire nav prop is not specified we cannot inject that rule because the id might not be available
+    //in the SQLite SQL.
+    Utf8CP sqlSnippetFormat = nullptr;
+    if (idPropMap != nullptr)
+        sqlSnippetFormat = "CASE WHEN %s IS NULL THEN NULL ELSE %s END";
     else
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultClassId());
+        sqlSnippetFormat = "%s%s";
 
+    if (!relClassIdPropMap.IsVirtual() || m_target == SqlTarget::SelectView)
+        {
+        NativeSqlBuilder idColSql;
+        if (idPropMap != nullptr)
+            idColSql.Append(m_classIdentifier, idPropMap->GetColumn().GetName().c_str());
+
+        NativeSqlBuilder relClassIdColSql;
+        relClassIdColSql.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+
+        result.GetSqlBuilderR().AppendFormatted(sqlSnippetFormat, idColSql.ToString(), relClassIdColSql.ToString());
+        return SUCCESS;
+        }
+
+    BeAssert(m_target == SqlTarget::Table && relClassIdPropMap.IsVirtual());
+
+    Utf8CP idColStr = "";
+    if (idPropMap != nullptr)
+        idColStr = idPropMap->GetColumn().GetName().c_str();
+
+    result.GetSqlBuilderR().AppendFormatted(sqlSnippetFormat, idColStr, relClassIdPropMap.GetDefaultClassId().ToString().c_str());
     return SUCCESS;
     }
-
 
 
 //---------------------------------------------------------------------------------------

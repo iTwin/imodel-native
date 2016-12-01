@@ -410,15 +410,13 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetNavigationValue(IECInstanceR inst
     ECPropertyCP prop = columnInfo.GetProperty();
     BeAssert(prop != nullptr && prop->GetIsNavigation() && "TODO: ECInstanceECSqlSelectAdapter expects that GetColumnInfo().GetProperty is never null. This is not the case for prim arrays. Please double-check the code.");
 
+    //WIP_ECOBJECTS_RELCLASSID
     ECClassId relClassId;
     ECInstanceId navId = value.GetNavigation<ECInstanceId>(&relClassId);
-    ECClassCP relClass = m_ecSqlStatement.GetECDb()->Schemas().GetECClass(relClassId);
-    if (relClass == nullptr || !relClass->IsRelationshipClass())
-        {
-        BeAssert(false && "RelationshipECClass for navigation property rel class id not found or is not ECRelationshipClass");
+    ECValue navValue;
+    if (ECObjectsStatus::Success != navValue.SetNavigationInfo(relClassId, (int64_t) navId.GetValueUnchecked()))
         return ERROR;
-        }
-    ECValue navValue(*relClass->GetRelationshipClassCP(), (int64_t) navId.GetValueUnchecked());
+
     return instance.SetValue(prop->GetName().c_str(), navValue) == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }
 

@@ -90,7 +90,7 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 //+===============+===============+===============+===============+===============+======
 struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
     {
-    enum SqlTarget
+    enum class SqlTarget
         {
         SelectView, //!SELECT view instead of table (used by view generator).
         Table, //!Direct query against a table
@@ -126,9 +126,11 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
 
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
-        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap const&) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&, NavigationPropertyMap::IdPropertyMap const*) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ECClassIdPropertyMap const&) const;
