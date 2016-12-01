@@ -181,7 +181,7 @@ bool SMMemoryPool::GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItem
 
     size_t binId = id / s_binSize;
     size_t itemId = id % s_binSize;
-    assert(binId < m_nbBins);
+    //assert(binId < m_nbBins);
 
     if (binId >= m_nbBins) return false;
     std::lock_guard<Spinlock> lock(*m_memPoolItemMutex[binId][itemId]);
