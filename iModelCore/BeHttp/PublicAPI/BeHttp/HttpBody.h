@@ -119,11 +119,40 @@ public:
     Utf8String AsString() const {return *m_string;}
 };
 
-typedef RefCountedPtr<struct HttpByteStreamBody> HttpByteStreamBodyPtr;
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               julius.cepuekenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpBinaryBody> HttpBinaryBodyPtr;
+struct EXPORT_VTABLE_ATTRIBUTE HttpBinaryBody : HttpBody
+    {
+    private:
+        uint64_t m_position = 0;
+        std::shared_ptr<bvector<char>> m_data;
+
+    protected:
+        HttpBinaryBody(std::shared_ptr<bvector<char>> data);
+        virtual ~HttpBinaryBody() {}
+
+    public:
+        BEHTTP_EXPORT static HttpBinaryBodyPtr Create(std::shared_ptr<bvector<char>> data);
+
+        void Open() override {}
+        void Close() override {}
+
+        BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+        BentleyStatus GetPosition(uint64_t& position) override {position = m_position; return SUCCESS;}
+        BEHTTP_EXPORT BentleyStatus Reset() override;
+        BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+        BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+        BEHTTP_EXPORT uint64_t GetLength() override;
+
+        Utf8String AsString() const override {BeAssert(false && "Not supported"); return "";}
+    };
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                     Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpByteStreamBody> HttpByteStreamBodyPtr;
 struct EXPORT_VTABLE_ATTRIBUTE HttpByteStreamBody : public HttpBody
 {
 protected:
@@ -239,6 +268,47 @@ public:
     uint64_t GetLength() {return m_bytesTo - m_bytesFrom + 1;}
 
     BEHTTP_EXPORT Utf8String AsString() const;
+};
+
+/*--------------------------------------------------------------------------------------+
+* @bsiclass                                               julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+typedef RefCountedPtr<struct HttpCompressedBody> HttpCompressedBodyPtr;
+struct EXPORT_VTABLE_ATTRIBUTE HttpCompressedBody : HttpBody
+{
+private:
+    std::shared_ptr<bvector<char>>  m_data;
+    HttpBodyPtr                     m_dataBody;
+    HttpBodyPtr                     m_contentBody;
+
+private:
+    BentleyStatus Compress();
+
+protected:
+    HttpCompressedBody(HttpBodyPtr httpBody);
+    virtual ~HttpCompressedBody() {}
+
+public:
+    BEHTTP_EXPORT static HttpCompressedBodyPtr Create(HttpBodyPtr content);
+
+    //! Calling Open() compresses the content body
+    BEHTTP_EXPORT void Open() override;
+
+    BEHTTP_EXPORT void Close() override;
+
+    //! Uses binary body for interacting with data
+    BEHTTP_EXPORT BentleyStatus SetPosition(uint64_t position) override;
+    BEHTTP_EXPORT BentleyStatus GetPosition(uint64_t& position) override;
+
+    //! Uses binary body for interacting with data
+    BEHTTP_EXPORT BentleyStatus Reset() override;
+    //! Not supported
+    BEHTTP_EXPORT size_t Write(const char* buffer, size_t bufferSize) override;
+    BEHTTP_EXPORT size_t Read(char* bufferOut, size_t bufferSize) override;
+    BEHTTP_EXPORT uint64_t GetLength() override;
+
+    //! Not supported
+    BEHTTP_EXPORT Utf8String AsString() const override;
 };
 
 END_BENTLEY_HTTP_NAMESPACE

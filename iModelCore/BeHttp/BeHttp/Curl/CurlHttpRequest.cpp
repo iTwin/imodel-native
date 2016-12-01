@@ -73,6 +73,17 @@ struct ProgressInfo
     };
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CurlHttpRequest::ShouldCompressRequestBody(HttpBodyPtr request, HttpBodyComprressionOptionsCR options)
+    {
+    if (!options.IsRequestCompressionEnabled())
+        return false;
+
+    return options.GetMinimumSizeToCompress() <= request->GetLength();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct CurlHttpRequest::TransferInfo
@@ -334,7 +345,7 @@ void CurlHttpRequest::SetupCurlCallbacks()
     curl_easy_setopt(m_curl, CURLOPT_HEADERFUNCTION, CurlWriteHeaderCallback);
     curl_easy_setopt(m_curl, CURLOPT_WRITEHEADER, this);
 
-    if (!m_httpRequest.GetRequestBody().IsNull())
+    if (!m_transferInfo->requestBody.IsNull())
         {
         curl_easy_setopt(m_curl, CURLOPT_READFUNCTION, CurlReadDataCallback);
         curl_easy_setopt(m_curl, CURLOPT_READDATA, this);
@@ -392,7 +403,7 @@ void CurlHttpRequest::SetupCurl()
     curl_easy_setopt(m_curl, CURLOPT_CUSTOMREQUEST, m_httpRequest.GetMethod().c_str());
 
     // Request body size
-    curl_off_t requestBodySize = m_httpRequest.GetRequestBody().IsNull() ? 0 : m_httpRequest.GetRequestBody()->GetLength();
+    curl_off_t requestBodySize = m_transferInfo->requestBody.IsNull() ? 0 : m_transferInfo->requestBody->GetLength();
     curl_easy_setopt(m_curl, CURLOPT_INFILESIZE_LARGE, requestBodySize);
     if (!m_httpRequest.GetMethod().Equals("GET"))
         {
@@ -495,6 +506,12 @@ void CurlHttpRequest::SetupHeaders()
         m_headers = curl_slist_append(m_headers, header.c_str());
         }
 
+    if (ShouldCompressRequestBody(m_transferInfo->requestBody, m_httpRequest.GetCompressionInfo()))
+        {
+        header.Sprintf("%s: %s", "Content-Encoding", "gzip");
+        m_headers = curl_slist_append(m_headers, header.c_str());
+        }
+
     if (Request::RetryOption::ResumeTransfer == m_httpRequest.GetRetryOption() && nullptr != m_transferInfo)
         {
         Utf8CP previousResponseEtag = m_transferInfo->responseContent->GetHeaders().GetValue("ETag");
@@ -524,9 +541,18 @@ void CurlHttpRequest::PrepareRequest()
     // Not null if request is retried
     if (nullptr == m_transferInfo)
         {
-        if (!m_httpRequest.GetRequestBody().IsNull())
+    	HttpBodyPtr requestBody;
+        if (m_httpRequest.GetRequestBody().IsNull())
             {
-            m_httpRequest.GetRequestBody()->Open();
+            requestBody = nullptr;
+            }
+        else
+            {
+            requestBody = m_httpRequest.GetRequestBody();
+            if (ShouldCompressRequestBody(requestBody, m_httpRequest.GetCompressionInfo()))
+                requestBody = HttpCompressedBody::Create(requestBody);
+
+            requestBody->Open();
             }
 
         if (!m_httpRequest.GetResponseBody().IsNull())
@@ -558,14 +584,13 @@ void CurlHttpRequest::PrepareRequest()
                           m_httpRequest.GetCancellationToken())
             );
         m_transferInfo->retriesLeft = m_httpRequest.GetMaxRetries();
-        m_transferInfo->requestBody = m_httpRequest.GetRequestBody();
+        m_transferInfo->requestBody = requestBody;
         }
 
-    if (!m_httpRequest.GetRequestBody().IsNull())
+    if (!m_transferInfo->requestBody.IsNull())
         {
-        m_httpRequest.GetRequestBody()->SetPosition(0);
+        m_transferInfo->requestBody->SetPosition(0);
         }
-
     SetupCurl();
 
     m_transferInfo->responseContent->GetHeaders().Clear();
@@ -622,9 +647,9 @@ bool CurlHttpRequest::ShouldRetry(ConnectionStatus status)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Response CurlHttpRequest::ResolveResponse(ConnectionStatus connectionStatus)
     {
-    if (!m_httpRequest.GetRequestBody().IsNull())
+    if (!m_transferInfo->requestBody.IsNull())
         {
-        m_httpRequest.GetRequestBody()->Close();
+        m_transferInfo->requestBody->Close();
         }
 
     long httpStatusCode = 0;

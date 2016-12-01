@@ -56,6 +56,8 @@ struct CurlHttpRequest
         std::shared_ptr<TransferInfo> m_transferInfo;
 
     private:
+        bool ShouldCompressRequestBody(HttpBodyPtr request, HttpBodyComprressionOptionsCR options);
+
         static void RegisterTransferInfo(TransferInfo* transfer);
         static void UnregisterTransferInfo(TransferInfo* transfer);
         static uint64_t GetNextNumber();

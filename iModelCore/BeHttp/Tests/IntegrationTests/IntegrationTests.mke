@@ -1,0 +1,88 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: Tests/IntegrationTests/IntegrationTests.mke $
+#
+#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+beHttpUnitTestsDir = $(SrcRoot)BeHttp/Tests/UnitTests/Published/
+
+#---------------------------------------------------------------------------------------+
+#   Compile unit tests
+#---------------------------------------------------------------------------------------+
+baseDir = $(_MakeFilePath)
+
+BEGTEST_NAME = BeHttpIntegrationTests
+BEGTEST_INPUT = $(baseDir)
+BEGTEST_OUTPUT = $(OutputRootDir)build/
+
+dirToSearch = $(beHttpUnitTestsDir)
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/BuildContexts/BeHttp/VendorAPI
+%include cincapnd.mki
+dirToSearch = $(OutRoot)Winx64/BuildContexts/BeHttp/PublicAPI
+%include cincapnd.mki
+
+# Generate <prg.h> version file for tests
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+%include $(SrcRoot)bsicommon/sharedmki/CreateBuildVersionHeader.mki 
+
+%include $(SrcRoot)bsicommon/sharedmki/BuildUnitTests.mke
+# $(o) is now $(BEGTEST_OUTPUT)$(BEGTEST_NAME)
+
+#---------------------------------------------------------------------------------------+
+#   Compile test utilities
+#---------------------------------------------------------------------------------------+
+
+# Compile rule
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+# Sources to compile
+$(o)ValuePrinter$(oext)				: $(beHttpUnitTestsDir)ValuePrinter.cpp ${MultiCompileDepends}
+
+$(o)WebTestsHelper$(oext)           : $(beHttpUnitTestsDir)WebTestsHelper.cpp ${MultiCompileDepends}
+
+$(o)TestsHelper$(oext)              : $(beHttpUnitTestsDir)TestsHelper.cpp ${MultiCompileDepends}
+
+$(o)FSTest$(oext)                   : $(beHttpUnitTestsDir)FSTest.cpp ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#---------------------------------------------------------------------------------------+
+#   Link test executable
+#---------------------------------------------------------------------------------------+
+
+%undef CPchOpts
+%undef CCPchOpts
+
+GUNITTEST_NAME      = $(BEGTEST_NAME)
+GUNITTEST_NTLIBS    = advapi32.lib ole32.lib
+GUNITTEST_OUT       = $(o)
+GUNITTEST_DEST      = $(o)
+GUNITTEST_PATH      = $(o) 
+GUNITTEST_SYMB      = $(o)
+
+GTEST_MAIN_IS_SUPPLIED = 1
+
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(o)*.obj]
+
+LIB_DIR =  $(BuildContext)SubParts/Libs/
+
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)Bentley$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeHttp$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeSQLite$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeJsonCpp$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeCurl$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeIcu4c$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)BeZlib$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gmock$(libext)
+GUNITTEST_LIBS + $(LIB_DIR)$(libprefix)gtest$(libext)
+
+# Don't run tests after build
+GUNITTEST_NOEXEC = 1
+
+%include $(SrcRoot)bsicommon/sharedmki/gunittest.mki

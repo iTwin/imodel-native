@@ -12,6 +12,7 @@
 #include <functional>
 
 #include <BeHttp/Http.h>
+#include <BeHttp/HttpBodyCompressionOptions.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/Credentials.h>
@@ -56,6 +57,7 @@ private:
     bool m_followRedirects = true;
     bool m_useNewConnection = false;
     IHttpHandlerPtr m_httpHandler;
+    HttpBodyComprressionOptions m_compressionOptions;
 
 public:
     BEHTTP_EXPORT Utf8String EscapeUnsafeSymbolsInUrl(Utf8StringCR url);
@@ -116,6 +118,10 @@ public:
     RetryOption const& GetRetryOption() const {return m_retryOption;}
 
     unsigned GetMaxRetries() const {return m_retriesMax;}
+
+    //! Set compression options for this request. By default request is not compressed
+    void SetCompressionOptions(HttpBodyComprressionOptions options) {m_compressionOptions = std::move(options);}
+    HttpBodyComprressionOptions GetCompressionInfo() {return m_compressionOptions;}
 
     void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
     Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}

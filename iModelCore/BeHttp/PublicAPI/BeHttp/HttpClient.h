@@ -16,6 +16,7 @@
 
 #include <BeHttp/Http.h>
 #include <BeHttp/HttpHeaderProvider.h>
+#include <BeHttp/HttpBodyCompressionOptions.h>
 #include <BeHttp/HttpRequest.h>
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/IHttpHandler.h>
@@ -31,6 +32,7 @@ private:
     IHttpHeaderProviderPtr m_defaultHeadersProvider;
     IHttpHandlerPtr m_handler;
     Credentials m_credentials;
+    HttpBodyComprressionOptions m_compressionOptions;
 
 public:
     //! Construct new client with predefined configuration
@@ -63,6 +65,10 @@ public:
     BEHTTP_EXPORT Request CreateGetRequest(Utf8StringCR url, Utf8StringCR etag) const;
     BEHTTP_EXPORT Request CreateGetJsonRequest(Utf8StringCR url, Utf8StringCR etag = nullptr) const;
     BEHTTP_EXPORT Request CreatePostRequest(Utf8StringCR url) const;
+
+    // Compression options to use when creating requests
+    void SetCompressionOptions(HttpBodyComprressionOptions options) {m_compressionOptions = std::move(options);}
+    HttpBodyComprressionOptions GetCompressionInfo() {return m_compressionOptions;}
 };
 
 typedef HttpClient& HttpClientR;

@@ -7,6 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpBody.h>
 
+#include <zlib/zlib.h>
+#include <zlib/zip/zip.h>
+#include <zlib/zip/unzip.h>
+
+#define HttpCompressedBody_BufferSize 16384
+
 USING_NAMESPACE_BENTLEY_HTTP
 
 /*--------------------------------------------------------------------------------------+
@@ -274,6 +280,88 @@ size_t HttpStringBody::Read(char* bufferOut, size_t bufferSize)
     uint64_t bytesCopied = m_string->copy(bufferOut, bufferSize, static_cast<Utf8String::size_type>(m_position));
     m_position += bytesCopied;
     return static_cast<size_t>(bytesCopied);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpBinaryBody::HttpBinaryBody(std::shared_ptr<bvector<char>> data) :
+m_data(data)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpBinaryBodyPtr HttpBinaryBody::Create(std::shared_ptr<bvector<char>> data)
+    {
+    return new HttpBinaryBody(data);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpBinaryBody::SetPosition(uint64_t position)
+    {
+    uint64_t currentLength = GetLength();
+    if (position > currentLength)
+        return ERROR;
+
+    m_position = position;
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpBinaryBody::Write(const char* buffer, size_t bufferSize)
+    {
+    if (bufferSize == 0)
+        return 0;
+
+    uint64_t currentLength = GetLength();
+
+    if (currentLength < m_position + bufferSize)
+        m_data->resize(m_position + bufferSize, '\0');
+
+    memcpy(m_data->data() + m_position, buffer, bufferSize);
+    m_position += bufferSize;
+
+    return bufferSize;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpBinaryBody::Read(char* bufferOut, size_t bufferSize)
+    {
+    size_t copyBytesCount = bufferSize;
+
+    if (GetLength() - m_position < copyBytesCount)
+        copyBytesCount = (size_t) GetLength() - m_position;
+
+    if (0 == copyBytesCount)
+        return 0;
+
+    memcpy(bufferOut, m_data->data() + m_position, copyBytesCount);
+    m_position += copyBytesCount;
+    return copyBytesCount;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t HttpBinaryBody::GetLength()
+    {
+    return m_data->size();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpBinaryBody::Reset()
+    {
+    m_data->clear();
+    return SetPosition(0);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -629,4 +717,179 @@ Utf8String HttpRangeBody::ReadAllAsString()
         return nullptr;
 
     return str;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpCompressedBody::HttpCompressedBody(HttpBodyPtr httpBody) :
+m_data(std::make_shared<bvector<char>>()),
+m_dataBody(HttpBinaryBody::Create(m_data)),
+m_contentBody(httpBody)
+    {}
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpCompressedBody::Open()
+    {
+    if (!m_data->empty())
+        return;
+
+    if (m_contentBody == nullptr)
+        return;
+
+    m_contentBody->Open();
+    if (SUCCESS != m_contentBody->SetPosition(0))
+        {
+        BeAssert(false);
+        return;
+        }
+
+    if (SUCCESS != Compress())
+        {
+        BeAssert(false);
+        return;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void HttpCompressedBody::Close()
+    {
+    if (m_contentBody != nullptr)
+        m_contentBody->Close();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpCompressedBody::Compress()
+    {
+    size_t dataLenght = 0;
+
+    //initialise z_stream
+    z_stream strm;
+    strm.zalloc = Z_NULL;
+    strm.zfree = Z_NULL;
+    strm.opaque = Z_NULL;
+
+    int result;
+    //create GZip stream    
+    result = deflateInit2(&strm, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | 16, 8, Z_DEFAULT_STRATEGY);
+    if (Z_OK != result)
+        return ERROR;
+
+    unsigned char out[HttpCompressedBody_BufferSize];
+    unsigned char in[HttpCompressedBody_BufferSize];
+
+    int flush = Z_NO_FLUSH;
+
+    while (Z_FINISH != flush)
+        {
+        strm.avail_in = static_cast<uInt>(m_contentBody->Read(reinterpret_cast<char*>(in), HttpCompressedBody_BufferSize));
+
+        uint64_t position;
+        if (SUCCESS != m_contentBody->GetPosition(position))
+            break;
+
+        flush = position >= m_contentBody->GetLength() ? Z_FINISH : Z_NO_FLUSH;
+
+        strm.next_in = in;
+        strm.avail_out = 0;
+
+        while (0 == strm.avail_out)
+            {
+            strm.avail_out = HttpCompressedBody_BufferSize;
+            strm.next_out = out;
+            result = deflate(&strm, flush);
+            if(Z_STREAM_ERROR == result)
+                break;
+
+            int have = HttpCompressedBody_BufferSize - strm.avail_out;
+            dataLenght += have;
+
+            m_data->resize(dataLenght);
+            memcpy(m_data->data() + (dataLenght - have), out, have);
+            }
+        }
+
+    if (Z_STREAM_END != result)
+        {
+        deflateEnd(&strm);
+        return ERROR;
+        }
+
+    result = deflateEnd(&strm);
+    if (Z_OK != result)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                julius.cepukenas    11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+HttpCompressedBodyPtr HttpCompressedBody::Create(HttpBodyPtr content)
+    {
+    return new HttpCompressedBody(content);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpCompressedBody::SetPosition(uint64_t position)
+    {
+    return m_dataBody->SetPosition(position);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpCompressedBody::GetPosition(uint64_t& position)
+    {
+    return m_dataBody->GetPosition(position);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpCompressedBody::Write(const char* buffer, size_t bufferSize)
+    {
+    BeAssert(false && "Not supported");
+    return 0;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t HttpCompressedBody::Read(char* bufferOut, size_t bufferSize)
+    {
+    return m_dataBody->Read(bufferOut, bufferSize);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus HttpCompressedBody::Reset()
+    {
+    return m_dataBody->Reset();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t HttpCompressedBody::GetLength()
+    { 
+    return m_dataBody->GetLength();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas 11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String HttpCompressedBody::AsString() const
+    {
+    BeAssert(false && "Not supported");
+    return "";
     }
