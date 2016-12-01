@@ -520,8 +520,13 @@ int EXP_LVL9 CSazmeaF (Const struct cs_Azmea_ *azmea,double xy [2],Const double 
 	}
 
 	del_lng = lng - azmea->org_lng;
+#ifdef GEOCOORD_ENHANCEMENT
+	if      (del_lng > cs_Pi  && azmea->org_lng <= 0.0) del_lng -= cs_Two_pi;
+	else if (del_lng < cs_Mpi && azmea->org_lng >= 0.0) del_lng += cs_Two_pi;
+#else
 	if      (del_lng > cs_Pi  && azmea->org_lng < 0.0) del_lng -= cs_Two_pi;
 	else if (del_lng < cs_Mpi && azmea->org_lng > 0.0) del_lng += cs_Two_pi;
+#endif
 	if (fabs (del_lng) > cs_Pi)
 	{
 		rtn_val = cs_CNVRT_RNG;
