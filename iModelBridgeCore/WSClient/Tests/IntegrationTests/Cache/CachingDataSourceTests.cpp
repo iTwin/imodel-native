@@ -77,7 +77,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectGlobal_Succeeds)
     WSQuery query("GlobalSchema", "Project");
     query.SetTop(100);
     auto objResult = ds->GetObjects(key, query,
-                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
@@ -125,7 +125,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectSharedContent_Succeeds
     txn.Commit();
 
     auto objResult = ds->GetObjects(key, WSQuery("SharedContentSchema", "Project"),
-                                    ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
+        ICachingDataSource::DataOrigin::RemoteOrCachedData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(objResult.IsSuccess());
     }
 
@@ -148,13 +148,12 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPersonalShare_Succeeds
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-// Does not work on DgnDb0601-16Q2 as it does not have appropriate changes
 TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFile_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &m_localState);
-    Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net";
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
@@ -390,7 +389,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     BeFileName cachePath = GetTestCachePath();
 
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5, 4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb",
-                                             "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
+        "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -416,8 +415,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     BentleyStatus status;
 
     /* pw:\\VILTEST2-5.bentley.com:PW_Mobile_SS3\Documents\VRA\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
-    ObjectId uploadsFolderId {"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
-    ObjectId uploadsFolderNavNodeId {"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
+    ObjectId uploadsFolderId{"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
+    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
 
     if (true)
         {
@@ -541,12 +540,12 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
 
     query->SetSelect("*,SpatialLocation.*");
     query->SetFilter("geo.intersects("
-                     "SpatialLocation.Location,geometry'Polygon(("
-                     "20.896001+53.065279,"
-                     "20.896001+57.105292,"
-                     "26.872565+57.105292,"
-                     "26.872565+53.065279,"
-                     "20.896001+53.065279))')");
+        "SpatialLocation.Location,geometry'Polygon(("
+        "20.896001+53.065279,"
+        "20.896001+57.105292,"
+        "26.872565+57.105292,"
+        "26.872565+53.065279,"
+        "20.896001+53.065279))')");
     query->SetSkip(0);
     query->SetTop(100);
 
@@ -557,11 +556,13 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
     auto result = ds->GetObjects(resultsKey, *query, ICachingDataSource::DataOrigin::CachedOrRemoteData, nullptr, nullptr)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
+    }
+
 TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    Utf8String serverUrl = "https://dev-punchlist-eus.cloudapp.net/"; // Only DEV has 06xx support now
+    Utf8String serverUrl = "https://qa-punchlist-eus.cloudapp.net/"; // Only DEV has 06xx support now
     Utf8String repositoryId = "IssuePluginV1.1--default"; // New plugin version for 06xx compatibility
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
@@ -580,8 +581,8 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
 
     auto txn = ds->StartCacheTransaction();
     auto rootKey = txn.GetCache().FindOrCreateRoot(nullptr);
-    CachedResponseKey key {rootKey, "A"};
-    CachedResponseKey key2 {rootKey, "B"};
+    CachedResponseKey key{rootKey, "A"};
+    CachedResponseKey key2{rootKey, "B"};
     txn.Commit();
 
     ICachingDataSource::ObjectsResult result;
