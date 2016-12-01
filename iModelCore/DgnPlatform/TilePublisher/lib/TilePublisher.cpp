@@ -1690,24 +1690,26 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
-    CameraViewDefinitionCP          cameraView = view.ToCameraView();
-
-    json["name"] = view.GetName();
-
     auto spatialView = view.ToSpatialView();
-    auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(&view) : nullptr;
+    auto drawingView = nullptr == spatialView ? view.ToDrawingView() : nullptr;
     if (nullptr != spatialView)
         {
         auto selectorId = spatialView->GetModelSelectorId().ToString();
         json["modelSelector"] = selectorId;
         }
-    else if (nullptr != view2d)
+    else if (nullptr != drawingView)
         {
-        auto fakeModelSelectorId = view2d->GetBaseModelId().ToString();
+        auto fakeModelSelectorId = drawingView->GetBaseModelId().ToString();
         fakeModelSelectorId.append("_2d");
         json["modelSelector"] = fakeModelSelectorId;
         }
+    else
+        {
+        BeAssert(false && "Unexpected view type");
+        return; // ###TODO sheets - should not end up here
+        }
 
+    json["name"] = view.GetName();
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
@@ -1730,6 +1732,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         for (size_t j = 0; j < 3; j++)
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
+    auto cameraView = nullptr != spatialView ? view.ToCameraView() : nullptr;
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
@@ -1741,9 +1744,13 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         json["lensAngle"] = cameraView->GetLensAngle();
         json["focusDistance"] = cameraView->GetFocusDistance();
         }
-    else
+    else if (nullptr != spatialView)
         {
         json["type"] = "ortho";
+        }
+    else
+        {
+        json["type"] = "drawing";
         }
     }
 
@@ -1776,11 +1783,13 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
             continue;
 
         auto spatialView = viewDefinition->ToSpatialView();
-        auto view2d = nullptr == spatialView ? dynamic_cast<ViewDefinition2dCP>(viewDefinition.get()) : nullptr;
+        auto drawingView = nullptr == spatialView ? viewDefinition->ToDrawingView() : nullptr;
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
-        else if (nullptr != view2d)
-            all2dModelIds.insert(view2d->GetBaseModelId());
+        else if (nullptr != drawingView)
+            all2dModelIds.insert(drawingView->GetBaseModelId());
+        else
+            continue;   // ###TODO: Sheets
 
         Json::Value entry(Json::objectValue);
  
