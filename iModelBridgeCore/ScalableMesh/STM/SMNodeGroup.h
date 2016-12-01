@@ -658,20 +658,32 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             DataSourceBuffer::BufferSize         destSize = 5 * 1024 * 1024;
 
             DataSourceURL dataSourceURL(m_dataSourcePrefix.c_str());
-            dataSourceURL.append(std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str());
+            dataSourceURL += std::to_wstring(pi_pNodeID) + m_dataSourceExtension.c_str();
 
             dataSource = this->InitializeDataSource(dest, destSize);
             if (dataSource == nullptr)
+                {
+                assert(false);
                 return 0;
+                }
 
             if (dataSource->open(dataSourceURL, DataSourceMode_Read).isFailed())
+                {
+                assert(false);
                 return 0;
+                }
 
             if (dataSource->read(dest.get(), destSize, readSize, 0).isFailed())
+                {
+                assert(false);
                 return 0;
+                }
 
             if (dataSource->close().isFailed())
+                {
+                assert(false);
                 return 0;
+                }
 
             //          this->GetDataSourceAccount()->destroyDataSource(dataSource);
 

@@ -389,7 +389,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     }
                 case SMNodeGroup::StrategyType::VIRTUAL:
                     {
-                    group->SetDataSourcePrefix(m_pathToHeaders.c_str());
+                    group->SetDataSourcePrefix((m_pathToHeaders + L"\\n_").c_str());
                     break;
                     }
                 case SMNodeGroup::StrategyType::CESIUM:
@@ -1264,7 +1264,8 @@ template <class EXTENT> bool SMStreamingStore<EXTENT>::GetNodeDataStore(ISM3DPtD
     else
         {
         auto nodeGroup = this->GetGroup(nodeHeader->m_id);
-        assert(nodeGroup.IsValid());
+        // NEEDS_WORK_SM_STREAMING: validate node group if node headers are grouped
+        //assert(nodeGroup.IsValid());
         dataStore = new SMStreamingNodeDataStore<DPoint3d, EXTENT>(m_dataSourceAccount, dataType, nodeHeader, nodeGroup);
         }
 
