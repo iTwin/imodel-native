@@ -12,8 +12,6 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 using namespace BentleyApi::Dgn::Render::Tile3d;
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -45,7 +43,7 @@ uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
+void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
     {
     switch (m_source)
         {
@@ -62,13 +60,14 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
             }
         case TileSource::Element:
             {
-            // ###TODO: Assumes 3d-only...
-            // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-            static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+            static const Utf8CP s_3dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+                "WHERE e.Id=? AND g.ElementId=e.Id";
+            static const Utf8CP s_2dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement2d) " AS g "
                 "WHERE e.Id=? AND g.ElementId=e.Id";
 
+            Utf8CP sql = is2d ? s_2dSql : s_3dSql;
             BeSQLite::Statement stmt;
-            stmt.Prepare(db, s_sql);
+            stmt.Prepare(db, sql);
 
             Json::Value elementIds(Json::arrayValue);
             Json::Value modelIds(Json::arrayValue);
@@ -296,7 +295,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
     Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb());
+    m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 
@@ -1142,7 +1141,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     bvector<double>             vertexIds;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
-    BeAssert (mesh.Polylines().empty());        // Meshes should contain either triangles or polylines but not both.
+    BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
 
     for (auto const& polyline : mesh.Polylines())
         {
@@ -1291,16 +1290,23 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
         }
 
-
-    DVec3d      zVector, yVector;
     RotMatrix   rMatrix;
 
-    zVector.Normalize ((DVec3dCR) ecfOrigin);
-    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+    if (view.Is3d())
+        {
+        DVec3d      zVector, yVector;
 
-    rMatrix.SetColumn (yVector, 1);
-    rMatrix.SetColumn (zVector, 2);
-    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+        zVector.Normalize ((DVec3dCR) ecfOrigin);
+        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+        rMatrix.SetColumn (yVector, 1);
+        rMatrix.SetColumn (zVector, 2);
+        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+        }
+    else
+        {
+        rMatrix.InitIdentity();
+        }
 
     m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
@@ -1536,10 +1542,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     auto spatialView = m_viewController._ToSpatialView();
     auto drawingView = m_viewController._ToDrawingView();
 
-#ifndef WIP_2D_SUPPORT
-    drawingView = nullptr;
-#endif
-    
     if (nullptr == spatialView && nullptr == drawingView)
         {
         BeAssert(false);
@@ -1652,21 +1654,26 @@ Json::Value PublisherContext::GetCategoriesJson (DgnCategoryIdSet const& categor
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform)
     {
-    CameraViewDefinitionCP          cameraView = view.ToCameraView();
-    OrthographicViewDefinitionCP    orthographicView = nullptr == cameraView ? view.ToOrthographicView() : nullptr;
-
-    if (nullptr == cameraView && nullptr == orthographicView)
+    auto spatialView = view.ToSpatialView();
+    auto drawingView = nullptr == spatialView ? view.ToDrawingView() : nullptr;
+    if (nullptr != spatialView)
         {
-        BeAssert(false && "unsupported view type");
-        return;
+        auto selectorId = spatialView->GetModelSelectorId().ToString();
+        json["modelSelector"] = selectorId;
+        }
+    else if (nullptr != drawingView)
+        {
+        auto fakeModelSelectorId = drawingView->GetBaseModelId().ToString();
+        fakeModelSelectorId.append("_2d");
+        json["modelSelector"] = fakeModelSelectorId;
+        }
+    else
+        {
+        BeAssert(false && "Unexpected view type");
+        return; // ###TODO sheets - should not end up here
         }
 
     json["name"] = view.GetName();
-
-    auto spatialView = view.ToSpatialView();
-    if (nullptr != spatialView)
-        json["modelSelector"] = spatialView->GetModelSelectorId().ToString();
-
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
@@ -1689,6 +1696,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         for (size_t j = 0; j < 3; j++)
             rotJson.append(columnMajorRotation.form3d[i][j]);
 
+    auto cameraView = nullptr != spatialView ? view.ToCameraView() : nullptr;
     if (nullptr != cameraView)
         {
         json["type"] = "camera";
@@ -1700,9 +1708,13 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
         json["lensAngle"] = cameraView->GetLensAngle();
         json["focusDistance"] = cameraView->GetFocusDistance();
         }
-    else
+    else if (nullptr != spatialView)
         {
         json["type"] = "ortho";
+        }
+    else
+        {
+        json["type"] = "drawing";
         }
     }
 
@@ -1725,6 +1737,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
+    DgnModelIdSet all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
     for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
@@ -1734,17 +1747,15 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
             continue;
 
         auto spatialView = viewDefinition->ToSpatialView();
-
-#ifndef WIP_2D_SUPPORT
-        if (nullptr == spatialView)
-            continue;
-#endif
-    
+        auto drawingView = nullptr == spatialView ? viewDefinition->ToDrawingView() : nullptr;
         if (nullptr != spatialView)
             allModelSelectors.insert(spatialView->GetModelSelectorId());
+        else if (nullptr != drawingView)
+            all2dModelIds.insert(drawingView->GetBaseModelId());
+        else
+            continue;   // ###TODO: Sheets
 
         Json::Value entry(Json::objectValue);
-
  
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
@@ -1762,7 +1773,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 
     json["defaultView"] = defaultViewId.ToString();
 
-    WriteModelsJson(json, allModelSelectors);
+    WriteModelsJson(json, allModelSelectors, all2dModelIds);
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
@@ -1777,9 +1788,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors)
+void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels)
     {
-    DgnModelIdSet allModels;
+    DgnModelIdSet allModels = all2dModels;
     Json::Value& selectorsJson = (json["modelSelectors"] = Json::objectValue);
     for (auto const& selectorId : allModelSelectors)
         {
@@ -1790,6 +1801,14 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
             selectorsJson[selectorId.ToString()] = IdSetToJson(models);
             allModels.insert(models.begin(), models.end());
             }
+        }
+
+    // create a fake model selector for each 2d model
+    for (auto const& modelId : all2dModels)
+        {
+        DgnModelIdSet modelIdSet;
+        modelIdSet.insert(modelId);
+        selectorsJson[modelId.ToString()+"_2d"] = IdSetToJson(modelIdSet);
         }
 
     json["models"] = GetModelsJson(allModels);
