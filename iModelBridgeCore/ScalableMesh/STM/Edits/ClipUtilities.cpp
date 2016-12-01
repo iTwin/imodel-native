@@ -624,7 +624,7 @@ void Clipper::MakeDTMFromIndexList(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&
         WString dtmFileName(L"d:\\clipping\\outputTM");
         WString triangleF = dtmFileName;
         dtmFileName.append(L".dtm");
-        BC_DTM_OBJ* bcDtmP = 0;
+        bcDtmP = 0;
         bcdtmObject_createDtmObject(&bcDtmP);
         bcdtmObject_storeDtmFeatureInDtmObject(bcDtmP, DTMFeatureType::RandomSpots, bcDtmP->nullUserTag, 1, &bcDtmP->nullFeatureId, m_vertexBuffer, (long)m_nVertices);
         bcdtmObject_triangulateDtmObject(bcDtmP);
@@ -1478,7 +1478,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, bvect
 
                     if (meshHasTexture)
                         {
-                        bvector<bvector<int32_t>> newFaces;
+                        newFaces.clear();
                         ComputeReplacementFacets(newFaces, results, param, true);
                         assert(!newFaces.empty());
                         if (!newFaces.empty())
@@ -1566,7 +1566,7 @@ void InsertMeshCuts(PolyfaceHeaderPtr& inOutMesh, PolyfaceVisitorPtr& vis, ClipV
 
                 if (meshHasTexture)
                     {
-                    bvector<bvector<int32_t>> newFaces;
+                    newFaces.clear();
                     ComputeReplacementFacets(newFaces, results, param, true);
                     assert(!newFaces.empty());
                     if (!newFaces.empty())

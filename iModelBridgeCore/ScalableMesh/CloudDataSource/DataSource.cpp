@@ -21,6 +21,15 @@ DataSource::~DataSource(void)
 {
 }
 
+
+bool DataSource::destroyAll(void)
+{
+    close();
+
+    return true;
+}
+
+
 DataSourceStatus DataSource::open(const DataSourceURL & sourceURL, DataSourceMode sourceMode)
 {
     setSubPath(sourceURL);

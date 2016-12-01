@@ -55,7 +55,41 @@ class DataSourceAccountWSG : public DataSourceAccountCached
 
 private:
 
-    class CURLHandleManager : public Manager<CURL*>
+    class CurlHandle
+    {
+    protected:
+
+        CURL *  handle;
+
+    public:
+
+        CurlHandle(void)
+        {
+            setHandle(nullptr);
+        }
+
+        CurlHandle(CURL *initHandle)
+        {
+            setHandle(initHandle);
+        }
+
+        DataSourceStatus destroyAll(void)
+        {
+            return DataSourceStatus();
+        }
+
+        void setHandle(CURL *initHandle)
+        {
+            handle = initHandle;
+        }
+
+        CURL *getHandle(void)
+        {
+            return handle;
+        }
+    };
+
+    class CURLHandleManager : public Manager<CurlHandle, true>
         {
         public:
             typedef std::wstring                            HandleName;

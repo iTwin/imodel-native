@@ -17,7 +17,7 @@ DataSourceAccount * DataSourceServiceFile::createAccount(const AccountName & acc
 
     DataSourceService::createAccount(getDataSourceManager(), *accountFile);
 
-    return Manager<DataSourceAccount>::create(account, accountFile);
+    return Manager<DataSourceAccount, true>::create(account, accountFile);
 }
 
 DataSourceStatus DataSourceServiceFile::destroyAccount(const AccountName & account)

@@ -6,7 +6,7 @@
 #include "DataSourceAccount.h"
 
 
-class DataSourceServiceManager : public Manager<DataSourceService>
+class DataSourceServiceManager : public Manager<DataSourceService, true>
 {
 public:
 
@@ -20,6 +20,8 @@ public:
                                                ~DataSourceServiceManager      (void);
 
             DataSourceStatus                    initialize                    (DataSourceManager &manager);
+
+			void								shutdown					  (void);
 
             DataSourceStatus                    addService                    (DataSourceService *service);
             DataSourceStatus                    destroyService                (const ServiceName &serviceName);

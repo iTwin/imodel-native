@@ -58,7 +58,8 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 //#include "CGALEdgeCollapse.h"
 
-DataSourceManager ScalableMeshBase::s_dataSourceManager;
+//DataSourceManager s_dataSourceManager;
+
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
@@ -2221,6 +2222,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         }
 #endif       
 
+#ifndef VANCOUVER_API
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {        
         IScalableMeshPtr scalableMeshPtr(this);
@@ -2231,7 +2233,6 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         int result = _wremove(newPath.c_str());
         assert(result == 0);
         */
-
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));        
 
         smGroundExtractor->SetExtractionArea(coverageData);
@@ -2249,7 +2250,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
             m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
             }                
         }
-
+#endif
 
     if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
@@ -2257,7 +2258,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
     skirts.push_back(coverageData);
    // _AddSkirt(skirts, id, false);
 
-    DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
+/*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
     m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
     return SUCCESS;
     }

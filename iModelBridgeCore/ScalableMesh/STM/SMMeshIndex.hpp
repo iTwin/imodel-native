@@ -2298,7 +2298,7 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         if (!ptIndices.IsValid() || ptIndices->size() <= 3)
             continue;
 
-        IScalableMeshMeshPtr meshPtr = IScalableMeshMesh::Create(pointsPtr->size(), &pts[0], ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
+        meshPtr = IScalableMeshMesh::Create(pointsPtr->size(), &pts[0], ptIndices->size(), &(*ptIndices)[0], 0, 0, 0, 0, 0, 0);
         ScalableMeshMesh* meshP = (ScalableMeshMesh*)meshPtr.get();
         vector<int32_t> childIndices;
         DRange3d nodeRange = DRange3d::From(ExtentOp<EXTENT>::GetXMin(nodeP->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(nodeP->m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetZMin(nodeP->m_nodeHeader.m_nodeExtent),
@@ -2314,7 +2314,7 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
         dynamic_pcast<SMMeshIndexNode<POINT,EXTENT>,SMPointIndexNode<POINT,EXTENT>>(nodeP)->PushPtsIndices(&childIndices[0], childIndices.size());                
 
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(nodeP->GetPointsPtr());
+       pointsPtr = nodeP->GetPointsPtr();
         pointsPtr->push_back(&nodePts[0], nodePts.size());
         nodeP->m_nodeHeader.m_totalCount = pointsPtr->size();
         nodeP->SetDirty(true);
@@ -2416,12 +2416,12 @@ void SortDefinitionsBasedOnNodeBounds(bvector<bvector<int32_t>>& featureDefs, co
         int iterations = 0;
         while (currentId < idxOrder.size())
             {
-            int feaId = idxOrder[currentId].second;
-            if (usedFeatures.count(feaId) != 0) break;
-            usedFeatures.insert(feaId);
+            int feaId2 = idxOrder[currentId].second;
+            if (usedFeatures.count(feaId2) != 0) break;
+            usedFeatures.insert(feaId2);
             checkIds.insert(currentId);
-            if (idxOrder[currentId].first == 1) currentFeature.insert(currentFeature.end(), featureDefs[feaId].begin() + 1, featureDefs[feaId].end()-1);
-            else currentFeature.insert(currentFeature.end(), featureDefs[feaId].rbegin()+1, featureDefs[feaId].rend() - 1);
+            if (idxOrder[currentId].first == 1) currentFeature.insert(currentFeature.end(), featureDefs[feaId2].begin() + 1, featureDefs[feaId2].end()-1);
+            else currentFeature.insert(currentFeature.end(), featureDefs[feaId2].rbegin()+1, featureDefs[feaId2].rend() - 1);
 
             if (currentFeature.back() == currentFeature[1]) break;
             if (iterations % 2 != 0) ++currentId;
@@ -2429,7 +2429,7 @@ void SortDefinitionsBasedOnNodeBounds(bvector<bvector<int32_t>>& featureDefs, co
                 {
                 size_t id = 0;
                 for (id = currentId + 1; id < idxOrder.size(); ++id)
-                    if (idxOrder[id].second == feaId)
+                    if (idxOrder[id].second == feaId2)
                         {
                         break;
                         }
@@ -3573,11 +3573,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             DPoint3d face[3];
             int32_t idx[3] = { (*existingFaces)[i], (*existingFaces)[i + 1], (*existingFaces)[i + 2] };
             DPoint2d uvCoords[3];
-            for (size_t i = 0; i < 3; ++i)
+            for (size_t j = 0; j < 3; ++j)
                 {
-                face[i] = points[idx[i] - 1];
-                uvCoords[i].x = max(0.0,min((face[i].x - contentExtent.low.x) / (contentExtent.XLength()),1.0));
-                uvCoords[i].y = max(0.0, min((face[i].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
+                face[j] = points[idx[j] - 1];
+                uvCoords[j].x = max(0.0,min((face[j].x - contentExtent.low.x) / (contentExtent.XLength()),1.0));
+                uvCoords[j].y = max(0.0, min((face[j].y - contentExtent.low.y) / (contentExtent.YLength()), 1.0));
                 }
             indicesOfTexturedRegion.push_back(idx[0]);
             indicesOfTexturedRegion.push_back(idx[1]);
@@ -3800,7 +3800,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
 
         if (hasClip) 
             {
-            bvector<bvector<PolyfaceHeaderPtr>> skirts;
+           
             //BuildSkirtMeshesForPolygonSet(skirts, polyfaces, polys, nodeRange);
             map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
 
@@ -4202,10 +4202,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
 
     for (size_t n = 0; n < MAX_NUM_NEIGHBORNODE_POSITIONS; ++n)
         {
-        for (auto& node : m_apNeighborNodes[n])
-            if (node != nullptr)
+        for (auto& nodeN : m_apNeighborNodes[n])
+            if (nodeN != nullptr)
                 {
-                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(node)->DeleteClip(clipId, false);
+                dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(nodeN)->DeleteClip(clipId, false);
                 }
         }
     }
