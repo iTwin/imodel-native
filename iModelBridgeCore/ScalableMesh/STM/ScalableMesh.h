@@ -306,7 +306,7 @@ template <class INDEXPOINT> class ScalableMesh : public ScalableMeshBase
         virtual IScalableMeshPtr                    _GetTerrainSM() override;
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) override;
-        virtual Transform                          _GetReprojectionTransform() override;
+        virtual Transform                          _GetReprojectionTransform() const override;
 
         virtual BentleyStatus                   _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id) override;
         virtual void                           _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) override;
@@ -447,7 +447,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
             return nullptr;
             }
 
-        virtual Transform                          _GetReprojectionTransform() override
+        virtual Transform                          _GetReprojectionTransform() const override
             {
             return Transform();
 
@@ -487,6 +487,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual void _ReFilter() override {};
            
     };
+
 
 /*__PUBLISH_SECTION_START__*/
 END_BENTLEY_SCALABLEMESH_NAMESPACE

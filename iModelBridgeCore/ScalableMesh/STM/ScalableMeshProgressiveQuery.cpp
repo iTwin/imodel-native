@@ -470,10 +470,9 @@ private:
 
         if (!inLoading)
             {                         
-            Transform reprojectTransform = scalableMeshPtr->GetReprojectionTransform();
-            ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode, reprojectTransform));
+            ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode, scalableMeshPtr.get()));
                                     
-            if (meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
+            if ((meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false && meshNode->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
                 meshNode->ApplyAllExistingClips();
@@ -945,8 +944,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
     if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
-    Transform reprojectTransform = sMesh->GetReprojectionTransform();
-    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, reprojectTransform));
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false);
            
     meshNode->ApplyAllExistingClips();
@@ -955,7 +953,6 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
-    m_smOverviews.push_back(sMesh);
         
     if (meshNode->GetLevel() < MAX_PRELOAD_OVERVIEW_LEVEL)
         {                
@@ -967,7 +964,8 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
             node = (dynamic_cast<ScalableMeshNode<DPoint3d>*>(childNode.get()))->GetNodePtr();            
             PreloadOverview(node, sMesh);
             }
-        }            
+        }     
+        m_smOverviews.push_back(sMesh);
     }             
 
 #define VALID_EXTENT_RATIO 0.5
@@ -1095,6 +1093,8 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
 
     viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
 
+    viewDependentQueryP->SetMaxPixelError(queryParam->GetMaxPixelError());
+
     //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
     if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))
         {
@@ -1129,10 +1129,10 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         return;
         }
          
-    Transform reprojectTransform = scalableMeshPtr->GetReprojectionTransform();
-    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr, reprojectTransform));
+
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr, scalableMeshPtr.get()));
     
-    if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
+    if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {        
         FindOverview(lowerResOverviewNodes, extentToCover/*meshNodePtr->GetContentExtent()*/, parentNodePtr, loadTexture, clipVisibilities, scalableMeshPtr);
         }
@@ -1235,14 +1235,13 @@ class NewQueryStartingNodeProcessor
             m_lowerResOverviewNodes[threadId].clear();
             m_toLoadNodes[threadId].clear();
             m_requiredMeshNodes[threadId].clear();
-            Transform reprojectTransform = scalableMeshPtr->GetReprojectionTransform();
             for (size_t nodeInd = m_nodeToSearchCurrentInd + 1; nodeInd < m_nodesToSearch->GetNodes().size(); nodeInd++)        
                 {                              
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
-                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], reprojectTransform));
+                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr.get()));
               
-                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {            
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
                     }
@@ -1256,9 +1255,9 @@ class NewQueryStartingNodeProcessor
                 {                      
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
-                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], reprojectTransform));
+                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_foundNodes->GetNodes()[nodeInd], scalableMeshPtr.get()));
                               
-                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
                     {                
                     FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_foundNodes->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
                                         

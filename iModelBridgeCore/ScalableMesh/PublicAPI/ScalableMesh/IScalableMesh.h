@@ -59,6 +59,7 @@ enum DTMAnalysisType
     Precise =0,
     Fast,
     RawDataOnly,
+    ViewOnly,
     Qty
     };
 
@@ -69,11 +70,25 @@ enum SMCloudServerType
     WSG
     };
 
+struct IScalableMeshMemoryCounts
+{
+
+public:
+    BENTLEY_SM_EXPORT static void SetMaximumMemoryUsage(size_t maxNumberOfBytes);
+    BENTLEY_SM_EXPORT static void SetMaximumVideoMemoryUsage(size_t maxNumberOfBytes);
+
+    BENTLEY_SM_EXPORT static size_t GetAmountOfUsedMemory();
+    BENTLEY_SM_EXPORT static size_t GetAmountOfUsedVideoMemory();
+
+    BENTLEY_SM_EXPORT static size_t GetMaximumMemoryUsage();
+    BENTLEY_SM_EXPORT static size_t GetMaximumVideoMemoryUsage();
+};
+
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
+struct IScalableMesh abstract:  IRefCounted 
     {
     private:
         
@@ -198,7 +213,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         virtual BentleyStatus                      _SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform) =0;
 
-        virtual Transform              _GetReprojectionTransform() = 0;
+        virtual Transform              _GetReprojectionTransform() const = 0;
          
 #ifdef WIP_MESH_IMPORT
         virtual void  _GetAllTextures(bvector<IScalableMeshTexturePtr>& textures) = 0;
@@ -323,7 +338,7 @@ struct IScalableMesh abstract:  IRefCounted //BENTLEY_NAMESPACE_NAME::TerrainMod
 
         BENTLEY_SM_EXPORT BentleyStatus          SetReprojection(GeoCoordinates::BaseGCSCR targetCS, TransformCR approximateTransform);
 
-        BENTLEY_SM_EXPORT Transform              GetReprojectionTransform();
+        BENTLEY_SM_EXPORT Transform              GetReprojectionTransform() const;
 
         BENTLEY_SM_EXPORT static IScalableMeshPtr        GetFor                 (const WChar*          filePath,
                                                                                  bool                    openReadOnly,

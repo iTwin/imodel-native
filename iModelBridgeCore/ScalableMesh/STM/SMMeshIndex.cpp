@@ -340,12 +340,13 @@ void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bve
     {
     if (m_cachedDisplayTexture != 0)
         {
-        BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture);
+        BentleyStatus status = m_isInVRAM ? m_displayCacheManagerPtr ->_DeleteFromVideoMemory(m_cachedDisplayTexture) : m_displayCacheManagerPtr->_DestroyCachedTexture(m_cachedDisplayTexture);
         assert(status == SUCCESS);
 
         for (auto& consumer : m_consumers)
             {
             consumer->RemoveDisplayMesh();
+            consumer->RemoveDisplayMesh(true);
 			//m_displayCacheManagerPtr->_SetCacheDirty(true);
             }
         }

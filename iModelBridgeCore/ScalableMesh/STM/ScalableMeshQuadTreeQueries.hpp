@@ -1466,8 +1466,17 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 			}
 		else*/
 			{
-			double screenPixelsPerPoint = area / nbOfPointsInTile;
-			IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+            double res = node->GetMinResolution();
+            if (res != 0.0)
+                {
+                double unitsPerPixel = maxDimension / distance;
+                IsCorrect = unitsPerPixel * m_maxPixelError < res;
+                }
+            else
+                {
+                double screenPixelsPerPoint = area / nbOfPointsInTile;
+                IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+                }
 			}
 						       
     #ifdef ACTIVATE_NODE_QUERY_TRACING

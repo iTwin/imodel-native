@@ -1067,6 +1067,9 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
 
     HINVARIANTS;
 
+    //deal with cancelling generation while it is still in progress
+    if (m_SMIndex->IsCanceled()) return;
+
     // If there are sub-nodes and these need filtering then first do the subnodes
     if (HasRealChildren())
         {
@@ -1103,7 +1106,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
         //assert(this->m_nodeHeader.m_balanced == true);
         if (s_useThreadsInMeshing)
             {
-            RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+            if (!m_SMIndex->IsCanceled())
+                RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
                 {
                 bool isMeshed;
                 if (node->m_nodeHeader.m_arePoints3d)
@@ -1168,6 +1172,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 
     HINVARIANTS;
 
+    if (m_SMIndex->IsCanceled()) return;
 //    size_t nodeInd;
 
     if (pi_levelToStitch == -1 || this->m_nodeHeader.m_level == pi_levelToStitch && this->GetNbObjects() > 0)
@@ -1221,7 +1226,8 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 #endif                
                         if (this->m_nodeHeader.m_level == 0 && nodesToStitch == 0 && pi_levelToStitch > 1 && s_useThreadsInStitching)
                             {
-                            RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, int pi_levelToStitch, size_t threadId) ->void
+                            if (!m_SMIndex->IsCanceled())
+                                RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, int pi_levelToStitch, size_t threadId) ->void
                                 {
                                 node->Stitch(pi_levelToStitch, 0);
                                 SetThreadAvailableAsync(threadId);

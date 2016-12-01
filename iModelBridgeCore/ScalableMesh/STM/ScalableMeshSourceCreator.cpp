@@ -368,6 +368,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     CreateDataIndex(pDataIndex, myMemMgr, true);
 
+    m_dataIndex = pDataIndex;
 
     size_t previousDepth = pDataIndex->GetDepth();
     pDataIndex->SetIsTerrain(true);
@@ -464,10 +465,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
         return BSIERROR;
 
+    if (IsCanceled()) return BSISUCCESS;
+
     // Import sources
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
+
+    if (IsCanceled()) return BSISUCCESS;
         
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
@@ -521,6 +526,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->PropagateDataDownImmediately((int)endLevel);
         }
 
+    if (IsCanceled()) return BSISUCCESS;
 #ifdef SCALABLE_MESH_ATP
     s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 
@@ -533,6 +539,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         if (BSISUCCESS != IScalableMeshCreator::Impl::Mesh<MeshIndexType>(*pDataIndex))
             return BSIERROR;
         }
+
+    if (IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -555,12 +563,16 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
                 return BSIERROR;
 
+            if (IsCanceled()) return BSISUCCESS;
+
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
             startClock = clock();
 #endif
             if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
                 return BSIERROR;
+
+            if (IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;

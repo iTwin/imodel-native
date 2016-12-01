@@ -327,6 +327,16 @@ StatusInt IScalableMeshCreator::SetGCS(const GeoCoords::GCS& gcs)
     return 0;
     }
 
+bool IScalableMeshCreator::IsCanceled()
+    {
+    return m_implP->IsCanceled();
+    }
+
+void IScalableMeshCreator::Cancel()
+    {
+    return m_implP->Cancel();
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshCreator class
 +----------------------------------------------------------------------------*/
@@ -772,6 +782,17 @@ StatusInt IScalableMeshCreator::Impl::Save()
 {
     return BSISUCCESS == SaveGCS();
 }
+
+bool IScalableMeshCreator::Impl::IsCanceled()
+    {
+    return m_isCanceled;
+    }
+
+void IScalableMeshCreator::Impl::Cancel()
+    {
+    m_isCanceled = true;
+    if (m_dataIndex) m_dataIndex->SetCanceled(true);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @description

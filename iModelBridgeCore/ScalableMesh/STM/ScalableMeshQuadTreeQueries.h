@@ -38,7 +38,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
     protected: 
                  
         //Parameters controlling the tile selection 
-        double m_meanScreenPixelsPerPoint;                        
+        double m_meanScreenPixelsPerPoint;           
+        double m_maxPixelError; //for datasets with a precomputed resolution in units
         
         // The viewbox to query in. This viewbox is expressed in the coordinate system and units
         // of the STM to be queiried upon.
@@ -93,7 +94,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                             : HGFViewDependentPointIndexQuery(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
                             {  
                             m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;                            
-
+                            m_maxPixelError = 1.0;
 #ifdef ACTIVATE_NODE_QUERY_TRACING
                             m_pTracingXMLFileName = "";
                             m_pTracingXMLFile     = 0;
@@ -122,6 +123,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
                             : HGFViewDependentPointIndexQuery(extent, rootToViewMatrix, viewportRotMatrix, gatherTileBreaklines)
                             {  
                             m_meanScreenPixelsPerPoint = MEAN_SCREEN_PIXELS_PER_POINT;
+                            m_maxPixelError = 1.0;
 
 #ifdef ACTIVATE_NODE_QUERY_TRACING
                             m_pTracingXMLFileName = "";
@@ -147,7 +149,10 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentPoint
 
         virtual void        SetMeanScreenPixelsPerPoint (double meanScreenPixelsPerPoint) {m_meanScreenPixelsPerPoint = meanScreenPixelsPerPoint;}
         virtual double      GetMeanScreenPixelsPerPoint () {return m_meanScreenPixelsPerPoint;}        
-        
+  
+
+        virtual void        SetMaxPixelError(double errorinPixels) { m_maxPixelError = errorinPixels; }
+        virtual double      GetMaxPixelError() { return m_maxPixelError; }
                         
 #ifdef ACTIVATE_NODE_QUERY_TRACING
         void                SetTracingXMLFileName(AString& pi_rTracingXMLFileName);
@@ -335,6 +340,10 @@ public:
 
                             virtual ~ScalableMeshQuadTreeLevelIntersectIndexQuery() {}
 
+                            void       SetLevel(size_t level)
+                            {
+                                m_requestedLevel = level;
+                            }
         
         // The Query process gathers points up to level depth        
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 

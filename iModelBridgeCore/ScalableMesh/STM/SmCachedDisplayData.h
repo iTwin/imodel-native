@@ -78,14 +78,16 @@ struct SmCachedDisplayMeshData
     {
     private:
 
-        SmCachedDisplayMesh*                m_cachedDisplayMesh;
         uint64_t                             m_textureID;
         bool                                 m_isTextured;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         size_t                              m_memorySize;
         bvector<uint64_t>                   m_appliedClips;
+        bool                                m_isInVRAM;
 
     public:
+
+        SmCachedDisplayMesh*                m_cachedDisplayMesh;
         SmCachedDisplayMeshData()
             {}
 
@@ -102,13 +104,14 @@ struct SmCachedDisplayMeshData
             m_displayCacheManagerPtr = displayCacheManagerPtr;
             m_memorySize = memorySize;
             m_appliedClips.insert(m_appliedClips.end(), appliedClips.begin(), appliedClips.end());
+            m_isInVRAM = false;
             }
 
         virtual ~SmCachedDisplayMeshData()
             {
             if (m_cachedDisplayMesh != 0)
                 {
-                BentleyStatus status = m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
+                BentleyStatus status = m_isInVRAM ? m_displayCacheManagerPtr->_DeleteFromVideoMemory(m_cachedDisplayMesh) : m_displayCacheManagerPtr->_DestroyCachedMesh(m_cachedDisplayMesh);
                 assert(status == SUCCESS);
                 }
             }
@@ -128,6 +131,16 @@ struct SmCachedDisplayMeshData
             return m_appliedClips;
             }
 
+        bool IsInVRAM() const
+            {
+            return m_isInVRAM;
+            }
+
+        void SetIsInVRAM(bool isInVRAM)
+            {
+            m_isInVRAM = isInVRAM;
+            }
+
         bool GetTextureInfo(uint64_t& textureID) const
             {
             if (!m_isTextured) return false;
@@ -143,14 +156,15 @@ struct SmCachedDisplayMeshData
 
 struct SmCachedDisplayTextureData
     {
-
-    private:
+    public:
         SmCachedDisplayTexture*             m_cachedDisplayTexture;
+    private:
         uint64_t m_textureID;
         IScalableMeshDisplayCacheManagerPtr m_displayCacheManagerPtr;
         size_t                              m_memorySize;
         bvector<SMMeshIndexNode<DPoint3d, DRange3d>*> m_consumers;
         std::mutex m_lockForConsumers;
+        bool                              m_isInVRAM;
 
 
     public:
@@ -164,7 +178,20 @@ struct SmCachedDisplayTextureData
             m_textureID = textureID;
             m_displayCacheManagerPtr = displayCacheManagerPtr;
             m_memorySize = memorySize;
+            m_isInVRAM = false;
             }
+
+        SmCachedDisplayTextureData(const SmCachedDisplayTextureData& texData)
+            : m_cachedDisplayTexture(texData.m_cachedDisplayTexture),
+            m_textureID(texData.m_textureID),
+            m_displayCacheManagerPtr(texData.m_displayCacheManagerPtr),
+            m_memorySize(texData.m_memorySize),
+            m_consumers(texData.m_consumers),
+            m_isInVRAM(texData.m_isInVRAM)
+           {
+
+           }
+
         virtual ~SmCachedDisplayTextureData();
 
         void AddConsumer(SMMeshIndexNode<DPoint3d, DRange3d>* node);
@@ -179,6 +206,16 @@ struct SmCachedDisplayTextureData
         uint64_t GetTextureID() const
             {
             return m_textureID;
+            }
+
+        bool IsInVRAM() const
+            {
+            return m_isInVRAM;
+            }
+
+        void SetIsInVRAM(bool isInVRAM)
+            {
+            m_isInVRAM = isInVRAM;
             }
 
         SmCachedDisplayTexture* GetCachedDisplayTexture() const
