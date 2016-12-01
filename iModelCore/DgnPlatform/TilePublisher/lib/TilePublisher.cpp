@@ -1333,16 +1333,23 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
         dgnGCS->XYZFromLatLong(ecfNorth, northLatLong);
         }
 
-
-    DVec3d      zVector, yVector;
     RotMatrix   rMatrix;
 
-    zVector.Normalize ((DVec3dCR) ecfOrigin);
-    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+    if (view.Is3d())
+        {
+        DVec3d      zVector, yVector;
 
-    rMatrix.SetColumn (yVector, 1);
-    rMatrix.SetColumn (zVector, 2);
-    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+        zVector.Normalize ((DVec3dCR) ecfOrigin);
+        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+
+        rMatrix.SetColumn (yVector, 1);
+        rMatrix.SetColumn (zVector, 2);
+        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
+        }
+    else
+        {
+        rMatrix.InitIdentity();
+        }
 
     m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
     }

@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
-constexpr double s_half2dDepthRange = 500.0;
+constexpr double s_half2dDepthRange = 10.0;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
