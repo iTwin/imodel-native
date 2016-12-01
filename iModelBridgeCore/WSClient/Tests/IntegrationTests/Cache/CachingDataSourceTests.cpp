@@ -152,8 +152,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
-    UrlProvider::Initialize(UrlProvider::Dev, UrlProvider::DefaultTimeout, &m_localState);
-    Utf8String serverUrl = "https://dev-wsg20-eus.cloudapp.net";
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &m_localState);
+    Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
     Utf8String repositoryId = "BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
