@@ -9,9 +9,11 @@
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerResult.h>
+#include <WebServices/Client/Response/WSObjectsReader.h>
 #include <Bentley/DateTime.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct RepositoryInfo> RepositoryInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(RepositoryInfo);
 DEFINE_TASK_TYPEDEFS(RepositoryInfoPtr, DgnDbServerRepository);
@@ -33,13 +35,17 @@ private:
 
     RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id);
     RepositoryInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date);
+
+    static RepositoryInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR repositoryInstanceId, Utf8StringCR url);
 //__PUBLISH_SECTION_START__
 public:
     //__PUBLISH_SECTION_END__
     RepositoryInfo();
 
     bool operator==(RepositoryInfoCR rhs) const;
-    static RepositoryInfoPtr FromJson(JsonValueCR json, Utf8StringCR url);
+    //! DEPRECATED: Use Parsing from Instance
+    static RepositoryInfoPtr Parse(JsonValueCR json, Utf8StringCR url);
+    static RepositoryInfoPtr Parse(WSObjectsReader::Instance instnace, Utf8StringCR url);
     static RepositoryInfoPtr Create (Utf8StringCR serverUrl, Utf8StringCR id);
     //__PUBLISH_SECTION_START__
 

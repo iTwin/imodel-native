@@ -264,9 +264,9 @@ DgnDbServerRepositoriesTaskPtr DgnDbClient::GetRepositories(ICancellationTokenPt
             }
 
         bvector<RepositoryInfoPtr> repositories;
-        for (const auto& repository : response.GetValue().GetJsonValue()[ServerSchema::Instances])
+        for (const auto& repository : response.GetValue().GetInstances())
             {
-            repositories.push_back(RepositoryInfo::FromJson(repository, m_serverUrl));
+            repositories.push_back(RepositoryInfo::Parse(repository, m_serverUrl));
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
@@ -315,7 +315,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryByName(Utf8StringCR repos
             return DgnDbServerRepositoryResult::Error(result.GetError());
             }
 
-        RepositoryInfoPtr repositoryInfo = RepositoryInfo::FromJson(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        RepositoryInfoPtr repositoryInfo = RepositoryInfo::Parse(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return DgnDbServerRepositoryResult::Success(repositoryInfo);
@@ -358,7 +358,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::GetRepositoryById(Utf8StringCR reposit
             return DgnDbServerRepositoryResult::Error(result.GetError());
             }
 
-        RepositoryInfoPtr repositoryInfo = RepositoryInfo::FromJson(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        RepositoryInfoPtr repositoryInfo = RepositoryInfo::Parse(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return DgnDbServerRepositoryResult::Success(repositoryInfo);
@@ -403,7 +403,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
         if (createRepositoryResult.IsSuccess())
             {
             JsonValueCR repositoryInstance = createRepositoryResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            auto repositoryInfo = RepositoryInfo::FromJson(repositoryInstance, m_serverUrl);
+            auto repositoryInfo = RepositoryInfo::Parse(repositoryInstance, m_serverUrl);
             finalResult->SetSuccess(repositoryInfo);
             return;
             }
@@ -438,17 +438,16 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateRepositoryInstance(Utf8StringCR 
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, queryResult.GetError().GetMessage().c_str());
                 return;
                 }
-            JsonValueCR repositoryInstances = queryResult.GetValue().GetJsonValue()[ServerSchema::Instances];
-            if (repositoryInstances.isArray())
-                {
-                finalResult->SetSuccess(RepositoryInfo::FromJson(repositoryInstances[0], m_serverUrl));
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
-                }
-            else
+
+            if (queryResult.GetValue().GetRapidJsonDocument().IsNull())
                 {
                 finalResult->SetError(error);
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, error.GetMessage().c_str());
+                return;
                 }
+
+            finalResult->SetSuccess(RepositoryInfo::Parse(*queryResult.GetValue().GetInstances().begin(), m_serverUrl));
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
             });
 
         })->Then<DgnDbServerRepositoryResult>([=]()
@@ -912,9 +911,9 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcaseToDir(RepositoryInf
         return CreateCompletedAsyncTask<DgnDbServerBriefcaseInfoResult>(DgnDbServerBriefcaseInfoResult::Error(briefcaseResult.GetError()));
         }
 
-    JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-    DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::FromJson(instance);
-    FileInfoPtr fileInfo = FileInfo::FromJson(instance);
+            JsonValueCR instance = briefcaseResult.GetValue().GetObject()[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
+            DgnDbServerBriefcaseInfoPtr briefcaseInfo = DgnDbServerBriefcaseInfo::Parse(instance);
+            FileInfoPtr fileInfo = FileInfo::Parse(instance);
 
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 
