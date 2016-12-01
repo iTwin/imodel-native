@@ -1262,6 +1262,8 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
     if (nullptr != entity.GetFaceMaterialAttachments())
         {
         bvector<PolyfaceHeaderPtr> polyfaces;
@@ -1279,6 +1281,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
                 params[i].ToGeometryParams(faceParams, m_currGeometryParams);
                 m_context.CookGeometryParams(faceParams, builder);
+
+                if (!doClipping)
+                    {
+                    m_processor._ProcessPolyface(*polyfaces[i], false, *this);
+                    continue;
+                    }
 
                 SimplifyPolyfaceClipper     polyfaceClipper;
                 bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1302,6 +1310,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
     if (!meshPtr.IsValid())
         return;
+
+    if (!doClipping)
+        {
+        m_processor._ProcessPolyface(*meshPtr, false, *this);
+        return;
+        }
 
     SimplifyPolyfaceClipper     polyfaceClipper;
     bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*meshPtr, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
