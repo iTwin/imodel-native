@@ -37,9 +37,6 @@ void SpatialEntityDataSource::SetUrl(Utf8CP url) { m_url = url; }
 Utf8StringCR SpatialEntityDataSource::GetGeoCS() const { return m_geoCS; }
 void SpatialEntityDataSource::SetGeoCS(Utf8CP geoCS) { m_geoCS = geoCS; }
 
-Utf8StringCR SpatialEntityDataSource::GetOriginalId() const { return m_originalId; }
-void SpatialEntityDataSource::SetOriginalId(Utf8CP originalId) { m_originalId = originalId; }
-
 Utf8StringCR SpatialEntityDataSource::GetCompoundType() const { return m_compoundType; }
 void SpatialEntityDataSource::SetCompoundType(Utf8CP type) { m_compoundType = type; }
 

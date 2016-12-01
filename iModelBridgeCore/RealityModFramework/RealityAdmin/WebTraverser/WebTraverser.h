@@ -11,7 +11,7 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/SpatialEntityData.h>
-#include "../ISpatialEntityTraversalObserver.h"
+#include "RealityAdmin/ISpatialEntityTraversalObserver.h"
 
 #include <curl/curl.h>
 #include <string>

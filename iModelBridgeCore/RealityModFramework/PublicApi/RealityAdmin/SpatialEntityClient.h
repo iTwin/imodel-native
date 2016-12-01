@@ -10,6 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
+#include "ISpatialEntityTraversalObserver.h"
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>

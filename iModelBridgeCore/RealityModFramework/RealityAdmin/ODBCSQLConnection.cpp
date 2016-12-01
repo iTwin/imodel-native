@@ -645,24 +645,8 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
 
             CHAR multiBQuery[1024];
 
-            if (source.GetOriginalId().size() != 0)
-                {
-                sprintf(multiBQuery, "INSERT INTO [%s].[dbo].[MultibandSources] ([Id], [OriginalId], [RedBandURL], [RedBandFileSize], [GreenBandURL], [GreenBandFileSize], [BlueBandURL], [BlueBandFileSize], [PanchromaticBandURL], [PanchromaticBandFileSize]) VALUES ( %d, '%s', '%s', %lld, '%s', %lld, '%s', %lld, '%s', %lld)",
-                    m_dbName.c_str(),
-                    dataSourceId,
-                    source.GetOriginalId().c_str(),
-                    redUrl.c_str(),
-                    source.GetRedBandSize(),
-                    greenUrl.c_str(),
-                    source.GetGreenBandSize(),
-                    blueUrl.c_str(),
-                    source.GetBlueBandSize(),
-                    panUrl.c_str(),
-                    source.GetPanchromaticBandSize());
-                }
-            else
-                {
-                sprintf(multiBQuery, "INSERT INTO [%s].[dbo].[MultibandSources] ([Id], [RedBandURL], [RedBandFileSize], [GreenBandURL], [GreenBandFileSize], [BlueBandURL], [BlueBandFileSize], [PanchromaticBandURL], [PanchromaticBandFileSize]) VALUES ( %d, '%s', %lld, '%s', %lld, '%s', %lld, '%s', %lld)",
+
+            sprintf(multiBQuery, "INSERT INTO [%s].[dbo].[MultibandSources] ([Id], [RedBandURL], [RedBandFileSize], [GreenBandURL], [GreenBandFileSize], [BlueBandURL], [BlueBandFileSize], [PanchromaticBandURL], [PanchromaticBandFileSize]) VALUES ( %d, '%s', %lld, '%s', %lld, '%s', %lld, '%s', %lld)",
                     m_dbName.c_str(),
                     dataSourceId,
                     redUrl.c_str(),
@@ -673,7 +657,7 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
                     source.GetBlueBandSize(),
                     panUrl.c_str(),
                     source.GetPanchromaticBandSize());
-                }
+  
 
             ExecuteSQL(multiBQuery);
             ReleaseStmt();
