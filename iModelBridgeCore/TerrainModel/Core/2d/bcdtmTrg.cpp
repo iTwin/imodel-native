@@ -3473,7 +3473,7 @@ BENTLEYDTM_Public int bcdtmObject_divConqMergeSortDtmObject(BC_DTM_OBJ *dtmP,lon
 ** Two data points
 */
  if( numPts == 2 )
-   {
+   {   
     p1P = pointAddrP(dtmP,*(sortP+startPnt)) ;
     p2P = pointAddrP(dtmP,*(sortP+startPnt+1)) ;
     if( p1P->x > p2P->x || ( p1P->x == p2P->x && p1P->y > p2P->y))
@@ -7680,7 +7680,8 @@ int bcdtmObject_stmFixInsertedPoints(BC_DTM_OBJ * dtmP)
             hasDeletedPoints = true;
         else if (failedToDeleteAPoint)
             return DTM_ERROR;
-        } while (deletedPoint);
+        }
+    while (deletedPoint);
 
         if (hasDeletedPoints)
             bcdtmTin_compactPointAndNodeTablesDtmObject(dtmP);
