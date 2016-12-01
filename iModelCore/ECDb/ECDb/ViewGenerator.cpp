@@ -742,9 +742,9 @@ void ViewGenerator::RecordPropertyMapIfRequried(PropertyMap const& propertyMap)
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto)
     {
+    const bool requiresJoin = sourceJoinInfo.RequiresJoin() || targetJoinInfo.RequiresJoin();
     SqlVisitor sqlVisitor(contextTable, contextTable.GetName().c_str(), true);
     viewSql.Append("SELECT ");
-
     //ECInstanceId
     sqlVisitor.Reset();
     RecordPropertyMapIfRequried(*relationMap.GetECInstanceIdPropertyMap());
@@ -816,7 +816,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
 
     DbTable const* requireJoinTo;
     NativeSqlBuilder dataPropertySql;
-    if (RenderPropertyMaps(dataPropertySql, requireJoinTo, relationMap, contextTable, nullptr, PropertyMap::Type::Data) != SUCCESS)
+    if (RenderPropertyMaps(dataPropertySql, requireJoinTo, relationMap, contextTable, nullptr, PropertyMap::Type::Data, requiresJoin) != SUCCESS)
         return ERROR;
 
     if (requireJoinTo != nullptr)
@@ -839,7 +839,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassMap(NativeSqlBuilder& viewSq
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMapCP baseClass, PropertyMap::Type filter)
+BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const&  contextTable, ClassMapCP baseClass, PropertyMap::Type filter, bool requireJoin)
     {
     requireJoinTo = nullptr;
     const bool generateECClassView = m_viewAccessStringList && m_captureViewAccessStringList;
@@ -929,7 +929,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTab
     if (propertyMaps.empty())
         return SUCCESS;
 
-    Utf8CP systemContextTableAlias = requireJoinToTableForDataProperties ? contextTable.GetName().c_str() : nullptr;
+    Utf8CP systemContextTableAlias = requireJoinToTableForDataProperties || requireJoin ? contextTable.GetName().c_str() : nullptr;
     NativeSqlBuilder::List propertySqlList;
     for (auto const& kvp : propertyMaps)
         {

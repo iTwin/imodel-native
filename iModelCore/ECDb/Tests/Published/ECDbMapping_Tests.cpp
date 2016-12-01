@@ -10709,7 +10709,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
         "        <ECProperty propertyName='M21' typeName='double'/>"        //sc5   [SharedColumn]
         "        <ECProperty propertyName='M22' typeName='double'/>"        //sc6   [SharedColumn]
         "        <ECProperty propertyName='M23' typeName='double'/>"        //sc7   [SharedColumn]
-        "        <ECProperty propertyName='M24' typeName='double'/>"        //sc8   [SharedColumn]
+        "        <ECProperty propertyName='M24' typeName='double'/>"        //sc8   [Overflow]
         "        <ECProperty propertyName='M31' typeName='double'/>"        //sc9   [Overflow]
         "        <ECProperty propertyName='M32' typeName='double'/>"        //sc10  [Overflow]
         "        <ECProperty propertyName='M33' typeName='double'/>"        //sc11  [Overflow]
@@ -10799,6 +10799,81 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
         ASSERT_EQ(mtx4x4ValuesB[i], mtx.GetValue(i).GetDouble());
         }
     }//===================================================================
+
+    }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Krischan.Eberle                  02/16
+    //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
+    {
+    SetupECDb("ambigousRelationshipProperty.ecdb",
+              SchemaItem("N:N and holding",
+                         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                         "  <ECEntityClass typeName='Geometry' >"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.02.00'>"
+                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "    <ECProperty propertyName='P1' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECEntityClass typeName='GeometryPart' >"
+                         "        <ECCustomAttributes>"
+                         "            <ClassMap xmlns='ECDbMap.02.00'>"
+                         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                         "            </ClassMap>"
+                         "        </ECCustomAttributes>"
+                         "    <ECProperty propertyName='P1' typeName='string' />"
+                         "  </ECEntityClass>"
+                         "  <ECRelationshipClass typeName='GeometryHoldsParts' strength='referencing' strengthDirection='Forward' modifier='Sealed'>"
+                         "     <Source cardinality='(0,N)' polymorphic='True'>"
+                         "         <Class class='Geometry' />"
+                         "     </Source>"
+                         "    <Target cardinality='(0,N)' polymorphic='True'>"
+                         "        <Class class='GeometryPart' />"
+                         "     </Target>"
+                         "    <ECProperty propertyName='P1' typeName='string' />"
+                         "  </ECRelationshipClass>"
+                         "</ECSchema>"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ECInstanceKey geometryKey, geometryPartKey;
+    {//INSERT Geometry
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Geometry(P1) VALUES('G1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geometryKey));
+    GetECDb().SaveChanges();
+    }//===============
+
+    {//INSERT GeometryPart
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryPart(P1) VALUES('GP1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(geometryPartKey));
+    GetECDb().SaveChanges();
+    }//===============
+
+    {//INSERT GeometryHoldsParts
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.GeometryHoldsParts(SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, P1) VALUES(?,?,?,?, 'GHP1')"));
+    stmt.BindId(1, geometryKey.GetECInstanceId());
+    stmt.BindId(2, geometryKey.GetECClassId());
+    stmt.BindId(3, geometryPartKey.GetECInstanceId());
+    stmt.BindId(4, geometryPartKey.GetECClassId());
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    GetECDb().SaveChanges();
+    }//===============
+
+    {//Verify
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, P1 FROM ts.GeometryHoldsParts WHERE P1 = 'GHP1'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(geometryKey.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+    ASSERT_EQ(geometryKey.GetECClassId(), stmt.GetValueId<ECClassId>(1));
+    ASSERT_EQ(geometryPartKey.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(2));
+    ASSERT_EQ(geometryPartKey.GetECClassId(), stmt.GetValueId<ECClassId>(3));
+    ASSERT_STREQ("GHP1", stmt.GetValueText(4));
+    }//===============
 
     }
 END_ECDBUNITTESTS_NAMESPACE
