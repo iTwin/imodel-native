@@ -8,7 +8,7 @@
 CompileOptionsMki = $(SrcRoot)BeSecurity/BeSecurityCompileOptions.mki
 %include $(CompileOptionsMki)
 
-%include mdl.mki
+# included by BeHttpCompileOptions.mki? -- %include mdl.mki
 
 #--------------------------------------------------------------------------------------
 #   Building the BeSecurity library
