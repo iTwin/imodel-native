@@ -14,21 +14,15 @@ USING_NAMESPACE_BENTLEY
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Farhad.Kabir                    11/16
 //---------------------------------------------------------------------------------------
-TEST(DateTime_Tests, HnsToRationalDays)
+TEST(DateTime_Tests, MillisecondsToRationalDays)
     {
-    uint64_t hns = 38189990000247;
-    double expectedRationals = 44.201377315100694;
-    double gotRationals = DateTime::HnsToRationalDay(hns);
-    EXPECT_DOUBLE_EQ(expectedRationals, gotRationals);
+    ASSERT_DOUBLE_EQ(5.7938, DateTime::MsecToRationalDay(500584320));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Farhad.Kabir                    11/16
 //---------------------------------------------------------------------------------------
-TEST(DateTime_Tests, RationalDaysToHns)
+TEST(DateTime_Tests, RationalDaysToMilliseconds)
     {
-    double rationalDays = 5.7938;
-    uint64_t expectedHns = 5005843200000;
-    uint64_t receivedHns = DateTime::RationalDayToHns(rationalDays);
-    EXPECT_EQ(expectedHns, receivedHns);
+    ASSERT_EQ(500584320, DateTime::RationalDayToMsec(5.7938));
     }

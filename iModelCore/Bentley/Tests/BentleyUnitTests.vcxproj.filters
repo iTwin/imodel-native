@@ -118,6 +118,13 @@
     <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
     <ClCompile Include="Performance\WString_performanceTest.cpp" />
     <ClCompile Include="Published\Utf8PrintfStringTests.cpp" />
+    <ClCompile Include="Published\formatting_test.cpp" />
+    <ClCompile Include="Published\BeIdTest.cpp" />
+    <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />
+    <ClCompile Include="NonPublished\DateTimeTests.cpp" />
+    <ClCompile Include="NonPublished\FileNameTests.cpp" />
+    <ClCompile Include="NonPublished\GlobalHandleContainerTests.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ignore_list.txt" />

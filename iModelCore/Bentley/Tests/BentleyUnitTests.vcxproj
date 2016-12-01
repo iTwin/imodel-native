@@ -12,8 +12,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NonPublished\bentleylogging_test.cpp" />
+    <ClCompile Include="NonPublished\BeStringUtilitiesTests.cpp" />
     <ClCompile Include="NonPublished\consoleatp.cpp" />
+    <ClCompile Include="NonPublished\DateTimeTests.cpp" />
     <ClCompile Include="NonPublished\fileatp.cpp" />
+    <ClCompile Include="NonPublished\FileNameTests.cpp" />
+    <ClCompile Include="NonPublished\GlobalHandleContainerTests.cpp" />
     <ClCompile Include="Performance\bmap_performanceTest.cpp" />
     <ClCompile Include="Performance\bvector_performanceTest.cpp" />
     <ClCompile Include="Performance\DateTime_performanceTest.cpp" />
@@ -22,6 +26,7 @@
     <ClCompile Include="Published\BeFileIterator_Tests.cpp" />
     <ClCompile Include="Published\BeFileName_test.cpp" />
     <ClCompile Include="Published\BeFile_Test.cpp" />
+    <ClCompile Include="Published\BeIdTest.cpp" />
     <ClCompile Include="Published\BeNumerical_Test.cpp" />
     <ClCompile Include="Published\BeStringUtilities_tests.cpp" />
     <ClCompile Include="Published\BeTextFile_Test.cpp" />
@@ -35,6 +40,7 @@
     <ClCompile Include="Published\DateTime_DstAnalysis.cpp" />
     <ClCompile Include="Published\DateTime_Tests.cpp" />
     <ClCompile Include="Published\DirectoryObserverTests.cpp" />
+    <ClCompile Include="Published\formatting_test.cpp" />
     <ClCompile Include="Published\Md5_Test.cpp" />
     <ClCompile Include="Published\OsEnvUnitTests.cpp" />
     <ClCompile Include="Published\printf_test.cpp" />
@@ -44,6 +50,7 @@
     <ClCompile Include="Published\DateTimeTestHelpers.cpp" />
     <ClCompile Include="Published\SHA1_Test.cpp" />
     <ClCompile Include="Published\shared_mutex.cpp" />
+    <ClCompile Include="Published\Tasks\AsyncErrorTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncResultTests.cpp" />
     <ClCompile Include="Published\Tasks\AsyncTaskTests.cpp" />
     <ClCompile Include="Published\Tasks\CancellationTokenTests.cpp" />
@@ -93,6 +100,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{18CE72BD-2296-43A0-91BC-C76D2EC910C9}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
+    <ProjectName>  </ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">

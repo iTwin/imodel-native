@@ -89,3 +89,9 @@
 #ifdef BENTLEY_CPP_MISSING_WCHAR_SUPPORT
     #define BENTLEY_CONFIG_CPP_MISSING_WCHAR_SUPPORT
 #endif
+
+#if defined(_WIN32)
+    #if defined(_MANAGED) || (_MSC_VER < 1900)  // visual studio 2015
+        #define BENTLEY_CONFIG_NO_THREAD_SUPPORT
+    #endif
+#endif

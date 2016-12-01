@@ -16,458 +16,434 @@ BEGIN_BENTLEY_NAMESPACE
 //! 
 //! A DateTime also holds additional metadata about the actual date time in its DateTime::Info member.
 //!
-//! A DateTime's accuracy is 100's of nanoseconds (i.e hecto-nanoseconds, i.e. 1e-7 seconds)
 //! @ingroup GROUP_Time
 //! @nosubgrouping
 //=======================================================================================    
 struct DateTime
-{
-public:
-    //=======================================================================================    
-    //! Specifies whether a DateTime represents a local time, a Coordinated Universal Time (UTC), 
-    //! or is not specified as either local time or UTC.
-    // @bsiclass                                                 Krischan.Eberle      10/2012
-    //=======================================================================================    
-    enum class Kind
-        {
-        //! The time represented is not specified as either local time or Coordinated Universal Time (UTC).
-        //! Only use that for legacy data when the time zone information is not known.
-        Unspecified = 0,
+    {
+    public:
+        //=======================================================================================    
+        //! Specifies whether a DateTime represents a local time, a Coordinated Universal Time (UTC), 
+        //! or is not specified as either local time or UTC.
+        // @bsiclass                                                 Krischan.Eberle      10/2012
+        //=======================================================================================    
+        enum class Kind
+            {
+            Unspecified = 0,//!< The time represented is not specified as either local time or Coordinated Universal Time (UTC)
+            Utc = 1,//!< The time represented is UTC.
+            Local = 2 //!<The time represented is local time (in machine's time zone).
+            };
 
-        //! The time represented is UTC.
-        Utc = 1,
+        //=======================================================================================    
+        //! Specifies whether a DateTime represents a date (without time component) or a date time
+        // @bsiclass                                                 Krischan.Eberle      02/2013
+        //=======================================================================================    
+        enum class Component
+            {
+            Date = 0, //!< The DateTime represents a date only (without time component)
+            DateAndTime = 1,//!< The DateTime represents a date and a time
+            };
 
-        //! The time represented is local time (in machine's time zone).
-        Local = 2
-        };
+        //=======================================================================================    
+        //! Specifies the days of the week.
+        // @bsiclass                                                 Krischan.Eberle      02/2014
+        //=======================================================================================    
+        enum class DayOfWeek
+            {
+            Sunday = 0, //!<Sunday
+            Monday = 1, //!<Monday
+            Tuesday = 2, //!<Tuesday
+            Wednesday = 3, //!<Wednesday
+            Thursday = 4, //!<Thursday
+            Friday = 5, //!<Friday
+            Saturday = 6 //!<Saturday
+            };
 
-    //=======================================================================================    
-    //! Specifies whether a DateTime represents a date (without time component) or a date time
-    // @bsiclass                                                 Krischan.Eberle      02/2013
-    //=======================================================================================    
-    enum class Component
-        {
-        //! The DateTime represents a date only (without time component)
-        Date = 0,
+        //=======================================================================================    
+        //! Result of comparing two DateTimes
+        //! @see DateTime::Compare
+        // @bsiclass                                                 Krischan.Eberle      06/2014
+        //=======================================================================================    
+        enum class CompareResult
+            {
+            EarlierThan, //!<Left hand side operand is earlier than right hand side
+            Equals, //!<Left hand side operand is same as right hand side
+            LaterThan, //!<Left hand side operand is later than right hand side
+            Error //!< Comparison failed
+            };
 
-        //! The DateTime represents a date and a time
-        DateAndTime = 1,
-        };
+        //=======================================================================================    
+        //! Provides the metadata portion of a DateTime object.
+        // @bsiclass                                                 Krischan.Eberle      02/2013
+        //=======================================================================================    
+        struct Info
+            {
+            private:
+                Kind m_kind;
+                Component m_component;
+                bool m_isValid;
 
-    //=======================================================================================    
-    //! Specifies the days of the week.
-    // @bsiclass                                                 Krischan.Eberle      02/2014
-    //=======================================================================================    
-    enum class DayOfWeek
-        {
-        Sunday = 0, //!<Sunday
-        Monday = 1, //!<Monday
-        Tuesday = 2, //!<Tuesday
-        Wednesday = 3, //!<Wednesday
-        Thursday = 4, //!<Thursday
-        Friday = 5, //!<Friday
-        Saturday = 6 //!<Saturday
-        };
+                Info(Kind kind, Component component) : m_isValid(true), m_kind(kind), m_component(component) {}
 
-    //=======================================================================================    
-    //! Result of comparing two DateTimes
-    //! @see DateTime::Compare
-    // @bsiclass                                                 Krischan.Eberle      06/2014
-    //=======================================================================================    
-    enum class CompareResult
-        {
-        EarlierThan, //!<Left hand side operand is earlier than right hand side
-        Equals, //!<Left hand side operand is same as right hand side
-        LaterThan, //!<Left hand side operand is later than right hand side
-        Error //!< Comparison failed
-        };
+            public:
+                //! Creates an uninitialized Info instance
+                Info() : m_isValid(false), m_kind(Kind::Unspecified), m_component(Component::DateAndTime) {}
 
-    //=======================================================================================    
-    //! Provides the metadata portion of a DateTime object.
-    // @bsiclass                                                 Krischan.Eberle      02/2013
-    //=======================================================================================    
-    struct Info
-        {
+                //! Creates an Info object for a DateTime
+                //! @param[in] kind DateTime kind
+                static Info CreateForDateTime(Kind kind) { return Info(kind, Component::DateAndTime); }
+                //! Creates an Info object for a Date
+                static Info CreateForDate() { return Info(Kind::Unspecified, Component::Date); }
+
+                //! Compares the given Info object with this Info object.
+                //! @param [in] rhs Info object to compare with this Info object
+                //! @return true if the two Info objects are equal, false otherwise
+                bool operator==(Info const& rhs) const { return m_isValid == rhs.m_isValid && m_kind == rhs.m_kind && m_component == rhs.m_component; }
+
+                //! Compares the given Info object with this Info object for inequality.
+                //! @param [in] rhs Info object to compare with this Info object
+                //! @return true if the two Info objects are not equal, false otherwise
+                bool operator!=(Info const& rhs) const { return !(*this == rhs); }
+
+                bool IsValid() const { return m_isValid; }
+
+                //! Gets the DateTime kind.
+                //! @return DateTime kind.
+                Kind GetKind() const { return m_kind; }
+
+                //! Gets the DateTime component.
+                //! @return DateTime component.
+                Component GetComponent() const { return m_component; }
+            };
+
     private:
-        Kind m_kind;
-        Component m_component;
+        Info m_info;
+        int16_t m_year;
+        uint8_t m_month;
+        uint8_t m_day;
+        uint8_t m_hour;
+        uint8_t m_minute;
+        uint8_t m_second;
+        uint16_t m_millisecond;
+
+        //! Initializes a new instance of the DateTime struct.
+        //! @param [in] info the DateTime::Info for this DateTime
+        //! @param [in] year The year
+        //! @param [in] month The month (1 through 12) 
+        //! @param [in] day The day in the month (1 through the number of days in @p month) 
+        //! @param [in] hour The hours (0 through 23)
+        //! @param [in] minute The minutes (0 through 59)
+        //! @param [in] second The seconds (0 through 59)
+        //! @param [in] millisecond The milliseconds (0 through 999)
+        DateTime(Info const& info, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second, uint16_t millisecond)
+            : m_info(info), m_year(year), m_month(month), m_day(day), m_hour(hour), m_minute(minute), m_second(second), m_millisecond(millisecond)
+            {
+            if (!m_info.IsValid() || m_month < 1 || m_month > 12 || m_day < 1 || m_day > GetMaxDay(m_year, m_month) ||
+                m_hour > 23 || m_minute > 59 || m_second > 59 || m_millisecond > 999)
+                {
+                BeAssert(false && "Invalid parameters to DateTime ctor");
+                m_info = Info(); //make DateTime object invalid
+                }
+            }
 
     public:
-        //! Construct a new instance of the Info class.
-        //! @param[in] kind DateTime kind
-        //! @param[in] component DateTime component
-        explicit Info(Kind kind=Kind::Unspecified, Component component=Component::DateAndTime) : m_kind(kind), m_component(component) {}
+        //! Initializes a new empty instance of the DateTime struct.
+        //! @remarks DateTime::IsValid returns false in that case, as it doesn't represent any date time.
+        DateTime() : m_year(0), m_month(0), m_day(0), m_hour(0), m_minute(0), m_second(0), m_millisecond(0) {}
 
-        //! Compares the given Info object with this Info object.
-        //! @param [in] rhs Info object to compare with this Info object
-        //! @return true if the two Info objects are equal, false otherwise
-        bool operator== (Info const& rhs) const {return m_kind == rhs.m_kind && m_component == rhs.m_component;}
+        //! Initializes a new instance of the DateTime struct.
+        //! @remarks This creates a "date-only" DateTime, i.e.
+        //!     the DateTime::Component of this DateTime amounts to DateTime::Component::Date.
+        //!     DateTime::Kind is irrelevant for "date-only" DateTime;
+        //! @param [in] year The year (-4713 through 9999) 
+        //! @param [in] month The month (1 through 12) 
+        //! @param [in] day The day in the month (1 through the number in @p month) 
+        DateTime(int16_t year, uint8_t month, uint8_t day) : DateTime(Info::CreateForDate(), year, month, day, 0, 0, 0, 0) {}
 
-        //! Compares the given Info object with this Info object for inequality.
-        //! @param [in] rhs Info object to compare with this Info object
-        //! @return true if the two Info objects are not equal, false otherwise
-        bool operator!= (Info const& rhs) const {return !(*this == rhs);}
+        //! Initializes a new instance of the DateTime struct.
+        //! @param [in] kind the Kind for this DateTime
+        //! @param [in] year The year
+        //! @param [in] month The month (1 through 12) 
+        //! @param [in] day The day in the month (1 through the number of days in @p month) 
+        //! @param [in] hour The hours (0 through 23)
+        //! @param [in] minute The minutes (0 through 59)
+        //! @param [in] second The seconds (0 through 59)
+        //! @param [in] millisecond The milliseconds (0 through 999)
+        DateTime(Kind kind, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second = 0, uint16_t millisecond = 0)
+            : DateTime(Info::CreateForDateTime(kind), year, month, day, hour, minute, second, millisecond) {}
 
-        //! Gets the DateTime kind.
-        //! @return DateTime kind.
-        Kind GetKind() const {return m_kind;}
+        //! Indicates whether this DateTime instance is a valid date/time or not.
+        //! @remarks Using the default constructor creates an invalid date time as none of the components have been set.
+        //! @return true, if the DateTime instance is valid, false otherwise
+        bool IsValid() const { return m_info.IsValid(); }
 
-        //! Gets the DateTime component.
-        //! @return DateTime component.
-        Component GetComponent() const {return m_component;}
+        //! Compares the given DateTime with this DateTime.
+        //! @param [in] rhs DateTime to compare with this DateTime
+        //! @return true if the two DateTimes are equal, false otherwise
+        bool operator==(DateTime const& rhs) const { return Equals(rhs, false); }
 
-        //! Generates a text representation of the specified DateTime::Kind
-        //! @param[in] kind DateTime::Kind to generate text representation for
-        //! @return Text representation of a DateTime::Kind
-        BENTLEYDLL_EXPORT static Utf8String KindToString(DateTime::Kind kind);
-        BENTLEYDLL_EXPORT static WString KindToStringW(DateTime::Kind kind);
+        //! Checks the given DateTime with this DateTime for inequality.
+        //! @param [in] rhs DateTime to compare with this DateTime
+        //! @return true if the two DateTimes are not equal, false if they are equal
+        bool operator!=(DateTime const& rhs) const { return !(*this == rhs); }
 
-        //! Generates a text representation of the specified DateTime::Kind
-        //! @param[in] component DateTime::Component to generate text representation for
-        //! @return Text representation of a DateTime::Kind
-        BENTLEYDLL_EXPORT static Utf8String ComponentToString(DateTime::Component component);
-        BENTLEYDLL_EXPORT static WString ComponentToStringW(DateTime::Component component);
-        };
+        //! Compares the given DateTime with this DateTime.
+        //! @param [in] rhs DateTime to compare with this DateTime
+        //! @param [in] ignoreDateTimeInfo true if the date time info should be ignored when comparing. false otherwise.
+        //! @return true, if the two DateTimes are equal, false otherwise
+        BENTLEYDLL_EXPORT bool Equals(DateTime const& rhs, bool ignoreDateTimeInfo = false) const;
 
-private:
-    Info m_info;
-    int16_t m_year;
-    uint8_t m_month;
-    uint8_t m_day;
-    uint8_t m_hour;
-    uint8_t m_minute;
-    uint8_t m_second;
-    uint32_t m_hectoNanosecond;
+        //! Compares two DateTimes.
+        //! This method internally converts the DateTime objects to Julian Days and compares
+        //! those. As the conversion can fail, this method can return an error (see DateTime::CompareResult).
+        //! This is also the reason why the class does not provide comparison operators other than equality
+        //! and inequality.
+        //! @param [in] lhs Left-hand side DateTime
+        //! @param [in] rhs Right-hand side DateTime
+        //! @return A CompareResult value.
+        BENTLEYDLL_EXPORT static CompareResult Compare(DateTime const& lhs, DateTime const& rhs);
 
-public:
-    //***** Construction ******
-//__PUBLISH_SECTION_END__
-    //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
-//__PUBLISH_SECTION_START__
+        /// @name DateTime components
+        /// @{
 
-    //! Initializes a new empty instance of the DateTime struct.
-    //! @remarks DateTime::IsValid returns false in that case, as it doesn't represent any date time.
-    BENTLEYDLL_EXPORT DateTime();
+        //! Gets meta data about this DateTime object.
+        //! @return DateTime::Info of this DateTime object.
+        Info const& GetInfo() const { BeAssert(IsValid()); return m_info; }
 
-    //! Initializes a new instance of the DateTime struct.
-    //! @remarks This creates a "date-only" DateTime, i.e.
-    //!     the DateTime::Component of this DateTime amounts to DateTime::Component::Date.
-    //!     DateTime::Kind is irrelevant for "date-only" DateTime;
-    //! @param [in] year The year (-4713 through 9999) 
-    //! @param [in] month The month (1 through 12) 
-    //! @param [in] day The day in the month (1 through the number in @p month) 
-    BENTLEYDLL_EXPORT DateTime(int16_t year, uint8_t month, uint8_t day);
+        //! Gets the year component of this DateTime object.
+        //! @return Year (negative if BCE, positive otherwise).
+        int16_t GetYear() const { BeAssert(IsValid()); return m_year; }
 
-    //! Initializes a new instance of the DateTime struct.
-    //! @param [in] kind the Kind for this DateTime
-    //! @param [in] year The year (-4713 through 9999) 
-    //! @param [in] month The month (1 through 12) 
-    //! @param [in] day The day in the month (1 through the number in @p month) 
-    //! @param [in] hour The hours (0 through 23)
-    //! @param [in] minute The minutes (0 through 59)
-    //! @param [in] second The seconds (0 through 59)
-    //! @param [in] hectoNanosecond The hecto-nanoseconds (0 through 9,999,999)
-    BENTLEYDLL_EXPORT DateTime(Kind kind, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second = 0, uint32_t hectoNanosecond = 0);
-    
-    //! Indicates whether this DateTime instance is a valid date/time or not.
-    //! @remarks Using the default constructor creates an invalid date time as none of the components have been set.
-    //! @return true, if the DateTime instance is valid, false otherwise
-    BENTLEYDLL_EXPORT bool IsValid() const;
+        //! Gets the month component of this DateTime object.
+        //! @return Month (1 through 12).
+        uint8_t GetMonth() const { BeAssert(IsValid()); return m_month; }
 
-//__PUBLISH_SECTION_END__
-    //! Initializes a new instance of the DateTime struct.
-    //! @param [in] info the DateTime::Info for this DateTime
-    //! @param [in] year The year (-4713 through 9999) 
-    //! @param [in] month The month (1 through 12) 
-    //! @param [in] day The day in the month (1 through the number in \p month) 
-    //! @param [in] hour The hours (0 through 23)
-    //! @param [in] minute The minutes (0 through 59)
-    //! @param [in] second The seconds (0 through 59)
-    //! @param [in] hectoNanosecond The hecto-nanoseconds (0 through 9,999,999)
-    DateTime(Info const& info, int16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second = 0, uint32_t hectoNanosecond = 0);
-//__PUBLISH_SECTION_START__
+        //! Gets the day component of this DateTime object.
+        //! @return Day in the month (1 through the number in GetMonth) 
+        uint8_t GetDay() const { BeAssert(IsValid()); return m_day; }
 
-    //! Compares the given DateTime with this DateTime.
-    //! @param [in] rhs DateTime to compare with this DateTime
-    //! @return true if the two DateTimes are equal, false otherwise
-    bool operator== (DateTime const& rhs) const { return Equals(rhs, false); }
+        //! Gets the hour component of this DateTime object.
+        //! @return Hours (0 through 59) 
+        uint8_t GetHour() const { BeAssert(IsValid()); return m_hour; }
 
-    //! Checks the given DateTime with this DateTime for inequality.
-    //! @param [in] rhs DateTime to compare with this DateTime
-    //! @return true if the two DateTimes are not equal, false if they are equal
-    bool operator!= (DateTime const& rhs) const { return !(*this == rhs); }
+        //! Gets the minute component of this DateTime object.
+        //! @return Minutes (0 through 59) 
+        uint8_t GetMinute() const { BeAssert(IsValid()); return m_minute; }
 
-    //! Compares the given DateTime with this DateTime.
-    //! @param [in] rhs DateTime to compare with this DateTime
-    //! @param [in] ignoreDateTimeInfo true if the date time info should be ignored when comparing. false otherwise.
-    //! @return true, if the two DateTimes are equal, false otherwise
-    BENTLEYDLL_EXPORT bool Equals(DateTime const& rhs, bool ignoreDateTimeInfo = false) const;
+        //! Gets the second component of this DateTime object.
+        //! @return Seconds (0 through 59) 
+        uint8_t GetSecond() const { BeAssert(IsValid()); return m_second; }
 
-    //! Compares two DateTimes.
-    //! This method internally converts the DateTime objects to Julian Days and compares
-    //! those. As the conversion can fail, this method can return an error (see DateTime::CompareResult).
-    //! This is also the reason why the class does not provide comparison operators other than equality
-    //! and inequality.
-    //! @param [in] lhs Left-hand side DateTime
-    //! @param [in] rhs Right-hand side DateTime
-    //! @return A CompareResult value.
-    BENTLEYDLL_EXPORT static CompareResult Compare(DateTime const& lhs, DateTime const& rhs);
+        //! Gets the millisecond component of this DateTime object.
+        //! @return Milliseconds (0 through 999) 
+        uint16_t GetMillisecond() const { BeAssert(IsValid()); return m_millisecond; }
 
-    //! @name Current time
-    //! @{
+        //! Gets the day of the week of this DateTime object.
+        //! @remarks Only call this method if the DateTime is valid (see DateTime::IsValid)
+        //! @return Day of the week
+        BENTLEYDLL_EXPORT DayOfWeek GetDayOfWeek() const;
 
-    //! Gets the current system time in local time.
-    //! @return Current system time in local time
-    BENTLEYDLL_EXPORT static DateTime GetCurrentTime();
+        //! Gets the day of the year of this DateTime object.
+        //! @return Day of the year or 0 if the DateTime object is not valid (see DateTime::IsValid)
+        BENTLEYDLL_EXPORT uint16_t GetDayOfYear() const;
 
-    //! Gets the current system time in UTC.
-    //! @return Current system time in UTC
-    BENTLEYDLL_EXPORT static DateTime GetCurrentTimeUtc();
-    
-    //! @}
+        //! Indicates whether the specified year is a leap year or not
+        //! @return true, if @p year is a leap year. false, otherwise.
+        static bool IsLeapYear(uint16_t year) { return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0)); }
 
-    //! @name Julian Day Conversion
-    //! @{
-    //! The Julian Day is the count of days and fractions since @b noon on November 24, 4714 BCE UTC proleptic Gregorian
-    //! calendar (-4713-11-24 12:00:00 UTC). See <a href="http://en.wikipedia.org/wiki/Julian_day" target="_blank">Julian Day</a>
-    //! for details.
-    //! If the date to convert to Julian Day is in local time, the DateTime is converted from local time to UTC.
-    //! The time zone conversion works fine on most of the platforms within the Unix epoch only
-    //! (1970-01-01 00:00:00 UTC through 2038-01-19 03:14:07 UTC). For dates outside this epoch
-    //! the offset computation is performed by using a default date within the epoch (2000-01-01 00:00:00 UTC).
-    //! In some cases this can lead to wrong offset computations and consequently to wrong Julian Day numbers.
-    //! Clients can avoid this by using UTC date times for dates outside this epoch.
+        /// @}
+        //! @name Current time
+        //! @{
 
-    //! Computes the Julian Day number in hecto-nanoseconds from this DateTime instance.
-    //! @remarks This DateTime must be on the proleptic Gregorian calendar.
-    //! @param  [out] julianDayInHns Julian Day number in hecto-nanoseconds
-    //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g. if date time instance is not valid (see DateTime::IsValid)
-    //!         or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToJulianDay(uint64_t& julianDayInHns) const;
+        //! Gets the current system time in local time.
+        //! @return Current system time in local time
+        BENTLEYDLL_EXPORT static DateTime GetCurrentTime();
 
-    //! Computes the Julian Day number from this DateTime instance.
-    //! @remarks This DateTime must be on the proleptic Gregorian calendar.
-    //! @param  [out] julianDay Julian Day number with the time component being the fractional component of the double value.
-    //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g. if date time instance is not valid (see DateTime::IsValid)
-    //!         or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToJulianDay(double& julianDay) const;
+        //! Gets the current system time in UTC.
+        //! @return Current system time in UTC
+        BENTLEYDLL_EXPORT static DateTime GetCurrentTimeUtc();
 
-    //! Computes the DateTime from the given Julian Day number.
-    //! @param  [out] dateTime Resulting DateTime object (on the proleptic Gregorian calendar)
-    //! @param  [in] julianDayInHns Julian Day number in hecto-nanoseconds to convert to DateTime
-    //! @param  [in] targetInfo DateTime::Info the resulting DateTime should have
-    //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g.
-    //!          if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT static BentleyStatus FromJulianDay(DateTime& dateTime, uint64_t julianDayInHns, Info const& targetInfo);
+        //! @}
 
-    //! Computes the DateTime from the given Julian Day number.
-    //! @param  [out] dateTime Resulting DateTime object (on the proleptic Gregorian calendar)
-    //! @param  [in] julianDay Julian Day number with the time component being the fractional component of the double value.
-    //! @param  [in] targetInfo DateTime::Info the resulting DateTime should have
-    //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g.
-    //!          if computation of local time zone offset failed.
-BENTLEYDLL_EXPORT static BentleyStatus FromJulianDay(DateTime& dateTime, double julianDay, Info const& targetInfo);
+        //! @name Julian Day Conversion
+        //! @{
+        //! The Julian Day is the count of days and fractions since @b noon on November 24, 4714 BCE UTC proleptic Gregorian
+        //! calendar (-4713-11-24 12:00:00 UTC). See <a href="http://en.wikipedia.org/wiki/Julian_day" target="_blank">Julian Day</a>
+        //! for details.
+        //! If the date to convert to Julian Day is in local time, the DateTime is converted from local time to UTC.
+        //! The time zone conversion works fine on most of the platforms within the Unix epoch only
+        //! (1970-01-01 00:00:00 UTC through 2038-01-19 03:14:07 UTC). For dates outside this epoch
+        //! the offset computation is performed by using a default date within the epoch (2000-01-01 00:00:00 UTC).
+        //! In some cases this can lead to wrong offset computations and consequently to wrong Julian Day numbers.
+        //! Clients can avoid this by using UTC date times for dates outside this epoch.
 
-    /// @}
+        //! Computes the Julian Day number in milliseconds from this DateTime instance.
+        //! @remarks This DateTime must be on the proleptic Gregorian calendar.
+        //! @param  [out] julianDay Julian Day number in milliseconds
+        //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g. if date time instance is not valid (see DateTime::IsValid)
+        //!         or if the date is before the beginning of the proleptic Gregorian calendar (-4713-11-24 12:00:00 UTC)
+        //!         or if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT BentleyStatus ToJulianDay(uint64_t& julianDay) const;
 
-    /// @name Conversions
-    /// @{
+        //! Computes the Julian Day number from this DateTime instance.
+        //! @remarks This DateTime must be on the proleptic Gregorian calendar.
+        //! @param  [out] julianDay Julian Day number with the time component being the fractional component of the double value.
+        //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g. if date time instance is not valid (see DateTime::IsValid)
+        //!         or if the date is before the beginning of the proleptic Gregorian calendar (-4713-11-24 12:00:00 UTC)
+        //!         or if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT BentleyStatus ToJulianDay(double& julianDay) const;
 
-    //! Converts this local DateTime to UTC
-    //! @param  [out] utcDateTime Resulting DateTime object in UTC 
-    //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-    //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToUtc(DateTime& utcDateTime) const;
+        //! Computes the DateTime from the given Julian Day number.
+        //! @param  [out] dateTime Resulting DateTime object (on the proleptic Gregorian calendar)
+        //! @param  [in] julianDayMsec Julian Day number in milliseconds to convert to DateTime
+        //! @param  [in] targetInfo DateTime::Info the resulting DateTime should have
+        //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g.
+        //!          if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT static BentleyStatus FromJulianDay(DateTime& dateTime, uint64_t julianDayMsec, Info const& targetInfo);
 
-    //! Converts this UTC DateTime to local time
-    //! @param  [out] localDateTime Resulting DateTime object in local time
-    //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-    //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToLocalTime(DateTime& localDateTime) const;
+        //! Computes the DateTime from the given Julian Day number.
+        //! @param  [out] dateTime Resulting DateTime object (on the proleptic Gregorian calendar)
+        //! @param  [in] julianDay Julian Day number with the time component being the fractional component of the double value.
+        //! @param  [in] targetInfo DateTime::Info the resulting DateTime should have
+        //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g.
+        //!          if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT static BentleyStatus FromJulianDay(DateTime& dateTime, double julianDay, Info const& targetInfo);
 
-    //! Converts this DateTime to Unix epoch milliseconds (UTC).
-    //!
-    //! This DateTime must be on the proleptic Gregorian calendar.
-    //!
-    //! The resulting Unix milliseconds are UTC based. If this DateTime object is in local time, the method internally
-    //! accounts for converting to UTC first.
-    //! @param [out] unixMilliseconds Unix epoch milliseconds. The value is negative for dates before the beginning
-    //!         of the Unix epoch (1970-01-01 00:00:00 UTC)
-    //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-    //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToUnixMilliseconds(int64_t& unixMilliseconds) const;
+        /// @}
 
-    //! Creates a DateTime in UTC from the given Unix epoch milliseconds
-    //! @param [out] dateTime The resulting DateTime object on the proleptic Gregorian calendar (in UTC).
-    //! @param [in] unixMilliseconds The Unix epoch milliseconds. Negative if they refer to a date before
-    //!             the Unix epoch (1970-01-01 00:00:00 UTC)
-    //! @return SUCCESS if conversion was successful. ERROR otherwise
-    BENTLEYDLL_EXPORT static BentleyStatus FromUnixMilliseconds(DateTime& dateTime, uint64_t unixMilliseconds);
-    
-    //! Computes the Unix milliseconds from the given Julian Day number.
-    //! @param  [in] julianDayInHectoNanoseconds Julian day in hecto-nanoseconds.unixMilliseconds Unix milliseconds.
-    //! @return Unix milliseconds. Negative numbers indicate dates before the Unix epoch.
-    BENTLEYDLL_EXPORT static int64_t JulianDayToUnixMilliseconds(uint64_t julianDayInHectoNanoseconds);
-    
-    //! Computes the Julian Day number from the given Unix milliseconds.
-    //! @param  [in] unixMilliseconds Unix milliseconds. Negative numbers indicate dates before the Unix epoch.
-    //! @return Julian Day number in hecto-nanoseconds
-    BENTLEYDLL_EXPORT static uint64_t UnixMillisecondsToJulianDay(uint64_t unixMilliseconds);
+        /// @name Other Conversions
+        /// @{
 
-    //! Computes the Common Era ticks from this DateTime instance.
-    //! This DateTime must be on the proleptic Gregorian calendar.
-    //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-    //! @param  [out] commonEraTicks Common Era ticks in hecto-nanoseconds
-    //! @return SUCCESS if successful. ERROR in case of errors, e.g.
-    //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT BentleyStatus ToCommonEraTicks(int64_t& commonEraTicks) const;
+        //! This DateTime must be on the proleptic Gregorian calendar.
+        //!
+        //! The resulting Unix milliseconds are UTC based. If this DateTime object is in local time, the method internally
+        //! accounts for converting to UTC first.
+        //! @param [out] unixMilliseconds Unix epoch milliseconds. The value is negative for dates before the beginning
+        //!         of the Unix epoch (1970-01-01 00:00:00 UTC)
+        //! @return SUCCESS if successful. ERROR in case of errors, e.g.
+        //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g. if date time instance is not valid (see DateTime::IsValid)
+        //!         or if the date is before the beginning of the proleptic Gregorian calendar (-4713-11-24 12:00:00 UTC)
+        //!         or if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT BentleyStatus ToUnixMilliseconds(int64_t& unixMilliseconds) const;
 
-    //! Computes the DateTime from the given Common Era ticks.
-    //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-    //! @param  [out] dateTime Resulting DateTime object (on the proleptic Gregorian calendar)
-    //! @param  [in] commonEraTicks Common Era ticks in hecto-nanoseconds
-    //! @param  [in] targetInfo DateTime::Info the resulting DateTime should have
-    //! @return SUCCESS if computation was successful. ERROR in case of errors, e.g.
-    //!          if computation of local time zone offset failed.
-    BENTLEYDLL_EXPORT static BentleyStatus FromCommonEraTicks(DateTime& dateTime, int64_t commonEraTicks, Info const& targetInfo);
+        //! Creates a DateTime in UTC from the given Unix epoch milliseconds
+        //! @param [out] dateTime The resulting DateTime object on the proleptic Gregorian calendar (in UTC).
+        //! @param [in] unixMilliseconds The Unix epoch milliseconds. Negative if they refer to a date before
+        //!             the Unix epoch (1970-01-01 00:00:00 UTC)
+        //! @return SUCCESS if conversion was successful. ERROR otherwise
+        BENTLEYDLL_EXPORT static BentleyStatus FromUnixMilliseconds(DateTime& dateTime, uint64_t unixMilliseconds);
 
-    //! Computes Common Era ticks from the given the Julian Day number.
-    //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-    //! @param  [in] julianDayInHectoNanoseconds Julian Day number 
-    //! @return Common Era ticks in hecto-nanoseconds
-    BENTLEYDLL_EXPORT static int64_t JulianDayToCommonEraTicks(uint64_t julianDayInHectoNanoseconds);
+        //! Computes the Unix milliseconds from the given Julian Day number.
+        //! @param  [in] julianDayMsec Julian day in milliseconds
+        //! @return Unix milliseconds. Negative numbers indicate dates before the Unix epoch (1970-01-01 00:00:00 UTC).
+        BENTLEYDLL_EXPORT static int64_t JulianDayToUnixMilliseconds(uint64_t julianDayMsec);
 
-    //! Computes the Julian Day number from the given Common Era ticks.
-    //! The Common Era begins at 0001-01-01 00:00:00 UTC.
-    //! @param  [in] commonEraTicks Common Era ticks in hecto-nanoseconds
-    //! @return Julian Day number in hecto-nanoseconds
-    BENTLEYDLL_EXPORT static uint64_t CommonEraTicksToJulianDay(int64_t commonEraTicks);
+        //! Computes the Julian Day number from the given Unix milliseconds.
+        //! @param [in] unixMilliseconds The Unix epoch milliseconds. Negative if they refer to a date before
+        //!             the Unix epoch (1970-01-01 00:00:00 UTC)
+        //! @return Julian Day number in milliseconds
+        BENTLEYDLL_EXPORT static uint64_t UnixMillisecondsToJulianDay(uint64_t unixMilliseconds);
 
-//__PUBLISH_SECTION_END__
-    //! Converts a number in hecto-nanoseconds into a rational day number
-    //! where the integral component represents the day numbers and the fractional component
-    //! represents the time in the day.
-    //! @param [in] hns The number in hecto-nanoseconds
-    //! @return the rational day number
-    BENTLEYDLL_EXPORT static double HnsToRationalDay(uint64_t hns);
+        //! Computes Common Era milliseconds from the given the Julian Day number.
+        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
+        //! @param  [in] julianDayMsec Julian Day 
+        //! @return Time in milliseconds since beginning of Common Era
+        BENTLEYDLL_EXPORT static int64_t JulianDayToCommonEraMilliseconds(uint64_t julianDayMsec);
 
-    //! Converts a rational day number to hecto-nanoseconds.
-    //! @param [in] rationalDay The rational day number where the integral component 
-    //! represents the day numbers and the fractional component represents the time in the day
-    //! @return The rational day number in hecto-nanoseconds
-    BENTLEYDLL_EXPORT static uint64_t RationalDayToHns(double rationalDay);
-    /// @}
+        //! Computes Common Era ticks from the given the Julian Day number.
+        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
+        //! A tick is a hectonanosecond which is 1E-7 seconds.
+        //! @param  [in] julianDayMsec Julian Day 
+        //! @return Time in ticks (hectonanoseconds) since beginning of Common Era
+        static int64_t JulianDayToCommonEraTicks(uint64_t julianDayMsec) { return JulianDayToCommonEraMilliseconds(julianDayMsec) * 10000; }
 
-//__PUBLISH_SECTION_START__
+        //! Computes the Julian Day number from the given Common Era milliseconds.
+        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
+        //! @param  [in] commonEraMsec Common Era milliseconds
+        //! @return Julian Day number in milliseconds
+        BENTLEYDLL_EXPORT static uint64_t CommonEraMillisecondsToJulianDay(int64_t commonEraMsec);
 
-    /// @name ToString and FromString
-    /// @{
+        //! Computes the Julian Day number from the given Common Era ticks.
+        //! The Common Era begins at 0001-01-01 00:00:00 UTC.
+        //! A tick is a hectonanosecond which is 1E-7 seconds.
+        //! @param  [in] commonEraTicks Common Era ticks (1E-7 seconds).
+        //! @return Julian Day number in milliseconds
+        static uint64_t CommonEraTicksToJulianDay(int64_t commonEraTicks) { return CommonEraMillisecondsToJulianDay(commonEraTicks / 10000); }
 
-    //! Converts the value of this DateTime into a string representation.
-    //! @remarks The resulting string is formatted according to the ISO8601 standard.
-    //!          Second fractions are rounded to milliseconds.
-    //! @return String representation of this DateTime object. An empty string is returned
-    //!         if this date time info object is not valid (see DateTime::IsValid )
-    BENTLEYDLL_EXPORT Utf8String ToUtf8String() const;
+        //! Converts this local DateTime to UTC
+        //! @param  [out] utcDateTime Resulting DateTime object in UTC 
+        //! @return SUCCESS if successful. ERROR in case of errors, e.g.
+        //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT BentleyStatus ToUtc(DateTime& utcDateTime) const;
 
-    //! Converts the value of this DateTime into a string representation.
-    //! @remarks The resulting string is formatted according to the ISO8601 standard.
-    //!          Second fractions are rounded to milliseconds.
-    //! @return String representation of this DateTime object. An empty string is returned
-    //!         if this date time info object is not valid (see DateTime::IsValid )
-    WString ToString() const {return WString(ToUtf8String().c_str(), BentleyCharEncoding::Utf8);}
-    
-    //! Parses an ISO 8601 date time string into a DateTime instance.
-    //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.
-    //! both <c>2013-09-15T12:05:39</c> and <c>2013-09-15 12:05:39</c> can be parsed into a DateTime object.
-    //! This is a minor deviation from the ISO standard (specifies the T delimiter), which allows to parse 
-    //! SQL-99 date time literals (specifies the space delimiter)
-    //! @param[out] dateTime the resulting DateTime instance
-    //! @param[in] dateTimeIso8601 the ISO 8601 date time string to parse
-    //! @return SUCCESS, if parsing was successful. ERROR, otherwise
-    BENTLEYDLL_EXPORT static BentleyStatus FromString(DateTime& dateTime, Utf8CP dateTimeIso8601);
+        //! Converts this UTC DateTime to local time
+        //! @param  [out] localDateTime Resulting DateTime object in local time
+        //! @return SUCCESS if successful. ERROR in case of errors, e.g.
+        //!         if this date time instance is invalid (see DateTime::IsValid) or if computation of local time zone offset failed.
+        BENTLEYDLL_EXPORT BentleyStatus ToLocalTime(DateTime& localDateTime) const;
 
-    //! Parses an ISO 8601 date time string into a DateTime instance.
-    //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.
-    //! both <c>2013-09-15T12:05:39</c> and <c>2013-09-15 12:05:39</c> can be parsed into a DateTime object.
-    //! This is a minor deviation from the ISO standard (specifies the T delimiter), which allows to parse 
-    //! SQL-99 date time literals (specifies the space delimiter)
-    //! @param[out] dateTime the resulting DateTime instance
-    //! @param[in] dateTimeIso8601 the ISO 8601 date time string to parse
-    //! @return SUCCESS, if parsing was successful. ERROR, otherwise
-    BENTLEYDLL_EXPORT static BentleyStatus FromString(DateTime& dateTime, WCharCP dateTimeIso8601);
+#if !defined (DOCUMENTATION_GENERATOR)
+        //! Converts a number in msecs into a rational day number
+        //! where the integral component represents the day numbers and the fractional component
+        //! represents the time in the day.
+        //! @param [in] msecs The number in milliseconds
+        //! @return the rational day number
+        BENTLEYDLL_EXPORT static double MsecToRationalDay(uint64_t msecs);
 
-    /// @name DateTime components
-    /// @{
+        //! Converts a rational day number to milliseconds.
+        //! @param [in] rationalDay The rational day number where the integral component 
+        //! represents the day numbers and the fractional component represents the time in the day
+        //! @return The rational day number in milliseconds
+        BENTLEYDLL_EXPORT static uint64_t RationalDayToMsec(double rationalDay);
 
-    //! Gets meta data about this DateTime object.
-    //! @return DateTime::Info of this DateTime object.
-    BENTLEYDLL_EXPORT Info const& GetInfo() const;
+        //! If this object is of kind Local, this computes the offset from local time to UTC in milliseconds. Otherwise, it sets the parameter to 0.
+        BENTLEYDLL_EXPORT BentleyStatus ComputeOffsetToUtcInMsec(int64_t& offset) const;
+#endif
 
-//__PUBLISH_SECTION_END__
-    //! Gets the Kind of this DateTime object.
-    //! @return Kind.
-    Kind GetKind() const;
-//__PUBLISH_SECTION_START__
+        /// @}
 
-    //! Gets the year component of this DateTime object.
-    //! @return Year (negative if BCE, positive otherwise).
-    BENTLEYDLL_EXPORT int16_t GetYear() const;
+        /// @name ToString and FromString
+        /// @{
 
-    //! Gets the month component of this DateTime object.
-    //! @return Month (1 through 12).
-    BENTLEYDLL_EXPORT uint8_t GetMonth() const;
+        //! Converts the value of this DateTime into a string representation.
+        //! @remarks The resulting string is formatted according to the ISO8601 standard.
+        //!          Second fractions are rounded to milliseconds.
+        //! @return String representation of this DateTime object. An empty string is returned
+        //!         if this date time info object is not valid (see DateTime::IsValid )
+        BENTLEYDLL_EXPORT Utf8String ToString() const;
 
-    //! Gets the day component of this DateTime object.
-    //! @return Day in the month (1 through the number in GetMonth) 
-    BENTLEYDLL_EXPORT uint8_t GetDay() const;
+        //! Converts the value of this DateTime into a string representation.
+        //! @remarks The resulting string is formatted according to the ISO8601 standard.
+        //!          Second fractions are rounded to milliseconds.
+        //! @return String representation of this DateTime object. An empty string is returned
+        //!         if this date time info object is not valid (see DateTime::IsValid )
+        WString ToWString() const { return WString(ToString().c_str(), BentleyCharEncoding::Utf8); }
 
-    //! Gets the hour component of this DateTime object.
-    //! @return Hours (0 through 59) 
-    BENTLEYDLL_EXPORT uint8_t GetHour() const;
+        //! Parses an ISO 8601 date time string into a DateTime instance.
+        //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.
+        //! both <c>2013-09-15T12:05:39</c> and <c>2013-09-15 12:05:39</c> can be parsed into a DateTime object.
+        //! This is a minor deviation from the ISO standard (specifies the T delimiter), which allows to parse 
+        //! SQL-99 date time literals (specifies the space delimiter)
+        //! @param[out] dateTime the resulting DateTime instance
+        //! @param[in] dateTimeIso8601 the ISO 8601 date time string to parse
+        //! @return SUCCESS, if parsing was successful. ERROR, otherwise
+        BENTLEYDLL_EXPORT static BentleyStatus FromString(DateTime& dateTime, Utf8CP dateTimeIso8601);
 
-    //! Gets the minute component of this DateTime object.
-    //! @return Minutes (0 through 59) 
-    BENTLEYDLL_EXPORT uint8_t GetMinute() const;
+        //! Parses an ISO 8601 date time string into a DateTime instance.
+        //! @remarks This method supports T and a space as delimiter of the date and time component, e.g.
+        //! both <c>2013-09-15T12:05:39</c> and <c>2013-09-15 12:05:39</c> can be parsed into a DateTime object.
+        //! This is a minor deviation from the ISO standard (specifies the T delimiter), which allows to parse 
+        //! SQL-99 date time literals (specifies the space delimiter)
+        //! @param[out] dateTime the resulting DateTime instance
+        //! @param[in] dateTimeIso8601 the ISO 8601 date time string to parse
+        //! @return SUCCESS, if parsing was successful. ERROR, otherwise
+        static BentleyStatus FromString(DateTime& dateTime, WCharCP dateTimeIso8601) { return FromString(dateTime, Utf8String(dateTimeIso8601).c_str()); }
 
-    //! Gets the second component of this DateTime object.
-    //! @return Seconds (0 through 59) 
-    BENTLEYDLL_EXPORT uint8_t GetSecond() const;   
-
-    //! Gets the milliseconds component of this DateTime object.
-    //! @remarks The hecto-nanoseconds are truncated (not rounded) at the millisecond position.
-    //! @return Milliseconds (0 through 999) 
-    BENTLEYDLL_EXPORT uint16_t GetMillisecond() const;
-
-    //! Gets the hecto-nanosecond component of this DateTime object.
-    //! @remarks 1 hecto-nanosecond is 1e-7 seconds.
-    //! @return Hecto-nanoseconds (0 through 9,999,999) 
-    BENTLEYDLL_EXPORT uint32_t GetHectoNanosecond() const;
-
-    //! Gets the day of the week of this DateTime object.
-    //! @remarks Only call this method if the DateTime is valid (see DateTime::IsValid)
-    //! @return Day of the week
-    BENTLEYDLL_EXPORT DayOfWeek GetDayOfWeek() const;
-
-    //! Gets the day of the year of this DateTime object.
-    //! @return Day of the year or 0 if the DateTime object is not valid (see DateTime::IsValid)
-    BENTLEYDLL_EXPORT uint16_t GetDayOfYear() const;
-
-    //! Indicates whether the specified year is a leap year or not
-    //! @return true, if @p year is a leap year. false, otherwise.
-    BENTLEYDLL_EXPORT static bool IsLeapYear(uint16_t year);
-
-    //! If this object is of kind Local, this computes the offset from local time to UTC in HNS (hectonanoseconds). Otherwise, it sets the parameter to 0.
-    BENTLEYDLL_EXPORT BentleyStatus ComputeOffsetToUtcInHns(int64_t& offset) const;
-    /// @}
-
-//__PUBLISH_SECTION_END__
-    //! Gets the maximum day number of the given month in the given year.
-    //! @param[in] year Year number
-    //! @param[in] month Month number
-    //! @return Maximum day number of the given month
-    static uint8_t GetMaxDay(int16_t year, uint8_t month);
-//__PUBLISH_SECTION_START__
+        //! Gets the maximum day number of the given month in the given year.
+        //! @param[in] year Year number
+        //! @param[in] month Month number
+        //! @return Maximum day number of the given month
+        BENTLEYDLL_EXPORT static uint8_t GetMaxDay(int16_t year, uint8_t month);
     };
 
 //Convenience typedefs for the DateTime type

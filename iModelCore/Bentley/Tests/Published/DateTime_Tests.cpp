@@ -5,21 +5,21 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#include <Bentley/DateTime.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <vector>
-#include "DateTimeTestDataset.h"
 
 USING_NAMESPACE_BENTLEY
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeConstructorTests)
+TEST(DateTimeTests, DateTimeConstructorTests)
     {
     //default constructor
     DateTime dateTime;
-    ASSERT_TRUE (!dateTime.IsValid ());
+    ASSERT_TRUE(!dateTime.IsValid());
 
     //with positive year
     DateTime::Kind expectedKind = DateTime::Kind::Local;
@@ -29,19 +29,19 @@ TEST (DateTimeTests, DateTimeConstructorTests)
     uint8_t expectedHour = 18;
     uint8_t expectedMinute = 3;
     uint8_t expectedSecond = 18;
-    uint32_t expectedHectoNanosecond = 1000000;
-    
-    dateTime = DateTime (expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedHectoNanosecond);
-    ASSERT_TRUE (dateTime.IsValid ());
-    ASSERT_EQ ((int) expectedKind, (int) dateTime.GetInfo ().GetKind ());
-    ASSERT_EQ ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo ().GetComponent ());
-    ASSERT_EQ (expectedYear, dateTime.GetYear ());
-    ASSERT_EQ (expectedMonth, dateTime.GetMonth ());
-    ASSERT_EQ (expectedDay, dateTime.GetDay ());
-    ASSERT_EQ (expectedHour, dateTime.GetHour ());
-    ASSERT_EQ (expectedMinute, dateTime.GetMinute ());
-    ASSERT_EQ (expectedSecond, dateTime.GetSecond ());
-    ASSERT_EQ (expectedHectoNanosecond, dateTime.GetHectoNanosecond ());
+    uint16_t expectedMillisecond = 100;
+
+    dateTime = DateTime(expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedMillisecond);
+    ASSERT_TRUE(dateTime.IsValid());
+    ASSERT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
+    ASSERT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
+    ASSERT_EQ(expectedYear, dateTime.GetYear());
+    ASSERT_EQ(expectedMonth, dateTime.GetMonth());
+    ASSERT_EQ(expectedDay, dateTime.GetDay());
+    ASSERT_EQ(expectedHour, dateTime.GetHour());
+    ASSERT_EQ(expectedMinute, dateTime.GetMinute());
+    ASSERT_EQ(expectedSecond, dateTime.GetSecond());
+    ASSERT_EQ(expectedMillisecond, dateTime.GetMillisecond());
 
     //with negative year
     expectedKind = DateTime::Kind::Local;
@@ -51,203 +51,196 @@ TEST (DateTimeTests, DateTimeConstructorTests)
     expectedHour = 18;
     expectedMinute = 3;
     expectedSecond = 18;
-    expectedHectoNanosecond = 1000000;
-    
-    dateTime = DateTime (expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedHectoNanosecond);
-    ASSERT_TRUE (dateTime.IsValid ());
-    ASSERT_EQ ((int) expectedKind, (int) dateTime.GetInfo ().GetKind ());
-    ASSERT_EQ ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo ().GetComponent ());
-    ASSERT_EQ (expectedYear, dateTime.GetYear ());
-    ASSERT_EQ (expectedMonth, dateTime.GetMonth ());
-    ASSERT_EQ (expectedDay, dateTime.GetDay ());
-    ASSERT_EQ (expectedHour, dateTime.GetHour ());
-    ASSERT_EQ (expectedMinute, dateTime.GetMinute ());
-    ASSERT_EQ (expectedSecond, dateTime.GetSecond ());
-    ASSERT_EQ (expectedHectoNanosecond, dateTime.GetHectoNanosecond ());
+    expectedMillisecond = 100;
+
+    dateTime = DateTime(expectedKind, expectedYear, expectedMonth, expectedDay, expectedHour, expectedMinute, expectedSecond, expectedMillisecond);
+    ASSERT_TRUE(dateTime.IsValid());
+    ASSERT_EQ((int) expectedKind, (int) dateTime.GetInfo().GetKind());
+    ASSERT_EQ((int) DateTime::Component::DateAndTime, (int) dateTime.GetInfo().GetComponent());
+    ASSERT_EQ(expectedYear, dateTime.GetYear());
+    ASSERT_EQ(expectedMonth, dateTime.GetMonth());
+    ASSERT_EQ(expectedDay, dateTime.GetDay());
+    ASSERT_EQ(expectedHour, dateTime.GetHour());
+    ASSERT_EQ(expectedMinute, dateTime.GetMinute());
+    ASSERT_EQ(expectedSecond, dateTime.GetSecond());
+    ASSERT_EQ(expectedMillisecond, dateTime.GetMillisecond());
 
     //with date only
-    DateTime dateOnly (expectedYear, expectedMonth, expectedDay);
-    ASSERT_TRUE (dateOnly.IsValid ());
-    ASSERT_EQ ((int) DateTime::Kind::Unspecified, (int) dateOnly.GetInfo ().GetKind ());
-    ASSERT_EQ ((int) DateTime::Component::Date, (int) dateOnly.GetInfo ().GetComponent ());
-    ASSERT_EQ (expectedYear, dateOnly.GetYear ());
-    ASSERT_EQ (expectedMonth, dateOnly.GetMonth ());
-    ASSERT_EQ (expectedDay, dateOnly.GetDay ());
-    ASSERT_EQ (0, dateOnly.GetHour ());
-    ASSERT_EQ (0, dateOnly.GetMinute ());
-    ASSERT_EQ (0, dateOnly.GetSecond ());
-    ASSERT_EQ (0, dateOnly.GetHectoNanosecond ());
+    DateTime dateOnly(expectedYear, expectedMonth, expectedDay);
+    ASSERT_TRUE(dateOnly.IsValid());
+    ASSERT_EQ((int) DateTime::Kind::Unspecified, (int) dateOnly.GetInfo().GetKind());
+    ASSERT_EQ((int) DateTime::Component::Date, (int) dateOnly.GetInfo().GetComponent());
+    ASSERT_EQ(expectedYear, dateOnly.GetYear());
+    ASSERT_EQ(expectedMonth, dateOnly.GetMonth());
+    ASSERT_EQ(expectedDay, dateOnly.GetDay());
+    ASSERT_EQ(0, dateOnly.GetHour());
+    ASSERT_EQ(0, dateOnly.GetMinute());
+    ASSERT_EQ(0, dateOnly.GetSecond());
+    ASSERT_EQ(0, dateOnly.GetMillisecond());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeSpecialMemberTests)
+TEST(DateTimeTests, DateTimeSpecialMemberTests)
     {
-    DateTime d1 (DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
-    ASSERT_TRUE (d1.IsValid ());
+    DateTime d1(DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
+    ASSERT_TRUE(d1.IsValid());
     //test copy constructor
-    DateTime d2 = d1;
-    DateTimeAsserter::Assert (d1, d2);
+    DateTime d2(d1);
+    ASSERT_EQ(d1, d2);
 
     //test copy assignment operator
     DateTime d3;
-    ASSERT_TRUE (!d3.IsValid ());
+    ASSERT_TRUE(!d3.IsValid());
     d3 = d1;
-    DateTimeAsserter::Assert (d1, d3);
+    ASSERT_EQ(d1, d3);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/14
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeIsValid)
+TEST(DateTimeTests, DateTimeIsValid)
     {
     //tests with invalid date times (created with default ctor)
     DateTime dt;
-    ASSERT_FALSE (dt.IsValid ());
+    ASSERT_FALSE(dt.IsValid());
 
-    BeTest::SetFailOnAssert (false);
-        {
-        ASSERT_EQ (DateTime::DayOfWeek::Sunday, dt.GetDayOfWeek ());
-        ASSERT_EQ (0, dt.GetDayOfYear ());
-        }
-    BeTest::SetFailOnAssert (true);
+    BeTest::SetFailOnAssert(false);
+    {
+    ASSERT_EQ(DateTime::DayOfWeek::Sunday, dt.GetDayOfWeek());
+    ASSERT_EQ(0, dt.GetDayOfYear());
+    }
+    BeTest::SetFailOnAssert(true);
 
     DateTime newDt;
-    ASSERT_EQ (ERROR, dt.ToLocalTime (newDt));
-    ASSERT_EQ (ERROR, dt.ToUtc (newDt));
+    ASSERT_EQ(ERROR, dt.ToLocalTime(newDt));
+    ASSERT_EQ(ERROR, dt.ToUtc(newDt));
 
     double jd = 0.0;
-    ASSERT_EQ (ERROR, dt.ToJulianDay (jd));
+    ASSERT_EQ(ERROR, dt.ToJulianDay(jd));
     uint64_t jdHns = 0ULL;
-    ASSERT_EQ (ERROR, dt.ToJulianDay (jdHns));
+    ASSERT_EQ(ERROR, dt.ToJulianDay(jdHns));
 
     int64_t millisecs = -1LL;
-    ASSERT_EQ (ERROR, dt.ToUnixMilliseconds (millisecs));
-    ASSERT_EQ (ERROR, dt.ToCommonEraTicks (millisecs));
+    ASSERT_EQ(ERROR, dt.ToUnixMilliseconds(millisecs));
 
-    Utf8String actualStr = dt.ToUtf8String ();
-    ASSERT_TRUE (actualStr.empty ());
+    Utf8String actualStr = dt.ToString();
+    ASSERT_TRUE(actualStr.empty());
 
-    WString actualStrW = dt.ToString ();
-    ASSERT_TRUE (actualStrW.empty ());
+    WString actualStrW = dt.ToWString();
+    ASSERT_TRUE(actualStrW.empty());
 
     //tests validity of DateTime objects created by conversion
-    DateTime now = DateTime::GetCurrentTime ();
-    ASSERT_TRUE (now.IsValid ());
-    now = DateTime::GetCurrentTimeUtc ();
-    ASSERT_TRUE (now.IsValid ());
+    DateTime now = DateTime::GetCurrentTime();
+    ASSERT_TRUE(now.IsValid());
+    now = DateTime::GetCurrentTimeUtc();
+    ASSERT_TRUE(now.IsValid());
 
-    ASSERT_EQ (SUCCESS, now.ToJulianDay (jd));
+    ASSERT_EQ(SUCCESS, now.ToJulianDay(jd));
     DateTime resultDt;
-    ASSERT_FALSE (resultDt.IsValid ());
-    ASSERT_EQ (SUCCESS, DateTime::FromJulianDay (resultDt, jd, DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime)));
-    ASSERT_TRUE (resultDt.IsValid ());
+    ASSERT_FALSE(resultDt.IsValid());
+    ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(resultDt, jd, DateTime::Info::CreateForDateTime(DateTime::Kind::Utc)));
+    ASSERT_TRUE(resultDt.IsValid());
 
-    ASSERT_EQ (SUCCESS, now.ToUnixMilliseconds (millisecs));
-    resultDt = DateTime ();
-    ASSERT_FALSE (resultDt.IsValid ());
-    ASSERT_EQ (SUCCESS, DateTime::FromUnixMilliseconds (resultDt, millisecs));
-    ASSERT_TRUE (resultDt.IsValid ());
+    ASSERT_EQ(SUCCESS, now.ToUnixMilliseconds(millisecs));
+    resultDt = DateTime();
+    ASSERT_FALSE(resultDt.IsValid());
+    ASSERT_EQ(SUCCESS, DateTime::FromUnixMilliseconds(resultDt, millisecs));
+    ASSERT_TRUE(resultDt.IsValid());
 
-    ASSERT_EQ (SUCCESS, now.ToCommonEraTicks (millisecs));
-    resultDt = DateTime ();
-    ASSERT_FALSE (resultDt.IsValid ());
-    ASSERT_EQ (SUCCESS, DateTime::FromCommonEraTicks (resultDt, millisecs, DateTime::Info (DateTime::Kind::Utc, DateTime::Component::DateAndTime)));
-    ASSERT_TRUE (resultDt.IsValid ());
+    resultDt = DateTime();
+    ASSERT_FALSE(resultDt.IsValid());
+    ASSERT_EQ(SUCCESS, DateTime::FromString(resultDt, now.ToString().c_str()));
+    ASSERT_TRUE(resultDt.IsValid());
 
-    resultDt = DateTime ();
-    ASSERT_FALSE (resultDt.IsValid ());
-    ASSERT_EQ (SUCCESS, DateTime::FromString (resultDt, now.ToUtf8String ().c_str ()));
-    ASSERT_TRUE (resultDt.IsValid ());
-
-    resultDt = DateTime ();
-    ASSERT_FALSE (resultDt.IsValid ());
-    ASSERT_EQ (SUCCESS, DateTime::FromString (resultDt, now.ToString ().c_str ()));
-    ASSERT_TRUE (resultDt.IsValid ());
+    resultDt = DateTime();
+    ASSERT_FALSE(resultDt.IsValid());
+    ASSERT_EQ(SUCCESS, DateTime::FromString(resultDt, now.ToWString().c_str()));
+    ASSERT_TRUE(resultDt.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeEqualityTests)
+TEST(DateTimeTests, DateTimeEqualityTests)
     {
     DateTime dt1, dt2;
-    ASSERT_TRUE (!dt1.IsValid ());
-    ASSERT_TRUE (!dt2.IsValid ());
-    ASSERT_TRUE (dt1 == dt2) << "Two invalid date times are expected to be interpreted as equal";
+    ASSERT_TRUE(!dt1.IsValid());
+    ASSERT_TRUE(!dt2.IsValid());
+    ASSERT_TRUE(dt1 == dt2) << "Two invalid date times are expected to be interpreted as equal";
 
-    DateTime utc (DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime utc(DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
     DateTime utc2 = utc;
     DateTime utc3;
     utc3 = utc;
-    DateTime local (DateTime::Kind::Local, 2012, 10, 18, 8, 30, 0, 0);
-    DateTime unspec (DateTime::Kind::Unspecified, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime local(DateTime::Kind::Local, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime unspec(DateTime::Kind::Unspecified, 2012, 10, 18, 8, 30, 0, 0);
 
-    DateTime dateOnly (2012, 10, 18);
+    DateTime dateOnly(2012, 10, 18);
     DateTime dateOnly2 = dateOnly;
-    DateTime utcDateOnly (DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
-    DateTime unspecifiedDateOnly (DateTime::Kind::Unspecified, 2012, 10, 18, 0, 0);
+    DateTime utcDateOnly(DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
+    DateTime unspecifiedDateOnly(DateTime::Kind::Unspecified, 2012, 10, 18, 0, 0);
 
     //test comparison operator
-    EXPECT_TRUE (utc == utc2);
-    EXPECT_TRUE (utc == utc3);
+    EXPECT_TRUE(utc == utc2);
+    EXPECT_TRUE(utc == utc3);
 
-    EXPECT_FALSE (utc != utc2);
-    EXPECT_FALSE (utc != utc3);
+    EXPECT_FALSE(utc != utc2);
+    EXPECT_FALSE(utc != utc3);
 
-    EXPECT_TRUE (dateOnly == dateOnly2);
-    EXPECT_FALSE (dateOnly != dateOnly2);
+    EXPECT_TRUE(dateOnly == dateOnly2);
+    EXPECT_FALSE(dateOnly != dateOnly2);
 
-    EXPECT_FALSE (dateOnly == utcDateOnly);
-    EXPECT_FALSE (dateOnly == unspecifiedDateOnly);
+    EXPECT_FALSE(dateOnly == utcDateOnly);
+    EXPECT_FALSE(dateOnly == unspecifiedDateOnly);
 
     DateTime empty1;
     DateTime empty2;
-    EXPECT_TRUE (empty1 == empty2);
-    EXPECT_FALSE (empty1 != empty2);
+    EXPECT_TRUE(empty1 == empty2);
+    EXPECT_FALSE(empty1 != empty2);
 
-    EXPECT_FALSE (utc == local);
-    EXPECT_TRUE (utc != local);
+    EXPECT_FALSE(utc == local);
+    EXPECT_TRUE(utc != local);
 
-    EXPECT_FALSE (utc == unspec);
-    EXPECT_TRUE (utc != unspec);
+    EXPECT_FALSE(utc == unspec);
+    EXPECT_TRUE(utc != unspec);
 
-    EXPECT_FALSE (local == unspec);
-    EXPECT_TRUE (local != unspec);
+    EXPECT_FALSE(local == unspec);
+    EXPECT_TRUE(local != unspec);
 
     //test Compare method
-    EXPECT_TRUE (utc.Equals (utc2, true));
-    EXPECT_TRUE (utc.Equals (utc2, false));
-    EXPECT_EQ ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare (utc, utc2));
+    EXPECT_TRUE(utc.Equals(utc2, true));
+    EXPECT_TRUE(utc.Equals(utc2, false));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(utc, utc2));
 
-    EXPECT_TRUE (utc.Equals (utc3, true));
-    EXPECT_TRUE (utc.Equals (utc3, false));
-    EXPECT_EQ ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare (utc, utc3));
+    EXPECT_TRUE(utc.Equals(utc3, true));
+    EXPECT_TRUE(utc.Equals(utc3, false));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(utc, utc3));
 
-    EXPECT_TRUE (utc.Equals (local, true));
-    EXPECT_FALSE (utc.Equals (local, false));
-    EXPECT_TRUE (local.Equals (utc, true));
-    EXPECT_FALSE (local.Equals (utc, false));
+    EXPECT_TRUE(utc.Equals(local, true));
+    EXPECT_FALSE(utc.Equals(local, false));
+    EXPECT_TRUE(local.Equals(utc, true));
+    EXPECT_FALSE(local.Equals(utc, false));
 
-    EXPECT_TRUE (utc.Equals (unspec, true));
-    EXPECT_FALSE (utc.Equals (unspec, false));
-    EXPECT_TRUE (unspec.Equals (utc, true));
-    EXPECT_FALSE (unspec.Equals (utc, false));
+    EXPECT_TRUE(utc.Equals(unspec, true));
+    EXPECT_FALSE(utc.Equals(unspec, false));
+    EXPECT_TRUE(unspec.Equals(utc, true));
+    EXPECT_FALSE(unspec.Equals(utc, false));
 
-    EXPECT_TRUE (local.Equals (unspec, true));
-    EXPECT_FALSE (local.Equals (unspec, false));
-    EXPECT_TRUE (unspec.Equals (local, true));
-    EXPECT_FALSE (unspec.Equals (local, false));
+    EXPECT_TRUE(local.Equals(unspec, true));
+    EXPECT_FALSE(local.Equals(unspec, false));
+    EXPECT_TRUE(unspec.Equals(local, true));
+    EXPECT_FALSE(unspec.Equals(local, false));
 
-    EXPECT_TRUE (dateOnly.Equals (dateOnly2, true));
-    EXPECT_TRUE (dateOnly.Equals (dateOnly2, false));
+    EXPECT_TRUE(dateOnly.Equals(dateOnly2, true));
+    EXPECT_TRUE(dateOnly.Equals(dateOnly2, false));
 
-    EXPECT_TRUE (dateOnly.Equals (utcDateOnly, true));
-    EXPECT_FALSE (dateOnly.Equals (utcDateOnly, false));
+    EXPECT_TRUE(dateOnly.Equals(utcDateOnly, true));
+    EXPECT_FALSE(dateOnly.Equals(utcDateOnly, false));
 
-    EXPECT_TRUE (dateOnly.Equals (unspecifiedDateOnly, true));
-    EXPECT_FALSE (dateOnly.Equals (unspecifiedDateOnly, false));
+    EXPECT_TRUE(dateOnly.Equals(unspecifiedDateOnly, true));
+    EXPECT_FALSE(dateOnly.Equals(unspecifiedDateOnly, false));
     }
 
 //---------------------------------------------------------------------------------------
@@ -255,16 +248,16 @@ TEST (DateTimeTests, DateTimeEqualityTests)
 //---------------------------------------------------------------------------------------
 TEST(DateTimeTests, DateTimeInfoEqualityTests)
     {
-    DateTime utc (DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime utc(DateTime::Kind::Utc, 2012, 10, 18, 8, 30, 0, 0);
     DateTime utc2 = utc;
     DateTime utc3;
     utc3 = utc;
-    DateTime local (DateTime::Kind::Local, 2012, 10, 18, 8, 30, 0, 0);
-    DateTime unspec (DateTime::Kind::Unspecified, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime local(DateTime::Kind::Local, 2012, 10, 18, 8, 30, 0, 0);
+    DateTime unspec(DateTime::Kind::Unspecified, 2012, 10, 18, 8, 30, 0, 0);
     utc = local;
-    DateTime utcDateOnly (DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
-    DateTime dateOnly (2012, 10, 18);
-    
+    DateTime utcDateOnly(DateTime::Kind::Utc, 2012, 10, 18, 0, 0);
+    DateTime dateOnly(2012, 10, 18);
+
     EXPECT_TRUE(utc2.GetInfo() == utc3.GetInfo());
     EXPECT_FALSE(utc2.GetInfo() != utc3.GetInfo());
 
@@ -285,398 +278,325 @@ TEST(DateTimeTests, DateTimeInfoEqualityTests)
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    06/14
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeComparisonTests)
+TEST(DateTimeTests, DateTimeComparisonTests)
     {
-    std::vector<DateTime> dateTimeDataset = { DateTime (-10, 3, 4), DateTime (2000, 3, 18), DateTime (2014, 6, 30), DateTime (DateTime::Kind::Utc, 2014, 6, 30, 0, 0, 1),
-        DateTime (DateTime::Kind::Utc, 2014, 6, 30, 0, 0, 1, 1) };
+    std::vector<DateTime> dateTimeDataset = {DateTime(-10, 3, 4), DateTime(2000, 3, 18), DateTime(2014, 6, 30), DateTime(DateTime::Kind::Utc, 2014, 6, 30, 0, 0, 1),
+        DateTime(DateTime::Kind::Utc, 2014, 6, 30, 0, 0, 1, 1)};
 
-    const size_t datasetSize = dateTimeDataset.size ();
+    const size_t datasetSize = dateTimeDataset.size();
     for (size_t lhsIx = 0; lhsIx < datasetSize; lhsIx++)
         for (size_t rhsIx = 0; rhsIx < datasetSize; rhsIx++)
             {
             DateTimeCR lhs = dateTimeDataset[lhsIx];
             DateTimeCR rhs = dateTimeDataset[rhsIx];
-            const auto res = DateTime::Compare (lhs, rhs);
+            const auto res = DateTime::Compare(lhs, rhs);
             if (lhsIx < rhsIx)
-                ASSERT_EQ ((int) DateTime::CompareResult::EarlierThan, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToUtf8String ().c_str () << " RHS: " << rhs.ToUtf8String ().c_str ();
+                ASSERT_EQ((int) DateTime::CompareResult::EarlierThan, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToString().c_str() << " RHS: " << rhs.ToString().c_str();
             else if (lhsIx == rhsIx)
-                ASSERT_EQ ((int) DateTime::CompareResult::Equals, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToUtf8String ().c_str () << " RHS: " << rhs.ToUtf8String ().c_str ();
-            else 
-                ASSERT_EQ ((int) DateTime::CompareResult::LaterThan, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToUtf8String ().c_str () << " RHS: " << rhs.ToUtf8String ().c_str ();
+                ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToString().c_str() << " RHS: " << rhs.ToString().c_str();
+            else
+                ASSERT_EQ((int) DateTime::CompareResult::LaterThan, (int) res) << "Unexpected comparison result. LHS: " << lhs.ToString().c_str() << " RHS: " << rhs.ToString().c_str();
             }
 
-    ASSERT_EQ ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare (DateTime (2014, 6, 30), DateTime (DateTime::Kind::Utc, 2014, 6, 30, 0, 0)));
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Julija.Suboc                    09/13
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeComponentToString)
-    {
-    Utf8String date = DateTime::Info::ComponentToString(DateTime::Component::Date);
-    EXPECT_EQ(0, date.CompareTo("Date"));
-    Utf8String dateTime = DateTime::Info::ComponentToString(DateTime::Component::DateAndTime);
-    EXPECT_EQ(0, dateTime.CompareTo("DateTime"));
-    // To WString
-    EXPECT_STREQ(L"Date",     DateTime::Info::ComponentToStringW(DateTime::Component::Date).c_str());
-    EXPECT_STREQ(L"DateTime", DateTime::Info::ComponentToStringW(DateTime::Component::DateAndTime).c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, GetMillisecondTests)
-    {
-    DateTime testDate (DateTime::Kind::Local, 2012, 3, 4, 5, 6, 7, 8888000);
-    uint16_t millisecs = testDate.GetMillisecond ();
-    EXPECT_EQ (888, millisecs);
-
-    testDate = DateTime (DateTime::Kind::Local, 2012, 3, 4, 5, 6, 7, 8885000);
-    millisecs = testDate.GetMillisecond ();
-    EXPECT_EQ (888, millisecs);
-
-    testDate = DateTime (DateTime::Kind::Local, 2012, 3, 4, 5, 6, 7, 8880000);
-    millisecs = testDate.GetMillisecond ();
-    EXPECT_EQ (888, millisecs);
+    ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(DateTime(2014, 6, 30), DateTime(DateTime::Kind::Utc, 2014, 6, 30, 0, 0)));
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    02/14
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, GetDayOfWeek)
+TEST(DateTimeTests, GetDayOfWeek)
     {
-    const DateTime baselineYear (2014, 2, 15);
-    const int baselineDayOfWeekNr = static_cast<int> (DateTime::DayOfWeek::Saturday);
+    const DateTime baselineYear(2016, 11, 26);
+    double baselineJd = -1.0;
+    ASSERT_EQ(SUCCESS, baselineYear.ToJulianDay(baselineJd));
+    const DateTime::DayOfWeek baselineDayOfWeekNr = DateTime::DayOfWeek::Saturday;
 
-    DateTime testDt (baselineYear);
-    int i = 0;
-    do 
+    for (int i = 0; i < 50; i++)
         {
-        int expectedDayOfWeekNr = baselineDayOfWeekNr - (i % 7);
-        const auto actualDayOfWeek = testDt.GetDayOfWeek ();
-        ASSERT_EQ (expectedDayOfWeekNr, static_cast<int> (actualDayOfWeek)) << "GetDayOfWeek failed for test date " << testDt.ToUtf8String ().c_str ();
+        double testJd = baselineJd - i; //decrement test date by one day each
+        DateTime testDate;
+        ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDate, testJd, baselineYear.GetInfo()));
 
-        //decrement test date by one day
-        double testJd = 0.0;
-        ASSERT_EQ (SUCCESS, testDt.ToJulianDay (testJd));
-        testJd--;
-        ASSERT_EQ (SUCCESS, DateTime::FromJulianDay (testDt, testJd, testDt.GetInfo ()));
-
-        i++;
-        } while (testDt.GetYear () > 1); //dates before 1 AD are not supported
+        DateTime::DayOfWeek expectedDayOfWeekNr = (DateTime::DayOfWeek) ((int) baselineDayOfWeekNr - (i % 7));
+        ASSERT_EQ(expectedDayOfWeekNr, testDate.GetDayOfWeek()) << testDate.ToString().c_str();
+        }
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    02/14
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, GetDayOfYear)
+TEST(DateTimeTests, GetDayOfYear)
     {
     auto runTest = [] (int16_t year)
         {
-        DateTime testDt (year, 1, 1);
-        const int dayCount = DateTime::IsLeapYear (year) ? 366 : 365;
+        DateTime testDt(year, 1, 1);
+        const int dayCount = DateTime::IsLeapYear(year) ? 366 : 365;
         for (int i = 0; i < dayCount; i++)
             {
             int expectedDayOfYear = i + 1;
-            int actualDayOfYear = testDt.GetDayOfYear ();
-            ASSERT_EQ (expectedDayOfYear, actualDayOfYear) << "GetDayOfYear failed for test date " << testDt.ToUtf8String ().c_str ();
+            int actualDayOfYear = testDt.GetDayOfYear();
+            ASSERT_EQ(expectedDayOfYear, actualDayOfYear) << "GetDayOfYear failed for test date " << testDt.ToString().c_str();
 
             //incrememt test date by one day
             double testJd = 0.0;
-            ASSERT_EQ (SUCCESS, testDt.ToJulianDay (testJd));
+            ASSERT_EQ(SUCCESS, testDt.ToJulianDay(testJd));
             testJd++;
-            ASSERT_EQ (SUCCESS, DateTime::FromJulianDay (testDt, testJd, testDt.GetInfo ()));
+            ASSERT_EQ(SUCCESS, DateTime::FromJulianDay(testDt, testJd, testDt.GetInfo()));
             }
         };
 
-    runTest (1); //no leap year
-    runTest (1900); //no leap year
-    runTest (1904); //leap year
-    runTest (2000); //leap year
-    runTest (2001); //no leap year
-    runTest (2004); //leap year
-    runTest (2014); //no leap year
+    runTest(1); //no leap year
+    runTest(1900); //no leap year
+    runTest(1904); //leap year
+    runTest(2000); //leap year
+    runTest(2001); //no leap year
+    runTest(2004); //leap year
+    runTest(2014); //no leap year
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    02/13
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, StringConversionRoundtripTests)
+TEST(DateTimeTests, StringConversionRoundtripTests)
     {
-    DateTime testDate (2012, 3, 1);
+    auto assertStringConversion = [] (DateTimeCR date, Utf8CP dateStr)
+        {
+        Utf8String actualStr = date.ToString();
+        ASSERT_STREQ(dateStr, actualStr.c_str());
+
+        DateTime actualDt;
+        ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr));
+        ASSERT_EQ(date, actualDt);
+        };
+
+    DateTime testDate(2012, 3, 1);
     Utf8CP isoDate = "2012-03-01";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
-    
-    testDate = DateTime (-342, 4, 5);
+    assertStringConversion(testDate, isoDate);
+
+    testDate = DateTime(-342, 4, 5);
     isoDate = "-0342-04-05";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (1, 10, 5);
+    testDate = DateTime(1, 10, 5);
     isoDate = "0001-10-05";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (DateTime::Kind::Unspecified, 2012, 3, 1, 2, 3, 0);
+    testDate = DateTime(DateTime::Kind::Unspecified, 2012, 3, 1, 2, 3, 0);
     isoDate = "2012-03-01T02:03:00.000";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 5000000);
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 500);
     isoDate = "2012-12-05T23:44:59.500Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 1111999);
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 111);
     isoDate = "2012-12-05T23:44:59.111Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 1114000);
-    isoDate = "2012-12-05T23:44:59.111Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
-
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 1115000);
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 112);
     isoDate = "2012-12-05T23:44:59.112Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
+    assertStringConversion(testDate, isoDate);
 
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 1116000);
-    isoDate = "2012-12-05T23:44:59.112Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
-
-    testDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 1119999);
-    isoDate = "2012-12-05T23:44:59.112Z";
-    DateTimeAsserter::AssertStringConversion (testDate, isoDate);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    03/14
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ToStringWithMillisecRounding)
-    {
-    DateTime date (DateTime::Kind::Utc, 2012, 11, 5, 14, 33, 59, 9999444);
-    Utf8CP expectedIso = "2012-11-05T14:34:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 11, 5, 14, 59, 59, 9999444);
-    expectedIso = "2012-11-05T15:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 11, 5, 23, 59, 59, 9999444);
-    expectedIso = "2012-11-06T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 11, 30, 23, 59, 59, 9999444);
-    expectedIso = "2012-12-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 1, 30, 23, 59, 59, 9999444);
-    expectedIso = "2012-01-31T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 1, 31, 23, 59, 59, 9999444);
-    expectedIso = "2012-02-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2013, 2, 28, 23, 59, 59, 9999444);
-    expectedIso = "2013-03-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    //leap year
-    date = DateTime (DateTime::Kind::Utc, 2012, 2, 28, 23, 59, 59, 9999444);
-    expectedIso = "2012-02-29T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 2, 29, 23, 59, 59, 9999444);
-    expectedIso = "2012-03-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 4, 30, 23, 59, 59, 9999444);
-    expectedIso = "2012-05-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
-
-    date = DateTime (DateTime::Kind::Utc, 2012, 12, 31, 23, 59, 59, 9999444);
-    expectedIso = "2013-01-01T00:00:00.000Z";
-    ASSERT_STREQ (expectedIso, date.ToUtf8String ().c_str ());
+    testDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 23, 44, 59, 999);
+    isoDate = "2012-12-05T23:44:59.999Z";
+    assertStringConversion(testDate, isoDate);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    02/13
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, FromStringTests)
+TEST(DateTimeTests, FromStringTests)
     {
+    auto assertFromString = [] (Utf8CP dateStr, DateTime const& expectedDt, bool expectedSuccess)
+        {
+        DateTime actualDt;
+        if (expectedSuccess)
+            {
+            ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr));
+            ASSERT_EQ(expectedDt, actualDt);
+            }
+        else
+            ASSERT_EQ(ERROR, DateTime::FromString(actualDt, dateStr));
+        };
+
     //supported ISO strings
     Utf8CP isoDateTime = "2012-12-05";
-    DateTime expectedDate (2012, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    DateTime expectedDate(2012, 12, 5);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-2012-12-05";
-    expectedDate = DateTime (-2012, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(-2012, 12, 5);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05";
-    expectedDate = DateTime (-1, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(-1, 12, 5);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205";
-    expectedDate = DateTime (-1, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(-1, 12, 5);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05T13:11:22Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05 13:11:22Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205T13:11:22.44Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 4400000);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 440);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205 13:11:22.44Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 4400000);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 440);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05T131122Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05 131122Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205T131122.44Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 4400000);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 440);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205 131122.44Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 4400000);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22, 440);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205T131122";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205 131122";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205T1311";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205 1311";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205T131122-01:45";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205 131122-01:45";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205T131122-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205 131122-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "2013-12-05T13:11:22-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "2013-12-05 13:11:22-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "2013-12-05T131122-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "2013-12-05 131122-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205T13:11-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205 13:11-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205T1311-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "20131205 1311-0145";
-    expectedDate = DateTime (DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05T13:11";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05 13:11";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205T1311";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-00011205 1311";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05T13:11Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05 13:11Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05T13:11+01:11";
-    expectedDate = DateTime (DateTime::Kind::Local, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = "-0001-12-05 13:11+01:11";
-    expectedDate = DateTime (DateTime::Kind::Local, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    expectedDate = DateTime(DateTime::Kind::Local, -1, 12, 5, 13, 11, 0);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05T13:11:00.1234567Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05 13:11:00.123Z";
+    expectedDate = DateTime(DateTime::Kind::Utc, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05 13:11:00.1234567Z";
-    expectedDate = DateTime (DateTime::Kind::Utc, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05T13:11:00.123";
+    expectedDate = DateTime(DateTime::Kind::Unspecified, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05T13:11:00.1234567";
-    expectedDate = DateTime (DateTime::Kind::Unspecified, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05T13:11:00.123+00:00";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05T13:11:00.1234567+00:00";
-    expectedDate = DateTime (DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05 13:11:00.123+00:00";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05 13:11:00.1234567+00:00";
-    expectedDate = DateTime (DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05T13:11:00.123-01:34";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = "2012-12-05T13:11:00.1234567-01:34";
-    expectedDate = DateTime (DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
-
-    isoDateTime = "2012-12-05 13:11:00.1234567-01:34";
-    expectedDate = DateTime (DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = "2012-12-05 13:11:00.123-01:34";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
     //Invalid ISO strings for which the parser still returns something.
-    isoDateTime = "2011-02-29";
-    expectedDate = DateTime (2011, 2, 29);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    BeTest::SetFailOnAssert(false);
+    {
+    expectedDate = DateTime(2011, 2, 29);
+    ASSERT_FALSE(expectedDate.IsValid()) << "2011-02-29";
+    DateTime dt;
+    ASSERT_EQ(ERROR, DateTime::FromString(dt, "2011-02-29"));
+    }
+    BeTest::SetFailOnAssert(true);
 
 
     //unsupported ISO strings
@@ -684,432 +604,220 @@ TEST (DateTimeTests, FromStringTests)
     //doesn't support them (yet?).
     bvector<Utf8String> unsupportedIsoDateTimeStrings;
     //leaving out month or day or minute
-    unsupportedIsoDateTimeStrings.push_back ("2012");
-    unsupportedIsoDateTimeStrings.push_back ("-2012");
-    unsupportedIsoDateTimeStrings.push_back ("2012-09");
-    unsupportedIsoDateTimeStrings.push_back ("2012-09-31T13");
+    unsupportedIsoDateTimeStrings.push_back("2012");
+    unsupportedIsoDateTimeStrings.push_back("-2012");
+    unsupportedIsoDateTimeStrings.push_back("2012-09");
+    unsupportedIsoDateTimeStrings.push_back("2012-09-31T13");
     //omit T or space delimiter
-    unsupportedIsoDateTimeStrings.push_back ("2012-09-3013:03:48");
-    unsupportedIsoDateTimeStrings.push_back ("20120930130348.123");
-    unsupportedIsoDateTimeStrings.push_back ("2012093013:03:48.123Z");
+    unsupportedIsoDateTimeStrings.push_back("2012-09-3013:03:48");
+    unsupportedIsoDateTimeStrings.push_back("20120930130348.123");
+    unsupportedIsoDateTimeStrings.push_back("2012093013:03:48.123Z");
     //leaving out the minutes in the time zone indicator
-    unsupportedIsoDateTimeStrings.push_back ("2012-04-29T12:33:11+01");
+    unsupportedIsoDateTimeStrings.push_back("2012-04-29T12:33:11+01");
 
     //leading / trailing blanks are not supported
-    unsupportedIsoDateTimeStrings.push_back (" 2012-12-05 13:11:00.1234567-01:34");
-    unsupportedIsoDateTimeStrings.push_back ("        2012-12-05 13:11:00.1234567-01:34");
-    unsupportedIsoDateTimeStrings.push_back ("2012-12-05 13:11:00.1234567-01:34 ");
-    unsupportedIsoDateTimeStrings.push_back ("2012-12-05 13:11:00.1234567-01:34       ");
-    unsupportedIsoDateTimeStrings.push_back (" 2012-12-05 13:11:00.1234567-01:34 ");
-    unsupportedIsoDateTimeStrings.push_back ("   2012-12-05 13:11:00.1234567-01:34     ");
-    unsupportedIsoDateTimeStrings.push_back (" 2012-12-05");
-    unsupportedIsoDateTimeStrings.push_back ("    2012-12-05");
-    unsupportedIsoDateTimeStrings.push_back ("2012-12-05 ");
-    unsupportedIsoDateTimeStrings.push_back ("2012-12-05    ");
-    unsupportedIsoDateTimeStrings.push_back ("  2012-12-05    ");
+    unsupportedIsoDateTimeStrings.push_back(" 2012-12-05 13:11:00.1234567-01:34");
+    unsupportedIsoDateTimeStrings.push_back("        2012-12-05 13:11:00.1234567-01:34");
+    unsupportedIsoDateTimeStrings.push_back("2012-12-05 13:11:00.1234567-01:34 ");
+    unsupportedIsoDateTimeStrings.push_back("2012-12-05 13:11:00.1234567-01:34       ");
+    unsupportedIsoDateTimeStrings.push_back(" 2012-12-05 13:11:00.1234567-01:34 ");
+    unsupportedIsoDateTimeStrings.push_back("   2012-12-05 13:11:00.1234567-01:34     ");
+    unsupportedIsoDateTimeStrings.push_back(" 2012-12-05");
+    unsupportedIsoDateTimeStrings.push_back("    2012-12-05");
+    unsupportedIsoDateTimeStrings.push_back("2012-12-05 ");
+    unsupportedIsoDateTimeStrings.push_back("2012-12-05    ");
+    unsupportedIsoDateTimeStrings.push_back("  2012-12-05    ");
 
     //dummy date
     DateTime dummyDate;
-    FOR_EACH (Utf8StringCR unsupportedIsoDateTimeString, unsupportedIsoDateTimeStrings)
+    for(Utf8StringCR unsupportedIsoDateTimeString : unsupportedIsoDateTimeStrings)
         {
-        DateTimeAsserter::AssertFromString (unsupportedIsoDateTimeString.c_str (), dummyDate, false);
+        assertFromString(unsupportedIsoDateTimeString.c_str(), dummyDate, false);
         }
 
     //invalid ISO strings
     bvector<Utf8String> invalidIsoDateTimeStrings;
-    invalidIsoDateTimeStrings.push_back ("012-12-05");
-    invalidIsoDateTimeStrings.push_back ("12-12-05");
-    invalidIsoDateTimeStrings.push_back ("1-12-05");
-    invalidIsoDateTimeStrings.push_back ("2012-13-05");
-    invalidIsoDateTimeStrings.push_back ("2012-20-05");
-    invalidIsoDateTimeStrings.push_back ("2012-1-05");
-    invalidIsoDateTimeStrings.push_back ("2012-5-05");
-    invalidIsoDateTimeStrings.push_back ("2012-03-1");
-    invalidIsoDateTimeStrings.push_back ("2012-03-32");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T1");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T25:00:12");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:2");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:60:12");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:.12");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T123:12:11");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:331:11");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:1");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:60");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:100");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11Y");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11+1");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-100:30");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-24:30");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-01.00");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-1:00");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-01:0");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-01:60");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11-01:100");
+    invalidIsoDateTimeStrings.push_back("012-12-05");
+    invalidIsoDateTimeStrings.push_back("12-12-05");
+    invalidIsoDateTimeStrings.push_back("1-12-05");
+    invalidIsoDateTimeStrings.push_back("2012-13-05");
+    invalidIsoDateTimeStrings.push_back("2012-20-05");
+    invalidIsoDateTimeStrings.push_back("2012-1-05");
+    invalidIsoDateTimeStrings.push_back("2012-5-05");
+    invalidIsoDateTimeStrings.push_back("2012-03-1");
+    invalidIsoDateTimeStrings.push_back("2012-03-32");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T1");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T25:00:12");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:2");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:60:12");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:.12");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T123:12:11");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:331:11");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:1");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:60");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:100");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11Y");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11+1");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-100:30");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-24:30");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-01.00");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-1:00");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-01:0");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-01:60");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11-01:100");
 
     //double blanks as time comp delimiter or blanks around T delimiter is invalid
-    invalidIsoDateTimeStrings.push_back ("2012-09-30  13:03:48.123Z");
-    invalidIsoDateTimeStrings.push_back ("2012-09-30T 13:03:48.123Z");
-    invalidIsoDateTimeStrings.push_back ("2012-09-30 T13:03:48.123Z");
-    invalidIsoDateTimeStrings.push_back ("2012-09-30 T 13:03:48.123Z");
+    invalidIsoDateTimeStrings.push_back("2012-09-30  13:03:48.123Z");
+    invalidIsoDateTimeStrings.push_back("2012-09-30T 13:03:48.123Z");
+    invalidIsoDateTimeStrings.push_back("2012-09-30 T13:03:48.123Z");
+    invalidIsoDateTimeStrings.push_back("2012-09-30 T 13:03:48.123Z");
 
     //valid date time strings which are embedded in a string is not supported.
-    invalidIsoDateTimeStrings.push_back ("BlaBla2012-04-29T12:33:11");
-    invalidIsoDateTimeStrings.push_back ("BlaBla2012-04-29 12:33:11");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29T12:33:11BlaBla");
-    invalidIsoDateTimeStrings.push_back ("2012-04-29 12:33:11BlaBla");
-    invalidIsoDateTimeStrings.push_back ("BlaBla2012-04-29T12:33:11BlaBla");
-    invalidIsoDateTimeStrings.push_back ("BlaBla2012-04-29 12:33:11BlaBla");
+    invalidIsoDateTimeStrings.push_back("BlaBla2012-04-29T12:33:11");
+    invalidIsoDateTimeStrings.push_back("BlaBla2012-04-29 12:33:11");
+    invalidIsoDateTimeStrings.push_back("2012-04-29T12:33:11BlaBla");
+    invalidIsoDateTimeStrings.push_back("2012-04-29 12:33:11BlaBla");
+    invalidIsoDateTimeStrings.push_back("BlaBla2012-04-29T12:33:11BlaBla");
+    invalidIsoDateTimeStrings.push_back("BlaBla2012-04-29 12:33:11BlaBla");
 
-    FOR_EACH (Utf8StringCR invalidIsoDateTimeString, invalidIsoDateTimeStrings)
+    for(Utf8StringCR invalidIsoDateTimeString : invalidIsoDateTimeStrings)
         {
-        DateTimeAsserter::AssertFromString (invalidIsoDateTimeString.c_str (), dummyDate, false);
+        assertFromString(invalidIsoDateTimeString.c_str(), dummyDate, false);
         }
     }
 //---------------------------------------------------------------------------------------
 // @betest                                      Julija.Suboc                    09/13
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, FromStringWCharCPTests)
+TEST(DateTimeTests, FromStringWCharCPTests)
     {
+    auto assertFromString = [] (WCharCP dateStr, DateTime const& expectedDt, bool expectedSuccess)
+        {
+        DateTime actualDt;
+        if (expectedSuccess)
+            {
+            ASSERT_EQ(SUCCESS, DateTime::FromString(actualDt, dateStr));
+            ASSERT_EQ(expectedDt, actualDt);
+            }
+        else
+            ASSERT_EQ(ERROR, DateTime::FromString(actualDt, dateStr));
+        };
+
     //supported ISO strings
     WCharCP isoDateTime = L"2012-12-05";
-    DateTime expectedDate (2012, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    DateTime expectedDate(2012, 12, 5);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"-0001-12-05";
     expectedDate = DateTime(-1, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"-00011205";
     expectedDate = DateTime(-1, 12, 5);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"-0001-12-05T13:11:22Z";
     expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"-0001-12-05 13:11:22Z";
     expectedDate = DateTime(DateTime::Kind::Utc, -1, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"-00011205T1311";
     expectedDate = DateTime(DateTime::Kind::Unspecified, -1, 12, 5, 13, 11, 0);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"20131205T131122-01:45";
     expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"20131205 131122-01:45";
     expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
     isoDateTime = L"2013-12-05 13:11:22-0145";
     expectedDate = DateTime(DateTime::Kind::Local, 2013, 12, 5, 13, 11, 22);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = L"2012-12-05T13:11:00.1234567-01:34";
-    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = L"2012-12-05T13:11:00.123-01:34";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
 
-    isoDateTime = L"2012-12-05 13:11:00.1234567-01:34";
-    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 1234567);
-    DateTimeAsserter::AssertFromString (isoDateTime, expectedDate, true);
+    isoDateTime = L"2012-12-05 13:11:00.123-01:34";
+    expectedDate = DateTime(DateTime::Kind::Local, 2012, 12, 5, 13, 11, 0, 123);
+    assertFromString(isoDateTime, expectedDate, true);
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, GetCurrentTimeTests)
+TEST(DateTimeTests, GetCurrentTimeTests)
     {
-    DateTime currentTimeLocal = DateTime::GetCurrentTime ();
-    EXPECT_EQ ((int) DateTime::Kind::Local, (int) currentTimeLocal.GetInfo ().GetKind ());
-    EXPECT_EQ ((int) DateTime::Component::DateAndTime, (int) currentTimeLocal.GetInfo ().GetComponent ());
+    DateTime currentTimeLocal = DateTime::GetCurrentTime();
+    EXPECT_EQ((int) DateTime::Kind::Local, (int) currentTimeLocal.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) currentTimeLocal.GetInfo().GetComponent());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE (static_cast<int> (currentTimeLocal.GetYear ()), 2013) << Utf8PrintfString("CurrentTime is %s", currentTimeLocal.ToUtf8String().c_str()).c_str();
+    EXPECT_GE(static_cast<int> (currentTimeLocal.GetYear()), 2013) << Utf8PrintfString("CurrentTime is %s", currentTimeLocal.ToString().c_str()).c_str();
 
-    DateTime currentTimeUtc = DateTime::GetCurrentTimeUtc ();
-    EXPECT_EQ ((int) DateTime::Kind::Utc, (int) currentTimeUtc.GetInfo ().GetKind ());
-    EXPECT_EQ ((int) DateTime::Component::DateAndTime, (int) currentTimeUtc.GetInfo ().GetComponent ());
+    DateTime currentTimeUtc = DateTime::GetCurrentTimeUtc();
+    EXPECT_EQ((int) DateTime::Kind::Utc, (int) currentTimeUtc.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) currentTimeUtc.GetInfo().GetComponent());
     //Simple check only to avoid drasticly wrong implementations (as were seen on iOS)
-    EXPECT_GE (static_cast<int> (currentTimeUtc.GetYear ()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToUtf8String().c_str()).c_str();
+    EXPECT_GE(static_cast<int> (currentTimeUtc.GetYear()), 2013) << Utf8PrintfString("currentTimeUtc is %s", currentTimeUtc.ToString().c_str()).c_str();
     }
 
 //---------------------------------------------------------------------------------------
 // @betest                                      Krischan.Eberle                    10/12
 //---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ToUtcAndToLocalTests)
+TEST(DateTimeTests, ToUtcAndToLocalTests)
     {
-    DateTime localTime = DateTime::GetCurrentTime ();
-    
+    DateTime localTime = DateTime::GetCurrentTime();
+
     DateTime utc;
-    BentleyStatus stat = localTime.ToUtc (utc);
-    EXPECT_EQ (SUCCESS, stat);
-    EXPECT_EQ ((int) DateTime::Kind::Utc, (int) utc.GetInfo ().GetKind ());
-    EXPECT_EQ ((int) DateTime::Component::DateAndTime, (int) utc.GetInfo ().GetComponent ());
+    BentleyStatus stat = localTime.ToUtc(utc);
+    EXPECT_EQ(SUCCESS, stat);
+    EXPECT_EQ((int) DateTime::Kind::Utc, (int) utc.GetInfo().GetKind());
+    EXPECT_EQ((int) DateTime::Component::DateAndTime, (int) utc.GetInfo().GetComponent());
 
     DateTime localTime2;
-    stat = utc.ToLocalTime (localTime2);
-    EXPECT_EQ (SUCCESS, stat);
-    EXPECT_TRUE (localTime == localTime2);
+    stat = utc.ToLocalTime(localTime2);
+    EXPECT_EQ(SUCCESS, stat);
+    EXPECT_TRUE(localTime == localTime2);
 
     DateTime res;
-    stat = localTime.ToLocalTime (res);
-    EXPECT_EQ (ERROR, stat);
+    stat = localTime.ToLocalTime(res);
+    EXPECT_EQ(ERROR, stat);
 
-    stat = utc.ToUtc (res);
-    EXPECT_EQ (ERROR, stat);
+    stat = utc.ToUtc(res);
+    EXPECT_EQ(ERROR, stat);
 
-    DateTime unspec (2012, 10, 10);
-    stat = unspec.ToLocalTime (res);
-    EXPECT_EQ (ERROR, stat);
+    DateTime unspec(2012, 10, 10);
+    stat = unspec.ToLocalTime(res);
+    EXPECT_EQ(ERROR, stat);
 
-    stat = unspec.ToUtc (res);
-    EXPECT_EQ (ERROR, stat);
+    stat = unspec.ToUtc(res);
+    EXPECT_EQ(ERROR, stat);
     }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, TestsWithDatesBeforeGregorianCalendarReform)
-    {
-    DateTimeTestItemList testItemList;
-    DateTimeTestDataset::CreateBeforeGregorianCalendarReformTestDataset (testItemList);
-
-    DateTimeAsserter::Assert (testItemList);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-void RunTestsOnBaseTestDataset
-(
-)
-    {
-    DateTimeTestItemList testItemUtcList;
-    DateTimeTestDataset::CreateBaseTestDataset (testItemUtcList, DateTime::Kind::Utc);
-
-    DateTimeTestItemList testItemLocalList;
-    DateTimeTestDataset::CreateBaseTestDataset (testItemLocalList, DateTime::Kind::Local);
-    //local date tests can only be run if the current local time zone offset could be computed.
-    //if that failed (e.g. because the tests run on a platform not supported by these tests)
-    //the test date vector is empty.
-    const bool runLocalDateTimeTests = testItemLocalList.size () > 0;
-
-    DateTimeTestItemList testItemUnspecifiedList;
-    DateTimeTestDataset:: CreateBaseTestDataset (testItemUnspecifiedList, DateTime::Kind::Unspecified);
-
-    DateTimeAsserter::Assert (testItemUtcList);
-    DateTimeAsserter::Assert (testItemUnspecifiedList);
-    
-    if (runLocalDateTimeTests)
-        {
-        DateTimeAsserter::Assert (testItemLocalList);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionsTestsInCurrentTimezone)
-    {
-    LOG.info (L"Tests use the machine's current time zone setting.");
-    //not setting TZ here which means that the current time zone from the system settings is used instead
-    RunTestsOnBaseTestDataset ();
-    }
-
-
-#if defined(BENTLEY_WIN32)
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsInCET)
-    {
-    //Central European Time UTC+01
-    TzSetter tz;
-    tz.Set ("MEZ-1MESZ");
-
-    RunTestsOnBaseTestDataset ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsInUSEST)
-    {
-    //US Eastern Standard Time UTC-05
-    TzSetter tz;
-    tz.Set ("EST5EDT");
-
-    RunTestsOnBaseTestDataset ();
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsInAustralianEST)
-    {
-    //Australian Eastern Standard Time UTC+10
-    TzSetter tz;
-    tz.Set ("EST-10EDT");
-
-    RunTestsOnBaseTestDataset ();
-    }
-
-#endif
-
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionAccuracyTests)
-    {
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateAccuracyTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-#if defined(BENTLEY_WIN32) 
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsAtBrimOfUnixEpochInCET)
-    {
-    //Central European Time UTC+01
-    TzSetter tz;
-    tz.Set ("MEZ-1MESZ");
-
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateBrimOfUnixEpochCETTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsAtBrimOfUnixEpochInEST)
-    {
-    //US Eastern Standard Time UTC-05
-    TzSetter tz;
-    tz.Set ("EST5EDT");
-
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateBrimOfUnixEpochESTTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestDSTUK)
-    {
-    if (!TzSetter::CurrentMachineTimezoneObservesDst ())
-        {
-        LOG.info (L"Current machine's time zone does not observe DST. CRT functions on Windows return strange results for dates in DST. Therefore skipping DST tests.");
-        return;
-        }
-
-    // Greenwich mean time (UK) (UTC+00)
-    TzSetter tz;
-    tz.Set ("GMT0BST");
-
-    //Transition to and from DST is a bit undefined as more than one local time maps to one UTC point in time.
-    //The algo used in DateTime differs is in-synch with the SQLite algo.
-    //So these tests here use the values SQLite computes as expected values.
-
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateDstUKTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, ConversionTestsDSTEST)
-    {
-    if (!TzSetter::CurrentMachineTimezoneObservesDst ())
-        {
-        LOG.info (L"Current machine's time zone does not observe DST. CRT functions on Windows return strange results for dates in DST. Therefore skipping DST tests.");
-        return;
-        }
-
-    //US Eastern Standard Time UTC-05
-    TzSetter tz;
-    tz.Set ("EST5EDT");
-
-    //Transition to and from DST is a bit undefined as more than one local time maps to one UTC point in time.
-    //The algo used in DateTime differs is in-synch with the SQLite algo.
-    //So these tests here use the values SQLite computes as expected values.
-
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateDstUSESTTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-//---------------------------------------------------------------------------------------
-// @betest                                      Umar.Hayat                    02/16
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTests, DateTimeKindToString)
-    {
-    // To WString
-    EXPECT_STREQ(L"Local",       DateTime::Info::KindToStringW(DateTime::Kind::Local).c_str());
-    EXPECT_STREQ(L"Utc",         DateTime::Info::KindToStringW(DateTime::Kind::Utc).c_str());
-    EXPECT_STREQ(L"Unspecified", DateTime::Info::KindToStringW(DateTime::Kind::Unspecified).c_str());
-    // To Utf8String
-    EXPECT_STREQ("Local",       DateTime::Info::KindToString(DateTime::Kind::Local).c_str());
-    EXPECT_STREQ("Utc",         DateTime::Info::KindToString(DateTime::Kind::Utc).c_str());
-    EXPECT_STREQ("Unspecified", DateTime::Info::KindToString(DateTime::Kind::Unspecified).c_str());
-    }
-
-//***************************************************************************************
-//Test fixture which can only be run when the machine's time zone is CET
-//***************************************************************************************
-
-#if defined(CET_IS_SYSTEMTIMEZONE) 
-//---------------------------------------------------------------------------------------
-// @betest                                      Krischan.Eberle                    10/12
-//---------------------------------------------------------------------------------------
-TEST (DateTimeTestsWhenCETIsSystemTimezone, ConversionTestsDSTCET)
-    {
-    //these tests do not use the TZ env var to force the current time zone to be CET because 
-    //when using TZ the US DST rules are applied instead of the European ones. These tests want
-    //to cover the actual (i.e. European) rules though and therefore can only be run
-    //when the machine's current time zone is set to CET.
-
-    //Transition to and from DST is a bit undefined as more than one local time maps to one UTC point in time.
-    //The algo used in DateTime differs is in-synch with the SQLite algo.
-    //So these tests here use the values SQLite computes as expected values.
-    DateTimeTestItemList testDataset;
-    DateTimeTestDataset::CreateDstCETTestDataset (testDataset);
-    DateTimeAsserter::Assert (testDataset);
-    }
-
-#endif
-
-#endif
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Farhad.Kabir                    11/16
 //---------------------------------------------------------------------------------------
-TEST(DateTimeTests, JulianDayToCommonEraTicks)
+TEST(DateTimeTests, JulianDayToCommonEra)
     {
-
-    ///1487311632000000000
-    uint64_t expec_ticks = 636121728000000000;
-    uint64_t ticks = DateTime::JulianDayToCommonEraTicks(2123433360000000000); //julian day in hns for date 1026/16/10
+    uint64_t expec_ticks = 63612172800000;
+    uint64_t ticks = DateTime::JulianDayToCommonEraMilliseconds(212343336000000);
     EXPECT_EQ(expec_ticks, ticks);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Farhad.Kabir                    11/16
 //---------------------------------------------------------------------------------------
-TEST(DateTimeTests, CommonEraTicksToJulianDay)
+TEST(DateTimeTests, CommonEraToJulianDay)
     {
-    uint64_t expec_jday = 2123433360000000000;
-    uint64_t jday = DateTime::CommonEraTicksToJulianDay(636121728000000000); //common era ticks in hns for date 1026/16/10
+    uint64_t expec_jday = 212343336000000;
+    uint64_t jday = DateTime::CommonEraMillisecondsToJulianDay(63612172800000);
     EXPECT_EQ(expec_jday, jday);
     }
 
@@ -1124,57 +832,91 @@ TEST(DateTimeTests, CompareDates)
 
     ASSERT_TRUE(date1.IsValid());
     ASSERT_TRUE(date2.IsValid());
-    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date1, date2));
-    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date2, date1));
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(date1, date2));
+    EXPECT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(date2, date1));
     date1 = date2;
-    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date2, date1));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date2, date1));
 
     //Date and Date Time Objects
-    DateTime date3(DateTime::Kind::Utc, 2014, 13, 13, 22, 3, 12, 8888000);
+    DateTime date3(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 888);
     DateTime date4(2014, 04, 13);
 
     ASSERT_TRUE(date3.IsValid());
     ASSERT_TRUE(date4.IsValid());
-    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date3, date4));
-    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date4, date3));
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(date3, date4));
+    EXPECT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(date4, date3));
     date3 = date4;
-    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date4, date3));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date4, date3));
 
     //DateTime Utc Objects
-    DateTime date5(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 8888000);
-    DateTime date6(DateTime::Kind::Utc, 2015, 10, 13, 22, 3, 12, 8888001);
+    DateTime date5(DateTime::Kind::Utc, 2014, 02, 13, 22, 3, 12, 888);
+    DateTime date6(DateTime::Kind::Utc, 2015, 10, 13, 22, 3, 12, 889);
 
     ASSERT_TRUE(date5.IsValid());
     ASSERT_TRUE(date6.IsValid());
-    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date5, date6));
-    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date6, date5));
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(date5, date6));
+    EXPECT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(date6, date5));
     date5 = date6;
-    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date6, date5));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date6, date5));
 
     //DateTime Local Objects
-    DateTime date7(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888000);
-    DateTime date8(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 8888012);
+    DateTime date7(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 888);
+    DateTime date8(DateTime::Kind::Local, 2014, 02, 13, 22, 3, 12, 889);
 
     ASSERT_TRUE(date7.IsValid());
     ASSERT_TRUE(date8.IsValid());
-    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date7, date8));
-    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date8, date7));
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(date7, date8));
+    EXPECT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(date8, date7));
     date7 = date8;
-    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date8, date7));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date8, date7));
 
     //DateTime Unspecified Objects
-    DateTime date9(DateTime::Kind::Unspecified, 2014, 01, 13, 22, 3, 12, 888000);
-    DateTime date10(DateTime::Kind::Unspecified, 2014, 02, 13, 22, 3, 12, 888000);
+    DateTime date9(DateTime::Kind::Unspecified, 2014, 01, 13, 22, 3, 12, 888);
+    DateTime date10(DateTime::Kind::Unspecified, 2014, 02, 13, 22, 3, 12, 888);
     ASSERT_TRUE(date9.IsValid());
     ASSERT_TRUE(date10.IsValid());
-    EXPECT_EQ((int)DateTime::CompareResult::EarlierThan, (int)DateTime::Compare(date9, date10));
-    EXPECT_EQ((int)DateTime::CompareResult::LaterThan, (int)DateTime::Compare(date10, date9));
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(date9, date10));
+    EXPECT_EQ((int) DateTime::CompareResult::LaterThan, (int) DateTime::Compare(date10, date9));
     date9 = date10;
-    EXPECT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date10, date9));
+    EXPECT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date10, date9));
 
     //Invalid DateTime Objects
     DateTime date11;
     DateTime date12;
     ASSERT_TRUE(!date11.IsValid());
-    ASSERT_EQ((int)DateTime::CompareResult::Equals, (int)DateTime::Compare(date11, date12));
+    ASSERT_EQ((int) DateTime::CompareResult::Equals, (int) DateTime::Compare(date11, date12));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Farhad.Kabir                    11/16
+//---------------------------------------------------------------------------------------
+TEST(DateTimeTests, ComputeOffsetToUtcInMsec)
+    {
+    DateTime date(2013, 02, 14);
+    ASSERT_TRUE(date.IsValid());
+
+    int64_t offset = 0;
+    ASSERT_EQ(SUCCESS, date.ComputeOffsetToUtcInMsec(offset));
+    EXPECT_EQ(0, offset);
+
+    DateTime date1(DateTime::Kind::Unspecified, 2013, 02, 14, 23, 23, 56, 888);
+    ASSERT_TRUE(date1.IsValid());
+
+    offset = 0;
+    ASSERT_EQ(SUCCESS, date1.ComputeOffsetToUtcInMsec(offset));
+    EXPECT_EQ(0, offset);
+
+    DateTime date2(DateTime::Kind::Utc, 2013, 02, 14, 23, 23, 56, 888);
+    ASSERT_TRUE(date2.IsValid());
+
+    offset = 0;
+    ASSERT_EQ(SUCCESS, date2.ComputeOffsetToUtcInMsec(offset));
+    EXPECT_EQ(0, offset);
+
+    DateTime local(DateTime::Kind::Local, 2012, 02, 14, 23, 23, 56, 888);
+    ASSERT_TRUE(local.IsValid());
+    //WIP How can this work on machines outside the UTC-1 or UTC+1 timezone?
+    //offset = 0;
+    //ASSERT_EQ(SUCCESS, local.ComputeOffsetToUtcInMsec(offset)) << "This is Offset " << offset;
+    //ASSERT_EQ(18000000, offset) << "This is Offset " << offset;
     }

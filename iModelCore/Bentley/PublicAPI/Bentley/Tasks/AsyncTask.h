@@ -132,8 +132,13 @@ struct EXPORT_VTABLE_ATTRIBUTE AsyncTask : public std::enable_shared_from_this<A
 
         BENTLEYDLL_EXPORT Priority GetPriority () const;
 
-        //! Block current thread and wait for task to be completed. WARNING - might cause dead lock.
+        //! Block current thread and wait for task to be completed.
+        //! WARNING - not recommended unless your design requires synchronizing async code execution to one thread.
+        //! WARNING - might cause dead lock if used inproperly. Example - waiting in thread that also would be used to complete same task.
+        //! WARNING - never use within Default sheduler threads - will produce assert. Redesign to async code or use custom thread for wait.
         BENTLEYDLL_EXPORT void Wait ();
+
+        //! Waits for specified amount of time for task completion. See Wait()
         BENTLEYDLL_EXPORT void WaitFor (int milliseconds);
 
         BENTLEYDLL_EXPORT void Execute ();
