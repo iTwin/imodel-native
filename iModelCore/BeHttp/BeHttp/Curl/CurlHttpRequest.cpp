@@ -14,6 +14,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/Base64Utilities.h>
 #include <BeHttp/HttpClient.h>
+#include <map>
 #include "../WebLogging.h"
 
 USING_NAMESPACE_BENTLEY_HTTP
@@ -733,15 +734,16 @@ ConnectionStatus CurlHttpRequest::GetConnectionStatus(CURLcode curlStatus)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String CurlHttpRequest::GetDebugStatusString(ConnectionStatus status, HttpStatus httpStatus)
     {
-    static bmap<ConnectionStatus, Utf8String> connectionStatusStrings;
-    connectionStatusStrings[ConnectionStatus::Canceled] = "Canceled";
-    connectionStatusStrings[ConnectionStatus::ConnectionLost] = "ConnectionLost";
-    connectionStatusStrings[ConnectionStatus::CouldNotConnect] = "CouldNotConnect";
-    connectionStatusStrings[ConnectionStatus::CertificateError] = "CertificateError";
-    connectionStatusStrings[ConnectionStatus::None] = "None";
-    connectionStatusStrings[ConnectionStatus::OK] = "OK";
-    connectionStatusStrings[ConnectionStatus::Timeout] = "Timeout";
-    connectionStatusStrings[ConnectionStatus::UnknownError] = "UnknownError";
+    static std::map<ConnectionStatus, Utf8String> connectionStatusStrings = {
+            {ConnectionStatus::Canceled, "Canceled"},
+            {ConnectionStatus::ConnectionLost, "ConnectionLost"},
+            {ConnectionStatus::CouldNotConnect, "CouldNotConnect"},
+            {ConnectionStatus::CertificateError, "CertificateError"},
+            {ConnectionStatus::None, "None"},
+            {ConnectionStatus::OK, "OK"},
+            {ConnectionStatus::Timeout, "Timeout"},
+            {ConnectionStatus::UnknownError, "UnknownError"},
+        };
 
     if (status == ConnectionStatus::OK)
         {
