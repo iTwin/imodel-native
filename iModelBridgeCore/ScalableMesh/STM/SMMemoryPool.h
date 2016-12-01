@@ -29,11 +29,12 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 class Spinlock
 {
 private:
-    std::atomic_flag lockFlag = ATOMIC_FLAG_INIT;
+    std::atomic_flag lockFlag; 
 public:
 
     Spinlock()
     {
+    lockFlag.clear();
     }
 
     void lock()
@@ -1167,7 +1168,7 @@ class SMMemoryPool : public RefCountedBase
         uint64_t                                  m_maxPoolSizeInBytes;
         atomic<uint64_t>                          m_currentPoolSizeInBytes;
         bvector<bvector<SMMemoryPoolItemBasePtr>> m_memPoolItems;
-        bvector<bvector<Spinlock*>>             m_memPoolItemMutex;
+        bvector<bvector<Spinlock*>>               m_memPoolItemMutex;
         bvector<bvector<clock_t>>                 m_lastAccessTime;
         uint64_t                                  m_nbBins;
         mutex                                     m_increaseBinMutex;
