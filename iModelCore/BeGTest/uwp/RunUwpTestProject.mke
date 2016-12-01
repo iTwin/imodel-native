@@ -51,7 +51,7 @@ always:
     !~@mkdir ${UWPTEST_OUTPUT_DIR}
 
 %if !defined (RUN_UWP_TESTS)
-    %warn To run Uwp CppUnitTests, define RUN_UWP_TESTS
+    %message To run Uwp CppUnitTests, define RUN_UWP_TESTS
     always:
         >$(logFile)
         CppUnitTests were not run
