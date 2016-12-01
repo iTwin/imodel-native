@@ -14,7 +14,7 @@
 struct SolrClientTests : public WSClientBaseTest
     {
     StubLocalState m_localState;
-    std::shared_ptr<ProxyHttpHandler> m_proxy;
+    IHttpHandlerPtr m_proxy;
     Utf8String m_serverUrl;
     Credentials m_credentials;
     void SetUp();
