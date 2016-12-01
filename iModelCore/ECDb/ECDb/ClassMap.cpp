@@ -1021,37 +1021,24 @@ ColumnFactory::ColumnFactory(ECDbCR ecdb, ClassMapCR classMap) : m_ecdb(ecdb), m
 //------------------------------------------------------------------------------------------
 DbColumn* ColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
     {
+    if (!CanEnforceColumnConstraints() &&
+        (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default))
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                                                        "For the ECProperty '%s' on ECClass '%s' either a NOT NULL, UNIQUE or COLLATE constraint is defined. The constraint cannot be enforced though because "
+                                                        "the ECProperty is mapped to a column shared with other ECProperties or the ECProperty has base ECClasses mapped to the same table.",
+                                                        ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
+
+        addNotNullConstraint = false;
+        addUniqueConstraint = false;
+        collation = DbColumn::Constraints::Collation::Default;
+        }
+
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
-        {
-        // Shared column does not support NOT NULL constraint -> omit NOT NULL and issue warning
-        if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
-            {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. It is mapped "
-                                                          "to a column though shared with other ECProperties. Therefore ECDb cannot enforce any of these constraints. "
-                                                          "The column is created without constraints.",
-                                                          ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
-
-            }
-
-           
         outColumn = ApplySharedColumnStrategy(colType, addNotNullConstraint, addUniqueConstraint, collation);
-        }
     else
-        {
-        if (GetTable().HasExclusiveRootECClass() && GetTable().GetExclusiveRootECClassId() != m_classMap.GetClass().GetId())
-            {
-            if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
-                {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. The ECClass has base classes though "
-                                                                "mapped to the same table so that the constraints cannot be enforced by the database.",
-                                                                ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
-                return nullptr;
-                }
-            }
-
         outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
-        }
 
     if (outColumn == nullptr)
         {
@@ -1081,9 +1068,10 @@ DbColumn* ColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::E
             return existingColumn;
             }
 
-        LOG.warningv("Column %s in table %s is used by multiple property maps where property name and data type matches,"
-                     " but where 'Nullable', 'Unique', or 'Collation' differs, and which will therefore be ignored for some of the properties.",
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,"Column %s in table %s is used by multiple property maps where property name and data type matches,"
+                     " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
                      existingColumn->GetName().c_str(), GetTable().GetName().c_str());
+        return nullptr;
         }
 
     const ECClassId classId = GetPersistenceClassId(ecProp, accessString);
@@ -1280,6 +1268,15 @@ BentleyStatus ColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>& 
 
     return SUCCESS;
     }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    12/2016
+//------------------------------------------------------------------------------------------
+bool ColumnFactory::CanEnforceColumnConstraints() const
+    {
+    return !m_usesSharedColumnStrategy && (!GetTable().HasExclusiveRootECClass() || GetTable().GetExclusiveRootECClassId() == m_classMap.GetClass().GetId());
+    }
+
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015

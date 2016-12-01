@@ -66,6 +66,7 @@ struct ColumnFactory : NonCopyableClass
         bool IsColumnInUseByClassMap(DbColumn const&) const;
         void CacheUsedColumn(DbColumn const&) const;
 
+        bool CanEnforceColumnConstraints() const;
         BentleyStatus GetDerivedColumnList(std::vector<DbColumn const*>&) const;
 
         DbTable& GetTable() const;
