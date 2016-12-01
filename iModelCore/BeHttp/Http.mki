@@ -13,6 +13,7 @@ HttpHeaders + $(BeHttpPublicApiDir)AuthenticationHandler.h
 HttpHeaders + $(BeHttpPublicApiDir)Credentials.h
 HttpHeaders + $(BeHttpPublicApiDir)DefaultHttpHandler.h
 HttpHeaders + $(BeHttpPublicApiDir)HttpBody.h
+HttpHeaders + $(BeHttpPublicApiDir)HttpBodyCompressionOptions.h
 HttpHeaders + $(BeHttpPublicApiDir)HttpClient.h
 HttpHeaders + $(BeHttpPublicApiDir)HttpConfigurationHandler.h
 HttpHeaders + $(BeHttpPublicApiDir)HttpError.h

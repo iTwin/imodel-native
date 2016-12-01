@@ -26,12 +26,19 @@ static BeAtomic<int> s_tasksInProgressCount;
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void HttpClient::Initialize(BeFileNameCR assetsDirectoryPath) {s_assetsDirectoryPath = assetsDirectoryPath;}
+void HttpClient::Initialize(BeFileNameCR assetsDirectoryPath) 
+    {
+    s_assetsDirectoryPath = assetsDirectoryPath;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                    Grigas.Petraitis                07/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR HttpClient::GetAssetsDirectoryPath() {return s_assetsDirectoryPath;}
+BeFileNameCR HttpClient::GetAssetsDirectoryPath() 
+    {
+    BeAssert(!s_assetsDirectoryPath.empty() && "HttpClient::Initialize() not called!");
+    return s_assetsDirectoryPath;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2013
@@ -113,6 +120,7 @@ Request HttpClient::CreateRequest(Utf8StringCR url, Utf8StringCR method) const
 
     m_defaultHeadersProvider->FillHttpRequestHeaders(request.GetHeaders());
     request.SetCredentials(m_credentials);
+    request.SetCompressionOptions(m_compressionOptions);
 
     return request;
     }

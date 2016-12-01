@@ -51,7 +51,7 @@
     <ClInclude Include="Published\AuthenticationHandlerTests.h" />
     <ClInclude Include="Published\BaseMockHttpHandlerTest.h" />
     <ClInclude Include="Published\FSTest.h" />
-    <ClInclude Include="Published\HttpBody\CompressedBodyTests.h" />
+    <ClInclude Include="Published\HttpBody\HttpCompressedBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpBinaryBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpFileBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpMultipartBodyTests.h" />

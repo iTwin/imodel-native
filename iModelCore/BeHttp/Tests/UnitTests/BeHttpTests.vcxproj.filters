@@ -42,8 +42,8 @@
     <ClInclude Include="Published\HttpBody\HttpMultipartBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpRangeBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpStringBodyTests.h" />
-    <ClInclude Include="Published\HttpBody\CompressedBodyTests.h" />
     <ClInclude Include="Published\HttpBody\HttpBinaryBodyTests.h" />
     <ClInclude Include="Published\TestIntegration\Http\HttpRequestTests.h" />
+    <ClInclude Include="Published\HttpBody\HttpCompressedBodyTests.h" />
   </ItemGroup>
 </Project>

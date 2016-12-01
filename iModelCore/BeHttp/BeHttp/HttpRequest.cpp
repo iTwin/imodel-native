@@ -16,7 +16,8 @@ USING_NAMESPACE_BENTLEY_TASKS
 +---------------+---------------+---------------+---------------+---------------+------*/
 Request::Request(Utf8StringCR url, Utf8StringCR method, IHttpHandlerPtr customHandler) :
     m_url(EscapeUnsafeSymbolsInUrl(url)), m_method(method), m_responseBody(HttpStringBody::Create()),
-    m_httpHandler(customHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHandler)
+    m_httpHandler(customHandler == nullptr ? DefaultHttpHandler::GetInstance() : customHandler),
+    m_compressionOptions()
     {
     }
 
