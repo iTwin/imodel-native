@@ -43,17 +43,17 @@ TEST_F(CreateFromInstanceTests, SpatialCategory)
 
     Utf8PrintfString json(
         "{"
-        "\"CodeAuthorityId\" : \"%d\","
+        "\"CodeAuthority\" : {\"Id\" : \"%d\"},"
         "\"CodeNamespace\" : \"\","
         "\"CodeValue\" : \"Hub\","
         "\"Descr\" : \"\","
-        "\"ModelId\" : {\"Id\" : \"16\"},"
-        "\"ParentId\" : null,"
+        "\"Model\" : {\"Id\" : \"16\"},"
+        "\"Parent\" : null,"
         "\"Rank\" : 1,"
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null"
         "}", 
-        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_SpatialCategory).GetValue()));
+        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_SpatialCategory).GetValue())); // value for CodeAuthority.Id
 
     DgnElementPtr inserted = nullptr;
     CreateAndInsertElement(inserted, json.c_str(), BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialCategory);
@@ -74,11 +74,11 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"$ECClassLabel\" : \"CameraViewDefinition\","
         "\"$ECInstanceId\" : \"502\","
         "\"$ECInstanceLabel\" : \"CameraViewDefinition\","
-        "\"CodeAuthorityId\" : {\"Id\" : \"4\"},"
+        "\"CodeAuthority\" : {\"Id\" : \"4\"},"
         "\"CodeNamespace\" : \"ViewDefinition\","
         "\"CodeValue\" : \"Default - View 1\","
         "\"Descr\" : \"\","
-        "\"ModelId\" : {\"Id\" : \"16\"},"
+        "\"Model\" : {\"Id\" : \"16\"},"
         "\"Extents\" : {"
             "\"x\" : 85.413445258737553,"
             "\"y\" : 76.125601109667528,"
@@ -89,14 +89,14 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
             "\"y\" : 69.335060236322079,"
             "\"z\" : 68.339134990346963"
         "},"
-        "\"FocusDistance\" : 100.61073354297713,"
-        "\"LensAngle\" : 0.80285145591739238,"
+        "\"FocusDistance\" : 100.610733542977,"
+        "\"LensAngle\" : 0.802851455917392,"
         "\"Origin\" : {"
             "\"x\" : 338.90639657040640,"
             "\"y\" : 174.64311379840612,"
             "\"z\" : -53.387925168591018"
         "},"
-        "\"ParentId\" : null,"
+        "\"Parent\" : null,"
         "\"Pitch\" : -35.264389682754654,"
         "\"Roll\" : -45.000000000000007,"
         "\"Source\" : 2,"
@@ -132,25 +132,25 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     auto camera = m_db->Elements().Get<CameraViewDefinition>(viewElement->GetElementId());
     ASSERT_TRUE(camera.IsValid());
     DPoint3d eyepoint = camera->GetEyePoint();
-    ASSERT_TRUE(293.99476935528162 == eyepoint.x);
-    ASSERT_TRUE(69.335060236322079 == eyepoint.y);
-    ASSERT_TRUE(68.339134990346963 == eyepoint.z);
-    ASSERT_TRUE(100.61073354297713 == camera->GetFocusDistance());
-    ASSERT_TRUE(0.80285145591739238 == camera->GetLensAngle());
+    ASSERT_EQ(293.99476935528162, eyepoint.x);
+    ASSERT_EQ(69.335060236322079, eyepoint.y);
+    ASSERT_EQ(68.339134990346963, eyepoint.z);
+    ASSERT_EQ(100.610733542977, camera->GetFocusDistance());
+    ASSERT_EQ(0.802851455917392, camera->GetLensAngle());
 
     DPoint3d origin = camera->GetOrigin();
-    ASSERT_TRUE(338.90639657040640 == origin.x);
-    ASSERT_TRUE(174.64311379840612 == origin.y);
-    ASSERT_TRUE(-53.387925168591018 == origin.z);
+    ASSERT_EQ(338.90639657040640, origin.x);
+    ASSERT_EQ(174.64311379840612, origin.y);
+    ASSERT_EQ(-53.387925168591018, origin.z);
 
     DPoint3d extents = camera->GetExtents();
-    ASSERT_TRUE(85.413445258737553 == extents.x);
-    ASSERT_TRUE(76.125601109667528 == extents.y);
-    ASSERT_TRUE(112.79558108349732 == extents.z);
+    ASSERT_EQ(85.413445258737553, extents.x);
+    ASSERT_EQ(76.125601109667528, extents.y);
+    ASSERT_EQ(112.79558108349732, extents.z);
 
     YawPitchRollAngles angles;
     YawPitchRollAngles::TryFromRotMatrix(angles, camera->GetRotation());
-    ASSERT_TRUE(29.999999999999986 == angles.GetYaw().Degrees());
-    ASSERT_TRUE(-35.264389682754654 == angles.GetPitch().Degrees());
-    ASSERT_TRUE(-45.000000000000007 == angles.GetRoll().Degrees());
+    ASSERT_EQ(29.999999999999986, angles.GetYaw().Degrees());
+    ASSERT_EQ(-35.264389682754654, angles.GetPitch().Degrees());
+    ASSERT_EQ(-45.000000000000007, angles.GetRoll().Degrees());
     }

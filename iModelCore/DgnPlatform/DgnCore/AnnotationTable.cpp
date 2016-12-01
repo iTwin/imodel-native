@@ -264,7 +264,7 @@ static double   getNonWrappedLength (AnnotationTextBlockCR textBlock)
 static Utf8String buildECSqlInsertString (Utf8CP schemaName, Utf8CP className, bvector<Utf8String> const& propertyNames, ECClassId relClassId)
     {
     Utf8PrintfString ecSql("INSERT INTO %s.%s (" PARAM_Element_Id "," PARAM_Element_RelECClassId ",", schemaName, className);
-    Utf8PrintfString values(":" PARAM_Element_Id ",%llu", relClassId.GetValue());
+    Utf8PrintfString values("?,%" PRIu64 ",", relClassId.GetValue());
 
     bool addedOne = false;
     for (Utf8StringCR propertyName : propertyNames)
@@ -303,7 +303,7 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
         addedOne = true;
         }
 
-    ecSql.append(" WHERE " PARAM_Element_Id "= :" PARAM_Element_Id);
+    ecSql.append(" WHERE " PARAM_Element_Id "=?");
 
     if (!isUniqueAspect)
         ecSql.append(" AND " PARAM_ECInstanceId "= :" PARAM_ECInstanceId);
@@ -572,7 +572,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
     {
-    statement.BindId(statement.GetParameterIndex(PARAM_Element_Id), GetTable().GetElementId());
+    statement.BindId(1, GetTable().GetElementId()); // PARAM_Element_Id is always the first parameter
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
         statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());

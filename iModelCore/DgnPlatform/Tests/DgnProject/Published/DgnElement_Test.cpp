@@ -2112,7 +2112,7 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_TRUE(elementB.IsValid());
     ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
     bset<Utf8String> ignoreProps;
-    ignoreProps.insert("ModelId");
+    ignoreProps.insert("Model");
     DgnElement::ComparePropertyFilter filter(ignoreProps);
     ASSERT_TRUE(elementA->Equals(*elementB, filter));
 

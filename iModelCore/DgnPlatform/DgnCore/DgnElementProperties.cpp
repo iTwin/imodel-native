@@ -439,7 +439,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
-    DgnModelId mid;
+    DgnModelId modelId;
         {
         ECN::ECValue v;
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_Model) || v.IsNull())
@@ -447,8 +447,8 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
-        mid = DgnModelId((uint64_t)v.GetLong());
-        if (!mid.IsValid())
+        modelId = DgnModelId(static_cast<uint64_t>(v.GetNavigationInfo().GetIdAsLong()));
+        if (!modelId.IsValid())
             {
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
@@ -470,7 +470,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
-        DgnAuthorityId id((uint64_t) v.GetLong());
+        DgnAuthorityId authorityId(static_cast<uint64_t>(v.GetNavigationInfo().GetIdAsLong()));
 
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
             {
@@ -486,10 +486,10 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code.From(id, v.GetUtf8CP(), codeName);
+        code.From(authorityId, v.GetUtf8CP(), codeName);
         }
 
-    DgnElement::CreateParams params(db, mid, classId, code);
+    DgnElement::CreateParams params(db, modelId, classId, code);
 
     auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
     if (!ecinstanceid.empty())

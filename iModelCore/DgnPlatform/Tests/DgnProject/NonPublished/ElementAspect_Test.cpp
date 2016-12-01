@@ -224,7 +224,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
     if (true)
         {
         // Verify that the a1's property is unchanged and a2's property was changed in the Db
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId.Id=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
         stmt->BindId(1, a1id);
         ASSERT_EQ(BE_SQLITE_ROW , stmt->Step() );
         ASSERT_STREQ( "1" , stmt->GetValueText(0) );
@@ -245,7 +245,7 @@ TEST_F(ElementAspectTests, MultiAspect_CRUD)
         m_db->SaveChanges();
 
         //Verify that it is not in the db now and other one is still there.
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId.Id=?)");
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE (ECInstanceId=?)");
         stmt->BindId(1, a1id);
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
         ASSERT_STREQ("1", stmt->GetValueText(0));
