@@ -512,7 +512,7 @@ Utf8String TilePublisher::AddPolylineShaderTechnique (Json::Value& rootNode)
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    static char         *s_programName                    = "polylineProgram",
+    static char const   *s_programName                    = "polylineProgram",
                         *s_vertexShaderName               = "polylineVertexShader",
                         *s_fragmentShaderName             = "polylineFragmentShader",
                         *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
@@ -783,7 +783,7 @@ void    TilePublisher::AddBinaryData (void const* data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max)
+void TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max)
     {
     size_t              nValues = nComponents * nAttributes;
     size_t              dataSize;

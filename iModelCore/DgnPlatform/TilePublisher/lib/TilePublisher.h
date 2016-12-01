@@ -169,7 +169,7 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
+    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
 
     BeFileName  GetBinaryDataFileName() const;
@@ -223,7 +223,7 @@ private:
     BentleyStatus           ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
 
 
-    template <typename T> BentleyStatus  TileReader::ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
+    template <typename T> BentleyStatus  ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
         {
         bvector <double>    values;
         size_t              nComponents = sizeof(T)/sizeof(double);

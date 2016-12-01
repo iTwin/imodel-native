@@ -11,7 +11,7 @@
 
 static int s_debug = 0;
 
-static char *tokenToString (int eClass)
+static char const*tokenToString (int eClass)
     {
     if (eClass == PK_CLASS_vertex)
         return "VRTX";
