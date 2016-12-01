@@ -1138,8 +1138,8 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
-    ECEntityClassCP leftAbstract = left.GetAbstractConstraint();
-    ECEntityClassCP rightAbstract = right.GetAbstractConstraint();
+    ECClassCP leftAbstract = left.GetAbstractConstraint();
+    ECClassCP rightAbstract = right.GetAbstractConstraint();
     if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0))
         diff->Add(DiffNodeId::AbstractConstraint)->SetValue(leftAbstract->GetFullName(), rightAbstract->GetFullName());
 
@@ -2221,7 +2221,11 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         mergedConstraint.SetAbstractConstraint(v->GetValueString());
     else
         if (defaultContraint)
-            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
+            {
+            ECInterfaceClassCP interfaceClass = defaultContraint->GetAbstractConstraint()->GetInterfaceClassCP();
+            ECEntityClassCP entityClass = defaultContraint->GetAbstractConstraint()->GetEntityClassCP();
+            (nullptr == interfaceClass) ? mergedConstraint.SetAbstractConstraint(*entityClass) : mergedConstraint.SetAbstractConstraint(*interfaceClass);
+            }
 
     set<Utf8String> constraintClasses;
     if (defaultContraint)
@@ -2493,7 +2497,7 @@ MergeStatus ECSchemaMergeTool::MergeProperty (ECDiffNodeP diff, ECClassR mergedC
             ECStructClassCP structTypeClass = typeClass->GetStructClassCP();
             if (structTypeClass == NULL)
                 return MergeStatus::Failed;
-            if (mergedClass.CreateStructArrayProperty (newStructProperty, defaultProperty->GetName(), structTypeClass) != ECObjectsStatus::Success)
+            if (mergedClass.CreateStructArrayProperty (newStructProperty, defaultProperty->GetName(), *structTypeClass) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
             newProperty = newStructProperty;
             }
@@ -2602,7 +2606,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
         ArrayECPropertyP newProperty;
         if (srcProperty->GetKind() == ARRAYKIND_Struct)
             {
-            ECClassCP resolvedType = srcProperty->GetAsStructArrayProperty()->GetStructElementType();
+            ECClassCP resolvedType = &srcProperty->GetAsStructArrayProperty()->GetStructElementType();
             if (IsPartOfMergeSchema(*resolvedType))
                 {
                 status = ResolveClassFromMergeContext (resolvedType, resolvedType->GetName().c_str());
@@ -2617,7 +2621,7 @@ MergeStatus ECSchemaMergeTool::AppendPropertyToMerge(ECClassR mergeClass,ECPrope
                 return MergeStatus::ErrorClassNotFound;
 
             StructArrayECPropertyP newStructProp;
-            if (mergeClass.CreateStructArrayProperty(newStructProp, srcProperty->GetName(), resolvedStructType) != ECObjectsStatus::Success)
+            if (mergeClass.CreateStructArrayProperty(newStructProp, srcProperty->GetName(), *resolvedStructType) != ECObjectsStatus::Success)
                 return MergeStatus::Failed;
             newProperty = newStructProp;
             }

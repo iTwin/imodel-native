@@ -36,6 +36,9 @@ struct SubCondition
 
         //! Constructor.
         ECOBJECTS_EXPORT SubCondition (Utf8StringCR condition);
+        
+        //! Copy constructor.
+        ECOBJECTS_EXPORT SubCondition(SubConditionCR);
 
         //! Destructor.
         ECOBJECTS_EXPORT                                ~SubCondition (void);
@@ -87,6 +90,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ChildNodeRule : public PresentationRule
 
         //! Constructor.
         ECOBJECTS_EXPORT ChildNodeRule (Utf8StringCR condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree);
+
+        //! Copy constructor.
+        ECOBJECTS_EXPORT ChildNodeRule(ChildNodeRuleCR);
 
         //! Destructor.
         ECOBJECTS_EXPORT virtual ~ChildNodeRule (void);

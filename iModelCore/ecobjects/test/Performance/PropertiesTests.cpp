@@ -64,7 +64,7 @@ TEST_F(PerformancePropertiesTest, AddArrayElements)
     struct1->CreatePrimitiveProperty (primProp, "String", PRIMITIVETYPE_String);
 
     StructArrayECPropertyP structArrayProp;
-    classA->CreateStructArrayProperty (structArrayProp, "StructArray", struct1);
+    classA->CreateStructArrayProperty (structArrayProp, "StructArray", *struct1);
     bmap<Utf8String, double> results;
     AddElementsOneAtATime(classA, "IntArray", results, TEST_DETAILS);
     AddElementsOneAtATime(classA, "StringArray", results, TEST_DETAILS);

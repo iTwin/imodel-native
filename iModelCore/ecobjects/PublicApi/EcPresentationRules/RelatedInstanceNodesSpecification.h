@@ -59,6 +59,9 @@ struct EXPORT_VTABLE_ATTRIBUTE RelatedInstanceNodesSpecification : public ChildN
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT virtual void                 _WriteXml (BeXmlNodeP xmlNode) const override;
+        
+        //! Clones this specification.
+        virtual ChildNodeSpecification* _Clone() const override {return new RelatedInstanceNodesSpecification(*this);}
 
     public:
         //! Constructor. It is used to initialize the rule with default settings.

@@ -151,9 +151,17 @@
 
 #define SEARCH_RESULT_INSTANCE_NODES_SPECIFICATION_XML_NODE_NAME                      "SearchResultInstances"
 
-#define SEARCH_QUERY_SPECIFICATION_XML_NODE_NAME                                      "Query"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_SCHEMA_NAME                          "SchemaName"
 #define SEARCH_QUERY_SPECIFICATION_XML_ATTRIBUTE_CLASS_NAME                           "ClassName"
+#define STRING_QUERY_SPECIFICATION_XML_NODE_NAME                                      "StringQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_NODE_NAME                            "PropertyValueQuery"
+#define ECPROPERTY_VALUE_QUERY_SPECIFICATION_XML_ATTRIBUTE_PARENT_PROPERTY_NAME       "ParentPropertyName"
+
+#define RELATED_INSTANCE_SPECIFICATION_XML_NODE_NAME                                  "RelatedInstance"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                        "ClassName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPNAME                 "RelationshipName"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_RELATIONSHIPDIRECTION            "RelationshipDirection"
+#define RELATED_INSTANCE_SPECIFICATION_XML_ATTRIBUTE_ALIAS                            "Alias"
 
 //ContentSpecifications
 #define CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES                                "ShowImages"
@@ -172,3 +180,8 @@
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME                                   "HiddenProperties"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME                         "ClassName"
 #define HIDDEN_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES                     "PropertyNames"
+
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME                               "CalculatedProperties"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME                              "Property"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_LABEL                         "Label"
+#define CALCULATED_PROPERTIES_SPECIFICATION_XML_ATTRIBUTE_PRIORITY                      "Priority"

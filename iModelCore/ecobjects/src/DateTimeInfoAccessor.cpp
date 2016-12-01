@@ -13,7 +13,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 // @bsimethod                                    Krischan.Eberle                 02/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty)
+ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty)
     {
     PrimitiveArrayECPropertyCP arrayDateTimeProp = nullptr;
     PRECONDITION((dateTimeProperty.GetIsPrimitive() && dateTimeProperty.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_DateTime) ||
@@ -30,8 +30,7 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTimeInfoR dateTimeInfo, ECProp
 
     if (caInstance == nullptr)
         {
-        //no CA found -> return a DateTimeInfo for which both Kind and Component are set to unset
-        dateTimeInfo = DateTimeInfo();
+        //no CA found -> return without modifying the out parameter
         return ECObjectsStatus::Success;
         }
 
@@ -65,7 +64,21 @@ ECObjectsStatus DateTimeInfoAccessor::GetFrom(DateTimeInfoR dateTimeInfo, ECProp
     if (!TryParseComponent(isComponentNull, component, caVal))
         return ECObjectsStatus::ParseError;
 
-    dateTimeInfo = DateTimeInfo(isKindNull, kind, isComponentNull, component);
+    if (!isComponentNull && component == DateTime::Component::Date)
+        {
+        if (!isKindNull)
+            {
+            LOG.errorv("Invalid 'DateTimeInfo' custom attribute on ECProperty '%s.%s'. DateTimeKind must remain unset if DateTimeComponent is set to 'Date'.", dateTimeProperty.GetClass().GetFullName(), dateTimeProperty.GetName().c_str());
+            return ECObjectsStatus::ParseError;
+            }
+
+        dateTimeInfo = DateTime::Info::CreateForDate();
+        return ECObjectsStatus::Success;
+        }
+
+    if (!isKindNull)
+        dateTimeInfo = DateTime::Info::CreateForDateTime(kind);
+
     return ECObjectsStatus::Success;
     }
 

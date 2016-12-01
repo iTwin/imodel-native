@@ -17,6 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 typedef bvector<RelatedPropertiesSpecificationP>   RelatedPropertiesSpecificationList;
 typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificationList;
 typedef bvector<HiddenPropertiesSpecificationP>    HiddenPropertiesSpecificationList;
+typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ContentSpecifications.
@@ -29,6 +30,7 @@ private:
     bool                                 m_showImages;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
     HiddenPropertiesSpecificationList    m_hiddenPropertiesSpecification;
+    CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
 
 protected:
@@ -37,6 +39,9 @@ protected:
 
     //! Constructor.
     ECOBJECTS_EXPORT ContentSpecification(int priority, bool showImages = false);
+
+    //! Copy constructor.
+    ECOBJECTS_EXPORT ContentSpecification(ContentSpecificationCR);
 
     //! Returns XmlElement name that is used to read/save this rule information.
     virtual CharCP                       _GetXmlElementName () const = 0;
@@ -47,9 +52,15 @@ protected:
     //! Writes rule information to given XmlNode.
     virtual void                         _WriteXml (BeXmlNodeP xmlNode) const = 0;
 
+    //! Clones this content specification.
+    virtual ContentSpecification*        _Clone() const = 0;
+
 public:
     //! Destructor.
     ECOBJECTS_EXPORT virtual                              ~ContentSpecification (void);
+    
+    //! Clones this content specification.
+    ContentSpecification*                                 Clone() const {return _Clone();}
 
     //! Reads specification from XML.
     ECOBJECTS_EXPORT bool                                 ReadXml (BeXmlNodeP xmlNode);
@@ -80,6 +91,12 @@ public:
     
     //! Hidden properties that will not be displayed.
     HiddenPropertiesSpecificationList& GetHiddenPropertiesR() {return m_hiddenPropertiesSpecification;}
+
+    //! Additional calculated properties included in the content
+    CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const {return m_calculatedPropertiesSpecification;}
+
+    //! Additional calculated properties included in the content
+    CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR() {return m_calculatedPropertiesSpecification;}
 
     //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    

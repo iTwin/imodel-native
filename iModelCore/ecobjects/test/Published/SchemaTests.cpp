@@ -592,7 +592,7 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     entityClass->CreateStructProperty(structProperty, "Struct1", *structClass);
 
     StructArrayECPropertyP structArrayProperty;
-    entityClass->CreateStructArrayProperty(structArrayProperty, "StructArray", structClass);
+    entityClass->CreateStructArrayProperty(structArrayProperty, "StructArray", *structClass);
 
     schema->CreateCustomAttributeClass(classCustomAttributeClass, "ClassCustomAttribute");
     classCustomAttributeClass->SetDescription("Custom Attribute that can only be applied to classes.");
@@ -958,7 +958,7 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveSchemaInUse)
     navRelClass->GetTarget().AddClass(*baseClass);
 
     class1->CreateStructProperty(structProp, "StructMember", *structClass);
-    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
+    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", *structClass);
     class1->CreateNavigationProperty(navProp, "NavProp", *navRelClass, ECRelatedInstanceDirection::Forward, PrimitiveType::PRIMITIVETYPE_Long, false);
 
     class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArrayProp");
@@ -1217,7 +1217,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
 
     class1->CreatePrimitiveProperty(stringProp, "StringMember");
     class1->CreateStructProperty(structProp, "StructMember", *structClass);
-    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", structClass);
+    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray", *structClass);
     class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray");
 
     primitiveArrayProp->SetPrimitiveElementType(PRIMITIVETYPE_Long);
@@ -1309,7 +1309,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     EXPECT_TRUE(PRIMITIVETYPE_Point3d == point3DProperty->GetType());
 
     class1->CreateStructProperty(structProp, "StructMember2", *structClass);
-    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray2", structClass);
+    class1->CreateStructArrayProperty(nestedArrayProp, "NestedArray2", *structClass);
     class1->CreatePrimitiveArrayProperty(primitiveArrayProp, "PrimitiveArray2", PRIMITIVETYPE_Integer);
     EXPECT_TRUE(ARRAYKIND_Struct == nestedArrayProp->GetKind());
     EXPECT_TRUE(ARRAYKIND_Primitive == primitiveArrayProp->GetKind());
@@ -1630,7 +1630,7 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     baseClass1->CreatePrimitiveProperty(baseDoubleProp, "DoubleProperty", PRIMITIVETYPE_Double);
     baseClass1->CreateStructProperty(baseStructProp, "StructProperty", *structClass);
     baseClass1->CreatePrimitiveArrayProperty(baseStringArrayProperty, "StringArrayProperty", PRIMITIVETYPE_String);
-    baseClass1->CreateStructArrayProperty(baseStructArrayProp, "StructArrayProperty", structClass);
+    baseClass1->CreateStructArrayProperty(baseStructArrayProp, "StructArrayProperty", *structClass);
 
     PrimitiveECPropertyP longProperty = NULL;
     PrimitiveECPropertyP stringProperty = NULL;
@@ -1679,8 +1679,8 @@ TEST_F(ClassTest, CanOverrideBaseProperties)
     EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreatePrimitiveArrayProperty(stringArrayProperty2, "StringProperty"));
 
     // Arrays overriding structs
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass2));
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", structClass));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", *structClass2));
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, class1->CreateStructArrayProperty(structArrayProperty, "StructProperty", *structClass));
 
     PrimitiveArrayECPropertyP intArrayProperty;
     // Arrays overriding arrays
@@ -1789,12 +1789,12 @@ TEST_F(ClassTest, ExpectFailureWhenStructTypeIsNotReferenced)
     StructArrayECPropertyP structArrayProperty2;
 
     EXPECT_EQ(ECObjectsStatus::SchemaNotFound, class1->CreateStructProperty(baseStructProp, "StructProperty", *structClass));
-    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, class1->CreateStructArrayProperty(structArrayProperty, "StructArrayProperty", structClass));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, class1->CreateStructArrayProperty(structArrayProperty, "StructArrayProperty", *structClass));
     EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(baseStructProp2, "StructProperty2", *structClass2));
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProperty2, "StructArrayProperty2", structClass2));
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProperty2, "StructArrayProperty2", *structClass2));
     schema->AddReferencedSchema(*schema2);
     EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructProperty(baseStructProp, "StructProperty", *structClass));
-    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProperty, "StructArrayProperty", structClass));
+    EXPECT_EQ(ECObjectsStatus::Success, class1->CreateStructArrayProperty(structArrayProperty, "StructArrayProperty", *structClass));
     }
 
 /*---------------------------------------------------------------------------------**//**

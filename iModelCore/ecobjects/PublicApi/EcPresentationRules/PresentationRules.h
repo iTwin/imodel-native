@@ -39,5 +39,7 @@
 #include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>
 #include <ECPresentationRules/ContentRelatedInstancesSpecification.h>
 #include <ECPresentationRules/SelectedNodeInstancesSpecification.h>
+#include <ECPresentationRules/CalculatedPropertySpecification.h>
+#include <ECPresentationRules/RelatedInstanceSpecification.h>
 
 /** @endcond */

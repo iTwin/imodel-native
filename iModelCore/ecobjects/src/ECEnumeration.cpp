@@ -35,7 +35,7 @@ ECEnumeration::ECEnumeration(ECSchemaCR schema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECEnumeration::~ECEnumeration()
     {
-    for (auto entry : m_enumeratorList)
+    for (ECEnumerator* entry : m_enumeratorList)
         {
         delete entry;
         }
@@ -46,26 +46,10 @@ ECEnumeration::~ECEnumeration()
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECSchemaCR ECEnumeration::GetSchema() const
-    {
-    return m_schema;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECEnumeration::SetName(Utf8CP name)
     {
     m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECEnumeration::GetName () const
-    {        
-    return m_validatedName.GetName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -172,34 +156,15 @@ ECObjectsStatus ECEnumeration::SetTypeName(Utf8CP typeName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ECEnumeration::GetIsDisplayLabelDefined () const
-    {
-    return m_validatedName.IsDisplayLabelDefined();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 Utf8StringCR ECEnumeration::GetDisplayLabel () const
     {
     return GetSchema().GetLocalizedStrings().GetEnumerationDisplayLabel(*this, GetInvariantDisplayLabel());
     }
 
 /*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECEnumeration::GetInvariantDisplayLabel() const
-    {
-    return m_validatedName.GetDisplayLabel();
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECEnumeration::SetDisplayLabel (Utf8CP displayLabel)
-    {        
-    m_validatedName.SetDisplayLabel (displayLabel);
-    }
+@bsimethod
+-+---------------+---------------+---------------+---------------+---------------+------*/
+void ECEnumeration::SetDisplayLabel(Utf8CP displayLabel) { m_validatedName.SetDisplayLabel(displayLabel); }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
@@ -207,14 +172,6 @@ void ECEnumeration::SetDisplayLabel (Utf8CP displayLabel)
 Utf8StringCR ECEnumeration::GetDescription () const
     {
     return GetSchema().GetLocalizedStrings().GetEnumerationDescription(*this, GetInvariantDescription());
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECEnumeration::GetInvariantDescription () const
-    {
-    return m_description;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -215,14 +215,6 @@ Utf8String ECNameValidation::EncodeToValidName (Utf8StringCR name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8StringCR ECValidatedName::GetDisplayLabel() const
-    {
-    return m_displayLabel;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ECValidatedName::SetName (Utf8CP name)
     {
     // Note that this method can be called with an un-encoded name (e.g. called by users creating schemas dynamically),
@@ -241,7 +233,7 @@ void ECValidatedName::SetName (Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECValidatedName::SetDisplayLabel (Utf8CP label)
+void ECValidatedName::SetDisplayLabel(Utf8CP label)
     {
     if (NULL == label || '\0' == *label)
         {
@@ -742,12 +734,7 @@ bool ECSchema::Validate(bool resolveIssues)
     bool isValid = true;
     for (ECClassP ecClass : GetClasses())
         {
-        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
-        if (relClass == nullptr)
-            continue;
-
-        // Will validate against the EC3.1 rules.
-        if (!relClass->IsValid(resolveIssues))
+        if (!ecClass->_Verify(resolveIssues))
             isValid = false;
         }
 
@@ -962,6 +949,31 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
     if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
 
     pClass = new ECEntityClass(*this);
+    ECObjectsStatus status = pClass->SetName (name);
+    if (ECObjectsStatus::Success != status)
+        {
+        delete pClass;
+        pClass = nullptr;
+        return status;
+        }
+
+    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
+        {
+        delete pClass;
+        pClass = nullptr;
+        }
+    
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECSchema::CreateInterfaceClass (ECInterfaceClassP& pClass, Utf8StringCR name)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    pClass = new ECInterfaceClass(*this);
     ECObjectsStatus status = pClass->SetName (name);
     if (ECObjectsStatus::Success != status)
         {
@@ -1649,7 +1661,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 }
             else if (prop->GetIsStructArray())
                 {
-                typeClass = prop->GetAsStructArrayProperty()->GetStructElementType();
+                typeClass = &(prop->GetAsStructArrayProperty()->GetStructElementType());
                 }
             else if (prop->GetIsNavigation())
                 {

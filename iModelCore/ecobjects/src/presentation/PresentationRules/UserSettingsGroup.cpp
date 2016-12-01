@@ -30,6 +30,15 @@ UserSettingsGroup::UserSettingsGroup (Utf8StringCR categoryLabel)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+UserSettingsGroup::UserSettingsGroup(UserSettingsGroupCR other)
+    {
+    CommonTools::CopyRules(m_nestedSettings, other.m_nestedSettings);
+    CommonTools::CopyRules(m_settingsItems, other.m_settingsItems);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 UserSettingsGroup::~UserSettingsGroup (void)

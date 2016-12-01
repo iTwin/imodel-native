@@ -1356,7 +1356,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
     ECEntityClassP class1;
     schema1->CreateEntityClass(class1, "Class");
     StructArrayECPropertyP structArrayProp;
-    class1->CreateStructArrayProperty(structArrayProp, "StructArray", struct1);
+    class1->CreateStructArrayProperty(structArrayProp, "StructArray", *struct1);
 
     StandaloneECInstancePtr instance1 = class1->GetDefaultStandaloneEnabler()->CreateInstance();
     instance1->AddArrayElements("StructArray", 2);
@@ -1377,7 +1377,7 @@ TEST_F(ECDBufferTests, ConvertDataBuffer_StructArrays)
     ECEntityClassP class2;
     schema2->CreateEntityClass(class2, "Class");
     class2->CreatePrimitiveProperty(primProp, "Stuff", PRIMITIVETYPE_String);
-    class2->CreateStructArrayProperty(structArrayProp, "StructArray", struct2);
+    class2->CreateStructArrayProperty(structArrayProp, "StructArray", *struct2);
 
     StandaloneECInstancePtr instance2 = class2->GetDefaultStandaloneEnabler()->CreateInstance();
     EXPECT_EQ(ECObjectsStatus::Success, instance2->CopyDataBuffer(*instance1, true));

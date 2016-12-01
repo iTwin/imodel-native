@@ -68,13 +68,15 @@ private:
     Utf8String          m_displayLabel;
     bool                m_hasExplicitDisplayLabel;
 public:
-    ECValidatedName() : m_hasExplicitDisplayLabel (false) { }
+    ECValidatedName() : m_hasExplicitDisplayLabel(false) {}
 
-    Utf8StringCR        GetName() const                 { return m_name; }
-    bool                IsDisplayLabelDefined() const   { return m_hasExplicitDisplayLabel; }
-    Utf8StringCR        GetDisplayLabel() const;
-    void                SetName (Utf8CP name);
-    void                SetDisplayLabel (Utf8CP label);
+    Utf8StringCR        GetName() const { return m_name; }
+    bool                IsDisplayLabelDefined() const { return m_hasExplicitDisplayLabel; }
+    Utf8StringCR        GetDisplayLabel() const { return m_displayLabel; }
+#if !defined (DOCUMENTATION_GENERATOR)
+    void                SetName(Utf8CP name);
+    void                SetDisplayLabel(Utf8CP label);
+#endif
     };
 
 //=======================================================================================
@@ -180,7 +182,7 @@ public:
     bool operator!=(ECTypeDescriptor const& rhs) const { return !(*this == rhs); }
 
     //! Returns the ValueKind of the ECProperty
-    inline ValueKind            GetTypeKind() const         { return m_typeKind; }
+    inline ValueKind            GetTypeKind() const { return m_typeKind; }
     //! Returns the ArrayKind of the ECProperty, if the ECProperty is an array property
     inline ArrayKind            GetArrayKind() const        { return (ArrayKind)(m_arrayKind & 0xFF); }
     //! Returns true if the ECProperty is a Primitive property
@@ -693,10 +695,18 @@ protected:
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
-    SchemaWriteStatus                   _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
+    virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes=nullptr, bool writeType=true);
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const { return GetTypeName(); }
     void                                _AdjustMinMaxAfterTypeChange();
 
+    virtual bool                        _IsInterfaceProperty() const { return false; }
+    virtual ECInterfacePropertyCP       _GetAsInterfacePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual ECInterfacePropertyP        _GetAsInterfacePropertyP() { return nullptr; } // used to avoid dynamic_cast
+
+    virtual bool                        _IsPrimitiveInterfaceProperty() const { return false; }
+    virtual PrimitiveECInterfacePropertyCP      _GetAsPrimitiveInterfacePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual PrimitiveECInterfacePropertyP       _GetAsPrimitiveInterfacePropertyP() { return nullptr; } // used to avoid dynamic_cast
+    
     virtual bool                        _IsPrimitive () const { return false; }
     virtual PrimitiveECPropertyCP       _GetAsPrimitivePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual PrimitiveECPropertyP        _GetAsPrimitivePropertyP()        { return nullptr; } // used to avoid dynamic_cast
@@ -717,6 +727,10 @@ protected:
     virtual StructArrayECPropertyCP     _GetAsStructArrayPropertyCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual StructArrayECPropertyP      _GetAsStructArrayPropertyP()        { return nullptr; } // used to avoid dynamic_cast
 
+    virtual bool                        _IsNavigationInterfaceProperty() const { return false; }
+    virtual NavigationECInterfacePropertyCP     _GetAsNavigationInterfacePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
+    virtual NavigationECInterfacePropertyP      _GetAsNavigationInterfacePropertyP() { return nullptr; } // used to avoid dynamic_cast
+
     virtual bool                        _IsNavigation() const { return false; }
     virtual NavigationECPropertyCP      _GetAsNavigationPropertyCP() const  { return nullptr; } // used to avoid dynamic_cast
     virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
@@ -732,6 +746,7 @@ protected:
     
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
+    virtual bool                        _Implements(ECInterfacePropertyCR interfaceProperty) const = 0;
 
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
@@ -781,12 +796,19 @@ public:
     //! Returns whether this property is an Array property (either a Primitive array or a StructArray)
     //! Use either GetIsPrimitiveArray or GetIsStructArray to differentiate.
     bool                                GetIsArray() const { return _IsArray(); }
+    //! Returns whether this property is an Interface property (either a Primitive or Navigation Interface)
+    //! Use either GetIsPrimitiveInterface or GetIsStructInterface to differentiate.
+    bool                                GetIsInterfaceProperty() const { return _IsInterfaceProperty(); }
+    //! Returns whether this property is a Primitive Interface property
+    bool                                GetIsPrimitiveInterfaceProperty() const { return _IsPrimitiveInterfaceProperty(); }
     //! Returns whether this property is a Primitive property
     bool                                GetIsPrimitive() const { return _IsPrimitive(); }
     //! Returns whether this property is a StructArray property
     bool                                GetIsStructArray() const { return _IsStructArray(); }
     //! Returns whether this property is a Primitive array
     bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
+    //! Returns whether this property is an NavigationECInterfaceProperty
+    bool                                GetIsNavigationInterfaceProperty() const { return _IsNavigationInterfaceProperty(); }
     //! Returns whether this property is a NavigationECProperty
     bool                                GetIsNavigation() const { return _IsNavigation(); }
     
@@ -881,6 +903,13 @@ public:
     NavigationECPropertyP       GetAsNavigationPropertyP()              { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
     ExtendedTypeECPropertyCP    GetAsExtendedTypeProperty() const       { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
     ExtendedTypeECPropertyP     GetAsExtendedTypePropertyP()            { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as an ExtendedTypeECProperty*
+
+    ECInterfacePropertyCP               GetAsInterfaceProperty() const              { return _GetAsInterfacePropertyCP(); } //! <Returns the property as a const ECInterfaceProperty*
+    ECInterfacePropertyP                GetAsInterfacePropertyP()                   { return _GetAsInterfacePropertyP(); } //! <Returns the property as an ECInterfaceProperty*
+    PrimitiveECInterfacePropertyCP      GetAsPrimitiveInterfaceProperty() const     { return _GetAsPrimitiveInterfacePropertyCP(); } //! <Returns the property as a const PrimitiveECInterfaceProperty*
+    PrimitiveECInterfacePropertyP       GetAsPrimitiveInterfacePropertyP()          { return _GetAsPrimitiveInterfacePropertyP(); } //! <Returns the property as an PrimitiveECInterfaceProperty*
+    NavigationECInterfacePropertyCP     GetAsNavigationInterfaceProperty() const    { return _GetAsNavigationInterfacePropertyCP(); } //! <Returns the property as a const NavigationECInterfaceProperty*
+    NavigationECInterfacePropertyP      GetAsNavigationInterfacePropertyP()         { return _GetAsNavigationInterfacePropertyP(); } //! <Returns the property as an NavigationECInterfaceProperty*
 };
 
 //=======================================================================================
@@ -944,6 +973,7 @@ protected:
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                        _Implements(ECInterfacePropertyCR interfaceProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
     virtual bool                                _IsCalculated() const override;
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
@@ -984,6 +1014,7 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                        _Implements(ECInterfacePropertyCR interfaceProperty) const override { return false; }
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::StructProperty; }
 
 //__PUBLISH_SECTION_START__
@@ -1025,6 +1056,8 @@ protected:
     virtual bool                        _IsArray () const override { return true;}
     virtual ArrayECPropertyCP           _GetAsArrayPropertyCP() const override { return this; }
     virtual ArrayECPropertyP            _GetAsArrayPropertyP()        override { return this; }
+
+    virtual bool                        _Implements(ECInterfacePropertyCR interfaceProperty) const override { return false; }
 
 /*__PUBLISH_SECTION_END__*/
 public:
@@ -1119,22 +1152,96 @@ protected:
 
 public:
     //! Sets the ECClass to be used for the array's struct elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCP value);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetStructElementType(ECStructClassCR value);
     //! Gets the ECClass of the array's struct elements
-    ECOBJECTS_EXPORT ECStructClassCP    GetStructElementType() const;
+    ECOBJECTS_EXPORT ECStructClassCR    GetStructElementType() const;
 
     };
 
 //=======================================================================================
-//! The in-memory representation of an ECNavigationProperty as defined by ECSchemaXML
+//! The in-memory representation of an ECInterfaceProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
+struct EXPORT_VTABLE_ATTRIBUTE ECInterfaceProperty /*abstract*/  : public ECProperty
     {
-DEFINE_T_SUPER(ECProperty)
-
-friend struct ECEntityClass;
 friend struct ECClass;
+friend struct ECInterfaceClass;
+protected:
+    ECInterfaceProperty(ECClassCR ecClass)
+        : ECProperty(ecClass) {};
+
+protected:
+    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* attributes = nullptr, bool writeType = true) override;
+
+    virtual bool                    _IsInterfaceProperty() const override { return true; }
+    virtual ECInterfacePropertyCP           _GetAsInterfacePropertyCP() const override { return this; }
+    virtual ECInterfacePropertyP            _GetAsInterfacePropertyP() override { return this; }
+
+    virtual bool                    _CanInterfaceOverride(ECPropertyCR baseProperty) const = 0;
+
+    // An ECInterfaceProperty can not implement an ECInterfaceProperty
+    virtual bool                    _Implements(ECInterfacePropertyCR interfaceProperty) const override { return false; }
+
+public:
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMinimumValue(ECValueCR min) { return ECObjectsStatus::OperationNotSupported; }
+    ECOBJECTS_EXPORT ECObjectsStatus    SetMaximumValue(ECValueCR max) { return ECObjectsStatus::OperationNotSupported; }
+    };
+
+//=======================================================================================
+//! The in-memory representation of an PrimitiveECInterfaceProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct PrimitiveECInterfaceProperty : public ECInterfaceProperty
+    {
+friend struct ECClass;
+friend struct ECInterfaceClass;
+private:
+    PrimitiveType   m_primitiveType;
+
+    PrimitiveECInterfaceProperty(ECClassCR ecClass) 
+        : ECInterfaceProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String) {};
+
+protected:
+    virtual SchemaReadStatus         _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual bool                     _IsPrimitiveInterfaceProperty () const override { return true; }
+    virtual PrimitiveECInterfacePropertyCP   _GetAsPrimitiveInterfacePropertyCP () const override { return this; }
+    virtual PrimitiveECInterfacePropertyP    _GetAsPrimitiveInterfacePropertyP () override { return this; }
+    virtual Utf8String               _GetTypeName () const override;
+    virtual ECObjectsStatus          _SetTypeName (Utf8StringCR typeName) override;
+    virtual bool                     _CanOverride (ECPropertyCR baseProperty) const override;
+    virtual bool                     _CanInterfaceOverride(ECPropertyCR baseProperty) const override { return _CanOverride(baseProperty); }
+
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveInterfaceProperty; };
+
+public:
+    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
+    //! Gets the PrimitiveType of this ECProperty
+    ECOBJECTS_EXPORT PrimitiveType GetType() const;
+    };
+//__PUBLISH_SECTION_END__
+
+// Used to reduce amount of duplicate code in NavigationECInterfaceProperty and NavigationECProperty
+struct SharedNavigationECProperty
+    {
+public:
+    static ECObjectsStatus SetRelationshipClassName(ECRelationshipClassCP &relationshipClass, ECClassCR ecClass, Utf8CP relationshipName);
+
+    static bool       Verify(ValueKind &valueKind, ECRelationshipClassCP relClass, ECClassCR ecClass, ECRelatedInstanceDirection direction);
+
+    };
+//__PUBLISH_SECTION_START__
+
+//=======================================================================================
+//! The in-memory representation of an NavigationECInterfaceProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE NavigationECInterfaceProperty : public ECInterfaceProperty
+    {
+friend struct ECClass;
+friend struct ECInterfaceClass;
 private:
     ECRelationshipClassCP       m_relationshipClass;
     ECRelatedInstanceDirection  m_direction;
@@ -1142,8 +1249,8 @@ private:
     ValueKind                   m_valueKind;
 
 protected:
-    explicit NavigationECProperty(ECClassCR ecClass)
-        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_Long) {};
+    explicit NavigationECInterfaceProperty(ECClassCR ecClass)
+        : ECInterfaceProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_Long) {};
 
     ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
     ECObjectsStatus                 SetDirection(Utf8CP directionString);
@@ -1153,16 +1260,18 @@ protected:
     virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
 
-    virtual bool                    _IsNavigation() const override { return true; }
-    virtual NavigationECPropertyCP  _GetAsNavigationPropertyCP() const override { return this; }
-    virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
+    virtual bool                     _IsNavigationInterfaceProperty() const override { return true; }
+    virtual NavigationECInterfacePropertyCP  _GetAsNavigationInterfacePropertyCP() const override { return this; }
+    virtual NavigationECInterfacePropertyP   _GetAsNavigationInterfacePropertyP() override { return this; }
 
     virtual Utf8String              _GetTypeName() const override;
     // Not valid because type cannot be set from xml, it must be set at runtime
     virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
 
-    virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationProperty; }
+    virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override { return false; };
+    virtual bool                    _CanInterfaceOverride(ECPropertyCR baseProperty) const override;
+
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationInterfaceProperty; };
 
 public:
     // !Gets the relationship class used to determine what related instance this navigation property points to
@@ -1191,6 +1300,73 @@ public:
     };
 
 //=======================================================================================
+//! The in-memory representation of an NavigationECProperty as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
+    {
+DEFINE_T_SUPER(ECProperty)
+
+friend struct ECEntityClass;
+friend struct ECClass;
+private:
+    ECRelationshipClassCP       m_relationshipClass;
+    ECRelatedInstanceDirection  m_direction;
+    PrimitiveType               m_type;
+    ValueKind                   m_valueKind;
+
+protected:
+    explicit NavigationECProperty(ECClassCR ecClass)
+        : ECProperty(ecClass), m_relationshipClass(nullptr), m_direction(ECRelatedInstanceDirection::Forward), m_valueKind(ValueKind::VALUEKIND_Uninitialized), m_type(PrimitiveType::PRIMITIVETYPE_Long) {};
+
+    ECObjectsStatus                 SetRelationshipClassName(Utf8CP relationshipName);
+    ECObjectsStatus                 SetDirection(Utf8CP directionString);
+    Utf8String                      GetRelationshipClassName() const;
+
+    virtual SchemaReadStatus        _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
+    virtual SchemaWriteStatus       _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) override;
+
+    virtual bool                    _IsNavigation() const override { return true; }
+    virtual NavigationECPropertyCP  _GetAsNavigationPropertyCP() const override { return this; }
+    virtual NavigationECPropertyP   _GetAsNavigationPropertyP() override { return this; }
+
+    virtual Utf8String              _GetTypeName() const override;
+    // Not valid because type cannot be set from xml, it must be set at runtime
+    virtual ECObjectsStatus         _SetTypeName(Utf8StringCR typeName) override { return ECObjectsStatus::OperationNotSupported; }
+
+    virtual bool                    _CanOverride(ECPropertyCR baseProperty) const override;
+    virtual bool                    _Implements(ECInterfacePropertyCR interfaceProperty) const override;
+
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::NavigationProperty; }
+
+public:
+    // !Gets the relationship class used to determine what related instance this navigation property points to
+    ECRelationshipClassCP       GetRelationshipClass() const { return m_relationshipClass; }
+    // !Gets the direction used to determine what related instance this navigation property points to
+    ECRelatedInstanceDirection  GetDirection() const { return m_direction; }
+
+    // !Sets the relationship and direction used by the navigation property
+    // @param[in]   relClass    The relationship this navigation property will represent
+    // @param[in]   direction   The direction the relationship will be traversed.  Forward if the class containing this property is a source constraint, Backward if the class is a target constraint
+    // @param[in]   verify      If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    // @returns     Returns Success if validation successful or not performed, SchemaNotFound if the schema containing the relationship class is not referenced and RelationshipConstraintsNotCompatible if validation
+    //              is performed but not successfull
+    ECOBJECTS_EXPORT ECObjectsStatus            SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify = true);
+
+    // !Verifies that the relationship class and direction is valid.  
+    ECOBJECTS_EXPORT bool       Verify();
+    // !Returns true if the Verify method has been called on this Navigation Property, false if it has not.
+    bool                        IsVerified() const { return ValueKind::VALUEKIND_Uninitialized != m_valueKind; }
+    // !Returns true if the navigation property points to an endpoint which can have more than one related instance
+    bool                        IsMultiple() const { return ValueKind::VALUEKIND_Array == m_valueKind; }
+
+    //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType type);
+    //! Gets the PrimitiveType of this ECProperty
+    PrimitiveType GetType() const { return m_type; }
+    };
+
+//=======================================================================================
 //! Container holding ECProperties that supports STL like iteration
 //! @bsiclass
 //=======================================================================================
@@ -1198,6 +1374,7 @@ struct ECPropertyIterable
 {
 private:
     friend struct ECClass;
+    friend struct ECInterfaceClass;
 
     ECClassCR       m_ecClass;
     bool            m_includeBaseProperties;
@@ -1253,7 +1430,8 @@ public:
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
-typedef bvector<ECEntityClassP> ECConstraintClassesList;
+typedef bvector<ECClassP> ECConstraintClassesList;
+typedef bvector<ECInterfaceClassP> ECInterfaceClassesList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
@@ -1270,7 +1448,8 @@ enum class ECClassType
     Entity,
     Relationship,
     Struct,
-    CustomAttribute
+    CustomAttribute,
+    Interface
     };
 //=======================================================================================
 //! The in-memory representation of an ECClass as defined by ECSchemaXML
@@ -1289,6 +1468,7 @@ friend struct ECPropertyIterable::IteratorState;
 friend struct SupplementedSchemaBuilder;
 friend struct ECProperty; // for access to InvalidateDefaultStandaloneEnabler() when property is modified
 friend struct ECSchemaConverter;
+friend struct ECInterfaceClass; // for access to the property map
 
 //__PUBLISH_SECTION_START__
 
@@ -1301,6 +1481,7 @@ private:
     ECClassModifier                 m_modifier;
     ECSchemaCR                      m_schema;
     ECBaseClassesList               m_baseClasses;
+    ECInterfaceClassesList          m_interfaces;
     mutable ECDerivedClassesList    m_derivedClasses;
 
     PropertyMap                     m_propertyMap;
@@ -1310,7 +1491,6 @@ private:
     bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
     bmap<int, bvector<Utf8String>> m_customAttributeXmlComments;
 
-    ECObjectsStatus AddProperty (ECPropertyP& pProperty, bool resolveConflicts = false);
     ECObjectsStatus RemoveProperty (ECPropertyR pProperty);
     void FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP originalName);
     ECObjectsStatus RenameConflictProperty(ECPropertyP thisProperty, bool renameDerivedProperties);
@@ -1320,8 +1500,9 @@ private:
 
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
+    static bool     FindInterface(ECClassCP thisClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
-    ECOBJECTS_EXPORT ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
+    bool            TraverseInterfaces(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
@@ -1335,6 +1516,10 @@ private:
 
     void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
     ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bool resolveConflicts);
+
+    ECObjectsStatus ValidateInterface(ECInterfaceClassCR interfaceClass) const;
+    ECInterfacePropertyP     GetInterfacePropertyP(Utf8CP name) const;
+
 protected:
     //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
     //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
@@ -1342,12 +1527,19 @@ protected:
     ECClass (ECSchemaCR schema);
     virtual ~ECClass();
 
+    virtual ECObjectsStatus AddProperty(ECPropertyP& pProperty, bool resolveConflicts = false);
+
     ECObjectsStatus                     AddProperty(ECPropertyP pProperty, Utf8StringCR name);
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true);
     virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass);
 
+    virtual ECObjectsStatus             _AddInterface(ECInterfaceClassCR interfaceClass, bool validate = true);
+
     virtual void                        _GetBaseContainers(bvector<IECCustomAttributeContainerP>& returnList) const override;
     virtual ECSchemaCP                  _GetContainerSchema() const override;
+
+    virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
+    virtual bool _Verify(bool resolveIssues = false) const;
 
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (Utf8StringCR name);
@@ -1362,12 +1554,13 @@ protected:
     //! @param[in]  conversionSchema  If there was a supplied schema to assist in converting from V2 to V3
     //! @param[out] navigationProperties A running list of all navigation properties in the schema.  This list is used for validation, which may only happen after all classes are loaded
     //! @return   Status code
-    virtual SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties);
+    virtual SchemaReadStatus _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties);
 
     void _ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>& comments);
 
     SchemaReadStatus _ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema);
     SchemaReadStatus _ReadPropertyFromXmlAndAddToClass(ECPropertyP ecProperty, BeXmlNodeP& childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, Utf8CP childNodeName);
+    SchemaReadStatus _ReadInterfaceFromXml(BeXmlNodeP childNode, ECSchemaReadContextR context);
 
     virtual SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
     SchemaWriteStatus _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion, Utf8CP elementName, bmap<Utf8CP, Utf8CP>* additionalAttributes, bool doElementEnd) const;
@@ -1379,6 +1572,9 @@ protected:
 
     virtual ECEntityClassCP _GetEntityClassCP () const { return nullptr; } // used to avoid dynamic_cast
     virtual ECEntityClassP _GetEntityClassP () { return nullptr; } // used to avoid dynamic_cast
+
+    virtual ECInterfaceClassCP _GetInterfaceClassCP() const { return nullptr; }  // used to avoid dynamic_cast
+    virtual ECInterfaceClassP _GetInterfaceClassP()        { return nullptr; }  // used to avoid dynamic_cast
 
     virtual ECStructClassCP _GetStructClassCP() const { return nullptr; } // used to avoid dynamic_cast
     virtual ECStructClassP _GetStructClassP() { return nullptr; } // used to avoid dynamic_cast
@@ -1411,6 +1607,9 @@ public:
     //! Is the class an entity class
     bool IsEntityClass() const { return ECClassType::Entity == GetClassType(); }
 
+    //! Is the class an interface class
+    bool IsInterfaceClass() const { return ECClassType::Interface == GetClassType(); }
+
     //! Is the class a struct class
     bool IsStructClass() const { return ECClassType::Struct == GetClassType();}
 
@@ -1434,6 +1633,11 @@ public:
     ECOBJECTS_EXPORT ECCustomAttributeClassCP GetCustomAttributeClassCP() const;
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECCustomAttributeClassP GetCustomAttributeClassP();
+
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECInterfaceClassCP GetInterfaceClassCP() const;
+    //! Used to avoid dynamic_cast
+    ECOBJECTS_EXPORT ECInterfaceClassP GetInterfaceClassP();
 
     //! Used to avoid dynamic_cast
     ECOBJECTS_EXPORT ECStructClassCP GetStructClassCP() const;
@@ -1465,6 +1669,8 @@ public:
     ECOBJECTS_EXPORT const ECBaseClassesList& GetBaseClasses() const;
     //! Returns a list of the classes that derive from this class.
     ECOBJECTS_EXPORT const ECDerivedClassesList& GetDerivedClasses() const;
+    //! Returns a list of the interfaces this ECClass implements
+    const ECInterfaceClassesList& GetInterfaceClasses() const { return m_interfaces; }
 
     //! Sets the description of this ECClass
     ECOBJECTS_EXPORT ECObjectsStatus SetDescription(Utf8StringCR value);
@@ -1515,11 +1721,21 @@ public:
     //! Removes a base class.
     ECOBJECTS_EXPORT ECObjectsStatus RemoveBaseClass(ECClassCR baseClass);
 
+    //! Adds an interface class
+    ECOBJECTS_EXPORT ECObjectsStatus AddInterface(ECInterfaceClassCR interfaceClass);
+
+    //! Returns whether there are any interfaces for this class
+    ECOBJECTS_EXPORT bool HasInterfaces() const { return m_interfaces.size() > 0; };
+
+    //! Removes an interface class.
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveInterface(ECClassCR interfaceClass);
+
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
 
-    //! Returns true if the class name  is of the type specified or derived from it.
-    ECOBJECTS_EXPORT bool Is(Utf8CP name) const;
+    //! Returns true if the class is the type specified or derived from it.
+    ECOBJECTS_EXPORT bool Is(ECInterfaceClassCP targetClass) const;
+
     //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
     ECOBJECTS_EXPORT bool Is(Utf8CP schemaName, Utf8CP className) const;
 
@@ -1539,7 +1755,7 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
     //! If the given name is valid, creates an array property object using the specified class as the array type
-    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCP structType);
+    ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
 
     //! If the given name is valid, creates a primitive property object with the given enumeration type
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumerationProperty(PrimitiveECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
@@ -1662,9 +1878,9 @@ friend struct SchemaXmlReaderImpl;
 
     public:
         //! The ECSchema that this enumeration is defined in
-        ECOBJECTS_EXPORT ECSchemaCR GetSchema() const;
+        ECSchemaCR GetSchema() const { return m_schema; }
         //! The name of this Enumeration
-        ECOBJECTS_EXPORT Utf8StringCR GetName() const;
+        Utf8StringCR GetName() const { return m_validatedName.GetName(); }
         //! {SchemaName}:{EnumerationName} The pointer will remain valid as long as the ECEnumeration exists.
         ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
         //! Given a schema and an enumeration, will return the fully qualified name.  If the enumeration is part of the passed in schema, there
@@ -1686,20 +1902,20 @@ friend struct SchemaXmlReaderImpl;
         ECOBJECTS_EXPORT Utf8String GetTypeName() const;
 
         //! Whether the display label is explicitly defined or not
-        ECOBJECTS_EXPORT bool GetIsDisplayLabelDefined() const;
+        bool GetIsDisplayLabelDefined() const { return m_validatedName.IsDisplayLabelDefined(); }
         //! Sets the display label of this ECEnumeration
         ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
         //! Gets the display label of this ECEnumeration.  If no display label has been set explicitly, it will return the name of the ECEnumeration
         ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
         //! Gets the invariant display label for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDisplayLabel() const;
+        Utf8StringCR GetInvariantDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
 
         //! Sets the description of this ECEnumeration
-        ECOBJECTS_EXPORT void SetDescription(Utf8CP value) { m_description = value; }
+        void SetDescription(Utf8CP value) { m_description = value; }
         //! Gets the description of this ECEnumeration.  Returns the localized description if one exists.
         ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
         //! Gets the invariant description for this ECEnumeration.
-        ECOBJECTS_EXPORT Utf8StringCR GetInvariantDescription() const;
+        Utf8StringCR GetInvariantDescription() const { return m_description; }
 
         //! Gets the IsStrict flag of this enum. True means that values on properties will be enforced.
         bool GetIsStrict() const { return m_isStrict; }
@@ -1838,22 +2054,28 @@ struct KindOfQuantity : NonCopyableClass
         //! Gets a qualified name of the enumeration, prefixed by the schema alias if it does not match the primary schema.
         ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
+        //! Whether the display label is explicitly defined or not
+        bool GetIsDisplayLabelDefined() const { return m_validatedName.IsDisplayLabelDefined(); }
+        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
+        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
         ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
-        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
-
+        Utf8StringCR GetInvariantDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
         void SetDescription(Utf8CP value) { m_description = value; }
-        //! Gets the description of this KindOfQuantity.
-        Utf8StringCR GetDescription() const { return m_description; };
+        
+        Utf8StringCR GetDescription() const {/*TODO: should this be localized?*/ return m_description; };
 
-        //! Sets the Unit of measuerement used for persisting the information
+        //! Gets the invariant description of this KindOfQuantity.
+        Utf8StringCR GetInvariantDescription() const { return m_description; };
+
+
+        //! Sets the Unit of measurement used for persisting the information
         //! @param[in]  value  The new value to apply
         void SetPersistenceUnit(Utf8CP value) { m_persistenceUnit = value; }
-        //! Gets the Unit of measuerement used for persisting the information
+        //! Gets the Unit of measurement used for persisting the information
         Utf8StringCR GetPersistenceUnit() const { return m_persistenceUnit; };
 
         //! Sets the Precision used for persisting the information. A precision of zero indicates that a default will be used.
@@ -1879,6 +2101,116 @@ struct KindOfQuantity : NonCopyableClass
         void                SetId(KindOfQuantityId id) { BeAssert(!m_kindOfQuantityId.IsValid()); m_kindOfQuantityId = id; };
         bool                HasId() const { return m_kindOfQuantityId.IsValid(); };
     };
+
+//---------------------------------------------------------------------------------------
+// The in-memory representation of an InterfaceClass as defined by ECSchemaXML
+// @bsiclass                                   Caleb.Shafer             11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+struct EXPORT_VTABLE_ATTRIBUTE ECInterfaceClass : ECClass
+{
+DEFINE_T_SUPER(ECClass)
+
+friend struct ECSchema;
+friend struct SchemaXmlReaderImpl;
+friend struct SchemaXmlWriter;
+
+private:
+    ECEntityClassCP     m_appliesTo;
+    bool m_appliesToAny;
+
+    // Used only during deserialization
+    Utf8String m_appliesToString;
+
+    ECObjectsStatus CanPropertyBeOverridden(ECInterfacePropertyCR baseProperty, ECInterfacePropertyCR newProperty) const;
+
+protected:
+    //  Lifecycle management:  For now, to keep it simple, the class constructor is protected.  The schema implementation will
+    //  serve as a factory for classes and will manage their lifecycle.  We'll reconsider if we identify a real-world story for constructing a class outside
+    //  of a schema.
+    ECInterfaceClass(ECSchemaCR schema);
+    virtual ~ECInterfaceClass() {}
+
+    virtual SchemaWriteStatus _WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
+    virtual SchemaReadStatus _ReadXmlAttributes(BeXmlNodeR classNode) override;
+    virtual SchemaReadStatus _ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties) override;
+
+    virtual ECClassType _GetClassType() const override { return ECClassType::Interface; }
+    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::InterfaceClass; }
+    virtual ECObjectsStatus AddProperty(ECPropertyP& pProperty, bool resolveConflicts = false) override;
+    virtual ECObjectsStatus GetProperties(bool includeBaseInterfaces, PropertyList* propertyList) const override;
+
+    ECObjectsStatus SetAppliesTo(Utf8StringCR value);
+    ECObjectsStatus SetAppliesToAny();
+
+    virtual ECInterfaceClassCP _GetInterfaceClassCP() const override { return this; }
+    virtual ECInterfaceClassP _GetInterfaceClassP() override { return this; }
+    virtual ECObjectsStatus _AddInterface(ECInterfaceClassCR interfaceClass, bool validate = true) override;
+
+    virtual bool _Verify(bool resolveIssues = false) const override;
+    ECObjectsStatus ValidateAppliesTo() const;
+    ECObjectsStatus ValidateAppliesTo(ECEntityClassCP ecClass) const;
+
+    // Removing unwanted functions
+    virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override { return ECObjectsStatus::OperationNotSupported; };
+    virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override { return ECObjectsStatus::OperationNotSupported; };
+
+public:
+    
+    //! Returns the applies to ECClass
+    ECOBJECTS_EXPORT ECEntityClassCP GetAppliesTo() const { return m_appliesTo; }
+
+    //! Returns if this class applies to any ECClasses
+    ECOBJECTS_EXPORT bool AppliesToAny() const { return m_appliesToAny; }
+
+    //! Sets the applies to ECClass
+    ECOBJECTS_EXPORT ECObjectsStatus SetAppliesTo(ECEntityClassCR ecClass);
+    
+    //! Returns whether the given class is or derived from the applies to constraint of this interface
+    ECOBJECTS_EXPORT bool CanBeAppliedTo(ECClassCR ecClass) const;
+
+    //! Get a property by name within the context of this class and its interface classes.
+    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name                    The name of the property to lookup.
+    //! @param[in]  includeBaseInterfaces   Whether to look on the base interface classes of the current class for the named property
+    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP(Utf8StringCR name, bool includeBaseInterfaces = true) const;
+
+    //! Get a property by name within the context of this class and its interface classes.
+    //! The pointer returned by this method is valid until the ECClass containing the property is destroyed or the property
+    //! is removed from the class.
+    //! @param[in]  name                    The name of the property to lookup.
+    //! @param[in]  includeBaseInterfaces   Whether to look on the base interface classes of the current class for the named property
+    //! @return   A pointer to an ECN::ECProperty if the named property exists within the current class; otherwise, NULL
+    ECOBJECTS_EXPORT ECPropertyP GetPropertyP(Utf8CP name, bool includeBaseInterfaces = true) const;
+
+    //! Returns the number of ECInterfaceProperties in this class
+    // @param[in] includeBaseInterfaces  If true will return the number of properties 
+    ECOBJECTS_EXPORT size_t GetPropertyCount(bool includeBaseInterfaces = true) const;
+
+    //! Returns an iterable of all the ECProperties defined on this class
+    ECOBJECTS_EXPORT ECPropertyIterable GetProperties() const { return GetProperties(true); }
+
+    //! Returns a list of properties for this class.
+    //! @param[in]  includeBaseInterfaces If true, then will return properties that are contained in this class's interfaces
+    //! @return     An iterable container of ECProperties
+    ECOBJECTS_EXPORT ECPropertyIterable GetProperties(bool includeBaseInterfaces) const { return ECClass::GetProperties(includeBaseInterfaces); }
+
+    //! If the given name is valid, creates a primitive interface property object with the given primitive type
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveInterfaceProperty(PrimitiveECInterfacePropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
+
+    //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
+    // @param[out]  ecProperty          Outputs the property if successfully created
+    // @param[in]   name                The name for the navigation property.  Must be a valid ECName
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
+    // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
+    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
+    // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationInterfaceProperty(NavigationECInterfacePropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
+
+    //! Returns true if the class is the type specified or derived from it.
+    ECOBJECTS_EXPORT bool Is(ECInterfaceClassCP targetClass) const;
+};
 
 //---------------------------------------------------------------------------------------
 // The in-memory representation of an EntityClass as defined by ECSchemaXML
@@ -2055,18 +2387,18 @@ struct ECRelationshipConstraintClass : NonCopyableClass
     {
 private:
     bvector<Utf8String> m_keys;
-    ECEntityClassCP m_ecClass;
+    ECClassCP m_ecClass;
 
 public:
 #ifndef DOCUMENTATION_GENERATOR 
-    explicit ECRelationshipConstraintClass(ECEntityClassCR ecClass);
+    explicit ECRelationshipConstraintClass(ECClassCR ecClass);
 #endif
 
     ECRelationshipConstraintClass(ECRelationshipConstraintClass&& rhs);
     ECRelationshipConstraintClass& operator= (ECRelationshipConstraintClass&& rhs);
     
     //! Gets the constraint's ECClass
-    ECEntityClassCR GetClass() const { return *m_ecClass; }
+    ECClassCR GetClass() const { return *m_ecClass; }
     //! Gets the constraint's key property names
     bvector<Utf8String> const& GetKeys() const { return m_keys; }
     //! Adds name of key property.
@@ -2133,13 +2465,13 @@ struct ECRelationshipConstraintClassList : NonCopyableClass
         //! will replace the current class applied to the constraint with the new class.
         //! @param[out] classConstraint ECRelationshipConstraintClass for current ECClass
         //! @param[in] ecClass  The class to add
-        ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass);
+        ECOBJECTS_EXPORT ECObjectsStatus            Add(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
         //! Clears the vector Constraint classes
         ECOBJECTS_EXPORT ECObjectsStatus            clear();
         //! Clears the vector Constraint classes
         ECOBJECTS_EXPORT uint32_t            size()const;
         //! Removes specified ECClass from Constraint class vector
-        ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECEntityClassCR);
+        ECOBJECTS_EXPORT ECObjectsStatus            Remove(ECClassCR);
         ~ECRelationshipConstraintClassList();
            
     };
@@ -2166,7 +2498,7 @@ private:
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipClassP        m_relClass;
     bool                        m_isSource;
-    ECEntityClassCP             m_abstractConstraint;
+    ECClassCP                   m_abstractConstraint;
 
     bool                        m_verify;
     bool                        m_verified;
@@ -2175,6 +2507,9 @@ private:
     ECObjectsStatus             _SetMultiplicity(Utf8CP multiplicity, bool validate = false);
 
     ECObjectsStatus             _SetAbstractConstraint(Utf8StringCR value, bool validate = false);
+    ECObjectsStatus             _SetAbstractConstraint(ECClassCR abstractConstraint);
+
+    ECObjectsStatus             _AddClass(ECClassCR classConstraint);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
@@ -2188,11 +2523,13 @@ private:
 
     bool                        IsValid(bool resolveIssues);
     ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
-    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
+    ECObjectsStatus             ValidateAbstractConstraint(ECInterfaceClassCP abstractConstraint, bool resolveIssues = false) { return _ValidateAbstractConstraint(abstractConstraint, resolveIssues); }
+    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false) { return _ValidateAbstractConstraint(abstractConstraint, resolveIssues); }
+    ECObjectsStatus             _ValidateAbstractConstraint(ECClassCP abstractConstraint, bool resolveIssues = false);
     ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
     ECObjectsStatus             ValidateRoleLabel(bool resolveIssues = false);
     ECObjectsStatus             ValidateClassConstraint() const;
-    ECObjectsStatus             _ValidateClassConstraint(ECEntityClassCR constraintClass) const;
+    ECObjectsStatus             _ValidateClassConstraint(ECClassCR constraintClass) const;
     ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
     ECObjectsStatus             _ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
@@ -2245,14 +2582,18 @@ public:
     ECOBJECTS_EXPORT RelationshipMultiplicityCR GetMultiplicity() const;
 
     //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
-    //! @param[in]  abstractConstraint String representation of an the full name of an ECEntityClass
-    //! @return     Success if the abstract constraint is parsed into a valid ECEntityClass
+    //! @param[in]  abstractConstraint String representation of an the full name of either an ECEntityClass or ECInterfaceClass
+    //! @return     Success if the abstract constraint is parsed into a valid ECEntityClass or ECInterfaceClass
     ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(Utf8StringCR abstractConstraint);
+    //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
+    //! @param[in] abstractConstraint representation of an the full name of an ECInterfaceClass
+    ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(ECInterfaceClassCR abstractConstraint);
     //! Sets the abstract constraint class, which all of the constraint classes must be or derive from. 
     //! @param[in] abstractConstraint representation of an the full name of an ECEntityClass
     ECOBJECTS_EXPORT ECObjectsStatus            SetAbstractConstraint(ECEntityClassCR abstractConstraint);
+    
     //! Gets the abstract constraint class for this ECRelationshipConstraint. 
-    ECOBJECTS_EXPORT ECEntityClassCP const      GetAbstractConstraint() const;
+    ECOBJECTS_EXPORT ECClassCP const            GetAbstractConstraint() const;
     //! Returns whether the AbstractConstraint Class has been set explicitly or inherited from a base constraint
     ECOBJECTS_EXPORT bool                       IsAbstractConstraintDefined() const;
     //! Returns whether the AbstractConstraint Class has been set explicitly and not inherited from a base constraint.
@@ -2261,19 +2602,24 @@ public:
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
     //! will replace the current class applied to the constraint with the new class.
-    //! @param[in] classConstraint  The class to add
+    //! @param[in] classConstraint  The ECEntityClass to add
     ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECEntityClassCR classConstraint);
     //! Adds the specified class to the constraint.
     //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
     //! will replace the current class applied to the constraint with the new class.
-    //! @note Only Entity classes are allowed as constraints.
+    //! @param[in] classConstraint  The ECInterfaceClass to add
+    ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECInterfaceClassCR classConstraint);
+    //! Adds the specified class to the constraint.
+    //! If the constraint is variable, add will add the class to the list of classes applied to the constraint.  Otherwise, Add
+    //! will replace the current class applied to the constraint with the new class.
+    //! @note Only Entity and Interface classes are allowed as constraints.
     //! @param[in] ecClass  The class to add
     //! @param[out] classConstraint  list of constraint classes
-    ECOBJECTS_EXPORT ECObjectsStatus            AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECEntityClassCR ecClass);
+    ECOBJECTS_EXPORT ECObjectsStatus            AddConstraintClass(ECRelationshipConstraintClass*& classConstraint, ECClassCR ecClass);
 
     //! Removes the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove
-    ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECEntityClassCR classConstraint);
+    ECOBJECTS_EXPORT ECObjectsStatus            RemoveClass(ECClassCR classConstraint);
 
     //! Returns the classes applied to the constraint.
     ECOBJECTS_EXPORT const ECConstraintClassesList GetClasses() const;
@@ -2334,20 +2680,20 @@ private:
 
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
-    
-    bool                                IsValid(bool resolveIssues) const;
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
 
     virtual SchemaReadStatus            _ReadXmlAttributes (BeXmlNodeR classNode) override;
-    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties) override;
+    virtual SchemaReadStatus            _ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties) override;
     virtual ECRelationshipClassCP       _GetRelationshipClassCP () const override {return this;};
     virtual ECRelationshipClassP        _GetRelationshipClassP ()  override {return this;};
     virtual ECClassType                 _GetClassType() const override { return ECClassType::Relationship; }
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
     virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
+
+    virtual bool                        _Verify(bool resolveIssues = false) const override;
 
 //__PUBLISH_SECTION_START__
 public:
@@ -3340,6 +3686,12 @@ public:
     //! @param[in]  name    Name of the class to create
     //! @return A status code indicating whether or not the class was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus    CreateEntityClass (ECEntityClassP& ecClass, Utf8StringCR name);
+
+    //! If the class name is valid, will create an ECInterfaceClass object and add the new class to the schema
+    //! @param[out] ecClass If successful, will contain a new ECInterfaceClass object
+    //! @param[in]  name        Name of the class to create
+    //! @return A status code indicating whether or not the class was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus    CreateInterfaceClass(ECInterfaceClassP& ecClass, Utf8StringCR name);
 
     //! If the class name is valid, will create an ECStructClass object and add the new class to the schema
     //! @param[out] ecClass If successful, will contain a new ECStructClass object

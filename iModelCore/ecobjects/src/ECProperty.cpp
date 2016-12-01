@@ -425,7 +425,7 @@ bool ECProperty::HasExtendedType () const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
+bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
     bool wasCalculated = IsCalculated();
     bool set = _SetCalculatedPropertySpecification (spec);
@@ -632,6 +632,17 @@ bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
         }
         
     return (basePrimitiveType == m_primitiveType);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool PrimitiveECProperty::_Implements(ECInterfacePropertyCR interfaceProperty) const
+    {
+    if (!interfaceProperty.GetIsPrimitiveInterfaceProperty())
+        return false;
+
+    return m_primitiveType == interfaceProperty.GetAsPrimitiveInterfaceProperty()->GetType();
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1397,11 +1408,12 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         {
         return false;
         }
-    else
-        {
-        auto myType = GetStructElementType(), baseType = baseArray->GetStructElementType();
-        return nullptr != myType && nullptr != baseType && 0 == strcmp (myType->GetFullName(), baseType->GetFullName());
-        }
+    
+    // if the struct type hasn't been set yet, we will say it cannot override
+    if (nullptr == m_structType)
+        return false;
+
+    return 0 == strcmp (m_structType->GetFullName(), baseArray->GetStructElementType().GetFullName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1412,7 +1424,7 @@ ECObjectsStatus StructArrayECProperty::_SetTypeName(Utf8StringCR typeName)
     ECStructClassCP structClass;
     ECObjectsStatus status = ResolveStructType(structClass, typeName, this->GetClass());
     if (ECObjectsStatus::Success == status)
-        return SetStructElementType(structClass);
+        return SetStructElementType(*structClass);
 
     m_originalTypeName = typeName;
     LOG.warningv("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
@@ -1434,30 +1446,186 @@ Utf8String StructArrayECProperty::_GetTypeName() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECStructClassCP StructArrayECProperty::GetStructElementType () const
+ECStructClassCR StructArrayECProperty::GetStructElementType () const
     {
-    return m_structType;
+    DEBUG_EXPECT(NULL != m_structType);
+    return *m_structType;
     }
 
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCP structType)
+ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCR structType)
     {        
-    PRECONDITION (NULL != structType, ECObjectsStatus::PreconditionViolated);
-
-    if (&(structType->GetSchema()) != &(this->GetClass().GetSchema()))
+    if (&(structType.GetSchema()) != &(this->GetClass().GetSchema()))
         {
-        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType->GetSchema()))
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), structType.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
         }
 
     m_arrayKind = ARRAYKIND_Struct;
-    m_structType = structType;
- 
-    SetCachedTypeAdapter (NULL);
-    SetCachedMemberTypeAdapter (NULL);
-    InvalidateClassLayout();
+    if (m_structType != &structType)
+        {
+        m_structType = &structType;
+        SetCachedTypeAdapter(NULL);
+        SetCachedMemberTypeAdapter(NULL);
+        InvalidateClassLayout();
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus ECInterfaceProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+    {
+    Utf8String value;
+    READ_REQUIRED_XML_ATTRIBUTE(propertyNode, PROPERTY_NAME_ATTRIBUTE, this, Name, propertyNode.GetName())
+
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DESCRIPTION_ATTRIBUTE, this, Description)
+    READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus ECInterfaceProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+    {
+    return _WriteXml(xmlWriter, EC_INTERFACEPROPERTY_ELEMENT, ecXmlVersion);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaWriteStatus ECInterfaceProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion, bvector<bpair<Utf8CP, Utf8CP>>* additionalAttributes, bool writeType)
+    {
+    if (ecXmlVersion < ECVersion::V3_1)
+        return SchemaWriteStatus::FailedToCreateXml;
+
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+
+    // If this property was created during supplementation as a local property on the class, then don't serialize it
+    if (m_forSupplementation)
+        return status;
+
+    xmlWriter.WriteElementStart(elementName);
+
+    xmlWriter.WriteAttribute(PROPERTY_NAME_ATTRIBUTE, this->GetName().c_str());
+
+    if (writeType)
+        {
+        if (m_originalTypeName.size() > 0 && !m_originalTypeName.Contains("GeometryNET"))
+            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, m_originalTypeName.c_str());
+        else
+            xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, this->_GetTypeNameForXml(ecXmlVersion).c_str());
+        }
+
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, this->GetInvariantDescription().c_str());
+    if (GetIsDisplayLabelDefined())
+        xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, this->GetInvariantDisplayLabel().c_str());
+
+    if (nullptr != additionalAttributes && !additionalAttributes->empty())
+        {
+        for (auto& attribute : *additionalAttributes)
+            xmlWriter.WriteAttribute(attribute.first, attribute.second);
+        }
+
+    WriteCustomAttributes(xmlWriter);
+    xmlWriter.WriteElementEnd();
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool PrimitiveECInterfaceProperty::_CanOverride(ECPropertyCR baseProperty) const
+    {
+    if (!baseProperty.GetIsPrimitiveInterfaceProperty())
+        return false;
+
+    return (baseProperty.GetAsPrimitiveInterfaceProperty()->GetType() == m_primitiveType);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus PrimitiveECInterfaceProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+    {
+    SchemaReadStatus status = ECInterfaceProperty::_ReadXml(propertyNode, schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return status;
+
+    // typeName is a required attribute.  If it is missing, an error will be returned.
+    // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
+    Utf8String value;
+    if (BEXML_Success != propertyNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE))
+        {
+        BeAssert(s_noAssert);
+        LOG.errorv("Invalid ECSchemaXML: %s element %s must contain a %s attribute", propertyNode.GetName(), this->GetName().c_str(), TYPE_NAME_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
+
+    else if (ECObjectsStatus::ParseError == this->SetTypeName(value.c_str()))
+        LOG.warningv("Defaulting the type of ECProperty '%s' to '%s' in reaction to non-fatal parse error.", GetName().c_str(), GetTypeName().c_str());
+
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String PrimitiveECInterfaceProperty::_GetTypeName () const
+    {
+    return ECXml::GetPrimitiveTypeName (m_primitiveType);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus PrimitiveECInterfaceProperty::_SetTypeName (Utf8StringCR typeName)
+    {
+    PrimitiveType primitiveType;
+    ECObjectsStatus status = ECXml::ParsePrimitiveType (primitiveType, typeName);
+    if (ECObjectsStatus::Success == status)
+        {            
+        if (PRIMITIVETYPE_IGeometry == primitiveType)
+            m_originalTypeName = typeName; // Internally we treat everything as the common Bentley.Geometry.Common.IGeometry, but we need to preserve the actual type
+
+        return SetType(primitiveType);
+        }
+        
+    m_originalTypeName = typeName; // Remember this for when we serialize the ECSchema again, later.
+    LOG.warningv("Unrecognized typeName '%s' found in '%s:%s.%s'. A type of 'string' will be used.",
+                 typeName.c_str(),
+                 GetClass().GetSchema().GetName().c_str(),
+                 GetClass().GetName().c_str(),
+                 GetName().c_str());
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+PrimitiveType PrimitiveECInterfaceProperty::GetType () const
+    {
+    return m_primitiveType;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus PrimitiveECInterfaceProperty::SetType (PrimitiveType primitiveType)
+    {
+    if (m_primitiveType != primitiveType)
+        {
+        m_primitiveType = primitiveType;        
+        SetCachedTypeAdapter (NULL);
+        InvalidateClassLayout();
+        }
 
     return ECObjectsStatus::Success;
     }
@@ -1465,7 +1633,7 @@ ECObjectsStatus StructArrayECProperty::SetStructElementType (ECStructClassCP str
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationshipName)
+ECObjectsStatus SharedNavigationECProperty::SetRelationshipClassName(ECRelationshipClassCP &relationshipClass, ECClassCR ecClass, Utf8CP relationshipName)
     {
     PRECONDITION(nullptr != relationshipName, ECObjectsStatus::PreconditionViolated);
 
@@ -1478,7 +1646,7 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
         return status;
         }
 
-    ECSchemaCP resolvedSchema = GetClass().GetSchema().GetSchemaByAliasP(alias);
+    ECSchemaCP resolvedSchema = ecClass.GetSchema().GetSchemaByAliasP(alias);
     if (nullptr == resolvedSchema)
         {
         LOG.errorv("Cannot resolve the relationship class name '%s' as a relationship class because the alias '%s' cannot be resolved to the primary or a referenced schema.",
@@ -1486,25 +1654,262 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationsh
         return ECObjectsStatus::SchemaNotFound;
         }
     
-    ECClassCP ecClass = resolvedSchema->GetClassCP(relClassName.c_str());
-    if (nullptr == ecClass)
+    ECClassCP resolvedClass = resolvedSchema->GetClassCP(relClassName.c_str());
+    if (nullptr == resolvedClass)
         {
         LOG.errorv("Cannot resolve the relationship class name '%s' as a relationship class because the ECClass '%s' does not exist in the schema '%s'.",
                      relationshipName, relClassName.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
     
-    m_relationshipClass = ecClass->GetRelationshipClassCP();
-    if (nullptr == m_relationshipClass)
+    ECRelationshipClassCP relClass = resolvedClass->GetRelationshipClassCP();
+    if (nullptr == relClass)
         {
         LOG.errorv("ECClass '%s' exists in the schema '%s' but is not an ECRelationshipClass.",
                      relClassName.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ECClassNotSupported;
         }
-    
+
+    relationshipClass = relClass;
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SharedNavigationECProperty::Verify(ValueKind &valueKind, ECRelationshipClassCP relClass, ECClassCR ecClass, ECRelatedInstanceDirection direction)
+    {
+    ECRelationshipConstraintCP thisConstraint;
+    ECRelationshipConstraintCP thatConstraint;
+    if (ECRelatedInstanceDirection::Forward == direction)
+        {
+        thisConstraint = &relClass->GetSource();
+        thatConstraint = &relClass->GetTarget();
+        }
+    else
+        {
+        thisConstraint = &relClass->GetTarget();
+        thatConstraint = &relClass->GetSource();
+        }
+
+    bool supportsClass = thisConstraint->SupportsClass(ecClass);
+    if (!supportsClass)
+        {
+        valueKind = ValueKind::VALUEKIND_Uninitialized;
+        return false;
+        }
+
+    if (1 == thatConstraint->GetMultiplicity().GetUpperLimit())
+        valueKind = ValueKind::VALUEKIND_Primitive;
+    else
+        valueKind = ValueKind::VALUEKIND_Array;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECInterfaceProperty::SetRelationshipClassName(Utf8CP relationshipName)
+    {
+    ECRelationshipClassCP relationshipClass = nullptr;
+    ECObjectsStatus status = SharedNavigationECProperty::SetRelationshipClassName(relationshipClass, GetClass(), relationshipName);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (nullptr == relationshipClass)
+        {
+        return ECObjectsStatus::ClassNotFound;
+        }
+
+    m_relationshipClass = relationshipClass;
     m_valueKind = ValueKind::VALUEKIND_Uninitialized;
 
     return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECInterfaceProperty::SetDirection(Utf8CP direction)
+    {
+    PRECONDITION(nullptr != direction, ECObjectsStatus::PreconditionViolated);
+
+    ECObjectsStatus status = ECXml::ParseDirectionString(m_direction, direction);
+    if (ECObjectsStatus::Success != status)
+        LOG.errorv("Failed to parse the ECRelatedInstanceDirection string '%s' for NavigationECProperty '%s'.", direction, GetName().c_str());
+
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
+
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String NavigationECInterfaceProperty::GetRelationshipClassName() const
+    {
+    if (!EXPECTED_CONDITION(nullptr != m_relationshipClass))
+        return EMPTY_STRING;
+    return ECClass::GetQualifiedClassName(this->GetClass().GetSchema(), *m_relationshipClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NavigationECInterfaceProperty::Verify()
+    {
+    if (IsVerified())
+        return true;
+
+    if (nullptr == m_relationshipClass)
+        return false;
+
+    return SharedNavigationECProperty::Verify(m_valueKind, m_relationshipClass, GetClass(), m_direction);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus NavigationECInterfaceProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+    {
+    SchemaReadStatus status = ECInterfaceProperty::_ReadXml(propertyNode, schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return status;
+
+    // relationshipName and direction are required properties
+    Utf8String value; // needed for macro.
+    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, RELATIONSHIP_NAME_ATTRIBUTE, this, RelationshipClassName, propertyNode.GetName())
+
+    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, DIRECTION_ATTRIBUTE, this, Direction, propertyNode.GetName())
+
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus NavigationECInterfaceProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+    {
+    if (ecXmlVersion < ECVersion::V3_1)
+        return SchemaWriteStatus::FailedToCreateXml;
+
+    bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
+    additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
+    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_direction)));
+
+    return ECInterfaceProperty::_WriteXml(xmlWriter, EC_NAVIGATION_INTERFACEPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String NavigationECInterfaceProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NavigationECInterfaceProperty::_CanInterfaceOverride(ECPropertyCR baseProperty) const
+    {
+    NavigationECInterfacePropertyCP baseNavProperty = baseProperty.GetAsNavigationInterfaceProperty();
+    if (nullptr == baseNavProperty)
+        return false;
+
+    ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
+    if (GetDirection() != baseDirection)
+        return false;
+
+    // Following the example of StructECProperty we will allow override if the current relationship has not been set.
+    if (nullptr == m_relationshipClass)
+        return true;
+
+    ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
+
+    return ECClass::ClassesAreEqualByName(m_relationshipClass, baseRelClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECInterfaceProperty::SetRelationshipClass(ECRelationshipClassCR relClass, ECRelatedInstanceDirection direction, bool verify)
+    {
+    if (&(relClass.GetSchema()) != &(this->GetClass().GetSchema()))
+        {
+        if (!ECSchema::IsSchemaReferenced(this->GetClass().GetSchema(), relClass.GetSchema()))
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
+    m_relationshipClass = &relClass;
+    m_direction = direction;
+    if (verify && !Verify())
+        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+
+    SetCachedTypeAdapter(nullptr);
+    InvalidateClassLayout();
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECInterfaceProperty::SetType(PrimitiveType type)
+    {
+    if (m_type != type)
+        {
+        m_type = type;
+        SetCachedTypeAdapter(nullptr);
+        InvalidateClassLayout();
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
+    {
+    if (m_type != type)
+        {
+        m_type = type;
+        SetCachedTypeAdapter(nullptr);
+        InvalidateClassLayout();
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus NavigationECProperty::SetRelationshipClassName(Utf8CP relationshipName)
+    {
+    ECRelationshipClassCP relationshipClass = nullptr;
+    ECObjectsStatus status = SharedNavigationECProperty::SetRelationshipClassName(relationshipClass, GetClass(), relationshipName);
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (nullptr == relationshipClass)
+        {
+        return ECObjectsStatus::ClassNotFound;
+        }
+
+    m_relationshipClass = relationshipClass;
+    m_valueKind = ValueKind::VALUEKIND_Uninitialized;
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8String NavigationECProperty::GetRelationshipClassName() const
+    {
+    if (!EXPECTED_CONDITION(nullptr != m_relationshipClass))
+        return EMPTY_STRING;
+    return ECClass::GetQualifiedClassName(this->GetClass().GetSchema(), *m_relationshipClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1521,115 +1926,6 @@ ECObjectsStatus NavigationECProperty::SetDirection(Utf8CP direction)
     m_valueKind = ValueKind::VALUEKIND_Uninitialized;
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::GetRelationshipClassName() const
-    {
-    if (!EXPECTED_CONDITION(nullptr != m_relationshipClass))
-        return EMPTY_STRING;
-    return ECClass::GetQualifiedClassName(this->GetClass().GetSchema(), *m_relationshipClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool NavigationECProperty::Verify()
-    {
-    if (IsVerified())
-        return true;
-
-    if (nullptr == m_relationshipClass)
-        return false;
-
-    ECRelationshipConstraintCP thisConstraint;
-    ECRelationshipConstraintCP thatConstraint;
-    if (ECRelatedInstanceDirection::Forward == m_direction)
-        {
-        thisConstraint = &m_relationshipClass->GetSource();
-        thatConstraint = &m_relationshipClass->GetTarget();
-        }
-    else
-        {
-        thisConstraint = &m_relationshipClass->GetTarget();
-        thatConstraint = &m_relationshipClass->GetSource();
-        }
-
-    bool supportsClass = thisConstraint->SupportsClass(GetClass());
-    if (!supportsClass)
-        {
-        m_valueKind = ValueKind::VALUEKIND_Uninitialized;
-        return false;
-        }
-
-    if (1 == thatConstraint->GetMultiplicity().GetUpperLimit())
-        m_valueKind = ValueKind::VALUEKIND_Primitive;
-    else
-        m_valueKind = ValueKind::VALUEKIND_Array;
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
-    {
-    SchemaReadStatus status = T_Super::_ReadXml(propertyNode, schemaContext);
-    if (status != SchemaReadStatus::Success)
-        return status;
-
-    // relationshipName and direction are required properties
-    Utf8String value; // neede for macro.
-    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, RELATIONSHIP_NAME_ATTRIBUTE, this, RelationshipClassName, propertyNode.GetName())
-
-    READ_REQUIRED_XML_ATTRIBUTE (propertyNode, DIRECTION_ATTRIBUTE, this, Direction, propertyNode.GetName())
-
-    return SchemaReadStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
-    {
-    if (ECVersion::V2_0 == ecXmlVersion)
-        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
-
-    bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
-    additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
-    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(m_direction)));
-
-    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Colin.Kerr                  12/2015
-//---------------+---------------+---------------+---------------+---------------+-------
-bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
-    {
-    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
-    if (nullptr == baseNavProperty)
-        return false;
-
-    ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
-    if (GetDirection() != baseDirection)
-        return false;
-
-    // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
-    if (nullptr == m_relationshipClass)
-        return true;
-
-    ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
-
-    return m_relationshipClass->Is(baseRelClass);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1655,18 +1951,102 @@ ECObjectsStatus NavigationECProperty::SetRelationshipClass(ECRelationshipClassCR
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NavigationECProperty::Verify()
+    {
+    if (IsVerified())
+        return true;
+
+    if (nullptr == m_relationshipClass)
+        return false;
+
+    return SharedNavigationECProperty::Verify(m_valueKind, m_relationshipClass, GetClass(), m_direction);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
+    {
+    NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
+    if (nullptr == baseNavProperty)
+        return false;
+
+    ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
+    if (GetDirection() != baseDirection)
+        return false;
+
+    // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
+    if (nullptr == m_relationshipClass)
+        return true;
+
+    ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
+
+    return m_relationshipClass->Is(baseRelClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool NavigationECProperty::_Implements(ECInterfacePropertyCR interfaceProperty) const
+    {
+    NavigationECInterfacePropertyCP interfaceNavProp = interfaceProperty.GetAsNavigationInterfaceProperty();
+    if (nullptr == interfaceNavProp)
+        return false;
+
+    ECRelatedInstanceDirection baseDirection = interfaceNavProp->GetDirection();
+    if (GetDirection() != baseDirection)
+        return false;
+
+    if (GetType() != interfaceNavProp->GetType())
+        return false;
+
+    // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
+    ECRelationshipClassCP relClass = GetRelationshipClass();
+    if (nullptr == relClass)
+        return true;
+
+    ECRelationshipClassCP baseRelClass = interfaceNavProp->GetRelationshipClass();
+
+    return relClass->Is(baseRelClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus NavigationECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+    {
+    SchemaReadStatus status = T_Super::_ReadXml(propertyNode, schemaContext);
+    if (status != SchemaReadStatus::Success)
+        return status;
+
+    // relationshipName and direction are required properties
+    Utf8String value; // neede for macro.
+    READ_REQUIRED_XML_ATTRIBUTE(propertyNode, RELATIONSHIP_NAME_ATTRIBUTE, this, RelationshipClassName, propertyNode.GetName())
+    READ_REQUIRED_XML_ATTRIBUTE(propertyNode, DIRECTION_ATTRIBUTE, this, Direction, propertyNode.GetName())
+
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr                  12/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus NavigationECProperty::SetType(PrimitiveType type)
-    {
-    if (m_type != type)
-        {
-        m_type = type;
-        SetCachedTypeAdapter(nullptr);
-        InvalidateClassLayout();
-        }
+Utf8String NavigationECProperty::_GetTypeName() const { return ECXml::GetPrimitiveTypeName(m_type); }
 
-    return ECObjectsStatus::Success;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                11/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus NavigationECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
+    {
+    if (ECVersion::V2_0 == ecXmlVersion)
+        return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion);
+
+    bvector<bpair<Utf8CP, Utf8CP>> additionalAttributes;
+    additionalAttributes.push_back(make_bpair(RELATIONSHIP_NAME_ATTRIBUTE, GetRelationshipClassName().c_str()));
+    additionalAttributes.push_back(make_bpair(DIRECTION_ATTRIBUTE, ECXml::DirectionToString(GetDirection())));
+
+    return T_Super::_WriteXml(xmlWriter, EC_NAVIGATIONPROPERTY_ELEMENT, ecXmlVersion, &additionalAttributes, false);
     }
 
 /*---------------------------------------------------------------------------------**//**

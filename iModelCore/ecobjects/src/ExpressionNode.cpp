@@ -2880,7 +2880,7 @@ bool ExpressionRemapper::ProcessDot (DotNodeCR node)
         if (nullptr != structProp)
             m_currentClass = &structProp->GetType();
         else if (nullptr != (arrayProp = prop->GetAsStructArrayProperty()))
-            m_currentClass = arrayProp->GetStructElementType();
+            m_currentClass = &arrayProp->GetStructElementType();
         }
 
     return true;

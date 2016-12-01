@@ -29,6 +29,15 @@ ContentRule::ContentRule (Utf8StringCR condition, int priority, bool onlyIfNotHa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Grigas.Petraitis                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ContentRule::ContentRule(ContentRuleCR other)
+    : m_customControl(other.m_customControl)
+    {
+    CommonTools::CloneRules(m_specifications, other.m_specifications);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentRule::~ContentRule ()
@@ -54,12 +63,12 @@ bool ContentRule::_ReadXml (BeXmlNodeP xmlNode)
 
     for (BeXmlNodeP child = xmlNode->GetFirstChild (BEXMLNODE_Element); NULL != child; child = child->GetNextSibling (BEXMLNODE_Element))
         {
-        if (0 == BeStringUtilities::Stricmp (child->GetName (), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList> (child, m_specifications);
-        else if (0 == BeStringUtilities::Stricmp (child->GetName (), SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME))
-            CommonTools::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList> (child, m_specifications);
+        if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_INSTANCES_OF_SPECIFIC_CLASSES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<ContentInstancesOfSpecificClassesSpecification, ContentSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), CONTENT_RELATED_INSTANCES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<ContentRelatedInstancesSpecification, ContentSpecificationList>(child, m_specifications);
+        else if (0 == BeStringUtilities::Stricmp(child->GetName(), SELECTED_NODE_INSTANCES_SPECIFICATION_XML_NODE_NAME))
+            CommonTools::LoadRuleFromXmlNode<SelectedNodeInstancesSpecification, ContentSpecificationList>(child, m_specifications);
         }
 
     return PresentationRule::_ReadXml (xmlNode);

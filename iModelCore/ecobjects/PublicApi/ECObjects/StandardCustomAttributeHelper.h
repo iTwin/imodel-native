@@ -17,100 +17,6 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //! @addtogroup ECObjectsGroup
 //! @beginGroup
 
-
-
-//=======================================================================================    
-//! DateTimeInfo contains the meta data held by the custom attribute \b %DateTimeInfo on an 
-//! ECProperty of type DgnPlatform::PRIMITIVETYPE_DateTime.
-//! @remarks 
-//! Date time values in ECObjects are represented by the DateTime class. Each DateTime instance can 
-//! contain metadata about the actual date time value (see DateTime::Info). 
-//! In order to preserve the metadata when persisting a DateTime, clients can decorate the respective
-//! ECProperty with the \b %DateTimeInfo custom attribute from the standard ECSchema \b Bentley_Standard_CustomAttributes.
-//! @bsiclass
-//=======================================================================================    
-struct DateTimeInfo
-    {
-    private:
-        bool m_isKindNull;
-        bool m_isComponentNull;
-        DateTime::Info m_info;
-
-        static const DateTime::Kind DEFAULT_KIND;
-        static const DateTime::Component DEFAULT_COMPONENT;
-        static const DateTime::Info s_default;
-
-    public:
-        //***** Construction ******
-        //Intentionally use the compiler-generated versions of copy constructor, assignment operator, and destructor
-
-        //! Initializes a new instance of the DateTimeInfo type.
-        DateTimeInfo() : m_isKindNull(true), m_isComponentNull(true) {}
-
-        //! Initializes a new instance of the DateTimeInfo type.
-        //! @param[in] metadata object from which the DateTimeInfo will be initialized.
-        explicit DateTimeInfo(DateTime::Info const& metadata) : m_isKindNull(false), m_isComponentNull(false), m_info(metadata) {}
-
-        //__PUBLISH_SECTION_END__
-        DateTimeInfo(bool isKindNull, DateTime::Kind kind, bool isComponentNull, DateTime::Component component);
-        //__PUBLISH_SECTION_START__
-
-        //! Compares this DateTimeInfo to @p rhs.
-        //! @param [in] rhs DateTimeInfo to compare this against
-        //! @return true if both objects are equal, false otherwise
-        ECOBJECTS_EXPORT bool operator== (DateTimeInfo const& rhs) const;
-
-        //! Compares this DateTimeInfo to @p rhs for inequality.
-        //! @param [in] rhs DateTimeInfo to compare this against
-        //! @return true if the objects are not equal, false otherwise
-        bool operator!= (DateTimeInfo const& rhs) const { return !(*this == rhs); }
-
-        //! Indicates whether the DateTime::Kind and DateTime::Component are both unset or not.
-        //! @return true, if both DateTime::Kind and DateTime::Component are unset. false, if at least one of the two are not unset.
-        bool IsNull() const { return IsKindNull() && IsComponentNull(); }
-
-        //! Indicates whether the DateTime::Kind is unset or not.
-        //! @return true, if the DateTime::Kind is unset. false, otherwise
-        bool IsKindNull() const { return m_isKindNull; }
-        //! Indicates whether the DateTime::Component is unset or not.
-        //! @return true, if the DateTime::Component is unset. false, otherwise
-        bool IsComponentNull() const { return m_isComponentNull; }
-
-        //__PUBLISH_SECTION_END__
-        //! Gets the content of this object as DateTime::Info.
-        //! @remarks Should only be called if DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull are not true.
-        //! @return DateTime::Info representing the content of this object
-        DateTime::Info const& GetInfo() const;
-        //__PUBLISH_SECTION_START__
-
-        //! Gets the content of this object as DateTime::Info.
-        //! @remarks if \p useDefaultIfUnset is true, fills in default values for date time kind
-        //!         and date time component if they are unset.
-        //!         @see GetDefault
-        //! @param[in] useDefaultIfUnset if true, default values are filled in, if a member of this object is unset,
-        //!            if false, no default values are filled in. The value of unset members is undefined.
-        //!            Callers have to check the unset status first using DateTimeInfo::IsKindNull and DateTimeInfo::IsComponentNull
-        //! @return DateTime::Info representing the content of this object
-        ECOBJECTS_EXPORT DateTime::Info GetInfo(bool useDefaultIfUnset) const;
-
-        //! Gets a DateTimeInfo object with the default values used by ECObjects.
-        //! @remarks The default values are DateTime::Kind::Unspecified and DateTime::Component::DateAndTime.
-        //! @return Default DateTime::Info
-        ECOBJECTS_EXPORT static DateTime::Info const& GetDefault();
-
-        //! Checks whether the RHS object matches this object.
-        //! @remarks If one of the members
-        //!          of this object is null, the RHS counterpart is ignored and the
-        //!          members are considered matching.
-        //! @param[in] rhs RHS
-        //! @return true, if the RHS matches this object. false otherwise
-        ECOBJECTS_EXPORT bool IsMatchedBy(DateTime::Info const& rhs) const;
-
-        //! Generates a text representation of this object.
-        //! @return Text representation of this object
-        ECOBJECTS_EXPORT Utf8String ToString() const;
-    };
-
 //=======================================================================================    
 //! StandardCustomAttributeHelper provides APIs to access items of the Bentley standard schemas
 //! @bsiclass
@@ -128,11 +34,11 @@ public:
     //! @b Bentley_Standard_CustomAttributes) on a date time ECProperty.
     //! See also DateTimeInfo.
     //! @param[out] dateTimeInfo the retrieved content of the %DateTimeInfo custom attribute. If the property did not
-    //!             carry the %DateTimeInfo custom attribute, the resulting @p dateTimeInfo's 'IsXXXNull' flags are set to true.
+    //!             carry the %DateTimeInfo custom attribute, the parameter remains unmodified.
     //! @param[in] dateTimeProperty the date time ECProperty from which the custom attribute is to be retrieved
     //! @return ECObjectsStatus::Success in case of success, error codes in case of parsing errors or if @p dateTimeProperty 
     //! is not of type ::PRIMITIVETYPE_DateTime. 
-    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTimeInfoR dateTimeInfo, ECPropertyCR dateTimeProperty);
+    ECOBJECTS_EXPORT static ECObjectsStatus GetDateTimeInfo (DateTime::Info& dateTimeInfo, ECPropertyCR dateTimeProperty);
 
     //! Returns the specified CustomAttribute ECClass
     //! @param[in] attributeName The name of the CustomAttribute ECClass
@@ -294,14 +200,15 @@ public:
     bool IsValid() const { return m_class != nullptr && m_ca != nullptr; }
 
     //! Tries to get the value of the SharedColumnCount property from the ShareColumns custom attribute.
+    //! The SharedColumnCount includes the overflow column.
     //! @param[out] sharedColumnCount Number of shared columns to use. It remains unchanged, if the SharedColumnCount property wasn't set.
     //! @return ECOBJECTSTATUS_Success if SharedColumnCount was set or unset in the ShareColumns custom attribute, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetSharedColumnCount(int& sharedColumnCount) const;
 
-    //! Tries to get the value of the ExcessColumnName property in the ShareColumns custom attribute.
-    //! @param[out] excessColumnName Name of excess column. It remains unchanged, if the ExcessColumnName property wasn't set.
-    //! @return ECOBJECTSTATUS_Success if ExcessColumnName was set or unset in the ShareColumns custom attribute, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetExcessColumnName(Utf8String& excessColumnName) const;
+    //! Tries to get the value of the OverflowColumnName property in the ShareColumns custom attribute.
+    //! @param[out] overflowColumnName Name of excess column. It remains unchanged, if the OverflowColumnName property wasn't set.
+    //! @return ECOBJECTSTATUS_Success if OverflowColumnName was set or unset in the ShareColumns custom attribute, error codes otherwise
+    ECOBJECTS_EXPORT ECObjectsStatus TryGetOverflowColumnName(Utf8String& overflowColumnName) const;
 
     //! Tries to get the value of the ApplyToSubclassesOnly property from the ShareColumns custom attribute.
     //! @param[out] applyToSubclassesOnly ApplyToSubclassesOnly flag. It remains unchanged, if the ApplyToSubclassesOnly property wasn't set.
