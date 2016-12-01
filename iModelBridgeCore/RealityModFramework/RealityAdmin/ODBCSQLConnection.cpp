@@ -885,12 +885,14 @@ ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityDataCR dat
         }
     else
         {
-        if (ODBCConnectionStatus::Success != (result = ServerConnection::SaveMetadata(data.GetMetadata(), metadataId)))
-            return result;
+        if (data.GetMetadataCP() != NULL)
+            {
+            if (ODBCConnectionStatus::Success != (result = ServerConnection::SaveMetadata(*(data.GetMetadataCP()), metadataId)))
+                return result;
 
-        if (ODBCConnectionStatus::Success != (result = ServerConnection::InsertBareSpatialEntity(data, metadataId, thumbnailId, entityId)))
-            return result;
-
+            if (ODBCConnectionStatus::Success != (result = ServerConnection::InsertBareSpatialEntity(data, metadataId, thumbnailId, entityId)))
+                return result;
+            }
         }
 
     SQLINTEGER dataSourceId;
@@ -1348,10 +1350,9 @@ ODBCConnectionStatus ServerConnection::Update(SpatialEntityDataCR data)
     {
     ODBCConnectionStatus result;
     RETCODE retCode;
-    SQLINTEGER entityId;
-//    SQLINTEGER thumbnailId;
-    SQLINTEGER dataSourceId;
-    SQLINTEGER metadataId;
+    SQLINTEGER entityId = 0;
+    SQLINTEGER dataSourceId = 0;
+    SQLINTEGER metadataId = 0;
     SQLLEN len;
 
 
@@ -1374,65 +1375,41 @@ ODBCConnectionStatus ServerConnection::Update(SpatialEntityDataCR data)
         return ODBCConnectionStatus::RecordDoesNotExistError;
         }
 
-    // Locate the metadata id
-    bool uniqueConsumer = true;
-    result = GetMetadataIdFromSpatialEntity(entityId, metadataId, uniqueConsumer);
-
-    if (ODBCConnectionStatus::Success == result && metadataId > 0 && uniqueConsumer)
+    // If metadata is provided ...
+    if (data.GetMetadataCP() == NULL)
         {
-        // The metadata is used by a single spatial entity ... we will update the present one ...
-        if (ODBCConnectionStatus::Success != (result = ServerConnection::UpdateMetadata(data.GetMetadata(), metadataId)))
-            return result;
+        // Locate the metadata id in the spatial entity and the fact it is used by one or many sources.
+        bool uniqueConsumer = true;
+        result = GetMetadataIdFromSpatialEntity(entityId, metadataId, uniqueConsumer);
+
+        if (ODBCConnectionStatus::Success == result && metadataId > 0 && uniqueConsumer)
+            {
+            // The metadata is used by a single spatial entity ... we will update the present one ...
+            if (ODBCConnectionStatus::Success != (result = ServerConnection::UpdateMetadata(*(data.GetMetadataCP()), metadataId)))
+                return result;
+            }
+        else
+            {
+            //if (metadataId <= 0)
+            //    {
+            //    // This means there were no thumbnail previously on this spatial entity ... we will ass a brand new one.
+            //    if (ODBCConnectionStatus::Success != (result = ServerConnection::UpdateThumbnail(data.GetThumbnail(), thumbnailId)))
+            //        return result;
+    
+            //    // Now we must set the thumbnail identifier in the spatial entity
+            //    retCode = SetMetadataIdToSpatialEntity(entityId, thumbnailId);
+    
+            //    } 
+            //if (uniqueConsumer)
+            //    {
+            //    // Metadata exist but is used by many spatial entities make use of it ... for the moment we pass
+            //    //&&AR What do we do here?
+            //    }
+            }
         }
-    else
-        {
-        //if (metadataId <= 0)
-        //    {
-        //    // This means there were no thumbnail previously on this spatial entity ... we will a brand new one.
-        //    if (ODBCConnectionStatus::Success != (result = ServerConnection::UpdateThumbnail(data.GetThumbnail(), thumbnailId)))
-        //        return result;
 
-        //    // Now we must set the thumbnail identifier in the spatial entity
-        //    retCode = SetMetadataIdToSpatialEntity(entityId, thumbnailId);
 
-        //    } 
-        //if (uniqueConsumer)
-        //    {
-        //    // Metadata exist but is used by many spatial entities make use of it ... for the moment we pass
-        //    //&&AR What do we do here?
-        //    }
-        }
-
-#if (0)
-    result = GetThumbnailIdFromSpatialEntity(entityId, thumbnailId, uniqueConsumer);
-
-    if (ODBCConnectionStatus::Success == result && thumbnailId > 0 && uniqueConsumer)
-        {
-        // The metadata is used by a single spatial entity ... we will update the present one ...
-        if (ODBCConnectionStatus::Success != (result = ServerConnection::UpdateThumbnail(data.GetThumbnail(), thumbnailId)))
-            return result;
-        }
-    else
-        {
-        //if (thumbnailId <= 0)
-        //    {
-        //    // This means there were no thumbnail previously on this spatial entity ... we will a brand new one.
-        //    if (ODBCConnectionStatus::Success != (result = ServerConnection::SaveThumbnail(data.GetThumbnail(), thumbnailId)))
-        //        return result;
-
-        //    // Now we must set the thumbnail identifier in the spatial entity
-        //    retCode = SetThumbnailIdToSpatialEntity(entityId, thumbnailId);
-
-        //    } 
-        //else
-        //    {
-        //    BeAssert(!uniqueConsumer);
-        //    // Metadata exist but is used by many spatial entities make use of it ... for the moment we pass
-        //    //&&AR What do we do here?
-        //    }
-        }
-#endif
-
+    // For every data source we will update existing and add new ones.
     for (size_t index = 0 ; index < data.GetDataSourceCount() ; index++)
         {
         // Check if data source already exists

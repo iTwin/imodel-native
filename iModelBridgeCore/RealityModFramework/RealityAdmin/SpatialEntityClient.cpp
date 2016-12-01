@@ -154,7 +154,7 @@ SpatialEntityStatus SpatialEntityClient::GetData() const
         newDataSource->SetUrl(m_dataRepositories[i].first.c_str());
 
         // Set server.
-        newDataSource->SetServer(*m_pServer);
+        newDataSource->SetServer(m_pServer.get());
 
         pExtractedData->AddDataSource(*newDataSource);
 

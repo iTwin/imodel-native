@@ -303,7 +303,11 @@ void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
 void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
     {
     for (size_t index = 0 ; index < data.GetDataSourceCount() ; index++)
-        data.GetDataSource(index).SetServerId(ServerConnection::GetInstance().SaveServer(data.GetDataSource(index).GetServer()));
+        {
+        if (data.GetDataSource(index).GetServerCP() != NULL)
+            data.GetDataSource(index).SetServerId(ServerConnection::GetInstance().SaveServer(*(data.GetDataSource(index).GetServerCP())));
+        }
+       
     
     if (m_updateMode)
         {

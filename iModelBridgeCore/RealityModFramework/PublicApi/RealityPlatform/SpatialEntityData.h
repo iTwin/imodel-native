@@ -48,11 +48,13 @@ enum class SpatialEntityStatus
     };
 
 
-#if (0)
-// Temporarily disabled ... to be kept
+
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
+//! This class is not currently used but kept as we have not yet elimnated the
+//! intention to have some sort of thumbnail service either apart or integrated
+//! in the GeoCoordination Service.
 //=====================================================================================
 struct SpatialEntityThumbnail : public RefCountedBase
     {
@@ -111,10 +113,13 @@ protected:
     bool m_isEmpty;
     };
 
-#endif
+
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
+//! This class holds general use metadata. This metadata can be used by many different
+//! spatial entities or not depending if the metadata applies to the whole dataset or
+//! or to a specific spatial entity
 //=====================================================================================
 struct SpatialEntityMetadata : public RefCountedBase
     {
@@ -153,6 +158,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetData() const;
     REALITYDATAPLATFORM_EXPORT void SetData(Utf8CP data);
 
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetMetadataUrl() const;
     REALITYDATAPLATFORM_EXPORT void SetMetadataUrl(Utf8CP metadataUrl);
 
@@ -174,6 +180,10 @@ protected:
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              5/2016
+//! Class to represent a data server. It indicates server specific information
+//! such as communication protocol (ftp, http, ...) authentication parameters
+//! data protocol (ftp, WMS, S3MX, ...)
+//! A server is used by many datasources.
 //=====================================================================================
 struct SpatialEntityServer : public RefCountedBase
     {
@@ -248,6 +258,12 @@ protected:
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
+//! A Spatial entity data source defines the storage location of a spatial entity.
+//! In conjunction with the server it is related to it provides all the information
+//! necessary to access the data.
+//! As a commodity it may also contain information that may be missing from the 
+//! source file such as the 'No Data Value' or the 'Geographic Coordinate System'
+//! that may be documented but not automatically extracted from the source file.
 //=====================================================================================
 struct SpatialEntityDataSource : public RefCountedBase
     {
@@ -262,7 +278,6 @@ public:
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetGeoCS() const;
     REALITYDATAPLATFORM_EXPORT void SetGeoCS(Utf8CP geoCS);
-
 
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetCompoundType() const;
@@ -282,10 +297,6 @@ public:
     //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetLocationInCompound() const;
     REALITYDATAPLATFORM_EXPORT void SetLocationInCompound(Utf8CP location);
-
-    //! Get/Set
-    REALITYDATAPLATFORM_EXPORT SpatialEntityServerCR GetServer() const;
-    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerR server);
 
     REALITYDATAPLATFORM_EXPORT bool GetIsMultiband() const;
     REALITYDATAPLATFORM_EXPORT void SetIsMultiband( bool isMultiband );
@@ -308,6 +319,12 @@ public:
     REALITYDATAPLATFORM_EXPORT SQLINTEGER GetServerId() const;
     //serverId is a mutable value so that it can be set on a const ref, before performing a Save()
     REALITYDATAPLATFORM_EXPORT void SetServerId( SQLINTEGER id ) const;
+
+    //! Get/Set
+    //! Since the server is an optional field of the data source it is expressed as a pointer
+    //! The pointer returned or given can be null
+    REALITYDATAPLATFORM_EXPORT SpatialEntityServerCP GetServerCP() const;
+    REALITYDATAPLATFORM_EXPORT void SetServer(SpatialEntityServerP server);
 
 protected:
     SpatialEntityDataSource();
@@ -337,6 +354,10 @@ protected:
 
 //=====================================================================================
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
+//! The central class of the Spatial Entity model. It represents a spatial
+//! geocoordinated data. It contains all fields necessary to represent the spatial
+//! entity except the actual data which is stored in the data sources the spatial
+//! entity makes references to.
 //=====================================================================================
 struct SpatialEntityData : public RefCountedBase
 {
@@ -356,6 +377,7 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProvider() const;
     REALITYDATAPLATFORM_EXPORT void SetProvider(Utf8CP provider);
 
+    //! Get/Set
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetProviderName() const;
     REALITYDATAPLATFORM_EXPORT void SetProviderName(Utf8CP providerName);
 
@@ -408,9 +430,11 @@ public:
 
 
     //! Get/Set
-    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCR GetMetadata() const;
-    REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataR metadata);
+    //! A reference to a metadata object. This object can be used by many spatial entities
+    REALITYDATAPLATFORM_EXPORT SpatialEntityMetadataCP GetMetadataCP() const;
+    REALITYDATAPLATFORM_EXPORT void SetMetadata(SpatialEntityMetadataP metadata);
   
+    // Get/Set
     REALITYDATAPLATFORM_EXPORT float GetCloudCover() const;
     REALITYDATAPLATFORM_EXPORT void SetCloudCover( float cover );
 
@@ -431,16 +455,10 @@ protected:
     DRange2d m_footprintExtents;
     bool m_approximateFootprint;
     uint64_t m_approximateFileSize;
-    // SpatialEntityThumbnailPtr m_pThumbnail;
     SpatialEntityMetadataPtr m_pMetadata;
     bvector<SpatialEntityDataSourcePtr> m_DataSources;
 
     float m_cloudCover = -1.0f;
-    //uint64_t m_redSize;
-    //uint64_t m_blueSize;
-    //uint64_t m_greenSize;
-    //uint64_t m_panchromaticSize;
-
     mutable SQLINTEGER m_serverId = -1;
     }; 
    

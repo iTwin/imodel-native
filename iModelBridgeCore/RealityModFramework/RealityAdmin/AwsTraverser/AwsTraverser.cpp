@@ -540,7 +540,7 @@ int main(int argc, char *argv[])
 
                 metaData->SetMetadataUrl(metadataUrl.c_str());
 
-                data->SetMetadata(*metaData);
+                data->SetMetadata(metaData.get());
 
                 // Check cloud cover value
                 if (data->GetCloudCover() < 0.0f)

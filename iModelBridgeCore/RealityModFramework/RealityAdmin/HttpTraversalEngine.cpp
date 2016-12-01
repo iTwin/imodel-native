@@ -276,7 +276,7 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     // Server.
     SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
     if (pServer != NULL)
-        newDataSource->SetServer(*pServer);
+        newDataSource->SetServer(pServer.get());
 
     pExtractedData->AddDataSource(*newDataSource);
 

@@ -224,7 +224,7 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     BeFileName metadataFilename = FtpDataHandler::BuildMetadataFilename(fileList[0].GetDirectoryName().GetNameUtf8().c_str());
     SpatialEntityMetadataPtr pMetadata = SpatialEntityMetadata::CreateFromFile(metadataFilename.GetNameUtf8().c_str());
     if (pMetadata != NULL)
-        pExtractedData->SetMetadata(*pMetadata);
+        pExtractedData->SetMetadata(pMetadata.get());
 
     // Resolution and geocoding.
     RasterDataPtr pRasterData = dynamic_cast<RasterDataP>(pData.get());
@@ -275,7 +275,7 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     // Server.
     SpatialEntityServerPtr pServer = SpatialEntityServer::Create();
     if (pServer != NULL)
-        newDataSource->SetServer(*pServer);
+        newDataSource->SetServer(pServer.get());
 
     pExtractedData->AddDataSource(*newDataSource);
 
