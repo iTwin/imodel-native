@@ -1038,7 +1038,20 @@ DbColumn* ColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessStr
         outColumn = ApplySharedColumnStrategy(colType, addNotNullConstraint, addUniqueConstraint, collation);
         }
     else
+        {
+        if (GetTable().HasExclusiveRootECClass() && GetTable().GetExclusiveRootECClassId() != m_classMap.GetClass().GetId())
+            {
+            if (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default)
+                {
+                m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For the ECProperty '%s' on ECClass '%s' either a 'not null', unique or collation constraint is defined. The ECClass has base classes though "
+                                                                "mapped to the same table so that the constraints cannot be enforced by the database.",
+                                                                ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
+                return nullptr;
+                }
+            }
+
         outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
+        }
 
     if (outColumn == nullptr)
         {

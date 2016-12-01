@@ -1741,17 +1741,16 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
+        "    <ECEntityClass typeName='TestClass' modifier='None'>"
         "        <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00'>"
         "                <MapStrategy>TablePerHierarchy</MapStrategy>"
         "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "               <SharedColumnCount>10</SharedColumnCount>"
+        "            </ShareColumns>"
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Child' modifier='None'>"
-        "        <BaseClass>Parent</BaseClass>"
         "        <ECProperty propertyName='NotNullableProp' typeName='double'>"
         "           <ECCustomAttributes>"
         "            <PropertyMap xmlns='ECDbMap.02.00'>"
@@ -1810,8 +1809,8 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
     ASSERT_FALSE(asserted);
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name='ts_Parent'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table ts_Parent";
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name='ts_TestClass'"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table ts_TestClass";
 
     bvector<Utf8String> columnDdlList;
     BeStringUtilities::Split(stmt.GetValueText(0), ",", columnDdlList);
@@ -6439,9 +6438,181 @@ TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, PropertyMapCA)
+    {
+    std::vector<SchemaItem> invalidCases {
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+            "    <ECEntityClass typeName='A' modifier='None'>"
+            "        <ECProperty propertyName='Id' typeName='long' />"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='B' modifier='None'>"
+            "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECNavigationProperty>"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECEntityClass>"
+            "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+            "    <Source cardinality='(0,1)' polymorphic='True'>"
+            "      <Class class='A'/>"
+            "    </Source>"
+            "    <Target cardinality='(0,N)' polymorphic='True'>"
+            "      <Class class='B' />"
+            "    </Target>"
+            "  </ECRelationshipClass>"
+            "</ECSchema>", false, "PropertyMap CA not allowed on navigation property"),
+
+            SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None'>"
+        "        <ECProperty propertyName='Id' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsNullable>false</IsNullable>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "        <ECProperty propertyName='Name' typeName='string' />"
+        "    </ECEntityClass>"
+        "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+        "      <Class class='B' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>", false, "PropertyMap CA not allowed on navigation property"),
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "    <ECEntityClass typeName='Base' modifier='None'>"
+            "           <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "           </ECCustomAttributes>"
+            "        <ECProperty propertyName='Id' typeName='long'/>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub' modifier='None'>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='SubProp' typeName='long'>"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsNullable>false</IsNullable>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "    </ECEntityClass>"
+            "</ECSchema>", false, "PropertyMap::IsNullable=false not allowed on subclass"),
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "    <ECEntityClass typeName='Base' modifier='None'>"
+            "           <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "           </ECCustomAttributes>"
+            "        <ECProperty propertyName='Id' typeName='long'/>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub' modifier='None'>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='SubProp' typeName='long'>"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsUnique>true</IsUnique>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "    </ECEntityClass>"
+            "</ECSchema>", false, "PropertyMap::IsUnique=true not allowed on subclass"),
+
+        SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+            "    <ECEntityClass typeName='Base' modifier='None'>"
+            "           <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "           </ECCustomAttributes>"
+            "        <ECProperty propertyName='Id' typeName='long'/>"
+            "    </ECEntityClass>"
+            "    <ECEntityClass typeName='Sub' modifier='None'>"
+            "        <BaseClass>Base</BaseClass>"
+            "        <ECProperty propertyName='SubProp' typeName='long'>"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <Collation>NoCase</Collation>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "    </ECEntityClass>"
+            "</ECSchema>", false, "PropertyMap::Collation not allowed on subclass")
+            };
+
+    AssertSchemaImport(invalidCases, "propertymapcatests.ecdb");
+
+    {
+    ECDb ecdb;
+    bool asserted = false;
+    AssertSchemaImport(ecdb, asserted, SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Base' modifier='None'>"
+        "           <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "           </ECCustomAttributes>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='Sub' modifier='None'>"
+        "        <BaseClass>Base</BaseClass>"
+        "        <ECProperty propertyName='SubProp' typeName='long'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <ColumnName>MyOwnSubPropName</ColumnName>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "        </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>"), "propertymapcatests.ecdb");
+    ASSERT_FALSE(asserted);
+
+    bvector<Utf8String> actualColNames;
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts1_Base"));
+    ASSERT_EQ(4, actualColNames.size()) << "ts1_Base";
+    ASSERT_STRCASEEQ("ECInstanceId", actualColNames[0].c_str()) << "ts1_Base";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts1_Base";
+    ASSERT_STRCASEEQ("Id", actualColNames[2].c_str()) << "ts1_Base";
+    ASSERT_STRCASEEQ("MyOwnSubPropName", actualColNames[3].c_str()) << "ts1_Base";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, NotNullableProperty)
+TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
     {
             {
             SchemaItem testItem(
@@ -6561,104 +6732,8 @@ TEST_F(ECDbMappingTestFixture, NotNullableProperty)
             ASSERT_FALSE(asserted);
             AssertIndex(db, "ix_b_id_name", false, "ts3_B", {"Id", "Name"});
             }
-
-            {
-            SchemaItem testItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='A' modifier='None'>"
-                "        <ECProperty propertyName='Code' typeName='string' />"
-                "        <ECProperty propertyName='Id' typeName='long' />"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECProperty propertyName='AId' typeName='long'>"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "               <IsNullable>false</IsNullable>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECProperty>"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                "    <Source cardinality='(1,1)' polymorphic='True'>"
-                "      <Class class='A'/>"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B'/>"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", true, "");
-
-            ECDb db;
-            bool asserted = false;
-            AssertSchemaImport(db, asserted, testItem, "notnullableproptest4.ecdb");
-            ASSERT_FALSE(asserted);
-
-            AssertIndex(db, "ix_ts4_B_fk_ts4_Rel_target", false, "ts4_B", {"ForeignECInstanceId_ts4_Rel"});
-
-            }
-
-            {
-            std::vector<SchemaItem> testItems {
-            SchemaItem(
-                "<?xml version='1.0' encoding='utf-8'?>"
-                "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                "    <ECEntityClass typeName='A' modifier='None'>"
-                "        <ECProperty propertyName='Id' typeName='long' />"
-                "    </ECEntityClass>"
-                "    <ECEntityClass typeName='B' modifier='None'>"
-                "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
-                "           <ECCustomAttributes>"
-                "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                "            </PropertyMap>"
-                "           </ECCustomAttributes>"
-                "        </ECNavigationProperty>"
-                "        <ECProperty propertyName='Name' typeName='string' />"
-                "    </ECEntityClass>"
-                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                "    <Source cardinality='(0,1)' polymorphic='True'>"
-                "      <Class class='A'/>"
-                "    </Source>"
-                "    <Target cardinality='(0,N)' polymorphic='True'>"
-                "      <Class class='B' />"
-                "    </Target>"
-                "  </ECRelationshipClass>"
-                "</ECSchema>", false, "PropertyMap CA not allowed on navigation property"),
-
-                SchemaItem(
-                    "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                    "    <ECEntityClass typeName='A' modifier='None'>"
-                    "        <ECProperty propertyName='Id' typeName='long' />"
-                    "    </ECEntityClass>"
-                    "    <ECEntityClass typeName='B' modifier='None'>"
-                    "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward'>"
-                    "           <ECCustomAttributes>"
-                    "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                    "               <IsNullable>false</IsNullable>"
-                    "            </PropertyMap>"
-                    "           </ECCustomAttributes>"
-                    "        </ECNavigationProperty>"
-                    "        <ECProperty propertyName='Name' typeName='string' />"
-                    "    </ECEntityClass>"
-                    "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
-                    "    <Source cardinality='(0,1)' polymorphic='True'>"
-                    "      <Class class='A'/>"
-                    "    </Source>"
-                    "    <Target cardinality='(0,N)' polymorphic='True'>"
-                    "      <Class class='B' />"
-                    "    </Target>"
-                    "  </ECRelationshipClass>"
-                    "</ECSchema>", false, "PropertyMap CA not allowed on navigation property")
-                };
-
-            AssertSchemaImport(testItems, "notnullableproptest.ecdb");
-            }
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     10/15

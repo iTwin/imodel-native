@@ -164,13 +164,7 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
-        if (!ecProp.GetIsPrimitive())
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                          "Failed to map ECProperty '%s:%s': only primitive ECProperties can have the custom attribute PropertyMap.",
-                                                          ecProp.GetClass().GetFullName(), ecProp.GetName().c_str());
-            return ERROR;
-            }
+        BeAssert(ecProp.GetIsPrimitive() && "Should already be caught by ECObjects appliesTo attribute");
 
         if (ECObjectsStatus::Success != customPropMap.TryGetColumnName(columnName))
             return ERROR;
