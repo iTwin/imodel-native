@@ -809,7 +809,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "length", GLTF_FLOAT_VEC2, "LENGTH");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-        static char         *s_programName                    = "polylineProgram",
+        static char const   *s_programName                    = "polylineProgram",
                             *s_vertexShaderName               = "polylineVertexShader",
                             *s_fragmentShaderName             = "polylineFragmentShader",
                             *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
