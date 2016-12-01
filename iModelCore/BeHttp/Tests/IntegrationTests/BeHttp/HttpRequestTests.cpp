@@ -335,3 +335,56 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
 
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
+
+TEST_F(HttpRequestTests, PerformAsync_DeclareCompressedEncodingWithoutEnablingRequestCompression_BadRequestError)
+    {
+    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+
+    Http::Response response = request.PerformAsync()->GetResult();
+
+    EXPECT_EQ(Http::HttpStatus::BadRequest, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompression_Success)
+    {
+    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    HttpBodyComprressionOptions options;
+    options.EnableRequestCompression(true, 0);
+    request.SetCompressionOptions(options);
+
+    Http::Response response = request.PerformAsync()->GetResult();
+
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(Http::HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
+    {
+    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    HttpBodyComprressionOptions options;
+    options.EnableRequestCompression(true, 10);
+    request.SetCompressionOptions(options);
+
+    Http::Response response = request.PerformAsync()->GetResult();
+    //Request was sucesfull but POST method is not allowed
+    EXPECT_EQ(Http::HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    }
+
+TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLargerThanContentSizeWithCompressedContentEncodingEnabled_BadRequestError)
+    {
+    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    HttpBodyComprressionOptions options;
+    options.EnableRequestCompression(true, 10);
+    request.SetCompressionOptions(options);
+
+    request.GetHeaders().AddValue("Content-Encoding", "gzip");
+
+    Http::Response response = request.PerformAsync()->GetResult();
+    EXPECT_EQ(Http::HttpStatus::BadRequest, response.GetHttpStatus());
+    }
