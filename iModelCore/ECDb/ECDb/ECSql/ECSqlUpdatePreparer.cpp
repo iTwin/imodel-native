@@ -287,7 +287,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
         if (assignmentExp->GetPropertyNameExp()->GetPropertyMap().IsData())
             {
             size_t component = 0;
-            SearchPropertyMapVisitor visitor(PropertyMap::Type::All, true);
+            SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
             assignmentExp->GetPropertyNameExp()->GetPropertyMap().AcceptVisitor(visitor);
             for (auto childPropertyMap : visitor.Results())
                 {               

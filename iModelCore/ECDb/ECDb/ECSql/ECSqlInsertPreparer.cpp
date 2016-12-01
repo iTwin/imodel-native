@@ -219,7 +219,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
 
         size_t component = 0;
-        SearchPropertyMapVisitor visitor(PropertyMap::Type::All, true);
+        SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
         for (auto childPropertyMap : visitor.Results())
             {
