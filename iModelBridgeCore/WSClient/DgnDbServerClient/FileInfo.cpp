@@ -10,7 +10,7 @@
 #include "DgnDbServerUtils.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
-
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
@@ -134,6 +134,21 @@ Utf8StringCR FileInfo::GetUserUploaded() const
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             10/2016
+//---------------------------------------------------------------------------------------
+Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member)
+    {
+    if (properties.HasMember(member.c_str()))
+        {
+        if (properties[member.c_str()].IsString())
+            {
+            return properties[member.c_str()].GetString();
+            }
+        }
+    return "";
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
 DateTimeCR FileInfo::GetUploadedDate() const
@@ -152,43 +167,51 @@ bool FileInfo::GetInitialized() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
+FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo)
     {
     auto info = std::make_shared<FileInfo>(fileInfo);
-    JsonValueCR properties = json[ServerSchema::Properties];
 
     info->m_index = -1;
-    if (properties[ServerSchema::Property::Index].isInt())
-        info->m_index = properties[ServerSchema::Property::Index].asInt();
+    if (properties.HasMember(ServerSchema::Property::Index))
+        {
+        if (properties[ServerSchema::Property::Index].IsInt())
+            info->m_index = properties[ServerSchema::Property::Index].GetInt();
+        }
+
     if (-1 == info->m_index)
         {
-        Utf8String indexStr = json[ServerSchema::InstanceId].asString();
         uint64_t index64;
-        BeStringUtilities::ParseUInt64(index64, indexStr.c_str());
+        BeStringUtilities::ParseUInt64(index64, instanceId.c_str());
         info->m_index = (int32_t) (index64 & INT32_MAX);
         }
 
-    Utf8String fileName = properties[ServerSchema::Property::FileName].asString();
+    Utf8String fileName = GetProperty(properties, ServerSchema::Property::FileName);
+
     if (!fileName.empty())
         info->m_fileName = fileName;
 
-    Utf8String fileId = properties[ServerSchema::Property::FileId].asString();
+    Utf8String fileId = GetProperty(properties, ServerSchema::Property::FileId);
+
     if (!fileId.empty())
         info->m_fileId.FromString(fileId.c_str());
 
-    Utf8String mergedRevisionId = properties[ServerSchema::Property::MergedRevisionId].asString();
+    Utf8String mergedRevisionId = GetProperty(properties, ServerSchema::Property::MergedRevisionId);
+
     if (!mergedRevisionId.empty())
         info->m_mergedRevisionId = mergedRevisionId;
 
-    Utf8String description = properties[ServerSchema::Property::FileDescription].asString();
+    Utf8String description = GetProperty(properties, ServerSchema::Property::FileDescription);
+
     if (!description.empty())
         info->m_description = description;
 
-    Utf8String url = properties[ServerSchema::Property::URL].asString();
+    Utf8String url = GetProperty(properties, ServerSchema::Property::URL);
+
     if (!url.empty())
         info->m_fileUrl = url;
 
-    Utf8String sizeString = properties[ServerSchema::Property::FileSize].asString();
+    Utf8String sizeString = GetProperty(properties, ServerSchema::Property::FileSize);
+
     if (!sizeString.empty())
         {
         uint64_t size;
@@ -200,17 +223,39 @@ FileInfoPtr FileInfo::FromJson(JsonValueCR json, FileInfoCR fileInfo)
             }
         }
 
-    Utf8String userUploaded = properties[ServerSchema::Property::UserUploaded].asString();
+    Utf8String userUploaded = GetProperty(properties, ServerSchema::Property::UserUploaded);
+
     if (!userUploaded.empty())
         info->m_userUploaded = userUploaded;
 
-    Utf8String dateStr = properties[ServerSchema::Property::UploadedDate].asString();
+    Utf8String dateStr = GetProperty(properties, ServerSchema::Property::UploadedDate);
+
     if (!dateStr.empty())
         DateTime::FromString(info->m_uploadedDate, dateStr.c_str());
 
-    info->m_initialized = properties[ServerSchema::Property::Initialized].asBool();
+    info->m_initialized = properties.HasMember(ServerSchema::Property::Initialized) ? properties[ServerSchema::Property::Initialized].GetBool() : false;
 
     return info;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             10/2016
+//---------------------------------------------------------------------------------------
+FileInfoPtr FileInfo::Parse(JsonValueCR json, FileInfoCR fileInfo)
+    {
+    JsonValueCR properties = json[ServerSchema::Properties];
+
+    auto rapidJson = ToRapidJson(properties);
+
+    return Parse(rapidJson, json[ServerSchema::InstanceId].asString(), fileInfo);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             10/2016
+//---------------------------------------------------------------------------------------
+FileInfoPtr FileInfo::Parse(WSObjectsReader::Instance instance, FileInfoCR fileInfo)
+    {
+    return Parse(instance.GetProperties(), instance.GetObjectId().remoteId, fileInfo);
     }
 
 //---------------------------------------------------------------------------------------
