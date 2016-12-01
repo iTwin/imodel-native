@@ -129,7 +129,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Reject _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
     DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _OnRangeElementFound(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();

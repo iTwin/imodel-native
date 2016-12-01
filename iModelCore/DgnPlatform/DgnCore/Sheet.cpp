@@ -167,10 +167,7 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     Tree& root = tile.GetTree();
 
     auto vp = DgnViewport::GetTileViewport();
-    if (!vp)
-        return ERROR;
-
-    return vp->_RenderTile(m_image, *root.m_view, tile, root.m_pixels);
+    return vp ? vp->_RenderTile(m_image, *root.m_view, tile, root.m_pixels) : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

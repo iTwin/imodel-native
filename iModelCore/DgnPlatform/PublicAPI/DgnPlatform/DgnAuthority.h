@@ -168,7 +168,7 @@ public:
     DGNPLATFORM_EXPORT static DatabaseScopeAuthorityPtr Create(Utf8CP name, DgnDbR dgndb);
 
     //! Create a DgnCode using the DatabaseScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, Utf8StringCR value, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace="");
     //! Create a DgnCode using this DatabaseScopeAuthority
     DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const {return DgnCode(GetAuthorityId(), value, nameSpace);}
 };
@@ -194,7 +194,7 @@ public:
     //! Create a DgnCode using the ModelScopeAuthority of the specified name
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value);
     //! Create a DgnCode using the ModelScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, DgnModelId modelId, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value);
     //! Create a DgnCode using this ModelScopeAuthority
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR model, Utf8StringCR value) const;
     //! Create a DgnCode using this ModelScopeAuthority

@@ -500,10 +500,10 @@ ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ViewContext::_CheckNodeRange(RangeIndex::FBoxCR testRange, bool is3d)
+ScanCriteria::Reject ViewContext::_CheckNodeRange(RangeIndex::FBoxCR testRange, bool is3d)
     {
     Frustum box(testRange.ToRange3d());
-    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Stop::No : ScanCriteria::Stop::Yes;
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Reject::No : ScanCriteria::Reject::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
