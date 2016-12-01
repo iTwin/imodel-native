@@ -56,7 +56,7 @@ TEST(BeFileName_Tests, BeGetTempFileName)
     TCHAR lpPathBuffer[BUFSIZE] = TEXT("");
     BeFileName befile(lpPathBuffer);
     BeFileName fileName(L"");
-    WCharP prefix = L"DEMO";
+    WCharCP prefix = L"DEMO";
     ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeGetTempFileName(fileName, befile, prefix));
     WCharCP expectedFileName = fileName.GetName();
     EXPECT_TRUE(PathFileExistsW(expectedFileName));
