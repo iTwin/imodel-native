@@ -44,7 +44,7 @@ uint16_t BatchIdMap::GetBatchId(BeInt64Id elemId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
+void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
     {
     switch (m_source)
         {
@@ -61,13 +61,14 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db) const
             }
         case TileSource::Element:
             {
-            // ###TODO: Assumes 3d-only...
-            // There's no longer a simple way to query the category of an arbitrary geometric element without knowing whether it's 2d or 3d...
-            static const Utf8CP s_sql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+            static const Utf8CP s_3dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
+                "WHERE e.Id=? AND g.ElementId=e.Id";
+            static const Utf8CP s_2dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement2d) " AS g "
                 "WHERE e.Id=? AND g.ElementId=e.Id";
 
+            Utf8CP sql = is2d ? s_2dSql : s_3dSql;
             BeSQLite::Statement stmt;
-            stmt.Prepare(db, s_sql);
+            stmt.Prepare(db, sql);
 
             Json::Value elementIds(Json::arrayValue);
             Json::Value modelIds(Json::arrayValue);
@@ -295,7 +296,7 @@ PublisherContext::Status TilePublisher::Publish()
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
 
     Json::Value batchTableJson(Json::objectValue);
-    m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb());
+    m_batchIds.ToJson(batchTableJson, m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
     Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
 

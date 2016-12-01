@@ -40,7 +40,7 @@ public:
     BatchIdMap(TileSource source);
 
     uint16_t GetBatchId(BeInt64Id entityId);
-    void ToJson(Json::Value& value, DgnDbR db) const;
+    void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 
