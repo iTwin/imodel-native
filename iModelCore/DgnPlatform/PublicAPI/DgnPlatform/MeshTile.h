@@ -102,14 +102,15 @@ private:
     DgnCategoryId                   m_categoryId;
     DgnSubCategoryId                m_subCategoryId;
     uint32_t                        m_fillColor;
+    uint32_t                        m_rasterWidth;
     DgnMaterialId                   m_materialId;
     mutable TileTextureImagePtr     m_textureImage;
     bool                            m_ignoreLighting;
 
     TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
-    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting) { }
-    TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()) {}
-    TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false) {}
+    TileDisplayParams(uint32_t fillColor, TileTextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0) { }
+    TileDisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0) {}
+    TileDisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0) {}
 public:
     static TileDisplayParamsPtr Create() { return Create(nullptr, nullptr); }
     static TileDisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return Create(&graphicParams, &geometryParams, ignoreLighting); }
@@ -124,6 +125,7 @@ public:
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
     DgnMaterialId GetMaterialId() const { return m_materialId; }
     uint32_t GetFillColor() const { return m_fillColor; }
+    uint32_t GetRasterWidth() const { return m_rasterWidth; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TileTextureImagePtr& TextureImage() { return m_textureImage; }
