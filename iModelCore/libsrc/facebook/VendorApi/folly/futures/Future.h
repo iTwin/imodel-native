@@ -16,6 +16,13 @@
 
 #pragma once
 
+#if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
+    namespace folly {
+    template <class T> class Future {};
+    };
+#else
+
+
 #include <algorithm>
 #include <exception>
 #include <functional>
@@ -505,3 +512,5 @@ class Future {
 } // folly
 
 #include <folly/futures/Future-inl.h>
+
+#endif //BENTLEY_CONFIG_NO_THREAD_SUPPORT
