@@ -12,8 +12,9 @@
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 #define PARAM_ECInstanceId                      "ECInstanceId"
 #define PARAM_Element                           "Element"
-#define PARAM_Element_Id                        "Element.Id"
-#define PARAM_Element_RelECClassId              "Element.RelECClassId"
+#define PARAM_ElementId                         "ElementId"             // named parameter for Element.Id (named parameters cannot include ".")
+#define ECSQL_Element_Id                        "Element.Id"            // property name in ECSql
+#define ECSQL_Element_RelECClassId              "Element.RelECClassId"
 
 #define HEADER_PARAM_RowCount                   "RowCount"
 #define HEADER_PARAM_ColumnCount                "ColumnCount"
@@ -263,8 +264,8 @@ static double   getNonWrappedLength (AnnotationTextBlockCR textBlock)
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlInsertString (Utf8CP schemaName, Utf8CP className, bvector<Utf8String> const& propertyNames, ECClassId relClassId)
     {
-    Utf8PrintfString ecSql("INSERT INTO %s.%s (" PARAM_Element_Id "," PARAM_Element_RelECClassId ",", schemaName, className);
-    Utf8PrintfString values("?,%" PRIu64 ",", relClassId.GetValue());
+    Utf8PrintfString ecSql("INSERT INTO %s.%s (" ECSQL_Element_Id "," ECSQL_Element_RelECClassId ",", schemaName, className);
+    Utf8PrintfString values(":" PARAM_ElementId ",%" PRIu64 ",", relClassId.GetValue());
 
     bool addedOne = false;
     for (Utf8StringCR propertyName : propertyNames)
@@ -303,7 +304,7 @@ static Utf8String buildECSqlUpdateString (Utf8CP schemaName, Utf8CP className, b
         addedOne = true;
         }
 
-    ecSql.append(" WHERE " PARAM_Element_Id "=?");
+    ecSql.append(" WHERE " ECSQL_Element_Id "=:" PARAM_ElementId);
 
     if (!isUniqueAspect)
         ecSql.append(" AND " PARAM_ECInstanceId "= :" PARAM_ECInstanceId);
@@ -347,7 +348,7 @@ static Utf8String buildECSqlSelectString (Utf8CP schemaName, Utf8CP className, b
     Utf8PrintfString from(" FROM %s.%s i", schemaName, className);
     ecSql.append (from);
 
-    Utf8String whereStr(" WHERE " PARAM_Element_Id "=?");
+    Utf8String whereStr(" WHERE " ECSQL_Element_Id "=:" PARAM_ElementId);
     ecSql.append (whereStr);
 
     return ecSql;
@@ -380,7 +381,7 @@ static Utf8String convertToComponents (Utf8CP aspectIndexProp)
 //---------------------------------------------------------------------------------------
 static Utf8String buildECSqlSelectDupeString (Utf8CP schemaName, Utf8CP className, Utf8CP aspectIndexProp)
     {
-    Utf8String  propsString (PARAM_Element_Id);
+    Utf8String  propsString (ECSQL_Element_Id);
     propsString.append (", ").append (convertToComponents (aspectIndexProp));
 
     //      SELECT
@@ -572,7 +573,7 @@ CachedECSqlStatementPtr AnnotationTableAspect::GetPreparedSelectStatement (Annot
 //---------------------------------------------------------------------------------------
 void    AnnotationTableAspect::BindProperties (ECSqlStatement& statement, bool isUpdate)
     {
-    statement.BindId(1, GetTable().GetElementId()); // PARAM_Element_Id is always the first parameter
+    statement.BindId(statement.GetParameterIndex(PARAM_ElementId), GetTable().GetElementId());
 
     if (isUpdate && ! _IsUniqueAspect() && EXPECTED_CONDITION (m_aspectId.IsValid()))
         statement.BindInt64  (statement.GetParameterIndex(PARAM_ECInstanceId), m_aspectId.GetValue());
