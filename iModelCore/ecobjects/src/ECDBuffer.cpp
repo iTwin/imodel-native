@@ -3213,28 +3213,18 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
     else
         relClassValue = v.GetNavigationInfo().GetRelationshipClassId().GetValue();
 
-    if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &isPointerFlag, sizeof(isPointerFlag)))
-        return ECObjectsStatus::PropertyValueMatchesNoChange;
-
     result = ModifyData(relClassValueP, &isPointerFlag, sizeof(isPointerFlag));
 
     // Increase the pointer to after the bit flag
     relClassValueP += 1;
 
     if (ECObjectsStatus::Success == result)
-        {
-        if (!isOriginalValueNull && 0 == memcmp(relClassValueP, &relClassValue, sizeof(relClassValue)))
-            return ECObjectsStatus::PropertyValueMatchesNoChange;
-
         result = ModifyData(relClassValueP, &relClassValue, sizeof(relClassValue));
-        }
     
     if (ECObjectsStatus::Success == result && PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
         {
         int64_t value = v.GetNavigationInfo().GetIdAsLong();
         Byte const* valueP = relClassValueP + sizeof(relClassValue);
-        if (!isOriginalValueNull && 0 == memcmp(valueP, &value, sizeof(value)))
-            return ECObjectsStatus::PropertyValueMatchesNoChange;
 
         result = ModifyData(valueP, &value, sizeof(value));
         }
