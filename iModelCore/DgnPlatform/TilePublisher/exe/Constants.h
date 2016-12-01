@@ -26,7 +26,7 @@ R"HTML(
 <script data-main="scripts/index.js" src="scripts/require.js"></script>
 <style>
 @import url(scripts/Cesium/Widgets/widgets.css);
-@import url(scripts/Bentley/Bim.css);
+@import url(scripts/Bentley/Bentley.css);
 
 html, body, #cesiumContainer {
 width: 100%;
