@@ -50,6 +50,11 @@ struct FBox
     FBox() {Invalidate();}
     bool IsNull() const {return m_low.x>m_high.x || m_low.y>m_high.y || m_low.z>m_high.z;}
     DRange3d ToRange3d() const {return DRange3d::From(m_low.x, m_low.y, m_low.z, m_high.x, m_high.y, m_high.z);}
+    bool IntersectsWith(FBox const& rhs) const
+        {
+        return m_low.x <= rhs.m_high.x && m_low.y <= rhs.m_high.y && m_low.z <= rhs.m_high.z
+            && rhs.m_low.x <= m_high.x && rhs.m_low.y <= m_high.y && rhs.m_low.z <= m_high.z;
+        }
 };
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FBox);
@@ -75,7 +80,8 @@ struct Entry
 struct Traverser
 {
     virtual ~Traverser() {}
-    virtual bool  _CheckRangeTreeNode(FBoxCR, bool is3d) const = 0;   // true == process node
+    virtual bool _AbortOnWriteRequest() const {return true;}
+    virtual bool _CheckRangeTreeNode(FBoxCR, bool is3d) const = 0;   // true == process node
 
     enum class Stop {No= 0, Yes= 1,};
     virtual Stop _VisitRangeTreeEntry(EntryCR) = 0;
@@ -90,6 +96,30 @@ struct Tree
     struct LeafNode;
 
     //=======================================================================================
+    //! On construction block until no write active. Then hold read lock until destruction. 
+    //! Note that there can be more than one simultaneous readers.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct ReadLock
+    {
+        TreeCR m_tree;
+        ReadLock(TreeCR tree) : m_tree(tree) {BeMutexHolder holder(tree.m_cv.GetMutex()); while (tree.m_writeActive) tree.m_cv.InfiniteWait(holder); ++tree.m_readers;}
+        ~ReadLock() {{BeMutexHolder holder(m_tree.m_cv.GetMutex()); --m_tree.m_readers; BeAssert(m_tree.m_readers>=0);} m_tree.m_cv.notify_all();}
+    };
+
+    //=======================================================================================
+    //! On construction block until no readers. Then hold write lock until destruction. 
+    //! There can only be one writer.
+    // @bsiclass                                                    Keith.Bentley   09/16
+    //=======================================================================================
+    struct WriteLock
+    {
+        TreeR m_tree;
+        WriteLock(TreeR tree) : m_tree(tree) {BeMutexHolder holder(tree.m_cv.GetMutex()); while (tree.m_readers>0){tree.m_writeRequest=true; tree.m_cv.InfiniteWait(holder);} tree.m_writeRequest=false; BeAssert(!tree.m_writeActive); tree.m_writeActive=true;}
+        ~WriteLock() {{BeMutexHolder holder(m_tree.m_cv.GetMutex()); BeAssert(m_tree.m_writeActive); m_tree.m_writeActive=false; } m_tree.m_cv.notify_all();}
+    };
+
+    //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   04/15
     //=======================================================================================
     struct Node
@@ -101,21 +131,18 @@ struct Tree
         InternalNode* m_parent;
         NodeType m_type;
         bool m_is3d;
-        bool m_sloppy;
 
     public:
         Node(NodeType type, bool is3d) : m_type(type), m_is3d(is3d), m_parent(nullptr) {ClearRange();}
         void SetParent(InternalNode* parent) {m_parent = parent;}
         LeafNode* ToLeaf() const {return m_type != NodeType::Internal ? (LeafNode*) this : nullptr;}
         bool IsLeaf() const {return nullptr != ToLeaf();}
-        bool IsSloppy() const {return m_sloppy;}
-        void ClearRange() {m_sloppy=false; m_nodeRange.Invalidate();}
-        DGNPLATFORM_EXPORT void ValidateRange();
-        FBoxCR GetRange() {ValidateRange(); return m_nodeRange;}
+        void ClearRange() {m_nodeRange.Invalidate();}
+        FBoxCR GetRange() {return m_nodeRange;}
         FBoxCR GetRangeCR() {return m_nodeRange;}
         bool Overlaps(FBoxCR range) const;
         bool CompletelyContains(FBoxCR range) const;
-        Traverser::Stop Traverse(Traverser&, bool is3d);
+        Traverser::Stop Traverse(Traverser&, TreeCR tree, bool is3d);
     };
 
     //=======================================================================================
@@ -134,7 +161,7 @@ struct Tree
         bool DropElement(DgnElementId, TreeR);
         size_t GetEntryCount() const {return m_endChild - m_firstChild;}
         EntryCP FindElement(DgnElementId) const;
-        Traverser::Stop Traverse(Traverser&, bool is3d);
+        Traverser::Stop Traverse(Traverser&, TreeCR tree, bool is3d);
     };
 
     //=======================================================================================
@@ -155,7 +182,7 @@ struct Tree
         void ValidateInternalRange();
         size_t GetEntryCount() const {return m_endChild - m_firstChild;}
         void ClearChildren() {m_endChild = m_firstChild; ClearRange();}
-        Traverser::Stop Traverse(Traverser&, bool is3d);
+        Traverser::Stop Traverse(Traverser&, TreeCR tree, bool is3d);
         DGNPLATFORM_EXPORT size_t GetElementCount();
     };
 
@@ -169,8 +196,12 @@ private:
     LeafIdx m_leafIdx;      // map to the leaf holding each entry
     Node* m_root = nullptr;
     bool m_is3d;
+    bool m_writeActive = false;
+    bool m_writeRequest = false;
+    mutable int m_readers = 0;
     size_t m_internalNodeSize;
     size_t m_leafNodeSize;
+    mutable BentleyApi::BeConditionVariable m_cv;
 
     InternalNode* AllocateInternalNode() {return new (m_internalNodes.AllocateNode()) InternalNode(m_is3d);}
     LeafNode* AllocateLeafNode() {return new (m_leafNodes.AllocateNode()) LeafNode(m_is3d);}

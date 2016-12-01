@@ -1262,6 +1262,8 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
     if (nullptr != entity.GetFaceMaterialAttachments())
         {
         bvector<PolyfaceHeaderPtr> polyfaces;
@@ -1279,6 +1281,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
                 params[i].ToGeometryParams(faceParams, m_currGeometryParams);
                 m_context.CookGeometryParams(faceParams, builder);
+
+                if (!doClipping)
+                    {
+                    m_processor._ProcessPolyface(*polyfaces[i], false, *this);
+                    continue;
+                    }
 
                 SimplifyPolyfaceClipper     polyfaceClipper;
                 bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1302,6 +1310,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
     if (!meshPtr.IsValid())
         return;
+
+    if (!doClipping)
+        {
+        m_processor._ProcessPolyface(*meshPtr, false, *this);
+        return;
+        }
 
     SimplifyPolyfaceClipper     polyfaceClipper;
     bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*meshPtr, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1427,7 +1441,7 @@ void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double 
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddLineString(numPoints, &localPointsBuf3d[0]);
     }
 
@@ -1448,7 +1462,7 @@ void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddPointString(numPoints, &localPointsBuf3d[0]);
     }
 
@@ -1469,7 +1483,7 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddShape(numPoints, &localPointsBuf3d[0], filled);
     }
 
@@ -1507,7 +1521,7 @@ void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t u
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags);
     }
 
@@ -1538,7 +1552,16 @@ void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth)
     {
-    _AddArc(ellipse, isEllipse, filled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddArc(ellipse, isEllipse, filled);
+        }
+    else
+        {
+        auto ell = ellipse;
+        ell.center.z = zDepth;
+        _AddArc(ell, isEllipse, filled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1556,7 +1579,21 @@ void SimplifyGraphic::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
-    _AddBSplineCurve(bcurve, filled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddBSplineCurve(bcurve, filled);
+        }
+    else
+        {
+        MSBsplineCurve bs;
+        bs.CopyFrom(bcurve);
+        int nPoles = bs.GetNumPoles();
+        DPoint3d* poles = bs.GetPoleP();
+        for (int i = 0; i < nPoles; i++)
+            poles[i].z = zDepth;
+
+        _AddBSplineCurve(bs, filled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1572,7 +1609,16 @@ void SimplifyGraphic::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    _AddCurveVector(curves, isFilled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddCurveVector(curves, isFilled);
+        }
+    else
+        {
+        Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
+        auto cv = curves.Clone(tf);
+        _AddCurveVector(*cv, isFilled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1653,7 +1699,18 @@ void SimplifyGraphic::_AddTextString(TextStringCR text)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
     {
-    _AddTextString(text);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddTextString(text);
+        }
+    else
+        {
+        TextStringPtr ts = text.Clone();
+        auto origin = ts->GetOrigin();
+        origin.z = zDepth;
+        ts->SetOrigin(origin);
+        _AddTextString(*ts);
+        }
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

@@ -188,6 +188,9 @@ virtual bool _IncludeWireframeEdges() {return true;}
 //! Whether to include face iso curves when UnhandledPreference::Curve is requested for a surface/solid geometric primitive.
 virtual bool _IncludeWireframeFaceIso() {return true;}
 
+//! Adjust z-depth for 2d geometry. By default, z is set to zero.
+virtual double _AdjustZDepth(double zDepth) {return 0.0;}
+
 //! Determine how geometry that originated as a PolyfaceQuery and is not compatible with the current IFacetOptions is treated.
 virtual IncompatiblePolyfacePreference _GetIncompatiblePolyfacePreference(PolyfaceQueryCR, SimplifyGraphic&) const {return IncompatiblePolyfacePreference::Modify;}
 

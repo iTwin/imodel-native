@@ -398,13 +398,11 @@ struct TilesetPublisher : PublisherContext
 {
 private:
     TileGeneratorP              m_generator = nullptr;
-    DgnModelIdSet               m_allModels;
-    DgnCategoryIdSet            m_allCategories;
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
 
-    virtual TileGenerator::Status _AcceptTile(TileNodeCR tile) override;
+    virtual TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
@@ -435,24 +433,6 @@ public:
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
-
-        auto& db = viewController.GetDgnDb();
-        for (auto& view : ViewDefinition::MakeIterator(db))
-            {
-            auto viewDefinition = ViewDefinition::Get(db, view.GetId());
-            auto spatialView = viewDefinition.IsValid() ? viewDefinition->ToSpatialView() : nullptr;
-            if (nullptr == spatialView)
-                continue;
-
-            auto spatial = spatialView->MakeCopy<SpatialViewDefinition>();
-            auto& modelSelector = spatial->GetModelSelector();
-            auto viewModels = modelSelector.GetModels();
-            m_allModels.insert(viewModels.begin(), viewModels.end());
-
-            auto& categorySelector = spatial->GetCategorySelector();
-            auto viewCats = categorySelector.GetCategories();
-            m_allCategories.insert(viewCats.begin(), viewCats.end());
-            }
         }
 
     Status Publish(PublisherParams const& params);
@@ -463,10 +443,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::Status TilesetPublisher::_AcceptTile(TileNodeCR tile)
+TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
     {
     if (Status::Success != m_acceptTileStatus || tile.GetDepth() > m_publishedTileDepth)
-        return TileGenerator::Status::Aborted;
+        return TileGeneratorStatus::Aborted;
 
     TilePublisher publisher(tile, *this);
     auto publisherStatus = publisher.Publish();
@@ -607,9 +587,8 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     if (Status::Success != status)
         return status;
 
-    TileModelCategoryFilter filter(GetDgnDb(), &m_allModels, &m_allCategories);
     ProgressMeter progressMeter(*this);
-    TileGenerator generator (m_dbToTile, GetDgnDb(), &filter, &progressMeter);
+    TileGenerator generator (m_dbToTile, GetDgnDb(), nullptr, &progressMeter);
 
     DRange3d            range;
 
