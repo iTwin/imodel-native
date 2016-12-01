@@ -16,7 +16,7 @@ USING_NAMESPACE_TILETREE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Node::GetChildFile() const
     {
-    DgnDb::VerifyClientThread();
+    BeAssert(IsNotLoaded());
     Utf8String parentPath("/");
     if (m_parent)
         parentPath = m_parent->_GetTileName();
