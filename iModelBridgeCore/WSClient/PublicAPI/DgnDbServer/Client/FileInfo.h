@@ -13,9 +13,11 @@
 #include <DgnPlatform/DgnDb.h>
 #include <Bentley/DateTime.h>
 #include <WebServices/Client/ObjectId.h>
+#include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_SQLITE
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct FileInfo> FileInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FileInfo);
 
@@ -43,13 +45,17 @@ private:
     FileInfo(Dgn::DgnDbCR db, Utf8StringCR description);
     FileInfo(int32_t index, Utf8StringCR fileName, Utf8StringCR fileId, Utf8StringCR mergedRevisionId,
              Utf8StringCR description, Utf8StringCR url, uint64_t size, Utf8StringCR user, DateTimeCR date);
+
+    static FileInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR instanceId, FileInfoCR fileInfo = FileInfo());
 //__PUBLISH_SECTION_START__
 public:
     //__PUBLISH_SECTION_END__
     FileInfo();
 
     static FileInfoPtr Create(BeGuid fileId);
-    static FileInfoPtr FromJson(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
+    //! DEPRECATED: Use Parsing from Instance
+    static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
+    static FileInfoPtr Parse(WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
     void ToPropertiesJson(JsonValueR json) const;
     WebServices::ObjectId GetObjectId() const;
     bool AreFileDetailsAvailable() const;

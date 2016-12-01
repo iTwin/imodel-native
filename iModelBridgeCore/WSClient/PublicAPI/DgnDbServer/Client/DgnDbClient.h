@@ -52,7 +52,7 @@ private:
     DgnDbServerRepositoryTaskPtr InitializeRepository(IWSRepositoryClientPtr client, Utf8StringCR repositoryId, Json::Value repositoryCreationJson,
                                                                  ObjectId repositoryObjectId, Http::Request::ProgressCallbackCR callback = nullptr,
                                                                  ICancellationTokenPtr cancellationToken = nullptr) const;
-    DgnDbServerStatusTaskPtr DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
+    DgnDbServerStatusResult DownloadBriefcase(DgnDbRepositoryConnectionPtr connection, BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId,
                                                FileInfoCR fileInfo, bool doSync = true, Http::Request::ProgressCallbackCR callback = nullptr,
                                                ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRepositoryTaskPtr CreateRepositoryInstance(Utf8StringCR repositoryName, Utf8StringCR description,
@@ -72,10 +72,6 @@ public:
 //__PUBLISH_SECTION_START__
 public:
     DGNDBSERVERCLIENT_EXPORT static BriefcaseFileNameCallback                       DefaultFileNameCallback;
-
-    //! Set up the DgnDbServer Client library. Initialization is required for most of the library functions to work.
-    //! Needs to be called from the work thread where DgnPlatform is initialized.
-    DGNDBSERVERCLIENT_EXPORT static void Initialize();
 
     //! Create new user. Use just for basic authorisation
     //! @param[in] credentials of the new user
