@@ -16,7 +16,7 @@
 TEST(BeStringUtilitiesTest, ComputeNumLogicalChars)
     {
     //can be tested with other multibyte characters, depending upon the current codepage
-    WCharP input = L"awesas+s a=d";
+    WCharCP input = L"awesas+s a=d";
     size_t receivedLogicalChars = BeStringUtilities::ComputeNumLogicalChars(input, 12);
     size_t expectedLogicalChars = 12;
     EXPECT_EQ(expectedLogicalChars, receivedLogicalChars);
@@ -28,7 +28,7 @@ TEST(BeStringUtilitiesTest, ComputeNumLogicalChars)
 TEST(BeStringUtilitiesTest, ComputeByteOffsetOfLogicalChar)
     {
     //can be tested with other multibyte characters, depending upon the current codepage
-    Utf8P input = "assas+sas=d";
+    Utf8CP input = "assas+sas=d";
     size_t receivedByteOffset = BeStringUtilities::ComputeByteOffsetOfLogicalChar(input, 8);
     size_t expectedByteOffset = 8;
     EXPECT_EQ(expectedByteOffset, receivedByteOffset);
