@@ -142,7 +142,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(bvector<DgnDbServerRevisionPtr> c
 DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbBriefcase::Push";
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    // NOT USED: double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
