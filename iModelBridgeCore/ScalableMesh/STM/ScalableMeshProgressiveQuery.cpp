@@ -399,7 +399,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     };
 
 //NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
-static bool s_delayJoinThread = false;
+static bool s_delayJoinThread = true;
 
 class QueryProcessor
     {

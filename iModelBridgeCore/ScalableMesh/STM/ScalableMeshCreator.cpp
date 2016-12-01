@@ -198,7 +198,7 @@ IScalableMeshCreator::IScalableMeshCreator (Impl* implP)
 IScalableMeshCreator::~IScalableMeshCreator ()
     {
     }
-
+  
 
 StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
     {

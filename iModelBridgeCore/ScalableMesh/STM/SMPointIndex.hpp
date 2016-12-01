@@ -5663,7 +5663,6 @@ template<class POINT, class EXTENT>
 bool SMPointIndexNode<POINT, EXTENT>::IsLeaf() const
     {
     // We do not call invariants for simple accessors as they are extensively called within reorganising methods
-
     if (!IsLoaded())
         Load();
 
