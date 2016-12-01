@@ -199,7 +199,7 @@ void DgnDbTestUtils::UpdateProjectExtents(DgnDbR db)
 //---------------------------------------------------------------------------------------
 void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
     {
-    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::QueryView(viewId, db).get());
+    SpatialViewDefinitionCPtr view = dynamic_cast<SpatialViewDefinitionCP>(ViewDefinition::Get(db, viewId).get());
     ASSERT_TRUE(view.IsValid());
 
     ViewControllerPtr viewController = view->LoadViewController();
@@ -213,35 +213,80 @@ void DgnDbTestUtils::FitView(DgnDbR db, DgnViewId viewId)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnCategoryId DgnDbTestUtils::InsertCategory(DgnDbR db, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance, DgnCategory::Scope scope, DgnCategory::Rank rank)
+DgnCategoryId DgnDbTestUtils::InsertDrawingCategory(DgnDbR db, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance, DgnCategory::Rank rank)
     {
     MUST_HAVE_HOST(DgnCategoryId());
 
-    DgnCategory category(DgnCategory::CreateParams(db, categoryName, scope, rank));
-
-    DgnCategoryCPtr persistentCategory = category.Insert(appearance);
-    EXPECT_TRUE(persistentCategory.IsValid()) << WPrintfString(L"%ls - Category insert into %ls failed", WString(categoryName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str()).c_str();
+    DrawingCategory category(db, categoryName, rank);
+    DrawingCategoryCPtr persistentCategory = category.Insert(appearance);
+    EXPECT_TRUE(persistentCategory.IsValid());
 
     return persistentCategory.IsValid()? persistentCategory->GetCategoryId(): DgnCategoryId();
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                           Shaun.Sewall           09/2016
+// @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnCategoryId DgnDbTestUtils::InsertCategory(DgnDbR db, Utf8CP categoryName, ColorDefCR color, DgnCategory::Scope scope, DgnCategory::Rank rank)
+DgnCategoryId DgnDbTestUtils::InsertSpatialCategory(DgnDbR db, Utf8CP categoryName, DgnSubCategory::Appearance const& appearance, DgnCategory::Rank rank)
+    {
+    MUST_HAVE_HOST(DgnCategoryId());
+
+    SpatialCategory category(db, categoryName, rank);
+    SpatialCategoryCPtr persistentCategory = category.Insert(appearance);
+    EXPECT_TRUE(persistentCategory.IsValid());
+
+    return persistentCategory.IsValid()? persistentCategory->GetCategoryId(): DgnCategoryId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+DgnCategoryId DgnDbTestUtils::InsertDrawingCategory(DgnDbR db, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank)
     {
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
-    return InsertCategory(db, categoryName, appearance, scope, rank);
+    return InsertDrawingCategory(db, categoryName, appearance, rank);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+DgnCategoryId DgnDbTestUtils::InsertSpatialCategory(DgnDbR db, Utf8CP categoryName, ColorDefCR color, DgnCategory::Rank rank)
+    {
+    DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+    return InsertSpatialCategory(db, categoryName, appearance, rank);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+DgnCategoryId DgnDbTestUtils::GetFirstDrawingCategoryId(DgnDbR db)
+    {
+    MUST_HAVE_HOST(DgnCategoryId());
+    DgnCategoryId categoryId = (*DrawingCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
+    EXPECT_TRUE(categoryId.IsValid());
+    return categoryId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                           Shaun.Sewall           11/2016
+//---------------------------------------------------------------------------------------
+DgnCategoryId DgnDbTestUtils::GetFirstSpatialCategoryId(DgnDbR db)
+    {
+    MUST_HAVE_HOST(DgnCategoryId());
+    DgnCategoryId categoryId = (*SpatialCategory::MakeIterator(db).begin()).GetId<DgnCategoryId>();
+    EXPECT_TRUE(categoryId.IsValid());
+    return categoryId;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnAuthorityId DgnDbTestUtils::InsertNamespaceAuthority(DgnDbR db, Utf8CP authorityName)
+DgnAuthorityId DgnDbTestUtils::InsertDatabaseScopeAuthority(DgnDbR db, Utf8CP authorityName)
     {
     MUST_HAVE_HOST(DgnAuthorityId());
-    DgnAuthorityPtr authority = NamespaceAuthority::CreateNamespaceAuthority(authorityName, db);
+    DgnAuthorityPtr authority = DatabaseScopeAuthority::Create(authorityName, db);
     EXPECT_TRUE(authority.IsValid());
     DgnDbStatus status = authority->Insert();
     EXPECT_TRUE(DgnDbStatus::Success == status) << WPrintfString(L"%ls - Authority insert into %ls failed with %x", WString(authorityName,BentleyCharEncoding::Utf8).c_str(), db.GetFileName().c_str(), (int)status).c_str();
@@ -273,20 +318,14 @@ ModelSelectorCPtr DgnDbTestUtils::InsertNewModelSelector(DgnDbR db, Utf8CP name,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void addAllCategories(DgnDbR db, CategorySelectorR selector)
-    {
-    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(db))
-        selector.AddCategory(categoryEntry.GetId<DgnCategoryId>());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
 DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, Utf8CP viewDescr)
     {
     auto& db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
-    addAllCategories(db, viewDef->GetCategorySelector());
+
+    for (ElementIteratorEntry categoryEntry : DrawingCategory::MakeIterator(db))
+        viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
     EXPECT_TRUE(viewDef->Insert().IsValid());
     return viewDef;
     }
@@ -298,46 +337,12 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     {
     auto& db = model.GetDgnDb();
     CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
-    addAllCategories(db, viewDef.GetCategorySelector());
+
+    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(db))
+        viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
+
     EXPECT_TRUE(viewDef.Insert().IsValid());
     return viewDef.GetViewId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Sam.Wilson      06/16
-//---------------------------------------------------------------------------------------
-CategorySelectorCPtr DgnDbTestUtils::InsertNewCategorySelector(DgnDbR db, Utf8CP name, DgnCategoryIdSet const* categoriesIn)
-    {
-    CategorySelector catSel(db, name);
-
-    DgnCategoryIdSet const* categories = categoriesIn;
-    DgnCategoryIdSet _categories;
-    if (nullptr == categories)
-        {
-        for (auto const& categoryId : DgnCategory::MakeIterator(db).BuildIdSet<DgnCategoryId>())
-            _categories.insert(categoryId);
-        categories = &_categories;
-        }
-
-    if (!categories->empty())
-        {
-        for (auto id : *categories)
-            catSel.AddCategory(id);
-        }
-
-    CategorySelectorCPtr catSelPersist = db.Elements().Insert(catSel);
-    if (!catSelPersist.IsValid())
-        {
-        EXPECT_TRUE(false) << " Insertion of CategorySelector with name " << name << " failed";
-        return nullptr;
-        }
-
-    EXPECT_EQ(catSelPersist.get(), db.Elements().GetElement(catSel.GetElementId()).get());
-    
-    auto& categoriesStored = catSelPersist->GetCategories();
-    EXPECT_EQ(categoriesStored, *categories);
-
-    return catSelPersist;
     }
 
 //---------------------------------------------------------------------------------------

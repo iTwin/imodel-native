@@ -321,7 +321,7 @@ struct JsECSqlValue : RefCountedBaseWithCreate
     JsECSqlValue(BeSQLite::EC::IECSqlValue const* value) : m_value(value) { ; }
 
     Utf8String GetText() { return m_value->GetText(); }
-    Utf8String GetDateTime() { return m_value->GetDateTime().ToUtf8String(); }
+    Utf8String GetDateTime() { return m_value->GetDateTime().ToString(); }
     double GetDouble() { return m_value->GetDouble(); }
     JsDPoint3dP GetDPoint3d() { return new JsDPoint3d(m_value->GetPoint3d()); }
     int32_t GetInt() { return m_value->GetInt(); }
@@ -776,7 +776,7 @@ struct JsDgnGeometryPart : RefCountedBaseWithCreate
     static JsDgnGeometryPart* Create(JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db));
+        return new JsDgnGeometryPart(*DgnGeometryPart::Create(*db->m_db, DgnCode::CreateEmpty())); // WIP: must pass in a valid code!
         }
     BentleyStatus Insert() {return m_value->GetDgnDb().Elements().Insert(*m_value).IsValid() ? BentleyStatus::SUCCESS : BentleyStatus::ERROR;}
 };
@@ -979,18 +979,18 @@ struct JsDgnCategory : RefCountedBaseWithCreate
     static JsDgnObjectIdP QueryCategoryId(Utf8StringCR name, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectId(DgnCategory::QueryCategoryId(name, *db->m_db).GetValueUnchecked());
+        return new JsDgnObjectId(DgnCategory::QueryCategoryId(*db->m_db, SpatialCategory::CreateCode(*db->m_db, name)).GetValueUnchecked());
         }
     static JsDgnCategory* QueryCategory(JsDgnObjectIdP id, JsDgnDbP db) 
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        auto cat = DgnCategory::QueryCategory(DgnCategoryId(id->m_id), *db->m_db);
+        auto cat = SpatialCategory::Get(*db->m_db, DgnCategoryId(id->m_id));
         return cat.IsValid()? new JsDgnCategory(*cat): nullptr;
         }
     static JsDgnObjectIdSetP QueryCategories(JsDgnDbP db)
         {
         DGNJSAPI_VALIDATE_ARGS_NULL(DGNJSAPI_IS_VALID_JSOBJ(db));
-        return new JsDgnObjectIdSet(DgnCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
+        return new JsDgnObjectIdSet(SpatialCategory::MakeIterator(*db->m_db).BuildIdSet<DgnCategoryId>());
         }
 
     STUB_OUT_SET_METHOD(DgnDb,JsDgnDbP)
@@ -1217,7 +1217,7 @@ struct JsECValue : RefCountedBaseWithCreate
         if (m_value.IsNull())
             return "";
         auto dt = m_value.GetDateTime();
-        return dt.ToUtf8String();
+        return dt.ToString();
         }
     int32_t GetInteger() const {return m_value.IsNull()? 0: m_value.GetInteger();}
     double GetDouble() const {return m_value.IsNull()? 0.0: m_value.GetDouble();}

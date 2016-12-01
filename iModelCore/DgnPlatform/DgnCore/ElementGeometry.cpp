@@ -270,6 +270,14 @@ static bool getRange(TextStringCR text, DRange3dR range, TransformCP transform)
     range.low.Init(textRange.low);
     range.high.Init(textRange.high);
 
+    // TextString::GetRange will report the cell box, which typically does /not/ encompass descenders or fancy adornments.
+    // The range being computed here directly affects element range, and elements cannot draw outside of their stated range.
+    // As such, similar to olden days, artificially pad our reported range to encourage glyph geometry to fit inside of it.
+    // This simple padding is a tradeoff between performance and actually computing this specific string's glyph geometry for a tight box.
+    double yPad = (text.GetStyle().GetSize().y / 2.0);
+    range.low.y -= yPad;
+    range.high.y += yPad;
+
     Transform textTransform = text.ComputeTransform();
     textTransform.Multiply(&range.low, 2);
 
@@ -1699,7 +1707,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
                 DgnCategoryId categoryId = elParams.GetCategoryId(); // Preserve current category and reset to sub-category appearance...
 
                 if (!categoryId.IsValid())
-                    categoryId = DgnSubCategory::QueryCategoryId(subCategoryId, m_db);
+                    categoryId = DgnSubCategory::QueryCategoryId(m_db, subCategoryId);
 
                 elParams = GeometryParams();
                 elParams.SetCategoryId(categoryId);
@@ -2474,7 +2482,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 auto ppfb = flatbuffers::GetRoot<FB::BasicSymbology>(egOp.m_data);
 
                 DgnSubCategoryId   subCategoryId((uint64_t)ppfb->subCategoryId());
-                DgnSubCategoryCPtr subCat = (subCategoryId.IsValid() ? DgnSubCategory::QuerySubCategory(subCategoryId, db) : nullptr);
+                DgnSubCategoryCPtr subCat = (subCategoryId.IsValid() ? DgnSubCategory::Get(db, subCategoryId) : nullptr);
 
                 if (subCat.IsValid() && nullptr != subCat->GetCode().GetValueCP())
                     output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s - Id: %" PRIu64 "\n", subCat->GetCode().GetValueCP(), subCategoryId.GetValue()).c_str());
@@ -4188,7 +4196,7 @@ bool GeometryBuilder::Append(GeometryParamsCR elParams, CoordSystem coord)
         if (elParams.GetCategoryId() != m_elParams.GetCategoryId())
             return false;
 
-        if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(elParams.GetSubCategoryId(), m_dgnDb))
+        if (elParams.GetCategoryId() != DgnSubCategory::QueryCategoryId(m_dgnDb, elParams.GetSubCategoryId()))
             return false;
         }
 

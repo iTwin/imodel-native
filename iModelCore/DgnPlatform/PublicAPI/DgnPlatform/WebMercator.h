@@ -30,34 +30,18 @@ DEFINE_REF_COUNTED_PTR(MapTile)
 DEFINE_REF_COUNTED_PTR(MapRoot)
 
 //=======================================================================================
-//! Identifies a tile in the fixed WebMercator tiling system.
-// @bsiclass                                                    Keith.Bentley   08/16
-//=======================================================================================
-struct TileId
-{
-    uint8_t  m_zoomLevel;
-    uint32_t m_row;
-    uint32_t m_column;
-    TileId() {}
-    TileId(uint8_t zoomLevel, uint32_t col, uint32_t row){m_zoomLevel=zoomLevel; m_column=col; m_row=row;}
-};
-
-//=======================================================================================
 //! The root of a multi-resolution web mercator map.
 // @bsiclass                                                    Keith.Bentley   08/16
 //=======================================================================================
-struct MapRoot : TileTree::Root
+struct MapRoot : TileTree::QuadTree::Root
 {
-    ColorDef m_tileColor;                   //! for setting transparency
-    uint8_t m_maxZoom;                      //! the maximum zoom level for this map
-    uint32_t m_maxPixelSize;                //! the maximum size, in pixels, that a tile should stretched to. If the tile's size on screen is larger than this, use its children.
     Render::ImageSource::Format m_format;   //! the format of the tile image source
     Utf8String m_urlSuffix;                 //! any suffix to append to tile names. Usually includes key
     Transform m_mercatorToWorld;            //! linear transform from web mercator meters to world meters. Only used when reprojection fails.
 
     DPoint3d ToWorldPoint(GeoPoint);
-    Utf8String _ConstructTileName(Dgn::TileTree::TileCR tile) const override;
-    uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
+    Utf8String _ConstructTileName(TileTree::TileCR tile) const override;
+    Utf8CP _GetName() const override {return "WebMercator";}
     MapRoot(DgnDbR, TransformCR location, Utf8CP realityCacheName, Utf8StringCR rootUrl, Utf8StringCR urlSuffix, Dgn::Render::SystemP system, Render::ImageSource::Format, double transparency, 
             uint8_t maxZoom, uint32_t maxSize);
     ~MapRoot() {ClearAllTiles();}
@@ -67,38 +51,23 @@ struct MapRoot : TileTree::Root
 //! A web mercator map tile. May or may not have its graphics downloaded.
 // @bsiclass                                                    Keith.Bentley   05/16
 //=======================================================================================
-struct MapTile : TileTree::Tile
+struct MapTile : TileTree::QuadTree::Tile
 {
-    //=======================================================================================
-    // @bsiclass                                                    Mathieu.Marchand  11/2016
-    //=======================================================================================
-    struct MapTileload : TileTree::TileLoad
-        {
-        MapTileload(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadsPtr loads) :TileLoad(url, tile, loads, tile._GetTileName()) {}
+    DEFINE_T_SUPER(TileTree::QuadTree::Tile)
 
+    struct Loader : TileTree::TileLoader
+    {
+        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
         BentleyStatus _LoadTile() override;
-        };
+    };
 
-    TileId m_id;                                        //! tile id 
-    Render::IGraphicBuilder::TileCorners m_corners;     //! 4 corners of tile, in world coordinates
-    MapRootR m_mapRoot;                                 //! the MapRoot that loaded this tile.
-    bool m_reprojected = false;                         //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
-    Render::GraphicPtr m_graphic;                       //! the texture for this tile.
-
+    bool m_reprojected = false;  //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     StatusInt ReprojectCorners(GeoPoint*);
-    TileId GetTileId() const {return m_id;}
-    MapTile(MapRootR mapRoot, TileId id, MapTileCP parent);
-
-    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawArgsR args) const;
-    bool _HasChildren() const override;
-    bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
-    ChildTiles const* _GetChildren(bool load) const override;
+    MapTile(MapRootR mapRoot, TileTree::QuadTree::TileId id, MapTileCP parent);
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
-    Utf8String _GetTileName() const override;
-    double _GetMaximumSize() const override {return m_mapRoot.GetMaxPixelSize();}
-
-    TileTree::TileLoadPtr _CreateTileLoad(TileTree::TileLoadsPtr) override;
+    TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
+    MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
 };
 
 //=======================================================================================
@@ -111,7 +80,7 @@ struct EXPORT_VTABLE_ATTRIBUTE WebMercatorModel : SpatialModel
 
 public:
     struct Properties
-        {
+    {
         //! Identifies a well known street map tile service
         enum class MapService
         {
@@ -126,7 +95,7 @@ public:
         };
 
         MapService m_mapService=MapService::MapBox;  //! Identifies the source of the tiled map data.
-        MapType m_mapType=MapType::Map;              //! Identifies the type of tiles to request and display.
+        MapType m_mapType=MapType::Map; //! Identifies the type of tiles to request and display.
         double m_groundBias=-1.0;       //! An offset from the ground plane to draw map. By default, draw map 1 meter below sea level (negative values are below sea level)
         double m_transparency=0.0;      //! 0=fully opaque, 1.0=fully transparent
 
@@ -138,7 +107,7 @@ public:
         bool IsTransparent() const {return 0.0 < m_transparency;}
         void ToJson(Json::Value&) const;
         void FromJson(Json::Value const&);
-        };
+    };
 
 protected:
     Properties m_properties;

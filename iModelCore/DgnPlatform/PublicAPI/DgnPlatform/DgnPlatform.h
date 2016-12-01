@@ -227,6 +227,7 @@ DGNPLATFORM_REF_COUNTED_PTR(CameraViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(ClipPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(ClipVector)
 DGNPLATFORM_REF_COUNTED_PTR(CameraViewController)
+DGNPLATFORM_REF_COUNTED_PTR(DatabaseScopeAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionElement)
 DGNPLATFORM_REF_COUNTED_PTR(DefinitionPartition)
 DGNPLATFORM_REF_COUNTED_PTR(DgnAuthority)
@@ -252,6 +253,7 @@ DGNPLATFORM_REF_COUNTED_PTR(DisplayStyle)
 DGNPLATFORM_REF_COUNTED_PTR(DisplayStyle3d)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingGraphic)
 DGNPLATFORM_REF_COUNTED_PTR(DrawingViewDefinition)
+DGNPLATFORM_REF_COUNTED_PTR(ElementScopeAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(GeometricPrimitive)
 DGNPLATFORM_REF_COUNTED_PTR(GraphicalType2d)
 DGNPLATFORM_REF_COUNTED_PTR(GroupInformationElement)
@@ -266,6 +268,7 @@ DGNPLATFORM_REF_COUNTED_PTR(LinkElement)
 DGNPLATFORM_REF_COUNTED_PTR(LinkModel)
 DGNPLATFORM_REF_COUNTED_PTR(LinkPartition)
 DGNPLATFORM_REF_COUNTED_PTR(ModelSelector)
+DGNPLATFORM_REF_COUNTED_PTR(ModelScopeAuthority)
 DGNPLATFORM_REF_COUNTED_PTR(OrthographicViewController)
 DGNPLATFORM_REF_COUNTED_PTR(OrthographicViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(PatternParams)
@@ -510,6 +513,7 @@ struct ElementAlignedBox2d : BoundingBox2d
     double GetTop() const {return high.y;}
     double GetWidth() const {return XLength();}
     double GetHeight() const {return YLength();}
+    double GetAspectRatio() const {return XLength() / YLength();}
     void SetLeft(double left) {low.x = left;}
     void SetBottom(double bottom) {low.y = bottom;}
     void SetRight(double right) {high.x = right;}
@@ -920,6 +924,7 @@ public:
     static ColorDef Blue()        {return ColorDef(0,0,0xff);}
     static ColorDef Yellow()      {return ColorDef(0xff,0xff,0);}
     static ColorDef Cyan()        {return ColorDef(0,0xff,0xff);}
+    static ColorDef Orange()      {return ColorDef(0xff,0xa5,0);}
     static ColorDef Magenta()     {return ColorDef(0xff,0,0xff);}
     static ColorDef Brown()       {return ColorDef(0xa5,0x2a,0x2a);}
     static ColorDef LightGrey()   {return ColorDef(0xbb,0xbb,0xbb);}
@@ -929,6 +934,7 @@ public:
     static ColorDef DarkGreen()   {return ColorDef(0,0x80,0);}       //<! Green
     static ColorDef DarkBlue()    {return ColorDef(0,0,0x80);}       //<! Navy
     static ColorDef DarkYellow()  {return ColorDef(0x80,0x80,0);}    //<! Olive
+    static ColorDef DarkOrange()  {return ColorDef(0xff,0x8c,0);}
     static ColorDef DarkCyan()    {return ColorDef(0,0x80,0x80);}    //<! Teal
     static ColorDef DarkMagenta() {return ColorDef(0x80,0,0x80);}    //<! Purple
     static ColorDef DarkBrown()   {return ColorDef(0x8b,0x45,0x13);}

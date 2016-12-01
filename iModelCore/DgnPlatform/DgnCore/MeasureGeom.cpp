@@ -893,6 +893,8 @@ bool MeasureGeomCollector::_ProcessBody (IBRepEntityCR entity, SimplifyGraphic& 
 
                 GraphicBuilder builder(graphic);
 
+                bodies.push_back(copyEntity); // NOTE: bodies doesn't contain original; either it's unchanged or it now refers to the first region...
+
                 for (IBRepEntityPtr thisEntity : bodies)
                     {
                     if (SUCCESS != PSolidUtil::ConvertSolidBodyToSheet(PSolidUtil::GetEntityTag(*thisEntity)))

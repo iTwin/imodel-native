@@ -88,16 +88,16 @@ protected:
     bool m_ignoreViewRange = false;
     bool m_scanRangeValid = false;
     bool m_stopAfterTimeout = false;
-    uint64_t                m_endTime = 0;     // abort after this time.
-    Render::ViewFlags       m_viewflags;
-    DrawPurpose             m_purpose;
-    DRange3d                m_npcSubRange;
-    DMap4d                  m_worldToNpc;
-    DMap4d                  m_worldToView;
-    ScanCriteria            m_scanCriteria;
-    Render::FrustumPlanes   m_frustumPlanes;
-    DgnViewportP            m_viewport = nullptr;
-    ClipPrimitiveCPtr       m_volume;
+    uint64_t m_endTime = 0;     // abort after this time.
+    Render::ViewFlags m_viewflags;
+    DrawPurpose m_purpose;
+    DRange3d m_npcSubRange;
+    DMap4d m_worldToNpc;
+    DMap4d m_worldToView;
+    ScanCriteria m_scanCriteria;
+    Render::FrustumPlanes m_frustumPlanes;
+    DgnViewportP m_viewport = nullptr;
+    ClipPrimitiveCPtr m_volume;
 
     void InvalidateScanRange() {m_scanRangeValid = false;}
     DGNPLATFORM_EXPORT virtual StatusInt _OutputGeometry(GeometrySourceCR);
@@ -129,7 +129,7 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
+    DGNPLATFORM_EXPORT virtual ScanCriteria::Reject _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
     DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _OnRangeElementFound(DgnElementCR) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();
@@ -139,7 +139,7 @@ public:
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
     DGNPLATFORM_EXPORT void SetSubRectFromViewRect(BSIRectCP viewRect);
-    void SetSubRectNpc(DRange3dCR subRect);
+    DGNPLATFORM_EXPORT void SetSubRectNpc(DRange3dCR subRect);
     void SetWantMaterials(bool wantMaterials) {m_wantMaterials = wantMaterials;}
     bool IsUndisplayed(GeometrySourceCR source);
     bool ValidateScanRange() {return m_scanRangeValid ? true : _ScanRangeFromPolyhedron();}
@@ -368,6 +368,7 @@ public:
     void EnableCheckStop(int stopInterval, int const* motionTolerance);
     void SetNoStroking(bool val) {m_wantStroke=!val;}
     UpdatePlan const& GetUpdatePlan() const {return m_plan;}
+    Render::GraphicListPtr GetList() const {return m_list;}
     RenderListContext(DgnViewportR vp, DrawPurpose purpose, Render::GraphicList* list, UpdatePlan const& plan);
 };
 

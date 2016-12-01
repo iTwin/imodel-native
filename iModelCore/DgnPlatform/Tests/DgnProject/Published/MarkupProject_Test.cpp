@@ -36,7 +36,7 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
         CreateDgnMarkupProjectParams cparms (*m_db);
         cparms.SetOverwriteExisting(true);
-        cparms.SetRootSubjectLabel("CreateDgnMarkupProject");
+        cparms.SetRootSubjectName("CreateDgnMarkupProject");
         DbResult status;
         DgnMarkupProjectPtr mproject = DgnMarkupProject::CreateDgnDb (&status, markupProjectFileName, cparms);
         ASSERT_TRUE( status == BE_SQLITE_OK );
@@ -56,7 +56,7 @@ TEST_F(DgnMarkupProjectTest, CreateDgnMarkupProject)
 
     // Create a redline model
     DgnDbStatus createStatus = DgnDbStatus::Success;
-    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), Redline::CreateCode("Redline 1", *mproject));
+    auto redline = Redline::Create(&createStatus, *mproject->GetRedlineListModel(), Redline::CreateCode(*mproject, "Redline 1"));
     ASSERT_TRUE(redline.IsValid());
     ASSERT_EQ(DgnDbStatus::Success, createStatus);
     ASSERT_TRUE(redline->Insert(&createStatus).IsValid());

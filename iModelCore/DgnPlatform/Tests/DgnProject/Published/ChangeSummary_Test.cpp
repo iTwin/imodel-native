@@ -45,7 +45,7 @@ public:
 //---------------------------------------------------------------------------------------
 int ChangeSummaryTestFixture::GetChangeSummaryInstanceCount(ChangeSummaryCR changeSummary, Utf8CP qualifiedClassName) const
     {
-    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, GetECClassId(), ECInstanceId)", qualifiedClassName);
+    Utf8PrintfString ecSql("SELECT COUNT(*) FROM %s WHERE IsChangedInstance(?, ECClassId, ECInstanceId)", qualifiedClassName);
 
     ECSqlStatement stmt;
     ECSqlStatus ecSqlStatus = stmt.Prepare(*m_testDb, ecSql.c_str());
@@ -882,7 +882,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
                 TargetECClassId;NULL;Generic:PhysicalObject:256
                 TargetECInstanceId;NULL;0:7
     */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject, DbOpcode::Update)); // Captured due to change of ParentId property
 
@@ -923,7 +923,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("ParentId").GetValueUInt64());
 
     EXPECT_EQ(4, relInstance.MakeValueIterator(changeSummary).QueryCount());
-    EXPECT_EQ(8, instance.MakeValueIterator(changeSummary).QueryCount());
+    EXPECT_EQ(2, instance.MakeValueIterator(changeSummary).QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -947,7 +947,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 
     // Query changed elements directly using ECSQL
     ECSqlStatement stmt;
-    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.GetECClassId(), el.ECInstanceId)";
+    Utf8CP ecsql = "SELECT el.ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_PhysicalElement) " el WHERE IsChangedInstance(?, el.ECClassId, el.ECInstanceId)";
     ECSqlStatus status = stmt.Prepare(*m_testDb, ecsql);
     ASSERT_TRUE(status.IsSuccess());
     
@@ -979,7 +979,7 @@ TEST_F(ChangeSummaryTestFixture, QueryChangedElements)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    07/2015
 //---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, DISABLED_QueryMultipleSessions)
+TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     {
     CreateDgnDb();
     m_testDb->SaveChanges();

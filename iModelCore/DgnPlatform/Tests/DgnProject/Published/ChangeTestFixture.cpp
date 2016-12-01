@@ -6,6 +6,8 @@
 #include "ChangeTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
+// #define DEBUG_REVISION_TEST_COMPRESSION 1
+
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
@@ -30,7 +32,7 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
         return;
 
     CreateDgnDbParams createDgnDbParams;
-    createDgnDbParams.SetRootSubjectLabel("ChangeTestFixture");
+    createDgnDbParams.SetRootSubjectName("ChangeTestFixture");
     createDgnDbParams.SetOverwriteExisting(true);
 
     DbResult createStatus;
@@ -83,10 +85,10 @@ void ChangeTestFixture::_CreateDgnDb()
     m_testCategoryId =  InsertCategory("TestCategory");
     ASSERT_TRUE(m_testCategoryId.IsValid());
 
-    m_testAuthorityId = InsertNamespaceAuthority("TestAuthority");
+    m_testAuthorityId = InsertDatabaseScopeAuthority("TestAuthority");
     ASSERT_TRUE(m_testAuthorityId.IsValid());
     
-    m_testAuthority = m_testDb->Authorities().Get<NamespaceAuthority>(m_testAuthorityId);
+    m_testAuthority = m_testDb->Authorities().Get<DatabaseScopeAuthority>(m_testAuthorityId);
     ASSERT_TRUE(m_testAuthority.IsValid());
     }
 
@@ -104,8 +106,7 @@ void ChangeTestFixture::OpenDgnDb()
     if (!m_testModelId.IsValid())
         {
         DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
-        DgnElementId partitionId = m_testDb->Elements().QueryElementIdByCode(partitionCode);
-        m_testModelId = DgnModelId(partitionId.GetValue());
+        m_testModelId = m_testDb->Models().QuerySubModelId(partitionCode);
         ASSERT_TRUE(m_testModelId.IsValid());
         }
 
@@ -118,12 +119,12 @@ void ChangeTestFixture::OpenDgnDb()
         ASSERT_TRUE(m_testAuthorityId.IsValid());
         }
 
-    m_testAuthority = m_testDb->Authorities().Get<NamespaceAuthority>(m_testAuthorityId);
+    m_testAuthority = m_testDb->Authorities().Get<DatabaseScopeAuthority>(m_testAuthorityId);
     ASSERT_TRUE(m_testAuthority.IsValid());
 
     if (!m_testCategoryId.IsValid())
         {
-        m_testCategoryId = DgnCategory::QueryCategoryId(DgnCategory::CreateCategoryCode("TestCategory"), *m_testDb);
+        m_testCategoryId = DgnCategory::QueryCategoryId(*m_testDb, SpatialCategory::CreateCode(*m_testDb, "TestCategory"));
         ASSERT_TRUE(m_testCategoryId.IsValid());
         }
     }
@@ -144,7 +145,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    DgnCategory category(DgnCategory::CreateParams(*m_testDb, categoryName, DgnCategory::Scope::Physical, DgnCategory::Rank::Application));
+    SpatialCategory category(*m_testDb, categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
@@ -158,14 +159,27 @@ DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    08/2015
 //---------------------------------------------------------------------------------------
-DgnAuthorityId ChangeTestFixture::InsertNamespaceAuthority(Utf8CP authorityName)
+DgnAuthorityId ChangeTestFixture::InsertDatabaseScopeAuthority(Utf8CP authorityName)
     {
-    RefCountedPtr<NamespaceAuthority> testAuthority = NamespaceAuthority::CreateNamespaceAuthority(authorityName, *m_testDb);
+    RefCountedPtr<DatabaseScopeAuthority> testAuthority = DatabaseScopeAuthority::Create(authorityName, *m_testDb);
 
     DgnDbStatus status = testAuthority->Insert();
     BeAssert(status == DgnDbStatus::Success);
 
     return testAuthority->GetAuthorityId();
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+double randFraction()
+    {
+#ifdef DEBUG_REVISION_TEST_COMPRESSION
+    return (double) rand() / RAND_MAX;
+#else
+    return 0.0;
+#endif
     }
 
 //---------------------------------------------------------------------------------------
@@ -175,12 +189,12 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
     {
     GenericPhysicalObjectPtr testElement = GenericPhysicalObject::Create(model, categoryId);
 
-    DPoint3d sizeOfBlock = DPoint3d::From(1, 1, 1);
-    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(0, 0, 0), sizeOfBlock, true);
+    DPoint3d sizeOfBlock = DPoint3d::From(1 + randFraction(), 1 + randFraction(), 1 + randFraction());
+    DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(randFraction(), randFraction(), randFraction()), sizeOfBlock, true);
     ISolidPrimitivePtr testGeomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(testGeomPtr.IsValid());
 
-    DPoint3d centerOfBlock = DPoint3d::From(x, y, z);
+    DPoint3d centerOfBlock = DPoint3d::From(x + randFraction(), y + randFraction(), z + randFraction());
     GeometryBuilderPtr builder = GeometryBuilder::Create(model, categoryId, centerOfBlock, YawPitchRollAngles());
     builder->Append(*testGeomPtr);
     BentleyStatus status = builder->Finish(*testElement);
@@ -196,7 +210,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (ElementIteratorEntry categoryEntry : DgnCategory::MakeIterator(*m_testDb))
+    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");
@@ -233,7 +247,7 @@ void ChangeTestFixture::UpdateDgnDbExtents()
     physicalExtents = m_testDb->Units().ComputeProjectExtents();
     m_testDb->Units().SetProjectExtents(physicalExtents);
 
-    auto view = ViewDefinition::QueryView("Default", *m_testDb);
+    auto view = ViewDefinition::Get(*m_testDb, "Default");
     ASSERT_TRUE(view.IsValid());
     auto editView = view->MakeCopy<SpatialViewDefinition>();
     ASSERT_TRUE(editView.IsValid());

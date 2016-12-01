@@ -41,8 +41,6 @@ private:
     explicit DgnGeometryPart(CreateParams const& params) : T_Super(params) { }
     DgnDbStatus WriteGeometryStream();
 
-    bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override final { return GeometryPartAuthority::GetGeometryPartAuthorityId() == auth.GetAuthorityId(); }
-    DgnCode _GenerateDefaultCode() const override final { return GeometryPartAuthority::CreateEmptyCode(); }
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
@@ -61,7 +59,7 @@ protected:
 public:
     //! Create a DgnGeometryPart
     //! @see DgnGeometryParts::InsertGeometryPart
-    DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DgnDbR db, DgnCode code=GeometryPartAuthority::CreateEmptyCode());
+    DGNPLATFORM_EXPORT static DgnGeometryPartPtr Create(DgnDbR db, DgnCodeCR code=DgnCode::CreateEmpty());
 
     //! Get the persistent Id of this DgnGeometryPart.
     //! @note Id will be invalid if not yet persisted.
@@ -77,10 +75,10 @@ public:
     Render::GraphicSet& Graphics() const {return m_graphics;}
 
     //! Create a DgnCode suitable for assigning to a DgnGeometryPart
-    static DgnCode CreateCode(Utf8StringCR name, Utf8StringCR nameSpace) { return GeometryPartAuthority::CreateGeometryPartCode(name, nameSpace); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR nameSpace) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_GeometryPart, db, name, nameSpace);}
 
     //! Looks up a DgnGeometryPartId by its code.
-    DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnCode const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnGeometryPartId QueryGeometryPartId(DgnDbR db, DgnCodeCR code);
 
     //! Query the range of a DgnGeometryPart by ID.
     //! @param[out] range On successful return, holds the DgnGeometryPart's range

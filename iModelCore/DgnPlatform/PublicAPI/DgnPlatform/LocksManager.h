@@ -261,7 +261,6 @@ private:
 
     DgnLockSet m_locks;
 
-    void InsertLock(LockableId id, LockLevel level);
 public:
     //! Constructor
     LockRequest() { }
@@ -328,9 +327,9 @@ public:
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 
-    void FromChangeSet(DgnDbCR dgndb, BeSQLite::IChangeSet& changeSet, bool stopOnFirst=false); //!< @private
     void ExtractLockSet(DgnLockSet& locks); //!< @private
-    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision); //!< @private
+    void InsertLock(LockableId id, LockLevel level);  //!< @private
+    DGNPLATFORM_EXPORT void FromRevision(DgnRevision& revision, DgnDbCR dgndb); //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

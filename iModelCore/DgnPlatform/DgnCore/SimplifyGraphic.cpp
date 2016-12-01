@@ -382,8 +382,6 @@ SimplifyGraphic::SimplifyGraphic(Render::Graphic::CreateParams const& params, IG
         m_facetOptions->SetAngleTolerance(0.25 * Angle::Pi());
         }
 
-    m_textAxes[0] = m_textAxes[1] = DVec3d::From(0.0, 0.0, 0.0);
-
     m_inPatternDraw = false;
     m_inSymbolDraw  = false;
     m_inTextDraw    = false;
@@ -396,8 +394,6 @@ Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGr
     {
     SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::Graphic::CreateParams(m_vp, Transform::FromProduct(m_localToWorldTransform, subToGraphic), m_pixelSize), m_processor, m_context);
 
-    subGraphic->m_textAxes[0]        = m_textAxes[0];
-    subGraphic->m_textAxes[1]        = m_textAxes[1];
     subGraphic->m_inPatternDraw      = m_inPatternDraw;
     subGraphic->m_inSymbolDraw       = m_inSymbolDraw;
     subGraphic->m_inTextDraw         = m_inTextDraw;
@@ -1266,6 +1262,8 @@ void SimplifyGraphic::ClipAndProcessBody(IBRepEntityCR geom)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
     {
+    bool doClipping = (nullptr != GetCurrentClip() && m_processor._DoClipping());
+
     if (nullptr != entity.GetFaceMaterialAttachments())
         {
         bvector<PolyfaceHeaderPtr> polyfaces;
@@ -1283,6 +1281,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
                 params[i].ToGeometryParams(faceParams, m_currGeometryParams);
                 m_context.CookGeometryParams(faceParams, builder);
+
+                if (!doClipping)
+                    {
+                    m_processor._ProcessPolyface(*polyfaces[i], false, *this);
+                    continue;
+                    }
 
                 SimplifyPolyfaceClipper     polyfaceClipper;
                 bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*polyfaces[i], *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1306,6 +1310,12 @@ void SimplifyGraphic::ClipAndProcessBodyAsPolyface(IBRepEntityCR entity)
 
     if (!meshPtr.IsValid())
         return;
+
+    if (!doClipping)
+        {
+        m_processor._ProcessPolyface(*meshPtr, false, *this);
+        return;
+        }
 
     SimplifyPolyfaceClipper     polyfaceClipper;
     bvector<PolyfaceHeaderPtr>& clippedPolyface = polyfaceClipper.ClipPolyface(*meshPtr, *GetCurrentClip(), m_facetOptions->GetMaxPerFace() <= 3);
@@ -1375,215 +1385,35 @@ void SimplifyGraphic::ClipAndProcessText(TextStringCR text)
 
         sGraphic->m_inTextDraw = true;
 
-        // NOTE: Need text axes to compute gpa transform in _OnGlyphAnnounced...
-        text.ComputeGlyphAxes(sGraphic->m_textAxes[0], sGraphic->m_textAxes[1]);
     
-        DgnFontCR font = text.GetStyle().GetFont();
-        auto numGlyphs = text.GetNumGlyphs();
+        auto        numGlyphs = text.GetNumGlyphs();
+        DPoint3dCP  glyphOrigins = text.GetGlyphOrigins();
+        DVec3d      xVector, yVector;
         DgnGlyphCP const* glyphs = text.GetGlyphs();
-        DPoint3dCP glyphOrigins = text.GetGlyphOrigins();
+
+        text.ComputeGlyphAxes(xVector, yVector);
 
         if (text.GetGlyphSymbology(sGraphic->m_currGeometryParams))
             m_context.CookGeometryParams(sGraphic->m_currGeometryParams, *graphic);
 
+        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xVector, yVector));
         for (size_t iGlyph = 0; iGlyph < numGlyphs; ++iGlyph)
-            sGraphic->ClipAndProcessGlyph(font, *glyphs[iGlyph], glyphOrigins[iGlyph]);
+            {
+            if (nullptr != glyphs[iGlyph])
+                {
+                bool            isFilled = false;
+                CurveVectorPtr  curves = glyphs[iGlyph]->GetCurveVector (isFilled);
+
+                curves->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
+                ClipAndProcessCurveVector(*curves, isFilled);
+                }
+            }
 
         text.AddUnderline(*graphic); // NOTE: Issue with supporting bold resource fonts, don't want underline bolded...
         return;
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool mightHaveHole(GPArrayCP gpa)
-    {
-    size_t  loopCount = 0;
-
-    for (int loopStart = 0, loopEnd = 0; loopStart < gpa->GetCount(); loopStart = loopEnd+1)
-        {
-        GraphicsPoint const* gPt = gpa->GetConstPtr(loopStart);
-
-        if (gPt && (HMASK_RSC_HOLE == (gPt->mask & HMASK_RSC_HOLE))) // NOTE: Mask value weirdness, hole shares bits with line/poly...
-            return true;
-
-        loopEnd = jmdlGraphicsPointArray_findMajorBreakAfter(gpa, loopStart);
-        loopCount++;
-        }
-
-    return loopCount > 1;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  10/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool isPhysicallyClosed(ICurvePrimitiveCR primitive)
-    {
-    switch (primitive.GetCurvePrimitiveType())
-        {
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_LineString:
-            return (primitive.GetLineStringCP ()->size() > 3 && primitive.GetLineStringCP ()->front().IsEqual(primitive.GetLineStringCP ()->back()));
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Arc:
-            return primitive.GetArcCP ()->IsFullEllipse();
-
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_BsplineCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_InterpolationCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_AkimaCurve:
-        case ICurvePrimitive::CURVE_PRIMITIVE_TYPE_Spiral:
-            return (primitive.GetProxyBsplineCurveCP ()->IsClosed());
-
-        default:
-            return false;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::ClipAndProcessGlyph(DgnFontCR font, DgnGlyphCR glyph, DPoint3dCR glyphOffset)
-    {
-    GPArraySmartP  gpaText;
-
-    if (SUCCESS != glyph.FillGpa(gpaText) || 0 == gpaText->GetCount())
-        return;
-
-    Transform   offsetTrans;
-
-    offsetTrans.InitFrom(glyphOffset);
-
-    DVec3d      zVec;
-    DPoint3d    origin;
-    Transform   scaledTrans, compoundTrans;
-
-    zVec.Init(0.0, 0.0, 1.0);
-    origin.Init(0.0, 0.0, 0.0);
-    scaledTrans.InitFromOriginAndVectors(origin, m_textAxes[0], m_textAxes[1], zVec);
-    compoundTrans.InitProduct(offsetTrans, scaledTrans);
-
-    bool  isFilled = (0 != gpaText->GetArrayMask(HPOINT_ARRAYMASK_FILL));
-    bool  isRscWithPossibleHoles = (isFilled && DgnFontType::Rsc == font.GetType() && mightHaveHole(gpaText));
-
-    if (DgnFontType::TrueType == font.GetType() || isRscWithPossibleHoles)
-        {
-        CurveVectorPtr  curves = gpaText->CreateCurveVector();
-
-        if (!curves.IsValid())
-            return;
-            
-        curves->ConsolidateAdjacentPrimitives();
-        curves->FixupXYOuterInner();
-        curves->TransformInPlace(compoundTrans);
-
-        ClipAndProcessCurveVector(*curves, isFilled);
-        return;
-        }
-
-    // Create curve vector that is just a collection of curves and not an open/closed path or region...
-    gpaText->Transform(&compoundTrans);
-
-    BentleyStatus            status = SUCCESS;
-    bvector<CurveVectorPtr>  glyphCurves;
-
-    for (int i=0, count = gpaText->GetCount(); i < count && SUCCESS == status; )
-        {
-        bool                isPoly = (DgnFontType::Rsc == font.GetType() && 0 != (gpaText->GetConstPtr(i)->mask & HMASK_RSC_POLY));
-        ICurvePrimitivePtr  primitive;
-
-        switch (gpaText->GetCurveType(i))
-            {
-            case GPCurveType::LineString:
-                {
-                bvector<DPoint3d> points;
-
-                if (SUCCESS != (status = gpaText->GetLineString(&i, points)))
-                    break;
-
-                primitive = ICurvePrimitive::CreateLineString(points);
-                break;
-                }
-
-            case GPCurveType::Ellipse:
-                {
-                DEllipse3d  ellipse;
-
-                if (SUCCESS != (status = gpaText->GetEllipse(&i, &ellipse)))
-                    break;
-
-                primitive = ICurvePrimitive::CreateArc(ellipse);
-                break;
-                }
-
-            case GPCurveType::Bezier:
-            case GPCurveType::BSpline:
-                {
-                MSBsplineCurve  bcurve;
-
-                if (SUCCESS != (status = gpaText->GetBCurve(&i, &bcurve)))
-                    break;
-
-                primitive = ICurvePrimitive::CreateBsplineCurve(bcurve);
-                bcurve.ReleaseMem();
-                break;
-                }
-
-            default:
-                {
-                i++;
-                break;
-                }
-            }
-
-        if (!primitive.IsValid())
-            continue;
-
-        CurveVectorPtr  singleCurve = CurveVector::Create((isPoly && isPhysicallyClosed(*primitive)) ? CurveVector::BOUNDARY_TYPE_Outer : CurveVector::BOUNDARY_TYPE_Open);
-
-        singleCurve->push_back(primitive);
-        glyphCurves.push_back(singleCurve);
-        }
-
-    size_t  nGlyphCurves = glyphCurves.size();
-
-    if (0 == nGlyphCurves)
-        return; // Empty glyph?!?
-
-    CurveVectorPtr  curves;
-
-    if (1 == nGlyphCurves)
-        {
-        curves = glyphCurves.front(); // NOTE: Glyph fill flag should be set correctly for this case...
-        }
-    else
-        {
-        size_t  nClosed = 0, nOpen = 0;
-
-        for (CurveVectorPtr singleCurve: glyphCurves)
-            {
-            if (singleCurve->IsClosedPath())
-                nClosed++;
-            else
-                nOpen++;
-            }
-
-        // NOTE: Create union region if all closed, create none for all open or mix...
-        curves = CurveVector::Create((nClosed == nGlyphCurves) ? CurveVector::BOUNDARY_TYPE_UnionRegion : CurveVector::BOUNDARY_TYPE_None);
-
-        for (CurveVectorPtr singleCurve: glyphCurves)
-            {
-            if (nOpen == nGlyphCurves)
-                curves->push_back(singleCurve->front()); // NOTE: Flatten hierarchy, better to not have child vectors for disjoint collection of sticks...
-            else
-                curves->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*singleCurve));
-            }
-
-        if (0 != nClosed && 0 != nOpen)
-            isFilled = true; // NOTE: Poly in mixed glyph treated as filled but glyph fill flag isn't set...
-        }
-
-    ClipAndProcessCurveVector(*curves, isFilled);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   09/03
@@ -1611,7 +1441,7 @@ void SimplifyGraphic::_AddLineString2d(int numPoints, DPoint2dCP points, double 
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddLineString(numPoints, &localPointsBuf3d[0]);
     }
 
@@ -1632,7 +1462,7 @@ void SimplifyGraphic::_AddPointString2d(int numPoints, DPoint2dCP points, double
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddPointString(numPoints, &localPointsBuf3d[0]);
     }
 
@@ -1653,7 +1483,7 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddShape(numPoints, &localPointsBuf3d[0], filled);
     }
 
@@ -1691,7 +1521,7 @@ void SimplifyGraphic::_AddTriStrip2d(int numPoints, DPoint2dCP points, int32_t u
     {
     std::valarray<DPoint3d> localPointsBuf3d(numPoints);
 
-    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, 0.0);
+    copy2dTo3d(numPoints, &localPointsBuf3d[0], points, m_processor._AdjustZDepth(zDepth));
     _AddTriStrip(numPoints, &localPointsBuf3d[0], usageFlags);
     }
 
@@ -1722,7 +1552,16 @@ void SimplifyGraphic::_AddArc(DEllipse3dCR ellipse, bool isEllipse, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth)
     {
-    _AddArc(ellipse, isEllipse, filled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddArc(ellipse, isEllipse, filled);
+        }
+    else
+        {
+        auto ell = ellipse;
+        ell.center.z = zDepth;
+        _AddArc(ell, isEllipse, filled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1740,7 +1579,21 @@ void SimplifyGraphic::_AddBSplineCurve(MSBsplineCurveCR bcurve, bool filled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddBSplineCurve2d(MSBsplineCurveCR bcurve, bool filled, double zDepth)
     {
-    _AddBSplineCurve(bcurve, filled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddBSplineCurve(bcurve, filled);
+        }
+    else
+        {
+        MSBsplineCurve bs;
+        bs.CopyFrom(bcurve);
+        int nPoles = bs.GetNumPoles();
+        DPoint3d* poles = bs.GetPoleP();
+        for (int i = 0; i < nPoles; i++)
+            poles[i].z = zDepth;
+
+        _AddBSplineCurve(bs, filled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1756,7 +1609,16 @@ void SimplifyGraphic::_AddCurveVector(CurveVectorCR curves, bool isFilled)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddCurveVector2d(CurveVectorCR curves, bool isFilled, double zDepth)
     {
-    _AddCurveVector(curves, isFilled);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddCurveVector(curves, isFilled);
+        }
+    else
+        {
+        Transform tf = Transform::From(DPoint3d::FromXYZ(0.0, 0.0, zDepth));
+        auto cv = curves.Clone(tf);
+        _AddCurveVector(*cv, isFilled);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1837,7 +1699,18 @@ void SimplifyGraphic::_AddTextString(TextStringCR text)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::_AddTextString2d(TextStringCR text, double zDepth)
     {
-    _AddTextString(text);
+    if (0.0 == (zDepth = m_processor._AdjustZDepth(zDepth)))
+        {
+        _AddTextString(text);
+        }
+    else
+        {
+        TextStringPtr ts = text.Clone();
+        auto origin = ts->GetOrigin();
+        origin.z = zDepth;
+        ts->SetOrigin(origin);
+        _AddTextString(*ts);
+        }
     }
 
 #if defined (NEEDS_WORK_CONTINUOUS_RENDER)

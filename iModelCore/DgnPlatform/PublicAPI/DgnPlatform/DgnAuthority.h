@@ -10,12 +10,41 @@
 
 #include "DgnDomain.h"
 
+//-----------------------------------------------------------------------------------------
+// Names of built-in Authorities. The best practice is to include the domain name as part of the authority name to ensure global uniqueness
+//-----------------------------------------------------------------------------------------
+#define BIS_AUTHORITY(name)                         "bis:" name
+#define BIS_AUTHORITY_NullAuthority                 BIS_AUTHORITY(BIS_CLASS_NullAuthority)
+#define BIS_AUTHORITY_AnnotationFrameStyle          BIS_AUTHORITY(BIS_CLASS_AnnotationFrameStyle)
+#define BIS_AUTHORITY_AnnotationLeaderStyle         BIS_AUTHORITY(BIS_CLASS_AnnotationLeaderStyle)
+#define BIS_AUTHORITY_AnnotationTextStyle           BIS_AUTHORITY(BIS_CLASS_AnnotationTextStyle)
+#define BIS_AUTHORITY_CategorySelector              BIS_AUTHORITY(BIS_CLASS_CategorySelector)
+#define BIS_AUTHORITY_DisplayStyle                  BIS_AUTHORITY(BIS_CLASS_DisplayStyle)
+#define BIS_AUTHORITY_Drawing                       BIS_AUTHORITY(BIS_CLASS_Drawing)
+#define BIS_AUTHORITY_DrawingCategory               BIS_AUTHORITY(BIS_CLASS_DrawingCategory)
+#define BIS_AUTHORITY_GeometryPart                  BIS_AUTHORITY(BIS_CLASS_GeometryPart)
+#define BIS_AUTHORITY_LightDefinition               BIS_AUTHORITY(BIS_CLASS_LightDefinition)
+#define BIS_AUTHORITY_LineStyle                     BIS_AUTHORITY(BIS_CLASS_LineStyle)
+#define BIS_AUTHORITY_LinkElement                   BIS_AUTHORITY(BIS_CLASS_LinkElement)
+#define BIS_AUTHORITY_MaterialElement               BIS_AUTHORITY(BIS_CLASS_MaterialElement)
+#define BIS_AUTHORITY_ModelSelector                 BIS_AUTHORITY(BIS_CLASS_ModelSelector)
+#define BIS_AUTHORITY_InformationPartitionElement   BIS_AUTHORITY(BIS_CLASS_InformationPartitionElement)
+#define BIS_AUTHORITY_Session                       BIS_AUTHORITY(BIS_CLASS_Session)
+#define BIS_AUTHORITY_Sheet                         BIS_AUTHORITY(BIS_CLASS_Sheet)
+#define BIS_AUTHORITY_SpatialCategory               BIS_AUTHORITY(BIS_CLASS_SpatialCategory)
+#define BIS_AUTHORITY_SubCategory                   BIS_AUTHORITY(BIS_CLASS_SubCategory)
+#define BIS_AUTHORITY_Subject                       BIS_AUTHORITY(BIS_CLASS_Subject)
+#define BIS_AUTHORITY_TextAnnotationSeed            BIS_AUTHORITY(BIS_CLASS_TextAnnotationSeed)
+#define BIS_AUTHORITY_Texture                       BIS_AUTHORITY(BIS_CLASS_Texture)
+#define BIS_AUTHORITY_TrueColor                     BIS_AUTHORITY(BIS_CLASS_TrueColor)
+#define BIS_AUTHORITY_ViewDefinition                BIS_AUTHORITY(BIS_CLASS_ViewDefinition)
+
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 
-namespace dgn_AuthorityHandler {struct Drawing; struct Link; struct Partition; struct Session; struct Sheet;};
+namespace dgn_AuthorityHandler {struct DatabaseScope; struct ElementScope; struct ModelScope; struct Null;};
 
 //=======================================================================================
-//! A DgnAuthority issues and validates DgnCodes for coded objects like elements and models.
+//! A DgnAuthority issues and validates DgnCodes for elements.
 //! There are 2 general types of codes issued by authorities:
 //!   - User/Application-supplied: The user/application supplies a DgnCode and the authority
 //!     simply enforces uniqueness and any constraints on e.g. allowable characters
@@ -24,6 +53,7 @@ namespace dgn_AuthorityHandler {struct Drawing; struct Link; struct Partition; s
 //! Some authorities may combine both approaches. e.g., sub-category names are supplied by
 //! the user or application, but their DgnCode namespaces are generated from the category
 //! to which they belong.
+//! @note Authorities are DgnDb-specific. That is, authority names are constant, but their DgnAuthorityIds may vary per DgnDb.
 // @bsistruct                                                    Paul.Connelly   09/15
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnAuthority : RefCountedBase
@@ -95,197 +125,108 @@ public:
 };
 
 //=======================================================================================
-//! The built-in default code-issuing authority.
+//! The built-in authority that issues null codes.
 // @bsistruct                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LocalAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE NullAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
+    friend struct dgn_AuthorityHandler::Null;
+    friend struct DgnDb;
 
-    LocalAuthority(CreateParams const& params) : T_Super(params) {}
+private:
+    static DgnDbStatus Insert(DgnDbR db);
+
+protected:
+    NullAuthority(CreateParams const& params) : T_Super(params) {}
+
+public:
+    //! Create a null code
+    static DgnCode CreateCode() {return DgnCode(GetNullAuthorityId(), "", "");}
+
+        //! Return the DgnAuthorityId of the NullAuthority
+    static DgnAuthorityId GetNullAuthorityId() {return DgnAuthorityId((uint64_t)1LL);}
+    //! Return true if the specified DgnAuthority is the NullAuthority
+    static bool IsNullAuthority(DgnAuthorityCR authority) {return authority.GetAuthorityId() == GetNullAuthorityId();}
 };
 
 //=======================================================================================
-//! A generic DgnAuthority which behaves like a namespace for user-/application-defined
-//! codes.
+//! A generic DgnAuthority which behaves like a namespace for user-/application-defined codes.
 // @bsistruct                                                    Paul.Connelly   09/15
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NamespaceAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE DatabaseScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority)
+    friend struct dgn_AuthorityHandler::DatabaseScope;
 
-    NamespaceAuthority(CreateParams const& params) : T_Super(params) {}
+protected:
+    DatabaseScopeAuthority(CreateParams const& params) : T_Super(params) {}
 
-    DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const { return T_Super::CreateCode(value, nameSpace); }
+public:
+    //! Create a new DatabaseScopeAuthority using the specified authorityName
+    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
+    DGNPLATFORM_EXPORT static DatabaseScopeAuthorityPtr Create(Utf8CP name, DgnDbR dgndb);
 
-    DGNPLATFORM_EXPORT static RefCountedPtr<NamespaceAuthority> CreateNamespaceAuthority(Utf8CP name, DgnDbR dgndb);
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, Utf8StringCR value, DgnDbR dgndb, Utf8StringCR nameSpace="");
+    //! Create a DgnCode using the DatabaseScopeAuthority of the specified name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace="");
+    //! Create a DgnCode using this DatabaseScopeAuthority
+    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const {return DgnCode(GetAuthorityId(), value, nameSpace);}
 };
 
 //=======================================================================================
-//! The default code-issuing authority for InformationPartitionElements.
-// @bsistruct                                                    Shaun.Sewall    10/16
+//! A generic DgnAuthority which enforces uniquess within the scope of a DgnModel.
+// @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct PartitionAuthority : DgnAuthority
+struct ModelScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Partition;
+    friend struct dgn_AuthorityHandler::ModelScope;
 
 protected:
     DgnDbStatus _ValidateCode(DgnElementCR) const override;
-    PartitionAuthority(CreateParams const& params) : T_Super(params) {}
+    ModelScopeAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static DgnCode CreatePartitionCode(Utf8StringCR codeValue, DgnElementId scopeId);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetPartitionAuthorityId();
+    //! Create a new ModelScopeAuthority using the specified authorityName
+    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
+    DGNPLATFORM_EXPORT static ModelScopeAuthorityPtr Create(Utf8CP authorityName, DgnDbR db);
+
+    //! Create a DgnCode using the ModelScopeAuthority of the specified name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value);
+    //! Create a DgnCode using the ModelScopeAuthority of the specified name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value);
+    //! Create a DgnCode using this ModelScopeAuthority
+    DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR model, Utf8StringCR value) const;
+    //! Create a DgnCode using this ModelScopeAuthority
+    DgnCode CreateCode(DgnModelId modelId, Utf8StringCR value) const {return DgnCode(GetAuthorityId(), value, modelId);}
 };
 
 //=======================================================================================
-//! The default code-issuing authority for LinkElements.
+//! A generic DgnAuthority which enforces uniquess within another DgnElement that is providing the scope.
 // @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct LinkAuthority : DgnAuthority
+struct ElementScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Link;
-
-protected:
-    LinkAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static DgnCode CreateLinkCode(Utf8StringCR codeValue, DgnElementId scopeId);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetLinkAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for Drawing elements.
-// @bsistruct                                                    Shaun.Sewall    11/16
-//=======================================================================================
-struct DrawingAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Drawing;
+    friend struct dgn_AuthorityHandler::ElementScope;
 
 protected:
     DgnDbStatus _ValidateCode(DgnElementCR) const override;
-    DrawingAuthority(CreateParams const& params) : T_Super(params) {}
+    ElementScopeAuthority(CreateParams const& params) : T_Super(params) {}
 
 public:
-    DGNPLATFORM_EXPORT static DgnCode CreateDrawingCode(Utf8StringCR codeValue, DgnElementId scopeId);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetDrawingAuthorityId();
-};
+    //! Create a new ElementScopeAuthority using the specified authorityName
+    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
+    DGNPLATFORM_EXPORT static ElementScopeAuthorityPtr Create(Utf8CP authorityName, DgnDbR db);
 
-//=======================================================================================
-//! The default code-issuing authority for Sheet elements.
-// @bsistruct                                                    Shaun.Sewall    11/16
-//=======================================================================================
-struct SheetAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Sheet;
-
-protected:
-    DgnDbStatus _ValidateCode(DgnElementCR) const override;
-    SheetAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static DgnCode CreateSheetCode(Utf8StringCR codeValue, DgnElementId scopeId);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetSheetAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for materials.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct MaterialAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-public:
-    MaterialAuthority(CreateParams const& params) : T_Super(params) {}
-
-    DGNPLATFORM_EXPORT static DgnCode CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetMaterialAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for categories and sub-categories.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct CategoryAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-protected:
-    virtual DgnDbStatus _ValidateCode(DgnElementCR) const override;
-public:
-    CategoryAuthority(CreateParams const& params) : T_Super(params) {}
-
-    DGNPLATFORM_EXPORT static DgnCode CreateCategoryCode(Utf8StringCR categoryName, Utf8StringCR nameSpace="");
-    DGNPLATFORM_EXPORT static DgnCode CreateSubCategoryCode(DgnCategoryId categoryId, Utf8StringCR subCategoryName);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetCategoryAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for named resources such as styles.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct ResourceAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-public:
-    ResourceAuthority(CreateParams const& params) : T_Super(params) {}
-    DGNPLATFORM_EXPORT static DgnCode CreateResourceCode(Utf8StringCR resourceName, Utf8StringCR namespaceName);
-    static DgnCode CreateDisplayStyleCode(Utf8StringCR name) {return CreateResourceCode(name,"dstyle");}
-    static DgnCode CreateModelSelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"models");}
-    static DgnCode CreateCategorySelectorCode(Utf8StringCR name) {return CreateResourceCode(name,"catgs");}
-    DGNPLATFORM_EXPORT static DgnCode CreateViewDefinitionCode(Utf8StringCR name);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetResourceAuthorityId();
-    static bool IsResourceAuthority(DgnAuthorityCR auth) {return auth.GetAuthorityId() == GetResourceAuthorityId();}
-};
-
-//=======================================================================================
-//! The default code-issuing authority for DgnTrueColors.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct TrueColorAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-public:
-    TrueColorAuthority(CreateParams const& params) : T_Super(params) {}
-
-    DGNPLATFORM_EXPORT static DgnCode CreateTrueColorCode(Utf8StringCR colorName, Utf8StringCR colorBookName);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetTrueColorAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for DgnGeometryParts.
-// @bsistruct                                                    Paul.Connelly   01/16
-//=======================================================================================
-struct GeometryPartAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-public:
-    GeometryPartAuthority(CreateParams const& params) : T_Super(params) {}
-
-    DGNPLATFORM_EXPORT static DgnCode CreateGeometryPartCode(Utf8StringCR name, Utf8StringCR nameSpace);
-    static DgnCode CreateEmptyCode() { return CreateGeometryPartCode("", ""); }
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetGeometryPartAuthorityId();
-};
-
-//=======================================================================================
-//! The default code-issuing authority for Session elements.
-// @bsistruct                                                    Shaun.Sewall    10/16
-//=======================================================================================
-struct SessionAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::Session;
-
-protected:
-    SessionAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DGNPLATFORM_EXPORT static DgnCode CreateSessionCode(Utf8StringCR codeValue);
-    DGNPLATFORM_EXPORT static DgnAuthorityId GetSessionAuthorityId();
+    //! Create a DgnCode using the ElementScopeAuthority of the specified name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnElementCR scopeElement, Utf8StringCR value);
+    //! Create a DgnCode using the ElementScopeAuthority of the specified name
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, DgnElementId scopeElementId, Utf8StringCR value);
+    //! Create a DgnCode using this ElementScopeAuthority
+    DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
+    //! Create a DgnCode using this ElementScopeAuthority
+    DgnCode CreateCode(DgnElementId scopeElementId, Utf8StringCR value) const {return DgnCode(GetAuthorityId(), value, scopeElementId);}
 };
 
 //=======================================================================================
@@ -314,66 +255,25 @@ namespace dgn_AuthorityHandler
         DgnAuthorityPtr Create(DgnAuthority::CreateParams const& params) { return _CreateInstance(params); }
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE Local : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE Null : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_LocalAuthority, LocalAuthority, Local, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_NullAuthority, NullAuthority, Null, Authority, DGNPLATFORM_EXPORT)
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE Namespace : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE DatabaseScope : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_NamespaceAuthority, NamespaceAuthority, Namespace, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_DatabaseScopeAuthority, DatabaseScopeAuthority, DatabaseScope, Authority, DGNPLATFORM_EXPORT)
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE Material : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE ModelScope : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_MaterialAuthority, MaterialAuthority, Material, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelScopeAuthority, ModelScopeAuthority, ModelScope, Authority, DGNPLATFORM_EXPORT)
     };
 
-    struct EXPORT_VTABLE_ATTRIBUTE GeometryPart : Authority
+    struct EXPORT_VTABLE_ATTRIBUTE ElementScope : Authority
     {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_GeometryPartAuthority, GeometryPartAuthority, GeometryPart, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Link : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_LinkAuthority, LinkAuthority, Link, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Partition : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_PartitionAuthority, PartitionAuthority, Partition, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE TrueColor : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_TrueColorAuthority, TrueColorAuthority, TrueColor, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Resource : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ResourceAuthority, ResourceAuthority, Resource, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Category : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_CategoryAuthority, CategoryAuthority, Category, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Session : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SessionAuthority, SessionAuthority, Session, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Drawing : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_DrawingAuthority, DrawingAuthority, Drawing, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Sheet : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_SheetAuthority, SheetAuthority, Sheet, Authority, DGNPLATFORM_EXPORT)
+       AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ElementScopeAuthority, ElementScopeAuthority, ElementScope, Authority, DGNPLATFORM_EXPORT)
     };
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

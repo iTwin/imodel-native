@@ -28,8 +28,6 @@
     #define DG_INLINE
 #endif
 
-extern BeThreadLocalStorage g_hostForThread;
 
 DG_INLINE IACSManagerR IACSManager::GetManager() {return T_HOST.GetAcsManager();}
-DG_INLINE DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *static_cast<DgnPlatformLib::Host*>(g_hostForThread.GetValueAsPointer());}
 

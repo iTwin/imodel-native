@@ -33,7 +33,7 @@ struct SqlFunctionsTest : public ::testing::Test
     void InsertElement(PhysicalElementR pelem);
     DgnModelR GetDefaultModel() {return *m_db->Models().GetModel(m_defaultModelId);}
     SpatialModelP GetDefaultSpatialModel() {return dynamic_cast<SpatialModelP>(&GetDefaultModel());}
-    DgnCode CreateCode(Utf8StringCR value) const { return NamespaceAuthority::CreateCode("SqlFunctionsTest", value, *m_db); }
+    DgnCode CreateCode(Utf8StringCR value) const { return DatabaseScopeAuthority::CreateCode("SqlFunctionsTest", *m_db, value); }
     };
 
 
@@ -70,11 +70,9 @@ void SqlFunctionsTest::SetUpTestCase()
 
     DgnSqlTestDomain::ImportSchemaFromPath(*db, T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
 
-    auto& hdlr = dgn_AuthorityHandler::Namespace::GetHandler();
-    DgnAuthority::CreateParams params(*db, db->Domains().GetClassId(hdlr), "SqlFunctionsTest");
-    DgnAuthorityPtr auth = hdlr.Create(params);
-    if (auth.IsValid())
-        auth->Insert();
+    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create("SqlFunctionsTest", *db);
+    if (authority.IsValid())
+        authority->Insert();
 
     db->SaveChanges();
     }
@@ -96,7 +94,7 @@ void SqlFunctionsTest::SetupProject(WCharCP newFileName, BeSQLite::Db::OpenMode 
     DgnModelPtr defaultModel = m_db->Models().GetModel(m_defaultModelId);
     ASSERT_TRUE(defaultModel.IsValid());
     
-    m_defaultCategoryId = DgnCategory::QueryFirstCategoryId(*m_db);
+    m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
     }
 
 /*---------------------------------------------------------------------------------**//**

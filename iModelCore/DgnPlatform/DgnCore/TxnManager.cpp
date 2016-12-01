@@ -212,7 +212,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         rlt = dynamic_cast<dgn_TxnTable::RelationshipLinkTable*>(handler);
         if (nullptr == rlt)
             {
-            BeAssert(false && "relationship link table appears to be handled already. I can't handle it!");
+            //BeAssert(false && "relationship link table appears to be handled already. I can't handle it!");
             return DgnDbStatus::BadArg;
             }
 
@@ -625,7 +625,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
     {
     BeAssert(!InDynamicTxn());
     
-    ChangeStreamFileReader changeStream(revision.GetChangeStreamFile(), m_dgndb);
+    RevisionChangesFileReader changeStream(revision.GetRevisionChangesFile(), m_dgndb);
 
     m_dgndb.Txns().EnableTracking(false);
     DbResult result = changeStream.ApplyChanges(m_dgndb);
@@ -681,7 +681,7 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     if (status == RevisionStatus::Success)
         {
-        status = m_dgndb.Revisions().SetParentRevisionId(revision.GetId());
+        status = m_dgndb.Revisions().SaveParentRevisionId(revision.GetId());
 
         if (status == RevisionStatus::Success)
             {

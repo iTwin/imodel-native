@@ -7,47 +7,136 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/SHA1.h>
+#include <BeSqlite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
 #include "DgnChangeIterator.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
+#define REVISION_LZMA_MARKER   "RevLzma"
+#define CURRENT_REV_END_TXN_ID "CurrentRevisionEndTxnId"
+// #define DEBUG_REVISION_KEEP_FILES 1
+
+//=======================================================================================
+// LZMA Header written to the top of the revision file
+// @bsiclass                                                 Ramanujam.Raman   10/15
+//=======================================================================================
+struct RevisionLzmaHeader
+{
+private:
+    uint16_t m_sizeOfHeader;
+    char    m_idString[10];
+    uint16_t m_formatVersionNumber;
+    uint16_t m_compressionType;
+
+public:
+    static const int formatVersionNumber = 0x10;
+    enum CompressionType
+        {
+        LZMA2 = 2
+        };
+
+    RevisionLzmaHeader()
+        {
+        CharCP idString = REVISION_LZMA_MARKER;
+        BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
+        memset(this, 0, sizeof(*this));
+        m_sizeOfHeader = (uint16_t)sizeof(RevisionLzmaHeader);
+        strcpy(m_idString, idString);
+        m_compressionType = CompressionType::LZMA2;
+        m_formatVersionNumber = formatVersionNumber;
+        }
+
+    int GetVersion() { return m_formatVersionNumber; }
+
+    bool IsValid()
+        {
+        if (m_sizeOfHeader != sizeof(RevisionLzmaHeader))
+            return false;
+
+        if (strcmp(m_idString, REVISION_LZMA_MARKER))
+            return false;
+
+        if (formatVersionNumber != m_formatVersionNumber)
+            return false;
+
+        return m_compressionType == LZMA2;
+        }
+};
+
 //=======================================================================================
 //! Writes the contents of a change stream to a file
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct ChangeStreamFileWriter : ChangeStream
+struct RevisionChangesFileWriter : ChangeStream
 {
 private:
+    BeSQLite::LzmaEncoder m_lzmaEncoder;
     BeFileName m_pathname;
-    BeFile m_file;
+    BeFileLzmaOutStream* m_outLzmaFileStream;
     DgnDbCR m_dgndb; // Only for debugging
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    11/2016
+    //---------------------------------------------------------------------------------------
+    BentleyStatus StartOutput()
+        {
+        BeAssert(m_outLzmaFileStream == nullptr);
+        m_outLzmaFileStream = new BeFileLzmaOutStream();
+
+        BeFileStatus fileStatus = m_outLzmaFileStream->CreateOutputFile(m_pathname, true /* createAlways */);
+        if (fileStatus != BeFileStatus::Success)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        RevisionLzmaHeader header;
+        uint32_t bytesWritten;
+        ZipErrors zipStatus = m_outLzmaFileStream->_Write(&header, sizeof(header), bytesWritten);
+        if (zipStatus != ZIP_SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        zipStatus = m_lzmaEncoder.StartCompress(*m_outLzmaFileStream);
+        if (zipStatus != ZIP_SUCCESS)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                Ramanujam.Raman                    11/2016
+    //---------------------------------------------------------------------------------------
+    void FinishOutput()
+        {
+        if (m_outLzmaFileStream == nullptr)
+            return;
+
+        m_lzmaEncoder.FinishCompress();
+
+        delete m_outLzmaFileStream;
+        m_outLzmaFileStream = nullptr;
+        }
 
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
     DbResult _OutputPage(const void *pData, int nData) override
         {
-        BeFileStatus fileStatus;
-
-        if (!m_file.IsOpen())
+        if (nullptr == m_outLzmaFileStream)
             {
-            fileStatus = m_file.Create(m_pathname.c_str(), true);
-            if (fileStatus != BeFileStatus::Success)
-                {
-                BeAssert(false);
+            if (SUCCESS != StartOutput())
                 return BE_SQLITE_ERROR;
-                }
             }
-
-        fileStatus = m_file.Write(nullptr, pData, (uint32_t) nData);
-        if (fileStatus != BeFileStatus::Success)
-            {
-            BeAssert(false);
-            return BE_SQLITE_ERROR;
-            }
-
-        return BE_SQLITE_OK;
+            
+        ZipErrors zipErrors = m_lzmaEncoder.CompressNextPage(pData, nData);
+        return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
         }
 
     //---------------------------------------------------------------------------------------
@@ -55,8 +144,7 @@ private:
     //---------------------------------------------------------------------------------------
     void _Reset() override
         {
-        if (m_file.IsOpen())
-            m_file.Close();
+        FinishOutput();
         }
 
     //---------------------------------------------------------------------------------------
@@ -73,137 +161,83 @@ public:
     //---------------------------------------------------------------------------------------
     // @bsimethod                                Ramanujam.Raman                    10/2015
     //---------------------------------------------------------------------------------------
-    ChangeStreamFileWriter(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb) {}
-    ~ChangeStreamFileWriter() {}
+    RevisionChangesFileWriter(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb), m_outLzmaFileStream(nullptr) {}
+    ~RevisionChangesFileWriter() {}
 };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::CloseCurrentFile()
+BentleyStatus RevisionChangesFileReader::StartInput()
     {
-    BeAssert(m_currentFileIndex >= 0);
-    if (!m_currentFile.IsOpen())
+    BeAssert(m_inLzmaFileStream == nullptr);
+    m_inLzmaFileStream = new BeFileLzmaInStream();
+
+    StatusInt status = m_inLzmaFileStream->OpenInputFile(m_pathname);
+    if (status != SUCCESS)
         {
         BeAssert(false);
         return ERROR;
         }
-    BeFileStatus fileStatus = m_currentFile.Close();
-    if (fileStatus != BeFileStatus::Success)
-        return ERROR;
 
-    m_currentTotalBytes = 0;
-    m_currentByteIndex = 0;
+    RevisionLzmaHeader  header;
+    uint32_t actuallyRead;
+    m_inLzmaFileStream->_Read(&header, sizeof(header), actuallyRead);
+    if (actuallyRead != sizeof(header) || !header.IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ZipErrors zipStatus = m_lzmaDecoder.StartDecompress(*m_inLzmaFileStream);
+    if (zipStatus != ZIP_SUCCESS)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    11/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::OpenNextFile(bool& completedAllFiles)
+void RevisionChangesFileReader::FinishInput()
     {
-    m_currentFileIndex++;
-    if (m_currentFileIndex >= (int) m_pathnames.size())
-        {
-        completedAllFiles = true;
-        return SUCCESS;
-        }
-    completedAllFiles = false;
+    if (m_inLzmaFileStream == nullptr)
+        return;
 
-    BeFileStatus fileStatus = m_currentFile.Open(m_pathnames[m_currentFileIndex], BeFileAccess::Read);
-    if (fileStatus != BeFileStatus::Success)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-    fileStatus = m_currentFile.GetSize(m_currentTotalBytes);
-    if (fileStatus != BeFileStatus::Success)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    m_currentByteIndex = 0;
-    return SUCCESS;
+    m_lzmaDecoder.FinishDecompress();
+    delete m_inLzmaFileStream;
+    m_inLzmaFileStream = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeStreamFileReader::ReadNextPage(void *pData, int *pnData)
+DbResult RevisionChangesFileReader::_InputPage(void *pData, int *pnData)
     {
-    uint32_t bytesRead;
-    BeFileStatus fileStatus = m_currentFile.Read(pData, &bytesRead, *pnData);
-    if (fileStatus != BeFileStatus::Success)
+    if (nullptr == m_inLzmaFileStream)
         {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    *pnData = (int) bytesRead;
-    m_currentByteIndex += bytesRead;
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-bool ChangeStreamFileReader::IsCurrentFileComplete() const
-    {
-    return m_currentByteIndex >= m_currentTotalBytes;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
-//---------------------------------------------------------------------------------------
-DbResult ChangeStreamFileReader::_InputPage(void *pData, int *pnData)
-    {
-    BentleyStatus status;
-
-    if (m_currentFileIndex < 0 || IsCurrentFileComplete())
-        {
-        if (m_currentFileIndex >= 0)
-            {
-            status = CloseCurrentFile();
-            if (SUCCESS != status)
-                return BE_SQLITE_ERROR;
-            }
-
-        bool completedAllFiles;
-        status = OpenNextFile(completedAllFiles);
-        if (SUCCESS != status)
+        if (SUCCESS != StartInput())
             return BE_SQLITE_ERROR;
-
-        if (completedAllFiles)
-            {
-            *pnData = 0;
-            return BE_SQLITE_OK;
-            }
         }
-
-    status = ReadNextPage(pData, pnData);
-    if (SUCCESS != status)
-        return BE_SQLITE_ERROR;
-
-    return BE_SQLITE_OK;
+    ZipErrors zipErrors = m_lzmaDecoder.DecompressNextPage((Byte*) pData, pnData);
+    return (zipErrors == ZIP_SUCCESS) ? BE_SQLITE_OK : BE_SQLITE_ERROR;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-void ChangeStreamFileReader::_Reset()
+void RevisionChangesFileReader::_Reset()
     {
-    if (m_currentFile.IsOpen())
-        CloseCurrentFile();
-    m_currentFileIndex = -1;
-    m_currentTotalBytes = 0;
-    m_currentByteIndex = 0;
+    FinishInput();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-ChangeSet::ConflictResolution ChangeStreamFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
+ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::ConflictCause cause, Changes::Change iter)
     {
     Utf8CP tableName = nullptr;
     int nCols, indirect;
@@ -350,10 +384,10 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
         return nullptr;
         }
 
-    BeFileName changeStreamPathname = BuildChangeStreamPathname(revisionId);
+    BeFileName changeStreamPathname = BuildRevisionChangesPathname(revisionId);
     
     DgnRevisionPtr revision = new DgnRevision(revisionId, parentRevisionId, dbGuid);
-    revision->SetChangeStreamFile(changeStreamPathname);
+    revision->SetRevisionChangesFile(changeStreamPathname);
     status = RevisionStatus::Success;
     return revision;
     }
@@ -363,18 +397,20 @@ DgnRevisionPtr DgnRevision::Create(RevisionStatus* outStatus, Utf8StringCR revis
 //---------------------------------------------------------------------------------------
 DgnRevision::~DgnRevision()
     {
-    if (m_changeStreamFile.DoesPathExist())
+#ifndef DEBUG_REVISION_KEEP_FILES
+    if (m_revChangesFile.DoesPathExist())
         {
-        BeFileNameStatus status = m_changeStreamFile.BeDeleteFile();
+        BeFileNameStatus status = m_revChangesFile.BeDeleteFile();
         BeAssert(BeFileNameStatus::Success == status && "Could not delete temporary change stream file");
         }
+#endif
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
 // static
-BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
+BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
     BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
@@ -389,16 +425,16 @@ BeFileName DgnRevision::BuildChangeStreamPathname(Utf8String revisionId)
 //---------------------------------------------------------------------------------------
 void DgnRevision::Dump(DgnDbCR dgndb) const
     {
-    LOG.infov("Id : %s\n", m_id.c_str());
-    LOG.infov("ParentId : %s\n", m_parentId.c_str());
-    LOG.infov("Initial ParentId : %s\n", m_initialParentId.c_str());
-    LOG.infov("DbGuid: %s\n", m_dbGuid.c_str());
-    LOG.infov("User Name: %s\n", m_userName.c_str());
-    LOG.infov("Summary: %s\n", m_summary.c_str());
-    LOG.infov("ChangeStreamFile: %ls\n", m_changeStreamFile.c_str());
-    LOG.infov("DateTime: %s\n", m_dateTime.ToUtf8String().c_str());
+    LOG.infov("Id : %s", m_id.c_str());
+    LOG.infov("ParentId : %s", m_parentId.c_str());
+    LOG.infov("Initial ParentId : %s", m_initialParentId.c_str());
+    LOG.infov("DbGuid: %s", m_dbGuid.c_str());
+    LOG.infov("User Name: %s", m_userName.c_str());
+    LOG.infov("Summary: %s", m_summary.c_str());
+    LOG.infov("ChangeStreamFile: %ls", m_revChangesFile.c_str());
+    LOG.infov("DateTime: %s", m_dateTime.ToString().c_str());
 
-    ChangeStreamFileReader fs(m_changeStreamFile, dgndb);
+    RevisionChangesFileReader fs(m_revChangesFile, dgndb);
     fs.Dump("Revision Contents:\n", dgndb, false, 0);
     }
 
@@ -420,13 +456,14 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
         return RevisionStatus::WrongDgnDb;
         }
 
-    if (!m_changeStreamFile.DoesPathExist())
+    if (!m_revChangesFile.DoesPathExist())
         {
         BeAssert(false && "File containing the change stream doesn't exist. Cannot validate.");
         return RevisionStatus::FileNotFound;
         }
 
-    ChangeStreamFileReader fs (m_changeStreamFile, dgndb);
+    RevisionChangesFileReader fs(m_revChangesFile, dgndb);
+
     Utf8String id = DgnRevisionIdGenerator::GenerateId(m_parentId, fs);
     if (m_id != id)
         {
@@ -437,37 +474,9 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     return RevisionStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRevision::IncludeChangeGroupData(ChangeGroup& changeGroup, Include include, DgnDbR db)
-    {
-    if (Include::None == include)
-        return;
-
-    AbortOnConflictChangeSet changeSet;
-    if (BE_SQLITE_OK != changeSet.FromChangeGroup(changeGroup))
-        {
-        BeAssert(false);
-        return;
-        }
-
-    if (Include::Locks == (include & Include::Locks))
-        {
-        LockRequest lockRequest;
-        lockRequest.FromChangeSet(db, changeSet, false);
-        lockRequest.ExtractLockSet(m_usedLocks);
-        }
-    
-    if (Include::Codes == (include & Include::Codes))
-        {
-        CollectCodesFromChangeSet(db, changeSet);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Paul.Connelly   12/15
+//---------------------------------------------------------------------------------------
 static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
     {
     if (code.IsEmpty() || !code.IsValid())
@@ -487,9 +496,9 @@ static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotI
     into.insert(code);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Paul.Connelly   12/15
+//---------------------------------------------------------------------------------------
 template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& discarded, T& collection)
     {
     for (auto const& entry : collection)
@@ -505,34 +514,63 @@ template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& 
         }
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRevision::CollectCodesFromChangeSet(DgnDbCR dgndb, IChangeSet& changeSet)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const
     {
-    m_assignedCodes.clear();
-    m_discardedCodes.clear();
+    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
+    auto elems = DgnChangeIterator::MakeElementChangeIterator(dgndb, changeStream);
 
-    auto elems = DgnChangeIterator::MakeElementChangeIterator(dgndb, changeSet);
-    collectCodes(m_assignedCodes, m_discardedCodes, elems);
+    assignedCodes.clear();
+    discardedCodes.clear();
+    collectCodes(assignedCodes, discardedCodes, elems);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRevision::ExtractUsedLocks(DgnLockSet& locks)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     {
-    locks.clear();
-    std::swap(m_usedLocks, locks);
-    }
+    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnRevision::ExtractAssignedCodes(DgnCodeSet& codes)
-    {
-    codes.clear();
-    std::swap(m_assignedCodes, codes);
+    LockRequest lockRequest;
+
+    for (ElementChangeEntry entry : DgnChangeIterator::MakeElementChangeIterator(dgndb, changeStream))
+        {
+        DgnModelId modelId;
+        switch (entry.GetDbOpcode())
+            {
+                case DbOpcode::Insert:  modelId = entry.GetNewModelId(); break;
+                case DbOpcode::Delete:  modelId = entry.GetOldModelId(); break;
+                case DbOpcode::Update:
+                    {
+                    modelId = entry.GetNewModelId();
+                    auto oldModelId = entry.GetOldModelId();
+                    if (oldModelId != modelId)
+                        lockRequest.InsertLock(LockableId(oldModelId), LockLevel::Shared);
+
+                    break;
+                    }
+            }
+
+        BeAssert(modelId.IsValid());
+        lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
+        lockRequest.InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
+        }
+
+    // Any models directly changed?
+    for (ModelChangeEntry entry : DgnChangeIterator::MakeModelChangeIterator(dgndb, changeStream))
+        {
+        lockRequest.InsertLock(LockableId(LockableType::Model, entry.GetModelId()), LockLevel::Exclusive);
+        }
+
+    // Anything changed at all?
+    if (!lockRequest.IsEmpty())
+        lockRequest.Insert(dgndb, LockLevel::Shared);
+
+    usedLocks.clear();
+    lockRequest.ExtractLockSet(usedLocks);
     }
 
 //---------------------------------------------------------------------------------------
@@ -547,7 +585,7 @@ RevisionManager::~RevisionManager()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
+RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
     DbResult result = m_dgndb.SaveBriefcaseLocalValue("ParentRevisionId", revisionId);
@@ -566,7 +604,7 @@ RevisionStatus RevisionManager::SetParentRevisionId(Utf8StringCR revisionId)
 Utf8String RevisionManager::GetParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue("ParentRevisionId", revisionId);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, "ParentRevisionId");
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -586,13 +624,96 @@ RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    10/2015
+// @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
-Utf8String RevisionManager::GetInitialParentRevisionId() const
+Utf8String RevisionManager::QueryInitialParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue("InitialParentRevisionId", revisionId);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, "InitialParentRevisionId");
     return (BE_SQLITE_ROW == result) ? revisionId : "";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId)
+    {
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_REV_END_TXN_ID, txnId.GetValue());
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    result = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
+    {
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_REV_END_TXN_ID);
+    if (BE_SQLITE_DONE != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    result = m_dgndb.SaveChanges();
+    if (BE_SQLITE_OK != result)
+        {
+        BeAssert(false);
+        return RevisionStatus::SQLiteError;
+        }
+
+    return RevisionStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+TxnManager::TxnId RevisionManager::QueryCurrentRevisionEndTxnId() const
+    {
+    uint64_t val;
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_REV_END_TXN_ID);
+    return (BE_SQLITE_ROW == result) ? TxnManager::TxnId(val) : TxnManager::TxnId();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+bool RevisionManager::IsCreatingRevision() const
+    {
+    return QueryCurrentRevisionEndTxnId().IsValid();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+DgnRevisionPtr RevisionManager::GetCreatingRevision()
+    {
+    if (m_currentRevision.IsValid())
+        return m_currentRevision;
+
+    /* Recreate the revision from scratch starting with the saved end transaction id
+     * This is to account for the possibility that the client crashed before 
+     * FinishCreateRevision() is called. */
+
+    TxnManager::TxnId endTxnId = QueryCurrentRevisionEndTxnId();
+    if (!endTxnId.IsValid())
+        return nullptr;
+
+    m_currentRevision = CreateRevision(nullptr, endTxnId);
+    
+    return m_currentRevision;
     }
 
 //---------------------------------------------------------------------------------------
@@ -642,12 +763,11 @@ RevisionStatus RevisionManager::MergeRevision(DgnRevisionCR revision)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
+RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup, TxnManager::TxnId endTxnId) const
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
     TxnManager::TxnId startTxnId = txnMgr.QueryNextTxnId(TxnManager::TxnId(0));
-    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
     if (!startTxnId.IsValid() || startTxnId >= endTxnId)
         return RevisionStatus::NoTransactions;
 
@@ -670,7 +790,7 @@ RevisionStatus RevisionManager::GroupChanges(ChangeGroup& changeGroup) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup, DgnRevision::Include include)
+DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, ChangeGroup& changeGroup)
     {
     Utf8String parentRevId = GetParentRevisionId();
     Utf8String revId = DgnRevisionIdGenerator::GenerateId(parentRevId, changeGroup);
@@ -680,9 +800,9 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
     if (revision.IsNull())
         return revision;
 
-    revision->SetInitialParentId(GetInitialParentRevisionId());
+    revision->SetInitialParentId(QueryInitialParentRevisionId());
     revision->SetDateTime(DateTime::GetCurrentTimeUtc());
-    
+
     return revision;
     }
 
@@ -691,11 +811,12 @@ DgnRevisionPtr RevisionManager::CreateRevisionObject(RevisionStatus* outStatus, 
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, ChangeGroup& changeGroup)
     {
-    ChangeStreamFileWriter writer(pathname, m_dgndb);
+    RevisionChangesFileWriter writer(pathname, m_dgndb);
+
     DbResult result = writer.FromChangeGroup(changeGroup);
     if (BE_SQLITE_OK != result)
         {
-        BeAssert("Could not write revision to a file");
+        BeAssert(false && "Could not write revision to a file");
         return RevisionStatus::FileWriteError;
         }
 
@@ -703,9 +824,32 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, Change
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    11/2016
+//---------------------------------------------------------------------------------------
+DgnRevisionPtr RevisionManager::CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId)
+    {
+    RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
+
+    ChangeGroup changeGroup;
+    status = GroupChanges(changeGroup, endTxnId);
+    if (RevisionStatus::Success != status)
+        return nullptr;
+
+    DgnRevisionPtr revision = CreateRevisionObject(outStatus, changeGroup);
+    if (revision.IsNull())
+        return nullptr;
+
+    status = WriteChangesToFile(revision->GetRevisionChangesFile(), changeGroup);
+    if (RevisionStatus::Success != status)
+        return nullptr;
+
+    return revision;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
-DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */, DgnRevision::Include include /* = All */)
+DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /* = nullptr */)
     {
     RevisionStatus ALLOW_NULL_OUTPUT(status, outStatus);
 
@@ -738,24 +882,17 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
         return nullptr;
         }
 
-    ChangeGroup changeGroup;
-    status = GroupChanges(changeGroup);
+    TxnManager::TxnId endTxnId = txnMgr.GetCurrentTxnId();
+
+    DgnRevisionPtr currentRevision = CreateRevision(outStatus, endTxnId);
+    if (!currentRevision.IsValid())
+        return nullptr;
+
+    status = SaveCurrentRevisionEndTxnId(endTxnId);
     if (RevisionStatus::Success != status)
         return nullptr;
-
-    DgnRevisionPtr currentRevision = CreateRevisionObject(outStatus, changeGroup, include);
-    if (currentRevision.IsNull())
-        return nullptr;
-
-    status = WriteChangesToFile(currentRevision->GetChangeStreamFile(), changeGroup);
-    if (RevisionStatus::Success != status)
-        return nullptr;
-
-    currentRevision->IncludeChangeGroupData(changeGroup, include, m_dgndb);
 
     m_currentRevision = currentRevision;
-    m_currentRevisionEndTxnId = m_dgndb.Txns().GetCurrentTxnId();
-    
     return m_currentRevision;
     }
 
@@ -764,16 +901,20 @@ DgnRevisionPtr RevisionManager::StartCreateRevision(RevisionStatus* outStatus /*
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::FinishCreateRevision()
     {
-    if (!IsCreatingRevision())
+    DgnRevisionPtr currentRevision = GetCreatingRevision();
+    if (!currentRevision.IsValid())
         {
         BeAssert(false && "No revision is currently being created");
         return RevisionStatus::IsNotCreatingRevision;
         }
 
-    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(m_currentRevisionEndTxnId))
+    TxnManager::TxnId endTxnId = QueryCurrentRevisionEndTxnId();
+    BeAssert(endTxnId.IsValid());
+
+    if (DgnDbStatus::Success != m_dgndb.Txns().DeleteFromStartTo(endTxnId))
         return RevisionStatus::SQLiteError;
 
-    RevisionStatus status = SetParentRevisionId(m_currentRevision->GetId());
+    RevisionStatus status = SaveParentRevisionId(currentRevision->GetId());
     if (RevisionStatus::Success != status)
         return status;
 
@@ -781,10 +922,11 @@ RevisionStatus RevisionManager::FinishCreateRevision()
     if (RevisionStatus::Success != status)
         return status;
 
-    m_dgndb.BriefcaseManager().OnFinishRevision(*m_currentRevision);
+    m_dgndb.BriefcaseManager().OnFinishRevision(*currentRevision);
 
-    m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
+    DeleteCurrentRevisionEndTxnId();
     m_currentRevision = nullptr;
+
     return RevisionStatus::Success;
     }
 
@@ -795,14 +937,6 @@ void RevisionManager::AbandonCreateRevision()
     {
     BeAssert(IsCreatingRevision());
 
-    m_currentRevisionEndTxnId = TxnManager::TxnId(); // Invalid id
+    DeleteCurrentRevisionEndTxnId();
     m_currentRevision = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnId RevisionManager::GetCurrentRevisionEndTxnId() const
-    {
-    return m_currentRevisionEndTxnId;
     }

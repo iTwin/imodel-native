@@ -288,13 +288,21 @@ DgnDbStatus DefinitionElement::_OnInsert()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Session::CreateCode(DgnDbR db, Utf8StringCR name)
+    {
+    return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_Session, db, name);
+    }
+                                                                                                                                                    
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 SessionPtr Session::Create(DgnDbR db, Utf8CP name)
     {
     DgnModelId modelId = db.GetSessionModel()->GetModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Session::GetHandler());
-    return new Session(CreateParams(db, modelId, classId, CreateCode(name)));
+    return new Session(CreateParams(db, modelId, classId, CreateCode(db, name)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,7 +311,7 @@ SessionPtr Session::Create(DgnDbR db, Utf8CP name)
 SessionCPtr Session::GetByName(DgnDbR db, Utf8StringCR name)
     {
     auto& elements = db.Elements(); 
-    return elements.Get<Session>(elements.QueryElementIdByCode(CreateCode(name)));
+    return elements.Get<Session>(elements.QueryElementIdByCode(CreateCode(db, name)));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
@@ -422,7 +430,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(handler);
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnCode code = PartitionAuthority::CreatePartitionCode(name, parentId);
+    DgnCode code = CreateCode(parentSubject, name);
 
     if (!parentId.IsValid() || !classId.IsValid() || !name || !*name)
         modelId.Invalidate(); // mark CreateParams as invalid
@@ -435,7 +443,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP name)
     {
-    return PartitionAuthority::CreatePartitionCode(name, parentSubject.GetElementId());
+    return ElementScopeAuthority::CreateCode(BIS_AUTHORITY_InformationPartitionElement, parentSubject, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -669,7 +677,7 @@ DgnDbStatus RoleElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return DrawingAuthority::CreateDrawingCode(name, model.GetModeledElementId());
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Drawing, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -725,7 +733,6 @@ SectionDrawingPtr SectionDrawing::Create(DocumentListModelCR model, Utf8CP name)
 
     return new SectionDrawing(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     }
-
 
 //=======================================================================================
 // @bsiclass

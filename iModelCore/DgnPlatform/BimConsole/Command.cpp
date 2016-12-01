@@ -234,7 +234,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
         filePath.AssignUtf8(args[2].c_str());
         }
 
-    size_t rootSubjectLabelIndex = 0;
+    size_t rootSubjectNameIndex = 0;
     size_t filePathIndex = 0;
     if (args[1].EqualsIAscii("bim"))
         {
@@ -244,7 +244,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
             return;
             }
 
-        rootSubjectLabelIndex = 2;
+        rootSubjectNameIndex = 2;
         filePathIndex = 3;
         }
     else
@@ -255,11 +255,11 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
             return;
             }
 
-        rootSubjectLabelIndex = 1;
+        rootSubjectNameIndex = 1;
         filePathIndex = 2;
         }
 
-    Utf8CP rootSubjectLabel = args[rootSubjectLabelIndex].c_str();
+    Utf8CP rootSubjectName = args[rootSubjectNameIndex].c_str();
     filePath.AssignUtf8(args[filePathIndex].c_str());
     filePath.Trim(L"\"");
 
@@ -271,7 +271,7 @@ void CreateCommand::_Run(Session& session, vector<Utf8String> const& args) const
 
     if (fileType == SessionFile::Type::Bim)
         {
-        Dgn::CreateDgnDbParams createParams(rootSubjectLabel);
+        Dgn::CreateDgnDbParams createParams(rootSubjectName);
         createParams.SetOverwriteExisting(true);
 
         DbResult fileStatus;

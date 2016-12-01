@@ -104,73 +104,29 @@
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
     </ECEntityClass>
-    <ECEntityClass typeName="LocalAuthority">
+    <ECEntityClass typeName="NullAuthority" modifier="Sealed">
+        <!-- Authority that issues null codes -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="NamespaceAuthority">
+    <ECEntityClass typeName="DatabaseScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique name+namespace combinations within the scope of the database -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="MaterialAuthority">
+    <ECEntityClass typeName="ModelScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique names within the scope of a model -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="PartitionAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="TrueColorAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ResourceAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="CategoryAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="GeometryPartAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SessionAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="LinkAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DrawingAuthority">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="SheetAuthority">
+    <ECEntityClass typeName="ElementScopeAuthority" modifier="Sealed">
+        <!-- Authority for elements that must have unique names within the scope of a "parent" element -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -354,7 +310,7 @@
 
     <ECEntityClass typeName="IModellableElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can be modeled (by a "sub" Model) -->
-        <!-- Mutually exclusive with ICompositeElement -->
+        <!-- Mutually exclusive with IParentElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
@@ -562,7 +518,6 @@
 
     <ECEntityClass typeName="PhysicalType" modifier="Abstract">
         <BaseClass>DefinitionElement</BaseClass>
-        <BaseClass>IModellableElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -770,8 +725,8 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
-        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Height" typeName="double"/>
+        <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="SheetBorder">
@@ -790,8 +745,8 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <!-- Height and Width will be locked to the border, if there is one -->
-        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
-        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Height" typeName="double"/>
+        <ECProperty propertyName="Width" typeName="double"/>
         <!-- Border is optional -->
         <ECNavigationProperty propertyName="Border" relationshipName="SheetTemplateHasSheetBorder" direction="Forward" />
     </ECEntityClass>
@@ -802,10 +757,10 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Scale" displayLabel="The scale of the drawing" typeName="double"/>
+        <ECProperty propertyName="Scale" typeName="double"/>
         <!-- Height and Width will be locked to the template, if there is one -->
-        <ECProperty propertyName="Height" displayLabel="Height of the sheet (meters)" typeName="double"/>
-        <ECProperty propertyName="Width" displayLabel="Width of the sheet (meters)" typeName="double"/>
+        <ECProperty propertyName="Height" typeName="double"/>
+        <ECProperty propertyName="Width" typeName="double"/>
         <!-- Template is optional -->
         <ECNavigationProperty propertyName="SheetTemplate" relationshipName="SheetHasSheetTemplate" direction="Forward" />
     </ECEntityClass>
@@ -1314,6 +1269,8 @@
         <BaseClass>GraphicalElement2d</BaseClass>
         <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
         <ECProperty propertyName="Details" typeName="string" />
+        <ECProperty propertyName="DisplayPriority" typeName="int" />
+        <ECProperty propertyName="Scale" typeName="double" />
     </ECEntityClass>
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
@@ -1330,7 +1287,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="ICompositeElement" modifier="Abstract">
+    <ECEntityClass typeName="IParentElement" modifier="Abstract">
         <!-- Interface implemented by Elements that can composite/own child elements -->
         <!-- Mutually exclusive with IModellableElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
@@ -1561,18 +1518,12 @@
         <ECProperty propertyName="Priority" typeName="int" description="The priority of this dependency, relative to other EntityDrivesEntity instances. Note that EntityHasChildEntities dependencies always take priority over EntityDrivesEntity dependencies."/>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="Category">
+    <ECEntityClass typeName="Category" modifier="Abstract">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
         <ECProperty propertyName="Descr" DisplayLabel="Description" typeName="string">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Scope" typeName="int">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty/>
@@ -1585,7 +1536,21 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECEntityClass typeName="SubCategory">
+    <ECEntityClass typeName="DrawingCategory" modifier="Sealed">
+        <!-- Category that only applies to drawing elements (2d) -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Category</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SpatialCategory" modifier="Sealed">
+        <!-- Category that only applies to SpatialElements (3d) -->
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <BaseClass>Category</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="SubCategory" modifier="Sealed">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
@@ -1612,7 +1577,7 @@
             <Class class="GeometricElement2d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
+            <Class class="DrawingCategory"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
@@ -1625,7 +1590,7 @@
             <Class class="GeometricElement3d" />
         </Source>
         <Target cardinality="(1,1)" roleLabel="contains elements" polymorphic="false">
-            <Class class="Category"/>
+            <Class class="SpatialCategory"/>
         </Target>
     </ECRelationshipClass>
 

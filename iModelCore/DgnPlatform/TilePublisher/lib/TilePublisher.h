@@ -75,7 +75,6 @@ protected:
     bvector<TileNodePtr>                    m_modelRoots;
     BeMutex                                 m_mutex;
     bool                                    m_publishPolylines;
-    bool                                    m_processModelsInParallel = true;
     bool                                    m_publishIncremental;
 
     TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
@@ -89,15 +88,15 @@ protected:
 
     TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
-    void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors);
+    void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
     void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
 
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
-    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _BeginProcessModel(DgnModelCR model) override;
-    TILEPUBLISHER_EXPORT virtual TileGenerator::Status _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGenerator::Status status) override;
+    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
+    TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
 
@@ -113,13 +112,13 @@ public:
     bool WantPolylines() const { return m_publishPolylines; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
 
-    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGenerator::Status input);
-    TILEPUBLISHER_EXPORT static TileGenerator::Status ConvertStatus(Status input);
+    TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
+    TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
-    TILEPUBLISHER_EXPORT void GetSpatialViewJson (Json::Value& json, SpatialViewDefinitionCR view, TransformCR transform);
+    TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
     TILEPUBLISHER_EXPORT bool IsGeolocated () const;
@@ -171,15 +170,20 @@ private:
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
+    void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
+    void AddMeshIndices(Json::Value& rootNode, Json::Value& primitive, bvector<uint32_t> const& indices, Utf8StringCR idStr);
+    void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
 
     BeFileName  GetBinaryDataFileName() const;
 
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
-    Utf8String AddPolylineShaderTechnique (Json::Value& rootNode);
+    Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
 
     void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
+    void AddPolylines(Json::Value& value, TileMeshR mesh, size_t index);
 
-    Utf8String AddMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddMeshMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
     template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
@@ -261,14 +265,3 @@ public:
 
 END_BENTLEY_DGN_TILE3D_NAMESPACE
 
-
-
-
-
-
-
-
-
-
-
-                                         

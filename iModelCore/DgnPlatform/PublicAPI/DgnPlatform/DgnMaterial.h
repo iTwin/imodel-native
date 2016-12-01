@@ -14,8 +14,6 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
-#define BIS_CLASS_MaterialElement "MaterialElement"
-
 // JSon  Material Asset Keywords.
 #define MATERIAL_ASSET_Rendering "RenderMaterial"
 
@@ -93,7 +91,8 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return MaterialAuthority::GetMaterialAuthorityId() == auth.GetAuthorityId(); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    
 //__PUBLISH_SECTION_END__
 public:
     static DgnMaterialId ImportMaterial(DgnMaterialId source, DgnImportContext& importer);
@@ -138,16 +137,16 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a DgnCode for a material. The palette name serves as the namespace, and the material name as the value.
-    static DgnCode CreateMaterialCode(Utf8StringCR paletteName, Utf8StringCR materialName) { return MaterialAuthority::CreateMaterialCode(paletteName, materialName); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_MaterialElement, db, materialName, paletteName);}
 
     //! Looks up the ID of the material with the specified code.
-    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnCode const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code);
 
     //! Looks up the ID of the material with the specified palette + material name.
-    static DgnMaterialId QueryMaterialId(Utf8StringCR paletteName, Utf8StringCR materialName, DgnDbR db) { return QueryMaterialId(CreateMaterialCode(paletteName, materialName), db); }
+    static DgnMaterialId QueryMaterialId(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) { return QueryMaterialId(db, CreateCode(db, paletteName, materialName)); }
 
     //! Looks up a material by ID.
-    static DgnMaterialCPtr QueryMaterial(DgnMaterialId materialId, DgnDbR db) { return db.Elements().Get<DgnMaterial>(materialId); }
+    static DgnMaterialCPtr Get(DgnDbR db, DgnMaterialId materialId) { return db.Elements().Get<DgnMaterial>(materialId); }
 
     //! An entry in a material iterator
     struct Entry : ECSqlStatementEntry

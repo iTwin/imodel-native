@@ -11,7 +11,6 @@
 #include <ECDb/ECDb.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 
-BeThreadLocalStorage g_hostForThread;
 BeThreadLocalStorage g_threadId;
 
 double const fc_hugeVal = 1e37;
@@ -32,11 +31,11 @@ WCharCP DgnDb::GetThreadIdName()
         case ThreadId::Client:      return L"ClientThread";
         case ThreadId::Render:      return L"RenderThread";
         case ThreadId::Query:       return L"QueryThread";
-        case ThreadId::RealityData: return L"RealityData";
+        case ThreadId::IoPool:      return L"IoPool";
+        case ThreadId::CpuPool:     return L"CpuPool";
         default:                    return L"UnknownThread";
         }
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      04/14
@@ -57,7 +56,7 @@ void DgnPlatformLib::InitializeBentleyLogging(WCharCP configFileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host::ExceptionHandler& DgnPlatformLib::Host::_SupplyExceptionHandler() { return *new ExceptionHandler(); }
+DgnPlatformLib::Host::ExceptionHandler& DgnPlatformLib::Host::_SupplyExceptionHandler() {return *new ExceptionHandler();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/10
@@ -116,13 +115,12 @@ void DgnPlatformLib::Host::_OnAssert(WCharCP _Message, WCharCP _File, unsigned _
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t DgnHost::GetKeyIndex(DgnHost::Key& key)
     {
-    static size_t s_highestKey = 0; // MT: DgnCoreCriticalSection
-
+    static size_t s_highestKey = 0;
     BeAssert(key.m_key >= 0 && key.m_key<=s_highestKey); // make sure we're given a valid key
 
     if (0 == key.m_key)
         {
-        ___DGNPLATFORM_SERIALIZED___;
+        BeSystemMutexHolder lock;
 
         if (0 == key.m_key)
             key.m_key = ++s_highestKey;
@@ -204,29 +202,50 @@ NotificationManager::MessageBoxValue NotificationManager::OpenMessageBox(Message
     return T_HOST.GetNotificationAdmin()._OpenMessageBox(mbType, message, icon);
     }
 
+static DgnPlatformLib::Host* s_host = nullptr;
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::AdoptHost(DgnPlatformLib::Host& host)
+DgnPlatformLib::Host* DgnPlatformLib::QueryHost() {return s_host;}
+DgnPlatformLib::Host& DgnPlatformLib::GetHost() {return *s_host;}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      02/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::StaticInitialize()
     {
-    g_hostForThread.SetValueAsPointer(&host);
+    BeSystemMutexHolder holdBeSystemMutexInScope;
+
+    static bool s_staticInitialized = false;
+    if (s_staticInitialized)
+        return;
+
+    bentleyAllocator_enableLowFragmentationCRTHeap();
+    s_staticInitialized = true;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   09/08
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnPlatformLib::Initialize(Host& host, bool loadResources)
+    {
+    StaticInitialize();
+
+    if (nullptr != s_host)
+        {
+        BeAssert(false && "only call DgnPlatformLib::Initialize once");
+        return;
+        }
+
+    s_host = &host;
     DgnDb::SetThreadId(DgnDb::ThreadId::Client);
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnPlatformLib::Host* DgnPlatformLib::QueryHost()
-    {
-    return static_cast<Host*>(g_hostForThread.GetValueAsPointer());
-    }
+    host.InitializeDgnHandlers(); 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      05/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnPlatformLib::ForgetHost()
-    {
-    g_hostForThread.SetValueAsPointer(NULL);
+    if (loadResources)
+        host.LoadResources();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,14 +254,6 @@ void DgnPlatformLib::ForgetHost()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnPlatformLib::Host::InitializeDgnCore()
     {
-    // NB: Assume that the caller has checked that we are not initializing the same thread twice.
-
-    if (NULL != DgnPlatformLib::QueryHost())
-        {
-        BeAssert(false); // called more than once on the same thread
-        return;
-        }
-
     BeAssert(NULL == m_knownLocationsAdmin); m_knownLocationsAdmin = &_SupplyIKnownLocationsAdmin();
     BeAssert(NULL == m_exceptionHandler); m_exceptionHandler = &_SupplyExceptionHandler();
     // establish the NotificationAdmin first, in case other _Supply methods generate errors
@@ -258,9 +269,6 @@ void DgnPlatformLib::Host::InitializeDgnCore()
     L10N::Initialize(_SupplySqlangFiles());
 
     GeoCoordinates::BaseGCS::Initialize(GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
-
-    AdoptHost(*this);
-    BeAssert(NULL != DgnPlatformLib::QueryHost());
 
     DgnDomains::RegisterDomain(BisCoreDomain::GetDomain());
     DgnDomains::RegisterDomain(GenericDomain::GetDomain());
@@ -298,8 +306,7 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     ON_HOST_TERMINATE(m_exceptionHandler, onProgramExit);
     ON_HOST_TERMINATE(m_knownLocationsAdmin, onProgramExit);
 
-    ForgetHost();
-    BeAssert(NULL == DgnPlatformLib::QueryHost());
+    s_host = nullptr;
 
     BeAssert(NULL == m_fontAdmin);
     BeAssert(NULL == m_lineStyleAdmin);

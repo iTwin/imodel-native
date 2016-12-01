@@ -85,9 +85,10 @@ TEST_F(ExampleTestGroup, Test1)
         DgnPlatformSeedManager::SeedDbInfo rootSeedInfo = DgnPlatformSeedManager::GetSeedDb(DgnPlatformSeedManager::SeedDbId::OneSpatialModel, DgnPlatformSeedManager::SeedDbOptions(false, true));
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDb(rootSeedInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_TRUE(db->Models().QuerySubModelId(rootSeedInfo.physicalPartitionCode).IsValid());
-        ASSERT_TRUE(DgnCategory::QueryCategoryId(rootSeedInfo.categoryName, *db).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(rootSeedInfo.viewName, *db).IsValid());
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), rootSeedInfo.physicalPartitionName.c_str());
+        ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
+        ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, rootSeedInfo.categoryName)).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(*db, rootSeedInfo.viewName).IsValid());
         DgnCode examplePartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), EXAMPLE_MODEL_NAME);
         ASSERT_FALSE(db->Models().QuerySubModelId(examplePartitionCode).IsValid()) << "Root seed file does not have this group's special setup";
         }
@@ -97,9 +98,10 @@ TEST_F(ExampleTestGroup, Test1)
         // Verify that the seed file for just this group is there.
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDb(s_seedFileInfo.fileName);
         ASSERT_TRUE(db.IsValid());
-        ASSERT_TRUE(db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode).IsValid());
-        ASSERT_TRUE(DgnCategory::QueryCategoryId(s_seedFileInfo.categoryName, *db).IsValid());
-        ASSERT_TRUE(ViewDefinition::QueryViewId(s_seedFileInfo.viewName, *db).IsValid());
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+        ASSERT_TRUE(db->Models().QuerySubModelId(physicalPartitionCode).IsValid());
+        ASSERT_TRUE(DgnCategory::QueryCategoryId(*db, SpatialCategory::CreateCode(*db, s_seedFileInfo.categoryName)).IsValid());
+        ASSERT_TRUE(ViewDefinition::QueryViewId(*db, s_seedFileInfo.viewName).IsValid());
         DgnCode examplePartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), EXAMPLE_MODEL_NAME);
         ASSERT_TRUE(db->Models().QuerySubModelId(examplePartitionCode).IsValid()) << "Group seed file has special setup";
         }
@@ -115,7 +117,8 @@ TEST_F(ExampleTestGroup, Test2)
         {
         //  Verify that we can work with a read-write copy of the test group seed file
         DgnDbPtr db = DgnPlatformSeedManager::OpenSeedDbCopy(s_seedFileInfo.fileName);
-        DgnModelId defaultModelId = db->Models().QuerySubModelId(s_seedFileInfo.physicalPartitionCode);
+        DgnCode physicalPartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), s_seedFileInfo.physicalPartitionName.c_str());
+        DgnModelId defaultModelId = db->Models().QuerySubModelId(physicalPartitionCode);
         ASSERT_TRUE(defaultModelId.IsValid());
 
         DgnCode examplePartitionCode = PhysicalPartition::CreateCode(*db->Elements().GetRootSubject(), EXAMPLE_MODEL_NAME);

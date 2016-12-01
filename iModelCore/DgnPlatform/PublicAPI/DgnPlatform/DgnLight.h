@@ -12,8 +12,6 @@
 #include "DgnElement.h"
 #include "ElementHandler.h"
 
-#define BIS_CLASS_LightDefinition "LightDefinition"
-
 DGNPLATFORM_TYPEDEFS(LightDefinition);
 DGNPLATFORM_REF_COUNTED_PTR(LightDefinition);
 
@@ -76,7 +74,8 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    
 public:
     //! Construct a new LightDefinition with the specified parameters
     explicit LightDefinition(CreateParams const& params) : T_Super(params), m_data(params.m_data) { }
@@ -99,16 +98,16 @@ public:
     LightDefinitionCPtr Update(DgnDbStatus* status=nullptr) { return GetDgnDb().Elements().Update<LightDefinition>(*this, status); }
 
     //! Creates a DgnCode for a light definition.
-    static DgnCode CreateLightDefinitionCode(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_ViewDefinition); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_LightDefinition, db, name); }
 
     //! Looks up the ID of the light definition with the specified code.
-    DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnCode const& code, DgnDbR db);
+    DGNPLATFORM_EXPORT static DgnLightId QueryLightId(DgnDbR db, DgnCodeCR code);
 
     //! Looks up the ID of the light definition with the specified name
-    static DgnLightId QueryLightId(Utf8StringCR name, DgnDbR db) { return QueryLightId(CreateLightDefinitionCode(name), db); }
+    static DgnLightId QueryLightId(DgnDbR db, Utf8StringCR name) { return QueryLightId(db, CreateCode(db, name)); }
 
     //! Looks up a light definition by ID
-    static LightDefinitionCPtr QueryLightDefinition(DgnLightId lightId, DgnDbR db) { return db.Elements().Get<LightDefinition>(lightId); }
+    static LightDefinitionCPtr Get(DgnDbR db, DgnLightId lightId) { return db.Elements().Get<LightDefinition>(lightId); }
 };
 
 namespace dgn_ElementHandler
@@ -124,4 +123,3 @@ namespace dgn_ElementHandler
 }
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE
-

@@ -66,13 +66,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
-    DgnCategory category(DgnCategory::CreateParams(*db, "Annotation Category", DgnCategory::Scope::Annotation));
-    DgnSubCategory::Appearance categoryAppearance;
-    category.Insert(categoryAppearance);
-
-    DgnCategoryId categoryId = category.GetCategoryId();
-    ASSERT_TRUE(categoryId.IsValid());
-
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*db, "Annotation Category");
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "2D Drawing");
     DrawingModelPtr model = DgnDbTestUtils::InsertDrawingModel(*drawing);
@@ -101,6 +95,7 @@ TEST_F(TextAnnotationTest, BasicCrud2d)
         // auto viewDef = DrawingViewDefinition::MakeViewOfModel(*model, "TextAnnotation2dTest-BasicCrud");
         // EXPECT_TRUE(viewDef->Insert().IsValid());
 
+    db->SaveChanges();
     }
 
     // Read the element back out, modify, and rewrite.
@@ -246,14 +241,8 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     ASSERT_TRUE(BE_SQLITE_OK == openStatus);
     ASSERT_TRUE(db.IsValid());
 
-    DgnCategory category(DgnCategory::CreateParams(*db, "Physical Category", DgnCategory::Scope::Physical));
-    DgnSubCategory::Appearance categoryAppearance;
-    category.Insert(categoryAppearance);
-
-    DgnCategoryId categoryId = category.GetCategoryId();
-    ASSERT_TRUE(categoryId.IsValid());
-
-        PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, TEST_NAME);
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*db, "Spatial Category");
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*db, TEST_NAME);
     modelId = model->GetModelId();
 
     textStyleId = ensureAnnotationTextStyle1(*db);
@@ -278,6 +267,8 @@ TEST_F(TextAnnotationTest, BasicCrud3d)
     //.........................................................................................
         auto range = insertedAnnotationElement->CalculateRange3d();
         DgnDbTestUtils::InsertCameraView(*model, "TextAnnotation3dTest-BasicCrud", &range, StandardView::Top, Render::RenderMode::Wireframe);
+
+        db->SaveChanges();
     }
 
     // Read the element back out, modify, and rewrite.

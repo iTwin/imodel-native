@@ -84,7 +84,15 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId ViewDefinition::QueryViewId(DgnCode const& code, DgnDbR db)
+bool ViewDefinition::IsValidCode(DgnCodeCR code)
+    {
+    return !code.GetValue().empty();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnViewId ViewDefinition::QueryViewId(DgnDbR db, DgnCodeCR code)
     {
     DgnElementId elemId = db.Elements().QueryElementIdByCode(code);
     return DgnViewId(elemId.GetValueUnchecked());
@@ -95,7 +103,7 @@ DgnViewId ViewDefinition::QueryViewId(DgnCode const& code, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewControllerPtr ViewDefinition::LoadViewController(DgnViewId viewId, DgnDbR db)
     {
-    auto view = QueryView(viewId, db);
+    auto view = Get(db, viewId);
     return view.IsValid() ? view->LoadViewController() : nullptr;
     }
 
@@ -296,7 +304,7 @@ DgnDbStatus ViewDefinition2d::OnModelDelete(DgnDbR db, DgnModelId mid)
     while (BE_SQLITE_ROW == findViewsStmt->Step())
         {
         auto viewId = findViewsStmt->GetValueId<DgnViewId>(0);
-        auto view = QueryView(viewId, db);
+        auto view = Get(db, viewId);
         if (view.IsValid())
             {
             lockElement(*view);
@@ -382,7 +390,7 @@ bool ViewDefinition2d::_EqualState(ViewDefinitionR in)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ViewDefinition::Iterator::Iterator(DgnDbR db, Options const& options)
     {
-    static const Utf8CP s_ecsql = "SELECT ECInstanceId,[CodeValue],[" PROPNAME_Source "]," PROPNAME_Descr ",GetECClassId() FROM " BIS_SCHEMA("ViewDefinition");
+    static const Utf8CP s_ecsql = "SELECT ECInstanceId,CodeValue,[" PROPNAME_Source "]," PROPNAME_Descr ",ECClassId FROM " BIS_SCHEMA("ViewDefinition");
 
     Utf8CP ecsql = s_ecsql;
     Utf8String customECSql;
@@ -681,7 +689,7 @@ DgnDbStatus ModelSelector::_OnDelete() const
     statement->BindId(1, GetElementId());
     if (BE_SQLITE_ROW == statement->Step())
         {
-        auto view = ViewDefinition::QueryView(statement->GetValueId<DgnViewId>(0), GetDgnDb());
+        auto view = ViewDefinition::Get(GetDgnDb(), statement->GetValueId<DgnViewId>(0));
         if (view.IsValid())
             view->Delete();
         }
@@ -1051,7 +1059,7 @@ BentleyStatus ViewDefinition::SetStandardViewRotation(StandardView standardView)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnSubCategory::Appearance DisplayStyle::LoadSubCategory(DgnSubCategoryId id) const
     {
-    auto unmodified = DgnSubCategory::QuerySubCategory(id, GetDgnDb());
+    auto unmodified = DgnSubCategory::Get(GetDgnDb(), id);
     BeAssert(unmodified.IsValid());
     if (!unmodified.IsValid())
         return DgnSubCategory::Appearance();

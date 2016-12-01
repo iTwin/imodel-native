@@ -120,7 +120,7 @@ private:
     Utf8String m_description;
     AnnotationTextStylePropertyBag m_data;
 
-    static DgnCode CreateCodeFromName(Utf8StringCR name) { return ResourceAuthority::CreateResourceCode(name, BIS_CLASS_AnnotationTextStyle); }
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_AnnotationTextStyle, db, name); }
 
 protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
@@ -131,7 +131,7 @@ protected:
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
     virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + 1 + m_data.GetMemSize()); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR auth) const override { return ResourceAuthority::IsResourceAuthority(auth); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext&) override;
 
 public:
@@ -144,7 +144,7 @@ public:
     AnnotationTextStylePtr CreateCopy() const { return MakeCopy<AnnotationTextStyle>(); }
 
     Utf8String GetName() const { return GetCode().GetValue(); }
-    void SetName(Utf8CP value) { T_Super::SetCode(CreateCodeFromName(value)); /* Only SetName is allowed to SetCode. */ }
+    void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8StringCR GetDescription() const { return m_description; }
     void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
     
@@ -183,7 +183,7 @@ public:
     DGNPLATFORM_EXPORT static AnnotationTextStylePtr CreateEffectiveStyle(AnnotationTextStyleCR docStyle, AnnotationTextStylePropertyBagCR docOverrides, AnnotationTextStyleCR parStyle, AnnotationTextStylePropertyBagCR parOverrides, AnnotationTextStyleCR runStyle, AnnotationTextStylePropertyBagCR runOverrides);
     DgnFontCR ResolveFont() const { return DgnFontManager::ResolveFont(m_dgndb.Fonts().FindFontById(GetFontId())); }
 
-    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCodeFromName(name)); }
+    static DgnElementId QueryId(DgnDbR db, Utf8CP name) { return db.Elements().QueryElementIdByCode(CreateCode(db, name)); }
     static AnnotationTextStyleCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static AnnotationTextStyleCPtr Get(DgnDbR db, DgnElementId id) { return db.Elements().Get<AnnotationTextStyle>(id); }
     static AnnotationTextStylePtr GetForEdit(DgnDbR db, DgnElementId id) { return db.Elements().GetForEdit<AnnotationTextStyle>(id); }

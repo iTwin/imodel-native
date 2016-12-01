@@ -69,13 +69,11 @@ DgnBRepApi                      = $(DgnPlatformAPISrc)DgnBRep/
 #-----------------------------------------------------------
 BuildContext                    = $(OutBuildContexts)DgnPlatform/
 
-
 # Define these to handle multi-platform.
 ToolsubsLib                     = $(libprefix)Toolsubs$(libext)
 BentleyGeomLib                  = $(libprefix)BentleyGeom$(libext)
 ECNativeObjectsLib              = $(libprefix)ECObjects$(libext)
 UnitsLib                        = $(libprefix)Units$(libext)
-
 
 #----------------------------------------------------------
 # Set and then include the CompileOptionsMki file.
@@ -83,7 +81,6 @@ UnitsLib                        = $(libprefix)Units$(libext)
 #----------------------------------------------------------
 CompileOptionsMki               = $(baseDir)DgnPlatform.mki
 %include $(CompileOptionsMki)
-
 
 DLM_OBJECT_DEST                 = $(DgnPlatformObj)
 ASSEMBLY_STRONGNAME             = 1
@@ -229,12 +226,6 @@ $(CoreObjs)VecMathDGNTolerances$(oext) :            $(DgnCoreDir)VecMathDGNToler
 $(coreObjs)DgnColors$(oext) :                       $(DgnCoreDir)DgnColors.cpp $(DgnPlatformAPISrc)ColorUtil.h $(DgnPlatformAPISrc)DgnTrueColor.h ${MultiCompileDepends}
 
 $(CoreObjs)ViewController$(oext) :                  $(DgnCoreDir)ViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
-
-%ifdef WIP_VIEW_DEFINITION
-$(CoreObjs)HypermodelingViewController$(oext) :     $(DgnCoreDir)HypermodelingViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
-
-$(CoreObjs)SectioningPhysicalViewController$(oext): $(DgnCoreDir)SectioningPhysicalViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends} $(contextDepends)
-%endif
 
 $(CoreObjs)DgnElements$(oext) :                     $(DgnCoreDir)DgnElements.cpp $(DgnPlatformAPISrc)DgnDb.h ${MultiCompileDepends}
 
@@ -440,7 +431,6 @@ $(o)DgnGeoCoord$(oext) :                            $(DgnGeoCoordDir)DgnGeoCoord
 
 $(o)GeoCoordServices$(oext) :                       $(DgnGeoCoordDir)GeoCoordServices.cpp $(DgnPlatformAPISrc)DgnGeoCoord.h $(BaseGeoCoordAPISrc)BaseGeoCoord.h ${MultiCompileDepends}
 
-
 #----------------------------------------------------------------------
 #   Configuration
 #----------------------------------------------------------------------
@@ -460,7 +450,6 @@ $(o)expandMacro$(oext) :                            $(ConfigToolsDir)expandMacro
 $(o)envvutil$(oext) :                               $(ConfigToolsDir)envvutil.cpp ${MultiCompileDepends}
 
 $(o)evalcnst$(oext) :                               $(ConfigToolsDir)evalcnst.cpp ${MultiCompileDepends}
-
 
 #----------------------------------------------------------------------
 #   DgnScript

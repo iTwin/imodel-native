@@ -188,10 +188,12 @@ static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, DgnCodeCR partitionCode)
+DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionId, Utf8CP partitionName)
     {
+    DgnCode partitionCode(Authorities().QueryAuthorityId(BIS_AUTHORITY_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
+
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,ModelId,ParentId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel) VALUES(?,?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,ModelId,ParentId,CodeAuthorityId,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECSqlWriteToken()))
         {
@@ -205,7 +207,6 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(4, partitionCode.GetAuthority());
     statement.BindText(5, partitionCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -220,8 +221,7 @@ DbResult DgnDb::CreateDictionaryModel()
     DgnElementId modeledElementId = Elements().GetDictionaryPartitionId();
     BeAssert(modeledElementId.GetValue() == DgnModel::DictionaryId().GetValue());
 
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA(BIS_CLASS_DictionaryModel), Elements().GetRootSubjectId());
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, partitionCode);
+    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, BIS_SCHEMA(BIS_CLASS_DictionaryModel));
     if (BE_SQLITE_DONE != result)
         return result;
 
@@ -236,8 +236,7 @@ DbResult DgnDb::CreateDictionaryModel()
 DbResult DgnDb::CreateSessionModel()
     {
     DgnElementId modeledElementId = Elements().GetSessionPartitionId();
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA(BIS_CLASS_SessionModel), Elements().GetRootSubjectId());
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, partitionCode);
+    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_DefinitionPartition), modeledElementId, BIS_SCHEMA(BIS_CLASS_SessionModel));
     if (BE_SQLITE_DONE != result)
         return result;
 
@@ -252,8 +251,7 @@ DbResult DgnDb::CreateSessionModel()
 DbResult DgnDb::CreateRealityDataSourcesModel()
     {
     DgnElementId modeledElementId = Elements().GetRealityDataSourcesPartitionId();
-    DgnCode partitionCode = PartitionAuthority::CreatePartitionCode(BIS_SCHEMA("RealityDataSources"), Elements().GetRootSubjectId());
-    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_LinkPartition), modeledElementId, partitionCode);
+    DbResult result = CreatePartitionElement(BIS_SCHEMA(BIS_CLASS_LinkPartition), modeledElementId, BIS_SCHEMA("RealityDataSources"));
     if (BE_SQLITE_DONE != result)
         return result;
 
@@ -279,11 +277,12 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     {
     DgnElementId elementId = Elements().GetRootSubjectId();
     DgnModelId modelId = DgnModel::RepositoryModelId();
-    DgnCode elementCode = DgnCode::CreateEmpty();
+    DgnAuthorityId authorityId = Authorities().QueryAuthorityId(BIS_AUTHORITY_Subject);
+    DgnCode elementCode = DgnCode(authorityId, params.m_rootSubjectName, elementId);
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,UserLabel,Descr) VALUES(?,?,?,?,?,?,?)", GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECSqlWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -294,8 +293,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     statement.BindId(3, elementCode.GetAuthority());
     statement.BindText(4, elementCode.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
     statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(6, params.m_rootSubjectLabel.c_str(), IECSqlBinder::MakeCopy::No);
-    statement.BindText(7, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);

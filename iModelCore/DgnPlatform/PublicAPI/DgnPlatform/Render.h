@@ -27,19 +27,19 @@ struct GraphicBuilderPtr;
 // @bsiclass                                                    Keith.Bentley   12/14
 //=======================================================================================
 enum class RenderMode
-    {
+{
     Wireframe      = 0,
     HiddenLine     = 3,
     SolidFill      = 4,
     SmoothShade    = 6,
-    };
+};
 
 /*=================================================================================**//**
 * Flags for view display style
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
 struct ViewFlags
-    {
+{
 private:
     RenderMode m_renderMode;
 
@@ -138,7 +138,7 @@ public:
     void InitDefaults() {*this = ViewFlags();}
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT void FromJson(JsonValueCR);
-    };
+};
 
 //=======================================================================================
 //! A rendering task to be performed on the render thread.
@@ -1640,7 +1640,6 @@ public:
 //=======================================================================================
 struct TransClip : RefCounted<NonCopyableClass>
 {
-
 };
 
 //=======================================================================================
@@ -1705,8 +1704,9 @@ struct System
 struct FrameRateAdjuster
 {
 private:
-    uint32_t        m_drawCount = 0;
-    uint32_t        m_abortCount = 0;
+    uint32_t m_drawCount = 0;
+    uint32_t m_abortCount = 0;
+
 public:
     static uint32_t const FRAME_RATE_MIN = 1;
     static uint32_t const FRAME_RATE_MAX = 30;
@@ -1738,8 +1738,9 @@ struct Target : RefCounted<NonCopyableClass>
         };
 
 protected:
-    bool               m_abort;
-    int                m_id; // for debugging
+    bool m_abort;
+    bool m_tileTarget = false;
+    int  m_id; // for debugging
     System&            m_system;
     DevicePtr          m_device;
     ClipPrimitiveCPtr  m_activeVolume;
@@ -1789,6 +1790,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,ImageR,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
@@ -1796,6 +1798,7 @@ public:
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}
     DeviceCP GetDevice() const {return m_device.get();}
+    DGNPLATFORM_EXPORT void DestroyNow();
     void OnResized() {_OnResized();}
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
@@ -1806,6 +1809,7 @@ public:
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
+    void SetTileTarget() {m_tileTarget=true;}
 
     static double DefaultFrameRateGoal()
         {

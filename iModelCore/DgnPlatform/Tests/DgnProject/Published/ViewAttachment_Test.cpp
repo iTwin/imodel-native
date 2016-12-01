@@ -48,7 +48,7 @@ public:
         EXPECT_EQ(a.z, b.z);
         }
 
-    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::QueryView(m_viewId, db)->ToDrawingView());}
+    DrawingViewDefinition& GetDrawingViewDef(DgnDbR db) {return const_cast<DrawingViewDefinition&>(*ViewDefinition::Get(db, m_viewId)->ToDrawingView());}
 
     void AddTextToModel(TextAnnotation2dCPtr&, DgnModelId, DPoint2dCR origin, Utf8CP text, double textRotationDegrees=0.0);
     void AddTextToDrawing(DgnModelId drawingId, Utf8CP text="My Text", double viewRot=0.0);
@@ -72,9 +72,9 @@ void ViewAttachmentTest::SetUp()
     m_sheetModelId = sheetModel->GetModelId();
 
     // Set up a category for attachments
-    m_attachmentCatId = DgnDbTestUtils::InsertCategory(db, "Attachments", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_attachmentCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Attachments", ColorDef::Cyan());
     ASSERT_TRUE(m_attachmentCatId.IsValid());
-    m_annotationCatId = DgnDbTestUtils::InsertCategory(db, "Annotations", ColorDef::Cyan(), DgnCategory::Scope::Annotation);
+    m_annotationCatId = DgnDbTestUtils::InsertDrawingCategory(db, "Annotations", ColorDef::Cyan());
     ASSERT_TRUE(m_annotationCatId.IsValid());
 
     // Set up a viewed model
@@ -232,13 +232,13 @@ TEST_F(ViewAttachmentTest, CRUD)
     EXPECT_INVALID(attachment.Insert());
     }
 
-    // Create a valid attachment attachment
+    // Create a valid attachment 
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
 
     // Confirm data as expected
-    EXPECT_EQ(m_viewId, cpAttach->GetViewId());
+    EXPECT_EQ(m_viewId, cpAttach->GetAttachedViewId());
     EXPECT_TRUE(placement.GetOrigin().IsEqual(cpAttach->GetPlacement().GetOrigin()));
 
     // Modify

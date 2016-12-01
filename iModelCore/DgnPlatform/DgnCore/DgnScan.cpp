@@ -12,34 +12,34 @@ using namespace RangeIndex;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Stop checkSubRange(FBoxCR scanRange, FBoxCR elemRange, bool isElem3d)
+static ScanCriteria::Reject checkSubRange(FBoxCR scanRange, FBoxCR elemRange, bool isElem3d)
     {
     /* if element xlow is greater than range xhigh, reject */
     if (elemRange.m_low.x > scanRange.m_high.x)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* if element ylow is greater than range yhigh, reject */
     if (elemRange.m_low.y > scanRange.m_high.y)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* if element xhigh is less than range xlow, reject */
     if (elemRange.m_high.x < scanRange.m_low.x)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* if element yhigh is less than range ylow, reject */
     if (elemRange.m_high.y < scanRange.m_low.y)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* if element zlow is greater than range zhigh, reject */
     if ((isElem3d ? elemRange.m_low.z : 0) > scanRange.m_high.z)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* if element zhigh is less than range zlow, reject */
     if ((isElem3d ? elemRange.m_high.z : 0) < scanRange.m_low.z)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* passed all tests, so accept it */
-    return  ScanCriteria::Stop::No;
+    return  ScanCriteria::Reject::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -55,7 +55,7 @@ static inline void exchangeAndNegate(double *dbl1, double *dbl2)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BJB             12/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-static ScanCriteria::Stop checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector, FBoxCR elemRange, bool isElem3d)
+static ScanCriteria::Reject checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector, FBoxCR elemRange, bool isElem3d)
     {
     double va1, va2, va3, va4;
     double vb1, vb2, vb3, vb4;
@@ -87,13 +87,13 @@ static ScanCriteria::Stop checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector
     va1 = dlo.x * skVector.y;
     vb2 = dhi.y * skVector.x;
     if (va1 > vb2)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* Check the projection of the element's xlow to the plane where yhigh of the element is equal to ylow of the skewrange */
     vb1 = dlo.y * skVector.x;
     va2 = dhi.x * skVector.y;
     if (va2 < vb1)
-        return ScanCriteria::Stop::Yes;
+        return ScanCriteria::Reject::Yes;
 
     /* now we need the Z stuff */
     dlo.z = (isElem3d ? (double) elemRange.m_low.z  : 0.0) - skewRange->m_high.z;
@@ -110,14 +110,14 @@ static ScanCriteria::Stop checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector
         va3 = dlo.x * skVector.z;
         vc2 = dhi.z * skVector.x;
         if (va3 > vc2)
-            return ScanCriteria::Stop::Yes;
+            return ScanCriteria::Reject::Yes;
         }
     else
         {
         vb3 = dlo.y * skVector.z;
         vc4 = dhi.z * skVector.y;
         if (vb3 > vc4)
-            return ScanCriteria::Stop::Yes;
+            return ScanCriteria::Reject::Yes;
         }
 
     /* project onto the other plane */
@@ -126,31 +126,31 @@ static ScanCriteria::Stop checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVector
         va4 = dhi.x * skVector.z;
         vc1 = dlo.z * skVector.x;
         if (va4 < vc1)
-            return ScanCriteria::Stop::Yes;
+            return ScanCriteria::Reject::Yes;
         }
     else
         {
         vb4 = dhi.y * skVector.z;
         vc3 = dlo.z * skVector.y;
         if (vb4 < vc3)
-            return ScanCriteria::Stop::Yes;
+            return ScanCriteria::Reject::Yes;
         }
 
-    return ScanCriteria::Stop::No;
+    return ScanCriteria::Reject::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ScanCriteria::CheckRange(FBoxCR elemRange, bool is3d) const
+ScanCriteria::Reject ScanCriteria::CheckRange(FBoxCR elemRange, bool is3d) const
     {
     if (m_testSkewScan)
         {
-        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Stop::Yes)
-            return ScanCriteria::Stop::Yes;
+        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Reject::Yes)
+            return ScanCriteria::Reject::Yes;
 
-        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Stop::No)
-            return ScanCriteria::Stop::No;
+        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Reject::No)
+            return ScanCriteria::Reject::No;
 
         return checkSkewRange(&m_skewRange, &m_skewVector, elemRange, is3d);
         }
@@ -172,29 +172,29 @@ bool ScanCriteria::CheckElementRange(DgnElementCR element) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ScanCriteria::_CheckRangeTreeNode(FBoxCR nodeRange, bool is3d) const
     {
-    return ScanCriteria::Stop::No == ((nullptr == m_callback) ? CheckRange(nodeRange, is3d) : m_callback->_CheckNodeRange(nodeRange, is3d));
+    return ScanCriteria::Reject::No == ((nullptr == m_callback) ? CheckRange(nodeRange, is3d) : m_callback->_CheckNodeRange(nodeRange, is3d));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
+ScanCriteria::Reject ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
     {
     if (m_testCategory)
         {
         auto geomEl = element.ToGeometrySource();
         if (nullptr == geomEl || !m_categories->Contains(geomEl->GetCategoryId()))
-            return  ScanCriteria::Stop::Yes;
+            return  ScanCriteria::Reject::Yes;
         }
 
     /* check the range */
     if (doRangeTest)
         {
         if (!CheckElementRange(element))
-            return  ScanCriteria::Stop::Yes;
+            return  ScanCriteria::Reject::Yes;
         }
 
-    return ScanCriteria::Stop::No;
+    return ScanCriteria::Reject::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,11 +202,11 @@ ScanCriteria::Stop ScanCriteria::CheckElement(DgnElementCR element, bool doRange
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop ScanCriteria::_VisitRangeTreeEntry(RangeIndex::EntryCR entry)
     {
-    if (ScanCriteria::Stop::No != CheckRange(entry.m_range, m_model->Is3d()))
+    if (ScanCriteria::Reject::No != CheckRange(entry.m_range, m_model->Is3d()))
         return Stop::No;
 
     auto el = m_model->GetDgnDb().Elements().GetElement(entry.m_id);
-    if (ScanCriteria::Stop::Yes == CheckElement(*el, false))
+    if (ScanCriteria::Reject::Yes == CheckElement(*el, false))
         return Stop::No;
 
     return m_callback->_OnRangeElementFound(*el);
@@ -222,7 +222,7 @@ StatusInt ScanCriteria::Scan()
 
     m_model->FillRangeIndex();
 
-    TreeP rangeIndex = m_model->GetRangeIndex();
+    auto rangeIndex = m_model->GetRangeIndex();
     if (nullptr == rangeIndex)
         {
         BeAssert(false);

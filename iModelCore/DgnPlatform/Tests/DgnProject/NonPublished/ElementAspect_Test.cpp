@@ -21,7 +21,7 @@ struct ElementAspectTests : public DgnDbTestFixture
 {
     DgnAuthorityPtr Create(Utf8CP name, bool insert = true)
     {
-        DgnAuthorityPtr auth = NamespaceAuthority::CreateNamespaceAuthority(name, *m_db);
+        DatabaseScopeAuthorityPtr auth = DatabaseScopeAuthority::Create(name, *m_db);
         if (insert)
         {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());

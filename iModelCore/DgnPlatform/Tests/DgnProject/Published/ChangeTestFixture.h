@@ -25,7 +25,7 @@ protected:
     DgnCategoryId m_testCategoryId;
 
     DgnAuthorityId m_testAuthorityId;
-    RefCountedCPtr<NamespaceAuthority> m_testAuthority;
+    DatabaseScopeAuthorityCPtr m_testAuthority;
 
     virtual void _CreateDgnDb();
 
@@ -34,7 +34,7 @@ protected:
     void CloseDgnDb();
         
     DgnCategoryId InsertCategory(Utf8CP categoryName);
-    DgnAuthorityId InsertNamespaceAuthority(Utf8CP authorityName);
+    DgnAuthorityId InsertDatabaseScopeAuthority(Utf8CP authorityName);
     DgnElementId InsertPhysicalElement(PhysicalModelR model, DgnCategoryId categoryId, int x, int y, int z);
     
     void CreateDefaultView(DgnModelId defaultModelId);

@@ -37,7 +37,7 @@ VolumeElement::VolumeElement(CreateParams const& params) : T_Super(params)
 // static
 DgnCategoryId VolumeElement::GetDefaultCategoryId(DgnDbR db)
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(VOLUME_DEFAULT_CATEGORY_NAME, db);
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, VOLUME_DEFAULT_CATEGORY_NAME));
     if (categoryId.IsValid())
         return categoryId;
 
@@ -47,7 +47,7 @@ DgnCategoryId VolumeElement::GetDefaultCategoryId(DgnDbR db)
     appearance.SetDontSnap(true);
     appearance.SetDontLocate(true);
 
-    DgnCategory category(DgnCategory::CreateParams(db, VOLUME_DEFAULT_CATEGORY_NAME, DgnCategory::Scope::Physical, DgnCategory::Rank::System));
+    SpatialCategory category(db, VOLUME_DEFAULT_CATEGORY_NAME, DgnCategory::Rank::System);
     category.Insert(appearance);
     
     categoryId = category.GetCategoryId();

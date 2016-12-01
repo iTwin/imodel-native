@@ -217,9 +217,6 @@
     <ClCompile Include="NonPublished\MissingHandler_Test.cpp">
       <Filter>NonPublished</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\TestDomainElements.cpp">
-      <Filter>BackDoor</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\ElementDependencyGraphPerformance.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -332,9 +329,6 @@
     </ClInclude>
     <ClInclude Include="Published\ChangeTestFixture.h">
       <Filter>Published</Filter>
-    </ClInclude>
-    <ClInclude Include="BackDoor\TestDomainElements.h">
-      <Filter>BackDoor</Filter>
     </ClInclude>
     <ClInclude Include="..\..\PublicAPI\DgnPlatform\UnitTests\DgnDbTestUtils.h">
       <Filter>UnitTests</Filter>

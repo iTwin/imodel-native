@@ -6,26 +6,27 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/TileTree.h>
 
 BEGIN_SHEET_NAMESPACE
-
 namespace Handlers
 {
 HANDLER_DEFINE_MEMBERS(Element);
-HANDLER_DEFINE_MEMBERS(Attachment)
+HANDLER_DEFINE_MEMBERS(AttachmentElement)
 HANDLER_DEFINE_MEMBERS(Model)
 }
-
 END_SHEET_NAMESPACE
 
+USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
+using namespace Attachment;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Sheet::Element::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return SheetAuthority::CreateSheetCode(name, model.GetModeledElementId());
+    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Sheet, model, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -86,11 +87,12 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
     auto sheet = new Element(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
-    #ifdef WIP_SHEETS
+
+#ifdef WIP_SHEETS
     sheet->SetHeight(sheetTemplateElem->GetHeight());
     sheet->SetWidth(sheetTemplateElem->GetWidth());
     sheet->SetBorder(sheetTemplateElem->GetBorder());
-    #endif
+#endif
     BeAssert(false && "WIP_SHEETS - templates");
     return sheet;
     }
@@ -100,7 +102,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Sheet::ViewAttachment::CheckValid() const
     {
-    if (!GetViewId().IsValid())
+    if (!GetAttachedViewId().IsValid())
         return DgnDbStatus::ViewNotFound;
 
     if (!GetModel()->IsSheetModel())
@@ -157,6 +159,202 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
+    {
+    Tile& tile = static_cast<Tile&>(*m_tile);
+    Tree& root = tile.GetTree();
+
+    auto vp = DgnViewport::GetTileViewport();
+    return vp ? vp->_RenderTile(m_image, *root.m_view, tile, root.m_pixels) : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* This sheet tile just became available from some source (cache, or created). Create a 
+* a Render::Graphic to draw it. Only when finished, set the "ready" flag.
+* @note this method can be called on many threads, simultaneously.
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Attachment::Tile::Loader::_LoadTile() 
+    {
+    Tile& tile = static_cast<Tile&>(*m_tile);
+    Tree& tree = tile.GetTree();
+
+    auto graphic = tree.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+
+    Texture::CreateParams textureParams;
+    textureParams.SetIsTileSection();
+    auto texture = tree.GetRenderSystem()->_CreateTexture(m_image, textureParams);
+
+    graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
+    graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+
+#define DEBUG_TILES 1
+#if defined (DEBUG_TILES)
+    graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);  // debugging
+    graphic->AddRangeBox(tile.m_range);                              // debugging
+#endif
+    
+    auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
+    BeAssert(SUCCESS==stat);
+    UNUSED_VARIABLE(stat);
+
+    tile.m_graphic = graphic;
+
+    tile.SetIsReady(); // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
+    {
+    double tileSize = 1.0 / (1 << id.m_level); // the size of a tile for this level, in NPC
+    double east  = id.m_column * tileSize;
+    double west  = east + tileSize;
+    double north = id.m_row * tileSize;
+    double south = north + tileSize;
+    
+    m_corners.m_pts[0].Init(east, north, 0.0);   //  | [0]     [1]
+    m_corners.m_pts[1].Init(west, north, 0.0);   //  y
+    m_corners.m_pts[2].Init(east, south, 0.0);   //  | [2]     [3]
+    m_corners.m_pts[3].Init(west, south, 0.0);   //  v
+
+    m_range.InitFrom(m_corners.m_pts, 4);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tree::Load(Render::SystemP renderSys)
+    {
+    if (m_rootTile.IsValid() && (nullptr==renderSys || m_renderSystem==renderSys))
+        return;
+
+    m_renderSystem = renderSys;
+    m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Attachment::Tree::Draw(RenderContextR context)
+    {
+    Load(&context.GetTargetR().GetSystem());
+    DrawInView(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)  
+    {
+    auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
+    if (!attach.IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto viewId = attach->GetAttachedViewId();
+    m_view = ViewDefinition::LoadViewController(viewId, db);
+    if (!m_view.IsValid())
+        return;
+
+    double aspect = m_view->GetViewDefinition().GetAspectRatio();
+
+    if (aspect<1.0)
+        m_pixels.Init(tileSize*aspect, tileSize);
+    else
+        m_pixels.Init(tileSize, tileSize/aspect);
+
+    auto& def=m_view->GetViewDefinition();
+    def.AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
+
+    auto* spatial=def.ToSpatialViewP();
+    if (spatial)
+        {
+        auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
+//        env.m_groundPlane.m_enabled = false;
+        env.m_skybox.m_enabled = false;
+        }
+
+    // max pixel size is half the length of the diagonal. 
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+
+    auto range = attach->GetPlacement().CalculateRange();
+    auto& box = attach->GetPlacement().GetElementBox();
+
+    Transform location = Transform::From(range.low);
+    location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
+    SetLocation(location);
+
+    SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Sheet::Attachment::TreePtr Sheet::ViewController::FindAttachment(DgnElementId attachId) const
+    {
+    for (auto& attach : m_attachments)
+        {
+        if (attach->GetAttachmentId() == attachId)
+            return attach;
+        }
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::_LoadState()
+    {
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        {
+        BeAssert(false);
+        return;
+        }
+
+    bvector<TreePtr> attachments;
+
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    stmt->BindId(1, model->GetModelId());
+
+    // If we're already loaded, look in existing list so we don't reload them
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        auto attachId = stmt->GetValueId<DgnElementId>(0);
+        auto tree = FindAttachment(attachId);
+
+        if (!tree.IsValid())
+            tree = new Tree(GetDgnDb(), attachId, 512);
+
+        attachments.push_back(tree);
+        }
+
+    // save new list of attachment
+    m_attachments = attachments;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewController::_CreateTerrain(TerrainContextR context) 
+    {
+    DgnDb::VerifyClientThread();
+
+    T_Super::_CreateTerrain(context);
+
+    for (auto& attach : m_attachments)
+        attach->Draw(context);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawView(ViewContextR context)
@@ -166,91 +364,4 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
-
-    // Find and draw the view attachments.
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,ViewId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
-    attachments->BindId(1, model->GetModelId());
-
-    while (BE_SQLITE_ROW == attachments->Step())
-        {
-        auto attachmentId = attachments->GetValueId<DgnElementId>(0);
-        auto viewId = attachments->GetValueId<DgnViewId>(1);
-        ViewDefinitionPtr view = const_cast<ViewDefinition*>(ViewDefinition::QueryView(viewId, GetDgnDb()).get());
-        if (view.IsNull())
-            continue;
-
-        // *** WIP_VIEW_ATTACHMENT - for now, show a thumbnail as a placeholder
-
-        auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachmentId);
-        if (!attachment.IsValid())
-            continue;
-
-        auto const& placement = attachment->GetPlacement();
-        auto const& box = placement.GetElementBox();
-
-        Render::GraphicBuilderPtr graphic = context.CreateGraphic();
-
-        IGraphicBuilder::TileCorners corners;
-        //  [2]     [3]
-        //  [0]     [1]
-        DPoint2d tc[4];
-        auto ll = box.low;
-        auto ur = box.high;
-        tc[0] = DPoint2d::From(ll.x , ll.y);
-        tc[1] = DPoint2d::From(ur.x , ll.y);
-        tc[2] = DPoint2d::From(ll.x , ur.y);
-        tc[3] = DPoint2d::From(ur.x , ur.y);
-        auto rot = placement.GetTransform();
-        rot.Multiply(tc, tc, 4);
-        for (auto i=0; i<4; ++i)
-            corners.m_pts[i] = DPoint3d::From(tc[i].x, tc[i].y, 0.0);
-
-        if (nullptr == dynamic_cast<ViewDefinition3d*>(view.get())) // don't try to generate thumbnail for 3-D views
-            {
-            #define WIP_SHEETS_SHOW_THUMBNAIL
-            #ifdef WIP_SHEETS_SHOW_THUMBNAIL // *** generate thumbnail
-                double meters_per_pixel = 0.0254 / context.GetViewport()->PixelsFromInches(1.0);
-
-                auto imageSize = Point2d::From((int)(0.5 + box.GetWidth()/meters_per_pixel), (int)(0.5 + box.GetHeight()/meters_per_pixel));
-
-                while (imageSize.x > 4096)
-                    {
-                    imageSize.x /= 10;
-                    imageSize.y /= 10;
-                    }
-
-                Render::Image image;
-                Render::RenderMode modeUsed;
-                if (BE_SQLITE_OK != T_HOST._RenderThumbnail(image, modeUsed, *view, imageSize, nullptr, 12000))
-                    continue;
-            #else
-                auto imageSource = GetViewDefinition().ReadThumbnail();
-                if (!imageSource.IsValid())
-                    continue;
-
-                Render::Image image(imageSource);
-
-            #endif
-
-            auto& rsys = context.GetViewport()->GetRenderTarget()->GetSystem();
-            Texture::CreateParams textureParams;
-            auto texture = rsys._CreateTexture(image, textureParams);
-
-            auto bgcolor = view->GetDisplayStyle().GetBackgroundColor();
-            if (bgcolor.GetRed() == 0xff) // *** WIP_SHEETS - if I set the bg color to White (or black), the texture displays as all black??
-                bgcolor.SetRed(0xfe);
-            else if (bgcolor.GetRed() == 0)
-                bgcolor.SetRed(1);
-
-            graphic->SetSymbology(bgcolor, bgcolor, 0);
-
-            graphic->AddTile(*texture, corners);
-            }
-        else
-            {
-            graphic->AddLineString(_countof(corners.m_pts), corners.m_pts);
-            }
-
-        context.OutputGraphic(*graphic, nullptr);
-        }
     }

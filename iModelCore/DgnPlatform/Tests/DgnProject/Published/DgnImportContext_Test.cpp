@@ -174,13 +174,13 @@ TEST_F(ImportTest, ImportGroups)
     ASSERT_TRUE(model1.IsValid());
     {
         // Put a group into moddel1
-        TestGroupPtr group = TestGroup::Create(*m_db, model1->GetModelId(), DgnCategory::QueryHighestCategoryId(*m_db));
+        DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
+        TestGroupPtr group = TestGroup::Create(*m_db, model1->GetModelId(), categoryId);
         ASSERT_TRUE(group.IsValid());
         ASSERT_TRUE(group->Insert().IsValid());
 
         //  Add a member
-        DgnCategoryId mcatid = DgnCategory::QueryHighestCategoryId(*m_db);
-        GenericPhysicalObjectPtr member = GenericPhysicalObject::Create(*model1, mcatid);
+        GenericPhysicalObjectPtr member = GenericPhysicalObject::Create(*model1, categoryId);
         ASSERT_TRUE(member.IsValid());
         ASSERT_TRUE(member->Insert().IsValid());
         ASSERT_EQ(DgnDbStatus::Success, group->AddMember(*member));
@@ -239,7 +239,7 @@ TEST_F(ImportTest, ImportGroups)
 //---------------------------------------------------------------------------------------
 static DgnElementCPtr insertElement(DgnDbR db, DgnModelId mid, bool is3d, DgnSubCategoryId subcat, Render::GeometryParams* customParms)
     {
-    DgnCategoryId cat = DgnSubCategory::QueryCategoryId(subcat, db);
+    DgnCategoryId cat = DgnSubCategory::QueryCategoryId(db, subcat);
 
     DgnElementPtr gelem;
     if (is3d)
@@ -271,36 +271,21 @@ static Render::GeometryParams getFirstGeometryParams(DgnElementCR gel)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
-static DgnSubCategory::Appearance createAppearance(ColorDef const& cdef)
+static DgnSubCategory::Appearance createAppearance(ColorDef const& colorDef)
     {
     DgnSubCategory::Appearance appearance;
-    appearance.SetColor(ColorDef(1, 2, 3, 0));
+    appearance.SetColor(colorDef);
     return appearance;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
-static DgnCategoryId createCategory(DgnDbR db, Utf8CP name, DgnCategory::Scope scope, DgnSubCategory::Appearance const& defaultAppearance)
-    {
-    DgnCategoryPtr c = new DgnCategory(DgnCategory::CreateParams(db, name, scope));
-    DgnCategoryCPtr cat = c->Insert(defaultAppearance);
-    if (!cat.IsValid())
-        return DgnCategoryId();
-    return cat->GetCategoryId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson      05/15
-//---------------------------------------------------------------------------------------
 static bool areMaterialsEqual(DgnMaterialId lmatid, DgnDbR ldb, DgnMaterialId rmatid, DgnDbR rdb)
     {
     if (!lmatid.IsValid() && !rmatid.IsValid())
         return true;
     if (!lmatid.IsValid() || !rmatid.IsValid())
         return false;
-    DgnMaterialCPtr lmat = DgnMaterial::QueryMaterial(lmatid, ldb);
-    DgnMaterialCPtr rmat = DgnMaterial::QueryMaterial(rmatid, rdb);
+    DgnMaterialCPtr lmat = DgnMaterial::Get(ldb, lmatid);
+    DgnMaterialCPtr rmat = DgnMaterial::Get(rdb, rmatid);
     if (!lmat.IsValid() || !rmat.IsValid())
         return false;
     // Note that textureids will be different. So, we must compare only values that are not IDs.
@@ -367,14 +352,14 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
 
     DgnDbR sourceDb = sourceElem.GetDgnDb();
 
-    DgnCategoryCPtr destCat = DgnCategory::QueryCategory(gdestElem->GetCategoryId(), destDb);
+    DgnCategoryCPtr destCat = DgnCategory::Get(destDb, gdestElem->GetCategoryId());
     ASSERT_TRUE(destCat.IsValid() );
     
     ASSERT_NE(destCat->GetCategoryId(), sourceElem.ToGeometrySource()->GetCategoryId() ) << "source element's Category should have been deep-copied and remapped to a new Category in destination DB";
 
-    DgnCategoryCPtr sourceCat = DgnCategory::QueryCategory(sourceElem.ToGeometrySource()->GetCategoryId(), sourceDb);
+    DgnCategoryCPtr sourceCat = DgnCategory::Get(sourceDb, sourceElem.ToGeometrySource()->GetCategoryId());
 
-    ASSERT_EQ( sourceCat->GetCode(), destCat->GetCode() );
+    ASSERT_EQ(sourceCat->GetCode(), destCat->GetCode());
 
     Render::GeometryParams sourceDisplayParams = getFirstGeometryParams(sourceElem);
 
@@ -384,10 +369,10 @@ static void checkImportedElement(DgnElementCPtr destElem, DgnElementCR sourceEle
     ASSERT_TRUE( destSubCategoryId.IsValid() );
     //ASSERT_TRUE( destSubCategoryId != sourceSubCategory1Id );   don't know what Id it was assigned
     
-    DgnSubCategoryCPtr destSubCategory = DgnSubCategory::QuerySubCategory(destSubCategoryId, destDb);
+    DgnSubCategoryCPtr destSubCategory = DgnSubCategory::Get(destDb, destSubCategoryId);
     ASSERT_TRUE(destSubCategory.IsValid());
 
-    ASSERT_TRUE( areDisplayParamsEqual(sourceDisplayParams, sourceDb, destDisplayParams, destDb) );
+    ASSERT_TRUE(areDisplayParamsEqual(sourceDisplayParams, sourceDb, destDisplayParams, destDb));
     }
 
 //---------------------------------------------------------------------------------------
@@ -405,7 +390,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
     DgnSubCategory::Appearance sourceAppearanceRequested = createAppearance(ColorDef(1, 2, 3, 0));
     sourceAppearanceRequested.SetMaterial(createTexturedMaterial(*sourceDb, "Texture1", L"", JsonRenderMaterial::TextureMap::Units::Relative));
 
-    DgnCategoryId sourceCategoryId = createCategory(*sourceDb, s_catName, DgnCategory::Scope::Analytical, sourceAppearanceRequested);
+    DgnCategoryId sourceCategoryId = DgnDbTestUtils::InsertSpatialCategory(*sourceDb, s_catName, sourceAppearanceRequested);
     ASSERT_TRUE( sourceCategoryId.IsValid() );
     DgnSubCategoryId sourceSubCategory1Id = DgnCategory::GetDefaultSubCategoryId(sourceCategoryId);
     ASSERT_TRUE( sourceSubCategory1Id.IsValid() );
@@ -450,7 +435,7 @@ TEST_F(ImportTest, ImportElementAndCategory1)
         for (int i=0; i<32; ++i)
             {
             // Insert another category into the destination DB, just to make sure that IDs don't line up
-            ASSERT_TRUE( createCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), DgnCategory::Scope::Any, createAppearance(ColorDef(7,8,9,10))).IsValid() );
+            ASSERT_TRUE( DgnDbTestUtils::InsertSpatialCategory(*destDb, Utf8PrintfString("Unrelated%d",i).c_str(), ColorDef(7,8,9,10)).IsValid() );
             }
 
         PhysicalModelPtr destmod = DgnDbTestUtils::InsertPhysicalModel(*destDb, "destmod");
@@ -502,11 +487,11 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create some Authorities. 
     DgnAuthorityId sourceAuthorityId;
-    RefCountedPtr<NamespaceAuthority> auth1;
+    RefCountedPtr<DatabaseScopeAuthority> auth1;
     {
-        auto auth0 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_NotUsed", *m_db);
-        auth1 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority", *m_db);
-        auto auth2 = NamespaceAuthority::CreateNamespaceAuthority("TestAuthority_AlsoNotUsed", *m_db);
+        auto auth0 = DatabaseScopeAuthority::Create("TestAuthority_NotUsed", *m_db);
+        auth1 = DatabaseScopeAuthority::Create("TestAuthority", *m_db);
+        auto auth2 = DatabaseScopeAuthority::Create("TestAuthority_AlsoNotUsed", *m_db);
         ASSERT_EQ(DgnDbStatus::Success, auth0->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth1->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth2->Insert());
@@ -523,7 +508,7 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // Put an element with an Item into moddel1
     {
         DgnCode code = auth1->CreateCode("TestElement");
-        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*m_db);
+        DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
         TestElementPtr tempEl = TestElement::Create(*m_db, model1->GetModelId(), gcatid, code);
         ASSERT_TRUE(m_db->Elements().Insert(*tempEl).IsValid());
         m_db->SaveChanges();
@@ -582,7 +567,7 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
 
     // Create 2 elements and make the first depend on the second
     {
-        DgnCategoryId gcatid = DgnCategory::QueryHighestCategoryId(*m_db);
+        DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
 
         TestElementPtr e1 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e1");
         ASSERT_TRUE(m_db->Elements().Insert(*e1).IsValid());
@@ -627,10 +612,10 @@ TEST_F(ImportTest, ImportElementsWithDependencies)
         ASSERT_TRUE(model3.IsValid());
         ASSERT_EQ(DgnDbStatus::Success, stat);
 
+        db2->SaveChanges();
+
         ASSERT_EQ(TestElementDrivesElementHandler::GetHandler().m_relIds.size(), 1);
         TestElementDrivesElementHandler::GetHandler().Clear();
-
-        db2->SaveChanges();
     }
 }
 
@@ -664,8 +649,9 @@ TEST_F(ImportTest, ElementGeomIOCausesFontRemap)
     db1_text->GetStyleR().SetFont(*db1_font);
     db1_text->GetStyleR().SetHeight(1.0);
 
-    GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, DgnDbTestUtils::QueryFirstGeometricModelId(*db1), db1_physicalDgnClass, DgnCategory::QueryFirstCategoryId(*db1)));
-    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWithAutoPlacement(*db1->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db1)), DgnCategory::QueryFirstCategoryId(*db1));
+    DgnCategoryId categoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(*db1);
+    GenericPhysicalObjectPtr db1_element = GenericPhysicalObject::Create(GenericPhysicalObject::CreateParams(*db1, DgnDbTestUtils::QueryFirstGeometricModelId(*db1), db1_physicalDgnClass, categoryId));
+    GeometryBuilderPtr db1_builder = GeometryBuilder::CreateWithAutoPlacement(*db1->Models().GetModel(DgnDbTestUtils::QueryFirstGeometricModelId(*db1)), categoryId);
     db1_builder->Append(*db1_text, GeometryBuilder::CoordSystem::World);
     db1_builder->Finish(*db1_element->ToGeometrySourceP());
 

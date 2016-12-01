@@ -138,13 +138,12 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool assignNodeIds)
+BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
     {
-    if (0 == nTools || !targetEntity.IsValid ())
+    if (0 == nTools)
         return ERROR;
 
-    bool        isOwned;
-    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTag (*targetEntity, &isOwned);
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
     if (PK_ENTITY_null == targetEntityTag)
         return ERROR;
@@ -152,42 +151,38 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
     PK_MARK_t            markTag = PK_ENTITY_null;
     bvector<PK_ENTITY_t> toolEntityTags;
 
-    PK_MARK_create (&markTag);
-
-    if (!isOwned)
-        PK_ENTITY_copy (targetEntityTag, &targetEntityTag);
+    PK_MARK_create(&markTag);
 
     Transform   invTargetTransform;
  
-    invTargetTransform.InverseOf (targetEntity->GetEntityTransform ());
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
 
     // Get tool bodies in coordinates of target...
     for (size_t iTool = 0; iTool < nTools; ++iTool)
         {
-        bool        isToolOwned;
-        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag (*toolEntities[iTool], &isToolOwned);
+        PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTagForModify(*toolEntities[iTool]);
 
-        if (!isToolOwned)
-            PK_ENTITY_copy (toolEntityTag, &toolEntityTag);
-            
+        if (PK_ENTITY_null == toolEntityTag)
+            continue;
+
         Transform   toolTransform;
 
-        toolTransform.InitProduct (invTargetTransform, toolEntities[iTool]->GetEntityTransform ());
-        PSolidUtil::TransformBody (toolEntityTag, toolTransform);                                                                                                                                                
+        toolTransform.InitProduct(invTargetTransform, toolEntities[iTool]->GetEntityTransform());
+        PSolidUtil::TransformBody(toolEntityTag, toolTransform);                                                                                                                                                
 
-        toolEntityTags.push_back (toolEntityTag);
+        toolEntityTags.push_back(toolEntityTag);
         }
 
     uint32_t highestNodeId, lowestNodeId;
 
     // If node ids are assigned to target body, avoid duplicate node ids with tool bodies...otherwise assume caller doesn't care about ids...
-    if (assignNodeIds && SUCCESS == PSolidTopoId::FindNodeIdRange (targetEntityTag, highestNodeId, lowestNodeId))
+    if (resolveNodeIdConflicts && SUCCESS == PSolidTopoId::FindNodeIdRange(targetEntityTag, highestNodeId, lowestNodeId))
         {
         for (PK_ENTITY_t toolEntityTag: toolEntityTags)
             {
             uint32_t highestToolNodeId, lowestToolNodeId;
 
-            if (SUCCESS == PSolidTopoId::FindNodeIdRange (toolEntityTag, highestToolNodeId, lowestToolNodeId))
+            if (SUCCESS == PSolidTopoId::FindNodeIdRange(toolEntityTag, highestToolNodeId, lowestToolNodeId))
                 {
                 if (highestToolNodeId < lowestNodeId)
                     {
@@ -203,14 +198,14 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
                     {
                     int32_t increment = abs ((int) highestNodeId - (int) lowestToolNodeId) + 1;
 
-                    PSolidTopoId::IncrementNodeIdAttributes (toolEntityTag, increment);
+                    PSolidTopoId::IncrementNodeIdAttributes(toolEntityTag, increment);
                     highestNodeId = highestToolNodeId + increment;
                     lowestNodeId  = (lowestNodeId < lowestToolNodeId ? lowestNodeId : lowestToolNodeId);
                     }
                 }
             else
                 {
-                PSolidTopoId::AddNodeIdAttributes (toolEntityTag, ++highestNodeId, false);
+                PSolidTopoId::AddNodeIdAttributes(toolEntityTag, ++highestNodeId, false);
                 }
             }
         }
@@ -219,21 +214,17 @@ BentleyStatus PSolidUtil::DoBoolean (IBRepEntityPtr& targetEntity, IBRepEntityPt
 
     if (SUCCESS == status)
         {
-        // Invalidate owned tool entities that were consumed in boolean...
+        // Invalidate tool entities that were consumed in boolean...
         for (size_t iTool = 0; iTool < nTools; ++iTool)
-            PSolidUtil::ExtractEntityTag (*toolEntities[iTool]);
-
-        // Update target in case it wasn't owned and we had to make a copy...
-        if (!isOwned)
-            targetEntity = PSolidUtil::CreateNewEntity (targetEntityTag, targetEntity->GetEntityTransform (), true);
+            PSolidUtil::ExtractEntityTag(*toolEntities[iTool]);
         }
     else
         {
         // Undo copy/transform of input entities...
-        PK_MARK_goto (markTag);
+        PK_MARK_goto(markTag);
         }
 
-    PK_MARK_delete (markTag);
+    PK_MARK_delete(markTag);
 
     return status;
     }
@@ -260,6 +251,59 @@ BentleyStatus   PSolidUtil::ConvertSolidBodyToSheet (PK_BODY_t body)
     PK_MEMORY_free (regions);
 
     return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus PSolidUtil::ImprintCurves(PK_ENTITY_t targetTag, bvector<PK_CURVE_t> const& toolCurves, bvector<PK_INTERVAL_t> const& toolIntervals, DVec3dCP direction, bool extend, bool connectSides)
+    {
+    if (PK_ENTITY_null == targetTag)
+        return ERROR;
+
+    if (toolCurves.empty() || (toolCurves.size() != toolIntervals.size()))
+        return ERROR;
+
+    PK_CURVE_project_o_t options;
+    PK_CURVE_project_r_t results;
+    PK_ENTITY_track_r_t  tracking;
+
+    PK_CURVE_project_o_m(options);
+
+    options.function = PK_proj_function_imprint_c;
+    options.complete = extend ? PK_proj_complete_edge_c : PK_proj_complete_no_c;
+
+    if (nullptr != direction)
+        {
+        direction->GetComponents(options.direction.coord[0], options.direction.coord[1], options.direction.coord[2]);
+        options.have_direction = PK_LOGICAL_true;
+        options.bidirectional = PK_LOGICAL_true;
+        options.connect = connectSides ? PK_proj_connect_side_c : PK_proj_connect_none_c;
+        }
+
+    memset(&results, 0, sizeof(results));
+    memset(&tracking, 0, sizeof(tracking));
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    BentleyStatus status = (SUCCESS == PK_CURVE_project((int) toolCurves.size(), &toolCurves.front(), &toolIntervals.front(), 1, &targetTag, &options, &results, &tracking)) ? SUCCESS : ERROR;
+
+    // NOTE: I don't think a "feature" should add it's node id to anything but the new edges. PSolidTopoId::AddNodeIdAttributes will resolve the
+    //       duplicate face ids after a split and id the new edges. Trying to have the feature "own" a face as per SmartFeatures is problematic 
+    //       when an open element is used to split a face. Another option might be to add the new node id (don't overwrite) to all the modified
+    //       faces...but that's problematic for assigning robust node ids when the target is a body and the faces split come from multiple features.
+
+    PK_ENTITY_track_r_f(&tracking);
+    PK_CURVE_project_r_f(&results);
+    
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -367,4 +411,45 @@ BentleyStatus   PSolidUtil::SweepBodyAxis (PK_BODY_t bodyTag, DVec3dCR revolveAx
     return (BentleyStatus) status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidUtil::FixBlends(PK_BODY_t bodyTag)
+    {
+    PK_MARK_t   markTag = PK_ENTITY_null;
 
+    PK_MARK_create(&markTag);
+
+    PK_BODY_fix_blends_o_t options;
+
+    PK_BODY_fix_blends_o_m(options);
+    options.local_check = PK_LOGICAL_true;
+
+    BentleyStatus    status = SUCCESS;
+    int              nBlends = 0;
+    PK_EDGE_t*       edges = nullptr;
+    PK_FACE_t*       blends = nullptr;
+    PK_FACE_array_t* faces = nullptr;
+    PK_blend_fault_t fault;
+    PK_EDGE_t        faultEdge;
+    PK_TOPOL_t       faultTopo;
+    PK_ERROR_code_t  failureCode = PK_BODY_fix_blends(bodyTag, &options, &nBlends, &blends, &faces, &edges, &fault, &faultEdge, &faultTopo);
+
+    if (PK_ERROR_no_errors != failureCode || 0 == nBlends || (PK_blend_fault_no_fault_c != fault && PK_blend_fault_repaired_c != fault))
+        status = ERROR;
+
+    PK_MEMORY_free(blends);
+    PK_MEMORY_free(edges);
+
+    for (int i=0; i < nBlends; i++)
+        PK_MEMORY_free(faces[i].array);
+
+    PK_MEMORY_free(faces);
+        
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+    }
