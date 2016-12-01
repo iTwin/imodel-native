@@ -1836,6 +1836,41 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
 TEST_F(ECDbMappingTestFixture, SharedColumnCount)
     {
             {
+            AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                          "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+                                          "   <ECEntityClass typeName='Parent' modifier='None' >"
+                                          "        <ECCustomAttributes>"
+                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                          "            </ClassMap>"
+                                          "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                                          "              <SharedColumnCount>0</SharedColumnCount>"
+                                          "            </ShareColumns>"
+                                          "        </ECCustomAttributes>"
+                                          "       <ECProperty propertyName='P1' typeName='int' />"
+                                          "   </ECEntityClass>"
+                                          "</ECSchema>", false, "SharedColumnCount must not be 0. It must be >= 1"), "sharedcolcount.ecdb");
+
+            AssertSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                          "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+                                          "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+                                          "   <ECEntityClass typeName='Parent' modifier='None' >"
+                                          "        <ECCustomAttributes>"
+                                          "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                          "            </ClassMap>"
+                                          "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                                          "              <SharedColumnCount>-3</SharedColumnCount>"
+                                          "            </ShareColumns>"
+                                          "        </ECCustomAttributes>"
+                                          "       <ECProperty propertyName='P1' typeName='int' />"
+                                          "   </ECEntityClass>"
+                                          "</ECSchema>", false, "SharedColumnCount must not be negative. It must be >= 1"), "sharedcolcount.ecdb");
+
+            }
+
+            {
             ECDbR ecdb = SetupECDb("sharedcolumncount.ecdb", SchemaItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
                 "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"

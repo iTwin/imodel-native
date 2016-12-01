@@ -95,6 +95,13 @@ BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns con
         if (ECObjectsStatus::Success != shareColumnsCA.TryGetSharedColumnCount(customShareColCount))
             return ERROR;
 
+        if (customShareColCount <= 0)
+            {
+            issues.Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its 'ShareColumns' custom attribute is invalid. The value of the property 'SharedColumnCount' must be greater or equal to 1, but was %d.",
+                          ecClass.GetFullName(), customShareColCount);
+            return ERROR;
+            }
+
         m_sharedColumnCount = customShareColCount;
 
         if (ECObjectsStatus::Success != shareColumnsCA.TryGetOverflowColumnName(m_overflowColumnName))
