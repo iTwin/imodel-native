@@ -482,7 +482,7 @@
     ####Example
 
         <ECCustomAttributes>
-            <SchemaMap xmlns="ECDbMap.01.00">
+            <SchemaMap xmlns="ECDbMap.02.00">
                 <TablePrefix>sp</TablePrefix>
             </SchemaMap>
         </ECCustomAttributes>
@@ -491,7 +491,8 @@
 
     Customizing the mapping for an ECClass is done by applying the @b ClassMap custom attribute to the respective ECClass.
     (ECDb will only look for it in local attributes on the ECClass).
-
+    Indexes are defined using the @b DbIndexList custom attribute. 
+       
     Description of the ClassMap properties:
 
     - @b MapStrategy (optional): Specifies how the ECClass is mapped to table(s). Default strategy is 'OwnTable'.
@@ -506,8 +507,9 @@
         <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
     - @b TableName (optional, required for MapStrategies @em ExistingTable and @em SharedTable):
     Specify a table name for this class for the MapStrategy.
-    - @b Indexes (optional) : List of indexes to be created for properties of this class.
-    It can be use to improve query performance or to add a unique constraint.
+
+    Description of the DbIndexList properties:
+        - @b Indexes: List of indexes to be created for properties of the class.
         - @b Name (optional): Index name. Follow EC identifier naming rules. The name must unique in database.
         - @b IsUnique (optional): If true, the index will be a unique index. Default value is @em false.
         - @b Properties: List of Names of properties that will be part of index. Only primitive properties can be used. The properties must exist
@@ -530,7 +532,7 @@
 
         <ECEntityClass typeName="Foo" modifier="Sealed">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.01.00">
+                <ClassMap xmlns="ECDbMap.02.00">
                     <MapStrategy>NotMapped</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
@@ -541,7 +543,7 @@
 
         <ECEntityClass typeName="Foo">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.01.00">
+                <ClassMap xmlns="ECDbMap.02.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
             </ECCustomAttributes>
@@ -552,7 +554,7 @@
 
         <ECEntityClass typeName="Person">
             <ECCustomAttributes>
-                <ClassMap xmlns="ECDbMap.01.00">
+                <DbIndexList xmlns="ECDbMap.02.00">
                     <Indexes>
                         <DbIndex>
                             <Name>ix_Person_Name</Name>
@@ -571,7 +573,7 @@
                             <Where>IndexedColumnsAreNotNull</Where>
                         </DbIndex>
                     </Indexes>
-                </ClassMap>
+                </DbIndexList>
             </ECCustomAttributes>
             <ECProperty propertyName="FirstName" typeName="string"/>
             <ECProperty propertyName="LastName" typeName="string"/>
@@ -604,7 +606,7 @@
 
         <ECProperty propertyName="Id" typeName="int">
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.01.00">
+                <PropertyMap xmlns="ECDbMap.02.00">
                     <ColumnName>assetid</ColumnName>
                 </PropertyMap>
             </ECCustomAttributes>
@@ -614,7 +616,7 @@
 
         <ECProperty propertyName="Name" typeName="string">
             <ECCustomAttributes>
-               <PropertyMap xmlns="ECDbMap.01.00">
+               <PropertyMap xmlns="ECDbMap.02.00">
                     <Collation>NoCase</Collation>
                </PropertyMap>
             </ECCustomAttributes>
@@ -667,7 +669,7 @@
 
         <ECRelationshipClass typeName="HardwareUsedByEmployee" strength="referencing">
             <ECCustomAttributes>
-                <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
                     <SourceECInstanceIdColumn>EmployeeId</SourceECInstanceIdColumn>
                     <TargetECInstanceIdColumn>HardwareId</TargetECInstanceIdColumn>
                 </LinkTableRelationshipMap>
@@ -683,7 +685,7 @@
 
         <ECRelationshipClass typeName="FolderHasFiles" strength="embedding">
             <ECCustomAttributes>
-                <ForeignKeyRelationshipMap xmlns="ECDbMap.01.00">
+                <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyRelationshipMap>
             </ECCustomAttributes>
