@@ -190,7 +190,7 @@ BentleyStatus RelationshipInfoManager::SaveInfo(RelationshipInfoR info)
         }
     if (info.IsInCache())
         {
-        if (BE_SQLITE_OK != m_infoUpdater.Get().Update(info.GetInstanceKey().GetECInstanceId(), info.GetJsonInfo()))
+        if (BE_SQLITE_OK != m_infoUpdater.Get().Update(info.GetInfoKey().GetECInstanceId(), info.GetJsonInfo()))
             {
             return ERROR;
             }

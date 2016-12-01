@@ -150,20 +150,42 @@ DgnDbServerStatusResult RepositoryInfo::WriteRepositoryInfo(Dgn::DgnDbR db, BeSQ
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-RepositoryInfoPtr RepositoryInfo::FromJson(JsonValueCR json, Utf8StringCR url)
+RepositoryInfoPtr RepositoryInfo::Parse(RapidJsonValueCR properties, Utf8StringCR repositoryInstanceId, Utf8StringCR url)
+    {
+    Utf8String name = properties[ServerSchema::Property::RepositoryName].GetString();
+    Utf8String description = properties[ServerSchema::Property::RepositoryDescription].GetString();
+    Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? properties[ServerSchema::Property::UserCreated].GetString() : "";
+    DateTime uploadedDate;
+    Utf8String dateStr = properties.HasMember(ServerSchema::Property::UploadedDate) ? properties[ServerSchema::Property::UploadedDate].GetString() : "";
+    if (!dateStr.empty())
+        DateTime::FromString(uploadedDate, dateStr.c_str());
+    return RepositoryInfoPtr(new RepositoryInfo(url, repositoryInstanceId, name, description, userUploaded, uploadedDate));
+    }
+
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    julius.cepukenas             10/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfoPtr RepositoryInfo::Parse(JsonValueCR json, Utf8StringCR url)
     {
     if (json.isNull())
         return nullptr;
     Utf8String repositoryInstanceId = json[ServerSchema::InstanceId].asString();
     JsonValueCR properties = json[ServerSchema::Properties];
-    Utf8String name = properties[ServerSchema::Property::RepositoryName].asString();
-    Utf8String description = properties[ServerSchema::Property::RepositoryDescription].asString();
-    Utf8String userUploaded = properties[ServerSchema::Property::UserCreated].asString();
-    DateTime uploadedDate;
-    Utf8String dateStr = properties[ServerSchema::Property::UploadedDate].asString();
-    if (!dateStr.empty())
-        DateTime::FromString(uploadedDate, dateStr.c_str());
-    return RepositoryInfoPtr (new RepositoryInfo(url, repositoryInstanceId, name, description, userUploaded, uploadedDate));
+
+    auto rapidJson = ToRapidJson(properties);
+
+    return Parse(rapidJson, repositoryInstanceId, url);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             10/2016
+//---------------------------------------------------------------------------------------
+RepositoryInfoPtr RepositoryInfo::Parse(WSObjectsReader::Instance instance, Utf8StringCR url)
+    {
+    Utf8String repositoryInstanceId = instance.GetObjectId().remoteId;
+    RapidJsonValueCR properties = instance.GetProperties();
+    return Parse(properties, repositoryInstanceId, url);
     }
 
 //---------------------------------------------------------------------------------------

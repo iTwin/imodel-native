@@ -67,101 +67,23 @@ struct DgnDbServerLocationsAdmin : public Dgn::DgnPlatformLib::Host::IKnownLocat
         virtual ~DgnDbServerLocationsAdmin() {}
     };
 
-BeFileName DgnDbServerHost::s_temp(L"");
-BeFileName DgnDbServerHost::s_assets(L"");
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerHost::DgnDbServerHost() : m_initialized(false), m_terminated(false)
-    {
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-void DgnDbServerHost::Initialize(BeFileNameCR temp, BeFileNameCR assets)
-    {
-    s_temp = temp;
-    s_assets = assets;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-bool DgnDbServerHost::IsInitialized()
-    {
-    return !s_assets.IsEmpty() && !s_temp.IsEmpty();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             01/2016
-//---------------------------------------------------------------------------------------
-void DgnDbServerHost::Adopt(std::shared_ptr<DgnDbServerHost> const& host)
-    {
-    if (DgnPlatformLib::QueryHost())
-        return;
-
-    if (!host->m_initialized)
-        {
-        DgnPlatformLib::Initialize(*host, false);
-        host->m_initialized = true;
-        }
-    else
-        {
-        BeStringUtilities::Initialize(host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             01/2016
-//---------------------------------------------------------------------------------------
-void DgnDbServerHost::Forget(std::shared_ptr<DgnDbServerHost> const& host, bool terminate)
-    {
-    if (DgnPlatformLib::QueryHost() == host.get())
-        {
-        if (terminate && host->m_initialized && !host->m_terminated)
-            {
-            host->m_terminated = true;
-            host->Terminate(false);
-            }
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-DgnDbServerHost::~DgnDbServerHost()
-    {
-    if (m_initialized && !m_terminated)
-        Terminate(false);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis             11/2015
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::IKnownLocationsAdmin& DgnDbServerHost::_SupplyIKnownLocationsAdmin()
-    {
-    return *new DgnDbServerLocationsAdmin(s_temp, s_assets);
-    }
-
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool BeInt64IdFromJson (BeInt64Id& id, JsonValueCR value)
+bool BeInt64IdFromJson(BeInt64Id& id, RapidJsonValueCR value)
     {
-    if (value.isNull ())
+    if (value.IsNull())
         return false;
 
-    if (value.isString ())
+    if (value.IsString())
         {
         uint64_t idParsed;
-        if (SUCCESS != BeStringUtilities::ParseUInt64 (idParsed, value.asCString ()))
+        if (SUCCESS != BeStringUtilities::ParseUInt64(idParsed, value.GetString()))
             return false;
-        id = BeInt64Id (idParsed);
+        id = BeInt64Id(idParsed);
         }
     else
-        id = BeInt64Id((uint64_t) value.asInt64 ());
+        id = BeInt64Id((uint64_t) value.GetInt64());
 
     return true;
     }
@@ -169,31 +91,76 @@ bool BeInt64IdFromJson (BeInt64Id& id, JsonValueCR value)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool StringFromJson (Utf8StringR result, JsonValueCR value)
+bool StringFromJson(Utf8StringR result, RapidJsonValueCR value)
     {
-    if (value.isNull ())
+    if (value.IsNull())
         return false;
 
-    result = value.asCString ();
+    result = value.GetString();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                              julius.cepukenas   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockLevelFromJson(LockLevel& level, RapidJsonValueCR value)
+    {
+    if (value.IsUint())
+        {
+        if (RepositoryJson::LockLevelFromUInt(level, value.GetUint()))
+            return true;
+        }
+
+    return false;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                             julius.cepukenas   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool LockableTypeFromJson(LockableType& type, RapidJsonValueCR value)
+    {
+    if (value.IsUint())
+        {
+        if (RepositoryJson::LockableTypeFromUInt(type, value.GetUint()))
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                               julius.cepukenas   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BriefcaseIdFromJson(BeBriefcaseId& bcId, RapidJsonValueCR value)
+    {
+    if (!value.IsUint())
+        return false;
+
+    bcId = BeBriefcaseId(value.GetUint());
     return true;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
-bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
     {
-    BeInt64Id id;
+    BeInt64Id           id;
     LockLevel           level;
     LockableType        type;
 
-    if (!BeInt64IdFromJson (id, serverJson[ServerSchema::Property::ObjectId]) ||
-        !RepositoryJson::LockLevelFromJson (level, serverJson[ServerSchema::Property::LockLevel]) ||
-        !RepositoryJson::LockableTypeFromJson (type, serverJson[ServerSchema::Property::LockType]) ||
-        !RepositoryJson::BriefcaseIdFromJson (briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
+    if (!serverJson.HasMember(ServerSchema::Property::ObjectId) || !serverJson.HasMember(ServerSchema::Property::LockLevel) ||
+        !serverJson.HasMember(ServerSchema::Property::LockType) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId))
         return false;
 
-    lock = DgnLock (LockableId (type, id), level);
+    if (!BeInt64IdFromJson(id, serverJson[ServerSchema::Property::ObjectId]) ||
+        !LockLevelFromJson(level, serverJson[ServerSchema::Property::LockLevel]) ||
+        !LockableTypeFromJson(type, serverJson[ServerSchema::Property::LockType]) ||
+        !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
+        return false;
+
+    lock = DgnLock(LockableId(type, id), level);
 
     return true;
     }
@@ -201,7 +168,7 @@ bool GetLockFromServerJson (JsonValueCR serverJson, DgnLockR lock, BeSQLite::BeB
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              08/2016
 //---------------------------------------------------------------------------------------
-bool GetCodeTemplateFromServerJson(JsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate)
+bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate)
     {
     BeInt64Id      authorityId;
     Utf8String     nameSpace = "";
@@ -244,15 +211,15 @@ void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-bool CodeStateFromJson(DgnCodeStateR codeState, JsonValueCR reservedValue, JsonValueCR usedValue, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR reservedValue, RapidJsonValueCR usedValue, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
-    if (reservedValue.isNull())
+    if (reservedValue.IsNull())
         return false;
 
     bool reserved, used;
 
-    reserved = reservedValue.asBool();
-    used = usedValue.isNull() ? false : usedValue.asBool();
+    reserved = reservedValue.GetBool();
+    used = usedValue.IsNull() ? false : usedValue.GetBool();
     
     if (reserved)
         {
@@ -276,26 +243,45 @@ bool CodeStateFromJson(DgnCodeStateR codeState, JsonValueCR reservedValue, JsonV
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016
 //---------------------------------------------------------------------------------------
-bool GetCodeFromServerJson(JsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
     {
     BeInt64Id      authorityId;
     Utf8String     nameSpace = "";
     Utf8String     value = "";
 
+    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+        !serverJson.HasMember(ServerSchema::Property::Value) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
+        !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
+        return false;
+
     if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
         !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
-        !RepositoryJson::BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
+        !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
         return false;
 
     // State revision is optional
-    StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
+    if (serverJson.HasMember(ServerSchema::Property::StateRevision))
+        StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
 
     code = DgnCode(DgnAuthorityId(authorityId.GetValue()), value, nameSpace);
     
     return true;
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas              10/2016
+//---------------------------------------------------------------------------------------
+rapidjson::Document ToRapidJson(JsonValueCR source)
+    {
+    rapidjson::Document target;
+    auto sourceStr = Json::FastWriter::ToString(source);
+    target.Parse<0>(sourceStr.c_str());
+    BeAssert(!target.HasParseError());
+    return target;
+    }
+
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas              06/2016

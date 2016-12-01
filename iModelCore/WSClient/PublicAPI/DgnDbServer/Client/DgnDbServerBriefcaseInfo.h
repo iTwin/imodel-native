@@ -9,8 +9,10 @@
 //__PUBLISH_SECTION_START__
 #include <DgnDbServer/DgnDbServerCommon.h>
 #include <DgnDbServer/Client/DgnDbServerResult.h>
+#include <WebServices/Client/Response/WSObjectsReader.h>
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 typedef std::shared_ptr<struct DgnDbServerBriefcaseInfo> DgnDbServerBriefcaseInfoPtr;
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerBriefcaseInfo);
 DEFINE_TASK_TYPEDEFS(DgnDbServerBriefcaseInfoPtr, DgnDbServerBriefcaseInfo);
@@ -38,7 +40,9 @@ struct DgnDbServerBriefcaseInfo
 
         //__PUBLISH_SECTION_END__
         bool operator==(DgnDbServerBriefcaseInfoCR briefcase) const;
-        static DgnDbServerBriefcaseInfoPtr FromJson(JsonValueCR json);
+        static DgnDbServerBriefcaseInfoPtr Parse(WSObjectsReader::Instance instance);
+        //! DEPRECATED: Use Parse from Instance
+        static DgnDbServerBriefcaseInfoPtr Parse(JsonValueCR json);
         void SetLocalPath(BeFileName localPath);
         //__PUBLISH_SECTION_START__
         DGNDBSERVERCLIENT_EXPORT BeSQLite::BeBriefcaseId GetId() const;

@@ -85,9 +85,9 @@ bool DgnDbServerBriefcaseInfo::GetIsReadOnly() const
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis           09/2016
 //---------------------------------------------------------------------------------------
-bool GuidFromJson(BeGuid& guid, JsonValueCR json)
+bool GuidFromJson(BeGuid& guid, RapidJsonValueCR json)
     {
-    Utf8String guidString = json.asString();
+    Utf8String guidString = json.GetString();
     if (guidString.size() > 0)
         return BentleyStatus::SUCCESS == guid.FromString(guidString.c_str());
     else
@@ -97,18 +97,37 @@ bool GuidFromJson(BeGuid& guid, JsonValueCR json)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::FromJson(JsonValueCR json)
+DgnDbServerBriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
     {
-    JsonValueCR properties      = json[ServerSchema::Properties];  
-
     BeSQLite::BeBriefcaseId id;
-    RepositoryJson::BriefcaseIdFromJson(id, properties[ServerSchema::Property::BriefcaseId]);
-    Utf8String  userOwned = properties[ServerSchema::Property::UserOwned].asString();
+    id = BeBriefcaseId(json[ServerSchema::Property::BriefcaseId].GetUint());
+    Utf8String  userOwned = json.HasMember(ServerSchema::Property::UserOwned) ? json[ServerSchema::Property::UserOwned].GetString() : "";
     BeGuid fileId;
-    GuidFromJson(fileId, properties[ServerSchema::Property::FileId]);
-    bool isReadOnly = properties[ServerSchema::Property::IsReadOnly].asBool();
+    GuidFromJson(fileId, json[ServerSchema::Property::FileId]);
+    bool isReadOnly = json[ServerSchema::Property::IsReadOnly].GetBool();
 
     return std::make_shared<DgnDbServerBriefcaseInfo>(id, userOwned, fileId, isReadOnly);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(JsonValueCR json)
+    {
+    JsonValueCR properties      = json[ServerSchema::Properties]; 
+
+    auto rapidJson = ToRapidJson(properties);
+
+    return ParseRapidJson(rapidJson);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerBriefcaseInfoPtr DgnDbServerBriefcaseInfo::Parse(WSObjectsReader::Instance instance)
+    {
+    RapidJsonValueCR properties = instance.GetProperties();
+    return ParseRapidJson(properties);
     }
 
 //---------------------------------------------------------------------------------------
