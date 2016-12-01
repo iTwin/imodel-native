@@ -7411,6 +7411,116 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Verifying KOQ assigned to the property
+    KindOfQuantityCP koq = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+
+    ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsArrayProperty()->GetKindOfQuantity());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECArrayProperty propertyName='Length' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Removing KindOfQuantity from an ECArrayProperty is supported");
+    ASSERT_FALSE(asserted);
+
+    //Verifying the property no longer has KOQ
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ArrayECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsArrayProperty();
+    ASSERT_EQ("Length", foo_length->GetName());
+    ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
+    {
+    SchemaItem schemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double' kindOfQuantity = 'MyKindOfQuantity'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>");
+
+    SetupECDb("schemaupdate.ecdb", schemaItem);
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+
+    //Verifying KOQ assigned to the property
+    KindOfQuantityCP koq = GetECDb().Schemas().GetKindOfQuantity("TestSchema", "MyKindOfQuantity");
+    ASSERT_TRUE(koq != nullptr);
+
+    ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
+    ASSERT_TRUE(foo != nullptr);
+
+    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveProperty()->GetKindOfQuantity());
+
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP editedSchemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='MyKindOfQuantity'"
+        "                    displayLabel='MyKindOfQuantity' persistenceUnit='CENTIMETRE' precision='10'"
+        "                    defaultPresentationUnit='FOOT' alternativePresentationUnits='INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double' />"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    m_updatedDbs.clear();
+    bool asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Removing KindOfQuantity from an ECProperty is supported");
+    ASSERT_FALSE(asserted);
+
+    //Verifying the property no longer has KOQ
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    PrimitiveECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveProperty();
+    ASSERT_EQ("Length", foo_length->GetName());
+    ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
