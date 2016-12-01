@@ -472,8 +472,8 @@ struct RangeAccumulator : RangeIndex::Traverser
         if (m_is2d)
             {
             BeAssert(m_range.low.z == m_range.high.z == 0.0);
-            m_range.low.z = -s_half2dDepthRange;
-            m_range.high.z = s_half2dDepthRange;
+            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
+            m_range.high.z = s_half2dDepthRange*2;
             }
 
         return TileGeneratorStatus::Success;
@@ -2118,12 +2118,18 @@ private:
     virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
     virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
-    virtual double _AdjustZDepth(double zDepth) override
+    virtual double _AdjustZDepth(double zDepthIn) override
         {
         // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
         // Coming from mstn, priorities tend to be in [-500..500]
+        // Let's assume that mstn's range is the full range and clamp anything outside that.
         // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
-        constexpr double ratio = s_half2dDepthRange / 0x7fffffff;
+        constexpr double priorityRange = 500;
+        constexpr double ratio = s_half2dDepthRange / priorityRange;
+
+        auto zDepth = std::min(zDepthIn, priorityRange);
+        zDepth = std::max(zDepth, -priorityRange);
+
         return zDepth * ratio;
         }
 
