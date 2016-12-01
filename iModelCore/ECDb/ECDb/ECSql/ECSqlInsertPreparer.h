@@ -31,11 +31,12 @@ private:
         ECInstanceIdMode m_ecinstanceIdMode;
         int m_ecinstanceIdExpIndex;
         NativeSqlBuilder m_classNameNativeSqlSnippet;
-        std::vector<size_t> m_overflowPropertyIndexes;
         NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
         NativeSqlBuilder::List m_pkColumnNamesNativeSqlSnippets; 
         NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
         NativeSqlBuilder::List m_pkValuesNativeSqlSnippets;
+        std::map<std::size_t, std::vector<std::size_t>> m_overflowPropertyIndexes;
+        std::map<std::size_t, std::vector<DataPropertyMap const*>> m_overflowProperties;
         };
 
 

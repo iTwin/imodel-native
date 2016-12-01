@@ -10680,5 +10680,125 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     }
 
 
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Affan.Khan                         11/16
+    //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
+    {
+    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>8</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"      //Code  
+        "    </ECEntityClass>"
+        "    <ECStructClass typeName='Matrix4x4' modifier='None'>"
+        "        <ECProperty propertyName='M11' typeName='double'/>"        //sc1   [SharedColumn]
+        "        <ECProperty propertyName='M12' typeName='double'/>"        //sc2   [SharedColumn]
+        "        <ECProperty propertyName='M13' typeName='double'/>"        //sc3   [SharedColumn]
+        "        <ECProperty propertyName='M14' typeName='double'/>"        //sc4   [SharedColumn]
+        "        <ECProperty propertyName='M21' typeName='double'/>"        //sc5   [SharedColumn]
+        "        <ECProperty propertyName='M22' typeName='double'/>"        //sc6   [SharedColumn]
+        "        <ECProperty propertyName='M23' typeName='double'/>"        //sc7   [SharedColumn]
+        "        <ECProperty propertyName='M24' typeName='double'/>"        //sc8   [SharedColumn]
+        "        <ECProperty propertyName='M31' typeName='double'/>"        //sc9   [Overflow]
+        "        <ECProperty propertyName='M32' typeName='double'/>"        //sc10  [Overflow]
+        "        <ECProperty propertyName='M33' typeName='double'/>"        //sc11  [Overflow]
+        "        <ECProperty propertyName='M34' typeName='double'/>"        //sc12  [Overflow]
+        "        <ECProperty propertyName='M41' typeName='double'/>"        //sc13  [Overflow]
+        "        <ECProperty propertyName='M42' typeName='double'/>"        //sc14  [Overflow]
+        "        <ECProperty propertyName='M43' typeName='double'/>"        //sc15  [Overflow]
+        "        <ECProperty propertyName='M44' typeName='double'/>"        //sc16  [Overflow]
+        "    </ECStructClass>"
+        "    <ECEntityClass typeName='TestElement' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECStructProperty propertyName='Mtx4x4' typeName='Matrix4x4'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
 
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    ecdb.SaveChanges();
+
+    Utf8CP codeA = "CodeA";
+    Utf8CP codeB = "CodeB";
+    std::vector<Utf8CP> mtx4x4Properties = {"M11","M12", "M13", "M14","M21","M22", "M23", "M24","M31","M32", "M33", "M34","M41","M42", "M43", "M44"};
+    std::vector<double> mtx4x4ValuesA = {1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4};
+    std::vector<double> mtx4x4ValuesB = {1.1342, 1.2357, 1.3134, 1.4963, 2.1168, 2.2848, 2.6521, 2.4460, 3.1249, 3.2149, 3.3709, 3.4357, 4.1126, 4.2579, 4.3327, 4.4419};
+
+    //INSERT a row was data
+    {//===================================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code) VALUES (?)"));
+    stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ecdb.SaveChanges();
+    }//===================================================================
+
+     //UPDATE a row was data
+    {//===================================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.TestElement SET Mtx4x4 = ? WHERE Code = ?"));
+    auto& mtx = stmt.BindStruct(1);
+    for (int i = 0; i < mtx4x4Properties.size(); i++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesA[i]));
+        }
+
+    stmt.BindText(2, codeA, IECSqlBinder::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ecdb.SaveChanges();
+    }//===================================================================
+
+    //INSERT a row was data
+    {//===================================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, Mtx4x4) VALUES (?,?)"));
+    stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
+    auto& mtx = stmt.BindStruct(2);
+    for (int i = 0; i < mtx4x4Properties.size(); i++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesB[i]));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ecdb.SaveChanges();
+    }//===================================================================
+
+     //Verify Row A
+    {//===================================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
+    stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
+    auto& mtx = stmt.GetValueStruct(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    for (int i = 0; i < mtx4x4Properties.size(); i++)
+        {
+        ASSERT_EQ(mtx4x4ValuesA[i], mtx.GetValue(i).GetDouble());
+        }
+    }//===================================================================
+
+     //Verify Row B
+    {//===================================================================
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
+    stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
+    auto& mtx = stmt.GetValueStruct(0);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    for (int i = 0; i < mtx4x4Properties.size(); i++)
+        {
+        ASSERT_EQ(mtx4x4ValuesB[i], mtx.GetValue(i).GetDouble());
+        }
+    }//===================================================================
+
+    }
 END_ECDBUNITTESTS_NAMESPACE
