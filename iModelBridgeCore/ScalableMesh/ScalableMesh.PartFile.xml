@@ -3,7 +3,7 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
 
 
- <!--   <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
+    <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
       <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
       <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>
       <SubPart PartName="pcl"      PartFile="pcl"      Repository="Libsrc-Pcl"/>      
@@ -18,10 +18,10 @@
     <Part Name="AzureSDK">
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
-            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
             <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -30,45 +30,47 @@
         <SubPart PartName="AzureSDK" />
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
             <VendorAPI Domain="CloudDataSource" />
         </Bindings>
-    </Part>-->
+    </Part>
 
-   <!-- <Part Name="ScalableMesh" BMakeFile="ScalableMesh_Vancouver.mke">
+    <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke">
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"                          Repository="DgnPlatform" />
-        <SubPart PartName="PCLWrapper" />
-        <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>     
-        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>        
-        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />-->
+        <!--<SubPart PartName="PCLWrapper" />
+        <SubPart PartName="EigenAPI"        PartFile="pcl"                                  Repository="Libsrc-Pcl"/>   -->  
+        <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
+        <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
-       <!-- <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
-        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>-->
-        <!--<SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>-->
-        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource" />
-        <SubPart PartName="BeCurl"          PartFile="BeCurl"                                   Repository="Libsrc-Curl"/>
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
-       <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />-->
+       <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+       <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
+      <SdkSource>ScalableMeshSDK</SdkSource>
         <!-- For Importer-->
-       <!-- <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
-        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
-        <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>-->
-        <!--<Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs" Required="false">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
-            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
+        <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
+        <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
+        <Bindings>
+          <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
+          <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(shlibext)</Assemblies> 
             <PublicAPI Domain="ScalableMesh" />
         </Bindings>
-    </Part>-->
+    </Part>
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
+        <SubPart PartName="ScalableMesh" />   
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />        
         <Bindings>
-            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">Delivery\ScalableMeshSDKexe.exe
+            <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe
             </Files>
            <!-- <Files ProductDirectoryName="TMSchemas" >
                 Delivery\TerrainModel.01.00.ecschema.xml,Delivery\DTMElement_TemplateExtender_Schema.01.00.ecschema.xml
@@ -76,12 +78,12 @@
        </Bindings>
     </Part>
 
-    <!--<Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
+    <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
         <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Bindings>
-          <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">Delivery\ScalableMeshATPexe.exe</Files>
+          <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
         </Bindings>
     </Part>
 
@@ -96,7 +98,7 @@
   <Part Name="ScalableMeshCommandLineTest" BentleyBuildMakeFile="Tests/ScalableMeshCommandLineTest.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
     <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
       <Bindings>
-        <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">Delivery\ScMeshTest.exe</Files>
+        <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScMeshTest.exe</Files>
       </Bindings>
   </Part>
 
@@ -109,7 +111,7 @@
     <Bindings>
       <Files ProductDirectoryName="DgnDbToSMTest">Delivery\DgnDbToSM.exe</Files>
     </Bindings>
-  </Part>-->
+  </Part>
     
     <ProductDirectoryList ListName="ScalableMeshSDK">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
@@ -199,7 +201,7 @@
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
         <SubPart PartName="ScalableMeshSDKexe"/>
-        <SubPart PartName="HeaderFiles"   PartFile="geomlibs"    Repository="GeomLibs"/>
+        <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
         <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
@@ -210,50 +212,9 @@
         <Directories DirectoryListName="ScalableMeshSDK" />        
     </Product>
 
-  <!--<ProductDirectoryList ListName="ScalableMeshATP">
+  <ProductDirectoryList ListName="ScalableMeshATP">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="ECSchemas"  Deliver="true" Path="Dlls"/>
-        <ProductDirectory Name="ECServicesManagedAssemblies"  Deliver="true" Path="Dlls"/>
-        <ProductDirectory Name="BentleyDesktopClientApi_Native"  Deliver="true" Path="Dlls"/>
-
-        <ProductDirectory   Name="ecobjectsnativeassemblies"                Path="Dlls"                              />
-        <ProductDirectory   Name="ecschemas"                                Path="Dlls"                              />
-        <ProductDirectory   Name="DGNIndexerECSchemas"                      Path="Dlls"                              />
-        <ProductDirectory   Name="ecobjectsmanagedassemblies"               Path="Dlls"                  />
-        <ProductDirectory   Name="ecservicesmanagedassemblies"              Path="Dlls"                  />
-        <ProductDirectory   Name="ecreportingmanagedassemblies"             Path="Dlls"                  />
-        <ProductDirectory   Name="ecexchangemanagedassemblies"              Path="Dlls"                  />
-        <ProductDirectory   Name ="ecrulesmanagedassemblies"                Path="Dlls"                  />
-        <ProductDirectory   Name="ECFAtpAssemblies"                         Path="Dlls"                  />
-        <ProductDirectory   Name="LoggingManagedAssemblies"                 Path="Dlls"                  />
-        <ProductDirectory   Name="LoggingOptionalManagedAssemblies"         Path="Dlls"                  />
-        <ProductDirectory   Name="PointCloudCoreAssemblies"                 Path="Dlls"                      />
-        <ProductDirectory   Name="ecplugins"                                Path="Dlls"                      />
-        <ProductDirectory   Name="SqlDbECPluginAssemblies"                  Path="Dlls"                      />
-        <ProductDirectory   Name="PlatformTechAssemblies"                   Path="Dlls"                      />
-        <ProductDirectory   Name="PlatformTechManagedAssemblies"            Path="Dlls"                      />
-        <ProductDirectory   Name="PlatformTechManagedTestSupportAssemblies" Path="Dlls"                      />
-        <ProductDirectory   Name="ManagedTestSupportAssemblies"             Path="Dlls"                      />
-        <ProductDirectory   Name="ContractTestRuntimeAssemblies"            Path="Dlls"                      />
-        <ProductDirectory   Name="ECExchangeTestSupportAssemblies"          Path="Dlls"                      />
-        <ProductDirectory   Name="dgnecpluginassemblies"                    Path="Dlls"                      />
-        <ProductDirectory   Name="MdlsysAsneeded"                           Path="Dlls"                      />
-      <ProductDirectory Name="LicenseAssembliesWithConnectionClient"  Deliver="true" Path="Dlls"/>
-      <ProductDirectory Name="LicenseAssemblies"  Deliver="true" Path="Dlls"/>
-      <ProductDirectory Name="BentleyGeometryNetAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="DgnPlatformNETAssemblies"  Deliver="true" Path="Dlls"/>
-        <ProductDirectory Name="JsonNetAssemblies"  Deliver="true" Path="Dlls"/>
-         <ProductDirectory Name="TelerikWPFAssemblies"  Deliver="true" Path="Dlls"/>
-          <ProductDirectory Name="SpellEngineAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="DgnIModelNativeAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="DgnIModelNETAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="MstnToolsNativeAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="PPManagedAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="NlibAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="IwGeometryAssemblies"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="FeatureAspectGenSrc"  Deliver="true" Path="Dlls"/>
-        <ProductDirectory Name="TranskitGenSrc"  Deliver="true" Path="Dlls"/>
-       <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="true" Path="Dlls"/>
         <ProductDirectory Name="PublicAPI" Path="PublicAPI" Deliver="true"/>
 <ProductDirectory Name="VendorAPI" Path="PublicAPI" Deliver="true"/>
         <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
@@ -286,12 +247,10 @@
         <ProductDirectory Name="DgnViewLibs"  Path="Libs" Deliver="true"/>
         <ProductDirectory Name="TerrainModelElementHandler" Path="Dlls" />
         <ProductDirectory Name="GlewAssemblies" Deliver="false"/>
-        <ProductDirectory Name="GlewAssemblies" LibType="static" Deliver="false"/>
         <ProductDirectory Name="JpegAssemblies" Deliver="false"/>
         <ProductDirectory Name="PngNativeAssemblies" Deliver="false"/>            
         <ProductDirectory Name="TiffNativeAssemblies" Deliver="false"/>      
         <ProductDirectory Name="ZlibNativeAssemblies" Deliver="false"/>
-         <ProductDirectory Name="ZlibNativeAssemblies" LibType="static" Deliver="false"/> 
         <ProductDirectory Name="Assemblies" Path="Dlls"/>
         <ProductDirectory Name="ErdasEcwJpeg2000Assemblies" Path="Dlls" />
         <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
@@ -307,6 +266,11 @@
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <!--<SubPart PartName="PSolidCore" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="RasterCore" PartFile="DgnDisplay" Repository="DgnDisplay"/>
+        <SubPart PartName="PSolidAcisInterop" PartFile="DgnDisplay" Repository="DgnDisplay" />
+        <SubPart PartName="DgnGeoCoord" PartFile="GeoCoord" Repository="GeoCoord" />
+        <SubPart PartName="DgnPlatformDataFiles" PartFile="MstnAppData" Repository="miscdev-mstnappdata"/>-->
         <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
@@ -361,8 +325,12 @@
   <ProductDirectoryList ListName="DgnDbToSM">
     <ProductDirectory Name="ScalableMeshAssemblies" Path="Dlls"/>
     <ProductDirectory Name="DgnDbToSMTest" Path="Dlls"/>
+    <ProductDirectory Name="AutomaticGroundDetection"  Path="Dlls" />
+    <ProductDirectory Name="CGALAssemblies"  Path="Dlls" />
+    <!--<ProductDirectory Name="ScalableMeshV8SDK"  Path="Dlls" />-->
+    <ProductDirectory Name="ScalableMeshLibs"  Deliver="false" />    
     <ProductDirectory Name="Assemblies" Path="Dlls"/>
-    <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="ImagePPAssemblies" Path="Dlls"/>        
     <ProductDirectory Name="TerrainModelNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="BentleyNativeAssemblies" Path="Dlls"/>
     <ProductDirectory Name="BeOpenSSLAssemblies" Path="Dlls"/>
@@ -386,14 +354,33 @@
     <ProductDirectory Name="RasterAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="PointoolsAssemblies" Path="Dlls" Deliver="true"/>
     <ProductDirectory Name="ThreeMxAssemblies" Path="Dlls" Deliver="true"/>
-    <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>
+    <ProductDirectory Name="DgnClientFxNativeAssemblies" Path="Dlls" Deliver="true"/>    
+    <ProductDirectory Name="BePortableUiAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="MdlsysAsneededSmartsolid" Path="Dlls"/>
+    <ProductDirectory Name="SmartSolidAssemblies" Path="Dlls"/>
+    <!--<ProductDirectory Name="StdThemes" Path="Dlls"/>-->
+    <ProductDirectory Name="WSClientAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="DataCaptureAssemblies" Path="Dlls"/>
+    <ProductDirectory Name="ConceptMaterials" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Winx86" Path="Dlls/winx86"/>
+    <ProductDirectory Name="BentleyEulaDelivery" Path="Dlls"/>
+    <ProductDirectory Name="DgnClientSdkTools-Win7" Path="Dlls/Win7"/>
+
+    <ProductDirectory Name="GeoUserLibraries" Path="Dlls/geolib"/>
+
+    <ProductDirectory Name="MobileUtilsXliffs" Path="Dlls/xliffs"/>
+
+    <ProductDirectory Name="MobileUtilsAssemblies" Path="Dlls"/>
+
+    <ProductDirectory Name="MobileUtilsAssets" Path="Dlls/assets"/>
+    
   </ProductDirectoryList>
 
   <Product Name="DgnDbSM">
     <SubPart PartName="DgnDbToSM" />
     <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />
     <Directories DirectoryListName="DgnDbToSM" />
-  </Product>-->
+  </Product>
   
  
     <!--<Part Name="ScalableMesh" BentleyBuildMakeFile="Tests/prewire.mke">
