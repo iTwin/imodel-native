@@ -151,6 +151,8 @@ public:
 
     //Returns true if point found
     bool        QueryPointToAddToTin();
+    bool        TryPointToAddToTin(const DPoint3d& pt);
+
     const PointCollection&  GetPointToAdd() const { return *m_pAcceptedPointCollection; }
     void        PrefetchPoints();
     size_t      GetMemorySize() const;

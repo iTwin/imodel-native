@@ -834,6 +834,22 @@ bool PCGroundTriangle::QueryPointToAddToTin()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     06/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PCGroundTriangle::TryPointToAddToTin(const DPoint3d& pt)
+    {
+#if 0
+    m_pAcceptedPointCollection->AddPoint(pt, *this);
+
+    //if no point, nothing to Add
+    if (m_pAcceptedPointCollection->size() == 0)
+        return false;
+#endif
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t  PCGroundTriangle::GetMemorySize() const
@@ -1192,7 +1208,8 @@ static bool s_testOneQuery = false;
 StatusInt  PCGroundTIN::_DensifyTIN()
     {       
     if (s_testOneQuery)
-        {       
+        {      
+#if 0 
         int currentIteration = 1;
         for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
             {            
@@ -1210,7 +1227,7 @@ StatusInt  PCGroundTIN::_DensifyTIN()
             IPointsProviderPtr pPointsProvider = IPointsProvider::CreateFrom(ptsProviderCreator, &m_triangleToProcessExtent);    
             pPointsProvider->SetUseMultiThread(GetParam().GetUseMultiThread());
             pPointsProvider->SetUseMeterUnit(true);//We want to work in meters, faster for pointCloud...  
-
+/*
             for (auto itr = pPointsProvider->begin(); itr != pPointsProvider->end(); ++itr)
                 {
                 DPoint3d ptIndex(*itr);
@@ -1219,9 +1236,37 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                 //Only PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD will be keep in the container
             //   m_pAcceptedPointCollection->AddPoint(ptIndex,*this);
                 }
+*/
 
+            TriangleSearcher triSearcher;
+            
+            for (PCGroundTriangleCollection::iterator triItr = m_trianglesToProcess.begin(); triItr != m_trianglesToProcess.end() && progressMonitor.InProgress(); ++triItr, ++nbTriangleProcessed, IncrementWorkDone())
+                {                
+                Point a(triItr->GetPoint(0).x, triItr->GetPoint(0).y, triItr->GetPoint(0).z);
+                Point b(triItr->GetPoint(1).x, triItr->GetPoint(1).y, triItr->GetPoint(1).z);
+                Point c(triItr->GetPoint(2).x, triItr->GetPoint(2).y, triItr->GetPoint(2).z);
+                CTriangle triangle(a, b, c);
 
-        
+                triSearcher.AddTriangle(triangle);                                
+                }
+
+            for (auto itr = pPointsProvider->begin(); itr != pPointsProvider->end(); ++itr)
+                {
+                DPoint3d ptIndex(*itr);                
+
+                double distance;
+                CTriangle nearestTriangle;
+                triSearcher.SearchNearestTri(nearestTriangle, distance, ptIndex);
+
+                DPoint3d a(DPoint3d::From(nearestTriangle.vertex(0).x(), nearestTriangle.vertex(0).y(), nearestTriangle.vertex(0).z());
+                DPoint3d b(DPoint3d::From(nearestTriangle.vertex(1).x(), nearestTriangle.vertex(1).y(), nearestTriangle.vertex(1).z());
+                DPoint3d c(DPoint3d::From(nearestTriangle.vertex(2).x(), nearestTriangle.vertex(2).y(), nearestTriangle.vertex(2).z());
+
+                PCGroundTrianglePtr groundTriPtr(PCGroundTriangle::Create(*this, a, b, c));
+
+                groundTriPtr
+
+                }
 
             ProgressMonitor progressMonitor(*m_pReport, m_trianglesToProcess.size(), false, m_pParams->GetUseMultiThread());
             size_t nbTriangleProcessed(1);
@@ -1249,6 +1294,7 @@ StatusInt  PCGroundTIN::_DensifyTIN()
 
             m_pReport->EndCurrentIteration();
             }
+#endif
         }
     else
         {    
