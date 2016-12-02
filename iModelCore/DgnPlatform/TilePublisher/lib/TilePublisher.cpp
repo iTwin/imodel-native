@@ -512,7 +512,7 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (Json::Value& rootNode)
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-    static char         *s_programName                    = "unlitProgram",
+    static char const   *s_programName                    = "unlitProgram",
                         *s_vertexShaderName               = "unlitVertexShader",
                         *s_fragmentShaderName             = "unlitFragmentShader",
                         *s_vertexShaderBufferViewName     = "unlitVertexShaderBufferView",
@@ -820,7 +820,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "vertexId", GLTF_FLOAT, "VERTEXID");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
-        static char         *s_programName                    = "polylineProgram",
+        static char const   *s_programName                    = "polylineProgram",
                             *s_vertexShaderName               = "polylineVertexShader",
                             *s_fragmentShaderName             = "polylineFragmentShader",
                             *s_vertexShaderBufferViewName     = "polylineVertexShaderBufferView",
@@ -891,7 +891,7 @@ void    TilePublisher::AddBinaryData (void const* data, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max)
+Utf8String TilePublisher::AddMeshVertexAttribute (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max)
     {
     Utf8String          nameId =  Concat(name, id),
                         accessorId = Concat ("acc", nameId),
