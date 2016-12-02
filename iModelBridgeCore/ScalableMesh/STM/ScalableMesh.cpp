@@ -858,7 +858,14 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         }
                     else if(s_stream_from_wsg)
                         {
-                        streamingSourcePath = L"scalablemesh" + (cloud_separator + datasetName);
+                        if (s_stream_using_cesium_3d_tiles_format)
+                            {
+                            streamingSourcePath = L"MarseilleCesium";
+                            }
+                        else
+                            {
+                            streamingSourcePath = L"scalablemesh" + (cloud_separator + datasetName);
+                            }
                         }
                     else
                         {

@@ -395,7 +395,14 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                     }
                 case SMNodeGroup::StrategyType::CESIUM:
                     {
-                    group->SetDataSourcePrefix(L"data\\n_");
+                    if (s_stream_from_wsg)
+                        {
+                        group->SetDataSourcePrefix(L"n_");
+                        }
+                    else
+                        {
+                        group->SetDataSourcePrefix(L"data\\n_");
+                        }
                     group->SetDataSourceExtension(L".json");
                     break;
                     }
@@ -1385,7 +1392,10 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
             m_dataSourceURL = L"textures";
             break;
         case SMStoreDataType::Cesium3DTiles:
-            m_dataSourceURL = L"data";
+            if (!s_stream_from_wsg)
+                {
+                m_dataSourceURL = L"data";
+                }
             break;
         default:
             assert(!"Unkown data type for streaming");
