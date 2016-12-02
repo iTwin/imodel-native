@@ -131,10 +131,14 @@ uint64_t lifetime
     request.SetRequestBody(HttpStringBody::Create(Json::FastWriter::ToString(params)));
     request.SetValidateCertificate(true); // Ensure secure connection when passing authentication information
 
-    return request.PerformAsync()->Then<SamlTokenResult>([] (Http::ResponseCR response)
+    return request.PerformAsync()->Then<SamlTokenResult>([rpUri, stsUrl] (Http::ResponseCR response)
         {
         if (response.GetConnectionStatus() != ConnectionStatus::OK)
             return SamlTokenResult::Error({response});
+
+        if (response.GetHttpStatus() == HttpStatus::InternalServerError)
+            LOG.errorv("ImsClient: Received server error. Make sure that relying party URI '%s' is correct and registered for IMS service '%s'",
+            rpUri.c_str(), stsUrl.c_str());
 
         if (response.GetHttpStatus() != HttpStatus::OK)
             return SamlTokenResult::Error({response});
@@ -236,7 +240,7 @@ Utf8String ImsClient::GetClientRelyingPartyUriForWtrealm(ClientInfoCR info)
     Utf8String rpUri = BeStringUtilities::UriEncode("sso://wsfed");
     rpUri += "_" + platformType + BeStringUtilities::UriEncode("/") + info.GetApplicationProductId();
     return rpUri;
-    }
+        }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2015
