@@ -374,13 +374,13 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 continue;
                 }
 
-            if (!childJsonValue.isObject() || !childJsonValue.isMember("Id"))
+            if (!childJsonValue.isObject() || !childJsonValue.isMember(ECINSTANCE_ID_ATTRIBUTE))
                 {
                 status = ERROR;
                 continue;
                 }
 
-            const int64_t navId = BeJsonUtilities::Int64FromValue(childJsonValue["Id"], INT64_C(0));
+            const int64_t navId = BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -388,14 +388,14 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 }
 
             ECValue v;
-            if (!childJsonValue.isMember("RelECClassId"))
+            if (!childJsonValue.isMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
                     status = ERROR;
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["RelECClassId"], INT64_C(0));
+                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(navId, ECClassId(relClassId)))
                     status = ERROR;
                 }
@@ -856,44 +856,6 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
 /////////////////////////////////////////////////////////////////////////////////////////
 // JsonEcInstanceWriter
 /////////////////////////////////////////////////////////////////////////////////////////
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Bill.Steinbock                  02/2016
-//---------------------------------------------------------------------------------------
-Utf8CP                   JsonEcInstanceWriter::GetPrimitiveTypeString(PrimitiveType primitiveType)
-    {
-    switch (primitiveType)
-        {
-        case PRIMITIVETYPE_Binary:
-            return "binary";
-
-        case PRIMITIVETYPE_Boolean:
-            return "boolean";
-
-        case PRIMITIVETYPE_DateTime:
-            return "dateTime";
-
-        case PRIMITIVETYPE_Double:
-            return "double";
-
-        case PRIMITIVETYPE_Integer:
-            return "int";
-
-        case PRIMITIVETYPE_Long:
-            return "long";
-
-        case PRIMITIVETYPE_Point2d:
-            return "point2d";
-
-        case PRIMITIVETYPE_Point3d:
-            return "point3d";
-
-        case PRIMITIVETYPE_String:
-            return "string";
-        }
-
-    BeAssert(false);
-    return "";
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
@@ -1062,7 +1024,7 @@ StatusInt     JsonEcInstanceWriter::WriteArrayPropertyValue(Json::Value& valueTo
     if (ARRAYKIND_Primitive == arrayKind)
         {
         PrimitiveType   memberType = arrayProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
-        Utf8CP          typeString = GetPrimitiveTypeString(memberType);
+        Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
         for (uint32_t index = 0; index < nElements; index++)
             {
             entryObj.clear();
@@ -1143,6 +1105,15 @@ StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructPropertyValue(Json::Value
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                    12/2016
+//---------------------------------------------------------------------------------------
+StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString)
+    {
+
+    return BSIERROR;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
 StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString)
@@ -1153,6 +1124,7 @@ StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMembe
         PrimitiveECPropertyP    primitiveProperty;
         ArrayECPropertyP        arrayProperty;
         StructECPropertyP       structProperty;
+        NavigationECPropertyP   navigationProperty;
         StatusInt               ixwStatus = BSIERROR;
 
         if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
@@ -1161,6 +1133,8 @@ StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMembe
             ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString);
         else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
             ixwStatus = WriteEmbeddedStructPropertyValue(valueToPopulate, *structProperty, ecInstance, baseAccessString);
+        else if (NULL != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
+            ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString);
 
         if (BSISUCCESS != ixwStatus)
             {
@@ -1182,12 +1156,12 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopu
     Utf8String  className = ecClass.GetName();
     Utf8String  fullSchemaName;
 
-    valueToPopulate["ecClass"] = className.c_str();
+    valueToPopulate[ECINSTANCE_CLASS_ATTRIBUTE] = className.c_str();
     fullSchemaName.Sprintf("%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionRead(), ecSchema.GetVersionMinor());
-    valueToPopulate["ecSchema"] = fullSchemaName.c_str();
+    valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)
-        valueToPopulate["instanceId"] = ecInstance.GetInstanceIdForSerialization().c_str();
+        valueToPopulate[ECINSTANCE_INSTANCEID_ATTRIBUTE] = ecInstance.GetInstanceIdForSerialization().c_str();
 
     Json::Value instanceObj(Json::objectValue);
     StatusInt status = WritePropertyValuesOfClassOrStructArrayMember(instanceObj, ecClass, ecInstance, nullptr);

@@ -128,6 +128,20 @@
 #define ECXML_MODIFIER_ABSTRACT             "Abstract"
 #define ECXML_MODIFIER_SEALED               "Sealed"
 
+// Defines Instance attributes that are used in Xml and Json serialization
+#define ECINSTANCE_XMLNS_ATTRIBUTE              "xmlns"
+#define ECINSTANCE_XSI_NIL_ATTRIBUTE            "nil"
+#define ECINSTANCE_SCHEMA_ATTRIBUTE             "ecSchema"
+#define ECINSTANCE_CLASS_ATTRIBUTE              "ecClass"
+#define ECINSTANCE_ID_ATTRIBUTE                 "id"
+#define ECINSTANCE_INSTANCEID_ATTRIBUTE         "instanceId"
+#define ECINSTANCE_SOURCECLASS_ATTRIBUTE        "sourceClass"
+#define ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE   "sourceInstanceID"
+#define ECINSTANCE_TARGETCLASS_ATTRIBUTE        "targetClass"
+#define ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE   "targetInstanceID"
+#define ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE    "relECClassId"
+#define ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE   "relECClassName"
+
 #define READ_OPTIONAL_XML_ATTRIBUTE(_nodeVar, _xmlAttributeName, _setInPointer, _setInPropertyName)   \
     if ((BEXML_Success == _nodeVar.GetAttributeStringValue (value, _xmlAttributeName)) &&   \
         (ECObjectsStatus::Success != _setInPointer->Set##_setInPropertyName (value.c_str()))) \

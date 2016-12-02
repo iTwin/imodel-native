@@ -2423,53 +2423,6 @@ static void CreateAccessString(Utf8StringR accessString, Utf8StringP baseAccessS
         }
     }
 
-#define INSTANCEID_ATTRIBUTE         "instanceID"
-#define SOURCECLASS_ATTRIBUTE        "sourceClass"
-#define SOURCEINSTANCEID_ATTRIBUTE   "sourceInstanceID"
-#define TARGETCLASS_ATTRIBUTE        "targetClass"
-#define TARGETINSTANCEID_ATTRIBUTE   "targetInstanceID"
-#define XMLNS_ATTRIBUTE              "xmlns"
-#define XSI_NIL_ATTRIBUTE            "nil"
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   05/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-static Utf8CP                   GetPrimitiveTypeString(PrimitiveType primitiveType)
-    {
-    switch (primitiveType)
-        {
-            case PRIMITIVETYPE_Binary:
-                return "binary";
-
-            case PRIMITIVETYPE_Boolean:
-                return "boolean";
-
-            case PRIMITIVETYPE_DateTime:
-                return "dateTime";
-
-            case PRIMITIVETYPE_Double:
-                return "double";
-
-            case PRIMITIVETYPE_Integer:
-                return "int";
-
-            case PRIMITIVETYPE_Long:
-                return "long";
-
-            case PRIMITIVETYPE_Point2d:
-                return "point2d";
-
-            case PRIMITIVETYPE_Point3d:
-                return "point3d";
-
-            case PRIMITIVETYPE_String:
-                return "string";
-        }
-
-    BeAssert(false);
-    return "";
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2648,7 +2601,7 @@ struct  InstanceXmlReader
             ecInstance = m_context.CreateStandaloneInstance(*foundClass).get();
 
             Utf8String instanceId;
-            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, INSTANCEID_ATTRIBUTE))
+            if (BEXML_Success == m_xmlNode.GetAttributeStringValue(instanceId, ECINSTANCE_INSTANCEID_ATTRIBUTE))
                 {
                 ecInstance->SetInstanceId(instanceId.c_str());
                 }
@@ -2660,19 +2613,19 @@ struct  InstanceXmlReader
                 {
                 // see if we can find the attributes corresponding to the relationship instance ids.
                 Utf8String sourceInstanceId;
-                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(sourceInstanceId, SOURCEINSTANCEID_ATTRIBUTE))
+                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(sourceInstanceId, ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE))
                     LOG.warning("Source InstanceId not set on serialized relationship instance");
 
                 Utf8String sourceClassName;
-                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(sourceClassName, SOURCECLASS_ATTRIBUTE))
+                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(sourceClassName, ECINSTANCE_SOURCECLASS_ATTRIBUTE))
                     LOG.warning("Source className not set on serialized relationship instance");
 
                 Utf8String targetInstanceId;
-                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(targetInstanceId, TARGETINSTANCEID_ATTRIBUTE))
+                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(targetInstanceId, ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE))
                     LOG.warning("Target InstanceId not set on serialized relationship instance");
 
                 Utf8String targetClassName;
-                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(targetClassName, TARGETCLASS_ATTRIBUTE))
+                if (BEXML_Success != m_xmlNode.GetAttributeStringValue(targetClassName, ECINSTANCE_TARGETCLASS_ATTRIBUTE))
                     LOG.warning("Target className not set on serialized relationship instance");
 
                 if (!Utf8String::IsNullOrEmpty(sourceInstanceId.c_str()) && !Utf8String::IsNullOrEmpty(sourceClassName.c_str()))
@@ -2794,7 +2747,7 @@ struct  InstanceXmlReader
                 if (memberType == serializedMemberType && !ValidateArrayPrimitiveType(arrayValueNode->GetName(), memberType))
                     {
                     LOG.warningv("Incorrectly formatted array element found in array %s.  Expected: %s  Found: %s",
-                                 accessString.c_str(), GetPrimitiveTypeString(memberType), arrayValueNode->GetName());
+                                 accessString.c_str(), ECXml::GetPrimitiveTypeName(memberType), arrayValueNode->GetName());
                     continue;
                     }
 
@@ -2831,36 +2784,34 @@ struct  InstanceXmlReader
             // We always input string as the serialized type to handle the case where the instance is loaded in an environment where the type is different than when serialized
             if (navigationProperty->IsMultiple())
                 {
-        return InstanceReadStatus::XmlParseError;
-        //Utf8String accessString;
-        //CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
-        //return ReadPrimitiveArrayValues(ecInstance, accessString, navigationProperty->GetType(), PrimitiveType::PRIMITIVETYPE_String, false, propertyValueNode);
-        }
-    else
-        {
-        // on entry, propertyValueNode is the xml node for the primitive property value.
-        InstanceReadStatus   ixrStatus;
-        ECValue              ecValue;
-        if (InstanceReadStatus::Success != (ixrStatus = ReadNavigationValue(ecValue, navigationProperty, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String)))
-            return ixrStatus;
+                //WIP
+                return InstanceReadStatus::XmlParseError;
+                }
+            else
+                {
+                // on entry, propertyValueNode is the xml node for the primitive property value.
+                InstanceReadStatus   ixrStatus;
+                ECValue              ecValue;
+                if (InstanceReadStatus::Success != (ixrStatus = ReadNavigationValue(ecValue, navigationProperty, propertyValueNode, PrimitiveType::PRIMITIVETYPE_String)))
+                    return ixrStatus;
 
-        if (ecValue.IsUninitialized())
-            {
-            //A malformed value was found.  A warning was shown; just move on.
-            return InstanceReadStatus::Success;
-            }
+                if (ecValue.IsUninitialized())
+                    {
+                    //A malformed value was found.  A warning was shown; just move on.
+                    return InstanceReadStatus::Success;
+                    }
 
-        ECObjectsStatus setStatus;
-                Utf8String accessString;
-                CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
-        setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue);
+                ECObjectsStatus setStatus;
+                        Utf8String accessString;
+                        CreateAccessString(accessString, baseAccessString, navigationProperty->GetName());
+                setStatus = ecInstance->SetInternalValue(accessString.c_str(), ecValue);
 
-        if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
-            LOG.warningv("Unable to set value for property %s", navigationProperty->GetName().c_str());
+                if (ECObjectsStatus::Success != setStatus && ECObjectsStatus::PropertyValueMatchesNoChange != setStatus)
+                    LOG.warningv("Unable to set value for property %s", navigationProperty->GetName().c_str());
 
-        BeAssert(ECObjectsStatus::Success == setStatus || ECObjectsStatus::PropertyValueMatchesNoChange == setStatus);
+                BeAssert(ECObjectsStatus::Success == setStatus || ECObjectsStatus::PropertyValueMatchesNoChange == setStatus);
 
-        return InstanceReadStatus::Success;
+                return InstanceReadStatus::Success;
                 }
             }
 
@@ -3021,7 +2972,7 @@ struct  InstanceXmlReader
             // On entry primitiveValueNode is the XML node that holds the value. 
             // First check to see if the value is set to NULL
             bool         nullValue;
-            if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue(nullValue, XSI_NIL_ATTRIBUTE))
+            if (BEXML_Success == primitiveValueNode.GetAttributeBooleanValue(nullValue, ECINSTANCE_XSI_NIL_ATTRIBUTE))
                 if (true == nullValue)
                     return InstanceReadStatus::Success;
 
@@ -3251,50 +3202,125 @@ struct  InstanceXmlReader
             return InstanceReadStatus::Success;
             }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Barry.Bentley                   10/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-InstanceReadStatus   ReadNavigationValue(ECValueR ecValue, NavigationECPropertyP navProperty, BeXmlNodeR primitiveValueNode, PrimitiveType serializedType)
-    {
-    PrimitiveType propertyType = navProperty->GetType();
-
-    // If we fail to read the property value for some reason, return it as null
-    ecValue.SetToNull();
-
-    BeXmlNodeP navValueNode = primitiveValueNode.GetFirstChild(BEXMLNODE_Element);
-
-    // On entry primitiveValueNode is the XML node that holds the value. 
-    // First check to see if the value is set to NULL
-    bool         nullValue;
-    if (BEXML_Success == navValueNode->GetAttributeBooleanValue(nullValue, XSI_NIL_ATTRIBUTE))
-        if (true == nullValue)
-            return InstanceReadStatus::Success;
-
-    if (PrimitiveType::PRIMITIVETYPE_Long == propertyType)
-        {
-        int64_t longValue;
-        BeXmlStatus status = primitiveValueNode.GetContentInt64Value(longValue);
-        if (BEXML_Success != status)
+        /*---------------------------------------------------------------------------------**//**
+        * @bsimethod                                    Caleb.Shafer                   12/2016
+        +---------------+---------------+---------------+---------------+---------------+------*/
+        InstanceReadStatus   ReadNavigationValue(ECValueR ecValue, NavigationECPropertyP navProperty, BeXmlNodeR navigationValueNode, PrimitiveType serializedType)
             {
-            if (BEXML_ContentWrongType == status)
-                return InstanceReadStatus::TypeMismatch;
-            if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
-                ecValue.SetToNull();
+            PrimitiveType propertyType = navProperty->GetType();
+
+            // If we fail to read the property value for some reason, return it as null
+            ecValue.SetToNull();
+
+            // On entry navigationValueNode is the XML node that holds the value. 
+            // First check to see if the value is set to NULL
+            bool         nullValue;
+            if (BEXML_Success == navigationValueNode.GetAttributeBooleanValue(nullValue, ECINSTANCE_XSI_NIL_ATTRIBUTE))
+                if (true == nullValue)
+                    return InstanceReadStatus::Success;
+
+            bvector<BeXmlNodeP> valueNodes;
+
+            BeXmlNodeP firstNavValueNode = navigationValueNode.GetFirstChild(BEXMLNODE_Element);
+            if (NULL == firstNavValueNode)
+                return InstanceReadStatus::BadNavigationValue;
+
+            valueNodes.push_back(firstNavValueNode);
+            Utf8String firstNavValueName(firstNavValueNode->GetName());
+
+            BeXmlNodeP secondNavValueNode = firstNavValueNode->GetNextSibling(BEXMLNODE_Element);
+            if (NULL == secondNavValueNode && !firstNavValueName.StartsWith(ECINSTANCE_ID_ATTRIBUTE))
+                return InstanceReadStatus::BadNavigationValue;
+
+            if (NULL != secondNavValueNode)
+                {
+                Utf8String secondNavValueName (secondNavValueNode->GetName());
+
+                // Invalid if the same value is defined twice or if the neither value is an Id
+                if (firstNavValueName.Equals(secondNavValueName) || (!firstNavValueName.StartsWith(ECINSTANCE_ID_ATTRIBUTE) && !secondNavValueName.StartsWith(ECINSTANCE_ID_ATTRIBUTE)))
+                    return InstanceReadStatus::BadNavigationValue;
+
+                valueNodes.push_back(secondNavValueNode);
+                }
+
+            ECClassId relClassId;
+            ECRelationshipClassCP relClass = nullptr;
+            int64_t longValue = -1;
+            // Loop through to read both values
+            for (BeXmlNodeP valueNode : valueNodes)
+                {
+                Utf8String valueNodeName(valueNode->GetName());
+
+                if (0 == valueNodeName.CompareTo(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+                    {
+                    Utf8String id;
+                    if (BEXML_Success != valueNode->GetContent(id))
+                        return InstanceReadStatus::BadNavigationValue;
+
+                    if (BentleyStatus::SUCCESS != ECClassId::FromString(relClassId, id.c_str()))
+                        return InstanceReadStatus::BadNavigationValue;
+                    }
+                else if (0 == valueNodeName.CompareTo(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
+                    {
+                    Utf8String relClassName;
+                    valueNode->GetContent(relClassName);
+
+                    Utf8String alias;
+                    Utf8String className;
+                    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, relClassName))
+                        return InstanceReadStatus::BadNavigationValue;
+
+                    ECSchemaCP resolvedSchema = navProperty->GetClass().GetSchema().GetSchemaByAliasP(alias);
+                    if (nullptr == resolvedSchema)
+                        return InstanceReadStatus::BadNavigationValue;
+
+                    ECClassCP resolvedClass = resolvedSchema->GetClassCP(className.c_str());
+                    if (nullptr == resolvedClass)
+                        return InstanceReadStatus::BadNavigationValue;
+
+                    relClass = resolvedClass->GetRelationshipClassCP();
+                    if (nullptr == relClass)
+                        return InstanceReadStatus::BadNavigationValue;
+                    }
+                 else if (valueNodeName.StartsWith(ECINSTANCE_ID_ATTRIBUTE))
+                     {
+                     size_t primitivePos = valueNodeName.find(":");
+                     Utf8String primitiveType(valueNodeName.substr(primitivePos + 1, valueNodeName.size() - primitivePos));
+                     if (!ValidateArrayPrimitiveType(primitiveType.c_str(), propertyType))
+                         return InstanceReadStatus::Success;
+
+                     if (PrimitiveType::PRIMITIVETYPE_Long == propertyType)
+                         {
+                         BeXmlStatus status = valueNode->GetContentInt64Value(longValue);
+                         if (BEXML_Success != status)
+                             {
+                             if (BEXML_ContentWrongType == status)
+                                 return InstanceReadStatus::TypeMismatch;
+                             if (BEXML_NullNodeValue == status || BEXML_NodeNotFound == status)
+                                 ecValue.SetToNull();
+                             return InstanceReadStatus::Success;
+                             }
+                         }
+                     }
+                }
+
+            if (longValue == -1)
+                return InstanceReadStatus::BadNavigationValue;
+
+            if (relClassId.IsValid())
+                ecValue.SetNavigationInfo(longValue, relClassId);
+            else
+                ecValue.SetNavigationInfo(longValue, relClass);
+
             return InstanceReadStatus::Success;
             }
-
-        //ecValue.SetNavigationInfo(, longValue);
-        }
-
-    return InstanceReadStatus::Success;
-    }
 
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Barry.Bentley                   04/10
         +---------------+---------------+---------------+---------------+---------------+------*/
         bool                            ValidateArrayPrimitiveType(Utf8CP typeFound, PrimitiveType expectedType)
             {
-            return (0 == strcmp(typeFound, GetPrimitiveTypeString(expectedType)));
+            return (0 == strcmp(typeFound, ECXml::GetPrimitiveTypeName(expectedType)));
             }
 
         /*---------------------------------------------------------------------------------**//**
@@ -3512,8 +3538,8 @@ struct  InstanceXmlWriter
                     sourceClassName.Sprintf("%s:%s", relationshipInstance->GetSource()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetSource()->GetClass().GetName().c_str());
                 else
                     sourceClassName.Sprintf("%s", relationshipInstance->GetSource()->GetClass().GetName().c_str());
-                m_xmlWriter->WriteAttribute(SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
-                m_xmlWriter->WriteAttribute(SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCEINSTANCEID_ATTRIBUTE, relationshipInstance->GetSource()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_SOURCECLASS_ATTRIBUTE, sourceClassName.c_str());
 
                 if (!relationshipInstance->GetTarget().IsValid())
                     return InstanceWriteStatus::XmlWriteError;
@@ -3523,12 +3549,12 @@ struct  InstanceXmlWriter
                     targetClassName.Sprintf("%s:%s", relationshipInstance->GetTarget()->GetClass().GetSchema().GetLegacyFullSchemaName().c_str(), relationshipInstance->GetTarget()->GetClass().GetName().c_str());
                 else
                     targetClassName.Sprintf("%s", relationshipInstance->GetTarget()->GetClass().GetName().c_str());
-                m_xmlWriter->WriteAttribute(TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
-                m_xmlWriter->WriteAttribute(TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETINSTANCEID_ATTRIBUTE, relationshipInstance->GetTarget()->GetInstanceId().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_TARGETCLASS_ATTRIBUTE, targetClassName.c_str());
                 }
 
             if (writeInstanceId)
-                m_xmlWriter->WriteAttribute(INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
+                m_xmlWriter->WriteAttribute(ECINSTANCE_INSTANCEID_ATTRIBUTE, ecInstance.GetInstanceIdForSerialization().c_str());
 
             InstanceWriteStatus status = WritePropertyValuesOfClassOrStructArrayMember(ecClass, ecInstance, NULL);
             if (status != InstanceWriteStatus::Success)
@@ -3620,7 +3646,7 @@ struct  InstanceXmlWriter
             {
             ECValue         ecValue;
             InstanceWriteStatus     status;
-            Utf8CP          typeString = GetPrimitiveTypeString(memberType);
+            Utf8CP          typeString = ECXml::GetPrimitiveTypeName(memberType);
             for (uint32_t index = 0; index < nElements; index++)
                 {
                 if (ECObjectsStatus::Success != ecInstance.GetValue(ecValue, accessString.c_str(), index))
@@ -3658,40 +3684,48 @@ struct  InstanceXmlWriter
 
             if (navigationProperty.IsMultiple())
                 {
-                // No members, don't write anything
-                uint32_t nElements = ecValue.GetArrayInfo().GetCount();
-                if (0 == nElements)
-                    return InstanceWriteStatus::Success;
-
-                m_xmlWriter->WriteElementStart(propertyName.c_str());
-                WritePrimitiveArray(ecInstance, accessString, nElements, navigationProperty.GetType());
-                m_xmlWriter->WriteElementEnd();
+                // Not Supported yet
+                return InstanceWriteStatus::XmlWriteError;
                 }
             else
                 {
                 m_xmlWriter->WriteElementStart(propertyName.c_str());
 
-        Utf8String typeString = "RelatedId:";
-        typeString = typeString.append(GetPrimitiveTypeString(navigationProperty.GetType()));
-        if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
-            return InstanceWriteStatus::XmlWriteError;
-        char outString[512];
+                Utf8String typeString (ECINSTANCE_ID_ATTRIBUTE);
+                typeString = typeString.append(":");
+                typeString = typeString.append(ECXml::GetPrimitiveTypeName(navigationProperty.GetType()));
 
-        if (PrimitiveType::PRIMITIVETYPE_Long == navigationProperty.GetType())
-            BeStringUtilities::Snprintf(outString, "%lld", ecValue.GetNavigationInfo().GetIdAsLong());
+                if (BEXML_Success != m_xmlWriter->WriteElementStart(typeString.c_str()))
+                    return InstanceWriteStatus::XmlWriteError;
+                char outString[512];
 
-        m_xmlWriter->WriteRaw(outString);
-        m_xmlWriter->WriteElementEnd();
+                if (PrimitiveType::PRIMITIVETYPE_Long == navigationProperty.GetType())
+                    BeStringUtilities::Snprintf(outString, "%lld", ecValue.GetNavigationInfo().GetIdAsLong());
 
-        if (BEXML_Success != m_xmlWriter->WriteElementStart("RelationshipClass"))
-            return InstanceWriteStatus::XmlWriteError;
+                m_xmlWriter->WriteRaw(outString);
+                m_xmlWriter->WriteElementEnd();
 
-        Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
+                // Write either the relationship class name or class id
+                if (nullptr != ecValue.GetNavigationInfo().GetRelationshipClass())
+                    {
+                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPNAME_ATTRIBUTE))
+                        return InstanceWriteStatus::XmlWriteError;
+                    Utf8String className = ECClass::GetQualifiedClassName(ecValue.GetNavigationInfo().GetRelationshipClass()->GetSchema(), *ecValue.GetNavigationInfo().GetRelationshipClass());
+                    m_xmlWriter->WriteRaw(className.c_str());
+                    m_xmlWriter->WriteElementEnd(); // End of class name
+                    }
+                else if (ecValue.GetNavigationInfo().GetRelationshipClassId().IsValid())
+                    {
+                    if (BEXML_Success != m_xmlWriter->WriteElementStart(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+                        return InstanceWriteStatus::XmlWriteError;
 
-        m_xmlWriter->WriteRaw(className.c_str());
-        m_xmlWriter->WriteElementEnd(); // End of class name
-
-        m_xmlWriter->WriteElementEnd();
+                    char classId[512];
+                    BeStringUtilities::Snprintf(classId, "%lld", ecValue.GetNavigationInfo().GetRelationshipClassId().GetValueUnchecked());
+                    m_xmlWriter->WriteRaw(classId);
+                    m_xmlWriter->WriteElementEnd(); // End of class id
+                    }
+                
+                m_xmlWriter->WriteElementEnd(); // End of Nav Value
                 }
 
             return InstanceWriteStatus::Success;

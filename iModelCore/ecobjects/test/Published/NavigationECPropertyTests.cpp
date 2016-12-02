@@ -308,16 +308,17 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
     if (!expectedRelClassId.IsValid())
         {
         ECRelationshipClassCP relClass = myTarget.GetNavigationInfo().GetRelationshipClass();
-        EXPECT_EQ(expectedRelClass, relClass) << "The relationship class pointer of '" << propertyAccessor << "' is not as expected.";
 
         if (nullptr != expectedRelClass)
             {
-
             EXPECT_EQ(expectedRelClass->GetId(), myTarget.GetNavigationInfo().GetRelationshipClassId()) << "The relationship class id of '" << propertyAccessor << "' is different than expected.";
-            EXPECT_STREQ(expectedRelClass->GetName().c_str(), relClass->GetName().c_str()) << "The relationship for '" << propertyAccessor << "' was not the expected relationship.";
+            EXPECT_TRUE(ECClass::ClassesAreEqualByName(expectedRelClass, relClass)) << "The relationship for '" << propertyAccessor << "' was not the expected relationship.";
             }
         else
+            {
+            EXPECT_EQ(expectedRelClass, relClass) << "The relationship class of '" << propertyAccessor << "' is not as expected.";
             EXPECT_FALSE(myTarget.GetNavigationInfo().GetRelationshipClassId().IsValid()) << "The relationship class id of '" << propertyAccessor << "' should be invalid but is valid.";
+            }
         }
     else
         {
@@ -374,6 +375,36 @@ void TestSettingNavPropLongValuesWithId(IECInstanceR instance)
     VerifyNavPropLongValue(instance, "MyTargetWithRelId", 42LL, nullptr, relClassId);
     }
 
+void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized, PrimitiveType navPropType)
+    {
+    ECValue stringValue;
+    sourceInstance.GetValue(stringValue, "sProp");
+    ECValue stringValueDes;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized.GetValue(stringValueDes, "sProp")) << "Failed to get standard string property value after deserialization";
+    ASSERT_STREQ(stringValue.GetUtf8CP(), stringValueDes.GetUtf8CP()) << "Standard String property value failed to deserialize correctly";
+
+    ECValue intValue;
+    sourceInstance.GetValue(intValue, "iProp");
+    ECValue intValueDes;
+    ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized.GetValue(intValueDes, "iProp")) << "Failed to get standard int property value after deserialization";
+    ASSERT_EQ(intValue.GetInteger(), intValueDes.GetInteger()) << "Standard Int property value failed to deserialize correctly";
+
+    if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
+        {
+        VerifyNavPropStringValue(sourceDeserialized, "MyTarget", "IdOfTarget", schema->GetClassCP("RelClass")->GetRelationshipClassCP());
+        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[0]", "IdOfTarget");
+        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[1]", "IdOfTarget1");
+        }
+    else // type is PrimitiveType::PRIMITIVETYPE_Long
+        {
+        VerifyNavPropLongValue(sourceDeserialized, "MyTarget", 42LL, schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
+        VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", 50LL, nullptr);
+        VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", 42LL, nullptr, ECClassId((uint64_t) 25));
+        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[0]", 42LL);
+        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[1]", 43LL);
+        }
+    }
+
 void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInstance, Utf8StringCR instanceXml, PrimitiveType navPropType)
     {
     ECInstanceReadContextPtr readContext = ECInstanceReadContext::CreateContext(*schema);
@@ -381,31 +412,17 @@ void DeserializeAndVerifyInstanceXml(ECSchemaPtr schema, IECInstanceR sourceInst
     InstanceReadStatus readStatus = StandaloneECInstance::ReadFromXmlString(sourceDeserialized, instanceXml.c_str(), *readContext);
     ASSERT_EQ(InstanceReadStatus::Success, readStatus) << "Failed to deserialize an instance with a nav property";
 
-    ECValue stringValue;
-    sourceInstance.GetValue(stringValue, "sProp");
-    ECValue stringValueDes;
-    ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized->GetValue(stringValueDes, "sProp")) << "Failed to get standard string property value after deserialization";
-    ASSERT_STREQ(stringValue.GetUtf8CP(), stringValueDes.GetUtf8CP()) << "Standard String property value failed to deserialize correctly";
+    VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
+    }
 
-    ECValue intValue;
-    sourceInstance.GetValue(intValue, "iProp");
-    ECValue intValueDes;
-    ASSERT_EQ(ECObjectsStatus::Success, sourceDeserialized->GetValue(intValueDes, "iProp")) << "Failed to get standard int property value after deserialization";
-    ASSERT_EQ(intValue.GetInteger(), intValueDes.GetInteger()) << "Standard Int property value failed to deserialize correctly";
+void DeserializeAndVerifyInstanceJson(ECSchemaPtr schema, IECInstanceR sourceInstance, JsonValueCR instanceJson, PrimitiveType navPropType)
+    {
+    IECInstancePtr sourceDeserialized = sourceInstance.GetClass().GetDefaultStandaloneEnabler()->CreateInstance(0);
+    ASSERT_TRUE(sourceDeserialized.IsValid());
+    BentleyStatus readStatus = ECJsonUtilities::ECInstanceFromJson(*sourceDeserialized, instanceJson);
+    ASSERT_EQ(BentleyStatus::SUCCESS, readStatus);
 
-    if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
-        {
-        VerifyNavPropStringValue(*sourceDeserialized, "MyTarget", "IdOfTarget", schema->GetClassCP("RelClass")->GetRelationshipClassCP());
-        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[0]", "IdOfTarget");
-        //VerifyNavPropStringValue(*sourceDeserialized, "MyTargetMult[1]", "IdOfTarget1");
-        }
-    else // type is PrimitiveType::PRIMITIVETYPE_Long
-        {
-        VerifyNavPropLongValue(*sourceDeserialized, "MyTarget", 42LL, schema->GetClassCP("RelClass")->GetRelationshipClassCP());
-        VerifyNavPropLongValue(*sourceDeserialized, "MyTargetNoRel", 50LL, nullptr);
-        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[0]", 42LL);
-        //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[1]", 43LL);
-        }
+    VerifyInstance(schema, sourceInstance, *sourceDeserialized, navPropType);
     }
 
 void InstanceWithNavProp(PrimitiveType navPropType)
@@ -490,11 +507,17 @@ void InstanceWithNavProp(PrimitiveType navPropType)
         TestSettingNavPropLongValuesWithId(*sourceInstance);
         }
 
+    Utf8String xmlString;
+    InstanceWriteStatus writeStatus = sourceInstance->WriteToXmlString(xmlString, true, false);
+    sourceInstance->WriteToXmlFile(L"D:\\dev\\BIM0200ECDb\\NewTestInstance.xml", true, false);
+    ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance to xml with a nav property";
+    DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
+
     // WIP
-    //Utf8String xmlString;
-    //InstanceWriteStatus writeStatus = sourceInstance->WriteToXmlString(xmlString, true, false);
-    //ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance with a nav property";
-    //DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
+    /*Json::Value jsonValue;
+    StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
+    ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
+    DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue, navPropType);*/
 
     //if (PrimitiveType::PRIMITIVETYPE_Long == navPropType)
     //    ASSERT_NE(0, xmlString.ReplaceAll("long", "string")) << "Failed to replace 'long' with 'string' in the serialzied xml";

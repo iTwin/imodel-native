@@ -246,6 +246,7 @@ enum class InstanceReadStatus
     UnableToGetStandaloneEnabler,
     CommentOnly,
     PropertyNotFound,
+    BadNavigationValue,
     };
 
 //! Result status of writing an IECInstance to Xml
