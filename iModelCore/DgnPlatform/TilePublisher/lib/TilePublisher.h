@@ -40,7 +40,7 @@ public:
     BatchIdMap(TileSource source);
 
     uint16_t GetBatchId(BeInt64Id entityId);
-    void ToJson(Json::Value& value, DgnDbR db) const;
+    void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
 
@@ -168,10 +168,10 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    void AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8StringCR bufferViewId, Utf8StringCR accesorId, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
+    Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
-    void AddMeshIndices(Json::Value& rootNode, Json::Value& primitive, bvector<uint32_t> const& indices, Utf8StringCR idStr);
+    Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
 
     BeFileName  GetBinaryDataFileName() const;
