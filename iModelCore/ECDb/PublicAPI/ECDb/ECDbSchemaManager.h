@@ -167,6 +167,16 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus CreateECClassViewsInDb() const;
 
+        //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
+        //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
+        //! @note The views are strictly intended for developers for debugging purpose only. They should not be used in application code. 
+        //! No code should depend on these views.
+        //! @param[in] ecclassids List of ECClassIds of those ECClasses for which to create ECClass views.
+        //! @note ECClass views can only be created for ECEntityClasses and ECRelationshipClasses and only if they are mapped
+        //! to the database. Otherwise the method will return an error.
+        //! @return SUCCESS or ERROR
+        ECDB_EXPORT BentleyStatus CreateECClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const;
+
 #if !defined (DOCUMENTATION_GENERATOR)
         void ClearCache() const;
         ECDbSchemaReader const& GetReader() const;

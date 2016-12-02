@@ -113,25 +113,52 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     if (BE_SQLITE_OK != stmt.Prepare(ecdb, sql.c_str()))
         return ERROR;
 
-    std::vector<ClassMapCP> classMaps;
-    ECDbMap const& map = ecdb.GetECDbImplR().GetECDbMap();
+    bvector<ECClassId> classIds;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         ECClassId classId = stmt.GetValueId<ECClassId>(0);
-        ClassMapCP classMap = map.GetClassMap(classId);
+        BeAssert(classId.IsValid());
+        classIds.push_back(classId);
+        }
+
+    stmt.Finalize();
+    return CreateECClassViews(ecdb, classIds);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                     12/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+//static 
+BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> const& ecclassIds)
+    {
+    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
+
+    for (ECClassId classId : ecclassIds)
+        {
+        if (!classId.IsValid())
+            return ERROR;
+
+        ClassMapCP classMap = ecdbMap.GetClassMap(classId);
         if (classMap == nullptr)
             {
             BeAssert(classMap != nullptr);
             return ERROR;
             }
 
-        BeAssert((classMap->GetClass().IsEntityClass() || classMap->GetClass().IsRelationshipClass()) && classMap->GetType() != ClassMap::Type::NotMapped);
+        if (classMap->GetType() == ClassMap::Type::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
+            {
+            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
+                                                          classMap->GetClass().GetFullName(), classId.ToString().c_str());
+            return ERROR;
+            }
+
         if (CreateECClassView(*classMap) != SUCCESS)
             return ERROR;
         }
 
     return SUCCESS;
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------

@@ -449,7 +449,15 @@ ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
-    return m_map.CreateECClassViewsInDb();
+    return ViewGenerator::CreateECClassViews(m_ecdb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   12/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const
+    {
+    return ViewGenerator::CreateECClassViews(m_ecdb, ecclassids);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

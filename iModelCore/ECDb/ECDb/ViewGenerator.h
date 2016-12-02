@@ -95,6 +95,7 @@ struct ViewGenerator
         static BentleyStatus CreateUpdatableViews(ECDbCR ecdb);
         static BentleyStatus DropUpdatableViews(ECDbCR ecdb);
 
+        static BentleyStatus CreateECClassViews(ECDbCR ecdb, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR ecdb);
         static BentleyStatus DropECClassViews(ECDbCR ecdb);
     };

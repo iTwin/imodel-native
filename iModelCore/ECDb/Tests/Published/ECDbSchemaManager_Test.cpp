@@ -943,7 +943,7 @@ std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     {
-    ECDbR ecdb = SetupECDb("CreateECClassViews.ecdb");
+    ECDbR ecdb = SetupECDb("createecclassviews.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
@@ -951,6 +951,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
+
     ECSchemaReadContextPtr  context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
     ECSchemaPtr schemaptr;
@@ -966,6 +967,66 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
     ASSERT_EQ(38, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                   12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetofClasses)
+    {
+    ECDbR ecdb = SetupECDb("createecclassviewspartially.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('FileInfo', 'FileInfoOwnership', 'AAA','Cubicle', 'Foo_has_Bars', 'RelationWithLinkTableMapping')"));
+    bvector<ECClassId> classIds;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECClassId id = stmt.GetValueId<ECClassId>(0);
+        ASSERT_TRUE(id.IsValid());
+        classIds.push_back(id);
+        }
+
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    ecdb.SaveChanges();
+
+    std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
+    ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
+    auto it = schemasWithECClassViews.find("ecdbf");
+    ASSERT_TRUE(it != schemasWithECClassViews.end());
+    std::set<Utf8String> const& ecdbfViews = it->second;
+    ASSERT_EQ(2, ecdbfViews.size());
+    ASSERT_TRUE(ecdbfViews.find(Utf8String("[ecdbf.FileInfo]")) != ecdbfViews.end());
+    ASSERT_TRUE(ecdbfViews.find(Utf8String("[ecdbf.FileInfoOwnership]")) != ecdbfViews.end());
+
+    it = schemasWithECClassViews.find("stco");
+    ASSERT_TRUE(it != schemasWithECClassViews.end());
+    std::set<Utf8String> const& stcoViews = it->second;
+    ASSERT_EQ(4, stcoViews.size());
+    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.AAA]")) != stcoViews.end());
+    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Cubicle]")) != stcoViews.end());
+    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Foo_has_Bars]")) != stcoViews.end());
+    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.RelationWithLinkTableMapping]")) != stcoViews.end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                   12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForInvalidClasses)
+    {
+    ECDbCR ecdb = SetupECDb("createecclassviewsforinvalidclasses.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECClassId id = stmt.GetValueId<ECClassId>(0);
+        ASSERT_TRUE(id.IsValid());
+        bvector<ECClassId> classIds;
+        classIds.push_back(id);
+        ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+        }
     }
 
 //---------------------------------------------------------------------------------------

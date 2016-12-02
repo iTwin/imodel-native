@@ -63,7 +63,6 @@ struct ECDbMap :NonCopyableClass
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
         MappingStatus MapSchemas(SchemaImportContext&);
-        BentleyStatus CreateECClassViewsInDb() const;
         DbTable* FindOrCreateTable(SchemaImportContext*, Utf8CP tableName, DbTable::Type, bool isVirtual, Utf8CP primaryKeyColumnName);
         void ClearCache();
         bool IsImportingSchema() const;
