@@ -159,7 +159,7 @@ struct ThreeMxProgressive : ProgressiveTask
 ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_scene.GetLocation(), now, now-m_scene.GetExpirationTime(), m_clip.get());
+    DrawArgs args(context, m_scene.GetLocation(), m_scene, now, now-m_scene.GetExpirationTime(), m_clip.get());
 
     DEBUG_PRINTF("3MX progressive %d missing, ", m_missing.size());
 
@@ -267,7 +267,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         return;
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_scene->GetLocation(), now, now-m_scene->GetExpirationTime(), m_clip.get());
+    DrawArgs args(context, m_scene->GetLocation(), *m_scene, now, now-m_scene->GetExpirationTime(), m_clip.get());
     m_scene->Draw(args);
     DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->m_rootTile->CountTiles(), args.m_missing.size());
 

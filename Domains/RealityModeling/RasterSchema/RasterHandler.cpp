@@ -387,7 +387,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
     ComputeDepthTransformation(depthTransfo, context);
 
     auto now = std::chrono::steady_clock::now();
-    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), now, now - m_root->GetExpirationTime());
+    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), *m_root, now, now - m_root->GetExpirationTime());
     args.SetClip(GetClip().GetClipVector());
 
     m_root->Draw(args);
