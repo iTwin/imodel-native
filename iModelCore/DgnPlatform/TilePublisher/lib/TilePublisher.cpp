@@ -1245,19 +1245,18 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
-    // For now use view center... maybe should use the DgnDb range center.
-    DPoint3d        origin = m_viewController.GetCenter ();
-
+    // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
+    DPoint3d        origin = db.Units().GetProjectExtents().GetCenter();
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
-    DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS*         dgnGCS = db.Units().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
@@ -1551,21 +1550,21 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
-    auto spatialView = m_viewController._ToSpatialView();
-    auto drawingView = m_viewController._ToDrawingView();
-
-    if (nullptr == spatialView && nullptr == drawingView)
-        {
-        BeAssert(false);
-        return Status::NoGeometry;
-        }
-
     DgnModelIdSet viewedModels;
-
-    if (nullptr != spatialView)
-        viewedModels = spatialView->GetViewedModels();
-    else
-        viewedModels.insert (drawingView->GetViewedModelId());
+    for (auto const& viewId : m_viewIds)
+        {
+        SpatialViewDefinitionPtr spatialView = nullptr;
+        auto drawingView = GetDgnDb().Elements().Get<DrawingViewDefinition>(viewId);
+        if (drawingView.IsValid())
+            {
+            viewedModels.insert(drawingView->GetBaseModelId());
+            }
+        else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
+            {
+            auto spatialModels = spatialView->GetModelSelector().GetModels();
+            viewedModels.insert(spatialModels.begin(), spatialModels.end());
+            }
+        }
 
     Json::Value     value;
     value["asset"]["version"] = "0.0";
@@ -1755,7 +1754,7 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint, DgnViewId defaultViewId)
     {
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
@@ -1767,16 +1766,15 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
         json["groundPoint"] = PointToJson(groundEcefPoint);
         }
 
-    DgnViewId defaultViewId;
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
     DgnModelIdSet all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
-    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
+    for (auto const& viewId : m_viewIds)
         {
-        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), view.GetId());
+        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), viewId);
         if (!viewDefinition.IsValid())
             continue;
 
@@ -1795,11 +1793,11 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
         GetViewJson(entry, *viewDefinition, transform);
-        viewsJson[view.GetId().ToString()] = entry;
+        viewsJson[viewId.ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default
-        if (!defaultViewId.IsValid() || view.GetId() == GetViewController().GetViewId())
-            defaultViewId = view.GetId();
+        if (!defaultViewId.IsValid())
+            defaultViewId = viewId;
         }
 
     if (!defaultViewId.IsValid())

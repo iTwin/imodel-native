@@ -26,6 +26,8 @@ USING_NAMESPACE_BENTLEY
 
 BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 
+typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
+
 //=======================================================================================
 // Maps elements associated with vertices to indexes into a batch table in the b3dm.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -43,8 +45,6 @@ public:
     void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
-
-
 
 //=======================================================================================
 //! Context in which tile publishing occurs.
@@ -65,7 +65,8 @@ struct PublisherContext : TileGenerator::ITileCollector
         };
 
 protected:
-    ViewControllerR                         m_viewController;
+    DgnDbR                                  m_db;
+    DgnViewIdSet                            m_viewIds;
     BeFileName                              m_outputDir;
     BeFileName                              m_dataDir;
     WString                                 m_rootName;
@@ -78,7 +79,7 @@ protected:
     bool                                    m_publishPolylines;
     bool                                    m_publishIncremental;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
@@ -108,8 +109,7 @@ public:
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
     TransformCR GetNonSpatailToEcef() const { return m_nonSpatialToEcef; }
-    ViewControllerCR GetViewController() const { return m_viewController; }
-    DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
+    DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
@@ -119,7 +119,7 @@ public:
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint, DgnViewId defaultViewId);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
