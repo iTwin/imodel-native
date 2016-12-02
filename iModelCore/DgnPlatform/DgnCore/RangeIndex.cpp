@@ -11,11 +11,8 @@ using namespace RangeIndex;
 
 BEGIN_UNNAMED_NAMESPACE
 
-typedef Tree::Node&         DRTNodeR;
-typedef Tree::Node*         DRTNodeP;
-typedef DRTNodeP*           DRTNodeH;
-typedef Tree::LeafNode*     DRTLeafNodeP;
-typedef Tree::InternalNode* DRTInternalNodeP;
+typedef Tree::LeafNode*     LeafNodeP;
+typedef Tree::InternalNode* InternalNodeP;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2009
@@ -63,7 +60,7 @@ static void extendRange(FBoxR thisRange, FBoxCR range)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/15
 //=======================================================================================
-struct DRTSplitEntry
+struct SplitEntry
 {
     FBox m_range;
     DgnElementId m_id; 
@@ -72,40 +69,40 @@ struct DRTSplitEntry
     int m_groupNumber[3];
 };
 
-typedef DRTSplitEntry* DRTSplitEntryP;
-typedef DRTSplitEntry const * DRTSplitEntryCP;
-typedef DRTSplitEntry const& DRTSplitEntryCR;
+typedef SplitEntry* SplitEntryP;
+typedef SplitEntry const * SplitEntryCP;
+typedef SplitEntry const& SplitEntryCR;
 
-static inline bool compareX(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.m_low.x < entry2.m_range.m_low.x;}
-static inline bool compareY(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.m_low.y < entry2.m_range.m_low.y;}
-static inline bool compareZ(DRTSplitEntryCR entry1, DRTSplitEntryCR entry2) {return entry1.m_range.m_low.z < entry2.m_range.m_low.z;}
-typedef bool (*PF_CompareFunc)(DRTSplitEntryCR, DRTSplitEntryCR);
+static inline bool compareX(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.x < entry2.m_range.m_low.x;}
+static inline bool compareY(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.y < entry2.m_range.m_low.y;}
+static inline bool compareZ(SplitEntryCR entry1, SplitEntryCR entry2) {return entry1.m_range.m_low.z < entry2.m_range.m_low.z;}
+typedef bool (*PF_CompareFunc)(SplitEntryCR, SplitEntryCR);
 
-enum SplitAxis {X_AXIS = 0 ,Y_AXIS = 1, Z_AXIS = 2};
+enum SplitAxis {X_AXIS=0, Y_AXIS=1, Z_AXIS=2};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod    RangeNode                                       KeithBentley    12/97
 +---------------+---------------+---------------+---------------+---------------+------*/
-static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis axis)
+static double checkSeparation(SplitEntryP entries, size_t count, SplitAxis axis)
     {
     double maxSeparation = 0, separation;
     double maxMinDist = 1.0e200, minDist;
 
-    static PF_CompareFunc  s_compareFuncs[3] = { compareX, compareY, compareZ };
+    static PF_CompareFunc  s_compareFuncs[3] = {compareX, compareY, compareZ};
     std::sort(entries, entries+count, s_compareFuncs[axis]);
 
     size_t minSize = count/3;
-    DRTSplitEntryCP lastEntry    = entries + count;
-    DRTSplitEntryCP entryEnd     = entries + (count-minSize);
-    DRTSplitEntryCP startEntries = entries + minSize;
-    DRTSplitEntryCP sepEntry=nullptr, minDistEntry=nullptr;
+    SplitEntryCP lastEntry    = entries + count;
+    SplitEntryCP entryEnd     = entries + (count-minSize);
+    SplitEntryCP startEntries = entries + minSize;
+    SplitEntryCP sepEntry=nullptr, minDistEntry=nullptr;
 
     switch (axis)
         {
         case X_AXIS:
-            for (DRTSplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
+            for (SplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
                 {
-                DRTSplitEntryCP nextEntry = currEntry + 1;
+                SplitEntryCP nextEntry = currEntry + 1;
 
                 if (currEntry->m_range.m_high.x < nextEntry->m_range.m_low.x)
                     {
@@ -127,9 +124,9 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
             break;
 
         case Y_AXIS:
-            for (DRTSplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
+            for (SplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
                 {
-                DRTSplitEntryCP nextEntry = currEntry + 1;
+                SplitEntryCP nextEntry = currEntry + 1;
 
                 if (currEntry->m_range.m_high.y < nextEntry->m_range.m_low.y)
                     {
@@ -151,9 +148,9 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
             break;
 
         case Z_AXIS:
-            for (DRTSplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
+            for (SplitEntryCP currEntry = startEntries; currEntry < entryEnd-1; ++currEntry)
                 {
-                DRTSplitEntryCP nextEntry = currEntry + 1;
+                SplitEntryCP nextEntry = currEntry + 1;
 
                 if (currEntry->m_range.m_high.z < nextEntry->m_range.m_low.z)
                     {
@@ -184,7 +181,7 @@ static double checkSeparation(DRTSplitEntryP entries, size_t count, SplitAxis ax
             sepEntry = entries + count/2;
         }
 
-    for (DRTSplitEntryP currEntry = entries; currEntry < lastEntry; ++currEntry)
+    for (SplitEntryP currEntry = entries; currEntry < lastEntry; ++currEntry)
         {
         if (currEntry < sepEntry)
             currEntry->m_groupNumber[axis] = 0;
@@ -201,8 +198,8 @@ END_UNNAMED_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop Tree::Node::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
-    DRTLeafNodeP leaf = ToLeaf();
-    return leaf ? leaf->Traverse(traverser, tree, is3d) : ((DRTInternalNodeP) this)->Traverse(traverser, tree, is3d);
+    LeafNodeP leaf = ToLeaf();
+    return leaf ? leaf->Traverse(traverser, tree, is3d) : ((InternalNodeP) this)->Traverse(traverser, tree, is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -211,7 +208,7 @@ Traverser::Stop Tree::Node::Traverse(Traverser& traverser, TreeCR tree, bool is3
 inline void Tree::InternalNode::ValidateInternalRange()
     {
     ClearRange();
-    for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         extendRange(m_nodeRange, (*curr)->GetRange());
     }
 
@@ -257,12 +254,12 @@ bool Tree::Node::CompletelyContains(FBoxCR range) const
 void Tree::InternalNode::SplitInternalNode(TreeR root)
     {
     size_t  count = GetEntryCount();
-    DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
+    SplitEntryP  splitEntries = (SplitEntryP) _alloca(count * sizeof(SplitEntry));
 
-    DRTSplitEntryP currEntry = splitEntries;
-    DRTSplitEntryP endEntry = splitEntries + count;
+    SplitEntryP currEntry = splitEntries;
+    SplitEntryP endEntry = splitEntries + count;
 
-    for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
+    for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
         currEntry->m_vp = *curr;
         currEntry->m_range = (*curr)->GetRangeCR();
@@ -280,17 +277,17 @@ void Tree::InternalNode::SplitInternalNode(TreeR root)
 
     // allocate a new InternalNode to hold (approx) half or our entries. If parent is nullptr, this is the root of the tree and it has become full.
     // We need to add a new level to the tree. Move all of the current entries into a new node that will become a child of this node.
-    DRTInternalNodeP newNode1 = root.AllocateInternalNode();
-    DRTInternalNodeP newNode2 = (nullptr == m_parent) ? root.AllocateInternalNode() : this;
+    InternalNode* newNode1 = root.AllocateInternalNode();
+    InternalNode* newNode2 = (nullptr == m_parent) ? root.AllocateInternalNode() : this;
 
     ClearChildren();
 
     for (currEntry = splitEntries; currEntry < endEntry; ++currEntry)
         {
         if (0 == currEntry->m_groupNumber[optimalSplit])
-            newNode1->AddInternalNode((DRTNodeP) currEntry->m_vp, root);
+            newNode1->AddInternalNode((Node*) currEntry->m_vp, root);
         else
-            newNode2->AddInternalNode((DRTNodeP) currEntry->m_vp, root);
+            newNode2->AddInternalNode((Node*) currEntry->m_vp, root);
         }
 
     // now add the newly created node into the parent of this node. If parent is nullptr, we're the root of the tree and we've just added a new level
@@ -309,13 +306,13 @@ void Tree::InternalNode::SplitInternalNode(TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DRTNodeP Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
+Tree::Node* Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
     {
-    DRTNodeP best = nullptr;
+    Tree::Node* best = nullptr;
     double   bestFit = 0.0;
     bool     isValid = false;
 
-    for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
         FBoxCR thisRange = (*curr)->GetRange();
         FBox newRange;
@@ -349,14 +346,14 @@ DRTNodeP Tree::InternalNode::ChooseBestNode(FBoxCP pRange, TreeR root)
 void Tree::InternalNode::AddEntry(Entry const& entry, TreeR root)
     {
     extendRange(m_nodeRange, entry.m_range);
-    DRTNodeP node = ChooseBestNode(&entry.m_range, root);
+    auto* node = ChooseBestNode(&entry.m_range, root);
 
-    DRTLeafNodeP leaf = node->ToLeaf();
+    LeafNodeP leaf = node->ToLeaf();
     if (leaf)
         leaf->AddEntryToLeaf(entry, root);
     else
         {
-        ((DRTInternalNodeP) node)->AddEntry(entry, root);
+        ((InternalNodeP) node)->AddEntry(entry, root);
         }
     }
 
@@ -377,15 +374,15 @@ void Tree::InternalNode::DropRange(FBoxCR range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::InternalNode::DropNode(DRTNodeP entry, TreeR root)
+void Tree::InternalNode::DropNode(Node* entry, TreeR root)
     {
-    for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+    for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
         {
         if (*curr != entry)
             continue;
 
         if (curr+1 < m_endChild)
-            memmove(curr, curr+1, (m_endChild - curr) * sizeof(DRTNodeP));
+            memmove(curr, curr+1, (m_endChild - curr) * sizeof(NodeP));
 
         --m_endChild;
 
@@ -410,7 +407,7 @@ void Tree::InternalNode::DropNode(DRTNodeP entry, TreeR root)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tree::InternalNode::AddInternalNode(DRTNodeP child, TreeR root)
+void Tree::InternalNode::AddInternalNode(Node* child, TreeR root)
     {
     child->SetParent(this);
     ValidateInternalRange();
@@ -426,13 +423,13 @@ void Tree::InternalNode::AddInternalNode(DRTNodeP child, TreeR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t Tree::InternalNode::GetElementCount()
     {
-    DRTLeafNodeP leaf = ToLeaf();
+    LeafNodeP leaf = ToLeaf();
     if (nullptr != leaf)
         return leaf->GetEntryCount();
 
     size_t count = 0;
-    for (DRTNodeH curr = &m_firstChild[0]; curr != m_endChild; ++curr)
-        count += ((DRTInternalNodeP)*curr)->GetElementCount();
+    for (auto curr = &m_firstChild[0]; curr != m_endChild; ++curr)
+        count += ((InternalNodeP)*curr)->GetElementCount();
 
     return count;
     }
@@ -444,7 +441,7 @@ Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, TreeCR tree, 
     {
     if (traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
-        for (DRTNodeH curr = &m_firstChild[0]; curr < m_endChild; ++curr)
+        for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
             if (Traverser::Stop::Yes == (*curr)->Traverse(traverser, tree, is3d))
                 return Traverser::Stop::Yes;
@@ -534,10 +531,10 @@ bool Tree::LeafNode::DropElement(DgnElementId id, TreeR root)
 void Tree::LeafNode::SplitLeafNode(TreeR root)
     {
     size_t  count = GetEntryCount();
-    DRTSplitEntryP  splitEntries = (DRTSplitEntryP) _alloca(count * sizeof(DRTSplitEntry));
+    SplitEntryP  splitEntries = (SplitEntryP) _alloca(count * sizeof(SplitEntry));
 
-    DRTSplitEntryP currEntry = splitEntries;
-    DRTSplitEntryP endEntry = splitEntries + count;
+    SplitEntryP currEntry = splitEntries;
+    SplitEntryP endEntry = splitEntries + count;
 
     for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr, ++currEntry)
         {
@@ -556,8 +553,8 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
     if (m_is3d && (zSep > ySep) && (zSep > xSep))
         optimalSplit = Z_AXIS;
 
-    DRTLeafNodeP newNode1 = root.AllocateLeafNode();
-    DRTLeafNodeP newNode2 = this;
+    LeafNodeP newNode1 = root.AllocateLeafNode();
+    LeafNodeP newNode2 = this;
     newNode2->m_type = newNode1->m_type;
 
     ClearChildren();    // clear range and child entries - about half of them will come back below.
@@ -574,7 +571,7 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
     // become the new root, and add both this node and the new node into it.
     if (nullptr == m_parent)
         {
-        DRTInternalNodeP newRoot = root.AllocateInternalNode();
+        InternalNodeP newRoot = root.AllocateInternalNode();
         newRoot->AddInternalNode(newNode1, root);
         newRoot->AddInternalNode(newNode2, root);
         root.m_root = newRoot;
@@ -632,11 +629,11 @@ void Tree::AddEntry(Entry const& entry)
     
     BeAssert(m_leafIdx.find(entry.m_id) == m_leafIdx.end());
 
-    DRTLeafNodeP leaf = m_root->ToLeaf();
+    LeafNodeP leaf = m_root->ToLeaf();
     if (leaf)
         leaf->AddEntryToLeaf(entry, *this);
     else
-        ((DRTInternalNodeP)m_root)->AddEntry(entry, *this);
+        ((InternalNodeP)m_root)->AddEntry(entry, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -680,7 +677,7 @@ void Tree::SetNodeSizes(size_t internalNodeSize, size_t leafNodeSize)
     m_leafNodeSize = leafNodeSize;
 
     m_leafNodes.SetEntrySize(sizeof(Tree::LeafNode) + ((int) leafNodeSize*sizeof(Entry)), 1);
-    m_internalNodes.SetEntrySize(sizeof(Tree::InternalNode) + ((int) internalNodeSize*sizeof(DRTNodeP)), 1);
+    m_internalNodes.SetEntrySize(sizeof(Tree::InternalNode) + ((int) internalNodeSize*sizeof(NodeP)), 1);
     }
 
 /*---------------------------------------------------------------------------------**//**

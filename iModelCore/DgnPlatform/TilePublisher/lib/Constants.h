@@ -224,12 +224,15 @@ static std::string s_polylineVertexShader =
 
 
 static std::string s_polylineFragmentShader =
+"uniform float u_feather;\n"
+
 "bool computePolylineColor (vec4 color, float distance)\n"
 "    {\n"
-"    float feather = .5;\n"
 "    if (distance > 1.0)\n"
 "        return false;\n"
-"    gl_FragColor = vec4 (color.rgb, distance > (1.0 - feather) ?  ((1.0 - distance)/feather) : 1.0);\n"
+"    float alpha = distance > (1.0 - u_feather) ?  ((1.0 - distance)/u_feather) : 1.0;\n"
+"    gl_FragColor = vec4 (color.rgb, alpha);\n"
+//"  gl_FragColor = vec4 (alpha, 0.0, 0.0, 1.0);\n"
 "    return true;\n" 
 "    }\n"
 "uniform vec4 u_color;\n"

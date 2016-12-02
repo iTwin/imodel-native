@@ -559,6 +559,30 @@ Utf8String TilePublisher::AddUnlitShaderTechnique (Json::Value& rootNode)
 
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void addTransparencyToTechnique (Json::Value& technique)
+    {
+    technique["states"]["enable"].append (3042);  // BLEND
+
+    auto&   techniqueFunctions =    technique["states"]["functions"] = Json::objectValue;
+
+    techniqueFunctions["blendEquationSeparate"] = Json::arrayValue;
+    techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
+
+    techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
+    techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (alpha)
+
+    techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
+    techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
+    techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
+    techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
+
+    techniqueFunctions["depthMask"] = "false";
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting)
@@ -664,25 +688,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (Json::Value& rootNode, boo
 
     // Transparency requires blending extensions...
     if (transparent)
-        {
-        technique["states"]["enable"].append (3042);  // BLEND
-
-        auto&   techniqueFunctions =    technique["states"]["functions"] = Json::objectValue;
-
-        techniqueFunctions["blendEquationSeparate"] = Json::arrayValue;
-        techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
-
-        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
-        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (alpha)
-    
-        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
-        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
-        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
-        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
-        
-        techniqueFunctions["depthMask"] = "false";
-        }
-
+        addTransparencyToTechnique (technique);
 
     rootNode["techniques"][techniqueName.c_str()] = technique;
 
@@ -770,6 +776,7 @@ Utf8String TilePublisher::AddMeshMaterial (Json::Value& rootNode, bool& isTextur
     return materialName;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -784,7 +791,8 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
     double          alpha = 1.0 - ((uint8_t*)&rgbInt)[3]/255.0;
     Json::Value&    materialValue = rootNode["materials"][materialName.c_str()] = Json::objectValue;
     RgbFactor       rgb     = RgbFactor::FromIntColor (rgbInt);
-    static double   s_minLineWidth = 1.5;
+    static double   s_minLineWidth = 1.0;
+    static double   s_featherPixels = 1.0;
 
     auto& materialColor = materialValue["values"]["color"] = Json::arrayValue;
 
@@ -795,7 +803,10 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
     Utf8String      s_techniqueName = "polylineTechnique";
 
-    materialValue["values"]["width"] = std::max(s_minLineWidth, (double) displayParams->GetRasterWidth()) / 2.0;
+    double          halfWidthPixels = std::max(s_minLineWidth, (double) displayParams->GetRasterWidth()) / 2.0, featherPixels;
+    halfWidthPixels += (featherPixels = std::min(halfWidthPixels/2.0, s_featherPixels));
+    materialValue["values"]["width"]   = halfWidthPixels;
+    materialValue["values"]["feather"] = featherPixels/halfWidthPixels;
 
     if (!rootNode.isMember("techniques") ||
         !rootNode["techniques"].isMember(s_techniqueName.c_str()))
@@ -856,25 +867,11 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         techniqueUniforms["u_color"] = "color";
         AddTechniqueParameter(technique, "width", GLTF_FLOAT, nullptr);
         techniqueUniforms["u_width"] = "width";
+        AddTechniqueParameter(technique, "feather", GLTF_FLOAT, nullptr);
+        techniqueUniforms["u_feather"] = "feather";
 
-        technique["states"]["enable"].append (3042);  // BLEND
-
-        auto&   techniqueFunctions =    technique["states"]["functions"] = Json::objectValue;
-
-        techniqueFunctions["blendEquationSeparate"] = Json::arrayValue;
-        techniqueFunctions["blendFuncSeparate"]     = Json::arrayValue;
-
-        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (rgb)
-        techniqueFunctions["blendEquationSeparate"].append (32774);   // FUNC_ADD (alpha)
-    
-        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcRGB)
-        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstRGB)
-        techniqueFunctions["blendFuncSeparate"].append(1);            // ONE (srcAlpha)
-        techniqueFunctions["blendFuncSeparate"].append(771);          // ONE_MINUS_SRC_ALPHA (dstAlpha)
-        
-        techniqueFunctions["depthMask"] = "false";
-
-        rootNode["techniques"][s_techniqueName.c_str()] = technique;
+        addTransparencyToTechnique (technique);
+        rootNode["techniques"][s_techniqueName] = technique;
         }
 
     materialValue["technique"] = s_techniqueName;

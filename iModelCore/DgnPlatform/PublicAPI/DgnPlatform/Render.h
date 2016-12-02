@@ -1664,6 +1664,7 @@ struct GraphicBranch
 //=======================================================================================
 struct System
 {
+
     Target* m_nowPainting = nullptr;
     bool CheckPainting(Target* target) {return target==m_nowPainting;}
     bool IsPainting() {return !CheckPainting(nullptr);}
@@ -1762,6 +1763,7 @@ protected:
     DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
+    static double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
 
 public:
     struct Debug
@@ -1820,6 +1822,8 @@ public:
 #endif
         }
 
+    static int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
+    static double DepthFromDisplayPriority(int32_t priority){return Get2dFrustumDepth() * (double) priority / (double) GetMaxDisplayPriority();}
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;
