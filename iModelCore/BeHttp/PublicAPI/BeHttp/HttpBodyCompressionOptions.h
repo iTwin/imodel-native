@@ -29,7 +29,7 @@ struct HttpBodyComprressionOptions
             {m_isRequestCmpressionEnabled = enable; m_minimumRequestSizeToCompress = minimumSize;}
 
         BEHTTP_EXPORT bool IsRequestCompressionEnabled() const {return m_isRequestCmpressionEnabled;}
-        BEHTTP_EXPORT size_t GetMinimumSizeToCompress() const {return m_minimumRequestSizeToCompress;}
+        BEHTTP_EXPORT uint64_t GetMinimumSizeToCompress() const {return m_minimumRequestSizeToCompress;}
     };
 
 typedef const HttpBodyComprressionOptions& HttpBodyComprressionOptionsCR;

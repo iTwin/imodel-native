@@ -77,6 +77,9 @@ struct ProgressInfo
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CurlHttpRequest::ShouldCompressRequestBody(HttpBodyPtr request, HttpBodyComprressionOptionsCR options)
     {
+    if (request == nullptr)
+        return false;
+
     if (!options.IsRequestCompressionEnabled())
         return false;
 
