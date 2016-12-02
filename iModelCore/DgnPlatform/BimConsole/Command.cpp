@@ -565,10 +565,10 @@ void ImportCommand::RunImportSchema(Session& session, BeFileNameCR ecschemaPath)
 
     for (BeFileName const& ecschemaFilePath : ecschemaFilePaths)
         {
-        Console::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8());
+        Console::WriteLine("Reading ECSchema ... %s", ecschemaFilePath.GetNameUtf8().c_str());
         if (SUCCESS != DeserializeECSchema(*context, ecschemaFilePath))
             {
-            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8());
+            Console::WriteErrorLine("Import failed. Could not read ECSchema '%s' into memory.", ecschemaFilePath.GetNameUtf8().c_str());
             return;
             }
         }
@@ -886,7 +886,7 @@ void MetadataCommand::_Run(Session& session, vector<Utf8String> const& args) con
         Utf8CP rootClassName = isGeneratedProp ? "generated" : columnInfo.GetRootClass().GetFullName();
         Utf8CP rootClassAlias = columnInfo.GetRootClassAlias();
 
-        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel(), typeName.c_str(), rootClassName, rootClassAlias);
+        Console::WriteLine("%3d     %-35s %-35s %-14s %-30s %s", i, propPathStr.c_str(), prop->GetDisplayLabel().c_str(), typeName.c_str(), rootClassName, rootClassAlias);
         }
 
     Console::WriteLine();
@@ -1209,7 +1209,7 @@ void DbSchemaCommand::Search(Session& session, std::vector<Utf8String> const& ar
     if (filePaths.empty())
         {
         Console::WriteErrorLine("Command failed. Folder '%s' does not contain files with extension *.%s.",
-                                folder, fileFilter.c_str());
+                                folder.c_str(), fileFilter.c_str());
         return;
         }
 

@@ -200,6 +200,7 @@ protected:
     //! Get the extent of the model(s) viewed by this view
     virtual AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const = 0;
 
+
     enum class CloseMe {No=0, Yes=1};
     //! called when one or more models are deleted
     //! @return true to close this viewport
