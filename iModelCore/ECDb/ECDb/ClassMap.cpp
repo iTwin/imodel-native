@@ -421,21 +421,21 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
             for (DbColumn const* column : columns)
                 {
-                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error,
-                                  "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
-                                  "The specified ECProperty '%s' is mapped to a virtual column.",
-                                  i, GetClass().GetFullName(), propertyAccessString.c_str());
-                    return ERROR;
-                    }
-
                 if (column->IsOverflowSlave())
                     {
                     Issues().Report(ECDbIssueSeverity::Error,
                                     "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
                                     "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
                                     i, GetClass().GetFullName(), propertyAccessString.c_str());
+                    return ERROR;
+                    }
+
+                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
+                    {
+                    Issues().Report(ECDbIssueSeverity::Error,
+                                  "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                  "The specified ECProperty '%s' is mapped to a virtual column.",
+                                  i, GetClass().GetFullName(), propertyAccessString.c_str());
                     return ERROR;
                     }
 
