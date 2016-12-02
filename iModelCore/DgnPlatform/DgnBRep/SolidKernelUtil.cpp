@@ -854,6 +854,24 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  11/2016
+//---------------------------------------------------------------------------------------
+uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId)
+    {
+    if (0 == nodeId)
+        {
+        uint32_t highestNodeId, lowestNodeId;
+
+        if (SUCCESS != FindNodeIdRange(entity, highestNodeId, lowestNodeId))
+            return 0;
+
+        nodeId = highestNodeId+1;
+        }
+
+    return (SUCCESS == AddNodeIdAttributes(entity, nodeId, false) ? nodeId : 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
