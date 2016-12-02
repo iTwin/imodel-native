@@ -3453,7 +3453,9 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                 if (SUCCESS != TextStringPersistence::DecodeFromFlatBuf(text, egOp.m_data, egOp.m_dataSize, context.GetDgnDb()))
                     break;
 
-                geomParamsChanged = text.GetGlyphSymbology(geomParams); // Modify for glyph draw (do we need to restore afterwards???)
+                if (text.GetGlyphSymbology(geomParams))
+                    geomParamsChanged = true;
+
                 DrawHelper::CookGeometryParams(context, geomParams, *currGraphic, geomParamsChanged);
 
                 if (!context.Is3dView())
