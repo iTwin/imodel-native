@@ -153,7 +153,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     StubLocalState localState;
 
     bset<Utf8String> urlNames;
-    EXPECT_CALL(*client, GetUrl(_, _)).Times(13).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
+    EXPECT_CALL(*client, GetUrl(_, _)).Times(14).WillRepeatedly(Invoke([&] (Utf8StringCR urlName, int regionId)
         {
         EXPECT_TRUE(urlNames.find(urlName) == urlNames.end());
         urlNames.insert(urlName);
@@ -202,7 +202,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     StubLocalState localState;
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(13)
+        .Times(14)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, &localState, client);
@@ -225,7 +225,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::CleanUpUrlCache();
 
     EXPECT_CALL(*client, GetUrl(_, _))
-        .Times(13)
+        .Times(14)
         .WillRepeatedly(Return(CreateCompletedAsyncTask(BuddiUrlResult::Success(url))));
 
     UrlProvider::Urls::ConnectEula.Get().c_str();
