@@ -333,12 +333,12 @@ struct ECValue
 
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
         //! @param[in] relationship The relationship used to initialize this ECValue from
-        //! @param[in] value        Value to initialize this ECValue from
+        //! @param[in] value Value to initialize this ECValue from
         ECOBJECTS_EXPORT explicit ECValue(ECRelationshipClassCR relationship, ::int64_t value);
 
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
-        //! @param[in] relationshipId   The relationship classId use to initialize this ECValue from
-        //! @param[in] value            Value to inialize this ECValue from
+        //! @param[in] relationshipClassId The relationship classId use to initialize this ECValue from
+        //! @param[in] value Value to inialize this ECValue from
         ECOBJECTS_EXPORT explicit ECValue(ECClassId relationshipClassId, ::int64_t value);
 
         bool operator==(ECValueCR rhs) const { return Equals(rhs); }
