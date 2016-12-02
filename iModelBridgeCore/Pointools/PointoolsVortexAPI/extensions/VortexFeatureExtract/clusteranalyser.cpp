@@ -235,7 +235,7 @@ PThandle ClusterAnalyser::resultsChannel()
 bool ClusterAnalyser::loadGrid()
 //-----------------------------------------------------------------------------
 {
-	PThandle				channel = ptGetChannelByName( L"diagnostic" );
+	PThandle				channel = ptGetChannelByName( const_cast<wchar_t*>(L"diagnostic") );
 
 	// feed grid the points
 	m_grid.clear();
@@ -327,7 +327,7 @@ int ClusterAnalyser::computeFastClusters()
 
 	Site					*site = 0;
 
-	PThandle				channel = ptGetChannelByName( L"diagnostic" );
+	PThandle				channel = ptGetChannelByName( const_cast<wchar_t*>(L"diagnostic") );
 
 	memset(clusters, 0, m_numPoints);
 
