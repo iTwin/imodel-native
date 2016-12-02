@@ -19,7 +19,7 @@ struct BlobToBase64 : ScalarFunction
     private:
         static BlobToBase64* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
 
-        BlobToBase64() : ScalarFunction("BlobToBase64", 1, DbValueType::TextVal) {}
+        BlobToBase64();
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:
@@ -36,7 +36,7 @@ struct Base64ToBlob : ScalarFunction
     private:
         static Base64ToBlob* s_singleton; //no need to release a static non-POD variable (Bentley C++ coding standards)
 
-        Base64ToBlob() : ScalarFunction("Base64ToBlob", 1, DbValueType::BlobVal) {}
+        Base64ToBlob();
         virtual void _ComputeScalar(Context& ctx, int nArgs, DbValue* args) override;
 
     public:

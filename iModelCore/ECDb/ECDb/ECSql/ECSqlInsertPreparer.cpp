@@ -277,7 +277,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
                 return;
                 }
 
-            ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
+            ToSqlPropertyMapVisitor sqlVisitor(classMap.GetJoinedTable(), ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
             ecInstanceIdPropMap->AcceptVisitor(sqlVisitor);
             
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back({sqlVisitor.GetResultSet().front().GetSqlBuilder()});
@@ -409,10 +409,16 @@ InsertStatementExp const& exp
                 else
                     insertBuilder.AppendComma();
 
-                if (property.GetIsPrimitiveArray() || (property.GetIsPrimitive() && property.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
-                    insertBuilder.Append("'").Append(properties[k]).Append("', BlobToBase64(").Append(values[k]).Append(")");
-                else
-                    insertBuilder.Append("'").Append(properties[k]).Append("',").Append(values[k]);
+                insertBuilder.Append("'").Append(properties[k]).Append("',");
+
+                const bool addBlobToBase64Func = property.GetIsPrimitiveArray() || (property.GetIsPrimitive() && property.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary);
+                if (addBlobToBase64Func)
+                    insertBuilder.Append(SQLFUNC_BlobToBase64 "(");
+
+                insertBuilder.Append(values[k]);
+
+                if (addBlobToBase64Func)
+                    insertBuilder.AppendParenRight();
                 }
             }
 
@@ -474,7 +480,7 @@ RelationshipClassEndTableMap const& classMap
     updateBuilder.Append(" WHERE ").Append(insertSqlSnippets.m_pkColumnNamesNativeSqlSnippets, "=", insertSqlSnippets.m_pkValuesNativeSqlSnippets, " AND ");
     //add expression to WHERE clause that only updates the row if the other end id is NULL. If it wasn't NULL, it would mean
     //a cardinality constraint violation, as by definition the other end's cardinality in an end table mapping is 0 or 1.
-    ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);    
+    ToSqlPropertyMapVisitor sqlVisitor(contextTable, ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
     classMap.GetReferencedEndECInstanceIdPropMap()->AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& referencedEndECInstanceIdColSnippet : sqlVisitor.GetResultSet())
         {

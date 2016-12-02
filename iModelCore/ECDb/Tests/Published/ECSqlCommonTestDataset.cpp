@@ -473,7 +473,7 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0); // = NULL returns NULL, so even if LHS is null, this will evaluate to false
 
         ecsql.Sprintf("%s WHERE MyPSA.RelECClassId IS NULL", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass); //even if relclassid is virtual it returns NULL if the nav id is NULL
 
 
         //*******************************************************

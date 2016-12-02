@@ -178,9 +178,14 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::DetermineClassIdentifier(Utf8StringR c
 //static
 void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlType ecsqlType, PropertyNameExp const& exp, PropertyMap const& propMap, Utf8CP classIdentifier)
     {
+    ToSqlPropertyMapVisitor::ECSqlScope scope;
+    if (ecsqlType == ECSqlType::Select)
+        scope = ToSqlPropertyMapVisitor::ECSqlScope::Select;
+    else
+        scope = exp.IsLhsAssignmentOperandExpression() ? ToSqlPropertyMapVisitor::ECSqlScope::NonSelectAssignmentExp : ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp;
+
     ToSqlPropertyMapVisitor sqlVisitor(propMap.GetClassMap().GetJoinedTable(),
-                                        ecsqlType == ECSqlType::Select ? ToSqlPropertyMapVisitor::SqlTarget::SelectView : ToSqlPropertyMapVisitor::SqlTarget::Table, 
-                                       classIdentifier, exp.HasParentheses(), exp.IsLhsAssignmentOperandExpression());
+                                       scope, classIdentifier, exp.HasParentheses());
 
     propMap.AcceptVisitor(sqlVisitor);
     for (ToSqlPropertyMapVisitor::Result const& r : sqlVisitor.GetResultSet())
@@ -286,7 +291,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareInSubqueryRef(NativeSqlBuilder:
                 if (!propertyRef->IsConverted())
                     {
                     PropertyMap const& propertyMap = propertyName->GetPropertyMap();
-                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::SqlTarget::SelectView, nullptr);
+                    ToSqlPropertyMapVisitor sqlVisitor(propertyMap.GetClassMap().GetJoinedTable(), ToSqlPropertyMapVisitor::ECSqlScope::Select, nullptr);
                     propertyMap.AcceptVisitor(sqlVisitor);
                     NativeSqlBuilder::List snippets;
                     for (auto const&r : sqlVisitor.GetResultSet())

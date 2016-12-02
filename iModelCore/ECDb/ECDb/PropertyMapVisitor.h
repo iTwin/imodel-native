@@ -90,10 +90,11 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 //+===============+===============+===============+===============+===============+======
 struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
     {
-    enum class SqlTarget
+    enum class ECSqlScope
         {
-        SelectView, //!SELECT view instead of table (used by view generator).
-        Table, //!Direct query against a table
+        Select,
+        NonSelectNoAssignmentExp,
+        NonSelectAssignmentExp
         };
 
     struct Result
@@ -116,7 +117,7 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         };
 
     private:
-        SqlTarget m_target;
+        ECSqlScope m_scope;
         Utf8CP m_classIdentifier;
         DbTable const& m_tableFilter;
         bool m_wrapInParentheses;
@@ -126,11 +127,9 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
-        virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
 
         BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
-        BentleyStatus ToNativeSql(NavigationPropertyMap const&) const;
-        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&, NavigationPropertyMap::IdPropertyMap const*) const;
+        BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ConstraintECClassIdPropertyMap const&) const;
         BentleyStatus ToNativeSql(ECClassIdPropertyMap const&) const;
@@ -139,13 +138,13 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
 
 
     public:
-        ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses = false, bool forAssignmentExpression = false);
+        ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope target, Utf8CP classIdentifier, bool wrapInParentheses = false);
         ~ToSqlPropertyMapVisitor() {}
         std::vector<Result> const& GetResultSet() const { return m_resultSet; }
         const Result* Find(Utf8CP accessString) const;
         void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
 
-        bool IsForAssignmentExpression() const { return m_isForAssignmentExpression; }
+        bool IsForAssignmentExpression() const { return m_scope == ECSqlScope::NonSelectAssignmentExp; }
     };
 
 struct DbClassMapSaveContext;

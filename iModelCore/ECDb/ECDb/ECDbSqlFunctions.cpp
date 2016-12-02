@@ -19,6 +19,11 @@ BlobToBase64* BlobToBase64::s_singleton = nullptr;
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
+BlobToBase64::BlobToBase64() : ScalarFunction(SQLFUNC_BlobToBase64, 1, DbValueType::TextVal) {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
 //static
 BlobToBase64& BlobToBase64::GetSingleton()
     {
@@ -53,6 +58,11 @@ void BlobToBase64::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
 Base64ToBlob* Base64ToBlob::s_singleton = nullptr;
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+Base64ToBlob::Base64ToBlob() : ScalarFunction(SQLFUNC_Base64ToBlob, 1, DbValueType::BlobVal) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   11/16

@@ -246,7 +246,8 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
         DbColumn const& m_column;
         virtual DbTable const& _GetTable() const override { return m_column.GetTable(); }
         virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
-        virtual OverflowState _GetOverflowState() const  override { return Enum::Intersects(m_column.GetKind(), DbColumn::Kind::OverflowSlave) ? OverflowState::Yes : OverflowState::No; }
+        virtual OverflowState _GetOverflowState() const override { return Enum::Intersects(m_column.GetKind(), DbColumn::Kind::OverflowSlave) ? OverflowState::Yes : OverflowState::No; }
+    
     protected:
         SingleColumnDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
             : DataPropertyMap(kind, classMap, ecProperty), m_column(column)

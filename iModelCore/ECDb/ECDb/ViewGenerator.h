@@ -21,7 +21,7 @@ struct ConstraintECClassIdJoinInfo;
 struct ViewGenerator
     {
     private:
-        struct SqlVisitor final : IPropertyMapVisitor
+        struct ToSqlVisitor final : IPropertyMapVisitor
             {
             struct Result
                 {
@@ -48,7 +48,11 @@ struct ViewGenerator
                 bool m_usePropertyNameAsAliasForSystemPropertyMaps;
                 mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-                bool m_forDebugView;
+                bool m_forECClassView;
+
+                virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
+                virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
+
                 BentleyStatus ToNativeSql(SingleColumnDataPropertyMap const&) const;
                 BentleyStatus ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const&) const;
                 BentleyStatus ToNativeSql(ConstraintECInstanceIdPropertyMap const&) const;
@@ -57,14 +61,9 @@ struct ViewGenerator
                 BentleyStatus ToNativeSql(ECInstanceIdPropertyMap const&) const;
                 Result& Record(SingleColumnDataPropertyMap const&) const;
 
-            private:
-                virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
-                virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
-
             public:
-                SqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps );
-                ~SqlVisitor() {}
-                void EnableDebugView() { m_forDebugView = true; }
+                ToSqlVisitor(DbTable const& tableFilter, Utf8CP classIdentifier, bool usePropertyNameAsAliasForSystemPropertyMaps, bool forECClassViews);
+                ~ToSqlVisitor() {}
                 std::vector<Result> const& GetResultSet() const { return m_resultSet; }
                 void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
             };

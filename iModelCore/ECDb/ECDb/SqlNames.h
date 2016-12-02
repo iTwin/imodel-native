@@ -20,6 +20,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define COL_ECClassId "ECClassId"
 #define COL_Overflow "scoverflow"
 
+#define SQLFUNC_BlobToBase64 "BlobToBase64"
+#define SQLFUNC_Base64ToBlob "Base64ToBlob"
+
 //The SQLVAL_xxx defines are meant to be only used in SQL strings. Potential redundancy
 //is ok to avoid the expensiveness of compose strings at runtime using expensive methods like Utf8String.Sprintf
 //although the SQL string is actually literal.

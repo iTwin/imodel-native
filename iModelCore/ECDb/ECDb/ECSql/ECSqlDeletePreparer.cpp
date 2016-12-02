@@ -55,31 +55,26 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForClass
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship
-(
-    ECSqlPrepareContext& ctx,
-    NativeSqlSnippets& nativeSqlSnippets,
-    RelationshipClassEndTableMap const& classMap
-    )
+ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, RelationshipClassEndTableMap const& classMap)
     {
-    auto referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
-    auto referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
+    ConstraintECInstanceIdPropertyMap const* referencedEndECInstanceIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
+    //this is wrong. Fixing it causes some other issues though. Affan to look at this.
+    ConstraintECInstanceIdPropertyMap const* referencedEndECClassIdPropMap = classMap.GetReferencedEndECInstanceIdPropMap();
+    //ConstraintECClassIdPropertyMap const* referencedEndECClassIdPropMap = classMap.GetReferencedEndECClassIdPropMap();
     if (referencedEndECClassIdPropMap->GetTables().size() > 1)
         {
         BeAssert(false && "Older code presume this is always a single table");
         return ECSqlStatus::Error;
         }
     DbTable const* contextTable = referencedEndECClassIdPropMap->GetTables().front();
-    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::SqlTarget::Table, nullptr);
-
+    ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
     SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All);
     classMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
     for (PropertyMap const* propMap : typeVisitor.Results())
         {
-        bool isSystem = propMap->IsSystem();
-        if (!isSystem || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
+        if (!propMap->IsSystem() || propMap == referencedEndECInstanceIdPropMap || propMap == referencedEndECClassIdPropMap)
             {
             propMap->AcceptVisitor(sqlVisitor);           
             ToSqlPropertyMapVisitor::Result const* r = sqlVisitor.Find(propMap->GetAccessString().c_str());;
@@ -116,7 +111,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
         {
         //WHERE [%s] IN (SELECT [%s].[%s] FROM [%s] INNER JOIN [%s] ON [%s].[%s] = [%s].[%s] WHERE (%s))
         NativeSqlBuilder whereClause;
-        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid uncessary
+        //Following generate optimized WHERE depending on what was accessed in WHERE class of delete. It will avoid unnecessary
         ClassMap const& currentClassMap = classNameExp.GetInfo().GetMap();
         if (currentClassMap.IsMappedToSingleTable())
             {

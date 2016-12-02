@@ -193,22 +193,11 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SystemPropertyMap const& property
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, SqlTarget target, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/, bool forAssignmentExpression /*= false*/) 
-    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_target(target), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses),  m_isForAssignmentExpression(forAssignmentExpression)
+ToSqlPropertyMapVisitor::ToSqlPropertyMapVisitor(DbTable const& tableFilter, ECSqlScope scope, Utf8CP classIdentifier, bool wrapInParentheses /*= false*/) 
+    : IPropertyMapVisitor(), m_tableFilter(tableFilter), m_scope(scope), m_classIdentifier(classIdentifier), m_wrapInParentheses(wrapInParentheses)
     {
     if (m_classIdentifier != nullptr && Utf8String::IsNullOrEmpty(m_classIdentifier))
         m_classIdentifier = nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle       11/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ToSqlPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
-    {
-    if (propertyMap.GetType() == PropertyMap::Type::Navigation)
-        return ToNativeSql(static_cast<NavigationPropertyMap const&> (propertyMap));
-
-    return IPropertyMapVisitor::_Visit(propertyMap);
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,122 +227,113 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap), nullptr);
+        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
 
     Result& result = Record(propertyMap);
+
+    NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
+
     if (m_wrapInParentheses)
-        result.GetSqlBuilderR().AppendParenLeft();
+        sqlBuilder.AppendParenLeft();
 
     if (propertyMap.GetOverflowState() != DataPropertyMap::OverflowState::Yes)
         {
-        result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+        BeAssert(propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::No);
+
+        sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         if (m_wrapInParentheses)
-            result.GetSqlBuilderR().AppendParenRight();
+            sqlBuilder.AppendParenRight();
 
         return SUCCESS;
         }
 
-    DbColumn const* overFlowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
-    BeAssert(overFlowColumn != nullptr);
-    //"json_extract(<overFlowColumnMaster>, '$.<overFlowColumnSlave>')"
-    if (m_isForAssignmentExpression)
+    switch (m_scope)
         {
-        //result.GetSqlBuilderR().Append(m_classIdentifier, overFlowColumn->GetName().c_str());
-        result.GetSqlBuilderR().Append(propertyMap.GetColumn().GetName().c_str());
-        }
-    else
-        {
-        if (m_target == SqlTarget::Table)
-            {
-            bool addBlobToBase64Func = false;
-            if (propertyMap.GetProperty().GetIsPrimitiveArray() || (propertyMap.GetProperty().GetIsPrimitive() && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
-                {
-                addBlobToBase64Func = true;
-                }
+            case ECSqlScope::Select:
+                sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+                break;
 
-            if (addBlobToBase64Func)
-                result.GetSqlBuilderR().Append("Base64ToBlob(json_extract(")
-                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                .AppendComma().Append("'$.")
-                .Append(propertyMap.GetColumn().GetName().c_str()).Append("'))");
-            else
-                result.GetSqlBuilderR().Append("json_extract(")
-                .Append(m_classIdentifier, overFlowColumn->GetName().c_str())
-                .AppendComma().Append("'$.")
-                .Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
-            }
-        else
+            case ECSqlScope::NonSelectAssignmentExp:
+                sqlBuilder.Append(propertyMap.GetColumn().GetName().c_str());
+                break;
+
+            case ECSqlScope::NonSelectNoAssignmentExp:
             {
-            result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
+            const bool addBase64ToBlobFunc = propertyMap.GetType() == PropertyMap::Type::PrimitiveArray || (propertyMap.GetType() == PropertyMap::Type::Primitive && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary);
+
+            if (addBase64ToBlobFunc)
+                sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");
+            
+            DbColumn const* physicalOverflowColumn = propertyMap.GetColumn().GetPhysicalOverflowColumn();
+            BeAssert(physicalOverflowColumn != nullptr);
+
+            sqlBuilder.Append("json_extract(").Append(m_classIdentifier, physicalOverflowColumn->GetName().c_str())
+                .AppendComma().Append("'$.").Append(propertyMap.GetColumn().GetName().c_str()).Append("')");
+
+            if (addBase64ToBlobFunc)
+                sqlBuilder.AppendParenRight();
+
+            break;
             }
+
+            default:
+                BeAssert(false);
+                return ERROR;
         }
 
     if (m_wrapInParentheses)
-        result.GetSqlBuilderR().AppendParenRight();
+        sqlBuilder.AppendParenRight();
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle       11/16
-//---------------------------------------------------------------------------------------
-BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap const& propertyMap) const
-    {
-    NavigationPropertyMap::IdPropertyMap const& idPropMap = propertyMap.GetIdPropertyMap();
-    if (SUCCESS != _Visit(idPropMap))
-        return ERROR;
-
-    NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propertyMap.GetRelECClassIdPropertyMap();
-    return ToNativeSql(relClassIdPropMap, &idPropMap);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap, NavigationPropertyMap::IdPropertyMap const* idPropMap) const
+BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap) const
     {
     Result& result = Record(relClassIdPropMap);
 
-    if (m_isForAssignmentExpression)
+    NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
+
+    switch (m_scope)
         {
-        if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
+            case ECSqlScope::Select:
+                //Here we refer to the class view representing the table, which is already fully prepared
+                //to deal whether the respective id col is null or not. Therefore no need to inject the CASE expr
+                sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+                return SUCCESS;
+
+            case ECSqlScope::NonSelectAssignmentExp:
+                if (relClassIdPropMap.IsVirtual()) //ignore completely, no-op binders will be
+                    return SUCCESS;
+
+                sqlBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+                return SUCCESS;
+
+            case ECSqlScope::NonSelectNoAssignmentExp:
+            {
+            BeAssert(relClassIdPropMap.GetParent() != nullptr && relClassIdPropMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
+            NavigationPropertyMap::IdPropertyMap const& idPropMap = static_cast<NavigationPropertyMap const*>(relClassIdPropMap.GetParent())->GetIdPropertyMap();
+
+            NativeSqlBuilder idColStrBuilder;
+            idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+
+            NativeSqlBuilder relClassIdColStrBuilder;
+            if (relClassIdPropMap.IsVirtual())
+                relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
+            else
+                relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
+            
+            //The RelECClassId should always be logically null if the respective NavId col is null
+            sqlBuilder.AppendFormatted("CASE WHEN %s IS NULL THEN NULL ELSE %s END", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
             return SUCCESS;
+            }
 
-        result.GetSqlBuilderR().Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
-        return SUCCESS;
+            default:
+                BeAssert(false);
+                return ERROR;
         }
-
-    //if the id prop map is passed it means that entire nav prop is specified in the ECSQL, not just the rel class id
-    //in that case we can inject the rule that a rel class id is always null if the id is null.
-    //if the entire nav prop is not specified we cannot inject that rule because the id might not be available
-    //in the SQLite SQL.
-    Utf8CP sqlSnippetFormat = nullptr;
-    if (idPropMap != nullptr)
-        sqlSnippetFormat = "CASE WHEN %s IS NULL THEN NULL ELSE %s END";
-    else
-        sqlSnippetFormat = "%s%s";
-
-    if (!relClassIdPropMap.IsVirtual() || m_target == SqlTarget::SelectView)
-        {
-        NativeSqlBuilder idColSql;
-        if (idPropMap != nullptr)
-            idColSql.Append(m_classIdentifier, idPropMap->GetColumn().GetName().c_str());
-
-        NativeSqlBuilder relClassIdColSql;
-        relClassIdColSql.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
-
-        result.GetSqlBuilderR().AppendFormatted(sqlSnippetFormat, idColSql.ToString(), relClassIdColSql.ToString());
-        return SUCCESS;
-        }
-
-    BeAssert(m_target == SqlTarget::Table && relClassIdPropMap.IsVirtual());
-
-    Utf8CP idColStr = "";
-    if (idPropMap != nullptr)
-        idColStr = idPropMap->GetColumn().GetName().c_str();
-
-    result.GetSqlBuilderR().AppendFormatted(sqlSnippetFormat, idColStr, relClassIdPropMap.GetDefaultClassId().ToString().c_str());
-    return SUCCESS;
     }
 
 
@@ -370,11 +350,12 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECInstanceIdPropert
         }
 
     Result& result = Record(*vmap);
-    Utf8CP columnExp = m_target == SqlTarget::SelectView ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    Utf8CP columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenLeft();
     
     result.GetSqlBuilderR().Append(m_classIdentifier, columnExp);
+
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenRight();
 
@@ -396,7 +377,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECClassIdPropertyMap const& p
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
     Result& result = Record(*vmap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
-    if (m_target == SqlTarget::SelectView)
+    if (m_scope == ECSqlScope::Select)
         result.GetSqlBuilderR().Append(m_classIdentifier, COL_ECClassId);
     else
         {
@@ -428,7 +409,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ConstraintECClassIdPropertyMa
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
     Result& result = Record(*vmap);
     if (m_wrapInParentheses) result.GetSqlBuilderR().AppendParenLeft();
-    if (m_target == SqlTarget::SelectView)
+    if (m_scope == ECSqlScope::Select)
         result.GetSqlBuilderR().Append(m_classIdentifier, propertyMap.GetAccessString().c_str());
     else
         {
@@ -457,7 +438,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(ECInstanceIdPropertyMap const
         }
 
     Result& result = Record(*vmap);
-    Utf8CP columnExp = m_target == SqlTarget::SelectView ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
+    Utf8CP columnExp = m_scope == ECSqlScope::Select ? propertyMap.GetAccessString().c_str() : vmap->GetColumn().GetName().c_str();
     if (m_wrapInParentheses) 
         result.GetSqlBuilderR().AppendParenLeft();
     

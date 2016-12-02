@@ -582,7 +582,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //ECDb cannot check whether rel class id is set without actual id
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
-    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), elementOwnsPhysicalElementsClassId);
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
     ASSERT_TRUE(insertWasValid);
 
     ecsql.Sprintf("INSERT INTO ts.PhysicalElement(Code,Parent.Id, Parent.RelECClassId) VALUES('Physical-3-6',NULL,'%s')",
@@ -591,7 +591,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     //ECDb cannot check whether rel class id is set without actual id
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey)) << stmt.GetECSql();
     stmt.Finalize();
-    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), elementOwnsPhysicalElementsClassId);
+    validateInsert(insertWasValid, ecdb, newKey.GetECInstanceId(), ECInstanceId(), ECClassId());
     ASSERT_TRUE(insertWasValid);
 
     //wrong nav id
@@ -864,7 +864,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, GetValueWithMandatoryRelClassId)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     {
-    ECDbCR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
+    ECDbR ecdb = SetupECDb("ecsqlnavpropsupport.ecdb",
                             SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -947,6 +947,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(element3Key));
     }
 
+    ecdb.SaveChanges();
+
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.SubElement WHERE Model IS NULL"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
@@ -970,10 +972,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
 
     ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
-    //when specified directly, the RelECClassId is not null in this case
-    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
-
+    ASSERT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql();
     ASSERT_TRUE(stmt.IsValueNull(3)) << stmt.GetECSql();
+
     relClassId.Invalidate();
     ASSERT_FALSE(stmt.GetValueNavigation<ECInstanceId>(3, &relClassId).IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
     ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 3 in: " << stmt.GetECSql();
@@ -1013,14 +1014,67 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Null)
     ASSERT_FALSE(relClassId.IsValid()) << "Select clause item 0 in: " << stmt.GetECSql();
 
     ASSERT_TRUE(stmt.IsValueNull(1)) << stmt.GetECSql();
-    //when specified directly, the RelECClassId is not null in this case
-    ASSERT_EQ(modelHasElementslementRelClassId, stmt.GetValueId<ECClassId>(2)) << stmt.GetECSql();
+    ASSERT_TRUE(stmt.IsValueNull(2)) << stmt.GetECSql();
 
     relClassId.Invalidate();
     ASSERT_EQ(element1Key.GetECInstanceId(), stmt.GetValueNavigation<ECInstanceId>(3, &relClassId)) << stmt.GetECSql();
     ASSERT_EQ(elementOwnsSubElementRelClassId, relClassId) << stmt.GetECSql();
     ASSERT_EQ(element1Key.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(4)) << stmt.GetECSql();
     ASSERT_EQ(elementOwnsSubElementRelClassId, stmt.GetValueId<ECClassId>(5)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.SubElement SET Model=? WHERE Model IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, modelKey.GetECInstanceId(), ECClassId())) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(2, ecdb.GetModifiedRowCount());
+    {
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(ecdb, "SELECT NULL FROM ts.SubElement WHERE Model IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step()) << verifyStmt.GetECSql();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ts.SubElement WHERE Model IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(1, ecdb.GetModifiedRowCount()) << "Actually 2 are deleted, but one per FK constraint action which Db::GetModifiedRowCount does not return.";
+
+    {
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(ecdb, "SELECT NULL FROM ts.SubElement WHERE Model IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step()) << verifyStmt.GetECSql();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
+
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.SubElement SET Parent=? WHERE Parent IS NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, element1Key.GetECInstanceId(), elementOwnsSubElementRelClassId)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(2, ecdb.GetModifiedRowCount());
+    {
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(ecdb, "SELECT NULL FROM ts.SubElement WHERE Parent IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step()) << verifyStmt.GetECSql();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "DELETE FROM ts.SubElement WHERE Parent IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    stmt.Finalize();
+    ASSERT_EQ(2, ecdb.GetModifiedRowCount());
+
+    {
+    ECSqlStatement verifyStmt;
+    ASSERT_EQ(ECSqlStatus::Success, verifyStmt.Prepare(ecdb, "SELECT NULL FROM ts.SubElement WHERE Parent IS NULL"));
+    ASSERT_EQ(BE_SQLITE_DONE, verifyStmt.Step()) << verifyStmt.GetECSql();
+    }
+
+    ASSERT_EQ(BE_SQLITE_OK, ecdb.AbandonChanges());
     }
 
 //---------------------------------------------------------------------------------------

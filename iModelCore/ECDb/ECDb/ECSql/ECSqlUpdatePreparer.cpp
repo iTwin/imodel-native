@@ -122,11 +122,17 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
                 {
                 const size_t k = overflowComponentIndexes[j];
                 ECPropertyCR property = overflowProperties[j]->GetProperty();
-                if (property.GetIsPrimitiveArray() || (property.GetIsPrimitive() && property.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary))
-                    nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',BlobToBase64(").Append(valuesNativeSqlSnippets[k]).Append(")");
-                else
-                    nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',").Append(valuesNativeSqlSnippets[k]);
 
+                nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',");
+
+                const bool addBlobToBase64Func = property.GetIsPrimitiveArray() || (property.GetIsPrimitive() && property.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary);
+                if (addBlobToBase64Func)
+                    nativeSqlBuilder.Append(SQLFUNC_BlobToBase64 "(");
+
+                nativeSqlBuilder.Append(valuesNativeSqlSnippets[k]);
+
+                if (addBlobToBase64Func)
+                    nativeSqlBuilder.AppendParenRight();
                 }
             }
 
