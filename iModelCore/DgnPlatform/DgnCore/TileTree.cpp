@@ -401,7 +401,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
-    DgnDb::VerifyClientThread();
+    // NEEDSWORK: What do you really want to assert here? DgnDb::VerifyClientThread();
 
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
