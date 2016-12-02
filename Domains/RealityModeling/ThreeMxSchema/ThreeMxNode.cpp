@@ -16,7 +16,7 @@ USING_NAMESPACE_TILETREE
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Node::GetChildFile() const
     {
-    BeAssert(IsNotLoaded());
+    // NEEDSWORK: What do you really want to assert here? BeAssert(IsNotLoaded());
     Utf8String parentPath("/");
     if (m_parent)
         parentPath = m_parent->_GetTileName();

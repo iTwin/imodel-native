@@ -199,6 +199,7 @@ private:
     DRange3d GetSceneRange();
     void Load(Dgn::Render::SystemP) const;
 
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
