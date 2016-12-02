@@ -193,6 +193,8 @@ public:
 +===============+===============+===============+===============+===============+======*/
 struct Root : RefCountedBase, NonCopyableClass
 {
+    friend struct DrawArgs;
+
 protected:
     bool m_isHttp = false;
     bool m_pickable = false;
@@ -200,6 +202,8 @@ protected:
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;
+    double m_biasDistance = 0.0;  // for 2d display priority
+    double m_substitueBiasDistance = -1.0; // for moving "substitute" tiles behind real tiles.
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
@@ -373,10 +377,9 @@ struct DrawArgs
 {
     typedef bmultimap<int, TileCPtr> MissingNodes;
     RenderContextR m_context;
+    RootR m_root;
     Transform m_location;
     double m_scale;
-    double m_biasDistance = 0.0; // for 2d display priority
-    double m_substitueBiasDistance = -1.0; // for moving "substitute" tiles behind real tiles.
     Render::GraphicBranch m_graphics;
     Render::GraphicBranch m_substitutes;
     MissingNodes m_missing;
@@ -384,12 +387,14 @@ struct DrawArgs
     TimePoint m_purgeOlderThan;
     ClipVectorCP m_clip;
 
-    DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(m_location, tile.GetCenter());}
+    DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
-    DrawArgs(RenderContextR context, TransformCR location, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) : m_context(context), m_location(location), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = location.ColumnXMagnitude();}
+    DrawArgs(RenderContextR context, TransformCR location, RootR root, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
+            : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = root.m_location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
+    TransformCR GetLocation() const {return m_location;}
 };
 
 //=======================================================================================
@@ -424,7 +429,6 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-
     virtual Utf8CP _GetName() const = 0;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);

@@ -282,21 +282,6 @@ void SpatialViewController::_DrawView(ViewContextR context)
         context.SetActiveVolume(*m_activeVolume);
 
     _VisitAllElements(context);
-
-#if defined (NEEDS_WORK_REALTY_DATA)
-    // Allow models to participate in picking
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        if (context.CheckStop())
-            return;
-
-        DgnModelPtr model = GetDgnDb().Models().GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModelP() : nullptr;
-
-        if (nullptr != geomModel)
-            geomModel->_DrawModel(context);
-        }
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -397,7 +382,6 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_CreateScene(SceneContextR context)
     {
-
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);
 #endif

@@ -22,7 +22,7 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : RangeIndex::Traverser
 {
 public:
-    enum Reject {Yes=1, No=0};
+    enum class Reject {Yes=1, No=0};
     struct Callback
     {
         virtual Reject _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) = 0;

@@ -534,7 +534,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        box = box.TransformBy(args.m_location);
+        box = box.TransformBy(args.GetLocation());
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
@@ -642,8 +642,8 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
 
-    DPoint3d offset = {0.0, 0.0, m_biasDistance};
-    Transform location = Transform::FromProduct(m_location, Transform::From(offset));
+    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance};
+    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
 
     if (!m_graphics.m_entries.empty())
         {
@@ -658,7 +658,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     if (!m_substitutes.m_entries.empty())
         {
         DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
-        offset.z = m_substitueBiasDistance;
+        offset.z = m_root.m_substitueBiasDistance;
         location = Transform::FromProduct(location, Transform::From(offset));
 
         m_substitutes.SetViewFlags(flags);
@@ -794,7 +794,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), now, now-GetExpirationTime());
+    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
     Draw(args);
     DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
@@ -811,13 +811,13 @@ void QuadTree::Root::DrawInView(RenderContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
+* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 
