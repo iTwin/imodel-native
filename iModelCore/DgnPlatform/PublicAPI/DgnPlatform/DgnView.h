@@ -390,9 +390,12 @@ protected:
     virtual DPoint3d _GetTargetPoint() const {return GetCenter();}
     virtual void _AdjustAspectRatio(double, bool expandView) = 0;
     DGNPLATFORM_EXPORT virtual ViewportStatus _SetupFromFrustum(Frustum const& inFrustum);
+    virtual void _GetExtentLimits(double& minExtent, double& maxExtent) const {minExtent=DgnUnits::OneMillimeter(); maxExtent= 2.0*DgnUnits::DiameterOfEarth(); }
     Utf8String ToDetailJson();
 
 public:
+    DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
+
     //! Determine whether two ViewDefinitions are "equal", including their unsaved "state"
     bool EqualState(ViewDefinitionR other) {return _EqualState(other);}
     
@@ -1184,6 +1187,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SheetViewDefinition : ViewDefinition2d
 protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
+    void _GetExtentLimits(double& minExtent, double& maxExtent) const override {minExtent=DgnUnits::OneMillimeter(); maxExtent=100*DgnUnits::OneMeter();}
     virtual SheetViewDefinitionCP _ToSheetView() const {return this;}
 
     //! Construct a SheetViewDefinition from the supplied params prior to loading it
