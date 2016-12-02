@@ -977,19 +977,19 @@ ECValue::ECValue(const Byte * data, size_t size)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECValue::ECValue (ECRelationshipClassCR relationship, ::int64_t value)
+ECValue::ECValue (::int64_t value, ECRelationshipClassCP relationship)
     {
     ConstructUninitialized();
-    SetNavigationInfo(relationship, value);
+    SetNavigationInfo(value, relationship);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECValue::ECValue(ECClassId relationshipClassId, ::int64_t value)
+ECValue::ECValue(::int64_t value, ECClassId relationshipClassId)
     {
     ConstructUninitialized();
-    SetNavigationInfo(relationshipClassId, value);
+    SetNavigationInfo(value, relationshipClassId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2156,7 +2156,7 @@ bool            ArrayInfo::IsStructArray() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value)
+ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value, ECRelationshipClassCP relationshipClass)
     {
     Clear();
     SetIsNull(false);
@@ -2164,7 +2164,7 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relationshipCla
     m_valueKind = VALUEKIND_Navigation;
     
     m_navigationInfo.Set(value);
-    m_navigationInfo.SetRelationship(&relationshipClass);
+    m_navigationInfo.SetRelationship(relationshipClass);
 
     return ECObjectsStatus::Success;
     }
@@ -2172,7 +2172,7 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECRelationshipClassCR relationshipCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(ECClassId relationshipClassId, ::int64_t value)
+ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value, ECClassId relationshipClassId)
     {
     Clear();
     SetIsNull(false);
@@ -2181,22 +2181,6 @@ ECObjectsStatus ECValue::SetNavigationInfo(ECClassId relationshipClassId, ::int6
 
     m_navigationInfo.Set(value);
     m_navigationInfo.SetRelationship(relationshipClassId);
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Caleb.Shafer    11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value)
-    {
-    Clear();
-    SetIsNull(false);
-
-    m_valueKind = VALUEKIND_Navigation;
-
-    m_navigationInfo.Set(value);
-    m_navigationInfo.SetRelationship(nullptr);
 
     return ECObjectsStatus::Success;
     }

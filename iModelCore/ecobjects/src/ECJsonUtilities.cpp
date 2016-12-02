@@ -396,7 +396,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             else
                 {
                 const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue["RelECClassId"], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(ECClassId(relClassId), navId))
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(navId, ECClassId(relClassId)))
                     status = ERROR;
                 }
 
@@ -835,7 +835,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
             else
                 {
                 const uint64_t relClassId = (uint64_t) Int64FromJson(json["RelECClassId"], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(ECClassId(relClassId), navId))
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(navId, ECClassId(relClassId)))
                     status = ERROR;
                 }
 

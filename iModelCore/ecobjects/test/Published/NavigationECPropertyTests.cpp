@@ -328,7 +328,7 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
 
 void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
     {
-    ECValue myTargetValue(*expectedRelClass, 42LL);
+    ECValue myTargetValue(42LL, expectedRelClass);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a long";
     EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTarget nav property not as expected";
     EXPECT_EQ(expectedRelClass, myTargetValue.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTarget nav property not as expected";
@@ -365,7 +365,7 @@ void TestSettingNavPropLongValuesWithId(IECInstanceR instance)
     {
     ECClassId relClassId((uint64_t) 25);
     ECValue myTargetValue;
-    myTargetValue.SetNavigationInfo(relClassId, 42LL);
+    myTargetValue.SetNavigationInfo(42LL, relClassId);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetWithRelId", myTargetValue)) << "Failed to set the value of MyTargetWithRelId nav prop to a long";
     EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetWithRelId nav property not as expected";
     EXPECT_TRUE(myTargetValue.GetNavigationInfo().GetRelationshipClassId().IsValid());
@@ -519,7 +519,7 @@ TEST_F(NavigationECPropertyTests, ValueCopyTest)
     schema->CreateRelationshipClass(relClass, "RelClass");
 
     ECValue v;
-    v = ECValue(*relClass, 42LL);
+    v = ECValue(42LL, relClass);
 
     ASSERT_FALSE(v.IsNull()) << "The value is null after the copy when it shouldn't be.";
     ASSERT_TRUE(v.IsNavigation()) << "The value is not a navigation";

@@ -2771,12 +2771,10 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
             int64_t value;
             Byte const * valueP = pValue + sizeof(int64_t);
             memcpy(&value, valueP, sizeof(value));
-            if (nullptr != relClass && isPointerFlag) // Set the relationship class pointer
-                v.SetNavigationInfo(*relClass, value);
-            else if (!isPointerFlag) // Sets the relationship class id
-                v.SetNavigationInfo(ECClassId((uint64_t) relClassValue), value);
-            else  // Sets the relationship to nullptr
-                v.SetNavigationInfo(value);
+            if (isPointerFlag) // Set the relationship class pointer
+                v.SetNavigationInfo(value, relClass);
+            else
+                v.SetNavigationInfo(value, ECClassId((uint64_t) relClassValue));
             }
         else
             {

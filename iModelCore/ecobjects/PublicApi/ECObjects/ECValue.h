@@ -334,12 +334,12 @@ struct ECValue
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
         //! @param[in] relationship The relationship used to initialize this ECValue from
         //! @param[in] value        Value to initialize this ECValue from
-        ECOBJECTS_EXPORT explicit ECValue(ECRelationshipClassCR relationship, ::int64_t value);
+        ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECRelationshipClassCP relationship);
 
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
         //! @param[in] relationshipId   The relationship classId use to initialize this ECValue from
         //! @param[in] value            Value to inialize this ECValue from
-        ECOBJECTS_EXPORT explicit ECValue(ECClassId relationshipClassId, ::int64_t value);
+        ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECClassId relationshipClassId);
 
         bool operator==(ECValueCR rhs) const { return Equals(rhs); }
         bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
@@ -508,16 +508,12 @@ struct ECValue
         //! Defines the navigation value for this ECValue
         //! @param[in] relationshipClass The relationship used to set this ECValue
         //! @param[in] value             Value to set this ECValue to
-        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECRelationshipClassCR relationshipClass, ::int64_t value);
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECRelationshipClassCP relationshipClass = nullptr);
 
         //! Defines the navigation value for this ECValue
         //! @param[in] relationshipClassId ClassId for the relationship used to set this ECValue
         //! @param[in] value               Value to set this ECValue to
-        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(ECClassId relationshipClassId, ::int64_t value);
-
-        //! Defines the navigation value for this ECValue
-        //! @param[in] value             Value to set this ECValue to
-        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value);
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECClassId relationshipClassId);
 
         //! Returns the navigation information definig this ECValue
         ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;
