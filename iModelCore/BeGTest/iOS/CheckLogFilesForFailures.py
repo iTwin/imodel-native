@@ -17,6 +17,7 @@ def checkLogFileForFailures(logfilename):
     xctestproj = ''
     lastLine = ''
     failed = False
+    foundTerminator = False
     failedTests = ''
     comma = ''
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
@@ -40,6 +41,11 @@ def checkLogFileForFailures(logfilename):
             # We get ** test failed ** if the build or the prep or the tests failed
             if -1 != lline.find('** test failed **'):
                 failed = True
+                foundTerminator = True
+
+            # xcodebuild prints ** test succeeded ** if all tests succeeded
+            if -1 != lline.find('** test succeeded **'):
+                foundTerminator = True
 
             err = errpat.search(line, re.IGNORECASE)
             if err != None:
@@ -47,7 +53,7 @@ def checkLogFileForFailures(logfilename):
                 comma = ', '
                 failed = True
      
-    if lastLine.find('Executed') == -1:
+    if foundTerminator  == False:
         failed = True
 
     if failed:
