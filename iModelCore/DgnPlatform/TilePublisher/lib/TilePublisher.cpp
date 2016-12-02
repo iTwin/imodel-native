@@ -1291,24 +1291,19 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
         }
 
     RotMatrix   rMatrix;
+    rMatrix.InitIdentity();
+    m_nonSpatialToEcef = Transform::From(rMatrix, ecfOrigin);
 
-    if (view.Is3d())
-        {
-        DVec3d      zVector, yVector;
+    DVec3d      zVector, yVector;
 
-        zVector.Normalize ((DVec3dCR) ecfOrigin);
-        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+    zVector.Normalize ((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
 
-        rMatrix.SetColumn (yVector, 1);
-        rMatrix.SetColumn (zVector, 2);
-        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
-        }
-    else
-        {
-        rMatrix.InitIdentity();
-        }
+    rMatrix.SetColumn (yVector, 1);
+    rMatrix.SetColumn (zVector, 2);
+    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
 
-    m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
+    m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1471,13 +1466,22 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     val["asset"]["version"] = "0.0";
 
     auto&       root = val[JSON_Root];
-    DRange3d    rootRange;
 
+    auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
+    if (!ecefTransform.IsIdentity())
+        {
+        DMatrix4d   matrix  = DMatrix4d::From (ecefTransform);
+        auto&       transformValue = root[JSON_Transform];
+
+        for (size_t i=0;i<4; i++)
+            for (size_t j=0; j<4; j++)
+                transformValue.append (matrix.coff[j][i]);
+        }
+
+    DRange3d    rootRange;
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
     TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1560,16 +1564,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     auto& root = value[JSON_Root];
 
-    if (!GetTileToEcef().IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (GetTileToEcef());
-        auto&       transformValue = root[JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
-
     root["refine"] = "replace";
     root[JSON_GeometricError] = 1.E6;
 
@@ -1619,16 +1613,50 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
     {
-    Json::Value     modelJson (Json::objectValue);
+    Json::Value     modelsJson (Json::objectValue);
     
     for (auto& modelId : modelIds)
         {
         auto const&  model = GetDgnDb().Models().GetModel (modelId);
         if (model.IsValid())
-            modelJson[modelId.ToString()] = model->GetName();
+            {
+            auto spatialModel = model->ToSpatialModel();
+            auto drawingModel = nullptr == spatialModel ? dynamic_cast<DrawingModelCP>(model.get()) : nullptr;
+            if (nullptr == spatialModel && nullptr == drawingModel)
+                {
+                BeAssert(false && "Unsupported model type");
+                continue;
+                }
+
+            Json::Value modelJson(Json::objectValue);
+
+            modelJson["name"] = model->GetName();
+
+            // ###TODO: Shouldn't have to compute this twice...
+            WString modelRootName;
+            BeFileName modelDataDir = GetDataDirForModel(*model, &modelRootName);
+            BeFileName childTilesetFileName (nullptr, modelDataDir.c_str(), modelRootName.c_str(), s_metadataExtension);
+
+            auto utf8FileName = childTilesetFileName.GetNameUtf8();
+            utf8FileName.ReplaceAll("\\", "//");
+            modelJson["tilesetUrl"] = utf8FileName;
+
+            // ###TODO: model extents?
+            if (nullptr != spatialModel)
+                {
+                modelJson["type"] = "spatial";
+                }
+            else
+                {
+                modelJson["type"] = "drawing";
+                // ###TODO: transform...
+                }
+
+            modelsJson[modelId.ToString()] = modelJson;
+            }
         }
 
-    return modelJson;
+    return modelsJson;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1726,7 +1754,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
 
-    if (!m_tileToEcef.IsIdentity())
+    if (!m_spatialToEcef.IsIdentity())
         {
         DPoint3d groundEcefPoint;
         transform.Multiply(groundEcefPoint, groundPoint);

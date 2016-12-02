@@ -70,7 +70,8 @@ protected:
     BeFileName                              m_dataDir;
     WString                                 m_rootName;
     Transform                               m_dbToTile;
-    Transform                               m_tileToEcef;
+    Transform                               m_spatialToEcef;
+    Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
     bvector<TileNodePtr>                    m_modelRoots;
     BeMutex                                 m_mutex;
@@ -105,7 +106,8 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
-    TransformCR  GetTileToEcef() const { return m_tileToEcef; }
+    TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
+    TransformCR GetNonSpatailToEcef() const { return m_nonSpatialToEcef; }
     ViewControllerCR GetViewController() const { return m_viewController; }
     DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }

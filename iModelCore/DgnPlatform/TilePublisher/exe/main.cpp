@@ -621,7 +621,8 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         groundPoint.z = params.GetGroundHeight();
         }
 
-    return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint, params);
+    auto const& ecefTf = m_viewController.IsSpatialView() ? m_spatialToEcef : m_nonSpatialToEcef;
+    return WriteWebApp(Transform::FromProduct(ecefTf, m_dbToTile), groundPoint, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
