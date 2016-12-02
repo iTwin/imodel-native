@@ -321,7 +321,15 @@ size_t HttpBinaryBody::Write(const char* buffer, size_t bufferSize)
     uint64_t currentLength = GetLength();
 
     if (currentLength < m_position + bufferSize)
-        m_data->resize(m_position + bufferSize, '\0');
+        {
+        if (std::numeric_limits<size_t>::max() < m_position + bufferSize)
+            {
+            BeAssert(false && "Body limit reached");
+            return 0;
+            }
+
+        m_data->resize(static_cast<size_t>(m_position + bufferSize), '\0');
+        }
 
     memcpy(m_data->data() + m_position, buffer, bufferSize);
     m_position += bufferSize;
