@@ -345,7 +345,7 @@ size_t HttpBinaryBody::Read(char* bufferOut, size_t bufferSize)
     size_t copyBytesCount = bufferSize;
 
     if (GetLength() - m_position < copyBytesCount)
-        copyBytesCount = (size_t) GetLength() - m_position;
+        copyBytesCount = (size_t)(GetLength() - m_position);
 
     if (0 == copyBytesCount)
         return 0;
