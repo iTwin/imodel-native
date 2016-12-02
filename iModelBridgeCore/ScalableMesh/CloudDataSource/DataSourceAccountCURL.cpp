@@ -163,13 +163,22 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
-    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header); // &&RB TODO : check for valid response header??
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
 
     if (CURLE_OK != curl_easy_perform(curl))
         {
         //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        assert(!"cURL error, download failed");
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
+
+    if (response_header.data["HTTP"] != "1.1 200 OK")
+        {
+        assert(!"HTTP error, download failed");
+        return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
+        }
+
+    curl_handle->free_header_list();
 
     assert(buffer.size <= size);
     readSize = buffer.size;
