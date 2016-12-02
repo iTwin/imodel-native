@@ -15,7 +15,7 @@ std::mutex s_consoleMutex;
 
 uint32_t s_max_number_nodes_in_group = 100;
 size_t s_max_group_size = 256 << 10; // 256 KB
-uint32_t s_max_group_depth = 2;
+uint32_t s_max_group_depth = 4;
 uint32_t s_max_group_common_ancestor = 2;
 
 StatusInt SMNodeGroup::Load(const uint64_t& priorityNodeID)
@@ -283,6 +283,10 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
             // We must update the parent's content url so we know how to reference the new tile set
             auto& parentNodeTile = *m_ParentGroup->m_tileTreeMap[parentNodeID];
             auto& parentNodeTileChildren = parentNodeTile["children"];
+
+            // Keep the index before updating the parent tile
+            m_RootTileTreeNode["index"] = parentNodeTileChildren.size();
+
             auto& childTile = parentNodeTileChildren.append(tile);
             childTile.removeMember("children");
             childTile.removeMember("SMHeader");
@@ -291,5 +295,24 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
             }
         }
     }
+
+void SMNodeGroup::MergeChild(SMNodeGroup::Ptr child)
+    {
+    assert(child->m_ParentGroup == this);
+    assert(child->m_RootTileTreeNode.isMember("SMHeader") && child->m_RootTileTreeNode["SMHeader"].isMember("parentID"));
+
+    auto& childTileTreeNode = child->m_RootTileTreeNode;
+    auto childIndex = childTileTreeNode["index"].asUInt();
+    childTileTreeNode.removeMember("index");
+
+    auto parentID = childTileTreeNode["SMHeader"]["parentID"].asUInt();
+    auto& parentTileChildren = (*this->m_tileTreeMap[parentID])["children"];
+
+    // Replace tile in the parent tile
+    parentTileChildren[childIndex] = childTileTreeNode;
+
+    this->m_tileTreeMap.insert(child->m_tileTreeMap.begin(), child->m_tileTreeMap.end());
+    }
+
 
 

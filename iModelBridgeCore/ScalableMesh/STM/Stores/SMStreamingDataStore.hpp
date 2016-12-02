@@ -126,7 +126,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         DataSourceService                       *   serviceWSG;
         DataSourceAccount                       *   accountWSG;
         //DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server 
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"dev-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
+        //DataSourceAccount::AccountIdentifier        accountIdentifier(L"dev-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
+        DataSourceAccount::AccountIdentifier        accountIdentifier(L"qa-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
         DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
 
         serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
@@ -249,7 +250,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
     SMNodeGroup::StrategyType groupMode = SMNodeGroup::StrategyType::NONE;
     if (s_stream_from_grouped_store) groupMode = SMNodeGroup::StrategyType::NORMAL;
-    if (m_use_virtual_grouping) groupMode = SMNodeGroup::StrategyType::VIRTUAL;
+    if (m_use_node_header_grouping && m_use_virtual_grouping) groupMode = SMNodeGroup::StrategyType::VIRTUAL;
     if (s_stream_using_cesium_3d_tiles_format) groupMode = SMNodeGroup::StrategyType::CESIUM;
     bool isGrouped = true;
     wchar_t buffer[10000];

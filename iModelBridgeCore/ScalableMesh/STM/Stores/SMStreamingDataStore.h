@@ -47,8 +47,8 @@ template <class EXTENT> class SMStreamingStore : public ISMDataStore<SMIndexMast
             };
     private : 
         
-        bool m_use_node_header_grouping;
-        bool m_use_virtual_grouping;
+        bool m_use_node_header_grouping = false;
+        bool m_use_virtual_grouping = false;
         FormatType m_formatType = FormatType::Binary;
         DataSourceAccount* m_dataSourceAccount;
         WString m_rootDirectory;        

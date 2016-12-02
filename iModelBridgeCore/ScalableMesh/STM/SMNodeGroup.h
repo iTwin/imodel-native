@@ -267,6 +267,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
         uint32_t m_ancestor = -1;
         uint64_t m_currentPosition = 0;
         uint64_t m_progress = 0;
+        uint32_t m_maxGroupDepth = 0;
         bvector<uint8_t> m_rawHeaders;
         unordered_map<uint64_t, Json::Value*> m_tileTreeMap;
         map<uint64_t, SMNodeGroup::Ptr> m_tileTreeChildrenGroups;
@@ -373,6 +374,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             --m_depth;
             }
 
+        void SetMaxGroupDepth(const uint32_t& depth)
+            {
+            m_maxGroupDepth = depth;
+            }
+
         WString GetFilePath() { return m_outputDirPath; }
 
         void Open(const uint32_t& pi_pGroupID)
@@ -410,7 +416,7 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         bool IsMaxDepthAchieved()
             {
-            return m_depth >= s_max_group_depth;
+            return m_depth >= (m_maxGroupDepth ? m_maxGroupDepth : s_max_group_depth);
             }
 
         bool IsCommonAncestorTooFar(const uint32_t& pi_pLevelRequested)
@@ -455,11 +461,11 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                     case StrategyType::VIRTUAL:
                         {
                         s_groupingStrategy<EXTENT> = new SMBentleyGroupingStrategy<EXTENT>(m_strategyType);
+                        s_max_group_depth = 2;
                         break;
                         }
                     case StrategyType::CESIUM:
                         {
-                        s_max_group_depth = 5;
                         s_groupingStrategy<EXTENT> = new SMCesium3DTileStrategy<EXTENT>();
                         break;
                         }
@@ -585,6 +591,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                 });
             return node != m_groupHeader->end();
             }
+
+        void MergeChild(SMNodeGroup::Ptr child);
 
         SMNodeHeader* GetNodeHeader(const uint64_t& pi_pNodeHeaderID)
             {
@@ -1130,10 +1138,18 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNod
     {
     if (pi_pChildGroup != pi_pParentGroup)
         {
-        SMNodeGroup::Ptr currentGroup = pi_pChildGroup;
-        pi_pChildGroup = this->GetNextGroup(pi_NodeHeader, pi_pParentGroup);
-        if (currentGroup != pi_pChildGroup)
+        if (pi_pChildGroup->m_tileTreeMap.size() < 10)
+            {
+            pi_pParentGroup->MergeChild(pi_pChildGroup);
+            pi_pChildGroup->m_tileTreeMap.clear();
+            }
+        else
+            {
+            SMNodeGroup::Ptr currentGroup = pi_pChildGroup;
+            pi_pChildGroup = this->GetNextGroup(pi_NodeHeader, pi_pParentGroup);
+            assert(currentGroup != pi_pChildGroup);
             currentGroup->Close<EXTENT>();
+            }
         }
     }
 
@@ -1152,6 +1168,8 @@ void SMCesium3DTileStrategy<EXTENT>::_SaveNodeGroup(SMNodeGroup::Ptr pi_Group) c
     Json::Value tileSet;
     tileSet["asset"]["version"] = "0.0";
     tileSet["root"] = pi_Group->m_RootTileTreeNode;
+
+    //std::cout << "#nodes in group(" << pi_Group->m_groupHeader->GetID() << ") = " << pi_Group->m_tileTreeMap.size() << std::endl;
 
     auto utf8TileTree = Json::FastWriter().write(tileSet);
 

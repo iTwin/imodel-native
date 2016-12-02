@@ -7750,6 +7750,8 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
 
     SMNodeGroup::Ptr group = new SMNodeGroup(dataSourceAccount, pi_pOutputDirPath, 0, nullptr, SMNodeGroup::StrategyType(pi_pGroupMode));
 
+    group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
+
     auto strategy = group->GetStrategy<EXTENT>();
 
     strategy->SetOldMasterHeader(oldMasterHeader);
