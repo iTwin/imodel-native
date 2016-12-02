@@ -141,6 +141,15 @@ public:
         json["z"] = pt.z;
         return json;
         }
+
+    static Json::Value TransformToJson(TransformCR);
+    static Json::Value RangeToJson(DRange3dCR range)
+        {
+        Json::Value json(Json::objectValue);
+        json["low"] = PointToJson(range.low);
+        json["high"] = PointToJson(range.high);
+        return json;
+        }
 };
 
 //=======================================================================================

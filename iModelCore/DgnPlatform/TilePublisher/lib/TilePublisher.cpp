@@ -1457,6 +1457,21 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::TransformToJson(TransformCR tf)
+    {
+    auto matrix = DMatrix4d::From(tf);
+    Json::Value json(Json::arrayValue);
+    for (size_t i=0;i<4; i++)
+        for (size_t j=0; j<4; j++)
+            json.append (matrix.coff[j][i]);
+
+
+    return json;
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth)
@@ -1469,14 +1484,7 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
 
     auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
     if (!ecefTransform.IsIdentity())
-        {
-        DMatrix4d   matrix  = DMatrix4d::From (ecefTransform);
-        auto&       transformValue = root[JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
-        }
+        root[JSON_Transform] = TransformToJson(ecefTransform);
 
     DRange3d    rootRange;
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
@@ -1631,6 +1639,15 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             Json::Value modelJson(Json::objectValue);
 
             modelJson["name"] = model->GetName();
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+
+            DRange3d modelRange = model->ToGeometricModel()->QueryModelRange();
+            auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
+            modelTransform.Multiply(modelRange, modelRange);
+            modelJson["extents"] = RangeToJson(modelRange);
+
+            if (nullptr == spatialModel && !modelTransform.IsIdentity())
+                modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
 
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName;
@@ -1640,17 +1657,6 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             auto utf8FileName = childTilesetFileName.GetNameUtf8();
             utf8FileName.ReplaceAll("\\", "//");
             modelJson["tilesetUrl"] = utf8FileName;
-
-            // ###TODO: model extents?
-            if (nullptr != spatialModel)
-                {
-                modelJson["type"] = "spatial";
-                }
-            else
-                {
-                modelJson["type"] = "drawing";
-                // ###TODO: transform...
-                }
 
             modelsJson[modelId.ToString()] = modelJson;
             }
@@ -1807,9 +1813,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
 
     AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
     transform.Multiply(projectExtents, projectExtents);
-    json["projectExtents"]["low"] = PointToJson(projectExtents.low);
-    json["projectExtents"]["high"] = PointToJson(projectExtents.high);
-
+    json["projectExtents"] = RangeToJson(projectExtents);
+    json["projectTransform"] = TransformToJson(m_spatialToEcef);
+    
     return Status::Success;
     }
 
