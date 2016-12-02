@@ -484,7 +484,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
+PSolidFacetTopologyTable (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
     {
     FacetEntity (in, pixelSize, pixelSizeRange);
     }
@@ -492,7 +492,7 @@ PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, double pix
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOptionsR options)
+PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOptionsR options)
     {
     FacetEntity (in, options);
     }
@@ -500,7 +500,7 @@ PSolidFacetTopologyTable::PSolidFacetTopologyTable (IBRepEntityCR in, IFacetOpti
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-PSolidFacetTopologyTable::~PSolidFacetTopologyTable ()
+~PSolidFacetTopologyTable ()
     {
     PK_TOPOL_facet_2_r_f (&m_table);
     }
@@ -508,20 +508,20 @@ PSolidFacetTopologyTable::~PSolidFacetTopologyTable ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   12/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual T_FaceAttachmentsVec const* PSolidFacetTopologyTable::_GetFaceAttachmentsVec() override {return (m_faceAttachmentsVec.empty() ? NULL : &m_faceAttachmentsVec);};
-virtual T_FaceToSubElemIdMap const* PSolidFacetTopologyTable::_GetFaceToSubElemIdMap() override {return (m_faceToSubElemIdMap.empty() ? NULL : &m_faceToSubElemIdMap);};
+virtual T_FaceAttachmentsVec const* _GetFaceAttachmentsVec() override {return (m_faceAttachmentsVec.empty() ? NULL : &m_faceAttachmentsVec);};
+virtual T_FaceToSubElemIdMap const* _GetFaceToSubElemIdMap() override {return (m_faceToSubElemIdMap.empty() ? NULL : &m_faceToSubElemIdMap);};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    PSolidFacetTopologyTable::_IsTableValid () override {return m_table.number_of_facets > 0;}
-virtual int     PSolidFacetTopologyTable::_GetFacetCount () override {return m_table.number_of_facets;}
-virtual int     PSolidFacetTopologyTable::_GetFinCount () override {return m_table.number_of_fins;}
+virtual bool    _IsTableValid () override {return m_table.number_of_facets > 0;}
+virtual int     _GetFacetCount () override {return m_table.number_of_facets;}
+virtual int     _GetFinCount () override {return m_table.number_of_fins;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-int             PSolidFacetTopologyTable::FindTableIndex (PK_TOPOL_fctab_t tableId)
+int             FindTableIndex (PK_TOPOL_fctab_t tableId)
     {
     for (int iTable=0; iTable < m_table.number_of_tables; iTable++)
         if (tableId == m_table.tables[iTable].fctab)
@@ -533,7 +533,7 @@ int             PSolidFacetTopologyTable::FindTableIndex (PK_TOPOL_fctab_t table
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint3dCP  PSolidFacetTopologyTable::_GetPoint () override
+virtual DPoint3dCP  _GetPoint () override
     {
     int         iTable;
     
@@ -546,7 +546,7 @@ virtual DPoint3dCP  PSolidFacetTopologyTable::_GetPoint () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetPointCount () override
+virtual int     _GetPointCount () override
     {
     int         iTable;
     
@@ -559,7 +559,7 @@ virtual int     PSolidFacetTopologyTable::_GetPointCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetPointIndex () override
+virtual int const*  _GetPointIndex () override
     {
     int         iTable;
     
@@ -572,7 +572,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetPointIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetPointIndexCount () override
+virtual int     _GetPointIndexCount () override
     {
     int         iTable;
     
@@ -585,7 +585,7 @@ virtual int     PSolidFacetTopologyTable::_GetPointIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DVec3dCP    PSolidFacetTopologyTable::_GetNormal () override
+virtual DVec3dCP    _GetNormal () override
     {
     int         iTable;
     
@@ -598,7 +598,7 @@ virtual DVec3dCP    PSolidFacetTopologyTable::_GetNormal () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetNormalCount () override
+virtual int     _GetNormalCount () override
     {
     int         iTable;
     
@@ -611,7 +611,7 @@ virtual int     PSolidFacetTopologyTable::_GetNormalCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetNormalIndex () override
+virtual int const*  _GetNormalIndex () override
     {
     int         iTable;
     
@@ -624,7 +624,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetNormalIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetNormalIndexCount () override
+virtual int     _GetNormalIndexCount () override
     {
     int         iTable;
     
@@ -637,7 +637,7 @@ virtual int     PSolidFacetTopologyTable::_GetNormalIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual DPoint2dCP  PSolidFacetTopologyTable::_GetParamUV () override
+virtual DPoint2dCP  _GetParamUV () override
     {
     int         iTable;
     
@@ -650,7 +650,7 @@ virtual DPoint2dCP  PSolidFacetTopologyTable::_GetParamUV () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetParamUVCount () override
+virtual int     _GetParamUVCount () override
     {
     int         iTable;
     
@@ -663,7 +663,7 @@ virtual int     PSolidFacetTopologyTable::_GetParamUVCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetParamUVIndex () override
+virtual int const*  _GetParamUVIndex () override
     {
     int         iTable;
     
@@ -676,7 +676,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetParamUVIndex () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetParamUVIndexCount () override
+virtual int     _GetParamUVIndexCount () override
     {
     int         iTable;
     
@@ -689,7 +689,7 @@ virtual int     PSolidFacetTopologyTable::_GetParamUVIndexCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetFinData () override // fin vertex...
+virtual int const*  _GetFinData () override // fin vertex...
     {
     int         iTable;
     
@@ -702,7 +702,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetFinData () override // fin ver
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetFinDataCount () override
+virtual int     _GetFinDataCount () override
     {
     int         iTable;
     
@@ -715,7 +715,7 @@ virtual int     PSolidFacetTopologyTable::_GetFinDataCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetFinFin () override
+virtual int const*  _GetFinFin () override
     {
     int         iTable;
     
@@ -728,7 +728,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetFinFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetFinFinCount () override
+virtual int     _GetFinFinCount () override
     {
     int         iTable;
     
@@ -741,7 +741,7 @@ virtual int     PSolidFacetTopologyTable::_GetFinFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   PSolidFacetTopologyTable::_GetFacetFin () override
+virtual Point2dCP   _GetFacetFin () override
     {
     int         iTable;
     
@@ -754,7 +754,7 @@ virtual Point2dCP   PSolidFacetTopologyTable::_GetFacetFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetFacetFinCount () override
+virtual int     _GetFacetFinCount () override
     {
     int         iTable;
     
@@ -767,7 +767,7 @@ virtual int     PSolidFacetTopologyTable::_GetFacetFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   PSolidFacetTopologyTable::_GetStripFin () override
+virtual Point2dCP   _GetStripFin () override
     {
     int         iTable;
     
@@ -780,7 +780,7 @@ virtual Point2dCP   PSolidFacetTopologyTable::_GetStripFin () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetStripFinCount () override
+virtual int     _GetStripFinCount () override
     {
     int         iTable;
     
@@ -793,7 +793,7 @@ virtual int     PSolidFacetTopologyTable::_GetStripFinCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetStripFaceId () override
+virtual int const*  _GetStripFaceId () override
     {
     int         iTable;
     
@@ -806,7 +806,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetStripFaceId () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetStripFaceIdCount () override
+virtual int     _GetStripFaceIdCount () override
     {
     int         iTable;
     
@@ -819,7 +819,7 @@ virtual int     PSolidFacetTopologyTable::_GetStripFaceIdCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual Point2dCP   PSolidFacetTopologyTable::_GetFinEdge () override
+virtual Point2dCP   _GetFinEdge () override
     {
     int         iTable;
     
@@ -832,7 +832,7 @@ virtual Point2dCP   PSolidFacetTopologyTable::_GetFinEdge () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetFinEdgeCount () override
+virtual int     _GetFinEdgeCount () override
     {
     int         iTable;
     
@@ -845,7 +845,7 @@ virtual int     PSolidFacetTopologyTable::_GetFinEdgeCount () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int const*  PSolidFacetTopologyTable::_GetFacetFace () override
+virtual int const*  _GetFacetFace () override
     {
     int         iTable;
     
@@ -858,7 +858,7 @@ virtual int const*  PSolidFacetTopologyTable::_GetFacetFace () override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual int     PSolidFacetTopologyTable::_GetFacetFaceCount () override
+virtual int     _GetFacetFaceCount () override
     {
     int         iTable;
     
@@ -877,7 +877,7 @@ virtual int     PSolidFacetTopologyTable::_GetFacetFaceCount () override
 *            topology table.
 *
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    PSolidFacetTopologyTable::_GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge, bool useHighestId) override
+virtual bool    _GetEdgeCurveId (CurveTopologyId& curveTopologyId, int32_t edge, bool useHighestId) override
     {
     return SUCCESS == PSolidTopoId::CurveTopologyIdFromEdge (curveTopologyId, (PK_EDGE_t) edge, useHighestId);
     }
@@ -885,13 +885,13 @@ virtual bool    PSolidFacetTopologyTable::_GetEdgeCurveId (CurveTopologyId& curv
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      10/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    PSolidFacetTopologyTable::_IsHiddenEdge (int32_t entity) override  {return m_hiddenEdges.find(entity) != m_hiddenEdges.end();}
-virtual bool    PSolidFacetTopologyTable::_IsHiddenFace (int32_t entity) override  {return m_hiddenFaces.find(entity) != m_hiddenFaces.end();}
+virtual bool    _IsHiddenEdge (int32_t entity) override  {return m_hiddenEdges.find(entity) != m_hiddenEdges.end();}
+virtual bool    _IsHiddenFace (int32_t entity) override  {return m_hiddenFaces.find(entity) != m_hiddenFaces.end();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::GetFacetTolerances (double *chordTolP, double *angleTolP, DPoint3dCP lowP, DPoint3dCP highP, double pixelSize)
+void            GetFacetTolerances (double *chordTolP, double *angleTolP, DPoint3dCP lowP, DPoint3dCP highP, double pixelSize)
     {
     if (0.0 == pixelSize)
         {
@@ -932,7 +932,7 @@ void            PSolidFacetTopologyTable::GetFacetTolerances (double *chordTolP,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Earlin.Lutz     11/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-double          PSolidFacetTopologyTable::RestrictAngleTol (double radians, double defaultRadians, double minRadians, double maxRadians)
+double          RestrictAngleTol (double radians, double defaultRadians, double minRadians, double maxRadians)
     {
     if (radians <= 0.0)
         radians = defaultRadians;
@@ -949,7 +949,7 @@ double          PSolidFacetTopologyTable::RestrictAngleTol (double radians, doub
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::RemoveHiddenEdges (PK_ENTITY_t entityTag)
+void            RemoveHiddenEdges (PK_ENTITY_t entityTag)
     {
     int         iTable;
     
@@ -984,7 +984,7 @@ void            PSolidFacetTopologyTable::RemoveHiddenEdges (PK_ENTITY_t entityT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::RemoveHiddenFaces (PK_ENTITY_t entityTag)
+void            RemoveHiddenFaces (PK_ENTITY_t entityTag)
     {
     int         iTable;
     
@@ -1064,7 +1064,7 @@ void            PSolidFacetTopologyTable::RemoveHiddenFaces (PK_ENTITY_t entityT
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMaterialAttachmentsCP attachments, bool hasHiddenEdge, bool hasHiddenFace)
+void    CompleteTable (PK_ENTITY_t entityTag, IFaceMaterialAttachmentsCP attachments, bool hasHiddenEdge, bool hasHiddenFace)
     {
     // Process hidden edges so they don't display...
     if (hasHiddenEdge)
@@ -1099,7 +1099,7 @@ void    PSolidFacetTopologyTable::CompleteTable (PK_ENTITY_t entityTag, IFaceMat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
+void            FacetEntity (IBRepEntityCR in, double pixelSize, DRange1dP pixelSizeRange)
     {
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(in);
     Transform   entityTransform = in.GetEntityTransform();
@@ -1236,7 +1236,7 @@ void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, double 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   01/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            PSolidFacetTopologyTable::FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
+void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
     {
     PK_ENTITY_t entityTag = PSolidUtil::GetEntityTag(in);
     Transform   entityTransform = in.GetEntityTransform();

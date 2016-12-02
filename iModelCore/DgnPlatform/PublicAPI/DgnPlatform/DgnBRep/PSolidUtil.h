@@ -82,7 +82,7 @@ DGNPLATFORM_EXPORT static void DeleteEntityId(PK_ENTITY_t entityTag);
 +===============+===============+===============+===============+===============+======*/
 struct PSolidAttrib
 {
-DGNPLATFORM_EXPORT static void GetAttrib(int* pNumAttribOut, PK_ATTRIB_t** ppAttribArrayOut, PK_ENTITY_t entityTagIn, char *pAttribNameIn);
+DGNPLATFORM_EXPORT static void GetAttrib(int* pNumAttribOut, PK_ATTRIB_t** ppAttribArrayOut, PK_ENTITY_t entityTagIn, char const*pAttribNameIn);
 DGNPLATFORM_EXPORT static void DeleteAttrib(PK_ENTITY_t entityTagIn, char* pAttribNameIn);
 
 DGNPLATFORM_EXPORT static BentleyStatus GetHiddenAttribute(bool& isHidden, PK_ENTITY_t entityTag);

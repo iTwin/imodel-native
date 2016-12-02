@@ -168,7 +168,7 @@ private:
     void ProcessMeshes(Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char* accessorType, bool quantize, double const* min, double const* max);
+    Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
     void AddBinaryData (void const* data, size_t size);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
@@ -227,7 +227,7 @@ private:
     BentleyStatus           ReadVertexBatchIds (bvector<uint16_t>& batchIds, Json::Value const& primitiveValue);
 
 
-    template <typename T> BentleyStatus  TileReader::ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
+    template <typename T> BentleyStatus  ReadVertexValues(bvector<T>& vertexValues, Json::Value const& primitiveValue, char const* attributeName)
         {
         bvector <double>    values;
         size_t              nComponents = sizeof(T)/sizeof(double);
