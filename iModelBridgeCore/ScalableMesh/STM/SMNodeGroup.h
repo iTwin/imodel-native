@@ -718,6 +718,11 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
             newGroup.reserve(s_max_number_nodes_in_group);
             }
 
+        void RemoveGroup(const uint32_t& pi_pGroupID)
+            {
+            this->erase(pi_pGroupID);
+            }
+
         void AddNodeToGroup(const uint32_t& pi_pGroupID, const uint64_t& pi_pNodeID, const uint64_t& pi_pNodeHeaderSize)
             {
             auto& group = this->operator[](pi_pGroupID);
@@ -1141,6 +1146,11 @@ void SMCesium3DTileStrategy<EXTENT>::_ApplyPostChildNodeProcess(const SMIndexNod
         if (pi_pChildGroup->m_tileTreeMap.size() < 10)
             {
             pi_pParentGroup->MergeChild(pi_pChildGroup);
+            for (auto& tile : pi_pChildGroup->m_tileTreeMap)
+                {
+                this->m_GroupMasterHeader.AddNodeToGroup(pi_pParentGroup->GetID(), tile.first, 0);
+                }
+            this->m_GroupMasterHeader.RemoveGroup(pi_pChildGroup->GetID());
             pi_pChildGroup->m_tileTreeMap.clear();
             }
         else
