@@ -1754,15 +1754,18 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint, DgnViewId defaultViewId)
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId)
     {
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
 
+    Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
+    Transform nonSpatialTransform = Transform::FromProduct(m_nonSpatialToEcef, m_dbToTile);
+
     if (!m_spatialToEcef.IsIdentity())
         {
         DPoint3d groundEcefPoint;
-        transform.Multiply(groundEcefPoint, groundPoint);
+        spatialTransform.Multiply(groundEcefPoint, groundPoint);
         json["groundPoint"] = PointToJson(groundEcefPoint);
         }
 
@@ -1792,7 +1795,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetViewJson(entry, *viewDefinition, transform);
+        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : nonSpatialTransform);
         viewsJson[viewId.ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default
@@ -1810,7 +1813,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
     AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
-    transform.Multiply(projectExtents, projectExtents);
+    spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);
     

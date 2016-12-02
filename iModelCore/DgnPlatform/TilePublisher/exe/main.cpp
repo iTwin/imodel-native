@@ -413,11 +413,11 @@ private:
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
-    Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
+    Status  GetViewsJson (Json::Value& value, DPoint3dCR groundPoint);
 
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
-    Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params);
+    Status WriteWebApp(DPoint3dCR groundPoint, PublisherParams const& params);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -474,7 +474,7 @@ TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
     {
     // URL of tileset .json
     Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
@@ -485,18 +485,18 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["tilesetUrl"] = tilesetUrl;
 
-    return GetViewsetJson(json, transform, groundPoint, m_defaultViewId);
+    return GetViewsetJson(json, groundPoint, m_defaultViewId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params)
+PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, PublisherParams const& params)
     {
     Json::Value json;
     Status      status;
 
-    if (Status::Success != (status = GetViewsJson (json, transform, groundPoint)))
+    if (Status::Success != (status = GetViewsJson (json, groundPoint)))
         return status;
 
 
@@ -629,19 +629,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         groundPoint.z = params.GetGroundHeight();
         }
 
-    // ###TODO: This transform can't apply to both 2d and spatial...
-    bool anySpatialViews = false;
-    for (auto const& viewId : m_viewIds)
-        {
-        if (GetDgnDb().Elements().Get<SpatialViewDefinition>(viewId).IsValid())
-            {
-            anySpatialViews = true;
-            break;
-            }
-        }
-
-    auto const& ecefTf = anySpatialViews ? m_spatialToEcef : m_nonSpatialToEcef;
-    return WriteWebApp(Transform::FromProduct(ecefTf, m_dbToTile), groundPoint, params);
+    return WriteWebApp(groundPoint, params);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -108,7 +108,7 @@ public:
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
     TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
-    TransformCR GetNonSpatailToEcef() const { return m_nonSpatialToEcef; }
+    TransformCR GetNonSpatialToEcef() const { return m_nonSpatialToEcef; }
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
@@ -119,7 +119,7 @@ public:
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint, DgnViewId defaultViewId);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
