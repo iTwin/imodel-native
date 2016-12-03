@@ -3246,7 +3246,6 @@ struct  InstanceXmlReader
             ECClassId relClassId;
             ECRelationshipClassCP relClass = nullptr;
             int64_t longValue = -1;
-            // Loop through to read both values
             for (BeXmlNodeP valueNode : valueNodes)
                 {
                 Utf8String valueNodeName(valueNode->GetName());
@@ -3287,7 +3286,7 @@ struct  InstanceXmlReader
                      size_t primitivePos = valueNodeName.find(":");
                      Utf8String primitiveType(valueNodeName.substr(primitivePos + 1, valueNodeName.size() - primitivePos));
                      if (!ValidateArrayPrimitiveType(primitiveType.c_str(), propertyType))
-                         return InstanceReadStatus::Success;
+                         return InstanceReadStatus::BadNavigationValue;
 
                      if (PrimitiveType::PRIMITIVETYPE_Long == propertyType)
                          {

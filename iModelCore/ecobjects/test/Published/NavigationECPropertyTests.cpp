@@ -509,7 +509,6 @@ void InstanceWithNavProp(PrimitiveType navPropType)
 
     Utf8String xmlString;
     InstanceWriteStatus writeStatus = sourceInstance->WriteToXmlString(xmlString, true, false);
-    sourceInstance->WriteToXmlFile(L"D:\\dev\\BIM0200ECDb\\NewTestInstance.xml", true, false);
     ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance to xml with a nav property";
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
 
