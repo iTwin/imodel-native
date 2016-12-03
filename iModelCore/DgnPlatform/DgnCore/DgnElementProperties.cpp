@@ -1253,7 +1253,7 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECCl
     {
     ECValue value;
     if (id.IsValid())
-        relClassId.IsValid() ? value.SetNavigationInfo(relClassId, id.GetValue()) : value.SetNavigationInfo(id.GetValue());
+        relClassId.IsValid() ? value.SetNavigationInfo(id.GetValue(), relClassId) : value.SetNavigationInfo(id.GetValue());
     else
         value.SetToNull();
 
