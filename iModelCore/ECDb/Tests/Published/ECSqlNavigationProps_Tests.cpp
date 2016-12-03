@@ -1321,7 +1321,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
 
     IECInstancePtr elementInst = elementClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Code", ECValue("TestCode-1", true)));
-    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", ECValue(relClass, modelKey.GetECInstanceId().GetValue())));
+    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", ECValue(modelKey.GetECInstanceId().GetValue(), &relClass)));
 
     ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
