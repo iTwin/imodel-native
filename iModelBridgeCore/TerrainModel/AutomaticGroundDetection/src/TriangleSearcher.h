@@ -7,25 +7,43 @@
 +--------------------------------------------------------------------------------------*/
 #pragma  once
 
+#define _DEBUG
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/AABB_tree.h>
+#include <CGAL/AABB_traits.h>
+#include <CGAL/AABB_triangle_primitive.h>
+
+typedef CGAL::Simple_cartesian<double> K;
+typedef K::FT FT;
+typedef K::Point_3 CPoint;
+typedef K::Triangle_3 CTriangle;
+typedef bvector<Triangle>::iterator Iterator;
+typedef CGAL::AABB_triangle_primitive<K, Iterator> CPrimitive;
+typedef CGAL::AABB_traits<K, Primitive> AABB_triangle_traits;
+typedef CGAL::AABB_tree<AABB_triangle_traits> CTree;
+
 BEGIN_GROUND_DETECTION_NAMESPACE
 
 struct TriangleSearcher : public RefCountedBase
     {
     private: 
 
-        bvector<DPoint3d> m_points;
+        bool               m_needTreeRebuilding;
+        CTree              m_searchTree;
+        bvector<CTriangle> m_triangles;
+        
 
        TriangleSearcher();
-        ~TriangleSearcher();
+       virtual ~TriangleSearcher();
 
 
     public:
 
-        static TriangleSearcherPtr Create();
+        //static TriangleSearcherPtr Create();
                
-        void AddTriangle(const DPoint3d& point);
+        void AddTriangle(CTriangle& triangle);
 
-        
+        void SearchNearestTri(CTriangle& nearestTriangle, double& distance, DPoint3d& location);
     
     };
 
