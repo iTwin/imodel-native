@@ -129,6 +129,9 @@ IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 1024);
+    m_wsRepositoryClient->SetCompressionOptions(options);
     m_wsRepositoryClient->SetCredentials(credentials);
     }
 
