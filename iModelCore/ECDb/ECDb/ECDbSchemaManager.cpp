@@ -503,10 +503,17 @@ ECClassCP ECDbSchemaManager::_LocateClass(Utf8CP schemaName, Utf8CP className)
 BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb() const
     {
     BeMutexHolder lock(m_mutex);
-
-    return GetDbMap().CreateECClassViewsInDb();
+    return ViewGenerator::CreateECClassViews(m_ecdb);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle   12/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus ECDbSchemaManager::CreateECClassViewsInDb(bvector<ECN::ECClassId> const& ecclassids) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return ViewGenerator::CreateECClassViews(m_ecdb, ecclassids);
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

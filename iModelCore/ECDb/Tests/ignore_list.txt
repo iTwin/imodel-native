@@ -40,3 +40,6 @@ ECSchemaUpdateTests.DeleteSharedColumnCount
 
 #TFS 555738
 ECDbMappingTestFixture.UserDefinedIndexTest
+
+ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
+ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
