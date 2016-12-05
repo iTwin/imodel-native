@@ -73,6 +73,7 @@ struct ContextServicesWorkbench
         Utf8String m_authorizationToken;
         BeFileName m_certificatePath;
         Utf8String m_spatialEntityWithDetailsJson;
+        Utf8String m_packageIdBuffer;
         GeoCoordinationParams m_params;
         bool m_downloadedSEWD;
         RealityPlatform::SpatioTemporalSelector::ResolutionMap m_selectedIds;
@@ -89,29 +90,41 @@ struct ContextServicesWorkbench
         BeFileName getBaseFolder();
         CURLcode performCurl(Utf8StringCR url, Utf8StringCP writeString = nullptr, FILE* fp = nullptr, Utf8StringCR postFields = Utf8String());
         
-        Utf8String createSpatialEntityWithDetailsViewUrl(Utf8String filter = "");
         BentleyStatus handlePackageFile();
     public:
+        REALITYDATAPLATFORM_EXPORT Utf8String CreateSpatialEntityWithDetailsViewUrl(Utf8String filter = "");
+        REALITYDATAPLATFORM_EXPORT Utf8String GetPackageIdUrl();
+        REALITYDATAPLATFORM_EXPORT char* GetPackageFileUrl();
+        REALITYDATAPLATFORM_EXPORT FILE* OpenPackageFile();
         REALITYDATAPLATFORM_EXPORT static ContextServicesWorkbench* Create(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params);
         REALITYDATAPLATFORM_EXPORT void SetGeoParam(GeoCoordinationParamsCR params);
         REALITYDATAPLATFORM_EXPORT Json::Value GetError() { return m_errorObj; }
         REALITYDATAPLATFORM_EXPORT Utf8String GetSpatialEntityWithDetailsJson() { return m_spatialEntityWithDetailsJson; }
+        REALITYDATAPLATFORM_EXPORT Utf8StringP GetSpatialEntityWithDetailsJsonPointer() { return &m_spatialEntityWithDetailsJson; }
+        REALITYDATAPLATFORM_EXPORT Utf8StringP GetPackageIdPointer() { return &m_packageIdBuffer; }
         REALITYDATAPLATFORM_EXPORT BeFileName GetPackageFileName() { return m_packageFileName; }
         REALITYDATAPLATFORM_EXPORT GeoCoordinationParamsCR GetUiParameters() const { return m_params; }
         REALITYDATAPLATFORM_EXPORT Utf8String GetInstanceId() const { return m_instanceId; }
+        REALITYDATAPLATFORM_EXPORT void SetInstanceId(Utf8String instanceId) { m_instanceId = instanceId; }
         REALITYDATAPLATFORM_EXPORT BeFileName GetCertificatePath() const { return m_certificatePath; }
+        REALITYDATAPLATFORM_EXPORT void SetPackageDownloaded(bool downloaded) { m_downloadedPackage = downloaded; }
+
+        REALITYDATAPLATFORM_EXPORT void SetToken(Utf8String token) { m_authorizationToken = token; }
 
         //REALITYDATAPLATFORM_EXPORT DetailedSpatialEntityListPtr GetSpatialEntityWithDetails() const { return m_contextList; }
         REALITYDATAPLATFORM_EXPORT RealityPlatform::SpatioTemporalSelector::ResolutionMap GetSelectedIds() const { return m_selectedIds; }
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadSpatialEntityWithDetails(Utf8String filter = "");
         REALITYDATAPLATFORM_EXPORT void FilterSpatialEntity(ContextServicesWorkbench_FilterFunction pi_Func = default_filter);
-        REALITYDATAPLATFORM_EXPORT Utf8String GetPackageParameters(bvector<Utf8String> selectedIds) const;
+        REALITYDATAPLATFORM_EXPORT Utf8String GetPackageParameters();
+        REALITYDATAPLATFORM_EXPORT Utf8String GetPackageParameters(bvector<Utf8String> selectedIds);
         REALITYDATAPLATFORM_EXPORT RealityPlatform::ResolutionCriteria GetResolution() { return m_selectedResolution; }
         REALITYDATAPLATFORM_EXPORT void SetResolution(RealityPlatform::ResolutionCriteria resolution) { m_selectedResolution = resolution; }
 
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackageId();
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadPackageFile();
         REALITYDATAPLATFORM_EXPORT BentleyStatus DownloadFiles();
+        REALITYDATAPLATFORM_EXPORT void SelectRandomResolution();
+        REALITYDATAPLATFORM_EXPORT void Init();
     };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

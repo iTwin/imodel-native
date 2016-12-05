@@ -9,7 +9,7 @@
 //#ifdef REALITYMODFRAMEWORK_LOCALTEST
 
 #include <windows.h>
-#include <omp.h>
+//#include <omp.h>
 
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFile.h>
@@ -604,6 +604,7 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
             ASSERT_TRUE(BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(statedSize, attribute.c_str()));
             ASSERT_TRUE(BeFileStatus::Success == file.GetSize(actualSize));
             ASSERT_TRUE(actualSize == statedSize);
+            file.Close();
             }
         }
 
