@@ -48,51 +48,33 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
     switch (m_source)
         {
         case TileSource::None:
-            return;
         case TileSource::Model:
-            {
-            Json::Value modelIds(Json::arrayValue);
-            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
-                modelIds.append(idIter->ToString());
-
-            value["model"] = modelIds;
-            return;
-            }
         case TileSource::Element:
             {
-            static const Utf8CP s_3dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
-            static const Utf8CP s_2dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement2d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
+            static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+            static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
 
             Utf8CP sql = is2d ? s_2dSql : s_3dSql;
             BeSQLite::Statement stmt;
             stmt.Prepare(db, sql);
 
             Json::Value elementIds(Json::arrayValue);
-            Json::Value modelIds(Json::arrayValue);
             Json::Value categoryIds(Json::arrayValue);
 
             for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
                 {
                 elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-                DgnModelId modelId;
                 DgnCategoryId categoryId;
 
                 stmt.BindId(1, *elemIter);
                 if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-                    {
-                    modelId = stmt.GetValueId<DgnModelId>(0);
-                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
-                    }
+                    categoryId = stmt.GetValueId<DgnCategoryId>(0);
 
-                modelIds.append(modelId.ToString());
                 categoryIds.append(categoryId.ToString());
                 stmt.Reset();
                 }
 
             value["element"] = elementIds;
-            value["model"] = modelIds;
             value["category"] = categoryIds;
             }
         }
