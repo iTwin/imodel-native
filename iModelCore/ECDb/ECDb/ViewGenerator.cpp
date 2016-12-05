@@ -131,14 +131,19 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
 //static 
 BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> const& ecclassIds)
     {
-    ECDbMap const& ecdbMap = ecdb.GetECDbImplR().GetECDbMap();
-
     for (ECClassId classId : ecclassIds)
         {
         if (!classId.IsValid())
             return ERROR;
 
-        ClassMapCP classMap = ecdbMap.GetClassMap(classId);
+        ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
+        if (ecClass == nullptr)
+            {
+            BeAssert(ecClass != nullptr);
+            return ERROR;
+            }
+
+        ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
         if (classMap == nullptr)
             {
             BeAssert(classMap != nullptr);
