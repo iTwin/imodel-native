@@ -226,6 +226,7 @@
     <ClInclude Include="IssueReporter.h" />
     <ClInclude Include="LightweightCache.h" />
     <ClInclude Include="MapStrategy.h" />
+    <ClInclude Include="Nullable.h" />
     <ClInclude Include="PropertyMap.h" />
     <ClInclude Include="PropertyMapVisitor.h" />
     <ClInclude Include="RelationshipClassMap.h" />
@@ -240,6 +241,7 @@
     <None Include="docs\source\ECSqlOverview.doxpage" />
     <None Include="docs\source\ECSqlStatement.doxpage" />
     <None Include="ECDb.mke" />
+    <None Include="ECDbCompileOptions.mki" />
     <None Include="ECSql\Parser\LICENSE" />
     <None Include="ECSql\Parser\NOTICE" />
     <None Include="ECSql\parser\sqlbison.y" />

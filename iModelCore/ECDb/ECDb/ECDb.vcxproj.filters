@@ -408,6 +408,7 @@
     <ClInclude Include="ECDbSqlFunctions.h">
       <Filter>ECDb</Filter>
     </ClInclude>
+    <ClInclude Include="Nullable.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -436,6 +437,9 @@
     </None>
     <None Include="docs\source\ECSqlStatement.doxpage">
       <Filter>docs\source</Filter>
+    </None>
+    <None Include="ECDbCompileOptions.mki">
+      <Filter>Mke</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

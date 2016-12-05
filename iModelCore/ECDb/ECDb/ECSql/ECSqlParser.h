@@ -174,7 +174,7 @@ private:
     BentleyStatus ParseTruthValue(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseSearchCondition(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8CP functionName, bool isStandardSetFunction) const;
+    BentleyStatus ParseSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName, bool isStandardSetFunction) const;
 
     BentleyStatus ParseUnaryPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;

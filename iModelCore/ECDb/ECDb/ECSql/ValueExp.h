@@ -213,16 +213,17 @@ struct FunctionCallExp : ValueExp
         virtual void _DoToECSql(Utf8StringR ecsql) const override;
         virtual Utf8String _ToString() const override;
 
+        static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8StringCR functionName, int argCount);
+
     public:
-        explicit FunctionCallExp(Utf8CP functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified, bool isStandardSetFunction = false) : ValueExp(), m_functionName(functionName), m_setQuantifier(setQuantifier), m_isStandardSetFunction(isStandardSetFunction) {}
+        explicit FunctionCallExp(Utf8StringCR functionName, SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified, bool isStandardSetFunction = false) : ValueExp(), m_functionName(functionName), m_setQuantifier(setQuantifier), m_isStandardSetFunction(isStandardSetFunction) {}
         virtual ~FunctionCallExp() {}
 
-        Utf8CP GetFunctionName() const { return m_functionName.c_str(); }
+        Utf8StringCR GetFunctionName() const { return m_functionName; }
         SqlSetQuantifier GetSetQuantifier() const { return m_setQuantifier; }
 
         BentleyStatus AddArgument(std::unique_ptr<ValueExp> argument);
 
-        static ECN::PrimitiveType DetermineReturnType(ECDbCR, Utf8CP functionName, int argCount);
     };
 
 

@@ -136,7 +136,11 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         auto const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
         if (ecinstanceIdValueSnippets.size() != 1)
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
+            if (ecinstanceIdValueSnippets.size() > 1)
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
+            else
+                BeAssert(false);
+
             return ECSqlStatus::InvalidECSql;
             }
 

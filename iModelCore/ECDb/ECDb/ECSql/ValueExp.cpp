@@ -510,7 +510,7 @@ BentleyStatus FunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument)
 // @bsimethod                                    Krischan.Eberle                    03/2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP functionName, int argCount)
+ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringCR functionName, int argCount)
     {
     DbFunction* func = nullptr;
     const bool isCustomFunction = ecdb.GetECDbImplR().TryGetSqlFunction(func, functionName, argCount);
@@ -533,80 +533,80 @@ ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8CP func
     //return type for SQLite built-in functions
     //TODO: This is SQLite specific and therefore should be moved out of the parser. Maybe an external file
     //for better maintainability?
-    if (BeStringUtilities::StricmpAscii(functionName, "any") == 0)
+    if (functionName.EqualsIAscii("any"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "count") == 0)
+    if (functionName.EqualsIAscii("count"))
         return PRIMITIVETYPE_Long;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "every") == 0)
+    if (functionName.EqualsIAscii("every"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "glob") == 0)
+    if (functionName.EqualsIAscii("glob"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "group_concat") == 0)
+    if (functionName.EqualsIAscii("group_concat"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "hex") == 0)
+    if (functionName.EqualsIAscii("hex"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "instr") == 0)
+    if (functionName.EqualsIAscii("instr"))
         return PRIMITIVETYPE_Integer;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "length") == 0)
+    if (functionName.EqualsIAscii("length"))
         return PRIMITIVETYPE_Long;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "like") == 0)
+    if (functionName.EqualsIAscii("like"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "lower") == 0)
+    if (functionName.EqualsIAscii("lower"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "ltrim") == 0)
+    if (functionName.EqualsIAscii("ltrim"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "match") == 0)
+    if (functionName.EqualsIAscii("match"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "quote") == 0)
+    if (functionName.EqualsIAscii("quote"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "randomblob") == 0)
+    if (functionName.EqualsIAscii("randomblob"))
         return PRIMITIVETYPE_Binary;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "regexp") == 0)
+    if (functionName.EqualsIAscii("regexp"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "replace") == 0)
+    if (functionName.EqualsIAscii("replace"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "rtrim") == 0)
+    if (functionName.EqualsIAscii("rtrim"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "some") == 0)
+    if (functionName.EqualsIAscii("some"))
         return PRIMITIVETYPE_Boolean;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "soundex") == 0)
+    if (functionName.EqualsIAscii("soundex"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "substr") == 0)
+    if (functionName.EqualsIAscii("substr"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "trim") == 0)
+    if (functionName.EqualsIAscii("trim"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "unicode") == 0)
+    if (functionName.EqualsIAscii("unicode"))
         return PRIMITIVETYPE_Long;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "upper") == 0)
+    if (functionName.EqualsIAscii("upper"))
         return PRIMITIVETYPE_String;
 
-    if (BeStringUtilities::StricmpAscii(functionName, "zeroblob") == 0)
+    if (functionName.EqualsIAscii("zeroblob"))
         return PRIMITIVETYPE_Binary;
 
     //Functions built-into BeSQLite
-    if (BeStringUtilities::StricmpAscii(functionName, "invirtualset") == 0)
+    if (functionName.EqualsIAscii("invirtualset"))
         return PRIMITIVETYPE_Boolean;
 
     //all other functions get the default return type

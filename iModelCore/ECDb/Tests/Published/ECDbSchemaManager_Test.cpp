@@ -929,6 +929,18 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
     ASSERT_EQ(37, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
+
+    //execute the views to cache errors in their ddl
+    for (std::pair<Utf8String, std::set<Utf8String>> const& kvPair : schemasWithECClassViews)
+        {
+        for (Utf8StringCR viewName : kvPair.second)
+            {
+            Utf8String sql("SELECT * FROM ");
+            sql.append(viewName);
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(ecdb, sql.c_str())) << sql.c_str();
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -969,6 +981,19 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetofClasses)
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Cubicle]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Foo_has_Bars]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.RelationWithLinkTableMapping]")) != stcoViews.end());
+
+    //execute the views to cache errors in their ddl
+    for (std::pair<Utf8String, std::set<Utf8String>> const& kvPair : schemasWithECClassViews)
+        {
+        for (Utf8StringCR viewName : kvPair.second)
+            {
+            Utf8String sql("SELECT * FROM ");
+            sql.append(viewName);
+            Statement stmt;
+            ASSERT_EQ(BE_SQLITE_OK, stmt.TryPrepare(ecdb, sql.c_str())) << sql.c_str();
+            }
+        }
+
     }
 
 //---------------------------------------------------------------------------------------

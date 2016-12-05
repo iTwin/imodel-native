@@ -73,16 +73,15 @@ struct ViewGenerator
         bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
         bool m_isPolymorphic;
-        std::unique_ptr<std::vector<Utf8String>> m_viewAccessStringList;
+        bool m_captureViewColumnNameList;
+        std::unique_ptr<std::vector<Utf8String>> m_viewColumnNameList;
         bool m_asSubQuery;
-        bool m_captureViewAccessStringList;
 
-    private:
-        explicit ViewGenerator(ECDb const& ecdb, bool returnViewAccessStringList = false, bool asSubQuery = true) :
-            m_ecdb(ecdb), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewAccessStringList(true)
+        explicit ViewGenerator(ECDb const& ecdb, bool cacheViewColumnNameList = false, bool asSubQuery = true) 
+            : m_ecdb(ecdb), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewColumnNameList(true)
             {
-            if (returnViewAccessStringList)
-                m_viewAccessStringList = decltype(m_viewAccessStringList)(new std::vector<Utf8String>());
+            if (cacheViewColumnNameList)
+                m_viewColumnNameList = std::unique_ptr<std::vector<Utf8String>>(new std::vector<Utf8String>());
             }
 
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);

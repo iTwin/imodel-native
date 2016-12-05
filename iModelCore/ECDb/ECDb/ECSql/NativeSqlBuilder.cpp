@@ -79,8 +79,8 @@ NativeSqlBuilder& NativeSqlBuilder::Append(NativeSqlBuilder const& builder)
 //+---------------+---------------+---------------+---------------+---------------+------
 NativeSqlBuilder& NativeSqlBuilder::Append(List const& builderList, Utf8CP separator)
     {
-    auto isFirstBuilder = true;
-    for (auto const& builder : builderList)
+    bool isFirstBuilder = true;
+    for (NativeSqlBuilder const& builder : builderList)
         {
         if (!isFirstBuilder)
             {
@@ -280,7 +280,7 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
             continue;
             }
 
-        auto const& innerList = listOfLists[i];
+        NativeSqlBuilder::List const& innerList = listOfLists[i];
         flattenedList.insert(flattenedList.end(), innerList.begin(), innerList.end());
         }
 
@@ -297,7 +297,7 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
     auto skipEndIt = indexSkipList.end();
     for (size_t i = 0; i < listOfLists.size(); i++)
         {
-        auto const& innerList = listOfLists[i];
+        NativeSqlBuilder::List const& innerList = listOfLists[i];
         auto itor = indexSkipList.find(i);
         if (itor != indexSkipList.end())
             {

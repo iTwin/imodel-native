@@ -1222,30 +1222,40 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     sql.Append(" ON ");
     {
     ECInstanceIdPropertyMap const* fromECInstanceIdPropMap = fromEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    PRECONDITION(fromECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
-    if (!fromECInstanceIdPropMap->IsMappedToSingleTable())
+    if (fromECInstanceIdPropMap == nullptr)
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
-        return ECSqlStatus::InvalidECSql;
+        BeAssert(false);
+        return ECSqlStatus::Error;
         }
 
     ToSqlPropertyMapVisitor fromECInstanceIdSqlVisitor(*fromECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, fromEP.GetClassNameRef()->GetId().c_str());
     fromECInstanceIdPropMap->AcceptVisitor(fromECInstanceIdSqlVisitor);
+    if (fromECInstanceIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     sql.Append(fromECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
-    sql.Append(" = ");
+    sql.Append(BooleanSqlOperator::EqualTo);
     }
 
     {
     ConstraintECInstanceIdPropertyMap const* fromRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
-    PRECONDITION(fromRelatedIdPropMap != nullptr, ECSqlStatus::Error);
-    if (!fromRelatedIdPropMap->IsMappedToSingleTable())
+    if (fromRelatedIdPropMap == nullptr)
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
-        return ECSqlStatus::InvalidECSql;
+        BeAssert(false);
+        return ECSqlStatus::Error;
         }
 
     ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
+    if (fromRelatedIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     sql.Append(fromRelatedIdSqlVisitor.GetResultSet().front().GetSql());
 
     //RelationView To ToECClass
@@ -1259,30 +1269,39 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     {
     ECInstanceIdPropertyMap const*  toECInstanceIdPropMap = toEP.GetClassNameRef()->GetInfo().GetMap().GetECInstanceIdPropertyMap();
-    PRECONDITION(toECInstanceIdPropMap != nullptr, ECSqlStatus::Error);
-    if (!toECInstanceIdPropMap->IsMappedToSingleTable())
+    if (toECInstanceIdPropMap == nullptr)
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
-        return ECSqlStatus::InvalidECSql;
+        BeAssert(false);
+        return ECSqlStatus::Error;
         }
 
     ToSqlPropertyMapVisitor toECInstanceIdSqlVisitor(*toECInstanceIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, toEP.GetClassNameRef()->GetId().c_str());
     toECInstanceIdPropMap->AcceptVisitor(toECInstanceIdSqlVisitor);
+    if (toECInstanceIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
+
     sql.Append(toECInstanceIdSqlVisitor.GetResultSet().front().GetSql());
-    sql.Append(" = ");
+    sql.Append(BooleanSqlOperator::EqualTo);
     }
 
     {
     ConstraintECInstanceIdPropertyMap const* toRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
-    PRECONDITION(toRelatedIdPropMap != nullptr, ECSqlStatus::Error);
-    if (!toRelatedIdPropMap->IsMappedToSingleTable())
+    if (toRelatedIdPropMap == nullptr)
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported in ECSQL.");
-        return ECSqlStatus::InvalidECSql;
+        BeAssert(false);
+        return ECSqlStatus::Error;
         }
 
     ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
+    if (toRelatedIdSqlVisitor.GetResultSet().size() != 1)
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
     sql.Append(toRelatedIdSqlVisitor.GetResultSet().front().GetSql());
     }
 
@@ -1297,24 +1316,23 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 //static
 ECSqlStatus ECSqlExpPreparer::PrepareFunctionCallExp(NativeSqlBuilder::List& nativeSqlSnippets, ECSqlPrepareContext& ctx, FunctionCallExp const& exp)
     {
-    Utf8CP functionName = exp.GetFunctionName();
+    Utf8StringCR functionName = exp.GetFunctionName();
     NativeSqlBuilder nativeSql;
     if (exp.HasParentheses())
         nativeSql.AppendParenLeft();
 
-    const bool isAnyOrSomeFunction = BeStringUtilities::StricmpAscii(functionName, "any") == 0 || BeStringUtilities::StricmpAscii(functionName, "some") == 0;
-    const bool isEveryFunction = !isAnyOrSomeFunction && BeStringUtilities::StricmpAscii(functionName, "every") == 0;
+    const bool isAnyOrSomeFunction = functionName.EqualsIAscii("any") || functionName.EqualsIAscii("some");
+    const bool isEveryFunction = !isAnyOrSomeFunction && functionName.EqualsIAscii("every");
     const bool isAnyEveryOrSomeFunction = isAnyOrSomeFunction || isEveryFunction;
     if (isAnyEveryOrSomeFunction)
         {
         //ANY, EVERY, SOME is not directly supported by SQLite. But they can be expressed by standard functions
         //ANY,SOME: checks whether at least one row in the specified BOOLEAN column is TRUE -> MAX(Col) <> 0
         //EVERY: checks whether all rows in the specified BOOLEAN column are TRUE -> MIN(Col) <> 0
-        Utf8CP sqlFunctionName = isEveryFunction ? "MIN" : "MAX";
-        nativeSql.Append(sqlFunctionName);
+        nativeSql.Append(isEveryFunction ? "MIN" : "MAX");
         }
     else
-        nativeSql.Append(functionName);
+        nativeSql.Append(functionName.c_str());
 
     nativeSql.AppendParenLeft();
 

@@ -525,7 +525,7 @@ BentleyStatus ECSqlParser::ParseFold(std::unique_ptr<ValueExp>& exp, OSQLParseNo
             }
         }
 
-    unique_ptr<FunctionCallExp> foldExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName));
+    unique_ptr<FunctionCallExp> foldExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(Utf8String(functionName)));
 
     OSQLParseNode const* argNode = parseNode->getChild(2);
     unique_ptr<ValueExp> valueExp = nullptr;
@@ -769,10 +769,10 @@ BentleyStatus ECSqlParser::ParseFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode
 
     const size_t childCount = parseNode->count();
     if (childCount == 5)
-        return ParseSetFct(exp, *parseNode, functionName.c_str(), false);
+        return ParseSetFct(exp, *parseNode, functionName, false);
 
 
-    unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName.c_str()));
+    unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(functionName);
     //parse function args. (if child parse node count is < 4, function doesn't have args)
     if (childCount == 4)
         {
@@ -799,7 +799,7 @@ BentleyStatus ECSqlParser::ParseFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseSetFct(unique_ptr<ValueExp>& exp, OSQLParseNode const& parseNode, Utf8CP functionName, bool isStandardSetFunction) const
+BentleyStatus ECSqlParser::ParseSetFct(unique_ptr<ValueExp>& exp, OSQLParseNode const& parseNode, Utf8StringCR functionName, bool isStandardSetFunction) const
     {
     SqlSetQuantifier setQuantifier = SqlSetQuantifier::NotSpecified;
     if (SUCCESS != ParseAllOrDistinctToken(setQuantifier, parseNode.getChild(2)))
@@ -807,7 +807,7 @@ BentleyStatus ECSqlParser::ParseSetFct(unique_ptr<ValueExp>& exp, OSQLParseNode 
 
     unique_ptr<FunctionCallExp> functionCallExp = unique_ptr<FunctionCallExp>(new FunctionCallExp(functionName, setQuantifier, isStandardSetFunction));
 
-    if (BeStringUtilities::StricmpAscii(functionName, "count") == 0 && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
+    if (functionName.EqualsIAscii("count") && Exp::IsAsteriskToken(parseNode.getChild(2)->getTokenValue().c_str()))
         {
         unique_ptr<ValueExp> argExp = nullptr;
         if (SUCCESS != LiteralValueExp::Create(argExp, *m_context, Exp::ASTERISK_TOKEN, ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies)))
@@ -933,7 +933,7 @@ BentleyStatus ECSqlParser::ParseGeneralSetFct(unique_ptr<ValueExp>& exp, OSQLPar
             }
         }
 
-    return ParseSetFct(exp, *parseNode, functionName, true);
+    return ParseSetFct(exp, *parseNode, Utf8String(functionName), true);
     }
 
 //-----------------------------------------------------------------------------------------

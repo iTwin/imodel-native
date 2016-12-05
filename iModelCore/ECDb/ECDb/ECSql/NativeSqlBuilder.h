@@ -95,48 +95,10 @@ struct NativeSqlBuilder
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
 
         std::vector<ECSqlParameterIndex> const& GetParameterIndexMappings() const { return m_parameterIndexMappings; }
+        void CopyIndexMappingFrom(NativeSqlBuilder const& arg) { m_parameterIndexMappings = arg.GetParameterIndexMappings(); }
 
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
-        void CopyIndexMappingFrom(NativeSqlBuilder const& arg)
-            {
-            m_parameterIndexMappings = arg.GetParameterIndexMappings();
-            }
-
-        static NativeSqlBuilder Union(List const& list)
-            {
-            BeAssert(!list.empty());
-            NativeSqlBuilder unionView;
-            bool first = true;
-            for (NativeSqlBuilder const& sql : list)
-                {
-                if (first)
-                    first = false;
-                else
-                    unionView.Append(" UNION ");
-
-                unionView.Append(sql);
-                }
-
-            return unionView;
-            }
-        static NativeSqlBuilder GenerateSelectList(List const& list)
-            {
-            BeAssert(!list.empty());
-            NativeSqlBuilder unionView;
-            bool first = true;
-            for (NativeSqlBuilder const& sql : list)
-                {
-                if (first)
-                    first = false;
-                else
-                    unionView.Append(", ");
-
-                unionView.Append(sql);
-                }
-
-            return unionView;
-            }
     };
 
 
