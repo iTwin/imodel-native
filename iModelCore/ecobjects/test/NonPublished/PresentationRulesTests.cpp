@@ -17,7 +17,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eligijus.Mauragas               06/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateChildNodeRule(ChildNodeRuleCR childNodeRule, Utf8P condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
+    void ValidateChildNodeRule(ChildNodeRuleCR childNodeRule, Utf8CP condition, int priority, bool onlyIfNotHandled, RuleTargetTree targetTree)
         {
         EXPECT_STREQ(condition, childNodeRule.GetCondition().c_str());
         EXPECT_EQ(priority, childNodeRule.GetPriority());
@@ -28,7 +28,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               06/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateContentRule(ContentRuleCR contentRule, Utf8P condition, int priority, bool onlyIfNotHandled)
+    void ValidateContentRule(ContentRuleCR contentRule, Utf8CP condition, int priority, bool onlyIfNotHandled)
         {
         EXPECT_STREQ(condition, contentRule.GetCondition().c_str());
         EXPECT_EQ(priority, contentRule.GetPriority());
@@ -38,7 +38,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               06/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateImageIdOverride(ImageIdOverrideCR imageIdOverride, Utf8P condition, Utf8P imageIdExpression, int priority)
+    void ValidateImageIdOverride(ImageIdOverrideCR imageIdOverride, Utf8CP condition, Utf8CP imageIdExpression, int priority)
         {
         EXPECT_STREQ(condition, imageIdOverride.GetCondition().c_str());
         EXPECT_STREQ(imageIdExpression, imageIdOverride.GetImageId().c_str());
@@ -48,7 +48,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               10/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateLabelOverride(LabelOverrideCR labelOverride, Utf8P condition, int priority, Utf8P label, Utf8P description)
+    void ValidateLabelOverride(LabelOverrideCR labelOverride, Utf8CP condition, int priority, Utf8CP label, Utf8CP description)
         {
         EXPECT_STREQ(condition, labelOverride.GetCondition().c_str());
         EXPECT_EQ(priority, labelOverride.GetPriority());
@@ -59,7 +59,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               10/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateStyleOverride(StyleOverrideCR labelOverride, Utf8P condition, int priority, Utf8P foreColor, Utf8P backColor, Utf8P fontStyle)
+    void ValidateStyleOverride(StyleOverrideCR labelOverride, Utf8CP condition, int priority, Utf8CP foreColor, Utf8CP backColor, Utf8CP fontStyle)
         {
         EXPECT_STREQ(condition, labelOverride.GetCondition().c_str());
         EXPECT_EQ(priority, labelOverride.GetPriority());
@@ -71,7 +71,7 @@ struct PresentationRulesTests : ECTestFixture
     /*---------------------------------------------------------------------------------**//**
     * @bsimethod                                    Eligijus.Mauragas               10/2012
     +---------------+---------------+---------------+---------------+---------------+------*/
-    void ValidateLocalizationResourceKeyDefinition(LocalizationResourceKeyDefinitionCR definition, int priority, Utf8P id, Utf8P key, Utf8P defaultValue)
+    void ValidateLocalizationResourceKeyDefinition(LocalizationResourceKeyDefinitionCR definition, int priority, Utf8CP id, Utf8CP key, Utf8CP defaultValue)
         {
         EXPECT_EQ(priority, definition.GetPriority());
         EXPECT_STREQ(id, definition.GetId().c_str());

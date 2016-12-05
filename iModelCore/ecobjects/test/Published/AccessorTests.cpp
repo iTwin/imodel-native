@@ -147,7 +147,7 @@ TEST_F (ValueAccessorTests, GetDefaultStandaloneEnabler)
 TEST_F (ValueAccessorTests, PushPopLocation)
     {
     CreateSchema();
-    Utf8Char* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
+    Utf8Char const* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
     
     for (int i=0; i<4; i++)
         {
@@ -184,7 +184,7 @@ TEST_F (ValueAccessorTests, PushPopLocation)
 TEST_F (ValueAccessorTests, MatchAccessors)
     {
     CreateSchema();
-    Utf8Char* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
+    Utf8Char const* properties[4] = {"Property_1", "Property_2", "Property_3", "Property_4"};
     IECInstancePtr instance_1;
     IECInstancePtr instance_2;
     

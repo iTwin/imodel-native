@@ -496,7 +496,7 @@ struct MemoryLayoutTests : ECTestFixture
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Adam.Klatzkin                   02/2010
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void ExerciseVariableCountIntArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, int baseValue)
+        void ExerciseVariableCountIntArray(IECInstanceR instance, ECValue& v, Utf8Char const* arrayAccessor, int baseValue)
             {
             // test insertion in an empty array
             ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 5));
@@ -533,7 +533,7 @@ struct MemoryLayoutTests : ECTestFixture
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Adam.Klatzkin                   02/2010
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void ExerciseVariableCountStringArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor, Utf8Char* stringSeed)
+        void ExerciseVariableCountStringArray(IECInstanceR instance, ECValue& v, Utf8Char const* arrayAccessor, Utf8Char const* stringSeed)
             {
             // test insertion in an empty array
             ASSERT_TRUE(ECObjectsStatus::Success == instance.InsertArrayElements(arrayAccessor, 0, 5));
@@ -572,7 +572,7 @@ struct MemoryLayoutTests : ECTestFixture
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Adam.Klatzkin                   02/2010
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void VerifyVariableCountManufacturerArray(IECInstanceR instance, ECValue& v, Utf8Char* arrayAccessor)
+        void VerifyVariableCountManufacturerArray(IECInstanceR instance, ECValue& v, Utf8Char const* arrayAccessor)
             {
             VerifyArrayInfo(instance, v, arrayAccessor, 4, false);
             EXPECT_TRUE(ECObjectsStatus::Success == instance.GetValue(v, arrayAccessor));
@@ -602,7 +602,7 @@ struct MemoryLayoutTests : ECTestFixture
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                    Adam.Klatzkin                   02/2010
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void ExerciseVariableCountManufacturerArray(IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, Utf8Char* arrayAccessor)
+        void ExerciseVariableCountManufacturerArray(IECInstanceR instance, StandaloneECEnablerR manufacturerEnabler, ECValue& v, Utf8Char const* arrayAccessor)
             {
             VerifyArrayInfo(instance, v, arrayAccessor, 0, false);
 
@@ -663,7 +663,7 @@ struct MemoryLayoutTests : ECTestFixture
         /*---------------------------------------------------------------------------------**//**
         * @bsimethod                                                    CaseyMullen     10/09
         +---------------+---------------+---------------+---------------+---------------+------*/
-        void ExerciseInstance(IECInstanceR instance, Utf8Char* valueForFinalStrings)
+        void ExerciseInstance(IECInstanceR instance, Utf8Char const* valueForFinalStrings)
             {
             ECValue v;
             instance.GetValue(v, "D");
@@ -1352,7 +1352,7 @@ TEST_F(MemoryLayoutTests, GetEnablerPropertyInformation)
         EXPECT_EQ (expectedPropertyCount, propertyCount);
     **/
 
-    Utf8Char* expectedProperties[expectedPropertyCount] =
+    Utf8Char const* expectedProperties[expectedPropertyCount] =
         {
         "",
         "AString",

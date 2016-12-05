@@ -37,7 +37,7 @@ TEST_F(ValueTests, ECValueToString)
     DateTime dateTime = DateTime(DateTime::Kind::Utc, 2013, 2, 14, 9, 58, 17, 456);
     DPoint2d point2d = {123.456, 456.789};
     DPoint3d point3d = {1.2, -3.4, 5.6};
-    WChar *unichar = L"TestingTesting\x017D\x06C6\x0F3D\x132B\x25E7\x277C\x28BE";
+    WChar const*unichar = L"TestingTesting\x017D\x06C6\x0F3D\x132B\x25E7\x277C\x28BE";
     Utf8String unicharUtf8;
     BeStringUtilities::WCharToUtf8(unicharUtf8, unichar);
     ECValue value;

@@ -2,7 +2,7 @@
 |
 |     $Source: test/Performance/PerformanceECXmlTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct PerformanceTestsECXml : PerformanceTestFixture
     {
 
-    void TimeSchema(WCharP schemaName, ECSchemaReadContextPtr   schemaContext, Utf8String testcaseName, Utf8String testName)
+    void TimeSchema(WCharCP schemaName, ECSchemaReadContextPtr   schemaContext, Utf8String testcaseName, Utf8String testName)
         {
         ECSchemaPtr schema;
         StopWatch deserializationTimer ("Deserialization", false);
@@ -61,7 +61,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         LogResultsToFile (results);
         }
 
-    void TimeInstance(WCharP schemaName, WCharP instanceXmlFile, ECSchemaReadContextPtr   schemaContext, Utf8String testcaseName, Utf8String testName)
+    void TimeInstance(WCharCP schemaName, WCharCP instanceXmlFile, ECSchemaReadContextPtr   schemaContext, Utf8String testcaseName, Utf8String testName)
         {
         ECSchemaPtr   schema;
         //    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile (schema, ECTestFixture::GetTestDataPath(L"MismatchedSchema.01.00.ecschema.xml").c_str(), *schemaContext);
