@@ -1546,16 +1546,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
             }
         }
 
-    Json::Value     value;
-    value["asset"]["version"] = "0.0";
-
-    auto& root = value[JSON_Root];
-
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = 1.E6;
-
-    rootRange = DRange3d::NullRange();
-
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
@@ -1568,7 +1558,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         {
         Json::Value childRoot;
 
-        rootRange.Extend(childRootTile->GetTileRange());
         childRoot["refine"] = "replace";
         childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
         TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
@@ -1580,17 +1569,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
 
         WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-
-        root[JSON_Children].append(childRoot);
         }
 
     m_modelRoots.clear();
-
-    TilePublisher::WriteBoundingVolume(root, rootRange);
-
-    BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
-
-    TileUtil::WriteJsonToFile (metadataFileName.c_str(), value);
 
     return Status::Success;
     }
