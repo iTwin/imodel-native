@@ -112,9 +112,9 @@ SpatialEntityDataPtr RealityConversionTools::JsonToSpatialEntityData(Json::Value
         data->SetDate(date);
         }
 
-    //Size
+    //// Approximate file size
     if(properties.isMember("FileSize") && !properties["FileSize"].isNull())
-        data->SetSize(std::stoi(properties["FileSize"].asString().c_str()));
+        data->SetApproximateFileSize(std::stoi(properties["FileSize"].asString().c_str()));
 
     // Resolution
     if (properties.isMember("ResolutionInMeters") && !properties["ResolutionInMeters"].isNull())

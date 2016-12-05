@@ -22,6 +22,88 @@ USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
+SpatialEntityDataSourcePtr SpatialEntityDataSource::Create()
+    {
+    return new SpatialEntityDataSource();
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert                   4/2016
+//-------------------------------------------------------------------------------------
+
+Utf8StringCR SpatialEntityDataSource::GetUrl() const { return m_url; }
+void SpatialEntityDataSource::SetUrl(Utf8CP url) { m_url = url; }
+
+Utf8StringCR SpatialEntityDataSource::GetGeoCS() const { return m_geoCS; }
+void SpatialEntityDataSource::SetGeoCS(Utf8CP geoCS) { m_geoCS = geoCS; }
+
+Utf8StringCR SpatialEntityDataSource::GetCompoundType() const { return m_compoundType; }
+void SpatialEntityDataSource::SetCompoundType(Utf8CP type) { m_compoundType = type; }
+
+uint64_t SpatialEntityDataSource::GetSize() const { return m_size; }
+void SpatialEntityDataSource::SetSize(uint64_t size) { m_size = size; }
+
+Utf8StringCR SpatialEntityDataSource::GetNoDataValue() const { return m_noDataValue; }
+void SpatialEntityDataSource::SetNoDataValue(Utf8CP value) { m_noDataValue = value; }
+
+Utf8StringCR SpatialEntityDataSource::GetDataType() const { return m_dataType; }
+void SpatialEntityDataSource::SetDataType(Utf8CP type) { m_dataType = type; }
+
+Utf8StringCR SpatialEntityDataSource::GetLocationInCompound() const { return m_locationInCompound; }
+void SpatialEntityDataSource::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
+
+SpatialEntityServerCP SpatialEntityDataSource::GetServerCP() const { return m_pServer.get(); }
+void SpatialEntityDataSource::SetServer(SpatialEntityServerP server) { m_pServer = server; }
+
+bool SpatialEntityDataSource::GetIsMultiband() const { return m_isMultiband; }
+void SpatialEntityDataSource::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }
+
+void SpatialEntityDataSource::GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl) const 
+    { 
+    redUrl = m_redDownloadUrl;
+    blueUrl = m_blueDownloadUrl;
+    greenUrl = m_greenDownloadUrl;
+    panchromaticUrl = m_panchromaticDownloadUrl;
+    }
+
+void SpatialEntityDataSource::SetMultibandUrls(Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl) 
+    { 
+    m_redDownloadUrl = redUrl;
+    m_blueDownloadUrl = blueUrl;
+    m_greenDownloadUrl = greenUrl;
+    m_panchromaticDownloadUrl = panchromaticUrl;
+    }
+
+uint64_t SpatialEntityDataSource::GetRedBandSize() const { return m_redSize; }
+void SpatialEntityDataSource::SetRedBandSize(uint64_t size) { m_redSize = size; }
+
+uint64_t SpatialEntityDataSource::GetBlueBandSize() const { return m_blueSize; }
+void SpatialEntityDataSource::SetBlueBandSize(uint64_t size) { m_blueSize = size; }
+
+uint64_t SpatialEntityDataSource::GetGreenBandSize() const { return m_greenSize; }
+void SpatialEntityDataSource::SetGreenBandSize(uint64_t size) { m_greenSize = size; }
+
+uint64_t SpatialEntityDataSource::GetPanchromaticBandSize() const { return m_panchromaticSize; }
+void SpatialEntityDataSource::SetPanchromaticBandSize(uint64_t size) { m_panchromaticSize = size; }
+
+SQLINTEGER SpatialEntityDataSource::GetServerId() const { return m_serverId; }
+void SpatialEntityDataSource::SetServerId(SQLINTEGER id) const { m_serverId = id; }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
+SpatialEntityDataSource::SpatialEntityDataSource()
+    {
+    m_size = 0;
+    m_redSize = 0;
+    m_blueSize = 0;
+    m_greenSize = 0;
+    m_panchromaticSize = 0;
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    5/2016
+//-------------------------------------------------------------------------------------
 SpatialEntityDataPtr SpatialEntityData::Create()
     {
     return new SpatialEntityData();
@@ -32,21 +114,6 @@ SpatialEntityDataPtr SpatialEntityData::Create()
 //-------------------------------------------------------------------------------------
 Utf8StringCR SpatialEntityData::GetName() const { return m_name; }
 void SpatialEntityData::SetName(Utf8CP name) { m_name = name; }
-
-Utf8StringCR SpatialEntityData::GetUrl() const { return m_url; }
-void SpatialEntityData::SetUrl(Utf8CP url) { m_url = url; }
-
-Utf8StringCR SpatialEntityData::GetGeoCS() const { return m_geoCS; }
-void SpatialEntityData::SetGeoCS(Utf8CP geoCS) { m_geoCS = geoCS; }
-
-Utf8StringCR SpatialEntityData::GetCompoundType() const { return m_compoundType; }
-void SpatialEntityData::SetCompoundType(Utf8CP type) { m_compoundType = type; }
-
-uint64_t SpatialEntityData::GetSize() const { return m_size; }
-void SpatialEntityData::SetSize(uint64_t size) { m_size = size; }
-
-uint64_t SpatialEntityData::GetNoDataValue() const { return m_noDataValue; }
-void SpatialEntityData::SetNoDataValue(uint64_t value) { m_noDataValue = value; }
 
 Utf8StringCR SpatialEntityData::GetResolution() const { return m_resolution; }
 void SpatialEntityData::SetResolution(Utf8CP res) { m_resolution = res; }
@@ -60,14 +127,17 @@ void SpatialEntityData::SetProviderName(Utf8CP providerName) { m_providerName = 
 Utf8StringCR SpatialEntityData::GetDataset() const { return m_dataset; }
 void SpatialEntityData::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
 
+Utf8StringCR SpatialEntityData::GetThumbnailURL() const { return m_thumbnailURL; }
+void SpatialEntityData::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
+
+Utf8StringCR SpatialEntityData::GetThumbnailLoginKey() const { return m_thumbnailLoginKey; }
+void SpatialEntityData::SetThumbnailLoginKey(Utf8CP thumbnailLoginKey) { m_thumbnailLoginKey = thumbnailLoginKey; }
+
 Utf8StringCR SpatialEntityData::GetClassification() const { return m_classification; }
 void SpatialEntityData::SetClassification(Utf8CP classification) { m_classification = classification; }
 
 Utf8StringCR SpatialEntityData::GetDataType() const { return m_dataType; }
 void SpatialEntityData::SetDataType(Utf8CP type) { m_dataType = type; }
-
-Utf8StringCR SpatialEntityData::GetLocationInCompound() const { return m_locationInCompound; }
-void SpatialEntityData::SetLocationInCompound(Utf8CP location) { m_locationInCompound = location; }
 
 DateTimeCR SpatialEntityData::GetDate() const { return m_date; }
 void SpatialEntityData::SetDate(DateTimeCR date) { m_date = date; }
@@ -78,64 +148,34 @@ void SpatialEntityData::SetFootprint(bvector<DPoint2d>& footprint) { m_footprint
 DRange2dCR SpatialEntityData::GetFootprintExtents() const { return m_footprintExtents; }
 void SpatialEntityData::SetFootprintExtents(DRange2dCR footprintExtents) { m_footprintExtents = footprintExtents; }
 
-SpatialEntityThumbnailCR SpatialEntityData::GetThumbnail() const { return *m_pThumbnail; }
-void SpatialEntityData::SetThumbnail(SpatialEntityThumbnailR thumbnail) { m_pThumbnail = &thumbnail; }
+bool SpatialEntityData::HasApproximateFootprint() const {return m_approximateFootprint;}
+void SpatialEntityData::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
 
-SpatialEntityMetadataCR SpatialEntityData::GetMetadata() const { return *m_pMetadata; }
-void SpatialEntityData::SetMetadata(SpatialEntityMetadataR metadata) { m_pMetadata = &metadata; }
+SpatialEntityMetadataCP SpatialEntityData::GetMetadataCP() const { return m_pMetadata.get(); }
+void SpatialEntityData::SetMetadata(SpatialEntityMetadataP metadata) { m_pMetadata = metadata; }
 
-SpatialEntityServerCR SpatialEntityData::GetServer() const { return *m_pServer; }
-void SpatialEntityData::SetServer(SpatialEntityServerR server) { m_pServer = &server; }
-
-bool SpatialEntityData::GetIsMultiband() const { return m_isMultiband; }
-void SpatialEntityData::SetIsMultiband(bool isMultiband) { m_isMultiband = isMultiband; }
-
-void SpatialEntityData::GetMultibandUrls(Utf8String& redUrl, Utf8String& greenUrl, Utf8String& blueUrl, Utf8String& panchromaticUrl) const 
-    { 
-    redUrl = m_redDownloadUrl;
-    blueUrl = m_blueDownloadUrl;
-    greenUrl = m_greenDownloadUrl;
-    panchromaticUrl = m_panchromaticDownloadUrl;
-    }
-
-void SpatialEntityData::SetMultibandUrls(Utf8String redUrl, Utf8String greenUrl, Utf8String blueUrl, Utf8String panchromaticUrl) 
-    { 
-    m_redDownloadUrl = redUrl;
-    m_blueDownloadUrl = blueUrl;
-    m_greenDownloadUrl = greenUrl;
-    m_panchromaticDownloadUrl = panchromaticUrl;
-    }
+SpatialEntityDataSourceCR SpatialEntityData::GetDataSource(size_t index) const { return *m_DataSources[index]; }
+SpatialEntityDataSourceR SpatialEntityData::GetDataSource(size_t index) { return *m_DataSources[index]; }
+void SpatialEntityData::AddDataSource(SpatialEntityDataSourceR dataSource) { m_DataSources.push_back(&dataSource); }
+size_t SpatialEntityData::GetDataSourceCount() const {return m_DataSources.size();}
 
 float SpatialEntityData::GetCloudCover() const { return m_cloudCover; }
 void SpatialEntityData::SetCloudCover(float cover) { m_cloudCover = cover; }
 
-float SpatialEntityData::GetRedBandSize() const { return m_redSize; }
-void SpatialEntityData::SetRedBandSize(float size) { m_redSize = size; }
+uint64_t SpatialEntityData::GetApproximateFileSize() const {return m_approximateFileSize;}
+void SpatialEntityData::SetApproximateFileSize(uint64_t size) {m_approximateFileSize = size;}
 
-float SpatialEntityData::GetBlueBandSize() const { return m_blueSize; }
-void SpatialEntityData::SetBlueBandSize(float size) { m_blueSize = size; }
 
-float SpatialEntityData::GetGreenBandSize() const { return m_greenSize; }
-void SpatialEntityData::SetGreenBandSize(float size) { m_greenSize = size; }
-
-float SpatialEntityData::GetPanchromaticBandSize() const { return m_panchromaticSize; }
-void SpatialEntityData::SetPanchromaticBandSize(float size) { m_panchromaticSize = size; }
-
-SQLINTEGER SpatialEntityData::GetServerId() const { return m_serverId; }
-void SpatialEntityData::SetServerId(SQLINTEGER id) const { m_serverId = id; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 SpatialEntityData::SpatialEntityData()
     {
-    m_size = 0;
     m_date = DateTime();
     m_footprint = bvector<DPoint2d>();
     m_footprintExtents = DRange2d();
-    m_pThumbnail = SpatialEntityThumbnail::Create();
-    m_pMetadata = SpatialEntityMetadata::Create();
-    m_pServer = SpatialEntityServer::Create();
+
     }
 
 
@@ -151,39 +191,46 @@ SpatialEntityThumbnailPtr SpatialEntityThumbnail::Create()
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR SpatialEntityThumbnail::GetProvenance() const { return m_provenance; }
-void SpatialEntityThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
+void SpatialEntityThumbnail::SetProvenance(Utf8CP provenance) { m_provenance = provenance; m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityThumbnail::GetFormat() const { return m_format; }
-void SpatialEntityThumbnail::SetFormat(Utf8CP format) { m_format = format; }
+void SpatialEntityThumbnail::SetFormat(Utf8CP format) { m_format = format;  m_isEmpty = false;}
 
 uint32_t SpatialEntityThumbnail::GetWidth() const { return m_width; }
-void SpatialEntityThumbnail::SetWidth(uint32_t width) { m_width = width; }
+void SpatialEntityThumbnail::SetWidth(uint32_t width) { m_width = width;  m_isEmpty = false;}
 
 uint32_t SpatialEntityThumbnail::GetHeight() const { return m_height; }
-void SpatialEntityThumbnail::SetHeight(uint32_t height) { m_height = height; }
+void SpatialEntityThumbnail::SetHeight(uint32_t height) { m_height = height;  m_isEmpty = false;}
 
 DateTimeCR SpatialEntityThumbnail::GetStamp() const { return m_stamp; }
-void SpatialEntityThumbnail::SetStamp(DateTimeCR date) { m_stamp = date; }
+void SpatialEntityThumbnail::SetStamp(DateTimeCR date) { m_stamp = date;  m_isEmpty = false;}
 
 const bvector<Byte>& SpatialEntityThumbnail::GetData() const { return m_data; }
-void SpatialEntityThumbnail::SetData(const bvector<Byte>& data) { m_data = data; }
+void SpatialEntityThumbnail::SetData(const bvector<Byte>& data) { m_data = data;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityThumbnail::GetGenerationDetails() const { return m_generationDetails; }
-void SpatialEntityThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details; }
+void SpatialEntityThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityThumbnail::GetThumbnailUrl() const { return m_thumbnailUrl; }
-void SpatialEntityThumbnail::SetThumbnailUrl(Utf8CP thumbnailUrl) { m_thumbnailUrl = thumbnailUrl; }
+void SpatialEntityThumbnail::SetThumbnailUrl(Utf8CP thumbnailUrl) { m_thumbnailUrl = thumbnailUrl;  m_isEmpty = false;}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert       	    11/2016
+//-------------------------------------------------------------------------------------
+bool SpatialEntityThumbnail::IsEmpty() const { return m_isEmpty; }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityThumbnail::SpatialEntityThumbnail()
+SpatialEntityThumbnail::SpatialEntityThumbnail() : m_isEmpty(false)
     {
-    m_width = THUMBNAIL_WIDTH;
-    m_height = THUMBNAIL_HEIGHT;
-    m_stamp = DateTime::GetCurrentTimeUtc();
+    m_width = 0;
+    m_height = 0;
+    // Default DataTime is valid for stamp
     m_data = bvector<Byte>();
     }
+
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
@@ -205,36 +252,42 @@ SpatialEntityMetadataPtr SpatialEntityMetadata::CreateFromFile(Utf8CP filePath)
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
 Utf8StringCR SpatialEntityMetadata::GetProvenance() const { return m_provenance; }
-void SpatialEntityMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance; }
+void SpatialEntityMetadata::SetProvenance(Utf8CP provenance) { m_provenance = provenance;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetDescription() const { return m_description; }
-void SpatialEntityMetadata::SetDescription(Utf8CP description) { m_description = description; }
+void SpatialEntityMetadata::SetDescription(Utf8CP description) { m_description = description;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetContactInfo() const { return m_contactInfo; }
-void SpatialEntityMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info; }
+void SpatialEntityMetadata::SetContactInfo(Utf8CP info) { m_contactInfo = info;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetLegal() const { return m_legal; }
-void SpatialEntityMetadata::SetLegal(Utf8CP legal) { m_legal = legal; }
+void SpatialEntityMetadata::SetLegal(Utf8CP legal) { m_legal = legal;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetFormat() const { return m_format; }
-void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format; }
+void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format;  m_isEmpty = false;}
 
 Utf8StringCR SpatialEntityMetadata::GetData() const { return m_data; }
-void SpatialEntityMetadata::SetData(Utf8CP data) { m_data = data; }
+void SpatialEntityMetadata::SetData(Utf8CP data) { m_data = data; m_isEmpty = false; }
 
 Utf8StringCR SpatialEntityMetadata::GetMetadataUrl() const { return m_metadataUrl; }
-void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; }
+void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; m_isEmpty = false;}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Alain.Robert         	    11/2016
+//-------------------------------------------------------------------------------------
+bool SpatialEntityMetadata::IsEmpty() const   {return m_isEmpty;}
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityMetadata::SpatialEntityMetadata()
+SpatialEntityMetadata::SpatialEntityMetadata() : m_isEmpty(true)
     {}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath)
+SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath) : m_isEmpty(false)
     {
     BeFileName metadataFile(filePath);
     Utf8String provenance(metadataFile.GetFileNameAndExtension());

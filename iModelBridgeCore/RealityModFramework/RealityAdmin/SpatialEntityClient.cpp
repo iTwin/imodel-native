@@ -12,6 +12,7 @@
 #include <RealityPlatform/SpatialEntityData.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include <RealityAdmin/SpatialEntityClient.h>
+#include <RealityAdmin/ISpatialEntityTraversalObserver.h>
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
@@ -97,8 +98,8 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
 
     pDownload->SetStatusCallBack(ConstructRepositoryMapping);
     RealityDataDownload::DownloadReport* dlReport = pDownload->Perform();
-    if (dlReport == nullptr)
-        return SpatialEntityStatus::DownloadError;
+    if (dlReport == nullptr) // This means that no new file were downloaded (all from cache)
+        return SpatialEntityStatus::Success;
 
     /*Utf8String report;
     dlReport->ToXml(report);*/
@@ -148,10 +149,14 @@ SpatialEntityStatus SpatialEntityClient::GetData() const
         }
 
         // Override source url so that it points to the SpatialEntity repository and not the local one.
-        pExtractedData->SetUrl(m_dataRepositories[i].first.c_str());
+        SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
+
+        newDataSource->SetUrl(m_dataRepositories[i].first.c_str());
 
         // Set server.
-        pExtractedData->SetServer(*m_pServer);
+        newDataSource->SetServer(m_pServer.get());
+
+        pExtractedData->AddDataSource(*newDataSource);
 
         // Set provider.
         pExtractedData->SetProvider(GetServerName().c_str());

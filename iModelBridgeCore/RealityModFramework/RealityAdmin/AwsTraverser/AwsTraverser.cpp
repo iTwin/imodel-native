@@ -26,6 +26,52 @@
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
+uint8_t GetMaxDay (int16_t year, uint8_t month)
+    {
+    //special case for February if leap year
+    if (month == 2 && DateTime::IsLeapYear (year))
+        return 29;
+
+    const uint8_t monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    return monthDays[month - 1];
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
+DateTime GetDateFromDayOfYear(uint16_t year, uint16_t dayOfYear)
+{
+    
+    uint8_t month;
+
+    for (month = 1; month < 12; month++)
+        {
+        uint8_t dayOfMonth = GetMaxDay(year, month + 1);
+        if (dayOfYear < dayOfMonth)
+            break;
+
+        dayOfYear -= dayOfMonth;
+        }
+
+    return DateTime(year, month, (uint8_t)dayOfYear);
+}
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Spencer.Mason            	    9/2016
+//-------------------------------------------------------------------------------------
+DateTime GetDateFromFileName(Utf8CP landsatFileName)
+{
+    Utf8String fileName(landsatFileName);
+
+    Utf8String yearString = fileName.substr(10, 13);
+    Utf8String dayInYearString = fileName.substr(14, 16);
+
+    uint16_t year = (uint16_t)atoi(yearString.c_str());
+    uint16_t dayOfYear = (uint16_t)atoi(dayInYearString.c_str());
+
+    return GetDateFromDayOfYear(year, dayOfYear);
+}
+
 AwsPinger* AwsPinger::s_instance = nullptr;
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
@@ -40,42 +86,42 @@ AwsPinger& AwsPinger::GetInstance()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
-float FindSize(std::string html, std::string lookFor)
+uint64_t FindSize(std::string html, std::string lookFor)
     {
     std::string relevantLine;
     size_t start, stop;
 
     start = html.find(lookFor);
     if(start == std::string::npos)
-        return -10.0f;
+        return 0;
     relevantLine = html.substr(start);
     start = relevantLine.find("(");
     if (start == std::string::npos)
-        return -10.0f;
+        return 0;
     start += 1;
 
     stop = relevantLine.find("MB)");
     if(stop != std::string::npos)
         {
         relevantLine = relevantLine.substr(start, (stop -start));
-        return std::stof(relevantLine) * 1000;
+        return (uint64_t)std::stof(relevantLine) * 1000;
         }
     
     stop = relevantLine.find("KB)");
     if (stop != std::string::npos)
         {
         relevantLine = relevantLine.substr(start, (stop - start));
-        return std::stof(relevantLine);
+        return (uint64_t)std::stof(relevantLine);
         }
 
     stop = relevantLine.find("GB)");
     if (stop != std::string::npos)
         {
         relevantLine = relevantLine.substr(start, (stop - start));
-        return std::stof(relevantLine) * 1000000;
+        return (uint64_t)std::stof(relevantLine) * 1000000;
         }
 
-    return -10.0f;
+    return 0;
     }
 
 //-------------------------------------------------------------------------------------
@@ -96,7 +142,7 @@ size_t ParseXML(char* buf, size_t size, size_t nmemb, void* up)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    9/2016
 //-------------------------------------------------------------------------------------
-void AwsPinger::ReadPage(Utf8CP url, float& redSize, float& greenSize, float& blueSize, float& panSize)
+void AwsPinger::ReadPage(Utf8CP url, uint64_t& redSize, uint64_t& greenSize, uint64_t& blueSize, uint64_t& panSize)
     {
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYPEER, 1); // Verify the SSL certificate.
     curl_easy_setopt(m_curl, CURLOPT_SSL_VERIFYHOST, 1);
@@ -165,6 +211,7 @@ void ShowUsage()
     std::cout << "  -l, --logfile           The file in which to write failed entries" <<std::endl;
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
     std::cout << "  -u, --update            Enable update mode" << std::endl;
+    std::cout << "  -n, --nofilesize        Disables extraction of the file size" << std::endl;
     std::cout << "  -provider:PROVIDER      Set provider name" << std::endl;
     std::cout << "  -cs, --connectionString Connection string to connect to the db (Required)" << std::endl;
     std::cout << "  if there are spaces in an argument, surround it with \"\" " << std::endl;
@@ -209,6 +256,7 @@ int main(int argc, char *argv[])
     //auto argIt = argv;
 
     bool updateMode = false;
+    bool extractFileSize = true;
     std::string provider;
     char* substringPosition;
     std::string dbName;
@@ -237,6 +285,10 @@ int main(int argc, char *argv[])
             substringPosition++;
             fileName = std::string(substringPosition);
             hasRequired |= 1;
+            }
+        else if (strstr(argv[i], "-n") || strstr(argv[i], "--nofilesize:"))
+            {
+            extractFileSize = false;
             }
         else if (strstr(argv[i], "-l:") || strstr(argv[i], "--logfile:"))
             {
@@ -298,7 +350,7 @@ int main(int argc, char *argv[])
         SpatialEntityServerPtr serverptr = SpatialEntityServer::Create();
         serverptr->SetProtocol("http");
         serverptr->SetName("s3-us-west-2.amazonaws.com");
-        serverptr->SetUrl("https://s3-us-west-2.amazonaws.com/landsat-pds/L8/");
+        serverptr->SetUrl("https://s3-us-west-2.amazonaws.com/");
         serverptr->SetOnline(1);
 
         DateTime dateTime = DateTime::GetCurrentTimeUtc();
@@ -316,15 +368,19 @@ int main(int argc, char *argv[])
         SpatialEntityDataPtr data;
         SpatialEntityMetadataPtr metaData = SpatialEntityMetadata::Create();
         metaData->SetDescription("Landsat data provided by Amazon Web Services");
-        metaData->SetProvenance("landsat8");
+        metaData->SetProvenance("Landsat 8 raw imagery.");
         metaData->SetLegal("Data available from the U.S. Geological Survey.");
+#if (0)
         SpatialEntityThumbnailPtr thumbnail = SpatialEntityThumbnail::Create();
         thumbnail->SetProvenance("Provided by Amazon Web Services");
-        thumbnail->SetFormat("png");
-        float redSize = 0;
-        float blueSize = 0;
-        float greenSize = 0;
-        float panSize = 0;
+        thumbnail->SetFormat("jpg");
+#endif
+        uint64_t redSize = 0;
+        uint64_t blueSize = 0;
+        uint64_t greenSize = 0;
+        uint64_t panSize = 0;
+        std::string acquisitionDateString;
+        DateTime acquisitionDate;
 
         do {
             comma = line.find(",");
@@ -337,7 +393,7 @@ int main(int argc, char *argv[])
             comma ++;
             rest = line.substr(comma);
 
-            if(serverConnection.CheckExists(Utf8String(id.c_str())))
+            if(!updateMode && serverConnection.CheckExists(Utf8String(id.c_str())))
                 {   
                 log->Log("duplicate: " + line);
                 continue;
@@ -348,7 +404,9 @@ int main(int argc, char *argv[])
                 continue;
 
             comma++;
-            rest = rest.substr(comma); //acquisitionDate
+            acquisitionDateString = rest.substr(0, comma-1);//acquisitionDate
+            DateTime::FromString(acquisitionDate, (acquisitionDateString + 'Z').c_str());
+            rest = rest.substr(comma); 
 
             comma = rest.find(",");
             if(!log->ValidateLine(comma, line))
@@ -419,9 +477,12 @@ int main(int argc, char *argv[])
             greenSize = 0;
             panSize = 0;
 
-            pinger.ReadPage(url, redSize, greenSize, blueSize, panSize);
+            if (extractFileSize)
+                pinger.ReadPage(url, redSize, greenSize, blueSize, panSize);
 
-            if(redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0)
+            std::cout << "Processing: " << id << std::endl;
+
+            if(!extractFileSize || (redSize > 0 && blueSize > 0 && greenSize > 0 && panSize > 0))
                 {
                 Utf8String dUrl = Utf8String(downloadUrl.c_str());
                 size_t ext = dUrl.rfind("/");
@@ -442,32 +503,70 @@ int main(int argc, char *argv[])
 
                 data = SpatialEntityData::Create();
                 data->SetName(Utf8CP(id.c_str()));
-                data->SetUrl(dUrl.c_str());
-                data->SetMultibandUrls(redUrl, greenUrl, blueUrl, panUrl);
-                thumbnail->SetThumbnailUrl(thumbUrl.c_str());
-                metaData->SetMetadataUrl(metadataUrl.c_str());
+                data->SetThumbnailURL(thumbUrl.c_str());
                 data->SetCloudCover(cloudCover);
+                data->SetApproximateFootprint(true);
+                data->SetDate(acquisitionDate);
                 data->SetFootprintExtents(DRange2d::From(min_lon, min_lat, max_lon, max_lat));
-                data->SetIsMultiband(true);
-                data->SetRedBandSize(redSize);
-                data->SetGreenBandSize(greenSize);
-                data->SetBlueBandSize(blueSize);
-                data->SetPanchromaticBandSize(panSize);
-                data->SetServerId(serverId);
+
                 data->SetResolution("15.00x15.00");
 
                 data->SetProvider("USGS");
-                data->SetProviderName("Amazon Landsat 8");
+                data->SetProviderName("U.S. Geological Survey");
                 data->SetDataset("Landat 8");
                 data->SetDataType("tif");
                 data->SetClassification("Imagery");
 
-                data->SetNoDataValue(0);
+                // Build the data source
+                SpatialEntityDataSourcePtr newDataSource = SpatialEntityDataSource::Create();
+            
+                newDataSource->SetUrl(panUrl.c_str());
+                newDataSource->SetMultibandUrls(redUrl, greenUrl, blueUrl, panUrl);
+                newDataSource->SetIsMultiband(true);
+                newDataSource->SetServerId(serverId);
 
-                data->SetThumbnail(*thumbnail);
-                data->SetMetadata(*metaData);
+                newDataSource->SetNoDataValue("0");
+                newDataSource->SetDataType("tif"); 
+                if (extractFileSize)
+                    {
+                    newDataSource->SetSize(redSize + greenSize + blueSize + panSize);
+                    newDataSource->SetRedBandSize(redSize);
+                    newDataSource->SetGreenBandSize(greenSize);
+                    newDataSource->SetBlueBandSize(blueSize);
+                    newDataSource->SetPanchromaticBandSize(panSize);
+                    }
 
-                serverConnection.Save(*data, false);
+                data->AddDataSource(*newDataSource);
+
+                metaData->SetMetadataUrl(metadataUrl.c_str());
+
+                data->SetMetadata(metaData.get());
+
+                // Check cloud cover value
+                if (data->GetCloudCover() < 0.0f)
+                    {
+                    log->Log("Invalid cloud cover value ... likely a scambled sample:" + line);
+                    }
+                else
+                    {
+                    ODBCConnectionStatus resultStatus;
+                    if (updateMode)
+                        resultStatus = serverConnection.Update(*data);      
+                    else
+                        resultStatus = serverConnection.SaveSpatialEntity(*data, false);
+
+                    if (ODBCConnectionStatus::Success != resultStatus)
+                        {
+                        if (ODBCConnectionStatus::RecordAlreadyExistsError == resultStatus)
+                            {
+                            log->Log("Record already exists for file: " + line);
+                            }
+                        else if (ODBCConnectionStatus::RecordDoesNotExistError == resultStatus)
+                            {
+                            log->Log("Record does not exist for file: " + line);
+                            }
+                        }
+                    }
                 }
             else 
                 log->Log("missing files: " + line);

@@ -320,7 +320,7 @@ namespace IndexECPlugin.Source
                 tN += AddBrackets(tableName) + ".";
                 }
 
-            m_sqlWhereClause += "NOT((" + tN + minXColName + " > " + bbox.maxX + ") OR (" + bbox.minX + " > " + tN + maxXColName + ") OR (" + tN + minYColName + " > " + bbox.maxY + ") OR (" + bbox.minY + " > " + tN + maxYColName + "))";
+            m_sqlWhereClause += "(" + tN + minXColName + " < " + bbox.maxX + " AND " + tN + maxXColName + " > " + bbox.minX + " AND " + tN + minYColName + " < " + bbox.maxY + " AND " + tN + maxYColName + " > " + bbox.minY + ")";
             }
 
         private string GetNewParamName ()
