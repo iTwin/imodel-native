@@ -24,6 +24,7 @@ namespace IndexECPlugin.Source.Helpers
 
         private string m_connectionString;
         private EnumerableBasedQueryHandler m_executeQuery;
+        bool m_osm;
 
         public Packager(string connectionString, EnumerableBasedQueryHandler executeQuery)
             {
@@ -48,11 +49,11 @@ namespace IndexECPlugin.Source.Helpers
                 }
 
             var osmPropValue = instance.GetPropertyValue("OSM");
-            bool osm = false;
+            m_osm = false;
             if ( osmPropValue != null )
                 {
                 if ( osmPropValue.StringValue.ToLower() == "true" )
-                    osm = true;
+                    m_osm = true;
                 }
 
             IECArrayValue requestedEntitiesECArray = instance.GetPropertyValue("RequestedEntities") as IECArrayValue;
@@ -63,7 +64,7 @@ namespace IndexECPlugin.Source.Helpers
                 throw new ProgrammerException("The ECSchema is not valid. PackageRequest must have an array property.");
                 }
 
-            if ( (requestedEntitiesECArray.Count == 0) && (osm == false) )
+            if ( (requestedEntitiesECArray.Count == 0) && (m_osm == false) )
                 {
                 throw new UserFriendlyException("The request is empty. Please specify items to include in the package");
                 }
@@ -131,7 +132,7 @@ namespace IndexECPlugin.Source.Helpers
             realityDataNetList.AddRange(UsgsPackager(sender, connection, queryModule, usgsRequestedEntities));
 
             //List<OsmSourceNet> osmSourceList = new List<OsmSourceNet>();
-            if ( osm )
+            if ( m_osm )
                 realityDataNetList.Add(OsmPackager(sender, connection, queryModule, selectedRegion));
 
             // Create data group and package.
@@ -417,6 +418,13 @@ namespace IndexECPlugin.Source.Helpers
                     RealityDataSourceNet rdsn = RealityDataSourceNet.Create(UriNet.Create(genericInfo.URI, genericInfo.FileInCompound), genericInfo.Type);
 
                     SetRdsnFields(rdsn, genericInfo);
+
+                    if(genericInfo.Name == "OpenStreetMap" || genericInfo.Type == "OSM")
+                        {
+                        //We skip OpenStreetMap and make sure it will be done later. 
+                        m_osm = true;
+                        continue;
+                        }
 
                     if ( !RDNList.Any(rdn => rdn.GetDataId() == genericInfo.SpatialEntityID) )
                         {
@@ -765,10 +773,6 @@ namespace IndexECPlugin.Source.Helpers
 
             odsn.SetOsmResource(osmResource.ToXml());
 
-            ModelDataNet mdn = ModelDataNet.Create(odsn);
-            mdn.SetDataId(spatialEntity.InstanceId);
-            mdn.SetDataName(spatialEntity["Name"].StringValue);
-
             odsn.SetId(spatialDataSource.InstanceId);
             if ( legal != null )
                 {
@@ -779,6 +783,10 @@ namespace IndexECPlugin.Source.Helpers
                 odsn.SetGeoCS(cs);
                 }
             odsn.SetSize(0);
+
+            ModelDataNet mdn = ModelDataNet.Create(odsn);
+            mdn.SetDataId(spatialEntity.InstanceId);
+            mdn.SetDataName(spatialEntity["Name"].StringValue);
 
             return mdn;
 
@@ -884,6 +892,7 @@ namespace IndexECPlugin.Source.Helpers
                 {
 
                 //TODO: Correct the switch case. The choice of the group for each class was not verified.
+                case "Model":
                 case "Roadway":
                 case "Bridge":
                 case "Building":
