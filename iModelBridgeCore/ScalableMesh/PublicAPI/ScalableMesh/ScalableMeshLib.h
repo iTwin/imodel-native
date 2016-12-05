@@ -66,13 +66,13 @@ public:
         void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 
-    //! Must be called once per Host before calling any method in ScalableTerrainModel. Applications can have more than one Host. 
+    //! Must be called once per Host before calling any method in ScalableMesh. Applications can have more than one Host. 
     BENTLEY_SM_EXPORT static void Initialize (Host& host);
 
-    //! Query if the ScalableTerrainModel library has been initialized on this thread.
+    //! Query if the ScalableMesh library has been initialized on this thread.
     BENTLEY_SM_EXPORT static bool IsInitialized ();
 
-    //! Get the ScalableTerrainModel library host for this thread. 
+    //! Get the ScalableMesh library host for this thread. 
     BENTLEY_SM_EXPORT static Host& GetHost(); 
 };
 
