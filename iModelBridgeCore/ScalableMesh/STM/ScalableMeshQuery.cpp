@@ -2167,6 +2167,11 @@ double IScalableMeshViewDependentMeshQueryParams::GetMinScreenPixelsPerPoint() c
     return _GetMinScreenPixelsPerPoint();
     }
 
+double IScalableMeshViewDependentMeshQueryParams::GetMaxPixelError() const
+{
+    return _GetMaxPixelError();
+}
+
 StopQueryCallbackFP IScalableMeshViewDependentMeshQueryParams::GetStopQueryCallback() const
     {
     return _GetStopQueryCallback();
@@ -2186,6 +2191,11 @@ void IScalableMeshViewDependentMeshQueryParams::SetMinScreenPixelsPerPoint(doubl
     {
     _SetMinScreenPixelsPerPoint(minScreenPixelsPerPoint);
     }
+
+void IScalableMeshViewDependentMeshQueryParams::SetMaxPixelError(double maxPixelError)
+{
+    _SetMaxPixelError(maxPixelError);
+}
 
 void IScalableMeshViewDependentMeshQueryParams::SetProgressiveDisplay(bool isProgressiveDisplay)
     {
@@ -2599,6 +2609,18 @@ StatusInt IScalableMeshCachedDisplayNode::GetCachedTextures(bvector<SmCachedDisp
 StatusInt IScalableMeshCachedDisplayNode::GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const
     {
     return _GetDisplayClipVectors(clipVectors);
+    }
+
+void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemory)
+    {
+    return _SetIsInVideoMemory(isInVideoMemory);
+    }
+
+IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
+    {
+    auto index = ((ScalableMesh<DPoint3d>*)smP)->GetMainIndexP();
+    auto node = index->FindLoadedNode(nodeId);
+    return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);
     }
 
     

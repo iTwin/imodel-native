@@ -501,10 +501,10 @@ void DataSourceAccountWSG::OpenSSLLockingFunction(int mode, int n, const char * 
 
 CURL * DataSourceAccountWSG::CURLHandleManager::getOrCreateCURLHandle(const HandleName & name, bool * created)
     {
-    CURL **    curl_handle = nullptr;
+    CurlHandle *curl_handle = nullptr;
 
     // Attempt to get the named CURL handle
-    curl_handle = Manager<CURL*>::get(name);
+    curl_handle = Manager<CurlHandle, true>::get(name);
     if (curl_handle)
         {
         // If requested, flag that the DataSource existed and was not created
@@ -512,7 +512,7 @@ CURL * DataSourceAccountWSG::CURLHandleManager::getOrCreateCURLHandle(const Hand
             *created = false;
         // Return the found DataSource
         assert(curl_handle != nullptr);
-        return *curl_handle;
+        return curl_handle->getHandle();
         }
 
     // If requested, flag that the DataSource was created
@@ -547,7 +547,7 @@ CURL * DataSourceAccountWSG::CURLHandleManager::createCURLHandle(const HandleNam
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
     //curl_easy_setopt(curl_handle, CURLOPT_VERBOSE, 1L);
     //curl_easy_setopt(curl_handle, CURLOPT_STDERR, std::cout);
-    if (Manager<CURL*>::create(name, new CURL*(curl_handle)) == NULL)
+    if (Manager<CurlHandle, true>::create(name, new CurlHandle(curl_handle)) == nullptr)
         {
         return nullptr;
         }

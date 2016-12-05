@@ -20,9 +20,6 @@ baseDir         = $(_MakeFilePath)
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/CGAL
-%include cincapnd.mki
-
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
 

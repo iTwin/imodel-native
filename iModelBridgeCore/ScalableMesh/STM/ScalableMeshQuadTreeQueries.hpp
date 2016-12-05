@@ -1022,6 +1022,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     return queryResult; 
     }
     
+static double s_toleranceFactor = 1.0;
+static bool s_alwaysTrue = false;
+
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                           HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
                                                                                                           size_t                                  numSubNodes,
@@ -1033,6 +1036,9 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     EXTENT visibleExtent;
     EXTENT nodeExtent;
 
+    if (s_alwaysTrue)
+        return true;
+
     if (node->IsEmpty())
         {
         /*
@@ -1041,9 +1047,22 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
         ExtentOp<EXTENT>::SetZMax(nodeExtent, ExtentOp<EXTENT>::GetZMax(m_extent));                        
         */
         return false;
-        }
+        }    
+
     
     nodeExtent = node->GetContentExtent();                     
+
+    DRange3d rangePts(DRange3d::NullRange()); 
+    RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(node->GetPointsPtr());
+
+    for (size_t currentIndex = 0 ; currentIndex < ptsPtr->size(); currentIndex++)
+        {
+        // The point falls inside extent of object .. we add a reference to the list
+        rangePts.Extend(ptsPtr->operator[](currentIndex));
+
+        //resultPoints.push_back(ptsPtr->operator[](currentIndex));
+        }
+
                  
     if (s_useClipVectorForVisibility)
         {            
@@ -1051,7 +1070,7 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 
         //NEEDS_WORK_SM : Tolerance (i.e. radius) and center could be precomputed during SM generation
         double maxDimension = max(max(ExtentOp<EXTENT>::GetWidth(node->GetContentExtent()), ExtentOp<EXTENT>::GetHeight(node->GetContentExtent())), ExtentOp<EXTENT>::GetThickness(node->GetContentExtent())) / 2.0;
-        double tolerance =  maxDimension / cos(PI / 4);
+        double tolerance =  maxDimension / cos(PI / 4) * s_toleranceFactor;
 
         DPoint3d center;
 
@@ -1060,7 +1079,11 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
                     ExtentOp<EXTENT>::GetZMin(node->GetContentExtent()) + ExtentOp<EXTENT>::GetThickness(node->GetContentExtent()) / 2); 
 
         if (!m_viewClipVector->PointInside(center, tolerance))                
+            {
+            assert(node->GetNbObjects() == 0 || (nodeExtent.low.x <= rangePts.low.x && nodeExtent.low.y <= rangePts.low.y && nodeExtent.low.z <= rangePts.low.z &&
+                   nodeExtent.high.x >= rangePts.high.x && nodeExtent.high.y >= rangePts.high.y && nodeExtent.high.z >= rangePts.high.z));
             return false;      
+            }
 
         visibleExtent = node->GetContentExtent();
         }
@@ -1447,8 +1470,17 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
 			}
 		else*/
 			{
-			double screenPixelsPerPoint = area / nbOfPointsInTile;
-			IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+            double res = node->GetMinResolution();
+            if (res != 0.0)
+                {
+                double unitsPerPixel = maxDimension / distance;
+                IsCorrect = unitsPerPixel * m_maxPixelError < res;
+                }
+            else
+                {
+                double screenPixelsPerPoint = area / nbOfPointsInTile;
+                IsCorrect = screenPixelsPerPoint > m_meanScreenPixelsPerPoint;
+                }
 			}
 						       
     #ifdef ACTIVATE_NODE_QUERY_TRACING

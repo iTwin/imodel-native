@@ -50,7 +50,7 @@ CCompOpts + -DVANCOUVER_API
 %endif
 
 #Uncomment this to allow generating design meshes
-#CCompOpts + -DWIP_MESH_IMPORT
+#CCompOpts + -DWIP_MESH_IMPORT 
 
 #For legal reasons, not compiling these libraries or code depending on them right now.
 %if !defined (3DMesh)
@@ -74,6 +74,9 @@ CCompOpts + -wd4244
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
+
+#x86 build. signed/unsigned mismatch and int64/size_t issues.
+CCompOpts + -wd4018 -wd4309 -wd4305
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
@@ -303,6 +306,14 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h $(SCMPublicAPISrc)ScalableMesh/IScalableMeshEdit.h ${MultiCompileDepends}
 
+#$(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+#$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 #-----------------------------------------------------------------------
 #   Build Stores
 #-----------------------------------------------------------------------
@@ -331,9 +342,9 @@ $(o)SMStoreUtils$(oext) : $(stmDir)Stores/SMStoreUtils.cpp $(stmDir)Stores/SMSto
 
 #$(o)PointCloudSisterFileManager$(oext) : $(automaticGroundDetectionDir)PointCloudSisterFileManager.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
+#$(o)ScalableMeshGroundExtractor$(oext) : $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.cpp $(automaticGroundDetectionDir)ScalableMeshGroundExtractor.h  ${MultiCompileDepends}
 
-$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
+#$(o)ScalableMeshPointsProvider$(oext) : $(automaticGroundDetectionDir)ScalableMeshPointsProvider.cpp $(automaticGroundDetectionDir)ScalableMeshPointsProvider.h  ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Compile Importer plugins
@@ -478,7 +489,7 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
-    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
+ #   $(ContextSubpartsLibs)AutomaticGroundDetection.lib
 
 #    $(ContextSubpartsLibs)DgnView.lib \
 #    $(ContextSubpartsLibs)RasterCore.lib \

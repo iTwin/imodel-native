@@ -9,6 +9,40 @@
 #include "include\DataSourceManager.h"
 #include <assert.h>
 
+DataSourceManager *DataSourceManager::dataSourceManager = nullptr;
+
+
+DataSourceManager *DataSourceManager::Get(void)
+{
+	if (dataSourceManager == nullptr)
+	{
+		dataSourceManager = new DataSourceManager;
+	}
+
+	return dataSourceManager;
+}
+
+
+void DataSourceManager::Shutdown(void)
+{
+	if (dataSourceManager != nullptr)
+	{
+		dataSourceManager->destroyAll();
+
+		delete dataSourceManager;
+
+		dataSourceManager = nullptr;
+	}
+}
+
+bool DataSourceManager::destroyAll(void)
+{
+    bool    result;
+                                                            // Destroy all services, their accounts and the account DataSources
+    result = DataSourceServiceManager::destroyAll();
+
+    return result;
+}
 
 
 DataSourceManager::DataSourceManager(void) : DataSourceServiceManager(*this)
@@ -43,7 +77,7 @@ DataSource * DataSourceManager::createDataSource(const DataSourceName &name, Dat
     if ((source = account.createDataSource()) == nullptr)
         return nullptr;
 
-    if (Manager<DataSource>::create(name, source) == NULL)
+    if (Manager<DataSource, true>::create(name, source) == NULL)
     {
         account.destroyDataSource(source);
         return nullptr;
@@ -56,7 +90,7 @@ DataSource *DataSourceManager::getOrCreateDataSource(const DataSourceName &name,
 {
     DataSource *    dataSource;
                                                             // Attempt to get the named DataSource
-    dataSource = Manager<DataSource>::get(name);
+    dataSource = Manager<DataSource, true>::get(name);
     if (dataSource)
     {
                                                             // If requested, flag that the DataSource existed and was not created
@@ -88,7 +122,7 @@ DataSourceStatus DataSourceManager::destroyDataSource(DataSource * dataSource)
         return status;
     }
                                                             // Then destroy the main data source itself
-    if (Manager<DataSource>::destroy(dataSource, true))
+    if (Manager<DataSource, true>::destroy(dataSource))
     {
         return DataSourceStatus(DataSourceStatus::Status_OK);
     }
@@ -104,7 +138,7 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
 
     bool deleted;
 
-    Manager<DataSource>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted]( Manager<DataSource>::Iterator it) -> bool
+    Manager<DataSource, false>::ApplyFunction deleteFirstAccountDataSource = [this, dataSourceAccount, &deleted](Manager<DataSource, false>::Iterator it) -> bool
     {
         if (it->second)
         {
@@ -131,7 +165,7 @@ DataSourceStatus DataSourceManager::destroyDataSources(DataSourceAccount * dataS
     {
         deleted = false;
                                                             // Delete account's DataSources
-        Manager<DataSource>::apply(deleteFirstAccountDataSource);
+        Manager<DataSource, true>::apply(deleteFirstAccountDataSource);
 
     } while (deleted);
 

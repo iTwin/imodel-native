@@ -114,6 +114,7 @@ double ScalableMeshPointsProvider::_GetExportResolution() const
 BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const
     {    
     assert(m_smesh.IsValid());
+    assert(clip != nullptr);
     
     ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = m_smesh->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
     bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;
@@ -122,10 +123,10 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
     DPoint3d box[8];
     size_t nPts = 0;
+    DRange3d queryRange;
 
     if (clip != nullptr)
-        {
-        DRange3d queryRange;
+        {        
         clip->GetRange(queryRange, &m_transform);
 
         if (queryRange.XLength() == 0 || queryRange.YLength() == 0)
@@ -148,8 +149,11 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
         auto mesh = node->GetMesh(flags);
                 
         for (size_t ptInd = 0; ptInd <  mesh->GetNbPoints(); ptInd++)
-            {            
-            points.push_back(mesh->EditPoints()[ptInd]);
+            {                        
+            if (queryRange.IsContainedXY(mesh->EditPoints()[ptInd]))
+                {
+                points.push_back(mesh->EditPoints()[ptInd]);
+                }
             }
                 
         if (points.size() > 5000000) 

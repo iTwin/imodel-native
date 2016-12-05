@@ -110,12 +110,11 @@ struct IScalableMeshCreator::Impl
         friend struct                       IScalableMeshSourceCreator::Impl;
         friend struct                       IScalableMeshNodeCreator::Impl;
 
-       // IDTMSourceCollection                m_sources;
         GeoCoords::GCS                      m_gcs;
         ScalableMeshCompressionType         m_compressionType;
         WString                             m_scmFileName;    
         IScalableMeshPtr                    m_scmPtr;  
-        //SMSQLiteFile                        m_smSQLite;
+
 
         SMSQLiteFilePtr                     m_smSQLitePtr;
         bool                                m_isDgnDb;
@@ -123,8 +122,9 @@ struct IScalableMeshCreator::Impl
         Time                                m_lastSyncTime;
 
         bool                                m_gcsDirty;
-       // DocumentEnv                         m_sourceEnv;
+
         const size_t                        m_workingLayer;
+
 
         //CREATOR2
 
@@ -132,7 +132,6 @@ struct IScalableMeshCreator::Impl
 
 
         StatusInt                           CreateDataIndex(HFCPtr<MeshIndexType>&                                    pDataIndex,
-                                                            HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                             bool needBalancing = false);
 
 
@@ -155,6 +154,11 @@ struct IScalableMeshCreator::Impl
         virtual bool                                IsFileDirty();
 
     protected:
+        
+        HFCPtr<MeshIndexType>               m_dataIndex;
+
+        std::atomic<bool>        m_isCanceled;
+
         template <typename PointIndex>
           StatusInt                    Filter(PointIndex&                             pointIndex,
                                             int                                     levelToFilter = -1);
@@ -197,6 +201,10 @@ struct IScalableMeshCreator::Impl
         StatusInt                           Filter                         ();
 
         void                               SetBaseExtraFilesPath(const WString& path);
+
+        bool                               IsCanceled();
+
+        void                               Cancel();
 
       //  IScalableMeshNodePtr                AddChildNode (const IScalableMeshNodePtr& parentNode, 
        //                                                   StatusInt&                  status);

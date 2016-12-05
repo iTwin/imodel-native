@@ -14,14 +14,15 @@ DataSourceServiceManager::DataSourceServiceManager(DataSourceManager &manager)
 
 DataSourceServiceManager::~DataSourceServiceManager(void)
 {
-    destroyServices();
+
 }
 
 
 DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager)
 {
+
     DataSourceService *    service;
-    DataSourceStatus    status;
+    DataSourceStatus       status;
 
     if ((service = new DataSourceServiceFile(manager, DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Memory_Allocation);
@@ -44,6 +45,12 @@ DataSourceStatus DataSourceServiceManager::initialize(DataSourceManager &manager
 
     return status;
 
+}
+
+
+void DataSourceServiceManager::shutdown(void)
+{
+	destroyServices();
 }
 
 DataSourceStatus DataSourceServiceManager::addService(DataSourceService * service)
@@ -94,7 +101,7 @@ DataSourceAccount * DataSourceServiceManager::getAccount(const DataSourceAccount
 DataSourceStatus DataSourceServiceManager::destroyService(const ServiceName & serviceName)
 {
                                                             // Find and destroy service
-    if (destroy(serviceName, true))
+    if (destroy(serviceName))
     {
         return DataSourceStatus();
     }
@@ -105,7 +112,7 @@ DataSourceStatus DataSourceServiceManager::destroyService(const ServiceName & se
 
 DataSourceStatus DataSourceServiceManager::destroyServices(void)
 {
-    if (destroyAll(true))
+    if (destroyAll())
     {
         return DataSourceStatus();
     }

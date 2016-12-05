@@ -72,6 +72,8 @@ public:
     CLOUD_EXPORT DataSource       *     getOrCreateDataSource           (const DataSource::Name &name, bool *created = nullptr);
     CLOUD_EXPORT DataSource       *     getOrCreateThreadDataSource     (bool *created = nullptr);
 
+            bool                        destroyAll                      (void);
+
             DataSourceStatus            destroyDataSources              (void);
     virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource) = 0;
 

@@ -1,5 +1,10 @@
 #include <ImagePP/h/ExportMacros.h>
 #include <ImagePP/h/ImageppAPI.h>
+
+#ifdef VANCOUVER_API
+    #include <ImagePP/h/hstdcpp.h>
+#endif
+
 #include <ImagePP/h/HStlStuff.h>
 #include <ImagePP/h/HTraits.h>
 #include <ImagePP/h/HIterators.h>

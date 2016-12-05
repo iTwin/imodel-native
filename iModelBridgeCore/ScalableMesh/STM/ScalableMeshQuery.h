@@ -702,6 +702,7 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         bool     m_isProgressiveDisplay;
         double   m_minScreenPixelsPerPoint;
+        double   m_maxPixelError;
         double   m_rootToViewMatrix[4][4];
         
 
@@ -731,6 +732,11 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             return m_minScreenPixelsPerPoint;
             } 
 
+        virtual double        _GetMaxPixelError() const override
+        {
+            return m_maxPixelError;
+        }
+
         virtual StopQueryCallbackFP _GetStopQueryCallback() const
             {
             return m_stopQueryCallbackFP;
@@ -755,6 +761,11 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
             {
             m_minScreenPixelsPerPoint = minScreenPixelsPerPoint;
             }
+
+        virtual void          _SetMaxPixelError(double errorInPixels) override
+        {
+            m_maxPixelError = errorInPixels;
+        }
 
         virtual void          _SetProgressiveDisplay(bool isProgressiveDisplay) override
             {
@@ -798,7 +809,8 @@ struct ScalableMeshViewDependentMeshQueryParams : public IScalableMeshViewDepend
 
         ScalableMeshViewDependentMeshQueryParams()
             {            
-            m_minScreenPixelsPerPoint = 100;      
+            m_minScreenPixelsPerPoint = 100;  
+            m_maxPixelError = 1.0;
             m_isProgressiveDisplay = false;
             m_stopQueryCallbackFP = 0;
             }
@@ -1357,6 +1369,8 @@ template<class POINT> class ScalableMeshCachedMeshNode : public virtual IScalabl
 
             virtual IScalableMeshTexturePtr _GetTexture() const override;
 
+            virtual void      _SetIsInVideoMemory(bool isInVideoMemory) override {}
+
     public:             
 
             ScalableMeshCachedMeshNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, bool loadTexture)
@@ -1391,17 +1405,18 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
     private: 
 
-            RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
+            mutable RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> m_cachedDisplayMeshData;
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;
             Transform m_reprojectionTransform;
+            const IScalableMesh* m_scalableMeshP;
 
 
 
     protected:         
                                     
             virtual StatusInt _GetCachedMeshes(bvector<SmCachedDisplayMesh*>& cachedMesh, bvector<bpair<bool,uint64_t>>& textureIds) const override 
-                {                            
+                {         
                 if (m_cachedDisplayMeshData.IsValid() && m_cachedDisplayMeshData->size() > 0)
                     {
                     for (size_t i = 0; i < m_cachedDisplayMeshData->size(); ++i)
@@ -1446,12 +1461,16 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                 clipVectors.insert(clipVectors.end(), m_clipVectors.begin(), m_clipVectors.end());                
                 return SUCCESS;                
                 }
+
+            virtual void      _SetIsInVideoMemory(bool isInVideoMemory);
           
     public:             
             
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr);
 
             ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform);
+
+            ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMeshP);
 
             virtual ~ScalableMeshCachedDisplayNode();
 
@@ -1461,6 +1480,7 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
 
             bool IsLoaded() const;
             bool IsLoaded(IScalableMeshDisplayCacheManager* mgr) const;
+            bool IsLoadedInVRAM(IScalableMeshDisplayCacheManager* mgr) const;
                 
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
@@ -1489,6 +1509,11 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
                 {
                 return new ScalableMeshCachedDisplayNode<POINT>(nodePtr, reprojectionTransform);
                 }
+
+            static ScalableMeshCachedDisplayNode<POINT>* Create(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMeshP)
+            {
+                return new ScalableMeshCachedDisplayNode<POINT>(nodePtr, scalableMeshP);
+            }
 
             typedef RefCountedPtr<ScalableMeshCachedDisplayNode<POINT>> Ptr;
     };

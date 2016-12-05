@@ -26,6 +26,30 @@ USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
 
+class Spinlock
+{
+private:
+    std::atomic_flag lockFlag = ATOMIC_FLAG_INIT;
+public:
+
+    Spinlock()
+    {
+    }
+
+    void lock()
+    {
+        if (!lockFlag.test_and_set())
+            return;
+        while (lockFlag.test_and_set())
+               std::this_thread::yield();
+    }
+
+    void unlock()
+    {
+        lockFlag.clear();
+    }
+};
+
 //NEEDS_WORK_SM : Merge SMStoreDataType and SMStoreDataType together?
 SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType);
     
@@ -38,6 +62,13 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem;
 template <typename DataType> class SMMemoryPoolBlobItem;
 template <typename DataType> class SMMemoryPoolGenericBlobItem;
 template <typename DataType> class SMStoredMemoryPoolMultiItems;
+
+
+enum class SMMemoryPoolType
+{
+    CPU = 0,
+    GPU = 1
+};
 
 
 
@@ -154,6 +185,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
         void SetDirty() { m_dirty = true; }
+
+        SMMemoryPoolType m_poolId;
     };
 
 
@@ -1129,14 +1162,16 @@ class SMMemoryPool : public RefCountedBase
     private : 
 
         static SMMemoryPoolPtr           s_memoryPool; 
+        static SMMemoryPoolPtr           s_videoMemoryPool;
 
         uint64_t                                  m_maxPoolSizeInBytes;
         atomic<uint64_t>                          m_currentPoolSizeInBytes;
         bvector<bvector<SMMemoryPoolItemBasePtr>> m_memPoolItems;
-        bvector<bvector<std::mutex*>>             m_memPoolItemMutex;
+        bvector<bvector<Spinlock*>>             m_memPoolItemMutex;
         bvector<bvector<clock_t>>                 m_lastAccessTime;
         uint64_t                                  m_nbBins;
         mutex                                     m_increaseBinMutex;
+        SMMemoryPoolType m_id;
 
         
         //std::mutex                 m_poolItemMutex;
@@ -1146,7 +1181,7 @@ class SMMemoryPool : public RefCountedBase
         atomic<bool>               m_lastAvailableInd;
         */
 
-        SMMemoryPool();
+        SMMemoryPool(SMMemoryPoolType type);
             
         virtual ~SMMemoryPool();
 
@@ -1154,6 +1189,7 @@ class SMMemoryPool : public RefCountedBase
     public : 
 
         static SMMemoryPoolItemId s_UndefinedPoolItemId;
+
         
             
         template<typename T>
@@ -1253,10 +1289,19 @@ class SMMemoryPool : public RefCountedBase
 
         void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 
+        size_t GetCurrentlyUsed()
+            {
+            return m_currentPoolSizeInBytes;
+            }
+
+
+        size_t GetMaxSize()
+        {
+            return m_maxPoolSizeInBytes;
+        }
+
         bool SetMaxSize(uint64_t maxSize)
             {
-            if (m_currentPoolSizeInBytes > 0)
-                return false;
 
             m_maxPoolSizeInBytes = maxSize;
 
@@ -1265,11 +1310,19 @@ class SMMemoryPool : public RefCountedBase
 
         static SMMemoryPoolPtr GetInstance()
             {
-            if (s_memoryPool == 0)
-                s_memoryPool = new SMMemoryPool;     
+            if (s_memoryPool == 0) 
+                s_memoryPool = new SMMemoryPool(SMMemoryPoolType::CPU);     
             
             return s_memoryPool;
             }
+
+        static SMMemoryPoolPtr GetInstanceVideo()
+        {
+            if (s_videoMemoryPool == 0)
+                s_videoMemoryPool = new SMMemoryPool(SMMemoryPoolType::GPU);
+
+            return s_videoMemoryPool;
+        }
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
