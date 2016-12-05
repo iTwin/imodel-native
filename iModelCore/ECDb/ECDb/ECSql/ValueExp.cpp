@@ -513,7 +513,7 @@ BentleyStatus FunctionCallExp::AddArgument(std::unique_ptr<ValueExp> argument)
 ECN::PrimitiveType FunctionCallExp::DetermineReturnType(ECDbCR ecdb, Utf8StringCR functionName, int argCount)
     {
     DbFunction* func = nullptr;
-    const bool isCustomFunction = ecdb.GetECDbImplR().TryGetSqlFunction(func, functionName, argCount);
+    const bool isCustomFunction = ecdb.GetECDbImplR().TryGetSqlFunction(func, functionName.c_str(), argCount);
     if (isCustomFunction)
         {
         switch (func->GetReturnType())
