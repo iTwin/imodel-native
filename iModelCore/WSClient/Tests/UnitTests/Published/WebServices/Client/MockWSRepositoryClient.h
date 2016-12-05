@@ -58,6 +58,10 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         MOCK_METHOD1(SetCredentials, void(Credentials credentials));
 
+        MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
+
+        MOCK_CONST_METHOD0(GetCompressionOptions, CompressionOptionsCR());
+
         MOCK_CONST_METHOD1(VerifyAccess, AsyncTaskPtr<WSVoidResult>
             (
             ICancellationTokenPtr canncelationToken
