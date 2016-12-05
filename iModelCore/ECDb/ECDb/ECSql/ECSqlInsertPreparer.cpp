@@ -130,16 +130,17 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
         {
         //ECSQL contains Source/TargetECInstanceId for foreign end
         const size_t foreignEndECInstanceIdIndexUnsigned = (size_t)foreignEndECInstanceIdIndex;
-        auto const& ecinstanceIdPropNameSnippets = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
+        NativeSqlBuilder::List const& ecinstanceIdPropNameSnippets = nativeSqlSnippets.m_propertyNamesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
         nativeSqlSnippets.m_pkColumnNamesNativeSqlSnippets.insert(nativeSqlSnippets.m_pkColumnNamesNativeSqlSnippets.end(), ecinstanceIdPropNameSnippets.begin(), ecinstanceIdPropNameSnippets.end());
 
-        auto const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
+        NativeSqlBuilder::List const& ecinstanceIdValueSnippets = nativeSqlSnippets.m_valuesNativeSqlSnippets[foreignEndECInstanceIdIndexUnsigned];
         if (ecinstanceIdValueSnippets.size() != 1)
             {
+            //WIP Shouldn't this be caught much earlier??
             if (ecinstanceIdValueSnippets.size() > 1)
                 ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Multi-value ECInstanceIds not supported.");
             else
-                BeAssert(false);
+                ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECRelationshipClass' foreign key end is abstract and doesn't have subclasses. Cannot insert into such an ECRelationshipClass.");
 
             return ECSqlStatus::InvalidECSql;
             }
@@ -225,7 +226,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         size_t component = 0;
         SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
-        for (auto childPropertyMap : visitor.Results())
+        for (PropertyMap const* childPropertyMap : visitor.Results())
             {
             DataPropertyMap const* childDataPropertyMap = static_cast<DataPropertyMap const*>(childPropertyMap);
             if (childDataPropertyMap->GetOverflowState() == DataPropertyMap::OverflowState::Yes)

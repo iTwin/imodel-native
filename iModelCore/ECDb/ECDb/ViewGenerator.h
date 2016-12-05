@@ -70,29 +70,20 @@ struct ViewGenerator
 
     private:
         ECDb const& m_ecdb;
-        bool m_optimizeByIncludingOnlyRealTables;
         ECSqlPrepareContext const* m_prepareContext;
         bool m_isPolymorphic;
+        bool m_asSubQuery;
         bool m_captureViewColumnNameList;
         std::unique_ptr<std::vector<Utf8String>> m_viewColumnNameList;
-        bool m_asSubQuery;
 
-        explicit ViewGenerator(ECDb const& ecdb, bool cacheViewColumnNameList = false, bool asSubQuery = true) 
-            : m_ecdb(ecdb), m_optimizeByIncludingOnlyRealTables(true), m_prepareContext(nullptr), m_asSubQuery(asSubQuery), m_captureViewColumnNameList(true)
-            {
-            if (cacheViewColumnNameList)
-                m_viewColumnNameList = std::unique_ptr<std::vector<Utf8String>>(new std::vector<Utf8String>());
-            }
+        explicit ViewGenerator(ECDb const& ecdb, ECSqlPrepareContext const* ctx, bool isPolymorphic, bool cacheViewColumnNameList, bool asSubQuery);
 
-        static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
-
-        /*=====================System Polymorphic view===================== */
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
-        BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&, bool isPolymorphicQuery, ECSqlPrepareContext const*);
-        /*=====================NEW API=================*/
-        bool IsECClassIdFilterEnabled() const;
-        void RecordPropertyMapIfRequried(PropertyMap const& accessString);
+        static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
+
+        BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&);
+
         BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Type filter = PropertyMap::Type::Entity, bool requireJoin = false);
         BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
         BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
@@ -100,6 +91,10 @@ struct ViewGenerator
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
         BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
+
+        void RecordPropertyMapIfRequried(PropertyMap const& accessString);
+        bool IsECClassIdFilterEnabled() const;
+
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view

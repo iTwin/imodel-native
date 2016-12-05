@@ -14,6 +14,16 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************** ViewGenerator ***************************************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                      05/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+ViewGenerator::ViewGenerator(ECDb const& ecdb, ECSqlPrepareContext const* ctx, bool isPolymorphic, bool cacheViewColumnNameList /*= false*/, bool asSubQuery /*= true*/) 
+    : m_ecdb(ecdb), m_prepareContext(ctx), m_isPolymorphic(isPolymorphic), m_asSubQuery(asSubQuery), m_captureViewColumnNameList(true)
+    {
+    if (cacheViewColumnNameList)
+        m_viewColumnNameList = std::unique_ptr<std::vector<Utf8String>>(new std::vector<Utf8String>());
+    }
+
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      05/2016
@@ -21,8 +31,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static 
 BentleyStatus ViewGenerator::GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const& ecdb, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
     {
-    ViewGenerator viewGenerator(ecdb);
-    return viewGenerator.GenerateViewSql(viewSql, classMap, isPolymorphicQuery, &prepareContext);
+    ViewGenerator viewGenerator(ecdb, &prepareContext, isPolymorphicQuery, false, true);
+    return viewGenerator.GenerateViewSql(viewSql, classMap);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -173,9 +183,9 @@ BentleyStatus ViewGenerator::CreateECClassView(ECDbCR ecdb, ClassMapCR classMap)
     Utf8String viewName;
     viewName.Sprintf("[%s.%s]", classMap.GetClass().GetSchema().GetAlias().c_str(), classMap.GetClass().GetName().c_str());
 
-    ViewGenerator viewGenerator(ecdb, true, false);
+    ViewGenerator viewGenerator(ecdb, nullptr, true, true, false);
     NativeSqlBuilder viewSql;
-    if (viewGenerator.GenerateViewSql(viewSql, classMap, true, nullptr) != SUCCESS)
+    if (viewGenerator.GenerateViewSql(viewSql, classMap) != SUCCESS)
         return ERROR;
 
     Utf8String viewColumnNameList;
@@ -391,9 +401,9 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
     if (tableCount < 2)
         return SUCCESS;
 
-    ViewGenerator generator(ecdb, false, false);
+    ViewGenerator generator(ecdb, nullptr, true, false, false);
     NativeSqlBuilder viewBodySql;
-    if (generator.GenerateViewSql(viewBodySql, classMap, true, nullptr) != SUCCESS)
+    if (generator.GenerateViewSql(viewBodySql, classMap) != SUCCESS)
         return ERROR;
     
     Utf8String updatableViewDdl;
@@ -414,10 +424,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                      07/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const* prepareContext)
+BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const& classMap)
     {
-    m_isPolymorphic = isPolymorphicQuery;
-    m_prepareContext = prepareContext;
     m_captureViewColumnNameList = true;
     if (classMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
@@ -441,11 +449,12 @@ BentleyStatus ViewGenerator::GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap
 //---------------------------------------------------------------------------------------
 bool ViewGenerator::IsECClassIdFilterEnabled() const
     {
-    if (m_prepareContext)
+    if (m_prepareContext != nullptr)
         {
         if (OptionsExp const* options = m_prepareContext->GetCurrentScope().GetOptions())
             return !options->HasOption(OptionsExp::NOECCLASSIDFILTER_OPTION);
         }
+
     return true;
     }
 //---------------------------------------------------------------------------------------
