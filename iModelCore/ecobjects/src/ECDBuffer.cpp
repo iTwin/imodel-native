@@ -3181,7 +3181,6 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
         return ECObjectsStatus::Success;
         }
     else if (!v.IsNavigation())
-        // For rigtht now need to specify both the related instance id and the relationship class pointer
         return ECObjectsStatus::DataTypeMismatch;
 
     if (isInUninitializedFixedCountArray)
@@ -3201,15 +3200,16 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
 
     uint8_t isPointerFlag = 0;
     int64_t relClassValue = 0;
-    if (v.GetNavigationInfo().IsPointer())
+    ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
+    ECClassId relClassId = v.GetNavigationInfo().GetRelationshipClassId();
+    if (nullptr == relClass && relClassId.IsValid())
+        relClassValue = relClassId.GetValueUnchecked();
+    else
         {
         isPointerFlag |= ((uint8_t) 1 << 7); // The bit flag is stored as either 0 or 1
-        ECRelationshipClassCP relClass = v.GetNavigationInfo().GetRelationshipClass();
         if (nullptr != relClass)
             relClassValue = (int64_t) relClass;
         }
-    else
-        relClassValue = v.GetNavigationInfo().GetRelationshipClassId().GetValue();
 
     result = ModifyData(relClassValueP, &isPointerFlag, sizeof(isPointerFlag));
 

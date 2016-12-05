@@ -113,10 +113,6 @@ struct ECValue
                 ECOBJECTS_EXPORT ECClassId GetRelationshipClassId() const;
                 //! Returns the long value, if this ECValue holds a long
                 ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
-
-                //! Retuns whether the relationship class was stored as a pointer to the relationship. If false, than the relationship
-                //! class was stored as an id.
-                ECOBJECTS_EXPORT bool IsPointer() const;
             };
 
     private:
