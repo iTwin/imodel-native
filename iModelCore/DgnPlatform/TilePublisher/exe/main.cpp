@@ -77,7 +77,7 @@ static CommandParam s_paramTable[] =
         { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"pl", L"polylines", L"Publish polylines", false, true },
+        { L"pl", L"polylines", L"Don't publish polylines", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
@@ -157,7 +157,7 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
-    bool            m_polylines = false;
+    bool            m_polylines = true;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
     bool            m_displayGlobe = false;
@@ -165,7 +165,7 @@ private:
     bool            m_overwriteExisting = true;
     bool            m_publish = false;
 
-    DgnViewId GetViewId(DgnDbR db) const;
+    DgnViewId GetDefaultViewId(DgnDbR db) const;
 public:
     PublisherParams () : m_groundHeight(0.0), m_groundPoint(DPoint3d::FromZero()), m_groundMode(GroundMode::FixedHeight), m_tolerance (.001), m_displayGlobe(false) { }
     BeFileNameCR GetInputFileName() const { return m_inputFileName; }
@@ -187,14 +187,14 @@ public:
 
     bool ParseArgs(int ac, wchar_t const** av);
     DgnDbPtr OpenDgnDb() const;
-    ViewControllerPtr LoadViewController(DgnDbR db);
+    DgnViewId GetViewIds(DgnViewIdSet& viewIds, DgnDbR db);
     Json::Value  GetViewerOptions () const;
 };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnViewId PublisherParams::GetViewId(DgnDbR db) const
+DgnViewId PublisherParams::GetDefaultViewId(DgnDbR db) const
     {
     if (!m_viewName.empty())
         return ViewDefinition::QueryViewId(db, m_viewName);
@@ -221,26 +221,32 @@ DgnViewId PublisherParams::GetViewId(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewControllerPtr PublisherParams::LoadViewController(DgnDbR db)
+DgnViewId PublisherParams::GetViewIds(DgnViewIdSet& viewIds, DgnDbR db)
     {
-    DgnViewId viewId = GetViewId(db);
-    ViewDefinitionCPtr view = ViewDefinition::Get(db, viewId);
+    bool publishSingleView = !m_viewName.empty();
+
+    DgnViewId defaultViewId = GetDefaultViewId(db);
+    ViewDefinitionCPtr view = ViewDefinition::Get(db, defaultViewId);
     if (view.IsNull())
         {
         printf("View not found\n");
-        return false;
+        return DgnViewId();
         }
+
+    viewIds.insert(defaultViewId);
+    if (publishSingleView)
+        return defaultViewId;
 
     m_viewName = view->GetName();
 
-    ViewControllerPtr controller = view->LoadViewController();
-    if (controller.IsNull())
+    for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
-        printf("Failed to load view %hs\n", view->GetName().c_str());
-        return false;
+        view = ViewDefinition::Get(db, entry.GetId());
+        if (view.IsValid() && (view->IsSpatialView() || view->IsDrawingView()))
+            viewIds.insert(entry.GetId());
         }
 
-    return controller;
+    return defaultViewId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -325,7 +331,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 break;
             case ParamId::Polylines:
-                m_polylines = true;
+                m_polylines = false;
                 break;
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
@@ -401,16 +407,17 @@ private:
     Status                      m_acceptTileStatus = Status::Success;
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
+    DgnViewId                   m_defaultViewId;
 
     virtual TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
 
-    Status  GetViewsJson (Json::Value& value, TransformCR transform, DPoint3dCR groundPoint);
+    Status  GetViewsJson (Json::Value& value, DPoint3dCR groundPoint);
 
     template<typename T> Json::Value GetIdsJson(Utf8CP tableName, T const& ids);
 
-    Status WriteWebApp(TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params);
+    Status WriteWebApp(DPoint3dCR groundPoint, PublisherParams const& params);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
 
     //=======================================================================================
@@ -428,8 +435,9 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental)
-        : PublisherContext(viewController, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental), m_publishedTileDepth(publishDepth)
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental)
+        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental),
+          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -466,7 +474,7 @@ TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
     {
     // URL of tileset .json
     Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
@@ -477,18 +485,18 @@ PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, Tran
 
     json["tilesetUrl"] = tilesetUrl;
 
-    return GetViewsetJson(json, transform, groundPoint);
+    return GetViewsetJson(json, groundPoint, m_defaultViewId);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status TilesetPublisher::WriteWebApp (TransformCR transform, DPoint3dCR groundPoint, PublisherParams const& params)
+PublisherContext::Status TilesetPublisher::WriteWebApp (DPoint3dCR groundPoint, PublisherParams const& params)
     {
     Json::Value json;
     Status      status;
 
-    if (Status::Success != (status = GetViewsJson (json, transform, groundPoint)))
+    if (Status::Success != (status = GetViewsJson (json, groundPoint)))
         return status;
 
 
@@ -621,7 +629,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         groundPoint.z = params.GetGroundHeight();
         }
 
-    return WriteWebApp(Transform::FromProduct(m_tileToEcef, m_dbToTile), groundPoint, params);
+    return WriteWebApp(groundPoint, params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -708,13 +716,14 @@ int wmain(int ac, wchar_t const** av)
     if (db.IsNull())
         return 1;
 
-    ViewControllerPtr viewController = createParams.LoadViewController(*db);
-    if (viewController.IsNull())
+    DgnViewIdSet viewsToPublish;
+    DgnViewId defaultView = createParams.GetViewIds(viewsToPublish, *db);
+    if (!defaultView.IsValid())
         return 1;
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
-    TilesetPublisher publisher(*viewController, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
+    TilesetPublisher publisher(*db, viewsToPublish, defaultView, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
                                                 createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental());
 
     if (!createParams.GetOverwriteExistingOutputFile())

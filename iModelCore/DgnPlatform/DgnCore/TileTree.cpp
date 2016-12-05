@@ -401,8 +401,6 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
-    DgnDb::VerifyClientThread();
-
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
         BeAssert(false);
@@ -424,18 +422,13 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 
         return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
             {
-            if (status != SUCCESS)
+            if (SUCCESS != status || SUCCESS != loader->LoadTile())
                 {
                 if (loads != nullptr && loads->IsCanceled())
                     tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
                 else
                     tile.SetNotFound();
-                return ERROR;
-                }
 
-            if (SUCCESS != loader->LoadTile())
-                {
-                tile.SetNotFound();
                 return ERROR;
                 }
 
@@ -627,14 +620,28 @@ TileLoadState::~TileLoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double branchOffset, Utf8CP title)
+    {
+    if (branch.m_entries.empty())
+        return;
+
+    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance + branchOffset};
+    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
+    DEBUG_PRINTF("drawing %d %s Tiles", branch.m_entries.size(), title);
+    branch.SetViewFlags(flags);
+    auto drawBranch = m_context.CreateBranch(branch, &location, m_clip);
+    BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
+    m_context.OutputGraphic(*drawBranch, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)
     {
-    if (m_graphics.m_entries.empty() && m_substitutes.m_entries.empty())
-        return;
-
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.m_textures = true;
@@ -642,30 +649,9 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
 
-    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance};
-    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
-
-    if (!m_graphics.m_entries.empty())
-        {
-        DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
-        m_graphics.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_graphics, &location, m_clip);
-        BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
-        m_context.OutputGraphic(*branch, nullptr);
-        }
-
-    // Substitute tiles are drawn behind "real" tiles so that when they arrive the better tiles overwrite the substitute ones.
-    if (!m_substitutes.m_entries.empty())
-        {
-        DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
-        offset.z = m_root.m_substitueBiasDistance;
-        location = Transform::FromProduct(location, Transform::From(offset));
-
-        m_substitutes.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip);
-        BeAssert(m_substitutes.m_entries.empty()); // CreateBranch should have moved them
-        m_context.OutputGraphic(*branch, nullptr);
-        }
+    DrawBranch(flags, m_graphics, 0.0, "Main");
+    DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
+    DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -726,7 +712,7 @@ bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
     if (parent->HasGraphics())
         {
         //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_substitutes.Add(*parent->m_graphic);
+        args.m_loResSubstitutes.Add(*parent->m_graphic);
         return true;
         }
 
@@ -746,7 +732,7 @@ void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
         if (quadChild->HasGraphics())
             {
             //DEBUG_PRINTF("using higher res");
-            args.m_substitutes.Add(*quadChild->m_graphic);
+            args.m_hiResSubstitutes.Add(*quadChild->m_graphic);
             }
         }
     }
@@ -761,8 +747,8 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        if (!TryLowerRes(args, 10))
-            TryHigherRes(args);
+        TryLowerRes(args, 10);
+        TryHigherRes(args);
 
         return;
         }

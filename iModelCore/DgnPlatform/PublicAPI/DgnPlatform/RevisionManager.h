@@ -103,7 +103,7 @@ public:
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct RevisionChangesFileReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStream
 {
 private:
     DgnDbCR m_dgndb; // Used only for debugging
@@ -115,9 +115,9 @@ private:
     BentleyStatus StartInput();
     void FinishInput();
 
-    virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    virtual void _Reset() override;
-    virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    DGNPLATFORM_EXPORT virtual void _Reset() override;
+    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
     RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}
