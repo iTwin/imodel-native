@@ -167,7 +167,7 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
 struct TileThread : BeFolly::ThreadPool
 {
     TileThread() : ThreadPool(1, "SheetTile") {}
-    static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.get();}
+    static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.try_get_fast();}
 };
 
 /*---------------------------------------------------------------------------------**//**
