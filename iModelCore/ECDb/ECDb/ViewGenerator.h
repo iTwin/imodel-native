@@ -21,6 +21,79 @@ struct ConstraintECClassIdJoinInfo;
 struct ViewGenerator
     {
     private:
+        enum class ViewType
+            {
+            SelectFromView,
+            UpdatableView,
+            ECClassView
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    12/2016
+        //+===============+===============+===============+===============+===============+======
+        struct Context
+            {
+        private:
+            ViewType m_viewType;
+            ECDbCR m_ecdb;
+
+        protected:
+            Context(ViewType viewType, ECDbCR ecdb) : m_viewType(viewType), m_ecdb(ecdb) {}
+
+        public:
+            virtual ~Context() {}
+
+            ViewType GetViewType() const { return m_viewType; }
+            ECDbCR GetECDb() const { return m_ecdb; }
+
+            template<typename TContext>
+            TContext& GetAs() { BeAssert(dynamic_cast<TContext*> (this) != nullptr); return static_cast<TContext&> (*this); }
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    12/2016
+        //+===============+===============+===============+===============+===============+======
+        struct SelectFromViewContext final : Context
+            {
+        private:
+            ECSqlPrepareContext const& m_prepareCtx;
+            bool m_isPolymorphicQuery;
+
+        public:
+            SelectFromViewContext(ECDbCR ecdb, ECSqlPrepareContext const& prepareCtx, bool isPolymorphicQuery) : Context(ViewType::SelectFromView, ecdb), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery) {}
+            ~SelectFromViewContext() {}
+
+            ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
+            bool IsPolymorphicQuery() const { return m_isPolymorphicQuery; }
+            bool IsECClassIdFilterEnabled() const;
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    12/2016
+        //+===============+===============+===============+===============+===============+======
+        struct UpdatableViewContext final : Context
+            {
+            public:
+                explicit UpdatableViewContext(ECDbCR ecdb) : Context(ViewType::UpdatableView, ecdb) {}
+                ~UpdatableViewContext() {}
+            };
+
+        //=======================================================================================
+        // @bsiclass                                                 Krischan.Eberle    12/2016
+        //+===============+===============+===============+===============+===============+======
+        struct ECClassViewContext final : Context
+            {
+            private:
+                bvector<Utf8StringCP> m_viewColumnNameList;
+
+            public:
+                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb) {}
+                ~ECClassViewContext() {}
+
+                void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
+                bvector<Utf8StringCP> const& GetViewColumnNames() const { return m_viewColumnNameList; }
+            };
+
         struct ToSqlVisitor final : IPropertyMapVisitor
             {
             struct Result
@@ -68,32 +141,22 @@ struct ViewGenerator
                 void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
             };
 
-    private:
-        ECDb const& m_ecdb;
-        ECSqlPrepareContext const* m_prepareContext;
-        bool m_isPolymorphic;
-        bool m_asSubQuery;
-        bool m_captureViewColumnNameList;
-        std::unique_ptr<std::vector<Utf8String>> m_viewColumnNameList;
-
-        explicit ViewGenerator(ECDb const& ecdb, ECSqlPrepareContext const* ctx, bool isPolymorphic, bool cacheViewColumnNameList, bool asSubQuery);
+        ViewGenerator();
+        ~ViewGenerator();
 
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
-        BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, ClassMap const&);
+        static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
 
-        BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Type filter = PropertyMap::Type::Entity, bool requireJoin = false);
-        BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, RelationshipClassEndTableMap const& relationMap);
-        BentleyStatus RenderRelationshipClassMap(NativeSqlBuilder& viewSql, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr) ;
-        BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, RelationshipClassLinkTableMap const& relationMap);
-        BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap);
-        BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
-        BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, ClassMap const& classMap);
-
-        void RecordPropertyMapIfRequried(PropertyMap const& accessString);
-        bool IsECClassIdFilterEnabled() const;
+        static BentleyStatus RenderPropertyMaps(NativeSqlBuilder& sqlView, Context&, DbTable const*& requireJoinTo, ClassMapCR classMap, DbTable const& contextTable, ClassMapCP baseClass = nullptr, PropertyMap::Type filter = PropertyMap::Type::Entity, bool requireJoin = false);
+        static BentleyStatus RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassEndTableMap const& relationMap);
+        static BentleyStatus RenderRelationshipClassLinkTableMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassLinkTableMap const& relationMap);
+        static BentleyStatus DoRenderRelationshipClassMap(NativeSqlBuilder& viewSql, Context&, RelationshipClassMap const& relationMap, DbTable const& contextTable, ConstraintECClassIdJoinInfo const& sourceJoinInfo, ConstraintECClassIdJoinInfo const& targetJoinInfo, RelationshipClassLinkTableMap const* castInto = nullptr);
+        static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
+        static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
+        static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
 
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
