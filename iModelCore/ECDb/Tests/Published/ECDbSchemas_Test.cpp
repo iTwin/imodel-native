@@ -945,12 +945,10 @@ TEST_F(ECDbSchemaTests, CheckCustomAttributesXmlFormatTest)
         EXPECT_LT(0, (int) caXmlString.length()) << "Retrieved custom attribute XML string is not expected to be empty.";
 
         //It is expected that the XML string doesn't contain the XML descriptor.
-        size_t found = caXmlString.find("<?xml");
-        EXPECT_EQ(Utf8String::npos, found) << "The custom attribute XML string is expected to not contain the XML description tag.";
+        EXPECT_TRUE(!caXmlString.ContainsI("<?xml")) << "The custom attribute XML string is expected to not contain the XML description tag.";
 
         //It is expected that the XML string does contain the instance id if the original CA was assigned one
-        found = caXmlString.find("instanceID=");
-        EXPECT_NE(Utf8String::npos, found) << "The custom attribute XML string is expected to contain the instance id for the given custom attribute instance.";
+        EXPECT_TRUE(caXmlString.ContainsI("instanceId=")) << "The custom attribute XML string is expected to contain the instance id for the given custom attribute instance.";
         }
 
     ASSERT_EQ(1, rowCount) << "Only one test custom attribute instance had been created.";
