@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
 
-constexpr double s_half2dDepthRange = 500.0;
+constexpr double s_half2dDepthRange = 10.0;
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
 
@@ -472,8 +472,8 @@ struct RangeAccumulator : RangeIndex::Traverser
         if (m_is2d)
             {
             BeAssert(m_range.low.z == m_range.high.z == 0.0);
-            m_range.low.z = -s_half2dDepthRange;
-            m_range.high.z = s_half2dDepthRange;
+            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
+            m_range.high.z = s_half2dDepthRange*2;
             }
 
         return TileGeneratorStatus::Success;
@@ -515,7 +515,7 @@ DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting) :
-    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (ignoreLighting)
+    m_fillColor(nullptr != graphicParams ? graphicParams->GetFillColor().GetValue() : 0x00ffffff), m_ignoreLighting (ignoreLighting), m_rasterWidth(nullptr != graphicParams ? graphicParams->GetWidth() : 0)
     {
     if (nullptr != geometryParams)
         {
@@ -531,6 +531,7 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
 bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
+    COMPARE_VALUES (m_rasterWidth, rhs.m_rasterWidth);                                                           
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
 
     // Note - do not compare category and subcategory - These are used only for 
@@ -1242,9 +1243,9 @@ virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
 
-    if (polyface.IsValid())
+    if (polyface.IsValid() && polyface->HasFacets())
         {
-        polyface->Transform(GetTransform());
+        polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
         polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
         }
 
@@ -1264,10 +1265,11 @@ virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override
     InitGlyphCurves();
 
     bvector<bvector<DPoint3d>>  strokePoints;
+    Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
 
     for (auto& glyphCurve : m_glyphCurves)
         if (!glyphCurve->IsAnyRegionType())
-            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, GetTransform());
+            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
     if (!strokePoints.empty())
         strokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
@@ -2118,12 +2120,18 @@ private:
     virtual bool _ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) override;
     virtual bool _ProcessTextString(TextStringCR, SimplifyGraphic&) override;
 
-    virtual double _AdjustZDepth(double zDepth) override
+    virtual double _AdjustZDepth(double zDepthIn) override
         {
         // zDepth is obtained from GeometryParams::GetNetDisplayPriority(), which returns an int32_t.
         // Coming from mstn, priorities tend to be in [-500..500]
+        // Let's assume that mstn's range is the full range and clamp anything outside that.
         // Map them to [-s_half2dDepthRange, s_half2dDepthRange]
-        constexpr double ratio = s_half2dDepthRange / 0x7fffffff;
+        constexpr double priorityRange = 500;
+        constexpr double ratio = s_half2dDepthRange / priorityRange;
+
+        auto zDepth = std::min(zDepthIn, priorityRange);
+        zDepth = std::max(zDepth, -priorityRange);
+
         return zDepth * ratio;
         }
 

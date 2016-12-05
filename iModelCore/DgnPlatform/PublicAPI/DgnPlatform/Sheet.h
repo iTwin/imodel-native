@@ -166,6 +166,10 @@ public:
 //=======================================================================================
 namespace Attachment
 {
+    //=======================================================================================
+    //! TileTree for displaying raster tiles generated from a sheet's view attachment
+    // @bsiclass                                                    Keith.Bentley   11/16
+    //=======================================================================================
     struct Tree : TileTree::QuadTree::Root
     {
         DEFINE_T_SUPER(TileTree::QuadTree::Root)

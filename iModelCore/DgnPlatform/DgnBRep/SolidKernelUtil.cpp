@@ -854,6 +854,24 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  11/2016
+//---------------------------------------------------------------------------------------
+uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId)
+    {
+    if (0 == nodeId)
+        {
+        uint32_t highestNodeId, lowestNodeId;
+
+        if (SUCCESS != FindNodeIdRange(entity, highestNodeId, lowestNodeId))
+            return 0;
+
+        nodeId = highestNodeId+1;
+        }
+
+    return (SUCCESS == AddNodeIdAttributes(entity, nodeId, false) ? nodeId : 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2396,9 +2414,6 @@ static void coverRubberFaces(PK_BODY_t bodyTag)
 BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, double defaultDistance, bvector<double> const& distances, StepFacesOption addStep)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (faces.empty())
-        return ERROR;
-
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
     if (PK_ENTITY_null == targetEntityTag)
@@ -2477,8 +2492,14 @@ BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<I
     for (int i=0; i<tracking.n_track_records; i++)
         {
         if (PK_TOPOL_track_create_c != tracking.track_records[i].track)
-            continue; // Only want to remove IDs from new faces...
+            continue; // Only want new IDs for offset faces...
 
+        // NEEDSWORK: I don't think shell should add it's node id to anything but the new faces/edges. When shelling outwards,
+        //            if it claims the offset faces, you won't be able to identity any other features. Since a shell is something
+        //            that is typically done once on a solid, I think it would be better to assign the offset faces starting
+        //            with the next highest available entity id for a given face's node id. Then the offset faces are unique, but
+        //            still belong to the orignal feature. These ids will be more stable than just assigning the new faces
+        //            sequentially...and the user can still easily modify the shell thickness through handles or properties.
         for (int j = 0; j < tracking.track_records[i].n_product_topols; j++)
             PSolidTopoId::DeleteEntityId(tracking.track_records[i].product_topols[j]);
         }

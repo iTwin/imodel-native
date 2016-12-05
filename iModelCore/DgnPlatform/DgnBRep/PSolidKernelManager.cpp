@@ -1240,7 +1240,7 @@ static void     setupHeaderStrings ()
 * purpose return a file extension string depending on guise & format
 * @bsimethod                                                    Deepak.Malkan   04/96
 +---------------+---------------+---------------+---------------+---------------+------*/
-static wchar_t* getFileExtension (int guise, int format)
+static wchar_t const* getFileExtension (int guise, int format)
     {
     static wchar_t ffcsnp[] = L".snp";      // snapshot file
     static wchar_t ffcjnl[] = L".jnl";      // journal file
@@ -1297,7 +1297,7 @@ static void     prependSchemaExtension (wchar_t* filename, int guise)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/96
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     appendExtension (wchar_t* filename, wchar_t* extension)
+static void     appendExtension (wchar_t* filename, wchar_t const* extension)
     {
     WString     ext;
     BeFileName::ParseName (NULL, NULL, NULL, &ext, filename);
@@ -2445,7 +2445,7 @@ static int pki_start_modeler()
     PK_ATTDEF_sf_t      entityIdAttribDefStruct;
     PK_ATTDEF_t         entityIdAttribDefTag;
 
-    entityIdAttribDefStruct.name          = PKI_ENTITY_ID_ATTRIB_NAME;
+    entityIdAttribDefStruct.name          = const_cast<CharP>(PKI_ENTITY_ID_ATTRIB_NAME);
     entityIdAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
     entityIdAttribDefStruct.n_owner_types = sizeof(entityIdOwnerTypes) / sizeof(entityIdOwnerTypes[0]);
     entityIdAttribDefStruct.owner_types   = entityIdOwnerTypes;
@@ -2460,7 +2460,7 @@ static int pki_start_modeler()
     PK_ATTDEF_sf_t      userDataAttribDefStruct;
     PK_ATTDEF_t         userDataAttribDefTag;
 
-    userDataAttribDefStruct.name          = PKI_USERDATA_ATTRIB_NAME;
+    userDataAttribDefStruct.name          = const_cast<CharP>(PKI_USERDATA_ATTRIB_NAME);
     userDataAttribDefStruct.attdef_class  = PK_ATTDEF_class_06_c;
     userDataAttribDefStruct.n_owner_types = sizeof(userDataOwnerTypes) / sizeof(userDataOwnerTypes[0]);
     userDataAttribDefStruct.owner_types   = userDataOwnerTypes;
@@ -2474,7 +2474,7 @@ static int pki_start_modeler()
     PK_ATTDEF_sf_t      hiddenAttrDefStruct;
     PK_ATTDEF_t         hiddenAttrDefTag;
 
-    hiddenAttrDefStruct.name              = PKI_HIDDEN_ENTITY_ATTRIB_NAME;
+    hiddenAttrDefStruct.name              = const_cast<CharP>(PKI_HIDDEN_ENTITY_ATTRIB_NAME);
     hiddenAttrDefStruct.attdef_class      = PK_ATTDEF_class_01_c;
     hiddenAttrDefStruct.n_owner_types     = sizeof (hiddenAttrOwnerTypes) / sizeof (hiddenAttrOwnerTypes[0]);
     hiddenAttrDefStruct.owner_types       = hiddenAttrOwnerTypes;

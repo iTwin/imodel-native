@@ -746,6 +746,13 @@ struct Modify
 //! will be the same. Similarly a vertex is identified by 3 FaceId pairs.
 struct TopologyID
     {
+    //! Assign new topology ids to faces of the given body. If the caller does not supply a non-zero node id the next highest available will be used.
+    //! @param[in,out] entity The body to modify.
+    //! @param[in] nodeId The topology node id to use in the new nodeId-entityId pairs or 0L for next available.
+    //! @return The node id assigned to any new faces or edges.
+    //! @see AddNodeIdAttributes FindNodeIdRange
+    DGNPLATFORM_EXPORT static uint32_t AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId = 0L);
+
     //! Assign new topology ids to faces of the given body. Resolves duplicate face ids such as from a face being split.
     //! @param[in,out] entity The body to modify.
     //! @param[in] nodeId The topology node id to use in the new nodeId-entityId pairs.

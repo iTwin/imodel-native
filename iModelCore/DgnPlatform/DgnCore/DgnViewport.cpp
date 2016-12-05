@@ -646,7 +646,7 @@ ViewportStatus DgnViewport::ChangeArea(DPoint3dCP pts)
         delta.z = viewController->GetDelta().z;
 
         // make sure its not too big or too small 
-        auto stat = ValidateViewDelta(delta, true);
+        auto stat = viewController->GetViewDefinition().ValidateViewDelta(delta, true);
         if (stat != ViewportStatus::Success)
             return stat;
 
@@ -850,7 +850,7 @@ ViewportStatus DgnViewport::Zoom(DPoint3dCP newCenterRoot, double factor)
     delta.y *= factor;
 
     // first check to see whether the zoom operation results in an invalid view. If so, make sure we don't change anything
-    ViewportStatus validSize = ValidateViewDelta(delta, false);
+    ViewportStatus validSize = viewController->GetViewDefinition().ValidateViewDelta(delta, false);
     if (ViewportStatus::Success != validSize)
         return  validSize;
 
@@ -1010,23 +1010,6 @@ double DgnViewport::GetPixelSizeAtPoint(DPoint3dCP rootPtP, DgnCoordSystem coord
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Keith.Bentley   03/90
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void limitWindowSize(ViewportStatus& error, double& value)
-    {
-    if (value < DgnViewport::GetMinViewDelta())
-        {
-        value = DgnViewport::GetMinViewDelta();
-        error = ViewportStatus::MinWindow;
-        }
-    else if (value > DgnViewport::GetMaxViewDelta())
-        {
-        value = DgnViewport::GetMaxViewDelta();
-        error = ViewportStatus::MaxWindow;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/11
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::OutputFrustumErrorMessage(ViewportStatus errorStatus)
@@ -1057,31 +1040,41 @@ void DgnViewport::OutputFrustumErrorMessage(ViewportStatus errorStatus)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Keith.Bentley   03/90
++---------------+---------------+---------------+---------------+---------------+------*/
+static void limitWindowSize(ViewportStatus& error, double& value, double minDelta, double maxDelta)
+    {
+    if (value < minDelta)
+        {
+        value = minDelta;
+        error = ViewportStatus::MinWindow;
+        }
+    else if (value > maxDelta)
+        {
+        value = maxDelta;
+        error = ViewportStatus::MaxWindow;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/86
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewportStatus DgnViewport::ValidateViewDelta(DPoint3dR delta, bool messageNeeded)
+ViewportStatus ViewDefinition::ValidateViewDelta(DPoint3dR delta, bool messageNeeded)
     {
     ViewportStatus  error=ViewportStatus::Success, ignore;
 
-    limitWindowSize(error,  delta.x);
-    limitWindowSize(error,  delta.y);
-    limitWindowSize(ignore, delta.z);
+    double maxExtent, minExtent;
+    _GetExtentLimits(minExtent, maxExtent);
+
+    limitWindowSize(error,  delta.x, minExtent, maxExtent);
+    limitWindowSize(error,  delta.y, minExtent, maxExtent);
+    limitWindowSize(ignore, delta.z, minExtent, maxExtent);
 
     if (messageNeeded)
-        OutputFrustumErrorMessage(error);
+        DgnViewport::OutputFrustumErrorMessage(error);
 
     return error;
     }
-
-#define QV_RESERVED_DISPLAYPRIORITY     (32)
-#define MAX_HW_DISPLAYPRIORITY          ((1<<23)-QV_RESERVED_DISPLAYPRIORITY)
-#define RESERVED_DISPLAYPRIORITY        (1<<19)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-int32_t DgnViewport::GetMaxDisplayPriority() {return MAX_HW_DISPLAYPRIORITY;}
-int32_t DgnViewport::GetDisplayPriorityFrontPlane() {return GetMaxDisplayPriority() - RESERVED_DISPLAYPRIORITY;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley  10/06

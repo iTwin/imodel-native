@@ -287,11 +287,16 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
 
+    range.low.z = 0.0; // make sure we're exactly on the sheet.
     Transform location = Transform::From(range.low);
     location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+
+    auto priority = attach->GetDisplayPriority();
+    m_biasDistance = Render::Target::DepthFromDisplayPriority(priority);
+    m_substitueBiasDistance = Render::Target::DepthFromDisplayPriority(-1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
