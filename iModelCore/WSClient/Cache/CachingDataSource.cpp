@@ -246,10 +246,17 @@ ICancellationTokenPtr ct
                     openResult->SetError({});
                     }
                 }
-                
+
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             LOG.infov("CachingDataSource::OpenOrCreate() %s and took: %.2f ms",
                 openResult->IsSuccess() ? "succeeded" : "failed", end - start);
+
+            if (!openResult->IsSuccess())
+                {
+                LOG.infov("CachingDataSource::OpenOrCreate() error: %s %s",
+                    openResult->GetError().GetMessage().c_str(),
+                    openResult->GetError().GetDescription().c_str());
+                }
 
             return *openResult;
             });
@@ -426,7 +433,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     std::vector<ECSchemaPtr> changedSchemas;
                     if (SUCCESS != LoadSchemas(changedSchemaPaths, changedSchemas))
                         {
-                        result->SetError(Status::InternalCacheError);
+                        result->SetError(Status::SchemaError);
                         return;
                         }
 
@@ -434,7 +441,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     auto txn = StartCacheTransaction();
                     if (SUCCESS != txn.GetCache().UpdateSchemas(changedSchemas))
                         {
-                        result->SetError(Status::InternalCacheError);
+                        result->SetError(Status::SchemaError);
                         return;
                         }
 
