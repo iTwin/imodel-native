@@ -29,7 +29,7 @@ SingletonHolder<T>& SingletonHolder<T>::singleton() {
   return *entry;
 }
 
-[[noreturn]] void singletonWarnDoubleRegistrationAndAbort(
+[[noreturn]] BE_FOLLY_EXPORT void singletonWarnDoubleRegistrationAndAbort(
     const TypeDescriptor& type);
 
 template <typename T>

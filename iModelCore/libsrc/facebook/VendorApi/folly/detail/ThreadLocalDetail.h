@@ -253,7 +253,7 @@ struct StaticMetaBase {
     }
   };
 
-  explicit StaticMetaBase(ThreadEntry* (*threadEntry)());
+  BE_FOLLY_EXPORT explicit StaticMetaBase(ThreadEntry* (*threadEntry)());
 
   ~StaticMetaBase() {
 #if defined (BENTLEY_CHANGE)
@@ -276,20 +276,20 @@ struct StaticMetaBase {
 
   static void onThreadExit(void* ptr);
 
-  uint32_t allocate(EntryID* ent);
+  BE_FOLLY_EXPORT uint32_t allocate(EntryID* ent);
 
-  void destroy(EntryID* ent);
+  BE_FOLLY_EXPORT void destroy(EntryID* ent);
 
   /**
    * Reserve enough space in the ThreadEntry::elements for the item
    * @id to fit in.
    */
-  void reserve(EntryID* id);
+  BE_FOLLY_EXPORT void reserve(EntryID* id);
 
   ElementWrapper& get(EntryID* ent);
 
   static void initAtFork();
-  static void registerAtFork(
+  BE_FOLLY_EXPORT static void registerAtFork(
       folly::Function<void()> prepare,
       folly::Function<void()> parent,
       folly::Function<void()> child);

@@ -47,11 +47,11 @@ private:
     Utf8CP GetName() const {return m_name.c_str();}
     bool HasWork() const {return !m_tasks.empty();}
     bool IsStopped() const {return m_stop;}
-    virtual void add(folly::Func func) override;
+    BE_FOLLY_EXPORT virtual void add(folly::Func func) override;
 
 protected:
-    ThreadPool(int nThreads, Utf8CP name);
-    ~ThreadPool();
+    BE_FOLLY_EXPORT ThreadPool(int nThreads, Utf8CP name);
+    BE_FOLLY_EXPORT ~ThreadPool();
 
 public:
     BE_FOLLY_EXPORT static ThreadPool& GetIoPool();

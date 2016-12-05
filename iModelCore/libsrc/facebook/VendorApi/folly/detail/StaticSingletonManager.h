@@ -19,6 +19,7 @@
 #include <mutex>
 #include <typeindex>
 #include <unordered_map>
+#include <folly/portability/config.h>
 
 namespace folly {
 namespace detail {
@@ -29,7 +30,7 @@ namespace detail {
 // dynamically.
 class StaticSingletonManager {
  public:
-  static StaticSingletonManager& instance();
+  BE_FOLLY_EXPORT static StaticSingletonManager& instance();
 
   template <typename T, typename Tag, typename F>
   inline T* create(F&& creator) {

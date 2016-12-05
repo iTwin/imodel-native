@@ -344,7 +344,7 @@ class SingletonVault {
   // registration is not complete. If validations succeeds,
   // register a singleton of a given type with the create and teardown
   // functions.
-  void registerSingleton(detail::SingletonHolderBase* entry);
+  BE_FOLLY_EXPORT void registerSingleton(detail::SingletonHolderBase* entry);
 
   /**
    * Called by `Singleton<T>.shouldEagerInit()` to ensure the instance
@@ -473,7 +473,7 @@ class SingletonVault {
   // 2. All singletons managed by folly::Singleton
   // 3. Singletons, not managed by folly::Singleton, which were created before
   //    any of the singletons managed by folly::Singleton was requested.
-  static void scheduleDestroyInstances();
+  BE_FOLLY_EXPORT static void scheduleDestroyInstances();
 
   typedef std::unordered_map<detail::TypeDescriptor,
                              detail::SingletonHolderBase*,
