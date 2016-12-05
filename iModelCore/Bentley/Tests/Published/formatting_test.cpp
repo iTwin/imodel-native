@@ -81,7 +81,7 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("11110000", numFmt.ByteToBinaryText(curs.GetConstants()->Get4ByteMark()).c_str());
 
     EXPECT_STREQ ("11000000", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingByteMask()).c_str());
-    EXPECT_STREQ ("10000000", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingByteMark()).c_str());
+     EXPECT_STREQ ("10000000", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingByteMark()).c_str());
     EXPECT_STREQ ("00111111", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingBitsMask()).c_str());
 
 	for (char c = 'A'; c < 'z'; c++)
@@ -94,3 +94,24 @@ TEST(FormattingTest, Simple)
 	EXPECT_TRUE(curs.GetConstants()->IsTrailingByteValid(uni[1]));
 
 }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(FormattingTest, TrueIndex)
+    {
+    FormattingScannerCursor fmScanner(nullptr, 0);
+    UnicodeConstantP unicodeN = fmScanner.GetConstants();
+    UnicodeConstant unicodeP;
+    char inChar = 'c';
+    size_t length = unicodeP.GetSequenceLength(inChar);
+    ASSERT_EQ(1, length);
+    EXPECT_TRUE(unicodeP.IsLittleEndian());
+    EXPECT_FALSE(unicodeP.ForceBigEndian());
+    EXPECT_FALSE(unicodeP.IsLittleEndian());
+    unicodeP.IsTrailingByteValid('s');
+    EXPECT_EQ(9, fmScanner.TrueIndex(9, 7));
+    unicodeN->ForceBigEndian();
+    size_t sd = fmScanner.TrueIndex(23, 17);
+    EXPECT_EQ(-7, (int)sd);
+    }
