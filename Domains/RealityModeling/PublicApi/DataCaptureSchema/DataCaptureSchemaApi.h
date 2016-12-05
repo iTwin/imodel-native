@@ -10,6 +10,8 @@
 //__PUBLISH_SECTION_START__
 #include "DataCaptureSchemaDefinitions.h"
 #include "DataCaptureDomain.h"
+#include "XmlReader.h"
+#include "XmlWriter.h"
 #include "Camera.h"
 #include "Photo.h"
 

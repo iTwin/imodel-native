@@ -125,6 +125,7 @@
     <Part Name="DataCapturePrewireForUnitTests" BentleyBuildMakeFile="DataCaptureSchema/Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="DataCapture" SubPartDirectory="UnitTests/DataCapture"> Delivery/UnitTests/ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
         </Bindings>
     </Part>
 
@@ -182,6 +183,10 @@
 
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="ApplicationRoot" Path=""/>
+        <!--<ProductDirectory Name="BeIcu4cData"     Path="ApplicationRoot" LibType="static" /> -->
+        <ProductDirectory Name="BeIcu4cData"                        Deliver="true" Path="assets"/>
+        <ProductDirectory Name="BeIcu4cData"                        Deliver="true" Path="assets" LibType="Static"/>
+
     </ProductDirectoryList>
 
     <!-- Build a gtest exe to run the tests -->
