@@ -13,6 +13,7 @@
 
     <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
         <SubPart PartName="AzureSDK" />
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
         <Bindings>
             <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
             <PublicAPI Domain="CloudDataSource" />

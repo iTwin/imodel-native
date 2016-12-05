@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 #include <curl/curl.h>
+#include <json/json.h>
+
 
 #include "DataSource.h"
 #include "DataSourceAccountCURL.h"
@@ -37,6 +39,8 @@ protected:
     typedef DataSourceAccountCURL           Super;
     typedef std::string                     WSGEtag;
     typedef std::string                     WSGToken;
+    typedef std::string                     AzureDirectPrefix;
+    typedef std::string                     AzureDirectSuffix;
 
     WSGServer::Request::protocol            wsgProtocol         = L"https:";
     WSGServer::Request::port                wsgPort             = L"443";
@@ -47,7 +51,7 @@ protected:
     WSGServer::class_name                   wsgClassName        = L"Document";
     //WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544"; // Dev Bentley org id
     WSGServer::organizationID               wsgOrganizationID = L"e82a584b-9fae-409f-9581-fd154f7b9ef9"; // Connect Bentley org id
-    
+
 
 public:
                                             DataSourceAccountWSG                (void) = delete;
@@ -71,10 +75,15 @@ public:
 
 private :
        std::function<std::string (void)>    m_getWSGToken;
+       WSGToken                             m_wsgToken;
        bool                                 m_isValid = true;
+       AzureDirectPrefix                    m_AzureDirectPrefix;
+       AzureDirectSuffix                    m_AzureDirectSuffix;
 
-       WSGToken                             getWSGToken                         (void);
+       WSGToken                             getWSGToken                         (DataSourceURL &url);
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
+       bool                                 needsUpdateToken                    (const WSGToken& token);
+       void                                 updateToken                         (const WSGToken& newToken, DataSourceURL url);
 
        bool                                 isValid                             (void);
     };

@@ -124,6 +124,7 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
+    $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)BeOpenSSL.lib \
     $(ContextSubpartsLibs)wastorage.lib
 

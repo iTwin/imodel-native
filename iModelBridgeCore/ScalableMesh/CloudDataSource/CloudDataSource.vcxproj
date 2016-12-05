@@ -153,6 +153,7 @@ BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  C
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
+    <IncludePath>$(OutRoot)\Winx64\BuildContexts\ScalableMesh\VendorAPI\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
