@@ -12,7 +12,7 @@
 
 #include "RealityContextTest.h"
 
-#define MAX_NB_CONNECTIONS          15
+#define MAX_NB_CONNECTIONS          25
 #define M_PI                        3.1415926f
 ///*---------------------------------------------------------------------------------**//**
 //* @bsifunction                                    Francis Boily                   09/2015
@@ -71,26 +71,25 @@ size_t getInnactiveUserSize()
     return s_innactiveUsers.size();
     }
 
-void restartUser(WorkOverlord* lord)
+void restartUser(UserManager* manager)
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
     User* user = s_innactiveUsers.back();
     s_innactiveUsers.pop_back();
-    user->DoNext(lord);
+    user->DoNext(manager);
     }
 
-void Dispatch(WorkOverlord* lord)
+void Dispatch(UserManager* manager)
     {
     while (s_keepRunning)
         {
-        //innactiveUserMutex.lock();
         if (getInnactiveUserSize() == 0)
             {
             Sleep(2000);
             continue;
             }
 
-        restartUser(lord);
+        restartUser(manager);
 
         int sleep = rand() % 2000;
         if (sleep > 999)
@@ -199,7 +198,6 @@ void User::SelectExtents()
     float sizeKm = (((float)((*m_distribution)(*m_generator)) * 99.5f) + 0.5f) / 2.0f;
 
     float lat = Degree2Radians(xLat);
-    //float lon = Degree2Radians(yLong);
 
     float earthRadius = 6371.0f;
     float parallel_radius = earthRadius*std::cos(lat);
@@ -232,7 +230,7 @@ User::User(Utf8StringP token, std::default_random_engine* generator, std::unifor
     m_bench = RealityPlatform::ContextServicesWorkbench::Create(*token, RealityPlatform::GeoCoordinationParams());
     }
 
-void User::DoNext(WorkOverlord* owner)
+void User::DoNext(UserManager* owner)
     {
     switch(m_currentOperation)
         {
@@ -400,7 +398,6 @@ BeFileName GetPemLocation()
     exeDir = exeDir.substr(0, pos + 1);
 
     BeFileName caBundlePath(exeDir);
-    //caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
     caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
     return caBundlePath;
     }
@@ -448,7 +445,7 @@ int main(int argc, char* argv[])
     {
     Utf8String token = GetToken();
 
-    WorkOverlord wo = WorkOverlord();
+    UserManager wo = UserManager();
     wo.m_certPath = GetPemLocation();
 
     for(int i = 0; i < MAX_NB_CONNECTIONS; i++)
@@ -463,7 +460,7 @@ int main(int argc, char* argv[])
     dispatch.join();
     }
 
-WorkOverlord::WorkOverlord()
+UserManager::UserManager()
     {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 
@@ -475,7 +472,7 @@ WorkOverlord::WorkOverlord()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Donald.Morissette  9/2015
 //----------------------------------------------------------------------------------------
-WorkOverlord::~WorkOverlord()
+UserManager::~UserManager()
     {
     if (m_pCurlHandle != NULL)
         curl_multi_cleanup(m_pCurlHandle);
@@ -489,7 +486,7 @@ User::~User()
     delete m_bench;
     }
 
-void WorkOverlord::Perform()
+void UserManager::Perform()
     {
     // we can optionally limit the total amount of connections this multi handle uses 
     curl_multi_setopt(m_pCurlHandle, CURLMOPT_MAXCONNECTS, MAX_NB_CONNECTIONS);
@@ -546,8 +543,6 @@ void WorkOverlord::Perform()
 
                 if (msg->data.result == CURLE_OK)
                     {
-                    //std::cout << "response received " << still_running << " " << std::time(nullptr) - user->m_downloadStart << std::endl;
-
                     if(!user->ValidatePrevious())
                         failCounter++;
 
@@ -592,11 +587,11 @@ void WorkOverlord::Perform()
             }
 
         } while (failCounter < 20);
-        std::cout << "failure achieved, conglaturations" << std::endl;
+        std::cout << "maximum allowed failures achieved, exiting" << std::endl;
         getch();
     }
 
-void WorkOverlord::Repopulate()
+void UserManager::Repopulate()
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
     size_t innactiveUserCount = s_innactiveUsers.size();
@@ -609,10 +604,7 @@ void WorkOverlord::Repopulate()
         }
     }
 
-//
-// false --> Curl error or file already there, skip download.
-//
-void WorkOverlord::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf8StringCR postFields)
+void UserManager::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf8StringCR postFields)
     {
     CURL *pCurl = NULL;
 
@@ -664,9 +656,4 @@ void WorkOverlord::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retStrin
         curl_multi_add_handle((CURLM*)m_pCurlHandle, pCurl);
         s_rps.AddRequest(user->m_currentOperation, user->m_downloadStart);
         }
-
-        /*if (pCurl != NULL)
-            return SetupCurlStatus::Success;
-        else
-            return SetupCurlStatus::Error;*/
     }

@@ -35,7 +35,7 @@ public:
     Region(float lon, float lat, float rad, Utf8String name) : m_longitude(lon), m_latitude(lat), m_radius(rad), m_name(name) {}
 };
 
-struct WorkOverlord;
+struct UserManager;
 
 struct Stat
 {
@@ -84,7 +84,7 @@ public:
     ~User();
     void SelectRegion();
     void SelectExtents();
-    void DoNext(WorkOverlord* owner);
+    void DoNext(UserManager* owner);
     bool ValidatePrevious();
     bool ValidateSpatial();
     bool ValidatePackageId();
@@ -94,7 +94,7 @@ public:
     void SampleIds(Json::Value regionItems);
 };
 
-struct WorkOverlord
+struct UserManager
 {
 public:
     void*                       m_pCurlHandle;
@@ -104,8 +104,8 @@ public:
     std::uniform_real_distribution<double> m_distribution;
     Stats                       m_stats;
 
-    WorkOverlord();
-    ~WorkOverlord();
+    UserManager();
+    ~UserManager();
     void Perform();
     void SetupCurl(User* bench, Utf8StringCR url, Utf8StringCP retString = nullptr, FILE* fp = nullptr, Utf8StringCR postFields = Utf8String());
     void Repopulate();
