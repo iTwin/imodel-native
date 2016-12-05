@@ -111,6 +111,7 @@ struct ViewGenerator
         static BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const&, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
         static BentleyStatus CreateUpdatableViews(ECDbCR);
         static BentleyStatus DropUpdatableViews(ECDbCR);
+        static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
         static BentleyStatus CreateECClassViews(ECDbCR);
         static BentleyStatus DropECClassViews(ECDbCR);
     };

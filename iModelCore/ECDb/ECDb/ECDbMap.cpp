@@ -220,14 +220,6 @@ MappingStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    affan.khan         12/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbMap::CreateECClassViewsInDb() const
-    {
-    return ViewGenerator::CreateECClassViews(GetECDb());
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    affan.khan         03/2016
 //---------------------------------------------------------------------------------------
 std::vector<ECClassCP> ECDbMap::GetBaseClassesNotAlreadyMapped(ECClassCR ecclass) const

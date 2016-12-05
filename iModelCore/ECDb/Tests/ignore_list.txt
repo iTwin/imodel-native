@@ -19,3 +19,6 @@ ECDbMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
 
 #TFS 520654
 ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
+
+ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
+ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
