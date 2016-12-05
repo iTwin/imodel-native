@@ -2,7 +2,7 @@
 |
 |     $Source: BeJsonUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeJsonCpp/BeJsonUtilities.h>
@@ -78,7 +78,7 @@ bool BeJsonUtilities::IsValidObject(Utf8CP objectName, JsonValueCR objectValue, 
     {
     if (!objectValue.isObject())
         {
-        BEJSONCPP_LOGE("JSON ERROR: \"%hs\" value is not of type object", objectName);
+        BEJSONCPP_LOGE("JSON ERROR - \"%hs\" value is not of type object", objectName);
         BeAssert(false);
         return false;
         }
@@ -100,7 +100,7 @@ bool BeJsonUtilities::IsValidObject(Utf8CP objectName, JsonValueCR objectValue, 
                 {
                 if (!objectValue.isMember(*memberName))
                     {
-                    BEJSONCPP_LOGE("JSON ERROR: required member \"%hs\" not found on \"%hs\" object", *memberName, objectName);
+                    BEJSONCPP_LOGE("JSON ERROR - required member \"%hs\" not found on \"%hs\" object", *memberName, objectName);
                     isValid = false;
                     BeAssert(isValid);
                     }
@@ -122,7 +122,7 @@ bool BeJsonUtilities::IsValidObject(Utf8CP objectName, JsonValueCR objectValue, 
             // all members in objectValue should be in expectedMembersObj
             if (!expectedMembersObj.isMember(objectValueMemberNames[i]))
                 {
-                BEJSONCPP_LOGE("JSON ERROR: member \"%hs\" not expected on \"%hs\" object", objectValueMemberNames[i].c_str(), objectName);
+                BEJSONCPP_LOGE("JSON ERROR - member \"%hs\" not expected on \"%hs\" object", objectValueMemberNames[i].c_str(), objectName);
                 isValid = false;
                 BeAssert(isValid);
                 }
@@ -130,7 +130,7 @@ bool BeJsonUtilities::IsValidObject(Utf8CP objectName, JsonValueCR objectValue, 
 
         if (!isValid)
             {
-            BEJSONCPP_LOGE("JSON ERROR: \"%hs\" object is not valid", objectName);
+            BEJSONCPP_LOGE("JSON ERROR - \"%hs\" object is not valid", objectName);
 
             if (NULL != requiredMembers)
                 {
