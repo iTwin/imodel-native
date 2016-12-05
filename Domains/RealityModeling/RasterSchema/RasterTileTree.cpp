@@ -82,7 +82,7 @@ bool RasterTile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
     if (parent->HasGraphics())
         {
         //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_substitutes.Add(*parent->m_graphic);
+        args.m_loResSubstitutes.Add(*parent->m_graphic);
         return true;
         }
 
@@ -101,7 +101,7 @@ void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
         if (mapChild->HasGraphics())
             {
             //DEBUG_PRINTF("using higher res");
-            args.m_substitutes.Add(*mapChild->m_graphic);
+            args.m_hiResSubstitutes.Add(*mapChild->m_graphic);
             }
         }
     }
@@ -119,8 +119,8 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        if (!TryLowerRes(args, DRAW_COARSER_DELTA))
-            TryHigherRes(args);
+        TryLowerRes(args, DRAW_COARSER_DELTA);
+        TryHigherRes(args);
 
         return;
         }
