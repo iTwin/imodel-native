@@ -422,7 +422,7 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
 
         return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
             {
-            if (SUCCESS == status && SUCCESS == loader->LoadTile())
+            if (SUCCESS != status || SUCCESS != loader->LoadTile())
                 {
                 if (loads != nullptr && loads->IsCanceled())
                     tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
