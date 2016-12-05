@@ -531,7 +531,7 @@ TileDisplayParams::TileDisplayParams(GraphicParamsCP graphicParams, GeometryPara
 bool TileDisplayParams::operator<(TileDisplayParams const& rhs) const
     {
     COMPARE_VALUES (m_fillColor, rhs.m_fillColor);
-    COMPARE_VALUES (m_rasterWidth, rhs.m_rasterWidth);
+    COMPARE_VALUES (m_rasterWidth, rhs.m_rasterWidth);                                                           
     COMPARE_VALUES (m_materialId.GetValueUnchecked(), rhs.m_materialId.GetValueUnchecked());
 
     // Note - do not compare category and subcategory - These are used only for 
@@ -1243,9 +1243,9 @@ virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
 
     PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
 
-    if (polyface.IsValid())
+    if (polyface.IsValid() && polyface->HasFacets())
         {
-        polyface->Transform(GetTransform());
+        polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
         polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
         }
 
@@ -1265,10 +1265,11 @@ virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override
     InitGlyphCurves();
 
     bvector<bvector<DPoint3d>>  strokePoints;
+    Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
 
     for (auto& glyphCurve : m_glyphCurves)
         if (!glyphCurve->IsAnyRegionType())
-            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, GetTransform());
+            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
     if (!strokePoints.empty())
         strokes.push_back (TileGeometry::TileStrokes (*GetDisplayParams(), std::move(strokePoints)));
