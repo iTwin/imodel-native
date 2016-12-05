@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceErrorTests.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -19,32 +19,40 @@ TEST_F(CachingDataSourceErrorTests, Ctor_DefaultWSError_EmptyMessageAndDescripti
     {
     auto error = CachingDataSource::Error(WSError());
 
-    EXPECT_EQ("", error.GetDescription());
     EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_SuccessStatus_EmptyMessageAndDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::Success);
 
-    EXPECT_EQ("", error.GetDescription());
     EXPECT_EQ("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_InternalCacheError_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::InternalCacheError);
 
-    EXPECT_EQ("", error.GetDescription());
     ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
+    }
+
+TEST_F(CachingDataSourceErrorTests, Ctor_SchemaError_NotEmptyMessageAndEmptyDescription)
+    {
+    auto error = CachingDataSource::Error(ICachingDataSource::Status::SchemaError);
+
+    ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_DataNotCached_NotEmptyMessageAndEmptyDescription)
     {
     auto error = CachingDataSource::Error(ICachingDataSource::Status::DataNotCached);
 
-    EXPECT_EQ("", error.GetDescription());
     ASSERT_NE("", error.GetMessage());
+    EXPECT_EQ("", error.GetDescription());
     }
 
 TEST_F(CachingDataSourceErrorTests, Ctor_StringMessage_StatusIsInternalCacheErrorAndMessageSet)
