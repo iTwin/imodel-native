@@ -49,6 +49,11 @@ $(o)Camera$(oext) : $(_MakeFilePath)Camera.cpp ${MultiCompileDepends} $(appPubli
 
 $(o)Photo$(oext) : $(_MakeFilePath)Photo.cpp ${MultiCompileDepends} $(appPublicApi)Photo.h
 
+$(o)XmlWriter$(oext) : $(_MakeFilePath)XmlWriter.cpp ${MultiCompileDepends} $(appPublicApi)XmlWriter.h
+
+$(o)XmlReader$(oext) : $(_MakeFilePath)XmlReader.cpp ${MultiCompileDepends} $(appPublicApi)XmlReader.h
+
+
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -73,6 +78,9 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGe
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BentleyGeomSerialization$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
+
 
 %include $(sharedMki)linkLibrary.mki
 

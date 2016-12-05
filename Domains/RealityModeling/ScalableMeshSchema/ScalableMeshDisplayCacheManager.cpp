@@ -16,7 +16,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  int                     nbTriangles,
                                                                  int*                    indices,
                                                                  float*                  params,
-                                                                 SmCachedDisplayTexture* cachedTexture)
+                                                                 SmCachedDisplayTexture* cachedTexture,
+                                                                 uint64_t nodeId,
+                                                                 uint64_t smId)
     {
     assert(m_renderSys != 0);
 
