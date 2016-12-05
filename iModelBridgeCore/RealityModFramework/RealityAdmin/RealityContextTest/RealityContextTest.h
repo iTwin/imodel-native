@@ -41,9 +41,9 @@ struct Stat
 {
 public:
     int success, failure;
-    time_t minTime, maxTime, avgTime;
+    time_t minTime, maxTime, avgTime, startTime;
 
-    Stat() : success(0), failure(0), minTime(1000), maxTime(0), avgTime(0) {}
+    Stat() : success(0), failure(0), minTime(1000), maxTime(0), avgTime(0), startTime(std::time(nullptr)) {}
     void Update(bool success, time_t time);
 };
 
@@ -55,6 +55,15 @@ struct Stats
     void InsertStats(OperationType type, bool success, time_t time);
     void PrintStats();
 };
+
+struct RPS
+    {
+    bmap<OperationType, bmap<time_t, int>> requestLog;
+
+    RPS();
+    void AddRequest(OperationType type, time_t time);
+    double GetRPS(OperationType type, time_t time);
+    };
 
 struct User
 {
