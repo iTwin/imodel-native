@@ -260,7 +260,7 @@ public:
 /** @name DgnPlatform Threads */
 /** @{ */
     //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, IoPool=103, CpuPool=104};
+    enum class ThreadId {Unknown=0, Client=100, Render=101, Query=102, IoPool=103, CpuPool=104, SheetTile=105};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();    //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName(); //!< For debugging purposes, get the current ThreadId as a string
