@@ -12,7 +12,7 @@
 #include <functional>
 
 #include <BeHttp/Http.h>
-#include <BeHttp/HttpBodyCompressionOptions.h>
+#include <BeHttp/CompressionOptions.h>
 #include <Bentley/Tasks/AsyncTask.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/Credentials.h>
@@ -57,7 +57,7 @@ private:
     bool m_followRedirects = true;
     bool m_useNewConnection = false;
     IHttpHandlerPtr m_httpHandler;
-    HttpBodyComprressionOptions m_compressionOptions;
+    CompressionOptions m_compressionOptions;
 
 public:
     BEHTTP_EXPORT Utf8String EscapeUnsafeSymbolsInUrl(Utf8StringCR url);
@@ -90,7 +90,7 @@ public:
     HttpBodyPtr GetRequestBody() const {return m_requestBody;}
 
     // Response body to write received data to
-    void SetResponseBody(HttpBodyPtr body){m_responseBody = body;}
+    void SetResponseBody(HttpBodyPtr body) {m_responseBody = body;}
     HttpBodyPtr GetResponseBody() const {return m_responseBody;}
 
     //! Sets connection and transfer timeouts with one value. Default - 60 seconds.
@@ -120,9 +120,8 @@ public:
     unsigned GetMaxRetries() const {return m_retriesMax;}
 
     //! Set compression options for this request. By default request is not compressed
-    void SetCompressionOptions(HttpBodyComprressionOptions options) {m_compressionOptions = std::move(options);}
-    HttpBodyComprressionOptions GetCompressionInfo() {return m_compressionOptions;}
-
+    void SetCompressionOptions(CompressionOptions options) {m_compressionOptions = std::move(options);}
+    CompressionOptionsCR GetCompressionOptions() const {return m_compressionOptions;}
     void SetCancellationToken(Tasks::ICancellationTokenPtr token) {m_cancellationToken = token;}
     Tasks::ICancellationTokenPtr GetCancellationToken() const {return m_cancellationToken;}
 

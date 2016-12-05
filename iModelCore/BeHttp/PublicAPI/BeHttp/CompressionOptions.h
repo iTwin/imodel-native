@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/BeHttp/HttpBodyCompressionOptions.h $
+|     $Source: PublicAPI/BeHttp/CompressionOptions.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,15 +11,15 @@
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
-struct HttpBodyComprressionOptions
+struct CompressionOptions
     {
     private:
         bool m_isRequestCmpressionEnabled       = false;
         uint64_t m_minimumRequestSizeToCompress =  1024;
 
     public:
-        HttpBodyComprressionOptions(){}
-        virtual ~HttpBodyComprressionOptions() {}
+        CompressionOptions(){}
+        virtual ~CompressionOptions() {}
 
         //! Set enabled in order to send compressed request. The request body will be compressed automaticly
         //! and appropiate headers will be set.
@@ -32,6 +32,6 @@ struct HttpBodyComprressionOptions
         BEHTTP_EXPORT uint64_t GetMinimumSizeToCompress() const {return m_minimumRequestSizeToCompress;}
     };
 
-typedef const HttpBodyComprressionOptions& HttpBodyComprressionOptionsCR;
+typedef const CompressionOptions& CompressionOptionsCR;
 
 END_BENTLEY_HTTP_NAMESPACE

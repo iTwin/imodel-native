@@ -75,7 +75,7 @@ struct ProgressInfo
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     julius.cepukenas 11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CurlHttpRequest::ShouldCompressRequestBody(HttpBodyPtr request, HttpBodyComprressionOptionsCR options)
+bool CurlHttpRequest::ShouldCompressRequestBody(HttpBodyPtr request, CompressionOptionsCR options)
     {
     if (request == nullptr)
         return false;
@@ -509,7 +509,7 @@ void CurlHttpRequest::SetupHeaders()
         m_headers = curl_slist_append(m_headers, header.c_str());
         }
 
-    if (ShouldCompressRequestBody(m_transferInfo->requestBody, m_httpRequest.GetCompressionInfo()))
+    if (ShouldCompressRequestBody(m_httpRequest.GetRequestBody(), m_httpRequest.GetCompressionOptions()))
         {
         header.Sprintf("%s: %s", "Content-Encoding", "gzip");
         m_headers = curl_slist_append(m_headers, header.c_str());
@@ -552,7 +552,7 @@ void CurlHttpRequest::PrepareRequest()
         else
             {
             requestBody = m_httpRequest.GetRequestBody();
-            if (ShouldCompressRequestBody(requestBody, m_httpRequest.GetCompressionInfo()))
+            if (ShouldCompressRequestBody(requestBody, m_httpRequest.GetCompressionOptions()))
                 requestBody = HttpCompressedBody::Create(requestBody);
 
             requestBody->Open();

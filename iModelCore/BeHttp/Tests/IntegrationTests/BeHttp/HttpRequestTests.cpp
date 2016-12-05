@@ -352,7 +352,7 @@ TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompression_Success)
     {
     Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
     request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
-    HttpBodyComprressionOptions options;
+    CompressionOptions options;
     options.EnableRequestCompression(true, 0);
     request.SetCompressionOptions(options);
 
@@ -366,7 +366,7 @@ TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLar
     {
     Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
     request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
-    HttpBodyComprressionOptions options;
+    CompressionOptions options;
     options.EnableRequestCompression(true, 10);
     request.SetCompressionOptions(options);
 
@@ -379,7 +379,7 @@ TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLar
     {
     Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
     request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
-    HttpBodyComprressionOptions options;
+    CompressionOptions options;
     options.EnableRequestCompression(true, 10);
     request.SetCompressionOptions(options);
 
