@@ -19,6 +19,7 @@
 #include <WebServices/Client/WSClient.h>
 #include <WebServices/Client/WSError.h>
 #include <WebServices/Client/WSQuery.h>
+#include <BeHttp/CompressionOptions.h>
 
 #include <Bentley/bset.h>
 
@@ -57,6 +58,8 @@ struct IWSRepositoryClient
         virtual Utf8StringCR GetRepositoryId() const = 0;
 
         virtual void SetCredentials(Credentials credentials) = 0;
+        virtual void SetCompressionOptions(CompressionOptions options) = 0;
+        virtual CompressionOptionsCR GetCompressionOptions() const = 0;
 
         //! Checks if supplied credentials are valid for this repository.
         //! @param[in] ct
@@ -267,6 +270,9 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSCLIENT_EXPORT Utf8StringCR GetRepositoryId() const override;
 
         WSCLIENT_EXPORT void SetCredentials(Credentials credentials);
+
+        WSCLIENT_EXPORT void SetCompressionOptions(CompressionOptions options);
+        WSCLIENT_EXPORT CompressionOptionsCR GetCompressionOptions() const;
 
         //! Check if user can access repository
         WSCLIENT_EXPORT AsyncTaskPtr<WSVoidResult> VerifyAccess(ICancellationTokenPtr ct = nullptr) const override;

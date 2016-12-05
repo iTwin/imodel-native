@@ -80,6 +80,22 @@ Utf8StringCR WSRepositoryClient::GetRepositoryId() const
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepositoryClient::SetCompressionOptions(CompressionOptions options)
+    {
+    m_connection->GetConfiguration().GetHttpClient().SetCompressionOptions(options);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                 julius.cepukenas   10/2013
++---------------+---------------+---------------+---------------+---------------+------*/
+CompressionOptionsCR WSRepositoryClient::GetCompressionOptions() const
+    {
+    return m_connection->GetConfiguration().GetHttpClient().GetCompressionOptions();
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                             Benediktas.Lipnickas   10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 void WSRepositoryClient::SetCredentials(Credentials credentials)
