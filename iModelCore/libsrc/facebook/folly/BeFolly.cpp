@@ -144,7 +144,7 @@ END_UNNAMED_NAMESPACE
 ThreadPool& ThreadPool::GetIoPool()
     {
     static folly::Singleton<IoThreadPoolImp> s_pool;
-    return *s_pool.get();
+    return *s_pool.try_get_fast();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -153,5 +153,5 @@ ThreadPool& ThreadPool::GetIoPool()
 ThreadPool& ThreadPool::GetCpuPool()
     {
     static folly::Singleton<CpuThreadPoolImp> s_pool;
-    return *s_pool.get();
+    return *s_pool.try_get_fast();
     }

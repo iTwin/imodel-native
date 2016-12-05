@@ -59,6 +59,7 @@ class ReadMostlySharedPtrCore {
 
   void increfWeak() {
     auto value = ++weakCount_;
+    UNUSED_VARIABLE(value);
     DCHECK_GT(value, 0);
   }
 
