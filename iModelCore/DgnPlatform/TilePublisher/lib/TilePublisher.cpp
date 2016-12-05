@@ -1517,6 +1517,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         BeAssert(nullptr != rootTile);
         BeMutexHolder lock(m_mutex);
         m_modelRoots.push_back(rootTile);
+        m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
         }
     else if (!m_publishIncremental)
         {
@@ -1637,7 +1638,13 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             modelJson["name"] = model->GetName();
             modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
 
-            DRange3d modelRange = model->ToGeometricModel()->QueryModelRange();
+            DRange3d modelRange;
+            auto modelRangeIter = m_modelRanges.find(modelId);
+            if (m_modelRanges.end() != modelRangeIter)
+                modelRange = modelRangeIter->second;
+            else
+                modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
+
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
             modelJson["extents"] = RangeToJson(modelRange);

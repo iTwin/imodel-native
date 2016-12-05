@@ -75,6 +75,7 @@ protected:
     Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
     bvector<TileNodePtr>                    m_modelRoots;
+    bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
     bool                                    m_publishPolylines;
     bool                                    m_publishIncremental;
