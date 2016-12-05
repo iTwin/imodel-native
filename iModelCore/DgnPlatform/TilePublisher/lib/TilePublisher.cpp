@@ -1648,9 +1648,12 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             // ###TODO: Shouldn't have to compute this twice...
             WString modelRootName;
             BeFileName modelDataDir = GetDataDirForModel(*model, &modelRootName);
-            BeFileName childTilesetFileName (nullptr, modelDataDir.c_str(), modelRootName.c_str(), s_metadataExtension);
 
-            auto utf8FileName = childTilesetFileName.GetNameUtf8();
+            BeFileName relativePath (nullptr, m_rootName.c_str(), modelRootName.c_str(), nullptr);  // RootDir/ModelDir/
+            relativePath.AppendToPath(modelRootName.c_str());                                       // RootDir/ModelDir/ModelName
+            relativePath.AppendExtension(s_metadataExtension);                                      // RootDir/ModelDir/ModelName.json
+
+            auto utf8FileName = relativePath.GetNameUtf8();
             utf8FileName.ReplaceAll("\\", "//");
             modelJson["tilesetUrl"] = utf8FileName;
 
