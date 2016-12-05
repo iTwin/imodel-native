@@ -77,7 +77,7 @@ static CommandParam s_paramTable[] =
         { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"pl", L"polylines", L"Publish polylines", false, true },
+        { L"pl", L"polylines", L"Don't publish polylines", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
@@ -157,7 +157,7 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
-    bool            m_polylines = false;
+    bool            m_polylines = true;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
     bool            m_displayGlobe = false;
@@ -331,7 +331,7 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 break;
             case ParamId::Polylines:
-                m_polylines = true;
+                m_polylines = false;
                 break;
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
