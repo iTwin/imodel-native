@@ -1721,6 +1721,42 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21_SendsRequest)
     client->SendChangesetRequest(HttpStringBody::Create("TestChangeset"), nullptr, nullptr)->Wait();
     }
 
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_CompressionIsNotEnabled_RequestCompressionDisabled)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_FALSE(request.GetCompressionOptions().IsRequestCompressionEnabled());
+        return StubHttpResponse();
+        });
+
+    EXPECT_FALSE(client->GetCompressionOptions().IsRequestCompressionEnabled());
+    client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
+    }
+
+TEST_F(WSRepositoryClientTests, SendChangesetRequest_EnableCompression_RequestCompressionEnabled)
+    {
+    auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
+
+    GetHandler().ExpectRequests(2);
+    GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi21());
+    GetHandler().ForRequest(2, [=] (Http::RequestCR request)
+        {
+        EXPECT_TRUE(request.GetCompressionOptions().IsRequestCompressionEnabled());
+        EXPECT_EQ(1111, request.GetCompressionOptions().GetMinimumSizeToCompress());
+        return StubHttpResponse();
+        });
+
+    EXPECT_FALSE(client->GetCompressionOptions().IsRequestCompressionEnabled());
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 1111);
+    client->SetCompressionOptions(options);
+    client->SendChangesetRequest(HttpStringBody::Create(""), nullptr, nullptr)->Wait();
+    }
+
 TEST_F(WSRepositoryClientTests, SendChangesetRequest_WebApiV21AndReceives201_Error)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
