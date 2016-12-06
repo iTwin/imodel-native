@@ -26,8 +26,14 @@ TEST_F(ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
     EXPECT_EQ(BeVersion(4, 2, 6, 9), info->GetApplicationVersion());
 
     EXPECT_STRNE("", info->GetSystemDescription().c_str());
-    EXPECT_STRNE("", info->GetDeviceId().c_str());
     EXPECT_STREQ("en", info->GetLanguage().c_str());
+
+#ifdef ANDROID
+    // Device class is not initialized on Android
+    EXPECT_STREQ("", info->GetDeviceId().c_str());
+#else
+    EXPECT_STRNE("", info->GetDeviceId().c_str());
+#endif
     }
 
 TEST_F(ClientInfoTests, Create_PassedProductId_SetsProductId)
