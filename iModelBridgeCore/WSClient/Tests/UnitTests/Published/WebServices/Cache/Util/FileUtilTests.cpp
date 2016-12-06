@@ -15,6 +15,13 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 using namespace ::testing;
 using std::shared_ptr;
 
+// Convert forward slashes to backslashes for tests on Android and iOS
+WString FixSlashes(WString path)
+    {
+    path.ReplaceAll(L"/", L"\\");
+    return path;
+    }
+
 TEST_F(FileUtilTests, TruncateFileName_VeryLongName_TruncatesNameThatFitsIntoBeFileNamePreservingExtension)
     {
     Utf8String fileName = Utf8String(10000, 'x') + ".test";
@@ -129,7 +136,7 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathMoreThanPath_DoesNothing)
     BentleyStatus status = FileUtil::TruncateFilePath(path, 100);
 
     EXPECT_EQ(SUCCESS, status);
-    EXPECT_STREQ(L"\\Foo\\Bar.txt", path.c_str());
+    EXPECT_STREQ(L"\\Foo\\Bar.txt", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathLessThanPath_TruncatesFileName)
@@ -138,7 +145,7 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathLessThanPath_TruncatesFileName)
     BentleyStatus status = FileUtil::TruncateFilePath(path, path.length() - 1);
 
     EXPECT_EQ(SUCCESS, status);
-    EXPECT_STREQ(L"\\A\\Ba.txt", path.c_str());
+    EXPECT_STREQ(L"\\A\\Ba.txt", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_NoFolders_TruncatesFileName)
@@ -156,7 +163,7 @@ TEST_F(FileUtilTests, TruncateFilePath_PathIsFolder_Error)
     BentleyStatus status = FileUtil::TruncateFilePath(path, path.length() - 1);
 
     EXPECT_EQ(ERROR, status);
-    EXPECT_STREQ(L"\\Foo\\Bar\\", path.c_str());
+    EXPECT_STREQ(L"\\Foo\\Bar\\", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_FileWithNoExtension_TruncatesFileName)
@@ -165,7 +172,7 @@ TEST_F(FileUtilTests, TruncateFilePath_FileWithNoExtension_TruncatesFileName)
     BentleyStatus status = FileUtil::TruncateFilePath(path, path.length() - 1);
 
     EXPECT_EQ(SUCCESS, status);
-    EXPECT_STREQ(L"\\Foo\\Ba", path.c_str());
+    EXPECT_STREQ(L"\\Foo\\Ba", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Error)
@@ -174,7 +181,7 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatFileNameWouldBeEmpty_Er
     BentleyStatus status = FileUtil::TruncateFilePath(path, path.length() - 1);
 
     EXPECT_EQ(ERROR, status);
-    EXPECT_STREQ(L"\\A\\B.txt", path.c_str());
+    EXPECT_STREQ(L"\\A\\B.txt", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged_Error)
@@ -183,7 +190,7 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSoSmallThatExtensionWouldBeChanged
     BentleyStatus status = FileUtil::TruncateFilePath(path, path.length() - 2);
 
     EXPECT_EQ(ERROR, status);
-    EXPECT_STREQ(L"\\A\\B.txt", path.c_str());
+    EXPECT_STREQ(L"\\A\\B.txt", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
@@ -192,7 +199,7 @@ TEST_F(FileUtilTests, TruncateFilePath_MaxPathSmallerThanDirectory_Error)
     BentleyStatus status = FileUtil::TruncateFilePath(path, 3);
 
     EXPECT_EQ(ERROR, status);
-    EXPECT_STREQ(L"\\Folder\\Bar.txt", path.c_str());
+    EXPECT_STREQ(L"\\Folder\\Bar.txt", FixSlashes(path).c_str());
     }
 
 TEST_F(FileUtilTests, SanitizeFileName_ValidFileName_SameReturned)
