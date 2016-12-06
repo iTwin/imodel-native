@@ -18,6 +18,7 @@
 #include <BeHttp/Credentials.h>
 #include <BeHttp/HttpResponse.h>
 #include <BeHttp/IHttpHandler.h>
+#include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_HTTP_NAMESPACE
 
@@ -132,11 +133,10 @@ public:
     void SetUploadProgressCallback(ProgressCallbackCR onProgress) {m_uploadProgressCallback = onProgress;}
     ProgressCallbackCR GetUploadProgressCallback() const {return m_uploadProgressCallback;}
 
-    // DEPRECATED: Use PerformAsync to avoid blocking caller thread.
-    // Execute request and block until finished.
-    Response Perform() {return PerformAsync()->GetResult();}
-
     // Execute request asynchronously
+    BEHTTP_EXPORT folly::Future<Response> Perform();
+
+    // DEPRECATED: Use Perform.
     Tasks::AsyncTaskPtr<Response> PerformAsync() {return m_httpHandler->_PerformRequest(*this);}
     };
 

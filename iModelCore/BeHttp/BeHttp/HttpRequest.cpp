@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <BeHttp/HttpRequest.h>
 #include <BeHttp/DefaultHttpHandler.h>
+#include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
@@ -49,3 +50,18 @@ Utf8String Request::EscapeUnsafeSymbolsInUrl(Utf8StringCR url)
     return fixedUrl;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2016
+//----------------------------------------------------------------------------------------
+folly::Future<Response> Request::Perform()
+    {
+    auto follyPromise = std::make_shared<folly::Promise<Response>>();
+
+    PerformAsync()->Then([=] (Response& response)
+        {
+        follyPromise->setValue(response);
+        });
+
+    // We want all f.then(...) to execute on the CPU pool unless overridden with f.then(&otherExec, ...)
+    return follyPromise->getFuture().via(&BeFolly::ThreadPool::GetCpuPool());
+    }

@@ -45,5 +45,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeZlib$(libext)
+LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(libext)
 
 %include $(sharedMki)linkLibrary.mki
