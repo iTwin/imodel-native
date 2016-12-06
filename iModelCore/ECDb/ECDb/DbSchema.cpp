@@ -1453,24 +1453,13 @@ BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  11/2016
 //---------------------------------------------------------------------------------------
-DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation)
+DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType)
     {
     Utf8String generatedName;
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
 
-    DbColumn* col = CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
-    if (col == nullptr)
-        return nullptr;
-
-    if (addNotNullConstraint)
-        col->GetConstraintsR().SetNotNullConstraint();
-
-    if (addUniqueConstraint)
-        col->GetConstraintsR().SetUniqueConstraint();
-
-    col->GetConstraintsR().SetCollation(collation);
-    return col;
+    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1834,17 +1823,17 @@ Utf8CP DbColumn::Constraints::CollationToSql(DbColumn::Constraints::Collation co
     {
     switch (collation)
         {
-        case Collation::Default:
+        case Collation::Unset:
             return "";
 
         case Collation::Binary:
-            return "BINARY";
+            return "COLLATE BINARY";
 
         case Collation::NoCase:
-            return "NOCASE";
+            return "COLLATE NOCASE";
 
         case Collation::RTrim:
-            return "RTRIM";
+            return "COLLATE RTRIM";
 
         default:
             BeAssert(false && "Unhandled value of Enum Collation");
@@ -1856,24 +1845,40 @@ Utf8CP DbColumn::Constraints::CollationToSql(DbColumn::Constraints::Collation co
 // @bsimethod                                                    Affan.Khan        10/2014
 //---------------------------------------------------------------------------------------
 //static 
-bool DbColumn::Constraints::TryParseCollationString(Collation& collation, Utf8CP str)
+bool DbColumn::Constraints::TryParseCollationString(Collation& collation, Utf8StringCR str)
     {
-    if (Utf8String::IsNullOrEmpty(str))
+    if (str.empty())
         {
-        collation = Collation::Default;
+        collation = Collation::Unset;
         return true;
         }
 
-    if (BeStringUtilities::StricmpAscii(str, "Binary") == 0)
+    if (str.EqualsIAscii("Binary"))
         collation = Collation::Binary;
-    else if (BeStringUtilities::StricmpAscii(str, "NoCase") == 0)
+    else if (str.EqualsIAscii("NoCase"))
         collation = Collation::NoCase;
-    else if (BeStringUtilities::StricmpAscii(str, "RTrim") == 0)
+    else if (str.EqualsIAscii("RTrim"))
         collation = Collation::RTrim;
     else
         return false;
 
     return true;
+    }
+
+//****************************************************************************************
+//DbColumn::CreateParams
+//****************************************************************************************
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                             Krischan.Eberlen        12/2016
+//---------------------------------------------------------------------------------------
+void DbColumn::CreateParams::Assign(Utf8StringCR colName, bool colNameIsFromPropertyMapCA, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation)
+    {
+    m_columnName.assign(colName);
+    m_columnNameIsFromPropertyMapCA = colNameIsFromPropertyMapCA;
+    m_addNotNullConstraint = addNotNullConstraint;
+    m_addUniqueConstraint = addUniqueConstraint;
+    m_collation = collation;
     }
 
 //****************************************************************************************
@@ -2276,6 +2281,8 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
     return table;
     }
+
+
 
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

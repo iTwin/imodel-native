@@ -56,17 +56,16 @@ struct ColumnFactory : NonCopyableClass
         bool m_usesSharedColumnStrategy;
         mutable bset<DbColumnId> m_idsOfColumnsInUseByClassMap;
 
-        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
+        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
 
-        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-        DbColumn* ApplySharedColumnStrategy(DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
+        DbColumn* ApplyDefaultStrategy(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type, DbColumn::CreateParams const&) const;
+        DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
 
-        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8CP accessString) const;
+        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
         bool IsColumnInUseByClassMap(DbColumn const&) const;
         void CacheUsedColumn(DbColumn const&) const;
 
-        bool CanEnforceColumnConstraints() const;
         BentleyStatus GetDerivedColumnList(std::vector<DbColumn const*>&) const;
 
         DbTable& GetTable() const;
@@ -75,7 +74,7 @@ struct ColumnFactory : NonCopyableClass
         ColumnFactory(ECDbCR ecdb, ClassMapCR classMap);
         ~ColumnFactory() {}
 
-        DbColumn* CreateColumn(ECN::ECPropertyCR, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
+        DbColumn* CreateColumn(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type, DbColumn::CreateParams const&) const;
         void Update(bool includeDerivedClasses) const;
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
