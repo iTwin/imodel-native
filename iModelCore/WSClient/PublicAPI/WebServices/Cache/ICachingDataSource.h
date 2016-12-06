@@ -333,18 +333,23 @@ struct ICachingDataSource::Error : public AsyncError
         static ICachingDataSource::Status ConvertCacheStatus(CacheStatus status);
 
     public:
+        //! Constructs error with Status::Success.
         WSCACHE_EXPORT Error();
+        //! Constructs error with specified status and localized message.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status);
+        //! Constructs error with matching status and localized message.
         WSCACHE_EXPORT Error(CacheStatus status);
+        //! Constructs error with specificed server error with status NetworkErrorsOccured or Canceled.
         WSCACHE_EXPORT Error(WSErrorCR error);
-        //! Constructs error with status InternalCacheError message and desription from error
+        //! Constructs error with status InternalCacheError and message with desription from specified error.
         WSCACHE_EXPORT Error(AsyncErrorCR error);
-        //! Constructs error with status and message with description from error
+        //! Constructs error with status and message with desription from specified error.
+        //! Can be used with Status::ApplicationError to pass localized error message to user.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status, AsyncErrorCR error);
         //! Constructs error with status InternalCacheError and specified message.
         WSCACHE_EXPORT Error(Utf8StringCR message);
         //! Constructs error with supplied status or status Canceled if cancellation token is non null and already canceled.
-        //! Used when operation might have been canceled but status does not indicated that.
+        //! Used when operation might have been canceled but status does not indicate that.
         WSCACHE_EXPORT Error(ICachingDataSource::Status status, ICancellationTokenPtr ct);
         WSCACHE_EXPORT ~Error();
 
