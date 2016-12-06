@@ -57,14 +57,14 @@ struct ECSqlBinder : IECSqlBinder
         bool HasToCallOnBeforeStep() const { return m_hasToCallOnBeforeStep; }
         bool HasToCallOnClearBindings() const { return m_hasToCallOnClearBindings; }
 
-        int GetMappedSqlParameterCount() const;
-        void SetSqliteIndex(size_t sqliteIndex);
-        void SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex);
+        int GetMappedSqlParameterCount() const { return m_mappedSqlParameterCount; }
+        void SetSqliteIndex(size_t sqliteIndex) { SetSqliteIndex(-1, sqliteIndex); }
+        void SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex) { _SetSqliteIndex(ecsqlParameterComponentIndex, sqliteIndex); }
 
         ECSqlTypeInfo const& GetTypeInfo() const { return m_typeInfo; }
 
-        ECSqlStatus OnBeforeStep();
-        void OnClearBindings();
+        ECSqlStatus OnBeforeStep() { return _OnBeforeStep(); }
+        void OnClearBindings() { return _OnClearBindings(); }
         ECSqlStatus SetOnBindEventHandler(IECSqlBinder& binder);
         void SetOnBindECInstanceIdEventHandler(std::function<void(ECInstanceId bindValue)> eventHandler) { BeAssert(m_onBindECInstanceIdEventHandler == nullptr); m_onBindECInstanceIdEventHandler = eventHandler; }
     };
@@ -78,12 +78,12 @@ struct ECSqlParameterMap : NonCopyableClass
         std::vector<std::unique_ptr<ECSqlBinder>> m_ownedBinders;
         std::vector<ECSqlBinder*> m_binders;
         std::vector<ECSqlBinder*> m_internalSqlParameterBinders;
-        std::map<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
+        bmap<Utf8String, int, CompareIUtf8Ascii> m_nameToIndexMapping;
 
         std::vector<ECSqlBinder*> m_bindersToCallOnClearBindings;
         std::vector<ECSqlBinder*> m_bindersToCallOnStep;
 
-        bool Contains(int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const;
+        bool Contains(int& ecsqlParameterIndex, Utf8StringCR ecsqlParameterName) const;
 
     public:
         ECSqlParameterMap() {}
@@ -91,7 +91,7 @@ struct ECSqlParameterMap : NonCopyableClass
 
         size_t Count() const { return m_binders.size(); }
         //! @remarks only named parameters have an identity. Therefore each unnamed parameters has its own binder
-        bool TryGetBinder(ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const;
+        bool TryGetBinder(ECSqlBinder*& binder, Utf8StringCR ecsqlParameterName) const;
         //!@param[in] ecsqlParameterIndex ECSQL parameter index (1-based)
         ECSqlStatus TryGetBinder(ECSqlBinder*& binder, int ecsqlParameterIndex) const;
 
@@ -99,11 +99,11 @@ struct ECSqlParameterMap : NonCopyableClass
         ECSqlStatus TryGetInternalBinder(ECSqlBinder*& binder, size_t internalBinderIndex) const;
 
         //!@return ECSQL Parameter index (1-based) or -1 if index could not be found for @p ecsqlParameterName
-        int GetIndexForName(Utf8CP ecsqlParameterName) const;
+        int GetIndexForName(Utf8StringCR ecsqlParameterName) const;
 
         ECSqlBinder* AddBinder(ECSqlPrepareContext&, ParameterExp const& parameterExp);
         ECSqlBinder* AddInternalBinder(size_t& index, ECSqlPrepareContext&, ECSqlTypeInfo const& typeInfo);
-        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName);
+        ECSqlBinder* AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8StringCR parameterName);
 
         ECSqlStatus OnBeforeStep();
 

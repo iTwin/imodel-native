@@ -49,36 +49,36 @@ struct ECDbSystemSchemaHelper : NonCopyableClass
         static Utf8CP const POINTPROP_Y_PROPNAME;
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
-private:
-    static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
+    private:
+        static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
 
-    //static class
-    ECDbSystemSchemaHelper ();
-    ~ECDbSystemSchemaHelper ();
+        //static class
+        ECDbSystemSchemaHelper();
+        ~ECDbSystemSchemaHelper();
 
-    static ECN::ECPropertyCP GetECProperty (ECN::ECClassCR, Utf8CP propertyName);
-    static Utf8CP GetPropertyName (ECSqlSystemPropertyKind);
+        static ECN::ECPropertyCP GetECProperty(ECN::ECClassCR, Utf8CP propertyName);
+        static Utf8CP GetPropertyName(ECSqlSystemPropertyKind);
 
-public:
-    //! Gets the ECSqlSystemPropertiesClass ECClass.
-    //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
-    static ECN::ECClassCP GetECSqlSystemPropertiesClass (ECDbSchemaManagerCR);
+    public:
+        //! Gets the ECSqlSystemPropertiesClass ECClass.
+        //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
+        static ECN::ECClassCP GetECSqlSystemPropertiesClass(ECDbSchemaManagerCR);
 
-    //! Gets the system property of the specified kind from the ECDb_System ECSchema.
-    //! @return System property or nullptr in case of errors
-    static ECN::ECPropertyCP GetSystemProperty (ECDbSchemaManagerCR, ECSqlSystemPropertyKind);
+        //! Gets the system property of the specified kind from the ECDb_System ECSchema.
+        //! @return System property or nullptr in case of errors
+        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyKind);
 
-    //! Checks whether the specified property is a system property of the given kind.
-    //! @return true, if @p ecProperty is a system property of the given kind. false otherwise
-    static bool IsSystemProperty (ECN::ECPropertyCR, ECSqlSystemPropertyKind);
+        //! Checks whether the specified property is a system property of the given kind.
+        //! @return true, if @p ecProperty is a system property of the given kind. false otherwise
+        static bool IsSystemProperty(ECN::ECPropertyCR, ECSqlSystemPropertyKind);
 
-    //! If @p ecProperty is a system property, returns the kind of system property.
-    //! @return true, if the given property is a system property. false, otherwise
-    static bool TryGetSystemPropertyKind (ECSqlSystemPropertyKind&, ECN::ECPropertyCR);
+        //! If @p ecProperty is a system property, returns the kind of system property.
+        //! @return true, if the given property is a system property. false, otherwise
+        static bool TryGetSystemPropertyKind(ECSqlSystemPropertyKind&, ECN::ECPropertyCR);
 
-    static Utf8CP ToString (ECSqlSystemPropertyKind);
+        static Utf8CP ToString(ECSqlSystemPropertyKind);
 
-    static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
+        static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

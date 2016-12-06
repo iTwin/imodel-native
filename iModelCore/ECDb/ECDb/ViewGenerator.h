@@ -66,6 +66,7 @@ struct ViewGenerator
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
             bool IsPolymorphicQuery() const { return m_isPolymorphicQuery; }
             bool IsECClassIdFilterEnabled() const;
+            bool IsInSelectClause(Utf8StringCR exp) const;
             };
 
         //=======================================================================================
@@ -145,7 +146,6 @@ struct ViewGenerator
         ~ViewGenerator();
 
         static BentleyStatus CreateUpdatableViewIfRequired(ECDbCR, ClassMap const&);
-        static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus CreateECClassView(ECDbCR, ClassMapCR);
 
         static BentleyStatus GenerateViewSql(NativeSqlBuilder& viewSql, Context&, ClassMap const&);
@@ -158,6 +158,8 @@ struct ViewGenerator
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
 
+        static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);
+
     public:
         //! Generates a SQLite polymorphic SELECT query for a given classMap
         //! @param viewSql [out] Output SQL for view
@@ -165,7 +167,7 @@ struct ViewGenerator
         //! @param isPolymorphicQuery [in] if true return a polymorphic view of ECClass else return a non-polymorphic view. Intend to be use by ECSQL "ONLY <ecClass>"
         //! @param prepareContext [in] prepareContext from ECSQL
         //! @remarks Only work work normal ECClasses but not relationship. It also support query over ecdb.Instances
-        static BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, ECDb const&, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
+        static BentleyStatus GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECDb const&, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext);
         static BentleyStatus CreateUpdatableViews(ECDbCR);
         static BentleyStatus DropUpdatableViews(ECDbCR);
         static BentleyStatus CreateECClassViews(ECDbCR, bvector<ECN::ECClassId> const&);
