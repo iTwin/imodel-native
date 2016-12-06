@@ -196,8 +196,8 @@ namespace Attachment
 
             Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
             BentleyStatus _LoadTile() override;
-            folly::Future<BentleyStatus> _SaveToDb() override {return SUCCESS;}
-            folly::Future<BentleyStatus> _ReadFromDb() override {return ERROR;}
+            folly::Future<BentleyStatus> _SaveToDb() override;
+            folly::Future<BentleyStatus> _ReadFromDb() override;
             folly::Future<BentleyStatus> _GetFromSource() override;
         };
 
