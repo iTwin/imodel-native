@@ -35,6 +35,18 @@ static HFCPtr<HRPPixelType> getTileQueryPixelType(HRARaster const& raster, Rende
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> RasterFileTile::RasterTileLoader::_GetFromSource()
     {
+    RefCountedPtr<RasterTileLoader> me(this);
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
+        {
+        return me->DoGetFromSource();
+        });
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterFileTile::RasterTileLoader::DoGetFromSource()
+    {
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
     bool enableAlphaBlend = false;

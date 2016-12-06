@@ -35,12 +35,14 @@ BentleyStatus Scene::ReadSceneFile()
     if (IsHttp())
         {
         TileTree::HttpDataQuery query(m_rootUrl, nullptr);
-        query.Perform(rootStream);
+        query.Perform().wait();
+
+        rootStream = std::move(query.GetData());
         }
     else
         {
         TileTree::FileDataQuery query(m_rootUrl, nullptr);
-        query.Perform(rootStream);
+        rootStream = std::move(query.Perform().get());
         }
 
     return rootStream.HasData() ? m_sceneInfo.Read(rootStream) : ERROR;
