@@ -39,6 +39,7 @@ private:
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
+    void CheckCreatingRevision() const;
 
 public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
