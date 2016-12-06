@@ -379,23 +379,18 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1_SendsGetRequestWithF
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = StubFilePath();
-
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi13());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://srv.com/ws/v1.1/DataSources/foo/Files/TestClass/TestId", request.GetUrl().c_str());
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-		if (httpFileBody.IsValid())
-			{
-        	EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-			}
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse();
         });
 
-    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->Wait();
+    BeFileName filePath = StubFilePath();
+    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, filePath)->Wait();
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetRequestForRedirect)
@@ -409,18 +404,18 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1Connect_SendsGetReque
         EXPECT_FALSE(request.GetFollowRedirects());
         EXPECT_STREQ("https://srv.com/ws/DataSources/foo/Files/TestClass/TestId", request.GetUrl().c_str());
         EXPECT_EQ("", Utf8String(request.GetHeaders().GetIfNoneMatch()));
-        EXPECT_EQ(nullptr, dynamic_cast<HttpFileBody*> (request.GetResponseBody().get()));
+        WriteStringToHttpBody("ThisShouldNotGoToFile", request.GetResponseBody());
         return StubHttpResponse();
         });
 
-    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, StubFilePath(), "TestETag")->Wait();
+    BeFileName filePath = StubFilePath();
+    client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, filePath, "TestETag")->Wait();
+    EXPECT_FALSE(filePath.DoesPathExist());
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFound_SendsGetRequestToLocation)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseBentleyConnectV1());
@@ -429,16 +424,13 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseFou
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_EQ("http://file.location/", request.GetUrl());
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            {
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-            }
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse();
         });
 
-    client->SendGetFileRequest(StubObjectId(), fileName)->Wait();
+    BeFileName filePath = StubFilePath();
+    client->SendGetFileRequest(StubObjectId(), filePath)->Wait();
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV1ConnectAndResponseOK_ReturnsServerNotSupported)
@@ -457,8 +449,6 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = StubFilePath();
-
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi20());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
@@ -466,25 +456,19 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV2_SendsCorrectUrl)
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.0/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
         EXPECT_EQ(nullptr, request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            {
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-            }
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, filePath)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndAllowRedirectHeader)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    BeFileName fileName = StubFilePath();
 
     GetHandler().ExpectRequests(2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
@@ -493,25 +477,19 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24_SendsCorrectUrlAndA
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://srv.com/ws/v2.4/Repositories/foo/TestSchema/TestClass/TestId/$file", request.GetUrl().c_str());
         EXPECT_STREQ("true", request.GetHeaders().GetValue("Mas-Allow-Redirect"));
-
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            {
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-            }
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendGetFileRequest({"TestSchema", "TestClass", "TestId"}, filePath)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectReceived_DownloadsFileFromExternalLocation)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    BeFileName fileName = StubFilePath();
 
     EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
@@ -525,25 +503,19 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndAzureRedirectRece
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
-
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            {
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-            }
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendGetFileRequest(StubObjectId(), filePath)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectReceived_DownloadsAnyway)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    BeFileName fileName = StubFilePath();
 
     EXPECT_REQUEST_COUNT(GetHandler(), 3);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
@@ -557,25 +529,19 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectRe
         {
         EXPECT_STREQ("GET", request.GetMethod().c_str());
         EXPECT_STREQ("https://foo.com/boo", request.GetUrl().c_str());
-
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        EXPECT_TRUE(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            {
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-            }
+        WriteStringToHttpBody("TestResponseBody", request.GetResponseBody());
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendGetFileRequest(StubObjectId(), filePath)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    EXPECT_EQ("TestResponseBody", SimpleReadFile(filePath));
     }
 
 TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectStatusReceived_Error)
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
-
-    BeFileName fileName = StubFilePath();
 
     EXPECT_REQUEST_COUNT(GetHandler(), 2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
@@ -586,7 +552,8 @@ TEST_F(WSRepositoryClientTests, SendGetFileRequest_WebApiV24AndUnknownRedirectSt
                 {"Mas-File-Access-Url-Type", "AzureBlobSasUrl"}});
         });
 
-    auto response = client->SendGetFileRequest(StubObjectId(), fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendGetFileRequest(StubObjectId(), filePath)->GetResult();
     EXPECT_FALSE(response.IsSuccess());
     }
 
@@ -2087,8 +2054,6 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
     {
     auto client = WSRepositoryClient::Create("https://srv.com/ws", "foo", StubClientInfo(), nullptr, GetHandlerPtr());
 
-    BeFileName fileName = StubFilePath();
-
     EXPECT_REQUEST_COUNT(GetHandler(), 2);
     GetHandler().ForRequest(1, StubWSInfoHttpResponseWebApi24());
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
@@ -2099,7 +2064,8 @@ TEST_F(WSRepositoryClientTests, SendUpdateFileRequest_WebApiV24AndAzureRedirectA
         });
         });
 
-    auto response = client->SendUpdateFileRequest(StubObjectId(), fileName)->GetResult();
+    BeFileName filePath = StubFilePath();
+    auto response = client->SendUpdateFileRequest(StubObjectId(), filePath)->GetResult();
     EXPECT_FALSE(response.IsSuccess());
     EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
     }
