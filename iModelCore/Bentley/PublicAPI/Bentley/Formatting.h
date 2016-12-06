@@ -11,6 +11,10 @@
 #include "Bentley.h"
 #include "WString.h"
 #include "RefCounted.h"
+//#include <Bentley/BeTimeUtilities.h>
+#include <ctype.h>
+#include <ctime>
+#include <chrono>
 #include <math.h>
 
 BENTLEY_NAMESPACE_TYPEDEFS(Formatting);
@@ -36,13 +40,13 @@ enum class ParameterCode
     Fractional = 152,
     Sientific = 153,
     ScientificNorm = 154,
-	Binary = 155,
-    NoZeroes = 201,
+    Binary = 155,
+    NoZeroControl = 201,
     LeadingZeroes = 202,
     TrailingZeroes = 203,
-    BothZeroes = 204,
-    ShowDotZero = 205, // with precision 0 by default only integer part will be shows. This option will force .0 after the int part 
-    Replace0Empty = 206,  // formatter will return the empy string if the result is 0
+    KeepSingleZero = 204,
+    KeepDecimalPoint = 205, 
+    Replace0Empty = 206,    // formatter will return the empy string if the result is 0
     DecPrec0 =  300,
     DecPrec1 =  301,
     DecPrec2 =  302,
@@ -90,13 +94,13 @@ enum class ParameterCode
     };
 
 enum class ParameterDataType
-	{
+    {
     Flag = 0,
     Integer = 1,
     Double = 2,
     Symbol = 3,
     String = 4
-	};
+    };
 
 enum class RoundingType
 {
@@ -143,12 +147,13 @@ enum class PresentationType
     ScientificNorm = 4   // normalized scientific when Mantissa is < 1
 };
 
-enum class ZeroControl
+enum class ZeroControl: int
 {
-    NoZeroes = 0,
-    LeadingZeroes = 1,
-    TrailingZeroes = 2,
-    BothZeroes = 3
+    None = 0,
+    LeadingZeroes = 0x1,
+    TrailingZeroes = 0x2,
+    KeepDecimalPoint = 0x4,
+    KeepSingleZero = 0x8
 };
 
 enum class DecimalPrecision
@@ -200,17 +205,17 @@ enum class ParameterCategory
 
 enum class ScannerCursorStatus
 {
-	Success = 0,
-	InvalidSymbol = 1,
-	IncompleteSequence = 2
+    Success = 0,
+    InvalidSymbol = 1,
+    IncompleteSequence = 2
 };
 
 static const char * GetParameterCategoryName(ParameterCategory parcat)
-	{
-	static const char * CategoryNames[] = {"DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
-		"FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping"};
-	return CategoryNames[(int)parcat];
-	}
+    {
+    static const char * CategoryNames[] = {"DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
+        "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping"};
+    return CategoryNames[(int)parcat];
+    }
 
 
 //=======================================================================================
@@ -219,6 +224,7 @@ static const char * GetParameterCategoryName(ParameterCategory parcat)
 struct NumericFormat
 {
 private:
+    double              m_minTreshold;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
     ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
     ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
@@ -230,61 +236,63 @@ private:
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
 
+    BENTLEYDLL_EXPORT void DefaultInit(size_t precision);
+    BENTLEYDLL_EXPORT double RoundedValue(double dval, double round);
+    BENTLEYDLL_EXPORT int TrimTrailingZeroes(CharP buf, int index);
+    BENTLEYDLL_EXPORT int InsertChar(CharP buf, int index, char c, int num);
 public:
 
-    int PrecisionValue() const;
-    double PrecisionFactor() const;
-    DecimalPrecision ConvertToPrecision(int num);
+    BENTLEYDLL_EXPORT NumericFormat() { DefaultInit(6); }
+    BENTLEYDLL_EXPORT NumericFormat(size_t precision) { DefaultInit(precision); }
 
-    NumericFormat()
-        {
-        m_presentationType = PresentationType::Decimal;
-        m_signOption = ShowSignOption::OnlyNegative;
-        m_ZeroControl = ZeroControl::NoZeroes;
-        m_showDotZero = false;
-        m_replace0Empty = false;
-        m_decPrecision = DecimalPrecision::Precision6;
-        m_fractPrecision = FractionalPrecision::Sixteenth;
-        m_useThousandsSeparator = false;
-        m_decimalSeparator = '.';
-        m_thousandsSeparator = ',';
-        }
+    BENTLEYDLL_EXPORT bool IfKeepTrailingZeroes() { return ((static_cast<int>(m_ZeroControl) & static_cast<int>(ZeroControl::TrailingZeroes)) != 0); }
+    BENTLEYDLL_EXPORT bool IfUseLeadingZeroes() { return ((static_cast<int>(m_ZeroControl) & static_cast<int>(ZeroControl::LeadingZeroes)) != 0); }
+    BENTLEYDLL_EXPORT bool IfKeepDecimalPoint() { return ((static_cast<int>(m_ZeroControl) & static_cast<int>(ZeroControl::KeepDecimalPoint)) != 0); }
+    BENTLEYDLL_EXPORT bool IfKeepSingleZero() { return ((static_cast<int>(m_ZeroControl) & static_cast<int>(ZeroControl::KeepSingleZero)) != 0); }
+    BENTLEYDLL_EXPORT void SetKeepTrailingZeroes(bool keep);
+    BENTLEYDLL_EXPORT void SetUseLeadingZeroes(bool use);
+    BENTLEYDLL_EXPORT void SetKeepDecimalPoint(bool keep);
+    BENTLEYDLL_EXPORT void SetKeepSingleZero(bool keep);
 
-	BENTLEYDLL_EXPORT void SetPresentationType(PresentationType type) { m_presentationType = type; }
-	BENTLEYDLL_EXPORT PresentationType GetPresentationType() const { return m_presentationType; }
-	BENTLEYDLL_EXPORT void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-	BENTLEYDLL_EXPORT ShowSignOption GetSignOption() const { return m_signOption; }
-	BENTLEYDLL_EXPORT void setZeroControl(ZeroControl opt) { m_ZeroControl = opt; }
-	BENTLEYDLL_EXPORT ZeroControl getZeroControl() const { return m_ZeroControl; }
-	BENTLEYDLL_EXPORT bool getShowDotZero() { return m_showDotZero; }
-	BENTLEYDLL_EXPORT bool getReplace0Empty() const { return m_replace0Empty; }
-	BENTLEYDLL_EXPORT bool setShowDotZero(bool set) { return m_showDotZero = set; }
-	BENTLEYDLL_EXPORT bool setReplace0Empty(bool set) { return m_replace0Empty = set; }
-	BENTLEYDLL_EXPORT FractionalPrecision SetfractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
-	BENTLEYDLL_EXPORT FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
-	BENTLEYDLL_EXPORT Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-	BENTLEYDLL_EXPORT Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-	BENTLEYDLL_EXPORT Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-	BENTLEYDLL_EXPORT Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
-	BENTLEYDLL_EXPORT bool IfInsertSeparator(bool useSeparator) { return (m_useThousandsSeparator && m_thousandsSeparator != 0 && useSeparator);}
-	BENTLEYDLL_EXPORT bool SetUseSeparator(bool set) { return m_useThousandsSeparator = set; }
-	BENTLEYDLL_EXPORT int GetDecimalPrecision()  { return PrecisionValue(); }
-	BENTLEYDLL_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-	BENTLEYDLL_EXPORT bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
-	BENTLEYDLL_EXPORT int IntPartToText (double n, char * bufOut, int bufLen, bool useSeparator);
-	BENTLEYDLL_EXPORT int FormatInteger (int n, char* bufOut, int bufLen);
-	BENTLEYDLL_EXPORT int FormatDouble(double dval, char* buf, int bufLen);
-	BENTLEYDLL_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
-	BENTLEYDLL_EXPORT int FormatBinaryShort (short int n, char* bufOut, int bufLen, bool useSeparator);
-	BENTLEYDLL_EXPORT int FormatBinaryInt (int n, char* bufOut, int bufLen, bool useSeparator);
-	BENTLEYDLL_EXPORT int FormatBinaryDouble (double x, char* bufOut, int bufLen, bool useSeparator);
-	BENTLEYDLL_EXPORT static int RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen);
-	BENTLEYDLL_EXPORT Utf8String FormatDouble(double dval);
-	BENTLEYDLL_EXPORT Utf8String FormatInteger(int ival);
-	BENTLEYDLL_EXPORT Utf8String ByteToBinaryText(unsigned char n);
-	BENTLEYDLL_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
-	BENTLEYDLL_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
-	BENTLEYDLL_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
+    BENTLEYDLL_EXPORT int PrecisionValue() const;
+    BENTLEYDLL_EXPORT double PrecisionFactor() const;
+    BENTLEYDLL_EXPORT DecimalPrecision ConvertToPrecision(size_t num);
+    BENTLEYDLL_EXPORT void SetPresentationType(PresentationType type) { m_presentationType = type; }
+    BENTLEYDLL_EXPORT PresentationType GetPresentationType() const { return m_presentationType; }
+    BENTLEYDLL_EXPORT void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
+    BENTLEYDLL_EXPORT ShowSignOption GetSignOption() const { return m_signOption; }
+    BENTLEYDLL_EXPORT void setZeroControl(ZeroControl opt) { m_ZeroControl = opt; }
+    BENTLEYDLL_EXPORT ZeroControl getZeroControl() const { return m_ZeroControl; }
+    BENTLEYDLL_EXPORT bool getShowDotZero() { return m_showDotZero; }
+    BENTLEYDLL_EXPORT bool getReplace0Empty() const { return m_replace0Empty; }
+    BENTLEYDLL_EXPORT bool setShowDotZero(bool set) { return m_showDotZero = set; }
+    BENTLEYDLL_EXPORT bool setReplace0Empty(bool set) { return m_replace0Empty = set; }
+    BENTLEYDLL_EXPORT FractionalPrecision SetfractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
+    BENTLEYDLL_EXPORT FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+    BENTLEYDLL_EXPORT Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    BENTLEYDLL_EXPORT Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+    BENTLEYDLL_EXPORT Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    BENTLEYDLL_EXPORT Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    BENTLEYDLL_EXPORT bool IfInsertSeparator(bool useSeparator) { return (m_useThousandsSeparator && m_thousandsSeparator != 0 && useSeparator);}
+    BENTLEYDLL_EXPORT bool SetUseSeparator(bool set) { return m_useThousandsSeparator = set; }
+    BENTLEYDLL_EXPORT int GetDecimalPrecision()  { return PrecisionValue(); }
+    BENTLEYDLL_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    BENTLEYDLL_EXPORT bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
+    BENTLEYDLL_EXPORT int IntPartToText (double n, char * bufOut, int bufLen, bool useSeparator);
+    BENTLEYDLL_EXPORT int FormatInteger (int n, char* bufOut, int bufLen);
+    BENTLEYDLL_EXPORT int FormatDouble(double dval, char* buf, int bufLen);
+    BENTLEYDLL_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
+    BENTLEYDLL_EXPORT int FormatBinaryShort (short int n, char* bufOut, int bufLen, bool useSeparator);
+    BENTLEYDLL_EXPORT int FormatBinaryInt (int n, char* bufOut, int bufLen, bool useSeparator);
+    BENTLEYDLL_EXPORT int FormatBinaryDouble (double x, char* bufOut, int bufLen, bool useSeparator);
+    BENTLEYDLL_EXPORT static int RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen);
+    BENTLEYDLL_EXPORT Utf8String FormatDouble(double dval);
+    BENTLEYDLL_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
+    BENTLEYDLL_EXPORT Utf8String FormatInteger(int ival);
+    BENTLEYDLL_EXPORT Utf8String ByteToBinaryText(unsigned char n);
+    BENTLEYDLL_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
+    BENTLEYDLL_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
+    BENTLEYDLL_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
 };
 
 //=======================================================================================
@@ -312,30 +320,30 @@ private:
     bool   m_lowAssigned;
     bool   m_negative;
 
-	void Convert();
-	void SetValue(double dval, DecimalPrecision prec);
-	NumericTriad();
+    void Convert();
+    void SetValue(double dval, DecimalPrecision prec);
+    NumericTriad();
 
 public:
     
-	NumericTriad(double dval, int topMid, int midLow, DecimalPrecision prec)
-		{
-		SetValue(dval, prec);
-		m_topToMid = topMid;
-		m_midToLow = midLow;
-		m_init = true;
-		Convert();
-		}
+    NumericTriad(double dval, int topMid, int midLow, DecimalPrecision prec)
+        {
+        SetValue(dval, prec);
+        m_topToMid = topMid;
+        m_midToLow = midLow;
+        m_init = true;
+        Convert();
+        }
 
-	double GetWhole() { return m_negative ? -m_dval: m_dval; }
-	void ProcessValue(double dval, DecimalPrecision prec)  {  SetValue(dval, prec);  Convert(); }
-	void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
-	void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-	double GetTopValue() { return m_topValue; }
-	double GetMidValue() { return m_midValue; }
-	double GetlowValue() { return m_lowValue; }
-	Utf8String FormatWhole(DecimalPrecision prec);
-	Utf8String FormatTriad(Utf8StringCP topName, Utf8StringCP midName, Utf8StringCP lowName, bool includeZero);
+    double GetWhole() { return m_negative ? -m_dval: m_dval; }
+    void ProcessValue(double dval, DecimalPrecision prec)  {  SetValue(dval, prec);  Convert(); }
+    void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
+    void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    double GetTopValue() { return m_topValue; }
+    double GetMidValue() { return m_midValue; }
+    double GetlowValue() { return m_lowValue; }
+    Utf8String FormatWhole(DecimalPrecision prec);
+    Utf8String FormatTriad(Utf8StringCP topName, Utf8StringCP midName, Utf8StringCP lowName, bool includeZero);
 
 };
 
@@ -354,20 +362,20 @@ private:
 
 public:
 
-	BENTLEYDLL_EXPORT FormatParameter(Utf8CP name, ParameterCategory cat, ParameterCode code, ParameterDataType type)
-		{
-		m_paramName = name;
-		m_category = cat;
-		m_paramCode = code;
-		m_paramType = type;
-		}
+    BENTLEYDLL_EXPORT FormatParameter(Utf8CP name, ParameterCategory cat, ParameterCode code, ParameterDataType type)
+        {
+        m_paramName = name;
+        m_category = cat;
+        m_paramCode = code;
+        m_paramType = type;
+        }
 
-	BENTLEYDLL_EXPORT Utf8StringCR GetName() { return m_paramName; }
-	BENTLEYDLL_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
-	BENTLEYDLL_EXPORT ParameterCategory GetCategory() { return m_category; }
-	BENTLEYDLL_EXPORT CharCP GetCategoryName() { return GetParameterCategoryName(m_category); }
-	BENTLEYDLL_EXPORT ParameterCode GetParameterCode() { return m_paramCode; }
-	BENTLEYDLL_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
+    BENTLEYDLL_EXPORT Utf8StringCR GetName() { return m_paramName; }
+    BENTLEYDLL_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
+    BENTLEYDLL_EXPORT ParameterCategory GetCategory() { return m_category; }
+    BENTLEYDLL_EXPORT CharCP GetCategoryName() { return GetParameterCategoryName(m_category); }
+    BENTLEYDLL_EXPORT ParameterCode GetParameterCode() { return m_paramCode; }
+    BENTLEYDLL_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
 };
 
 //=======================================================================================
@@ -376,18 +384,18 @@ public:
 struct FormatDictionary
 {
 private:
-	bvector<FormatParameter> m_paramList;
+    bvector<FormatParameter> m_paramList;
 
-	BENTLEYDLL_EXPORT void InitLoad();
-	
+    BENTLEYDLL_EXPORT void InitLoad();
+
 public:
 
-	BENTLEYDLL_EXPORT FormatDictionary() { InitLoad(); }
-	BENTLEYDLL_EXPORT int GetCount() { return (int)m_paramList.size(); }
-	BENTLEYDLL_EXPORT void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
-	BENTLEYDLL_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
-	BENTLEYDLL_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
-	BENTLEYDLL_EXPORT FormatParameterP GetParameterByIndex(int index);
+    BENTLEYDLL_EXPORT FormatDictionary() { InitLoad(); }
+    BENTLEYDLL_EXPORT int GetCount() { return (int)m_paramList.size(); }
+    BENTLEYDLL_EXPORT void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
+    BENTLEYDLL_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
+    BENTLEYDLL_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
+    BENTLEYDLL_EXPORT FormatParameterP GetParameterByIndex(int index);
 };
 
 //=======================================================================================
@@ -396,81 +404,121 @@ public:
 struct UnicodeConstant
 {
 private:
-	
-	static const unsigned char m_twoByteMask = 0xE0;      // 11100000 - complement will select 5 upper bits
-	static const unsigned char m_twoByteMark = 0xC0;      // 11000000
-	static const unsigned char m_threeByteMask = 0xF0;    // 11110000  - complement will select 4 upper bits
-	static const unsigned char m_threeByteMark = 0xE0;    // 11100000
-	static const unsigned char m_fourByteMask = 0xF8;     // 11111000  - complement will select 3 upper bits
-	static const unsigned char m_fourByteMark = 0xF0;     // 11110000
-	static const unsigned char m_trailingByteMask = 0xC0; // 11000000 - complement will select trailing bits
-	static const unsigned char m_trailingByteMark = 0x80; // 10000000 - indicator of the trailing bytes and also an ASCII char
-	static const unsigned char m_trailingBits = 0x3F;     // 00111111
-	static const size_t m_upperBitShift = 6;
-	bool m_isLittleEndian;
+    static const unsigned char m_twoByteMask = 0xE0;      // 11100000 - complement will select 5 upper bits
+    static const unsigned char m_twoByteMark = 0xC0;      // 11000000
+    static const unsigned char m_threeByteMask = 0xF0;    // 11110000  - complement will select 4 upper bits
+    static const unsigned char m_threeByteMark = 0xE0;    // 11100000
+    static const unsigned char m_fourByteMask = 0xF8;     // 11111000  - complement will select 3 upper bits
+    static const unsigned char m_fourByteMark = 0xF0;     // 11110000
+    static const unsigned char m_trailingByteMask = 0xC0; // 11000000 - complement will select trailing bits
+    static const unsigned char m_trailingByteMark = 0x80; // 10000000 - indicator of the trailing bytes and also an ASCII char
+    static const unsigned char m_trailingBits = 0x3F;     // 00111111
+    static const size_t m_upperBitShift = 6;
+    bool m_isLittleEndian;
 
-	static bool CheckEndian()
-		{
-		union { short int s; char b[4]; } un;
-		un.s = 1;
-		return (un.b[0] == (char)1);
-		}
+    static bool CheckEndian()
+        {
+        union { short int s; char b[4]; } un;
+        un.s = 1;
+        return (un.b[0] == (char)1);
+        }
 
 
 public:
-	BENTLEYDLL_EXPORT UnicodeConstant() { m_isLittleEndian = CheckEndian(); }
-	BENTLEYDLL_EXPORT const char Get2ByteMask() { return m_twoByteMask; }                 // 11100000 - complement will select 5 upper bits
-	BENTLEYDLL_EXPORT const char Get3ByteMask() { return m_threeByteMask; }				  // 11000000
-	BENTLEYDLL_EXPORT const char Get4ByteMask() { return m_fourByteMask; }				  // 11110000  - complement will select 4 upper bits
-	BENTLEYDLL_EXPORT const char Get2ByteMark() { return m_twoByteMark; }				  // 11100000
-	BENTLEYDLL_EXPORT const char Get3ByteMark() { return m_threeByteMark; }				  // 11111000  - complement will select 3 upper bits
-	BENTLEYDLL_EXPORT const char Get4ByteMark() { return m_fourByteMark; }				  // 11110000
-	BENTLEYDLL_EXPORT const char GetTrailingByteMask() { return m_trailingByteMask; }	  // 11000000 - complement will select trailing bits
-	BENTLEYDLL_EXPORT const char GetTrailingByteMark() { return m_trailingByteMark; }	  // 10000000 - indicator of the trailing bytes and also an ASCII char
-	BENTLEYDLL_EXPORT const char GetTrailingBitsMask() { return m_trailingBits; }		  // 00111111
-	BENTLEYDLL_EXPORT const size_t GetSequenceLength(unsigned char c);
-	BENTLEYDLL_EXPORT bool IsTrailingByteValid(unsigned char c);
-	BENTLEYDLL_EXPORT bool GetTrailingBits(unsigned char c, CharP outBits);
+    BENTLEYDLL_EXPORT UnicodeConstant() { m_isLittleEndian = CheckEndian(); }
+    BENTLEYDLL_EXPORT const char Get2ByteMask() { return m_twoByteMask; }                 // 11100000 - complement will select 5 upper bits
+    BENTLEYDLL_EXPORT const char Get3ByteMask() { return m_threeByteMask; }				  // 11000000
+    BENTLEYDLL_EXPORT const char Get4ByteMask() { return m_fourByteMask; }				  // 11110000  - complement will select 4 upper bits
+    BENTLEYDLL_EXPORT const char Get2ByteMark() { return m_twoByteMark; }				  // 11100000
+    BENTLEYDLL_EXPORT const char Get3ByteMark() { return m_threeByteMark; }				  // 11111000  - complement will select 3 upper bits
+    BENTLEYDLL_EXPORT const char Get4ByteMark() { return m_fourByteMark; }				  // 11110000
+    BENTLEYDLL_EXPORT const char GetTrailingByteMask() { return m_trailingByteMask; }	  // 11000000 - complement will select trailing bits
+    BENTLEYDLL_EXPORT const char GetTrailingByteMark() { return m_trailingByteMark; }	  // 10000000 - indicator of the trailing bytes and also an ASCII char
+    BENTLEYDLL_EXPORT const char GetTrailingBitsMask() { return m_trailingBits; }		  // 00111111
+    BENTLEYDLL_EXPORT const size_t GetSequenceLength(unsigned char c);
+    BENTLEYDLL_EXPORT bool IsTrailingByteValid(unsigned char c);
+    BENTLEYDLL_EXPORT bool GetTrailingBits(unsigned char c, CharP outBits);
+    BENTLEYDLL_EXPORT bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
     BENTLEYDLL_EXPORT int GetTrailingShift() { return m_upperBitShift; }
-	BENTLEYDLL_EXPORT bool IsLittleEndian(); 
-	BENTLEYDLL_EXPORT bool ForceBigEndian();
+    BENTLEYDLL_EXPORT bool IsLittleEndian(); 
+    BENTLEYDLL_EXPORT bool ForceBigEndian();
 };
 
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
+struct FormatCursorDetail
+{
+private:
+    size_t m_totalScanLength; // this is the total length of the byte sequence that ought to be scanned/parsed
+    size_t m_cursorPosition;  // the index of the next byte to be scanned
+    size_t m_lastScannedCount;   // the number of bytes processed in the last step
+    size_t m_uniCode;
+
+    void Init() { m_totalScanLength = 0; m_cursorPosition = 0; m_lastScannedCount = 0; m_uniCode = 0; }
+public:
+
+};
+
+//=======================================================================================
+// @bsiclass                                                    David.Fox-Rabinovitz
+//=======================================================================================
 struct FormattingScannerCursor
 {
 private:
-	Utf8String m_text;            // pointer to the head of the string
-	size_t m_totalScanLength; // this is the total length of the byte sequence that ought to be scanned/parsed
-	size_t m_cursorPosition;  // the index of the next byte to be scanned
-	size_t m_lastScannedCount;   // the number of bytes processed in the last step
+    Utf8String m_text;            // pointer to the head of the string
+    size_t m_totalScanLength; // this is the total length of the byte sequence that ought to be scanned/parsed
+    size_t m_cursorPosition;  // the index of the next byte to be scanned
+    size_t m_lastScannedCount;   // the number of bytes processed in the last step
     size_t m_uniCode;
-	union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
-	bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
-	UnicodeConstantP m_unicodeConst; // reference to constants and character processors
-	ScannerCursorStatus m_status;
+    //union { uint8_t octet[4];  unsigned int word; } m_code; // container for the scanned bytes
+    bool m_isASCII;          // flag indicating that the last scanned byte is ASCII
+    UnicodeConstantP m_unicodeConst; // reference to constants and character processors
+    ScannerCursorStatus m_status;
     char m_temp;
 
-	// takes an logical index to an array of ordered bytes representing an integer entity in memory and 
-	// returns the physical index of the same array adjusted by endianness. The little endian is default 
-	//  and the index will be returned unchaged. This function does not check if supplied 
+    // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
+    // returns the physical index of the same array adjusted by endianness. The little endian is default 
+    //  and the index will be returned unchaged. This function does not check if supplied 
     BENTLEYDLL_EXPORT size_t TrueIndex(size_t index, size_t wordSize);
     BENTLEYDLL_EXPORT int AddTrailingByte();
-
+    BENTLEYDLL_EXPORT size_t GetCurrentPosition() { return m_cursorPosition; }
+    BENTLEYDLL_EXPORT size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
+    BENTLEYDLL_EXPORT int FormattingScannerCursor::ProcessTrailingByte(char c, int* bits);
 public:
-	//! Construct a cursor attached to the given Utf8 string 
-	BENTLEYDLL_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
+    //! Construct a cursor attached to the given Utf8 string 
+    BENTLEYDLL_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
     BENTLEYDLL_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
-	BENTLEYDLL_EXPORT UnicodeConstant* GetConstants() { return m_unicodeConst; }
-	BENTLEYDLL_EXPORT size_t GetNextSymbol();
-	BENTLEYDLL_EXPORT bool IsError() { return (m_status != ScannerCursorStatus::Success); }
+    BENTLEYDLL_EXPORT UnicodeConstant* GetConstants() { return m_unicodeConst; }
+    BENTLEYDLL_EXPORT size_t GetNextSymbol();
+    BENTLEYDLL_EXPORT size_t GetNextCodePoint();
+    BENTLEYDLL_EXPORT bool IsError() { return (m_status != ScannerCursorStatus::Success); }
     BENTLEYDLL_EXPORT bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
-	BENTLEYDLL_EXPORT ScannerCursorStatus GetOperationStatus() { return m_status;}
-	BENTLEYDLL_EXPORT bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
-	BENTLEYDLL_EXPORT bool IsASCII() { return m_isASCII; }
+    BENTLEYDLL_EXPORT ScannerCursorStatus GetOperationStatus() { return m_status;}
+    BENTLEYDLL_EXPORT bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
+    BENTLEYDLL_EXPORT bool IsASCII() { return m_isASCII; }
     BENTLEYDLL_EXPORT int CodePointCount();
+    BENTLEYDLL_EXPORT void Rewind();
+    BENTLEYDLL_EXPORT size_t GetUnicode() { return m_uniCode; }
+    BENTLEYDLL_EXPORT size_t GetLastScanned() { return m_lastScannedCount; }
+    BENTLEYDLL_EXPORT size_t SkipBlanks();
+    BENTLEYDLL_EXPORT Utf8String SelectKeyWord();
 };
 
+struct FormatStopWatch
+{
+private:
+    std::chrono::steady_clock::time_point m_start;
+    double m_lastInterval;
+    double m_totalElapsed;
+    size_t m_lastAmount;
+    size_t m_totalAmount;
+   
+public:
+    BENTLEYDLL_EXPORT FormatStopWatch();
+    BENTLEYDLL_EXPORT Utf8String LastIntervalMetrics(size_t amount);
+    BENTLEYDLL_EXPORT Utf8String LastInterval(double factor);
+    
+
+};
 END_BENTLEY_NAMESPACE
