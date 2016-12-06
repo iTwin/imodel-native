@@ -113,7 +113,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
 
     return Json::Reader::DoParse(httpResponse.GetBody().AsString());
     }
@@ -133,7 +133,7 @@ Json::Value UsageTracking::GetUserUsages(Utf8StringCR userGuid, Utf8StringCR dev
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
 
     return Json::Reader::DoParse(httpResponse.GetBody().AsString());
     }
