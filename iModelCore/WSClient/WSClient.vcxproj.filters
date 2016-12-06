@@ -498,6 +498,12 @@
     <ClCompile Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\FileInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1119,6 +1125,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Cache\Persistence\Upgrade\UpgraderFromV20ToV21.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\FileInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerCodeEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerDeletedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerEventParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerLockEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerRevisionEvent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
