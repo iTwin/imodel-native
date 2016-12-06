@@ -54,6 +54,7 @@ struct Stats
     Stats();
     void InsertStats(OperationType type, bool success, time_t time);
     void PrintStats();
+    void WriteToFile();
 };
 
 struct RPS
