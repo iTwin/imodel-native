@@ -33,6 +33,11 @@
         </Bindings>
     </Part>
 
+    <!-- We need this shim part because there is no LKG for some platforms, and thus builds cannot get a partfile from the LKG to see that the part excludes said platforms. -->
+    <Part Name="FollyShim" ExcludePlatforms="Linux*">
+        <SubPart PartName="folly" PartFile="Facebook" Repository="Libsrc-facebook"/>
+    </Part>
+
     <Part Name="BeHttpLibrary" BentleyBuildMakeFile="BeHttp.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BeHttpLibrary-Curl"/>
@@ -41,6 +46,7 @@
         <SubPart PartName="Zlib"            PartFile="Zlib"         Repository="Libsrc-Compress"/>
         <SubPart PartName="snappy"          PartFile="Zlib"         Repository="Libsrc-Compress"/>
         <SubPart PartName="lzma"            PartFile="Zlib"         Repository="Libsrc-Compress"/>
+        <SubPart PartName="FollyShim"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)BeHttp$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BeHttp$(ApiNumber)$(shlibext)</Assemblies>
