@@ -119,7 +119,8 @@ DLM_EXPORT_OBJS             = $(MultiCompileObjectList)
 LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeOpenSSL.lib \
-    $(ContextSubpartsLibs)wastorage.lib
+    $(ContextSubpartsLibs)wastorage.lib \
+    $(ContextSubpartsLibs)cpprest120_2_6.lib
 
 #--------------------------------------------------------------------------------------
 #   Create the library
