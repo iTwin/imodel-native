@@ -15,23 +15,19 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
 
-    BeFileName fileName = StubFilePath();
+    BeFileName path = StubFilePath();
 
     GetHandler().ExpectRequests(1);
     GetHandler().ForFirstRequest([=] (Http::RequestCR request)
         {
         EXPECT_STREQ("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", request.GetUrl().c_str());
-
-        HttpFileBodyPtr httpFileBody = dynamic_cast<HttpFileBody*> (request.GetResponseBody().get());
-        BeAssert(httpFileBody.IsValid());
-        if (httpFileBody.IsValid())
-            EXPECT_STREQ(fileName, httpFileBody->GetFilePath());
-
+        WriteStringToHttpBody("TestBlob", request.GetResponseBody());
         return StubHttpResponse(HttpStatus::OK);
         });
 
-    auto response = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", fileName)->GetResult();
+    auto response = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", path)->GetResult();
     EXPECT_TRUE(response.IsSuccess());
+    EXPECT_EQ("TestBlob", SimpleReadFile(path));
     }
 
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)
