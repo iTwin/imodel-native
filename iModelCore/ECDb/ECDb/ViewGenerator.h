@@ -86,15 +86,17 @@ struct ViewGenerator
             {
             private:
                 bvector<Utf8StringCP> m_viewColumnNameList;
-                bool m_stopCaptureColumnNames;
+                bool m_captureViewColumnNames;
             public:
-                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb), m_stopCaptureColumnNames(true) {}
+                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb), m_captureViewColumnNames(true) {}
                 ~ECClassViewContext() {}
-                bvector<Utf8StringCP> const& GetViewColumnNames() const { return m_viewColumnNameList; }
-                bool CanCaptureColumnNames() const { return m_stopCaptureColumnNames; }
-                void StopCaptureColumnNames() { m_stopCaptureColumnNames = false; }
-                void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(CanCaptureColumnNames()); if (!CanCaptureColumnNames()) return;  BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
 
+                bool MustCaptureViewColumnNames() const { return m_captureViewColumnNames; }
+                void StopCaptureViewColumnNames() { m_captureViewColumnNames = false; }
+                void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(MustCaptureViewColumnNames()); if (!MustCaptureViewColumnNames()) return;  BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
+
+                bvector<Utf8StringCP> const& GetViewColumnNames() const { return m_viewColumnNameList; }
+                
             };
 
         struct ToSqlVisitor final : IPropertyMapVisitor
