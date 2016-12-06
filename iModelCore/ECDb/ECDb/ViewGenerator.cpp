@@ -550,6 +550,9 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
         viewSql.Append(" = ").AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
         }
+    
+    if (ctx.GetViewType() == ViewType::ECClassView)
+        ctx.GetAs<ECClassViewContext>().StopCaptureColumnNames();
 
     return SUCCESS;
     }
@@ -581,7 +584,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
             viewSql.Append("NULL ").AppendEscaped(primitiveMap->GetColumn().GetName().c_str());
             }
 
-        if (ctx.GetViewType() == ViewType::ECClassView)
+        if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
         }
 
@@ -746,7 +749,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     ToSqlVisitor sqlVisitor(contextTable, contextTable.GetName().c_str(), true, false);
     viewSql.Append("SELECT ");
     //ECInstanceId
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetECInstanceIdPropertyMap()->GetAccessString());
 
     sqlVisitor.Reset();
@@ -754,7 +757,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     viewSql.Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
 
     //ECClassId
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetECClassIdPropertyMap()->GetAccessString());
 
     sqlVisitor.Reset();
@@ -762,7 +765,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
 
     //SourceECInstanceId
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetSourceECInstanceIdPropMap()->GetAccessString());
 
     sqlVisitor.Reset();
@@ -770,7 +773,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
 
     //SourceECClassId
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetSourceECClassIdPropMap()->GetAccessString());
 
     if (sourceJoinInfo.RequiresJoin())
@@ -795,7 +798,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         }
 
     //TargetECInstanceid
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetTargetECInstanceIdPropMap()->GetAccessString());
 
     sqlVisitor.Reset();
@@ -803,7 +806,7 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
     viewSql.AppendComma().Append(sqlVisitor.GetResultSet().front().GetSqlBuilder());
 
     //TargetECClassId
-    if (ctx.GetViewType() == ViewType::ECClassView)
+    if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
         ctx.GetAs<ECClassViewContext>().AddViewColumnName(relationMap.GetTargetECClassIdPropMap()->GetAccessString());
 
     if (targetJoinInfo.RequiresJoin())
@@ -844,6 +847,10 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         }
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName().c_str());
+
+    if (ctx.GetViewType() == ViewType::ECClassView)
+        ctx.GetAs<ECClassViewContext>().StopCaptureColumnNames();
+
     return SUCCESS;
     }
 
@@ -944,7 +951,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             }
 
         BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(propertyMap) == nullptr);
-        if (ctx.GetViewType() == ViewType::ECClassView)
+        if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().CanCaptureColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
 
         NativeSqlBuilder propertySql;

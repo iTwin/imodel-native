@@ -469,7 +469,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
 
         ColumnLists::push_back(columns.m_fkColumnsPerFkTable, newFkCol);
         }
-
+    
     BeAssert(columns.m_fkColumnsPerFkTable.size() == foreignEndTables.size());
 
     ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = classMappingInfo.GetOnDeleteAction();
