@@ -170,6 +170,12 @@ struct TileThread : BeFolly::ThreadPool
     static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.try_get_fast();}
 };
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> Attachment::Tile::Loader::::_SaveToDb() override {return SUCCESS;}
+folly::Future<BentleyStatus> Attachment::Tile::Loader::::_ReadFromDb() override {return ERROR;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
