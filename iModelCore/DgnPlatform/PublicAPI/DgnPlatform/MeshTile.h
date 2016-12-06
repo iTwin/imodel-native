@@ -506,7 +506,7 @@ private:
     TileGenerationCache(Options options);
     TileGeneratorStatus Populate(DgnDbR db, DgnModelR model);
 
-    static TileGenerationCachePtr Create(Options options = Options::CacheGeometrySources) { return new TileGenerationCache(options); }
+    static TileGenerationCachePtr Create(Options options = Options::None) { return new TileGenerationCache(options); }
 public:
     DGNPLATFORM_EXPORT ~TileGenerationCache();
 
