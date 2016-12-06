@@ -93,8 +93,8 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
     if (BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimWidth,           "ImageDimensions/Width")) &&
         BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimHeight,          "ImageDimensions/Height")))
         {
-        ImageDimensionType ImgDim(ImgDimWidth, ImgDimHeight);
-        cameraInfo.SetImageDimension(ImgDim);
+        cameraInfo.SetImageWidth(ImgDimWidth);
+        cameraInfo.SetImageHeight(ImgDimHeight);
         }
 
     // if Principal Point not specified, use center of pixel array

@@ -28,8 +28,8 @@ TEST_F(DataCaptureTests, CreateCamera)
     //Change camera properties
     cameraPtr->SetLabel("BasicCamera1");
     cameraPtr->SetFocalLenghtPixels(4798.35);
-    ImageDimensionType imgDimension(5456,3632);
-    cameraPtr->SetImageDimension(imgDimension); 
+    cameraPtr->SetImageWidth(5456);
+    cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint={2677.8,1772};
     cameraPtr->SetPrincipalPoint(principalPoint);
     CameraDistortionType distortion(1,2,3,4,5);
@@ -63,7 +63,8 @@ TEST_F(DataCaptureTests, CreateCamera)
 
     //read back camera properties and check if equal
     ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),4798.35);
-    ASSERT_TRUE(imgDimension.IsEqual(myCamPtr->GetImageDimension()));
+    ASSERT_EQ(5456,myCamPtr->GetImageWidth());
+    ASSERT_EQ(3632,myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
     ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),1.0);
@@ -94,8 +95,8 @@ TEST_F(DataCaptureTests, ModifyCamera)
 
     //Change camera properties
     cameraPtr->SetFocalLenghtPixels(12);
-    ImageDimensionType imgDimension(13,14);
-    cameraPtr->SetImageDimension(imgDimension); 
+    cameraPtr->SetImageWidth(13);
+    cameraPtr->SetImageHeight(14);
     DPoint2d principalPoint={15,16};
     cameraPtr->SetPrincipalPoint(principalPoint);
     CameraDistortionType distortion(11,12,13,14,15);
@@ -132,7 +133,8 @@ TEST_F(DataCaptureTests, ModifyCamera)
 
     //read back camera properties and check if equal
     ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),12);
-    ASSERT_TRUE(imgDimension.IsEqual(myCamPtr->GetImageDimension()));
+    ASSERT_EQ(13, myCamPtr->GetImageWidth());
+    ASSERT_EQ(14, myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
     ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),2.0);
@@ -211,8 +213,8 @@ TEST_F(DataCaptureTests, CreatePhoto)
     ASSERT_TRUE(cameraPtr.IsValid());
     cameraPtr->SetLabel("BasicCamera1");
     cameraPtr->SetFocalLenghtPixels(4798.35);
-    ImageDimensionType imgDimension(5456, 3632);
-    cameraPtr->SetImageDimension(imgDimension);
+    cameraPtr->SetImageWidth(5456);
+    cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint = { 2677.8,1772 };
     cameraPtr->SetPrincipalPoint(principalPoint);
     CameraDistortionType distortion(1, 2, 3, 4, 5);

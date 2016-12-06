@@ -12,55 +12,6 @@
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-//=======================================================================================
-//! Base class for ImageDimensionType 
-//! @ingroup DataCaptureGroup
-//=======================================================================================
-struct ImageDimensionType
-    {
-private:
-    int  m_width;
-    int  m_height;
-
-public:
-    //! Constructor
-    ImageDimensionType(int width, int height):m_width(width),m_height(height) {}
-
-    //! Empty constructor (creates an invalid ImageDimensionType)
-    ImageDimensionType() : m_width(0), m_height(0) {}
-
-    //! Copy constructor
-    ImageDimensionType(ImageDimensionTypeCR rhs) { *this = rhs; }
-
-    //! Assignment operator
-    ImageDimensionType& operator= (ImageDimensionTypeCR rhs)
-        {
-        m_width = rhs.m_width;
-        m_height = rhs.m_height;
-        return *this;
-        }
-
-
-    //! Validates 
-    bool IsValid() const { return true; }
-    bool IsEqual(ImageDimensionTypeCR rhs) const
-        {
-        if (m_width==rhs.m_width && m_height==rhs.m_height)
-            return true;
-        return false;
-        }
-
-    int GetWidth() const     {return m_width;}
-    int GetHeight() const    {return m_height;}
-    void SetWidth(int val)   {m_width=val;}
-    void SetHeight(int val)  {m_height=val;}
-
-    //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, ImageDimensionTypeCR val);
-
-    //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    static ImageDimensionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
-    };
 
 //=======================================================================================
 //! Base class for CameraDistortionType 
@@ -153,7 +104,8 @@ public:
 
 private:
     double                  m_focalLenghtPixels;
-    ImageDimensionType      m_imageDimension;
+    int                     m_imageWidth;
+    int                     m_imageHeight;
     DPoint2d                m_principalPoint;
     CameraDistortionType    m_Distortion;
     double                  m_aspectRatio;
@@ -214,18 +166,20 @@ public:
     DATACAPTURE_EXPORT CameraElementId GetId() const;
 
     //Properties Get/Set
-    DATACAPTURE_EXPORT double                  GetFocalLenghtPixels() const;
-    DATACAPTURE_EXPORT ImageDimensionType      GetImageDimension() const;
-    DATACAPTURE_EXPORT DPoint2d                GetPrincipalPoint() const;
-    DATACAPTURE_EXPORT CameraDistortionType    GetDistortion() const;
-    DATACAPTURE_EXPORT double                  GetAspectRatio() const;
-    DATACAPTURE_EXPORT double                  GetSkew() const;
-    DATACAPTURE_EXPORT void                    SetFocalLenghtPixels(double val);
-    DATACAPTURE_EXPORT void                    SetImageDimension(ImageDimensionTypeCR val);
-    DATACAPTURE_EXPORT void                    SetPrincipalPoint(DPoint2dCR val);
-    DATACAPTURE_EXPORT void                    SetDistortion(CameraDistortionTypeCR val);
-    DATACAPTURE_EXPORT void                    SetAspectRatio(double val);
-    DATACAPTURE_EXPORT void                    SetSkew(double val);
+    DATACAPTURE_EXPORT int                      GetImageWidth() const; 
+    DATACAPTURE_EXPORT void                     SetImageWidth(int val);
+    DATACAPTURE_EXPORT int                      GetImageHeight() const;
+    DATACAPTURE_EXPORT void                     SetImageHeight(int val);
+    DATACAPTURE_EXPORT double                   GetFocalLenghtPixels() const;
+    DATACAPTURE_EXPORT void                     SetFocalLenghtPixels(double val);
+    DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
+    DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;
+    DATACAPTURE_EXPORT CameraDistortionType     GetDistortion() const;
+    DATACAPTURE_EXPORT void                     SetDistortion(CameraDistortionTypeCR val);
+    DATACAPTURE_EXPORT double                   GetAspectRatio() const;
+    DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
+    DATACAPTURE_EXPORT double                   GetSkew() const;
+    DATACAPTURE_EXPORT void                     SetSkew(double val);
    
 };
 

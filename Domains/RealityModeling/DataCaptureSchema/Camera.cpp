@@ -12,9 +12,8 @@ BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 HANDLER_DEFINE_MEMBERS(CameraHandler)
 
 #define CAMERA_PROPNAME_FocalLenghtPixels    "FocalLenghtPixels"
-#define CAMERA_PROPNAME_ImageDimension       "ImageDimension"
-#define CAMERA_PROPNAME_ImageDimension_Width "Width"
-#define CAMERA_PROPNAME_ImageDimension_Height "Height"
+#define CAMERA_PROPNAME_ImageWidth           "ImageWidth"
+#define CAMERA_PROPNAME_ImageHeight          "ImageHeight"
 #define CAMERA_PROPNAME_PrincipalPoint       "PrincipalPoint"
 #define CAMERA_PROPNAME_Distortion           "Distortion"
 #define CAMERA_PROPNAME_Distortion_K1        "K1"
@@ -25,52 +24,6 @@ HANDLER_DEFINE_MEMBERS(CameraHandler)
 #define CAMERA_PROPNAME_AspectRatio          "AspectRatio"
 #define CAMERA_PROPNAME_Skew                 "Skew"
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECSqlStatus ImageDimensionType::BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, ImageDimensionTypeCR val)
-    {
-    if (!val.IsValid())
-        {
-        statement.BindNull(columnIndex);
-        return BeSQLite::EC::ECSqlStatus::Error;
-        }
-
-    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
-    BeSQLite::EC::ECSqlStatus status;
-    status = binder.GetMember(CAMERA_PROPNAME_ImageDimension_Width).BindInt(val.GetWidth());
-    BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_ImageDimension_Height).BindInt(val.GetHeight());
-    BeAssert(status == ECSqlStatus::Success);
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-ImageDimensionType ImageDimensionType::GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex)
-    {
-    if (statement.IsValueNull(columnIndex))
-        return ImageDimensionType();
-
-    ImageDimensionType imageDimension;
-    IECSqlStructValue const& imageDimensionValue = statement.GetValueStruct(columnIndex);
-    for (int ii = 0; ii < imageDimensionValue.GetMemberCount(); ii++)
-        {
-        IECSqlValue const& memberValue = imageDimensionValue.GetValue(ii);
-        ECPropertyCP memberProperty = memberValue.GetColumnInfo().GetProperty();
-        BeAssert(memberProperty != nullptr);
-        Utf8CP memberName = memberProperty->GetName().c_str();
-
-        if (0 == BeStringUtilities::Stricmp(CAMERA_PROPNAME_ImageDimension_Width, memberName))
-            imageDimension.SetWidth(memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(CAMERA_PROPNAME_ImageDimension_Height, memberName))
-            imageDimension.SetHeight(memberValue.GetInt());
-        else
-            BeAssert(false);
-        }
-    return imageDimension;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -139,7 +92,8 @@ void CameraHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(CAMERA_PROPNAME_FocalLenghtPixels);
-    params.Add(CAMERA_PROPNAME_ImageDimension);
+    params.Add(CAMERA_PROPNAME_ImageWidth);
+    params.Add(CAMERA_PROPNAME_ImageHeight);
     params.Add(CAMERA_PROPNAME_PrincipalPoint);
     params.Add(CAMERA_PROPNAME_Distortion);
     params.Add(CAMERA_PROPNAME_AspectRatio);
@@ -162,15 +116,17 @@ CameraPtr Camera::Create(Dgn::SpatialModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+int                     Camera::GetImageWidth() const { return m_imageWidth; }
+int                     Camera::GetImageHeight() const { return m_imageHeight; }
+void                    Camera::SetImageWidth(int val) { m_imageWidth = val; }
+void                    Camera::SetImageHeight(int val) { m_imageHeight = val; }
 CameraElementId         Camera::GetId() const { return CameraElementId(GetElementId().GetValueUnchecked()); }
 double                  Camera::GetFocalLenghtPixels() const { return m_focalLenghtPixels; }
-ImageDimensionType      Camera::GetImageDimension() const { return m_imageDimension; }
 DPoint2d                Camera::GetPrincipalPoint() const { return m_principalPoint; }
 CameraDistortionType    Camera::GetDistortion() const { return m_Distortion; }
 double                  Camera::GetAspectRatio() const { return m_aspectRatio; }
 double                  Camera::GetSkew() const { return m_skew; }
 void                    Camera::SetFocalLenghtPixels(double val) { m_focalLenghtPixels = val; }
-void                    Camera::SetImageDimension(ImageDimensionTypeCR val) { m_imageDimension = val; }
 void                    Camera::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
 void                    Camera::SetDistortion(CameraDistortionTypeCR val) { m_Distortion = val; }
 void                    Camera::SetAspectRatio(double val) { m_aspectRatio = val; }
@@ -183,7 +139,8 @@ void                    Camera::SetSkew(double val) { m_skew = val; }
 DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
     if (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_FocalLenghtPixels), GetFocalLenghtPixels()) ||
-        ECSqlStatus::Success != ImageDimensionType::BindParameter(statement, statement.GetParameterIndex(CAMERA_PROPNAME_ImageDimension),GetImageDimension()) ||
+        ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageWidth),GetImageWidth()) ||
+        ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageHeight), GetImageHeight()) ||
         ECSqlStatus::Success != statement.BindPoint2D(statement.GetParameterIndex(CAMERA_PROPNAME_PrincipalPoint), GetPrincipalPoint()) ||
         ECSqlStatus::Success != CameraDistortionType::BindParameter(statement, statement.GetParameterIndex(CAMERA_PROPNAME_Distortion), GetDistortion()) ||
         ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_AspectRatio), GetAspectRatio()) ||
@@ -226,7 +183,8 @@ DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams con
         {
         //read camera properties
         SetFocalLenghtPixels (stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_FocalLenghtPixels)));
-        SetImageDimension(ImageDimensionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_ImageDimension)));
+        SetImageWidth(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageWidth)));
+        SetImageHeight(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageHeight)));
         SetPrincipalPoint(stmt.GetValuePoint2D(params.GetSelectIndex(CAMERA_PROPNAME_PrincipalPoint))); 
         SetDistortion(CameraDistortionType::GetValue(stmt, params.GetSelectIndex(CAMERA_PROPNAME_Distortion)));
         SetAspectRatio(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_AspectRatio)));
@@ -264,7 +222,8 @@ void Camera::_CopyFrom(DgnElementCR el)
         return;
 
     SetFocalLenghtPixels(other->GetFocalLenghtPixels());
-    SetImageDimension(other->GetImageDimension());
+    SetImageWidth(other->GetImageWidth());
+    SetImageHeight(other->GetImageHeight());
     SetPrincipalPoint(other->GetPrincipalPoint());
     SetDistortion(other->GetDistortion());
     SetAspectRatio(other->GetAspectRatio());

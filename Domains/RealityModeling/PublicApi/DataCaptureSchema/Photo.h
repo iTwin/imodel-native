@@ -45,10 +45,10 @@ public:
         return *this;
         }
 
-    //! Bind the ImageDimensionType field in a ECSQL statement
+    //! Bind the otationMatrixType field in a ECSQL statement
     static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
 
-    //! Get the ImageDimensionType value at the specified column from a ECSQL statement
+    //! Get the otationMatrixType value at the specified column from a ECSQL statement
     static RotationMatrixType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
     };
 
@@ -66,7 +66,7 @@ public:
     //! Constructor
     DATACAPTURE_EXPORT PoseType(DPoint3dCR center, RotationMatrixTypeCR rotation);
 
-    //! Empty constructor (creates an invalid ImageDimensionType)
+    //! Empty constructor (creates an invalid PoseType)
     DATACAPTURE_EXPORT PoseType();
 
     //! Copy constructor
@@ -83,10 +83,10 @@ public:
     DATACAPTURE_EXPORT void SetCenter(DPoint3dCR val);
     DATACAPTURE_EXPORT void SetRotation(RotationMatrixTypeCR val);
 
-    //! Bind the ImageDimensionType field in a ECSQL statement
+    //! Bind the PoseType field in a ECSQL statement
     static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, PoseTypeCR val);
 
-    //! Get the ImageDimensionType value at the specified column from a ECSQL statement
+    //! Get the PoseType value at the specified column from a ECSQL statement
     static PoseType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
     };
 
