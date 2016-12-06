@@ -619,7 +619,7 @@
         - <CODE>NoCase</CODE>: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note it only folds ASCII characters.
         - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
 
-    @note 
+        @note 
         - You must not specify @em ColumnName or @em Collation for an ECProperty that maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
         ECDb will fail to import the ECSchema in this case.
         - @em IsNullable is ignored if the ECProperty maps to a shared column 
