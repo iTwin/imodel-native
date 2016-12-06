@@ -177,7 +177,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterSameIdTaskIsCanceledButIsNotF
     {
     auto thread1 = WorkerThread::Create ();
     auto thread2 = WorkerThread::Create ();
-
+    EXPECT_FALSE(thread1->HasRunningTasks());
     UniqueTasksHolder<int, int> holder;
     AsyncTestCheckpoint a, b, c;
 
@@ -192,7 +192,7 @@ TEST_F (UniqueTasksHolderTests, GetTask_CalledAfterSameIdTaskIsCanceledButIsNotF
             return 0;
             });
         });
-
+    EXPECT_TRUE(thread1->HasRunningTasks());
     a.WaitUntilReached ();
     holder.CancelTask (42);
     a.Continue ();

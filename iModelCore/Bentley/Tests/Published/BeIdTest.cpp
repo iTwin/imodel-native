@@ -16,7 +16,7 @@
 TEST(BeIdTests, FromString)
     {
     //Decimal Format
-    Utf8P idString = "122321123";
+    Utf8CP idString = "122321123";
     BeInt64Id received;
     BeInt64Id expected(122321123);
     ASSERT_EQ(BentleyStatus::SUCCESS, BeInt64Id::FromString(received, idString));

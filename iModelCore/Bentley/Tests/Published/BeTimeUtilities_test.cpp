@@ -108,9 +108,6 @@ TEST(BeTimeUtilitiesTests, StopWatch)
     }
 #endif
 
-//     This method calculates time difference between local time zone of machine and
-//     GMT/UTC time in milli seconds.
-
 #if defined (NOT_NOW)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Farhad.Kabir                       11/16
@@ -150,4 +147,16 @@ TEST(BeTimeUtilitiesTests, GetCurrentTimeAsUnixMillisDoubleWithDelay)
     double ts0 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDoubleWithDelay();
     double ts1 = BeTimeUtilities::GetCurrentTimeAsUnixMillisDoubleWithDelay();
     EXPECT_NE(ts0, ts1) << "ts0 is " << ts0 << "ts1 is " << ts1;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Farhad.Kabir                       12/16
+//---------------------------------------------------------------------------------------
+TEST(BeTimeUtilitiesTests, ConvertTmToUnixMillis)
+    {
+    uint64_t unixMillisExpected = 1095379199000;
+    tm expectedTm;
+    ASSERT_EQ(BentleyStatus::SUCCESS, BeTimeUtilities::ConvertUnixMillisToTm(expectedTm, unixMillisExpected));
+    uint64_t unixMillisReceived = BeTimeUtilities::ConvertTmToUnixMillis(expectedTm);
+    EXPECT_EQ(unixMillisExpected, unixMillisReceived);
     }

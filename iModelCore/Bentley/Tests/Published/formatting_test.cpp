@@ -236,3 +236,23 @@ TEST(FormattingTest, Simple)
     LOG.infov("Formatting test End");
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST(FormattingTest, TrueIndex)
+    {
+    FormattingScannerCursor fmScanner(nullptr, 0);
+    UnicodeConstantP unicodeN = fmScanner.GetConstants();
+    UnicodeConstant unicodeP;
+    char inChar = 'c';
+    size_t length = unicodeP.GetSequenceLength(inChar);
+    ASSERT_EQ(1, length);
+    EXPECT_TRUE(unicodeP.IsLittleEndian());
+    EXPECT_FALSE(unicodeP.ForceBigEndian());
+    EXPECT_FALSE(unicodeP.IsLittleEndian());
+    unicodeP.IsTrailingByteValid('s');
+    EXPECT_EQ(9, fmScanner.TrueIndex(9, 7));
+    unicodeN->ForceBigEndian();
+    size_t sd = fmScanner.TrueIndex(23, 17);
+    EXPECT_EQ(-7, (int)sd);
+    }

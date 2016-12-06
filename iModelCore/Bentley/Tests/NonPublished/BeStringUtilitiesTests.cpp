@@ -9,23 +9,27 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/WString.h>
 #include <Bentley/BeStringUtilities.h>
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                  11/16
 //---------------------------------------------------------------------------------------
-//TEST(BeStringUtilitiesTest, ComputeNumLogicalChars)
-//    {
-//    WCharP input = L"a€sas+sas=d";
-//    size_t received_size = BeStringUtilities::ComputeNumLogicalChars(input, 12);
-//    size_t expected_size = 2;
-//    EXPECT_EQ(expected_size, received_size);
-//    }
-//
-//TEST(BeStringUtilitiesTest, ComputeByteOffsetOfLogicalChar)
-//    {
-//    Utf8P input = "ab€sas+sas=d";
-//    Utf8P dummy = "abs as+sas=d";
-//    size_t received_size = BeStringUtilities::ComputeByteOffsetOfLogicalChar(input, 4);
-//    size_t expected_size = 2;
-//    EXPECT_EQ(expected_size, received_size);
-//    EXPECT_STREQ(input, dummy);
-//    }
+TEST(BeStringUtilitiesTest, ComputeNumLogicalChars)
+    {
+    //can be tested with other multibyte characters, depending upon the current codepage
+    WCharCP input = L"awesas+s a=d";
+    size_t receivedLogicalChars = BeStringUtilities::ComputeNumLogicalChars(input, 12);
+    size_t expectedLogicalChars = 12;
+    EXPECT_EQ(expectedLogicalChars, receivedLogicalChars);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                  11/16
+//---------------------------------------------------------------------------------------
+TEST(BeStringUtilitiesTest, ComputeByteOffsetOfLogicalChar)
+    {
+    //can be tested with other multibyte characters, depending upon the current codepage
+    Utf8CP input = "assas+sas=d";
+    size_t receivedByteOffset = BeStringUtilities::ComputeByteOffsetOfLogicalChar(input, 8);
+    size_t expectedByteOffset = 8;
+    EXPECT_EQ(expectedByteOffset, receivedByteOffset);
+    }
