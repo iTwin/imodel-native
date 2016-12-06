@@ -50,9 +50,10 @@ public:
 struct Stats
 {
     bmap<OperationType, Stat*> opStats;
+    bvector<Utf8String>        errors;
 
     Stats();
-    void InsertStats(OperationType type, bool success, time_t time);
+    void InsertStats(OperationType type, bool success, time_t time, Utf8String errorMsg = "");
     void PrintStats();
     void WriteToFile();
 };
