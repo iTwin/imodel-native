@@ -347,7 +347,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_gcsDirty(false),
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
-    m_workingLayer(DEFAULT_WORKING_LAYER)
+    m_workingLayer(DEFAULT_WORKING_LAYER),
+    m_isCanceled(false)
     {
 
 
@@ -365,7 +366,8 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_lastSyncTime(Time::CreateSmallestPossible()),
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
-        m_workingLayer(DEFAULT_WORKING_LAYER)
+        m_workingLayer(DEFAULT_WORKING_LAYER),
+        m_isCanceled(false)
     {
   
 
