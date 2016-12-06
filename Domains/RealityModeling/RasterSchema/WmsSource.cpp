@@ -410,32 +410,39 @@ TileTree::Tile::ChildTiles const* WmsTile::_GetChildren(bool load) const
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> WmsTile::WmsTileLoader::_GetFromSource()
     {
-    TileTree::HttpDataQuery query(m_fileName, m_loads);
+    auto query = std::make_shared<TileTree::HttpDataQuery>(m_fileName, m_loads);
 
     if (m_credentials.IsValid())
-        query.GetRequest().SetCredentials(m_credentials);
+        query->GetRequest().SetCredentials(m_credentials);
 
     if (m_proxyCredentials.IsValid())
-        query.GetRequest().SetCredentials(m_proxyCredentials);
+        query->GetRequest().SetCredentials(m_proxyCredentials);
 
-    if (SUCCESS != query.Perform(m_tileBytes))
+    RefCountedPtr<WmsTileLoader> me(this);
+
+    return query->Perform().then([me, query] (Http::Response const& response)
         {
-        if (!query.WasCanceled() && Http::HttpStatus::OK != query.GetResponse().GetHttpStatus() && Http::HttpStatus::None != query.GetResponse().GetHttpStatus())
-            GetWmsTile().GetSourceR().SetLastHttpError(query.GetResponse().GetHttpStatus());
-        
-        return ERROR;
-        }
+        if (!response.IsSuccess())
+            {
+            if (response.GetConnectionStatus() != Http::ConnectionStatus::Canceled &&
+                Http::HttpStatus::OK != response.GetHttpStatus() && Http::HttpStatus::None != response.GetHttpStatus())
+                me->GetWmsTile().GetSourceR().SetLastHttpError(response.GetHttpStatus());
 
-    m_contentType = query.GetContentType();    
-    if (m_contentType.EqualsI("application/vnd.ogc.se_xml"))
-        {
-        // Report WMS error in the tile, root or model??
-        return ERROR;
-        }
+            return ERROR;
+            }
 
-    m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
+        me->m_contentType = response.GetHeaders().GetContentType();
+        if (me->m_contentType.EqualsI("application/vnd.ogc.se_xml"))
+            {
+            // Report WMS error in the tile, root or model??
+            return ERROR;
+            }
 
-    return SUCCESS;
+        me->m_tileBytes = std::move(query->GetData());
+        me->m_saveToCache = TileTree::HttpDataQuery::GetCacheContolExpirationDate(me->m_expirationDate, response);
+
+        return SUCCESS;
+        });
     }
 
 //----------------------------------------------------------------------------------------

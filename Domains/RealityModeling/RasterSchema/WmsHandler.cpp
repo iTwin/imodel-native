@@ -293,7 +293,7 @@ Http::HttpStatus WmsModel::Authenticate(Http::Credentials const& credentials, Ht
     if (proxyCredentials.IsValid())
         request.SetProxyCredentials(proxyCredentials);
 
-    Http::Response response = request.Perform();
+    Http::Response response = request.Perform().get();
 
     if (Http::ConnectionStatus::OK != response.GetConnectionStatus())
         return Http::HttpStatus::None;
