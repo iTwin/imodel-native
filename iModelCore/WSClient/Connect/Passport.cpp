@@ -61,7 +61,7 @@ StatusInt Passport::HasUserPassport(Utf8StringCR userGuid)
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().SetAuthorization(authorization);
 
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
         return PASSPORT_ERROR;
