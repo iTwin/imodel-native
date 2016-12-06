@@ -86,13 +86,15 @@ struct ViewGenerator
             {
             private:
                 bvector<Utf8StringCP> m_viewColumnNameList;
-
+                bool m_stopCaptureColumnNames;
             public:
-                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb) {}
+                explicit ECClassViewContext(ECDbCR ecdb) : Context(ViewType::ECClassView, ecdb), m_stopCaptureColumnNames(true) {}
                 ~ECClassViewContext() {}
-
-                void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
                 bvector<Utf8StringCP> const& GetViewColumnNames() const { return m_viewColumnNameList; }
+                bool CanCaptureColumnNames() const { return m_stopCaptureColumnNames; }
+                void StopCaptureColumnNames() { m_stopCaptureColumnNames = false; }
+                void AddViewColumnName(Utf8StringCR propAccessString) { BeAssert(CanCaptureColumnNames()); if (!CanCaptureColumnNames()) return;  BeAssert(!propAccessString.empty()); m_viewColumnNameList.push_back(&propAccessString); }
+
             };
 
         struct ToSqlVisitor final : IPropertyMapVisitor
