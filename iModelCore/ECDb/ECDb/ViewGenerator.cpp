@@ -492,6 +492,10 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         if (RenderEntityClassMap(view, ctx, *tableRootClassMap, partition->GetTable(), castInto) != SUCCESS)
             return ERROR;
 
+        //capture view column names only for the first class, all other classes will be unioned together and therefore
+        //have the same select clause
+        if (ctx.GetViewType() == ViewType::ECClassView)
+            ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
         if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = tableRootClassMap->GetECClassIdPropertyMap()->FindDataPropertyMap(partition->GetTable()))
             {
@@ -551,9 +555,6 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
         viewSql.Append(" ON ").AppendEscaped(contextTable.GetName().c_str()).AppendDot().AppendEscaped(primaryKey->GetName().c_str());
         viewSql.Append(" = ").AppendEscaped(requireJoinTo->GetName().c_str()).AppendDot().AppendEscaped(fkKey->GetName().c_str());
         }
-    
-    if (ctx.GetViewType() == ViewType::ECClassView)
-        ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
     return SUCCESS;
     }
@@ -631,6 +632,11 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
         if (DoRenderRelationshipClassMap(view, ctx, contextRelationship, partition.GetTable(), sourceECClassIdJoinInfo, targetECClassIdJoinInfo, castInto) != SUCCESS)
             return ERROR;
 
+        //capture view column names only for the first table, all other tables will be unioned together and therefore
+        //have the same select clause
+        if (ctx.GetViewType() == ViewType::ECClassView)
+            ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
+
         if (sourceECClassIdJoinInfo.RequiresJoin())
             view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
 
@@ -691,6 +697,11 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
         if (DoRenderRelationshipClassMap(view, ctx, relationMap, *table, sourceECClassIdJoinInfo, targetECClassIdJoinInfo) != SUCCESS)
             return ERROR;
+
+        //capture view column names only for the first table, all other tables will be unioned together and therefore
+        //have the same select clause
+        if (ctx.GetViewType() == ViewType::ECClassView)
+            ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
 
         if (sourceECClassIdJoinInfo.RequiresJoin())
             view.Append(sourceECClassIdJoinInfo.GetNativeJoinSql());
@@ -848,10 +859,6 @@ BentleyStatus ViewGenerator::DoRenderRelationshipClassMap(NativeSqlBuilder& view
         }
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName().c_str());
-
-    if (ctx.GetViewType() == ViewType::ECClassView)
-        ctx.GetAs<ECClassViewContext>().StopCaptureViewColumnNames();
-
     return SUCCESS;
     }
 
