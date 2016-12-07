@@ -1196,7 +1196,8 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequestInternal
 (
 std::shared_ptr<WSChangeset> changeset,
 IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+IWSRepositoryClient::RequestOptionsPtr requestOptions
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
@@ -1210,7 +1211,7 @@ ICancellationTokenPtr cancellationToken
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Codes, "false");
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken, requestOptions)->Then<DgnDbServerStatusResult>
         ([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
@@ -2759,7 +2760,11 @@ ICancellationTokenPtr           cancellationToken
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
 
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
-    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken)
+
+    auto requestOptions = std::make_shared<WSRepositoryClient::RequestOptions>();
+    requestOptions->SetTransferTimeOut(WSRepositoryClient::Timeout::Transfer::LongUpload);
+
+    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, nullptr)
         ->Then([=] (const DgnDbServerStatusResult& initializeRevisionResult)
         {
         if (initializeRevisionResult.IsSuccess())
