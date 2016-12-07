@@ -108,6 +108,52 @@ void AnnotationLeaderStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::AnnotationLeaderStyleHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PROP_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
+            value.SetUtf8CP(el.GetDescription().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROP_Data,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
+            bvector<Byte> data;
+            if (SUCCESS != AnnotationLeaderStylePersistence::EncodeAsFlatBuf(data, el, AnnotationLeaderStylePersistence::FlatBufEncodeOptions::Default))
+                return DgnDbStatus::BadArg;
+            value.SetBinary(data.data(), data.size());
+            return DgnDbStatus::Success;
+            },
+       [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            AnnotationLeaderStyle& el = (AnnotationLeaderStyle&) elIn;
+            size_t dataSize = 0;
+            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+            if (SUCCESS != AnnotationLeaderStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
+                return DgnDbStatus::BadArg;
+            return DgnDbStatus::Success;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
 void AnnotationLeaderStyle::_CopyFrom(DgnElementCR src)

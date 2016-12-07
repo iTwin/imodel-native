@@ -96,6 +96,52 @@ void TextAnnotationSeed::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::TextAnnotationSeedHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PROP_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
+            value.SetUtf8CP(el.GetDescription().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROP_Data,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
+            bvector<Byte> data;
+            if (SUCCESS != TextAnnotationSeedPersistence::EncodeAsFlatBuf(data, el, TextAnnotationSeedPersistence::FlatBufEncodeOptions::Default))
+                return DgnDbStatus::BadArg;
+            value.SetBinary(data.data(), data.size());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            TextAnnotationSeed& el = (TextAnnotationSeed&) elIn;
+            size_t dataSize = 0;
+            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+            if (SUCCESS != TextAnnotationSeedPersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
+                return DgnDbStatus::BadArg;
+            return DgnDbStatus::Success;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
 void TextAnnotationSeed::_CopyFrom(DgnElementCR src)

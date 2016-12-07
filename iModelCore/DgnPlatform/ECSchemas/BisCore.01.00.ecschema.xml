@@ -1702,16 +1702,8 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Data" typeName="string" description="Encoded style properties">
-            <ECCustomAttributes>
-                <CustomHandledProperty/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Descr" displayLabel="Description" typeName="string" description="Description of the style" />
+        <ECProperty propertyName="Data" typeName="string" description="Encoded style properties" />
     </ECEntityClass>
 
     <ECEntityClass typeName="Texture">
