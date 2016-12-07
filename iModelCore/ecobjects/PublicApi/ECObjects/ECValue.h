@@ -113,6 +113,9 @@ struct ECValue
                 ECOBJECTS_EXPORT ECClassId GetRelationshipClassId() const;
                 //! @return The id that was set in this navigation value
                 template <class TBeInt64Id> TBeInt64Id GetId() const { return TBeInt64Id(m_id.GetValueUnchecked()); }
+
+                //! Sets the relationship to null and id to the an invalid BeInt64Id
+                void Clear();
             };
 
     private:
@@ -367,9 +370,6 @@ struct ECValue
         //! Frees the values memory, if necessary, and sets the state to NULL.
         ECOBJECTS_EXPORT void           SetToNull();
 
-        //! Frees the values memory, if necessary, sets the type to BentleyAPI::ECN::VALUEKIND_NAVIGATION, and sets the state to NULL
-        ECOBJECTS_EXPORT void           SetNavigationToNull();
-
         //! Does a ShallowCopy of the supplied ECValue
         //! @param[in] v    The ECValue to copy from
         ECOBJECTS_EXPORT void           From(ECValueCR v);
@@ -500,6 +500,9 @@ struct ECValue
 
         //! Returns the array information defining this ECValue
         ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
+
+        //! Defines the navigation value as null. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo();
 
         //! Defines the navigation value for this ECValue
         //! @param[in] value The value to set

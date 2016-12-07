@@ -487,17 +487,17 @@ void InstanceWithNavProp(PrimitiveType navPropType)
 
     ECValue myTargetValueFromInst;
     ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetValueFromInst, "MyTarget")) << "Failed to get ECValue for MyTarget Navigation Property";
-    ASSERT_TRUE(myTargetValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetValueFromInst.IsNull()) << "Expected Navigation Property MyTarget to be null but it was not";
     ASSERT_TRUE(myTargetValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
     ECValue myTargetNoRelValueFromInst;
     ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetNoRelValueFromInst, "MyTargetNoRel")) << "Failed to get ECValue for MyTargetNoRel Navigation Property";
-    ASSERT_TRUE(myTargetNoRelValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetNoRelValueFromInst.IsNull()) << "Expected Navigation Property MyTargetNoRel to be null but it was not";
     ASSERT_TRUE(myTargetNoRelValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
     ECValue myTargetRelIdValueFromInst;
     ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->GetValue(myTargetRelIdValueFromInst, "MyTargetWithRelId")) << "Failed to get ECValue for MyTargetWithRelId Navigation Property";
-    ASSERT_TRUE(myTargetRelIdValueFromInst.IsNull());
+    ASSERT_TRUE(myTargetRelIdValueFromInst.IsNull()) << "Expected Navigation Property MyTargetWithRelId to be null but it was not";
     ASSERT_TRUE(myTargetRelIdValueFromInst.IsNavigation()) << "Expected the value to be a navigation type but it was not";
 
     if (PrimitiveType::PRIMITIVETYPE_String == navPropType)
@@ -554,12 +554,14 @@ TEST_F(NavigationECPropertyTests, ValueCopyTest)
     EXPECT_STREQ(relClass->GetName().c_str(), v.GetNavigationInfo().GetRelationshipClass()->GetName().c_str()) << "Value did not have the expected relationship";
     }
 
-TEST_F(NavigationECPropertyTests, ValueEqualsTest)
+TEST_F(NavigationECPropertyTests, TestNavigationValueEquality)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
     ECRelationshipClassP relClass;
+    ECRelationshipClassP relClass2;
     schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateRelationshipClass(relClass2, "RelClass2");
     
     BeInt64Id navId(42);
     ECClassId relClassId((uint64_t) 10);
@@ -572,6 +574,7 @@ TEST_F(NavigationECPropertyTests, ValueEqualsTest)
     ECValue v2(navId, relClass);
     EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class set with valid. ";
     }
+
     {
     ECValue v;
     v.SetNavigationInfo(navId, relClass->GetId());
@@ -579,6 +582,7 @@ TEST_F(NavigationECPropertyTests, ValueEqualsTest)
     ECValue v2 (navId, relClassId);
     EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class id set. Relationship class is nullptr";
     }
+
     {
     ECValue v;
     v.SetNavigationInfo(navId);
@@ -586,15 +590,51 @@ TEST_F(NavigationECPropertyTests, ValueEqualsTest)
     ECValue v2(navId);
     EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id set and relationship class nullptr";
     }
+
     {
-    ECRelationshipClassP relClass2;
-    schema->CreateRelationshipClass(relClass2, "RelClass2");
     ECValue v;
     v.SetNavigationInfo(navId, relClass2);
 
     ECValue v2(navId, relClass2);
     EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class set with no class id set.";
     }
+
+    {
+    ECValue v(navId, relClass);
+    ECValue v2(navId, relClass2);
+
+    EXPECT_FALSE(v.Equals(v2)) << "Should not be equal because the relationships used to set the value are different.";
     }
+
+    {
+    BeInt64Id diffNavId(15);
+    ECValue v(navId, relClass);
+    ECValue v2(diffNavId, relClass);
+
+    EXPECT_FALSE(v.Equals(v2)) << "Should not be equal because the navigation values are different.";
+    }
+    }
+
+TEST_F(NavigationECPropertyTests, TestNullNavigationValue)
+    {
+    ECValue v;
+    EXPECT_TRUE(v.IsNull()) << "The value should be null but it is not.";
+    EXPECT_FALSE(v.IsNavigation()) << "The value should not be a navigation value but it is.";
+
+    v.SetNavigationInfo();
+    EXPECT_TRUE(v.IsNull()) << "The value should be null but it is not";
+    EXPECT_TRUE(v.IsNavigation()) << "The value should be a navigation value but it is not";
+
+    BeInt64Id navId(12);
+    v.SetNavigationInfo(navId);
+    EXPECT_FALSE(v.IsNull()) << "The value should not be null but it is ";
+    EXPECT_TRUE(v.IsNavigation()) << "The value should be a navigation value but it is not";
+    EXPECT_EQ(navId, v.GetNavigationInfo().GetId<BeInt64Id>()) << "The value was not as expected";
+
+    v.Clear();
+    EXPECT_TRUE(v.IsNull()) << "The value should be null but it is not.";
+    EXPECT_FALSE(v.IsNavigation()) << "The value should not be a navigation value but it is.";
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

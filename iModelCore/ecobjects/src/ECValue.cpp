@@ -421,6 +421,15 @@ ECObjectsStatus ECValue::NavigationInfo::Set(BeInt64Id id)
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECValue::NavigationInfo::Clear()
+    {
+    m_relClass = nullptr;
+    m_id = BeInt64Id();
+    }
+
 //*********************** ECValue ***************************************
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,6 +762,10 @@ void            ECValue::FreeMemory()
                 if ((m_structInstance != NULL))
                     m_structInstance->Release();
                 return;
+
+            case VALUEKIND_Navigation:
+                m_navigationInfo.Clear();
+                return;
         }
     }
 
@@ -763,17 +776,6 @@ void            ECValue::SetToNull()
     {
     FreeMemory();
     SetIsNull(true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Caleb.Shafer    11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-void            ECValue::SetNavigationToNull()
-    {
-    m_valueKind = VALUEKIND_Navigation;
-    m_navigationInfo.Set(BeInt64Id());
-    m_navigationInfo.SetRelationship(nullptr);
-    SetToNull();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2148,6 +2150,18 @@ bool            ArrayInfo::IsPrimitiveArray() const
 bool            ArrayInfo::IsStructArray() const
     {
     return GetKind() == VALUEKIND_Struct;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer    11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECValue::SetNavigationInfo()
+    {
+    Clear();
+    SetIsNull(true);
+    m_valueKind = VALUEKIND_Navigation;
+
+    return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

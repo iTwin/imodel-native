@@ -2734,7 +2734,7 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
     bool isInUninitializedFixedCountArray = ((useIndex) && (propertyLayout.GetModifierFlags() & PROPERTYLAYOUTMODIFIERFLAGS_IsArrayFixedCount) && (GetAllocatedArrayCount(propertyLayout) == 0));
     if (isInUninitializedFixedCountArray || IsPropertyValueNull(propertyLayout, useIndex, index))
         {
-        v.SetNavigationToNull();
+        v.SetNavigationInfo();
         }
     else
         {
@@ -2751,7 +2751,7 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
         memcpy(&isPointerFlag, pValue, sizeof(isPointerFlag));
         isPointerFlag = isPointerFlag >> 7;
         
-        // Increment to get past bit flag
+        // Increment past bit flag
         pValue += 1;
 
         int64_t relClassValue;
