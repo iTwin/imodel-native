@@ -3455,7 +3455,6 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateClassConstraint
 ECClassCR constraintClass
 ) const
     {
-    ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
 
@@ -3473,15 +3472,14 @@ ECClassCR constraintClass
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
 
-    // Check if this is the source or target constraint. Then Iterate over the base classes and check 
+    // Check if this is the source or target constraint. Then iterate over the base classes and check 
     // if the constraintClass is equal to or larger in scope than the possibly defined scope on the
     // baseclasses. 
-    bool isSourceConstraint = &relationshipClass->GetSource() == this;
-    for (auto baseClass : relationshipClass->GetBaseClasses())
+    for (auto baseClass : m_relClass->GetBaseClasses())
         {
         // Get the relationship base class
         ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
-        ECRelationshipConstraintCP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource() 
+        ECRelationshipConstraintCP baseClassConstraint = (m_isSource) ? &relationshipBaseClass->GetSource() 
                                                                               : &relationshipBaseClass->GetTarget();
 
         // Validate against the base class again...
@@ -3499,7 +3497,7 @@ ECClassCR constraintClass
                 {
                 Utf8String errorMessage;
                 errorMessage.Sprintf("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not, nor derived from, Class '%s' as specified in Class '%s'",
-                                     constraintClass.GetFullName(), (isSourceConstraint) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
+                                     constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                                      baseConstraintClass->GetFullName(), relationshipBaseClass->GetFullName());
 
                 if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
@@ -3529,16 +3527,14 @@ ECObjectsStatus ECRelationshipConstraint::ValidateMultiplicityConstraint(bool re
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues) const
     {
-    ECRelationshipClassCP relationshipClass = m_relClass;
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
 
-    bool isSourceConstraint = &relationshipClass->GetSource() == this;
-    for (auto baseClass : relationshipClass->GetBaseClasses())
+    for (auto baseClass : m_relClass->GetBaseClasses())
         {
         // Get the relationship base class
         ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
-        ECRelationshipConstraintP baseClassConstraint = (isSourceConstraint) ? &relationshipBaseClass->GetSource()
+        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relationshipBaseClass->GetSource()
                                                                               : &relationshipBaseClass->GetTarget();
 
         // Checks the multiplicity: 0 = equal multiplicity, -1 = leftside is bigger, 1 = rightside is bigger
@@ -3547,7 +3543,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
             {
             Utf8String errorMessage;
             errorMessage.Sprintf("Multiplicity Violation: The Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                                  lowerLimit, upperLimit, relationshipClass->GetFullName(),
+                                  lowerLimit, upperLimit, m_relClass->GetFullName(),
                                   relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
             if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3)
@@ -3563,7 +3559,7 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
 
                 // For legacy 2.0 schemas we change the base class constraint multiplicity to bigger derived class constraint in order for it to pass the validation rules.
                 LOG.warningv("The Multiplicity of %s's base class, %s, has been changed from (%" PRIu32 "..%" PRIu32 ") to (%" PRIu32 "..%" PRIu32 ") to conform to new relationship constraint rules.",
-                             relationshipClass->GetFullName(), relationshipBaseClass->GetFullName(),
+                             m_relClass->GetFullName(), relationshipBaseClass->GetFullName(),
                              baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit(), lowerLimit, upperLimit);
                 baseClassConstraint->SetMultiplicity(lowerLimit, upperLimit);
                 }
