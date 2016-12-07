@@ -64,7 +64,7 @@ void NumericFormat::DefaultInit(size_t precision)
     m_useThousandsSeparator = false;
     m_decimalSeparator = '.';
     m_thousandsSeparator = ',';
-    m_ZeroControl = ZeroControl::None;
+    m_ZeroControl = ZeroControl::DefaultZeroes;
     SetKeepSingleZero(true);
     SetKeepDecimalPoint(true);
     }
@@ -122,6 +122,31 @@ void NumericFormat::SetKeepSingleZero(bool keep)
     m_ZeroControl = static_cast<ZeroControl>(temp);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+void NumericFormat::SetZeroEmpty(bool empty)
+{
+    size_t temp = static_cast<int>(m_ZeroControl);
+    if (empty)
+        temp |= static_cast<int>(ZeroControl::ZeroEmpty);
+    else
+        temp &= ~static_cast<int>(ZeroControl::ZeroEmpty);
+    m_ZeroControl = static_cast<ZeroControl>(temp);
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+void NumericFormat::SetExponentZero(bool empty)
+{
+    size_t temp = static_cast<int>(m_ZeroControl);
+    if (empty)
+        temp |= static_cast<int>(ZeroControl::ExponentZero);
+    else
+        temp &= ~static_cast<int>(ZeroControl::ExponentZero);
+    m_ZeroControl = static_cast<ZeroControl>(temp);
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -561,70 +586,102 @@ Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
      return Utf8String(buf);
  }
 
+ //---------------------------------------------------------------------------------------
+ // @bsimethod                                                   David Fox-Rabinovitz 11/16
+ //---------------------------------------------------------------------------------------
+ //Utf8String NumericFormat::ToText()
+ //{
+ //    Utf8String str;
+
+ //    switch (m_presentationType)
+ //    {
+ //    case PresentationType::Decimal:
+
+ //    }
+
+ //    //PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
+ //    //ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+ //    //ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+ //    //bool                m_showDotZero;
+ //    //bool                m_replace0Empty;
+ //    //DecimalPrecision    m_decPrecision;          // Precision0...12
+ //    //FractionalPrecision m_fractPrecision;
+ //    //bool                m_useThousandsSeparator; // UseThousandSeparator
+ //    //Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+ //    //Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+
+ //    return str;
+ //}
+
+ static int ZeroControlBit(ZeroControl zcValue)
+ {
+     return static_cast<int>(zcValue);
+ }
 
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
 void FormatDictionary::InitLoad()
     {
-    AddParameter(FormatParameter("NoSign", ParameterCategory::Sign, ParameterCode::NoSign, ParameterDataType::Flag));
-    AddParameter(FormatParameter("OnlyNegative", ParameterCategory::Sign, ParameterCode::OnlyNegative, ParameterDataType::Flag));
-    AddParameter(FormatParameter("SignAlways", ParameterCategory::Sign, ParameterCode::SignAlways, ParameterDataType::Flag));
-    AddParameter(FormatParameter("NegativeParenths", ParameterCategory::Sign, ParameterCode::NegativeParenths, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Decimal", ParameterCategory::Presentation, ParameterCode::Decimal, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Fractional", ParameterCategory::Presentation, ParameterCode::Fractional, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Scientific", ParameterCategory::Presentation, ParameterCode::Sientific, ParameterDataType::Flag));
-    AddParameter(FormatParameter("ScientificNorm", ParameterCategory::Presentation, ParameterCode::ScientificNorm, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Binary", ParameterCategory::Presentation, ParameterCode::Binary, ParameterDataType::Flag));
-    AddParameter(FormatParameter("NoZeroes", ParameterCategory::Zeroes, ParameterCode::NoZeroControl, ParameterDataType::Flag));
-    AddParameter(FormatParameter("LeadingZeroes", ParameterCategory::Zeroes, ParameterCode::LeadingZeroes, ParameterDataType::Flag));
-    AddParameter(FormatParameter("TrailingZeroes", ParameterCategory::Zeroes, ParameterCode::TrailingZeroes, ParameterDataType::Flag));
-    AddParameter(FormatParameter("KeepDecimalPoint", ParameterCategory::Zeroes, ParameterCode::KeepDecimalPoint, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Replace0Empty", ParameterCategory::Zeroes, ParameterCode::Replace0Empty, ParameterDataType::Flag));
-    AddParameter(FormatParameter("KeepSingleZero", ParameterCategory::Zeroes, ParameterCode::KeepSingleZero, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision0", ParameterCategory::DecPrecision, ParameterCode::DecPrec0, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision1", ParameterCategory::DecPrecision, ParameterCode::DecPrec1, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision2", ParameterCategory::DecPrecision, ParameterCode::DecPrec2, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision3", ParameterCategory::DecPrecision, ParameterCode::DecPrec3, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision4", ParameterCategory::DecPrecision, ParameterCode::DecPrec4, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision5", ParameterCategory::DecPrecision, ParameterCode::DecPrec5, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision6", ParameterCategory::DecPrecision, ParameterCode::DecPrec6, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision7", ParameterCategory::DecPrecision, ParameterCode::DecPrec7, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision8", ParameterCategory::DecPrecision, ParameterCode::DecPrec8, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision9", ParameterCategory::DecPrecision, ParameterCode::DecPrec9, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision10", ParameterCategory::DecPrecision, ParameterCode::DecPrec10, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision11", ParameterCategory::DecPrecision, ParameterCode::DecPrec11, ParameterDataType::Flag));
-    AddParameter(FormatParameter("Precision12", ParameterCategory::DecPrecision, ParameterCode::DecPrec12, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec1", ParameterCategory::FractPrecision, ParameterCode::FractPrec1, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec2", ParameterCategory::FractPrecision, ParameterCode::FractPrec2, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec4", ParameterCategory::FractPrecision, ParameterCode::FractPrec4, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec8", ParameterCategory::FractPrecision, ParameterCode::FractPrec8, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec16", ParameterCategory::FractPrecision, ParameterCode::FractPrec16, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec32", ParameterCategory::FractPrecision, ParameterCode::FractPrec32, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec64", ParameterCategory::FractPrecision, ParameterCode::FractPrec64, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec128", ParameterCategory::FractPrecision, ParameterCode::FractPrec128, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractPrec256", ParameterCategory::FractPrecision, ParameterCode::FractPrec256, ParameterDataType::Flag));
-    AddParameter(FormatParameter("DecimalComma", ParameterCategory::Separator, ParameterCode::DecimalComma, ParameterDataType::Flag));
-    AddParameter(FormatParameter("DecimalPoint", ParameterCategory::Separator, ParameterCode::DecimalPoint, ParameterDataType::Flag));
-    AddParameter(FormatParameter("DecimalSepar", ParameterCategory::Separator, ParameterCode::DecimalSepar, ParameterDataType::Symbol));
-    AddParameter(FormatParameter("ThousandSepComma", ParameterCategory::Separator, ParameterCode::ThousandSepComma, ParameterDataType::Flag));
-    AddParameter(FormatParameter("ThousandSepPoint", ParameterCategory::Separator, ParameterCode::ThousandSepPoint, ParameterDataType::Flag));
-    AddParameter(FormatParameter("ThousandsSepar", ParameterCategory::Separator, ParameterCode::ThousandsSepar, ParameterDataType::Symbol));
-    AddParameter(FormatParameter("RoundUp", ParameterCategory::RoundType, ParameterCode::RoundUp, ParameterDataType::Double));
-    AddParameter(FormatParameter("RoundDown", ParameterCategory::RoundType, ParameterCode::RoundDown, ParameterDataType::Double));
-    AddParameter(FormatParameter("RoundToward0", ParameterCategory::RoundType, ParameterCode::RoundToward0, ParameterDataType::Double));
-    AddParameter(FormatParameter("RoundAwayFrom0", ParameterCategory::RoundType, ParameterCode::RoundAwayFrom0, ParameterDataType::Double));
-    AddParameter(FormatParameter("FractBarHoriz", ParameterCategory::FractionBar, ParameterCode::FractBarHoriz, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractBarOblique", ParameterCategory::FractionBar, ParameterCode::FractBarOblique, ParameterDataType::Flag));
-    AddParameter(FormatParameter("FractBarDiagonal", ParameterCategory::FractionBar, ParameterCode::FractBarDiagonal, ParameterDataType::Flag));
-    AddParameter(FormatParameter("AngleRegular", ParameterCategory::AngleFormat, ParameterCode::AngleRegular, ParameterDataType::Flag));
-    AddParameter(FormatParameter("AngleDegMin", ParameterCategory::AngleFormat, ParameterCode::AngleDegMin, ParameterDataType::Flag));
-    AddParameter(FormatParameter("AngleDegMinSec", ParameterCategory::AngleFormat, ParameterCode::AngleDegMinSec, ParameterDataType::Flag));
-    AddParameter(FormatParameter("PaddingSymbol", ParameterCategory::Padding, ParameterCode::PaddingSymbol, ParameterDataType::Symbol));
-    AddParameter(FormatParameter("CenterAlign", ParameterCategory::Alignment, ParameterCode::CenterAlign, ParameterDataType::Flag));
-    AddParameter(FormatParameter("LeftAlign", ParameterCategory::Alignment, ParameterCode::LeftAlign, ParameterDataType::Flag));
-    AddParameter(FormatParameter("RightAlign", ParameterCategory::Alignment, ParameterCode::RightAlign, ParameterDataType::Flag));
-    AddParameter(FormatParameter("MapName", ParameterCategory::Mapping, ParameterCode::MapName, ParameterDataType::String));
+    AddParameter(FormatParameter(FormatConstant::FPN_NoSign(), ParameterCategory::Sign, ParameterCode::NoSign, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_OnlyNegative(), ParameterCategory::Sign, ParameterCode::OnlyNegative, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_SignAlways(), ParameterCategory::Sign, ParameterCode::SignAlways, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_NegativeParenths(), ParameterCategory::Sign, ParameterCode::NegativeParenths, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Decimal(), ParameterCategory::Presentation, ParameterCode::Decimal, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Fractional(), ParameterCategory::Presentation, ParameterCode::Fractional, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Scientific(), ParameterCategory::Presentation, ParameterCode::Scientific, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_ScientificNorm(), ParameterCategory::Presentation, ParameterCode::ScientificNorm, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Binary(), ParameterCategory::Presentation, ParameterCode::Binary, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_DefaultZeroes(), ParameterCategory::Zeroes, ParameterCode::DefaultZeroes, ZeroControlBit(ZeroControl::DefaultZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_LeadingZeroes(), ParameterCategory::Zeroes, ParameterCode::LeadingZeroes, ZeroControlBit(ZeroControl::LeadingZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_TrailingZeroes(), ParameterCategory::Zeroes, ParameterCode::TrailingZeroes, ZeroControlBit(ZeroControl::TrailingZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_KeepDecimalPoint(), ParameterCategory::Zeroes, ParameterCode::KeepDecimalPoint, ZeroControlBit(ZeroControl::KeepDecimalPoint)));
+    AddParameter(FormatParameter(FormatConstant::FPN_ZeroEmpty(), ParameterCategory::Zeroes, ParameterCode::ZeroEmpty, ZeroControlBit(ZeroControl::ZeroEmpty)));
+    AddParameter(FormatParameter(FormatConstant::FPN_KeepSingleZero(), ParameterCategory::Zeroes, ParameterCode::KeepSingleZero, ZeroControlBit(ZeroControl::KeepSingleZero)));
+    AddParameter(FormatParameter(FormatConstant::FPN_ExponentZero(), ParameterCategory::Zeroes, ParameterCode::ExponentZero, ZeroControlBit(ZeroControl::ExponentZero)));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision0(), ParameterCategory::DecPrecision, ParameterCode::DecPrec0, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision1(), ParameterCategory::DecPrecision, ParameterCode::DecPrec1, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision2(), ParameterCategory::DecPrecision, ParameterCode::DecPrec2, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision3(), ParameterCategory::DecPrecision, ParameterCode::DecPrec3, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision4(), ParameterCategory::DecPrecision, ParameterCode::DecPrec4, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision5(), ParameterCategory::DecPrecision, ParameterCode::DecPrec5, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision6(), ParameterCategory::DecPrecision, ParameterCode::DecPrec6, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision7(), ParameterCategory::DecPrecision, ParameterCode::DecPrec7, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision8(), ParameterCategory::DecPrecision, ParameterCode::DecPrec8, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision9(), ParameterCategory::DecPrecision, ParameterCode::DecPrec9, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision10(), ParameterCategory::DecPrecision, ParameterCode::DecPrec10, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision11(), ParameterCategory::DecPrecision, ParameterCode::DecPrec11, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_Precision12(), ParameterCategory::DecPrecision, ParameterCode::DecPrec12, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec1(), ParameterCategory::FractPrecision, ParameterCode::FractPrec1, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec2(), ParameterCategory::FractPrecision, ParameterCode::FractPrec2, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec4(), ParameterCategory::FractPrecision, ParameterCode::FractPrec4, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec8(), ParameterCategory::FractPrecision, ParameterCode::FractPrec8, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec16(), ParameterCategory::FractPrecision, ParameterCode::FractPrec16, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec32(), ParameterCategory::FractPrecision, ParameterCode::FractPrec32, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec64(), ParameterCategory::FractPrecision, ParameterCode::FractPrec64, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec128(), ParameterCategory::FractPrecision, ParameterCode::FractPrec128, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractPrec256(), ParameterCategory::FractPrecision, ParameterCode::FractPrec256, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_DecimalComma(), ParameterCategory::Separator, ParameterCode::DecimalComma, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_DecimalPoint(), ParameterCategory::Separator, ParameterCode::DecimalPoint, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_DecimalSepar(), ParameterCategory::Separator, ParameterCode::DecimalSepar, ParameterDataType::Symbol));
+    AddParameter(FormatParameter(FormatConstant::FPN_ThousandSepComma(), ParameterCategory::Separator, ParameterCode::ThousandSepComma, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_ThousandSepPoint(), ParameterCategory::Separator, ParameterCode::ThousandSepPoint, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_ThousandsSepar(), ParameterCategory::Separator, ParameterCode::ThousandsSepar, ParameterDataType::Symbol));
+    AddParameter(FormatParameter(FormatConstant::FPN_RoundUp(), ParameterCategory::RoundType, ParameterCode::RoundUp, ParameterDataType::Double));
+    AddParameter(FormatParameter(FormatConstant::FPN_RoundDown(), ParameterCategory::RoundType, ParameterCode::RoundDown, ParameterDataType::Double));
+    AddParameter(FormatParameter(FormatConstant::FPN_RoundToward0(), ParameterCategory::RoundType, ParameterCode::RoundToward0, ParameterDataType::Double));
+    AddParameter(FormatParameter(FormatConstant::FPN_RoundAwayFrom0(), ParameterCategory::RoundType, ParameterCode::RoundAwayFrom0, ParameterDataType::Double));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractBarHoriz(), ParameterCategory::FractionBar, ParameterCode::FractBarHoriz, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractBarOblique(), ParameterCategory::FractionBar, ParameterCode::FractBarOblique, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_FractBarDiagonal(), ParameterCategory::FractionBar, ParameterCode::FractBarDiagonal, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_AngleRegular(), ParameterCategory::AngleFormat, ParameterCode::AngleRegular, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_AngleDegMin(), ParameterCategory::AngleFormat, ParameterCode::AngleDegMin, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_AngleDegMinSec(), ParameterCategory::AngleFormat, ParameterCode::AngleDegMinSec, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_PaddingSymbol(), ParameterCategory::Padding, ParameterCode::PaddingSymbol, ParameterDataType::Symbol));
+    AddParameter(FormatParameter(FormatConstant::FPN_CenterAlign(), ParameterCategory::Alignment, ParameterCode::CenterAlign, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_LeftAlign(), ParameterCategory::Alignment, ParameterCode::LeftAlign, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_RightAlign(), ParameterCategory::Alignment, ParameterCode::RightAlign, ParameterDataType::Flag));
+    AddParameter(FormatParameter(FormatConstant::FPN_MapName(), ParameterCategory::Mapping, ParameterCode::MapName, ParameterDataType::String));
     }
 
 //---------------------------------------------------------------------------------------
@@ -670,6 +727,14 @@ FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
     return nullptr;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8StringCR FormatDictionary::CodeToName(ParameterCode paramCode)
+{
+    FormatParameterP par = FindParameterByCode(paramCode);
+    return (nullptr == par)? static_cast<Utf8StringCR>(nullptr) : par->GetName();
+}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

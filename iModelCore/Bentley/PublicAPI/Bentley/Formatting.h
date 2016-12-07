@@ -38,15 +38,16 @@ enum class ParameterCode
     NegativeParenths = 104,
     Decimal = 151,
     Fractional = 152,
-    Sientific = 153,
+    Scientific = 153,
     ScientificNorm = 154,
     Binary = 155,
-    NoZeroControl = 201,
+    DefaultZeroes = 201,
     LeadingZeroes = 202,
     TrailingZeroes = 203,
     KeepSingleZero = 204,
-    KeepDecimalPoint = 205, 
-    Replace0Empty = 206,    // formatter will return the empy string if the result is 0
+    KeepDecimalPoint = 205,
+    ExponentZero = 206,
+    ZeroEmpty = 207,    // formatter will return the empy string if the result is 0
     DecPrec0 =  300,
     DecPrec1 =  301,
     DecPrec2 =  302,
@@ -96,10 +97,11 @@ enum class ParameterCode
 enum class ParameterDataType
     {
     Flag = 0,
-    Integer = 1,
-    Double = 2,
-    Symbol = 3,
-    String = 4
+    BitFlag = 1,
+    Integer = 2,
+    Double = 3,
+    Symbol = 4,
+    String = 5
     };
 
 enum class RoundingType
@@ -139,6 +141,17 @@ enum class ShowSignOption
     NegativeParentheses = 3
 };
 
+//static Utf8String ShowSignOptionName(ShowSignOption opt)
+//    {
+//    switch (opt)
+//        {
+//        case ShowSignOption::OnlyNegative: return "OnlyNegative";
+//        case ShowSignOption::SignAlways: return "SignAlways";
+//        case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
+//        default: return "NoSign";
+//        }
+//    }
+
 enum class PresentationType
 {
     Decimal = 1,
@@ -149,12 +162,15 @@ enum class PresentationType
 
 enum class ZeroControl: int
 {
-    None = 0,
+    DefaultZeroes = 0,
     LeadingZeroes = 0x1,
     TrailingZeroes = 0x2,
     KeepDecimalPoint = 0x4,
-    KeepSingleZero = 0x8
+    KeepSingleZero = 0x8,
+    ExponentZero = 0x10,
+    ZeroEmpty = 0x20
 };
+
 
 enum class DecimalPrecision
 {
@@ -214,7 +230,7 @@ static const char * GetParameterCategoryName(ParameterCategory parcat)
     {
     static const char * CategoryNames[] = {"DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
         "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping"};
-    return CategoryNames[(int)parcat];
+    return CategoryNames[static_cast<int>(parcat)];
     }
 
 
@@ -253,6 +269,8 @@ public:
     BENTLEYDLL_EXPORT void SetUseLeadingZeroes(bool use);
     BENTLEYDLL_EXPORT void SetKeepDecimalPoint(bool keep);
     BENTLEYDLL_EXPORT void SetKeepSingleZero(bool keep);
+    BENTLEYDLL_EXPORT void SetExponentZero(bool keep);
+    BENTLEYDLL_EXPORT void SetZeroEmpty(bool empty);
 
     BENTLEYDLL_EXPORT int PrecisionValue() const;
     BENTLEYDLL_EXPORT double PrecisionFactor() const;
@@ -293,6 +311,7 @@ public:
     BENTLEYDLL_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     BENTLEYDLL_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     BENTLEYDLL_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
+    BENTLEYDLL_EXPORT Utf8String ToText();
 };
 
 //=======================================================================================
@@ -359,6 +378,7 @@ private:
     ParameterCategory m_category;
     ParameterCode m_paramCode;
     ParameterDataType m_paramType;
+    int m_intValue;            // for binary flags and other integer values
 
 public:
 
@@ -368,6 +388,16 @@ public:
         m_category = cat;
         m_paramCode = code;
         m_paramType = type;
+        m_intValue = 0;
+        }
+
+    BENTLEYDLL_EXPORT FormatParameter(Utf8CP name, ParameterCategory cat, ParameterCode code, int bitFlag)
+        {
+        m_paramName = name;
+        m_category = cat;
+        m_paramCode = code;
+        m_paramType = ParameterDataType::BitFlag;
+        m_intValue = bitFlag;
         }
 
     BENTLEYDLL_EXPORT Utf8StringCR GetName() { return m_paramName; }
@@ -378,10 +408,77 @@ public:
     BENTLEYDLL_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
 };
 
+//   FormatConstant::FPN_NoSign
+struct FormatConstant
+{
+public:
+    // FPN prefix stands for FormatParameter Name
+    static Utf8CP FPN_NoSign() { return "NoSign"; }
+    static Utf8CP FPN_OnlyNegative() { return "OnlyNegative"; }
+    static Utf8CP FPN_SignAlways() { return "SignAlways"; }
+    static Utf8CP FPN_NegativeParenths() { return "NegativeParenths";}
+    static Utf8CP FPN_Decimal() { return "Decimal";}
+    static Utf8CP FPN_Fractional() { return "Fractional";}
+    static Utf8CP FPN_Scientific() { return "Scientific";}
+    static Utf8CP FPN_ScientificNorm() { return "ScientificNorm";}
+    static Utf8CP FPN_Binary() { return "Binary";}
+    static Utf8CP FPN_DefaultZeroes() { return "DefaultZeroes";}
+    static Utf8CP FPN_LeadingZeroes() { return "LeadingZeroes";}
+    static Utf8CP FPN_TrailingZeroes() { return "TrailingZeroes";}
+    static Utf8CP FPN_KeepDecimalPoint() { return "KeepDecimalPoint";}
+    static Utf8CP FPN_ZeroEmpty() { return "ZeroEmpty"; }
+    static Utf8CP FPN_KeepSingleZero() { return "KeepSingleZero"; }
+    static Utf8CP FPN_ExponentZero() { return "ExponentZero"; }
+    static Utf8CP FPN_Precision0() { return "Precision0"; }
+    static Utf8CP FPN_Precision1() { return "Precision1"; }
+    static Utf8CP FPN_Precision2() { return "Precision2"; }
+    static Utf8CP FPN_Precision3() { return "Precision3"; }
+    static Utf8CP FPN_Precision4() { return "Precision4"; }
+    static Utf8CP FPN_Precision5() { return "Precision5"; }
+    static Utf8CP FPN_Precision6() { return "Precision6"; }
+    static Utf8CP FPN_Precision7() { return "Precision7"; }
+    static Utf8CP FPN_Precision8() { return "Precision8"; }
+    static Utf8CP FPN_Precision9() { return "Precision9"; }
+    static Utf8CP FPN_Precision10() { return "Precision10"; }
+    static Utf8CP FPN_Precision11() { return "Precision11"; }
+    static Utf8CP FPN_Precision12() { return "Precision12"; }
+    static Utf8CP FPN_FractPrec1() { return "FractPrec1"; }
+    static Utf8CP FPN_FractPrec2() { return "FractPrec2"; }
+    static Utf8CP FPN_FractPrec4() { return "FractPrec4"; }
+    static Utf8CP FPN_FractPrec8() { return "FractPrec8"; }
+    static Utf8CP FPN_FractPrec16() { return "FractPrec16"; }
+    static Utf8CP FPN_FractPrec32() { return "FractPrec32"; }
+    static Utf8CP FPN_FractPrec64() { return "FractPrec64"; }
+    static Utf8CP FPN_FractPrec128() { return "FractPrec128"; }
+    static Utf8CP FPN_FractPrec256() { return "FractPrec256"; }
+    static Utf8CP FPN_DecimalComma() { return "DecimalComma"; }
+    static Utf8CP FPN_DecimalPoint() { return "DecimalPoint"; }
+    static Utf8CP FPN_DecimalSepar() { return "DecimalSepar"; }
+    static Utf8CP FPN_ThousandSepComma() { return "ThousandSepComma"; }
+    static Utf8CP FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
+    static Utf8CP FPN_ThousandsSepar() { return "ThousandsSepar"; }
+    static Utf8CP FPN_RoundUp() { return "RoundUp"; }
+    static Utf8CP FPN_RoundDown() { return "RoundDown"; }
+    static Utf8CP FPN_RoundToward0() { return "RoundToward0"; }
+    static Utf8CP FPN_RoundAwayFrom0() { return "RoundFrom0"; }
+    static Utf8CP FPN_FractBarHoriz() { return "FractBarHoriz"; }
+    static Utf8CP FPN_FractBarOblique() { return "FractBarOblique"; }
+    static Utf8CP FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
+    static Utf8CP FPN_AngleRegular() { return "AngleRegular"; }
+    static Utf8CP FPN_AngleDegMin() { return "AngleDegMin"; }
+    static Utf8CP FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
+    static Utf8CP FPN_PaddingSymbol() { return "PaddingSymbol"; }
+    static Utf8CP FPN_CenterAlign() { return "CenterAlign"; }
+    static Utf8CP FPN_LeftAlign() { return "LeftAlign"; }
+    static Utf8CP FPN_RightAlign() { return "RightAlign"; }
+    static Utf8CP FPN_MapName() { return "MapName"; }
+
+};
+
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct FormatDictionary
+struct FormatDictionary: FormatConstant
 {
 private:
     bvector<FormatParameter> m_paramList;
@@ -396,6 +493,7 @@ public:
     BENTLEYDLL_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
     BENTLEYDLL_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     BENTLEYDLL_EXPORT FormatParameterP GetParameterByIndex(int index);
+    BENTLEYDLL_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
 };
 
 //=======================================================================================
