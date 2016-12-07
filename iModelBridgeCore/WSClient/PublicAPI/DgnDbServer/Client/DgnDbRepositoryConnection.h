@@ -251,7 +251,7 @@ private:
 
     //! Sends a request from changeset.
     DgnDbServerStatusTaskPtr SendChangesetRequestInternal(std::shared_ptr<WSChangeset> changeset, IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All,
-        ICancellationTokenPtr cancellationToken = nullptr) const;
+        ICancellationTokenPtr cancellationToken = nullptr, IWSRepositoryClient::RequestOptionsPtr requestOptions = nullptr) const;
 
     //! Initializes the revision.
     DgnDbServerStatusTaskPtr InitializeRevision(Dgn::DgnRevisionPtr revision, Dgn::DgnDbCR dgndb, JsonValueR pushJson, ObjectId revisionObjectId, bool relinquishCodesLocks,

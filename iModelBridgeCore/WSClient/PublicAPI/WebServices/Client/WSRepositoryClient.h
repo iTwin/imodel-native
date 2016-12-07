@@ -47,11 +47,31 @@ typedef AsyncResult<void, WSError>                      WSVoidResult;
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct IWSRepositoryClient
     {
+    struct RequestOptions;
+    typedef std::shared_ptr<RequestOptions> RequestOptionsPtr;
+
     public:
         // WIP: SkipTokens disabled due to issues.
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
     public:
+        struct Timeout
+            {
+            struct Connection
+                {
+                WSCLIENT_EXPORT static const uint32_t Default;
+                };
+            struct Transfer
+                {
+                WSCLIENT_EXPORT static const uint32_t GetObject;
+                WSCLIENT_EXPORT static const uint32_t GetObjects;
+                WSCLIENT_EXPORT static const uint32_t FileDownload;
+                WSCLIENT_EXPORT static const uint32_t Upload;
+                WSCLIENT_EXPORT static const uint32_t Default;
+                WSCLIENT_EXPORT static const uint32_t LongUpload;
+                };
+            };
+
         WSCLIENT_EXPORT virtual ~IWSRepositoryClient();
 
         virtual IWSClientPtr GetWSClient() const = 0;
@@ -126,13 +146,15 @@ struct IWSRepositoryClient
         //! Supported from WSG 2.1, usage with older server versions will return "not supported" error.
         //! @param changeset JSON serialized to string. IIS defaults request size to 4MB (configurable) so string should accomodate to that
         //! @param uploadProgressCallback upload callback for changeset
-        //! @param ct 
+        //! @param ct
+        //! @param options optional request options
         //! @return server response that includes changed instances JSON
         virtual AsyncTaskPtr<WSChangesetResult> SendChangesetRequest
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            RequestOptionsPtr options = nullptr
             ) const = 0;
 
         //! Create object with any relationships or related objects. Optionally attach file.
@@ -219,6 +241,23 @@ struct IWSSchemaProvider
     };
 
 /*--------------------------------------------------------------------------------------+
+* @bsiclass                                                     julius.cepukenas    05/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+//! Request options that can be passed to individual requests to define their properties
+struct IWSRepositoryClient::RequestOptions
+    {
+    private:
+        uint64_t m_transferTimeOut;
+  
+    public:
+        WSCLIENT_EXPORT RequestOptions();
+        virtual ~RequestOptions() {}
+
+        void SetTransferTimeOut(uint64_t timeOut) {m_transferTimeOut = timeOut;}
+        uint64_t GetTransferTimeOut() const {return m_transferTimeOut;}
+    };
+
+/*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct WSRepositoryClient : public IWSRepositoryClient
@@ -232,20 +271,6 @@ struct WSRepositoryClient : public IWSRepositoryClient
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
 
     public:
-        struct Timeout
-            {
-            struct Connection
-                {
-                static const uint32_t Default;
-                };
-            struct Transfer
-                {
-                static const uint32_t GetObject;
-                static const uint32_t GetObjects;
-                static const uint32_t FileDownload;
-                static const uint32_t Upload;
-                };
-            };
 
         //! @param[in] serverUrl - address to supported server/site
         //! @param[in] repositoryId - repository identifier
@@ -326,7 +351,8 @@ struct WSRepositoryClient : public IWSRepositoryClient
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            RequestOptionsPtr options = nullptr
             ) const override;
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest

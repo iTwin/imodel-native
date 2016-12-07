@@ -15,12 +15,19 @@ using namespace std::placeholders;
 // this corrupts data refresh.
 const Utf8String IWSRepositoryClient::InitialSkipToken = "";
 
-const uint32_t WSRepositoryClient::Timeout::Connection::Default = 30;
+const uint32_t IWSRepositoryClient::Timeout::Connection::Default = 30;
 
-const uint32_t WSRepositoryClient::Timeout::Transfer::GetObject = 30;
-const uint32_t WSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
-const uint32_t WSRepositoryClient::Timeout::Transfer::FileDownload = 30;
-const uint32_t WSRepositoryClient::Timeout::Transfer::Upload = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObject = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::GetObjects = 120; // Some repositories take a lot of time to create many full ECInstances
+const uint32_t IWSRepositoryClient::Timeout::Transfer::FileDownload = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::Upload = 30;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::Default = 60;
+const uint32_t IWSRepositoryClient::Timeout::Transfer::LongUpload = 120;
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    julius.cepukenas 12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+IWSRepositoryClient::RequestOptions::RequestOptions() : m_transferTimeOut(IWSRepositoryClient::Timeout::Transfer::Default) {}
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
@@ -233,12 +240,13 @@ AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct
+ICancellationTokenPtr ct,
+RequestOptionsPtr options
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct);
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct, options);
         }, ct);
     }
 

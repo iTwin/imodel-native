@@ -64,6 +64,7 @@ DgnDbServerRevisionsTaskPtr DgnDbBriefcase::Pull(Http::Request::ProgressCallback
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<DgnDbServerRevisionsResult>(DgnDbServerRevisionsResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
+    CheckCreatingRevision();
 
     Utf8String lastRevisionId = GetLastRevisionPulled();
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "%s%s", Utf8String::IsNullOrEmpty(lastRevisionId.c_str()) ? "No revisions pulled yet" : "Downloading revisions after revision ", lastRevisionId.c_str());
@@ -112,7 +113,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Merge(bvector<DgnDbServerRevisionPtr> c
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
-
+    CheckCreatingRevision();
     RevisionStatus mergeStatus = RevisionStatus::Success;
 
     if (!revisions.empty())
@@ -165,12 +166,22 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::Push(Utf8CP description, bool relinquis
         DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Tracking is not enabled.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::TrackingNotEnabled));
         }
+    CheckCreatingRevision();
 
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::BeforeStartCreateRevision);
 #endif
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to create a new revision.");
-    DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
+    DgnRevisionPtr revision = nullptr;
+    if (m_db->Revisions().IsCreatingRevision())
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Taking already creating revision.");
+        revision = m_db->Revisions().GetCreatingRevision();
+        }
+    else
+        {
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to create a new revision.");
+        revision = m_db->Revisions().StartCreateRevision();
+        }
 #if defined (ENABLE_BIM_CRASH_TESTS)
     DgnDbServerBreakHelper::HitBreakpoint(DgnDbServerBreakpoints::AfterStartCreateRevision);
 #endif
@@ -323,6 +334,25 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
     // Sleep.
     std::this_thread::sleep_for (std::chrono::milliseconds(currentDelay));
     return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            12/2015
+//---------------------------------------------------------------------------------------
+void DgnDbBriefcase::CheckCreatingRevision() const
+    {
+    if (m_db->Revisions().IsCreatingRevision())
+        {
+        auto creatingRevisionId = m_db->Revisions().GetCreatingRevision()->GetId();
+        if (Utf8String::IsNullOrEmpty(creatingRevisionId.c_str()))
+            return;
+
+        auto creatingRevisionResult = m_repositoryConnection->GetRevisionById(creatingRevisionId)->GetResult();
+        if (creatingRevisionResult.IsSuccess())
+            {
+            m_db->Revisions().FinishCreateRevision();
+            }
+        }
     }
 
 //---------------------------------------------------------------------------------------
