@@ -11,4 +11,6 @@
 #include "../../Utils/WebServicesTestsHelper.h"
 
 class ClientInfoTests : public WSClientBaseTest
-    {};
+    {
+    void SetUp();
+    };

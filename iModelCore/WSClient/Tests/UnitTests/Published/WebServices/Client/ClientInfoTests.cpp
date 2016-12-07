@@ -10,6 +10,11 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+void ClientInfoTests::SetUp()
+    {
+    BackDoor::DgnClientFx::Device::Initialize();
+    }
+
 TEST_F(ClientInfoTests, DefaultLanguage_Constant_NotEmpty)
     {
     EXPECT_STRNE("", ClientInfo::DefaultLanguage);
@@ -27,13 +32,7 @@ TEST_F(ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
 
     EXPECT_STRNE("", info->GetSystemDescription().c_str());
     EXPECT_STREQ("en", info->GetLanguage().c_str());
-
-#ifdef ANDROID
-    // Device class is not initialized on Android
-    EXPECT_STREQ("", info->GetDeviceId().c_str());
-#else
     EXPECT_STRNE("", info->GetDeviceId().c_str());
-#endif
     }
 
 TEST_F(ClientInfoTests, Create_PassedProductId_SetsProductId)
