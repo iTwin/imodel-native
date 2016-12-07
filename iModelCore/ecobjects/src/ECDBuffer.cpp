@@ -2771,10 +2771,11 @@ ECObjectsStatus       ECDBuffer::GetNavigationValueFromMemory(ECValueR v, Proper
             int64_t value;
             Byte const * valueP = pValue + sizeof(int64_t);
             memcpy(&value, valueP, sizeof(value));
+            BeInt64Id id((uint64_t) value);
             if (isPointerFlag) // Set the relationship class pointer
-                v.SetNavigationInfo(value, relClass);
+                v.SetNavigationInfo(id, relClass);
             else
-                v.SetNavigationInfo(value, ECClassId((uint64_t) relClassValue));
+                v.SetNavigationInfo(id, ECClassId((uint64_t) relClassValue));
             }
         else
             {
@@ -3221,7 +3222,7 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
     
     if (ECObjectsStatus::Success == result && PRIMITIVETYPE_Long == typeDescriptor.GetPrimitiveType())
         {
-        int64_t value = v.GetNavigationInfo().GetIdAsLong();
+        uint64_t value = v.GetNavigationInfo().GetId<BeInt64Id>().GetValueUnchecked();
         Byte const* valueP = relClassValueP + sizeof(relClassValue);
 
         result = ModifyData(valueP, &value, sizeof(value));

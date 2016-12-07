@@ -295,7 +295,7 @@ void TestSettingNavPropStringValues(IECInstanceR instance, ECRelationshipClassCP
     */
     }
 
-void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int64_t expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, ECClassId expectedRelClassId = ECClassId())
+void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, BeInt64Id expectedValue, ECRelationshipClassCP expectedRelClass = nullptr, ECClassId expectedRelClassId = ECClassId())
     {
     ECValueAccessor accessor;
     ECValueAccessor::PopulateValueAccessor(accessor, instance, propertyAccessor);
@@ -303,7 +303,7 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
     ASSERT_EQ(ECObjectsStatus::Success, instance.GetValueUsingAccessor(myTarget, accessor)) << "Failed to get ECValue for '" << propertyAccessor << "' Navigation Property";
     ASSERT_FALSE(myTarget.IsNull()) << "Expected Navigation Property '" << propertyAccessor << "' to be not null but it was";
     EXPECT_TRUE(myTarget.IsNavigation()) << "Expected Navigation Property '" << propertyAccessor << "' to be ValueKind Navigation but it was not.";
-    EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetIdAsLong()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
+    EXPECT_EQ(expectedValue, myTarget.GetNavigationInfo().GetId<BeInt64Id>()) << "Value of '" << propertyAccessor << "' nav property value from instance not as expected";
 
     if (!expectedRelClassId.IsValid())
         {
@@ -329,20 +329,22 @@ void VerifyNavPropLongValue(IECInstanceR instance, Utf8CP propertyAccessor, int6
 
 void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipClassCP expectedRelClass)
     {
-    ECValue myTargetValue(42LL, expectedRelClass);
+    BeInt64Id navId(42);
+    ECValue myTargetValue(navId, expectedRelClass);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTarget", myTargetValue)) << "Failed to set the value of MyTarget nav prop to a long";
-    EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTarget nav property not as expected";
+    EXPECT_EQ(navId, myTargetValue.GetNavigationInfo().GetId<BeInt64Id>()) << "Id value of MyTarget nav property not as expected";
     EXPECT_EQ(expectedRelClass, myTargetValue.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTarget nav property not as expected";
 
-    VerifyNavPropLongValue(instance, "MyTarget", 42LL, expectedRelClass);
+    VerifyNavPropLongValue(instance, "MyTarget", navId, expectedRelClass);
 
+    BeInt64Id noRelNavId (50);
     ECValue myTargetNoRel;
-    myTargetNoRel.SetNavigationInfo(50LL);
+    myTargetNoRel.SetNavigationInfo(noRelNavId);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetNoRel", myTargetNoRel)) << "Failed to set the value of MyTargetNoRel nav prop to a long";
-    EXPECT_EQ(50LL, myTargetNoRel.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetNoRel nav property not as expected";
+    EXPECT_EQ(noRelNavId, myTargetNoRel.GetNavigationInfo().GetId<BeInt64Id>()) << "Id value of MyTargetNoRel nav property not as expected";
     EXPECT_EQ(nullptr, myTargetNoRel.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTargetNoRel nav property not as expected";
 
-    VerifyNavPropLongValue(instance, "MyTargetNoRel", 50LL, nullptr);
+    VerifyNavPropLongValue(instance, "MyTargetNoRel", noRelNavId, nullptr);
 
     /*
     ECValueAccessor accessor;
@@ -364,15 +366,16 @@ void TestSettingNavPropLongValuesWithRel(IECInstanceR instance, ECRelationshipCl
 
 void TestSettingNavPropLongValuesWithId(IECInstanceR instance)
     {
+    BeInt64Id navId(42);
     ECClassId relClassId((uint64_t) 25);
     ECValue myTargetValue;
-    myTargetValue.SetNavigationInfo(42LL, relClassId);
+    myTargetValue.SetNavigationInfo(navId, relClassId);
     ASSERT_EQ(ECObjectsStatus::Success, instance.SetValue("MyTargetWithRelId", myTargetValue)) << "Failed to set the value of MyTargetWithRelId nav prop to a long";
-    EXPECT_EQ(42LL, myTargetValue.GetNavigationInfo().GetIdAsLong()) << "Id value of MyTargetWithRelId nav property not as expected";
+    EXPECT_EQ(navId, myTargetValue.GetNavigationInfo().GetId<BeInt64Id>()) << "Id value of MyTargetWithRelId nav property not as expected";
     EXPECT_TRUE(myTargetValue.GetNavigationInfo().GetRelationshipClassId().IsValid());
     EXPECT_EQ(relClassId, myTargetValue.GetNavigationInfo().GetRelationshipClassId()) << "Relationship Class Id of MyTargetWithRelId nav property not as expected";
 
-    VerifyNavPropLongValue(instance, "MyTargetWithRelId", 42LL, nullptr, relClassId);
+    VerifyNavPropLongValue(instance, "MyTargetWithRelId", navId, nullptr, relClassId);
     }
 
 void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstanceR sourceDeserialized, PrimitiveType navPropType)
@@ -397,9 +400,9 @@ void VerifyInstance(ECSchemaPtr schema, IECInstanceR sourceInstance, IECInstance
         }
     else // type is PrimitiveType::PRIMITIVETYPE_Long
         {
-        VerifyNavPropLongValue(sourceDeserialized, "MyTarget", 42LL, schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
-        VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", 50LL, nullptr);
-        VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", 42LL, nullptr, ECClassId((uint64_t) 25));
+        VerifyNavPropLongValue(sourceDeserialized, "MyTarget", BeInt64Id(42), schema->GetClassCP("DerivedRelClass")->GetRelationshipClassCP());
+        VerifyNavPropLongValue(sourceDeserialized, "MyTargetNoRel", BeInt64Id(50), nullptr);
+        VerifyNavPropLongValue(sourceDeserialized, "MyTargetWithRelId", BeInt64Id(42), nullptr, ECClassId((uint64_t) 25));
         //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[0]", 42LL);
         //VerifyNavPropLongValue(*sourceDeserialized, "MyTargetMult[1]", 43LL);
         }
@@ -540,13 +543,58 @@ TEST_F(NavigationECPropertyTests, ValueCopyTest)
     ECRelationshipClassP relClass;
     schema->CreateRelationshipClass(relClass, "RelClass");
 
+    BeInt64Id navId(42);
+
     ECValue v;
-    v = ECValue(42LL, relClass);
+    v = ECValue(navId, relClass);
 
     ASSERT_FALSE(v.IsNull()) << "The value is null after the copy when it shouldn't be.";
     ASSERT_TRUE(v.IsNavigation()) << "The value is not a navigation";
-    EXPECT_EQ(42LL, v.GetNavigationInfo().GetIdAsLong()) << "Value did not have expected value";
+    EXPECT_EQ(navId, v.GetNavigationInfo().GetId<BeInt64Id>()) << "Value did not have expected value";
     EXPECT_STREQ(relClass->GetName().c_str(), v.GetNavigationInfo().GetRelationshipClass()->GetName().c_str()) << "Value did not have the expected relationship";
+    }
+
+TEST_F(NavigationECPropertyTests, ValueEqualsTest)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    ECRelationshipClassP relClass;
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    
+    BeInt64Id navId(42);
+    ECClassId relClassId((uint64_t) 10);
+    relClass->SetId(relClassId);
+
+    {
+    ECValue v;
+    v.SetNavigationInfo(navId, relClass);
+
+    ECValue v2(navId, relClass);
+    EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class set with valid. ";
+    }
+    {
+    ECValue v;
+    v.SetNavigationInfo(navId, relClass->GetId());
+
+    ECValue v2 (navId, relClassId);
+    EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class id set. Relationship class is nullptr";
+    }
+    {
+    ECValue v;
+    v.SetNavigationInfo(navId);
+
+    ECValue v2(navId);
+    EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id set and relationship class nullptr";
+    }
+    {
+    ECRelationshipClassP relClass2;
+    schema->CreateRelationshipClass(relClass2, "RelClass2");
+    ECValue v;
+    v.SetNavigationInfo(navId, relClass2);
+
+    ECValue v2(navId, relClass2);
+    EXPECT_TRUE(v.Equals(v2)) << "Should not have failed with navigation id and relationship class set with no class id set.";
+    }
     }
 END_BENTLEY_ECN_TEST_NAMESPACE
 

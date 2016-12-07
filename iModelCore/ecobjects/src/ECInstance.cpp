@@ -3245,7 +3245,7 @@ struct  InstanceXmlReader
 
             ECClassId relClassId;
             ECRelationshipClassCP relClass = nullptr;
-            int64_t longValue = -1;
+            BeInt64Id id;
             for (BeXmlNodeP valueNode : valueNodes)
                 {
                 Utf8String valueNodeName(valueNode->GetName());
@@ -3290,6 +3290,7 @@ struct  InstanceXmlReader
 
                      if (PrimitiveType::PRIMITIVETYPE_Long == propertyType)
                          {
+                         int64_t longValue;
                          BeXmlStatus status = valueNode->GetContentInt64Value(longValue);
                          if (BEXML_Success != status)
                              {
@@ -3299,17 +3300,19 @@ struct  InstanceXmlReader
                                  ecValue.SetToNull();
                              return InstanceReadStatus::Success;
                              }
+
+                         id = BeInt64Id(longValue);
                          }
                      }
                 }
 
-            if (longValue == -1)
+            if (!id.IsValid())
                 return InstanceReadStatus::BadNavigationValue;
 
             if (relClassId.IsValid())
-                ecValue.SetNavigationInfo(longValue, relClassId);
+                ecValue.SetNavigationInfo(id, relClassId);
             else
-                ecValue.SetNavigationInfo(longValue, relClass);
+                ecValue.SetNavigationInfo(id, relClass);
 
             return InstanceReadStatus::Success;
             }
@@ -3699,7 +3702,7 @@ struct  InstanceXmlWriter
                 char outString[512];
 
                 if (PrimitiveType::PRIMITIVETYPE_Long == navigationProperty.GetType())
-                    BeStringUtilities::Snprintf(outString, "%lld", ecValue.GetNavigationInfo().GetIdAsLong());
+                    BeStringUtilities::Snprintf(outString, "%lld", ecValue.GetNavigationInfo().GetId<BeInt64Id>().GetValueUnchecked());
 
                 m_xmlWriter->WriteRaw(outString);
                 m_xmlWriter->WriteElementEnd();
