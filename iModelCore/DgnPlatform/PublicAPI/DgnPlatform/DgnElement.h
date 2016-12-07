@@ -1577,7 +1577,7 @@ public:
     //! Return the value of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
-        return TBeInt64Id(static_cast<uint64_t>(GetNavigationInfo(propertyName).GetIdAsLong()));
+        return GetNavigationInfo(propertyName).GetId<TBeInt64Id>();
         }
 
     //! Return the value of a string ECProperty by name

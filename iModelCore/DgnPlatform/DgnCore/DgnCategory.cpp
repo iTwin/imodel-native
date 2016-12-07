@@ -783,7 +783,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
             stat = DgnDbStatus::InvalidParent;
             return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
             }
-        categoryId = DgnCategoryId((uint64_t) v.GetNavigationInfo().GetIdAsLong());
+        categoryId = v.GetNavigationInfo().GetId<DgnCategoryId>();
         if (!categoryId.IsValid())
             {
             stat = DgnDbStatus::InvalidParent;
