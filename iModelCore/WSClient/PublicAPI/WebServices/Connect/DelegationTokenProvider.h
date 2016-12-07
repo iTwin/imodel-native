@@ -25,12 +25,11 @@ struct DelegationTokenProvider : public IConnectTokenProvider
         IImsClientPtr m_client;
         Utf8String m_rpUri;
         IConnectTokenProviderPtr m_parentTokenProvider;
+        UniqueTaskHolder<SamlTokenResult> m_tokenRetrieveTask;
 
         SamlTokenPtr m_token;
         uint32_t m_tokenLifetime;
         DateTime m_tokenUpdateDate;
-
-        UniqueTaskHolder<SamlTokenResult> m_tokenRetriever;
 
         uint32_t m_tokenRequestLifetime;
         uint32_t m_tokenExpirationThreshold;
