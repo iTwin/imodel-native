@@ -37,7 +37,7 @@ END_UNNAMED_NAMESPACE
 BentleyStatus TileLoader::LoadTile()
     {
     // During the read we may have abandoned the tile. Do not waste time loading it.
-    if (m_tile->IsAbandoned())
+    if (IsCanceledOrAbandoned())
         return ERROR;
 
     BeAssert(m_tile->IsQueued());
@@ -47,28 +47,48 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::CreateTile()
+folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    if (m_loads != nullptr && m_loads->IsCanceled())
-        {
-        m_tile->SetNotLoaded();
-        return ERROR;
-        }
+    DgnDb::VerifyClientThread();
 
-    LoadFlag loadFlag(m_tile->GetRootR());
+    if (m_loads)
+        m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
 
-    if (!m_tile->IsQueued())
-        return ERROR; // this node was abandoned.
+    m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
+    auto loadFlag = std::make_shared<LoadFlag>(m_tile->GetRootR());  // Keep track of running requests so we can exit gracefully.
 
-    return _ReadFromDb().then([me] (BentleyStatus status)
+    return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
         if (SUCCESS == status)
             return folly::makeFuture(SUCCESS);
-
+            
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+       
         return me->_GetFromSource();
-        });
+        }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
+            {
+            DgnDb::SetThreadId(DgnDb::ThreadId::CpuPool); // for debugging
+
+            auto& tile = *me->m_tile;
+
+            if (SUCCESS != status || SUCCESS != me->LoadTile())
+                {
+                if (me->m_loads != nullptr && me->m_loads->IsCanceled())
+                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
+                else
+                    tile.SetNotFound();
+                return ERROR;
+                }
+            
+            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+            
+            // On a successful load, potentially store the tile in the cache.   
+            me->_SaveToDb();    // don't wait on the save.
+            return SUCCESS;
+            });
     }
 
 //----------------------------------------------------------------------------------------
@@ -101,7 +121,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
     TileLoaderPtr me(this);
     return query->Perform().then([me, query](ByteStream const& data)
         {
-        if (data.HasData())
+        if (!data.HasData())
             return ERROR;
 
         me->m_tileBytes = std::move(data);
@@ -125,6 +145,9 @@ folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
         {
+        if (me->IsCanceledOrAbandoned())
+            return ERROR;
+
         return me->DoReadFromDb();
         });
     }
@@ -156,6 +179,8 @@ BentleyStatus TileLoader::DoReadFromDb()
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(2);    
         m_expirationDate = stmt->GetValueInt64(3);
+        
+        m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         uint64_t rowId = stmt->GetValueInt64(2);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
@@ -467,32 +492,8 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   
-
-    if (loads)
-        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
-    tile.SetIsQueued(); // mark as queued so we don't request it again.
     
-    return loader->CreateTile().then(&BeFolly::ThreadPool::GetCpuPool(), [loader,loads,&tile](BentleyStatus status)
-        {
-        DgnDb::SetThreadId(DgnDb::ThreadId::CpuPool); // for debugging
-        
-        if (SUCCESS != status || SUCCESS != loader->LoadTile())
-            {
-            if (loads != nullptr && loads->IsCanceled())
-                tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
-            else
-                tile.SetNotFound();
-            return ERROR;
-            }
-
-
-        tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-        // On a successful load, potentially store the tile in the cache.   
-        loader->_SaveToDb();    // don't wait on the save.
-        return SUCCESS;
-        });
+    return loader->Perform();
     }
 
 /*---------------------------------------------------------------------------------**//**

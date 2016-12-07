@@ -299,11 +299,13 @@ protected:
     TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
         :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
+    BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();
     BentleyStatus DoSaveToDb();
 
 public:
-    BentleyStatus LoadTile();
+    bool IsCanceledOrAbandoned() const { return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned(); }
+
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
 
@@ -320,8 +322,8 @@ public:
         ~LoadFlag() {m_root.DoneTileLoad();}
         };
 
-    //! Called from worker threads to create a tile. Could be from cache or from source.
-    folly::Future<BentleyStatus> CreateTile();
+    //! Perform the load asynchronously.
+    folly::Future<BentleyStatus> Perform();
 };
 
 //=======================================================================================

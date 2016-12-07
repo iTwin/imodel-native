@@ -193,6 +193,9 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     // Step 1 is done on the "TileThread". When it finishes, it creates a promise for Step 2 on the Render thread, in _CreateTile().
     auto stat = folly::via(&TileThread::Get(), [me]() 
         {
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+
         DgnDb::SetThreadId(DgnDb::ThreadId::SheetTile);
         Tile& tile = static_cast<Tile&>(*me->m_tile);
         Tree& root = tile.GetTree();
