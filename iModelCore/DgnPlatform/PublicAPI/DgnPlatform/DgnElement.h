@@ -642,6 +642,18 @@ public:
         virtual bool _IgnoreErrors() const {return m_ignoreErrors;}
     };
 
+    //! Information about an ECNavigationProperty
+    struct NavigationPropertyInfo
+    {
+    private:
+        BeInt64Id m_id;
+        DgnClassId m_relClassId;
+
+    public:
+        explicit NavigationPropertyInfo(BeInt64Id id=BeInt64Id(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
+        DgnClassId GetRelClassId() const {return m_relClassId;}
+        template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(m_id.GetValueUnchecked());}
+    };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
     enum class Hilited : uint8_t
@@ -1571,13 +1583,13 @@ public:
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
 
-    //! Return the NavigationInfo for an ECNavigationProperty of the specified name
-    DGNPLATFORM_EXPORT ECN::ECValue::NavigationInfo GetNavigationInfo(Utf8CP propertyName) const;
+    //! Return the NavigationPropertyInfo for an ECNavigationProperty of the specified name
+    DGNPLATFORM_EXPORT NavigationPropertyInfo GetNavigationPropertyInfo(Utf8CP propertyName) const;
 
-    //! Return the value of an ECNavigationProperty by name
+    //! Return the value of the ID of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
-        return GetNavigationInfo(propertyName).GetId<TBeInt64Id>();
+        return GetNavigationPropertyInfo(propertyName).GetId<TBeInt64Id>();
         }
 
     //! Return the value of a string ECProperty by name

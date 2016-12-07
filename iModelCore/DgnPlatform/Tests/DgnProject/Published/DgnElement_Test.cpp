@@ -1274,10 +1274,10 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
         DgnCode code = DgnCode::CreateEmpty();
         // custom-handled properties
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Model", ECN::ECValue((int64_t)m_defaultModelId.GetValue(), DgnClassId())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId.GetValue(), DgnClassId())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority().GetValue(), DgnClassId())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
@@ -1311,7 +1311,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
         ECN::ECValue v;
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Model"));
-        ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetNavigationInfo().GetIdAsLong());
+        ASSERT_EQ(m_defaultModelId, v.GetNavigationInfo().GetId<DgnModelId>());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
         ASSERT_STREQ("my label", v.ToString().c_str());
         ASSERT_STREQ("my label", ele->GetUserLabel());
@@ -1344,7 +1344,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
     ECN::ECValue v;
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Model"));
-    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetNavigationInfo().GetIdAsLong());
+    ASSERT_EQ(m_defaultModelId, v.GetNavigationInfo().GetId<DgnModelId>());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
     ASSERT_STREQ("my label", v.ToString().c_str());
     ASSERT_STREQ("my label", ele->GetUserLabel());
@@ -2463,10 +2463,10 @@ TEST_F(DgnElementTests, DemoArrayProblem)
 
     DgnCode code = DgnCode::CreateEmpty();
     // custom-handled properties
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Model", ECN::ECValue((int64_t) m_defaultModelId.GetValue(), DgnClassId())));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId.GetValue(), DgnClassId())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority().GetValue(), DgnClassId())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 

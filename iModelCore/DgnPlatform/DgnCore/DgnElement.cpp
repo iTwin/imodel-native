@@ -2484,7 +2484,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthority, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetCode().GetAuthority().GetValueUnchecked(), ECClassId());
+            value.SetNavigationInfo(el.GetCode().GetAuthority());
             return DgnDbStatus::Success;
             },
         
@@ -2493,14 +2493,14 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(DgnAuthorityId((uint64_t)value.GetNavigationInfo().GetIdAsLong()), existingCode.GetValue(), existingCode.GetNamespace());
+            DgnCode newCode(value.GetNavigationInfo().GetId<DgnAuthorityId>(), existingCode.GetValue(), existingCode.GetNamespace());
             return el.SetCode(newCode);
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetModelId().GetValueUnchecked(), ECClassId());
+            value.SetNavigationInfo(el.GetModelId());
             return DgnDbStatus::Success;
             },
         
@@ -2512,7 +2512,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Parent, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetParentId().GetValueUnchecked(), el.GetParentRelClassId());
+            value.SetNavigationInfo(el.GetParentId(), el.GetParentRelClassId());
             return DgnDbStatus::Success;
             },
         
@@ -2520,7 +2520,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
             {
             if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
-            return el.SetParentId(DgnElementId((uint64_t)value.GetNavigationInfo().GetIdAsLong()), value.GetNavigationInfo().GetRelationshipClassId());
+            return el.SetParentId(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, 
@@ -2611,7 +2611,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3d& el = (GeometricElement3d&)elIn;
-            value.SetNavigationInfo(el.GetCategoryId().GetValueUnchecked(), ECClassId());
+            value.SetNavigationInfo(el.GetCategoryId());
             return DgnDbStatus::Success;
             },
 
@@ -2623,7 +2623,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
                 return DgnDbStatus::BadArg;
                 }
             GeometricElement3d& el = (GeometricElement3d&)elIn;
-            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetNavigationInfo().GetIdAsLong()));
+            return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
     params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 

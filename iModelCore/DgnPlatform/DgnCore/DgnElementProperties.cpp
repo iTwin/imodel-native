@@ -1177,13 +1177,13 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArray
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValue::NavigationInfo DgnElement::GetNavigationInfo(Utf8CP propertyName) const
+DgnElement::NavigationPropertyInfo DgnElement::GetNavigationPropertyInfo(Utf8CP propertyName) const
     {
     ECN::ECValue value;
     DgnDbStatus status = GetPropertyValue(value, propertyName);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return value.GetNavigationInfo();
+    return NavigationPropertyInfo(value.GetNavigationInfo().GetId<BeInt64Id>(), value.GetNavigationInfo().GetRelationshipClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
