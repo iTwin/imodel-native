@@ -370,7 +370,7 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
     DgnCode _GenerateDefaultCode() const override {return DgnCode();}
     bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
-    DgnDbStatus _SetParentId(DgnElementId) override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     DgnDbStatus _OnChildUpdate(DgnElementCR, DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     virtual ViewControllerPtr _SupplyController() const = 0;

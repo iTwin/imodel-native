@@ -239,8 +239,8 @@ ElementChangeIterator::ElementChangeIterator(DgnDbCR dgndb, IChangeSet& changeSe
 void ElementChangeIterator::_Initialize()
     {
     T_Super::_Initialize();
-    m_modelIdColumnMap = m_tableMap->GetColumn("ModelId");
-    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("CodeAuthorityId");
+    m_modelIdColumnMap = m_tableMap->GetColumn("Model.Id");
+    m_codeAuthorityIdColumnMap = m_tableMap->GetColumn("CodeAuthority.Id");
     m_codeNamespaceColumnMap = m_tableMap->GetColumn("CodeNamespace");
     m_codeValueColumnMap = m_tableMap->GetColumn("CodeValue");
     }

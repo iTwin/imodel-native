@@ -84,7 +84,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnChildImport(DgnElementCR child, DgnModelR destModel, DgnImportContext& importer) const override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT virtual void _RemapIds(DgnImportContext& importer);

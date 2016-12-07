@@ -10,15 +10,18 @@
 
 USING_NAMESPACE_BENTLEY_DPTEST
 
-//----------------------------------------------------------------------------------------
+//=======================================================================================
 // @bsiclass                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
+//=======================================================================================
 struct CreateFromInstanceTests : public DgnDbTestFixture 
     {
     protected:
         void CreateAndInsertElement(DgnElementPtr& element, Utf8CP json, Utf8CP schemaName, Utf8CP className);
     };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf8CP json, Utf8CP schemaName, Utf8CP className)
     {
     ECN::ECClassCP ecClass = m_db->Schemas().GetECClass(schemaName, className);
@@ -37,17 +40,20 @@ void CreateFromInstanceTests::CreateAndInsertElement(DgnElementPtr& element, Utf
     m_db->SaveChanges();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            10/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(CreateFromInstanceTests, SpatialCategory)
     {
     SetupSeedProject();
 
     Utf8PrintfString json(
         "{"
-        "\"CodeAuthority\" : {\"Id\" : \"%d\"},"
+        "\"CodeAuthority\" : {\"id\" : \"%d\"},"
         "\"CodeNamespace\" : \"\","
         "\"CodeValue\" : \"Hub\","
         "\"Descr\" : \"\","
-        "\"Model\" : {\"Id\" : \"16\"},"
+        "\"Model\" : {\"id\" : \"16\"},"
         "\"Parent\" : null,"
         "\"Rank\" : 1,"
         "\"UserLabel\" : null,"
@@ -67,18 +73,18 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
     {
     SetupSeedProject();
 
-    Utf8CP json =
+    Utf8PrintfString json(
         "{"
         "\"$ECClassId\" : \"198\","
         "\"$ECClassKey\" : \"BisCore.CameraViewDefinition\","
         "\"$ECClassLabel\" : \"CameraViewDefinition\","
         "\"$ECInstanceId\" : \"502\","
         "\"$ECInstanceLabel\" : \"CameraViewDefinition\","
-        "\"CodeAuthority\" : {\"Id\" : \"4\"},"
+        "\"CodeAuthority\" : {\"id\" : \"%d\"},"
         "\"CodeNamespace\" : \"ViewDefinition\","
         "\"CodeValue\" : \"Default - View 1\","
         "\"Descr\" : \"\","
-        "\"Model\" : {\"Id\" : \"16\"},"
+        "\"Model\" : {\"id\" : \"16\"},"
         "\"Extents\" : {"
             "\"x\" : 85.413445258737553,"
             "\"y\" : 76.125601109667528,"
@@ -103,8 +109,8 @@ TEST_F(CreateFromInstanceTests, ViewDefinition)
         "\"UserLabel\" : null,"
         "\"UserProperties\" : null,"
         "\"Yaw\" : 29.999999999999986"
-        "}";
-
+        "}",
+        static_cast<int>(m_db->Authorities().QueryAuthorityId(BIS_AUTHORITY_ViewDefinition).GetValue())); // value for CodeAuthority.Id
 
     ECN::ECClassCP viewDefClass = m_db->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CameraViewDefinition);
     ASSERT_TRUE(nullptr != viewDefClass);

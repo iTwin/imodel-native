@@ -446,11 +446,11 @@ public:
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
         if (nullptr == parent)
-            m_el->SetParentId(DgnElementId());
+            m_el->SetParentId(DgnElementId(), DgnClassId());
         else
             {
             DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(parent));
-            m_el->SetParentId(parent->m_el->GetElementId());
+            m_el->SetParentId(parent->m_el->GetElementId(), DgnClassId()); // WIP: Set ParentRelECClassId!!!
             }
         }
     JsECValueP GetPropertyValue(Utf8StringCR);

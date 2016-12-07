@@ -767,16 +767,20 @@ void DgnElement::_OnReversedDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId)
+DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId)
     {
     // Check for direct cycle...will check indirect cycles on update.
     if (parentId.IsValid() && parentId == GetElementId())
         return DgnDbStatus::InvalidParent;
 
+    if (parentId.IsValid() && !parentRelClassId.IsValid())
+        return DgnDbStatus::InvalidId;
+
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
     m_parentId = parentId;
+    m_parentRelClassId = parentRelClassId;
     return DgnDbStatus::Success;
     }
 
@@ -959,7 +963,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel));
 
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), m_parentId, ECClassId());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
 
     if (m_federationGuid.IsValid())
         statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
@@ -2480,23 +2484,23 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeAuthority, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetLong(el.GetCode().GetAuthority().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetCode().GetAuthority().GetValueUnchecked(), ECClassId());
             return DgnDbStatus::Success;
             },
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
             DgnCode existingCode = el.GetCode();
-            DgnCode newCode(DgnAuthorityId((uint64_t)value.GetLong()), existingCode.GetValue(), existingCode.GetNamespace());
+            DgnCode newCode(DgnAuthorityId((uint64_t)value.GetNavigationInfo().GetIdAsLong()), existingCode.GetValue(), existingCode.GetNamespace());
             return el.SetCode(newCode);
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetLong(el.GetModelId().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetModelId().GetValueUnchecked(), ECClassId());
             return DgnDbStatus::Success;
             },
         
@@ -2508,15 +2512,15 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Parent, 
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetLong(el.GetParentId().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetParentId().GetValueUnchecked(), el.GetParentRelClassId());
             return DgnDbStatus::Success;
             },
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsLong())
+            if (!value.IsNavigation())
                 return DgnDbStatus::BadArg;
-            return el.SetParentId(DgnElementId((uint64_t)value.GetLong()));
+            return el.SetParentId(DgnElementId((uint64_t)value.GetNavigationInfo().GetIdAsLong()), value.GetNavigationInfo().GetRelationshipClassId());
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_UserLabel, 
@@ -2607,7 +2611,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3d& el = (GeometricElement3d&)elIn;
-            value.SetLong(el.GetCategoryId().GetValueUnchecked());
+            value.SetNavigationInfo(el.GetCategoryId().GetValueUnchecked(), ECClassId());
             return DgnDbStatus::Success;
             },
 
@@ -2619,7 +2623,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
                 return DgnDbStatus::BadArg;
                 }
             GeometricElement3d& el = (GeometricElement3d&)elIn;
-            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetLong()));
+            return el.SetCategoryId(DgnCategoryId((uint64_t)value.GetNavigationInfo().GetIdAsLong()));
             });
 
     params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 
@@ -3001,7 +3005,7 @@ DgnElementCPtr ElementCopier::MakeCopy(DgnDbStatus* statusOut, DgnModelR targetM
         if (remappedParentId.IsValid())
             newParentId = remappedParentId;
         }
-    outputEditElement->SetParentId(newParentId);
+    outputEditElement->SetParentId(newParentId, targetModel.GetDgnDb().Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements)); // WIP: right way to set ParentRelECClassId?
 
     DgnElementCPtr outputElement = outputEditElement->Insert(&status);
     if (!outputElement.IsValid())

@@ -580,6 +580,7 @@ public:
         Utf8String          m_userLabel;
         DgnElementId        m_id;
         DgnElementId        m_parentId;
+        DgnClassId          m_parentRelClassId;
 
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent), m_federationGuid(federationGuid) {SetUserLabel(label);}
@@ -589,7 +590,7 @@ public:
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
-        void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
+        void SetParentId(DgnElementId parent, DgnClassId parentRelClassId) {m_parentId=parent; m_parentRelClassId=parentRelClassId;}  //!< Set the ParentId for elements created with this CreateParams
         void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnElement created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
@@ -956,6 +957,7 @@ protected:
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
     DgnElementId m_parentId;
+    DgnClassId m_parentRelClassId;
     DgnModelId m_modelId;
     DgnClassId m_classId;
     DgnCode m_code;
@@ -1221,11 +1223,12 @@ protected:
     //! Override to generate the display label in a different way.
     virtual Utf8String _GetDisplayLabel() const {return HasUserLabel() ? m_userLabel : GetCode().GetValue();}
 
-    //! Change the parent (owner) of this DgnElement.
-    //! The default implementation sets the parent without doing any checking.
+    //! Change the parent (owner) of this DgnElement. The default implementation sets the parent without doing any checking.
+    //! @param[in] parentId The DgnElementId of the new parent element.
+    //! @param[in] parentRelClassId The DgnClassId of the ElementOwnsChildElements subclass that relates this element to its parent element.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId);
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved to perform the specified operation on this element.
     //! @param[in] request Request to populate
@@ -1460,11 +1463,15 @@ public:
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
 
+    //! Get the DgnClassId of the ElementOwnsChildElements subclass used to relate this element to its parent element.
+    //! @return Will be invalid if this element does not have a parent element.
+    DgnClassId GetParentRelClassId() const {return m_parentId.IsValid() ? m_parentRelClassId : DgnClassId();}
+
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
-    DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
+    DgnDbStatus SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) {return parentId == GetParentId() && parentRelClassId == GetParentRelClassId() ? DgnDbStatus::Success : _SetParentId(parentId, parentRelClassId);}
 
     //! Return the DgnCode of this DgnElement
     DgnCodeCR GetCode() const {return m_code;}

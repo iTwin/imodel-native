@@ -358,7 +358,7 @@ DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(DgnDbR db, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId parentId)
+DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId, DgnClassId)
     {
     // a sub-category cannot be re-parented. Its parent must be a category. The parent category is set up when we create + insert the subcategory.
     return DgnDbStatus::InvalidParent;

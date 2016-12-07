@@ -1562,7 +1562,7 @@ DgnDbStatus DgnModel::_ImportElementsFrom(DgnModelCR sourceModel, DgnImportConte
     for (auto entry : needsParentFixup)
         {
         DgnElementPtr cc = GetDgnDb().Elements().GetForEdit<DgnElement>(entry.first);
-        cc->SetParentId(importer.FindElementId(entry.second));
+        cc->SetParentId(importer.FindElementId(entry.second), cc->GetParentRelClassId());
         cc->Update();
         }
 

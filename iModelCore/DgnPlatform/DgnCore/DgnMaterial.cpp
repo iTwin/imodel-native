@@ -64,7 +64,7 @@ void DgnMaterial::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId) 
+DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) 
     {
     if (parentId.IsValid())
         {
@@ -78,7 +78,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
             return DgnDbStatus::InvalidParent;
         }
 
-    return T_Super::_SetParentId(parentId);
+    return T_Super::_SetParentId(parentId, parentRelClassId);
     }
 
 /*---------------------------------------------------------------------------------**//**
