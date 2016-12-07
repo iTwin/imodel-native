@@ -425,7 +425,6 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
 
-
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"]["bufferView"] = bvImageId;
@@ -817,7 +816,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
         AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
         AddTechniqueParameter(technique, "direction", GLTF_FLOAT_VEC3, "DIRECTION");
-        AddTechniqueParameter(technique, "vertexId", GLTF_FLOAT, "VERTEXID");
+        AddTechniqueParameter(technique, "vertexDelta", GLTF_FLOAT_VEC3, "VERTEXDELTA");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
         static char const   *s_programName                    = "polylineProgram",
@@ -834,11 +833,10 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
         auto& techniqueAttributes = technique["attributes"];
 
-        techniqueAttributes["a_next"] = "next";
         techniqueAttributes["a_batchId"] = "batch";
         techniqueAttributes["a_pos"]  = "pos";
         techniqueAttributes["a_direction"]  = "direction";
-        techniqueAttributes["a_vertexId"] = "vertexId";
+        techniqueAttributes["a_vertexDelta"] = "vertexDelta";
 
         auto& techniqueUniforms = technique["uniforms"];
         techniqueUniforms["u_mv"] = "mv";
@@ -848,7 +846,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         rootProgramNode["attributes"] = Json::arrayValue;
         AppendProgramAttribute(rootProgramNode, "a_pos");
         AppendProgramAttribute(rootProgramNode, "a_direction");
-        AppendProgramAttribute(rootProgramNode, "a_vertexId");
+        AppendProgramAttribute(rootProgramNode, "a_vertexDelta");
         AppendProgramAttribute(rootProgramNode, "a_batchId");
 
         rootProgramNode["vertexShader"]   = s_vertexShaderName;
@@ -1135,7 +1133,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
     bvector<DgnElementId>       entityIds;
     bvector<uint32_t>           indices;
-    bvector<double>             vertexIds;
+    bvector<DPoint3d>           vertexDeltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
@@ -1147,7 +1145,8 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             DPoint3d        p0 = meshPoints[polyline.m_indices[i]], 
                             p1 = meshPoints[polyline.m_indices[i+1]];
             DVec3d          direction = DVec3d::FromStartEnd (p0, p1);
-
+            bool            isStart  (i == 0),
+                            isEnd    (i == polyline.m_indices.size()-2);
             if (direction.Magnitude() < s_degenerateSegmentTolerance)
                 continue;
 
@@ -1166,7 +1165,22 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
             for (size_t j=0; j<4; j++)
                 {
-                vertexIds.push_back((double) j);
+                DPoint2d    delta;
+                double      uParam;
+                
+                if (j < 2)
+                    {
+                    uParam = 0.0;
+                    delta.x = isStart ? 0.0 : -1.0;
+                    }
+                else
+                    {
+                    uParam = 1.0;
+                    delta.x = isEnd ? 0.0 : 1.0;
+                    }
+                
+                delta.y = (0 == (j & 0x0001)) ? -1.0 : 1.0;
+                vertexDeltas.push_back (DPoint3d::From(delta.x, delta.y, uParam));
                 directions.push_back(direction);
                 }
 
@@ -1185,7 +1199,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
     Json::Value     primitive = Json::objectValue;
     DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
-    double          vertexIdLow = 0.0, vertexIdHigh = 3.0;
+    DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 
     static bool     s_doQuantize = false;
 
@@ -1195,7 +1209,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     Utf8String  accPositionId = AddMeshVertexAttribute (rootNode, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
     primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (rootNode, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", s_doQuantize, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXID"]  =  AddMeshVertexAttribute (rootNode, &vertexIds.front(), "VertexId", idStr.c_str(), 1, vertexIds.size(), "SCALAR", s_doQuantize, &vertexIdLow, &vertexIdHigh);
+    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (rootNode, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", s_doQuantize, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (rootNode, "Index", indices, idStr);
 
     AddMeshBatchIds(rootNode, primitive, entityIds, idStr);

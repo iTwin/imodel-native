@@ -31,6 +31,7 @@ BENTLEY_RENDER_TYPEDEFS(ITileGenerationFilter);
 BENTLEY_RENDER_TYPEDEFS(TileGenerationCache);
 BENTLEY_RENDER_TYPEDEFS(ITileGenerationProgressMonitor);
 BENTLEY_RENDER_TYPEDEFS(TileModelDelta);
+BENTLEY_RENDER_TYPEDEFS(TileGeomPart);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileNode);
@@ -42,6 +43,7 @@ BENTLEY_RENDER_REF_COUNTED_PTR(TileTextureImage);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileDisplayParams);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileGenerationCache);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileModelDelta);
+BENTLEY_RENDER_REF_COUNTED_PTR(TileGeomPart);
 
 BEGIN_BENTLEY_RENDER_NAMESPACE
 
@@ -334,6 +336,7 @@ public:
     double GetTolerance() const { return m_tolerance; }
 };
 
+
 //=======================================================================================
 //! Representation of geometry processed by a TileGenerator.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -353,6 +356,7 @@ struct TileGeometry : RefCountedBase
         PolyfaceHeaderPtr       m_polyface;
             
         TilePolyface(TileDisplayParamsR displayParams, PolyfaceHeaderPtr& polyface) : m_displayParams(&displayParams), m_polyface(polyface) { }
+        void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform (transform); }
         };
     struct TileStrokes
         {
@@ -393,11 +397,13 @@ public:
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
     size_t GetFacetCount(IFacetOptionsR options) const;
+    size_t GetFacetCount(FacetCounter& counter) const { return _GetFacetCount(counter); }
     IFacetOptionsPtr CreateFacetOptions(double chordTolerance, NormalMode normalMode) const;
 
     bool IsCurved() const { return m_isCurved; }
     bool HasTexture() const { return m_hasTexture; }
 
+    T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions) { return _GetPolyfaces(facetOptions); }
     T_TilePolyfaces GetPolyfaces(double chordTolerance, NormalMode normalMode);
     bool DoDecimate() const { return _DoDecimate(); }
     bool DoVertexCluster() const { return _DoVertexCluster(); }
@@ -409,8 +415,37 @@ public:
     static TileGeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
     //! Create a TileGeometry for text.
     static TileGeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
+    //! Create a TileGeometry for a part instance.
+    static TileGeometryPtr Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db);
 
 };
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/2016
+//=======================================================================================
+struct TileGeomPart : RefCountedBase
+{
+private:
+    DgnGeometryPartId           m_partId;
+    DgnGeometryPartCPtr         m_geomPart;
+    TileGeometryList            m_geometries;
+    size_t                      m_instanceCount;
+    mutable size_t              m_facetCount;
+
+protected:
+    TileGeomPart(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometry);
+
+public:
+    DRange3d    GetRange() const;
+
+    static TileGeomPartPtr Create(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometry) { return new TileGeomPart(partId, geomPart, geometry); }
+    TileGeometry::T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance);
+    TileGeometry::T_TileStrokes GetStrokes(IFacetOptionsR facetOptions, TileGeometryCR instance);
+    size_t GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const;
+    bool IsCurved() const;
+    void IncrementInstanceCount() { m_instanceCount++; }
+
+
+};  // TileGeomPart
 
 //=======================================================================================
 //! Filters elements during TileNode generation. Elements are selected according to their
@@ -427,7 +462,7 @@ public:
     bool AcceptElement(DgnElementId elementId) const { return _AcceptElement(elementId); }
 };
 
-//=======================================================================================
+//=======================================================================================            a
 // @bsistruct                                                   Ray.Bentley     11/2016
 //=======================================================================================
 struct TileModelDelta : RefCountedBase, ITileGenerationFilter
@@ -493,10 +528,12 @@ struct TileGenerationCache : RefCountedBase
 private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
     typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
+    typedef bmap<DgnGeometryPartId, TileGeomPartPtr>                GeomPartMap;
 
     DRange3d                    m_range;
     mutable GeometryListMap     m_geometry;
     mutable GeometrySourceMap   m_geometrySources;
+    mutable GeomPartMap         m_geomParts;
     mutable BeMutex             m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
     Options                     m_options;
@@ -520,6 +557,9 @@ public:
     bool WantCacheGeometry() const { return Options::CacheGeometryLists == m_options; }
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
+
+    bool GetGeomPart(TileGeomPartPtr& tileGeomPart, DgnGeometryPartId partId) const;
+    void AddGeomPart(DgnGeometryPartId partId, TileGeomPartR tileGeomPart) const;
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 };
