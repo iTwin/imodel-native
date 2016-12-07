@@ -290,34 +290,46 @@ DbTable& DbColumnFactory::GetTable() const
     {
     return m_classMap.GetJoinedTable();
     }
-
+//**************************ClassMapUsedSharedColumnQuery***********************************
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    01/2016
+//@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
+BentleyStatus ClassMapUsedSharedColumnQuery::_Query(bset<DbColumn const*>& columns, DbTable const& table) const 
     {
-    for (ECN::ECClassCP constraintClass : m_constraintClasses)
+    GetColumnsPropertyMapVisitor sharedColumnVisitor(PropertyMap::Type::Data);
+    m_classMap.GetPropertyMaps().AcceptVisitor(sharedColumnVisitor);
+    for (DbColumn const* columnInUse : sharedColumnVisitor.GetColumns())
         {
-        if (ecdbMap.GetClassMap(*constraintClass) == nullptr)
-            {
-            LOG.errorv("Finishing creation of ECRelationship class map because class map for Constraint ECClass '%s' could not be found.",
-                       constraintClass->GetFullName());
-            return ERROR;
-            }
+        if (columnInUse->IsShared() && &columnInUse->GetTable() == &table)
+            columns.insert(columnInUse);
         }
-
-    for (NavigationPropertyMap* propMap : m_navPropMaps)
-        {
-        if (SUCCESS != ClassMapper::SetupNavigationPropertyMap(*propMap))
-            return ERROR;
-        }
-
-    m_constraintClasses.clear();
-    m_navPropMaps.clear();
     return SUCCESS;
     }
+//*************************DerivedClassUsedSharedColumnQuery********************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+BentleyStatus DerivedClassUsedSharedColumnQuery::_Query(bset<DbColumn const*>& columns, DbTable const& table) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        "SELECT c.Id FROM ec_Column c "
+        "              JOIN ec_PropertyMap pm ON c.Id = pm.ColumnId "
+        "              JOIN ec_ClassMap cm ON cm.ClassId = pm.ClassId "
+        "              JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = cm.ClassId "
+        "              JOIN ec_Table t on t.Id = c.TableId "
+        "WHERE ch.BaseClassId=? AND t.Name=? and c.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn " <> 0 "
+        "GROUP BY c.Name");
 
+    if (stmt == nullptr)
+        return ERROR;
+    stmt->BindId(1, m_classId);
+    stmt->BindText(2, table.GetName().c_str(), Statement::MakeCopy::No);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        columns.insert(table.FindColumn(stmt->GetValueText(0)));
+        }
 
-
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

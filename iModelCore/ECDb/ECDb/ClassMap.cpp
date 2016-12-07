@@ -1000,7 +1000,32 @@ ECClassId ClassMap::TablePerHierarchyHelper::DetermineParentOfJoinedTableECClass
 
     return m_parentOfJoinedTableECClassId; 
     }
+//************************** ClassMapLoadContext ***************************************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Krischan.Eberle    01/2016
+//------------------------------------------------------------------------------------------
+BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
+    {
+    for (ECN::ECClassCP constraintClass : m_constraintClasses)
+        {
+        if (ecdbMap.GetClassMap(*constraintClass) == nullptr)
+            {
+            LOG.errorv("Finishing creation of ECRelationship class map because class map for Constraint ECClass '%s' could not be found.",
+                       constraintClass->GetFullName());
+            return ERROR;
+            }
+        }
 
+    for (NavigationPropertyMap* propMap : m_navPropMaps)
+        {
+        if (SUCCESS != ClassMapper::SetupNavigationPropertyMap(*propMap))
+            return ERROR;
+        }
+
+    m_constraintClasses.clear();
+    m_navPropMaps.clear();
+    return SUCCESS;
+    }
 //************************** UnmappedClassMap ***************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
