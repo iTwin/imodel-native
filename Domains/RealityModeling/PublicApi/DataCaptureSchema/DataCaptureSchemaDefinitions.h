@@ -72,6 +72,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Elements
 #define BDCP_CLASS_Camera                                        "Camera"
 #define BDCP_CLASS_Photo                                         "Photo"
+#define BDCP_CLASS_RadialDistortion                              "RadialDistortion"
+#define BDCP_CLASS_TangentialDistortion                          "TangentialDistortion"
 
 // Relationships
 #define BDCP_REL_PhotoIsTakenByCamera                          "PhotoIsTakenByCamera"
@@ -124,12 +126,15 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 // Define typedefs and Ptrs in the DataCapture namespace
 //-----------------------------------------------------------------------------------------
 DATACAPTURE_TYPEDEFS(Camera)
-DATACAPTURE_TYPEDEFS(CameraDistortionType)
+DATACAPTURE_TYPEDEFS(RadialDistortion)
+DATACAPTURE_TYPEDEFS(TangentialDistortion)
 DATACAPTURE_TYPEDEFS(Photo)
 DATACAPTURE_TYPEDEFS(PoseType)
 DATACAPTURE_TYPEDEFS(RotationMatrixType)
 
 
+DATACAPTURE_REFCOUNTED_PTR(RadialDistortion)
+DATACAPTURE_REFCOUNTED_PTR(TangentialDistortion)
 DATACAPTURE_REFCOUNTED_PTR(Camera)
 DATACAPTURE_REFCOUNTED_PTR(Photo)
 

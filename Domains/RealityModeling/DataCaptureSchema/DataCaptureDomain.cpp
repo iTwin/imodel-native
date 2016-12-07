@@ -15,6 +15,8 @@ DOMAIN_DEFINE_MEMBERS(DataCaptureDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley DataCapture Domain", 1)
     {
+    RegisterHandler(RadialDistortionHandler::GetHandler());
+    RegisterHandler(TangentialDistortionHandler::GetHandler());
     RegisterHandler(CameraHandler::GetHandler());    
     RegisterHandler(PhotoHandler::GetHandler());
     }

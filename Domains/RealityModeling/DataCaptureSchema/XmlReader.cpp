@@ -127,8 +127,13 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         p1 = 0.0;
         p2 = 0.0;
         }
-    CameraDistortionType distortion(k1,k2,k3,p1,p2);
-    cameraInfo.SetDistortion(distortion);
+    else
+        {
+        RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(k1, k2, k3);
+        TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(p1, p2);
+        cameraInfo.SetRadialDistortion(pRadialDistortion.get());
+        cameraInfo.SetTangentialDistortion(pTangentialDistortion.get());
+        }
 
     return BEXML_Success;
     }

@@ -32,8 +32,10 @@ TEST_F(DataCaptureTests, CreateCamera)
     cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint={2677.8,1772};
     cameraPtr->SetPrincipalPoint(principalPoint);
-    CameraDistortionType distortion(1,2,3,4,5);
-    cameraPtr->SetDistortion(distortion);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraPtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraPtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraPtr->SetAspectRatio(1.0);
     cameraPtr->SetSkew(1.0);
 
@@ -66,7 +68,10 @@ TEST_F(DataCaptureTests, CreateCamera)
     ASSERT_EQ(5456,myCamPtr->GetImageWidth());
     ASSERT_EQ(3632,myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
-    ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
+    ASSERT_TRUE(nullptr != myCamPtr->GetRadialDistortion());
+    ASSERT_TRUE(pRadialDistortion->IsEqual(*(myCamPtr->GetRadialDistortion())));
+    ASSERT_TRUE(nullptr != myCamPtr->GetTangentialDistortion());
+    ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCamPtr->GetTangentialDistortion())));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),1.0);
     ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),1.0);
     }
@@ -99,8 +104,10 @@ TEST_F(DataCaptureTests, ModifyCamera)
     cameraPtr->SetImageHeight(14);
     DPoint2d principalPoint={15,16};
     cameraPtr->SetPrincipalPoint(principalPoint);
-    CameraDistortionType distortion(11,12,13,14,15);
-    cameraPtr->SetDistortion(distortion);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(11,12,13);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(14,15);
+    cameraPtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraPtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraPtr->SetAspectRatio(2.0);
     cameraPtr->SetSkew(3.0);
 
@@ -136,7 +143,10 @@ TEST_F(DataCaptureTests, ModifyCamera)
     ASSERT_EQ(13, myCamPtr->GetImageWidth());
     ASSERT_EQ(14, myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
-    ASSERT_TRUE(distortion.IsEqual(myCamPtr->GetDistortion()));
+    ASSERT_TRUE(nullptr != myCamPtr->GetRadialDistortion());
+    ASSERT_TRUE(pRadialDistortion->IsEqual(*(myCamPtr->GetRadialDistortion())));
+    ASSERT_TRUE(nullptr !=myCamPtr->GetTangentialDistortion());
+    ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCamPtr->GetTangentialDistortion())));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),2.0);
     ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),3.0);
     }
@@ -217,8 +227,10 @@ TEST_F(DataCaptureTests, CreatePhoto)
     cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint = { 2677.8,1772 };
     cameraPtr->SetPrincipalPoint(principalPoint);
-    CameraDistortionType distortion(1, 2, 3, 4, 5);
-    cameraPtr->SetDistortion(distortion);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraPtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraPtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraPtr->SetAspectRatio(1.0);
     cameraPtr->SetSkew(1.0);
     auto cameraInsertedPtr = cameraPtr->Insert();

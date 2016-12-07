@@ -14,65 +14,106 @@ BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 
 //=======================================================================================
-//! Base class for CameraDistortionType 
+//! Base class for RadialDistortion 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct CameraDistortionType
+struct RadialDistortion : Dgn::DgnElement::UniqueAspect
     {
+    DGNASPECT_DECLARE_MEMBERS(BDCP_SCHEMA_NAME,BDCP_CLASS_RadialDistortion, Dgn::DgnElement::UniqueAspect)
+
 private:
     double m_k1;
     double m_k2;
     double m_k3;
+
+protected:
+    //! Constructor
+    RadialDistortion(double k1, double k2, double k3) :m_k1(k1), m_k2(k2), m_k3(k3) {}
+
+    //! Copy constructor
+    RadialDistortion(RadialDistortionCR rhs);
+
+    //! Empty constructor 
+    RadialDistortion() :m_k1(0), m_k2(0), m_k3(0) {}
+
+    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+
+
+public:
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(RadialDistortion)
+
+    //! Create a new RadialDistortion 
+    DATACAPTURE_EXPORT static RadialDistortionPtr Create();
+
+    //! Create a new RadialDistortion 
+    DATACAPTURE_EXPORT static RadialDistortionPtr Create(double k1, double k2, double k3);
+
+    DATACAPTURE_EXPORT RadialDistortionPtr Clone() const;
+
+    //! Assignment operator
+    DATACAPTURE_EXPORT RadialDistortion& operator= (RadialDistortionCR rhs);
+
+    //! Validates 
+    DATACAPTURE_EXPORT bool IsValid() const;
+    DATACAPTURE_EXPORT bool IsEqual(RadialDistortionCR rhs) const;
+
+    DATACAPTURE_EXPORT double GetK1() const;
+    DATACAPTURE_EXPORT double GetK2() const;
+    DATACAPTURE_EXPORT double GetK3() const;
+    DATACAPTURE_EXPORT void   SetK1(double val);
+    DATACAPTURE_EXPORT void   SetK2(double val);
+    DATACAPTURE_EXPORT void   SetK3(double val);
+
+    };
+//=======================================================================================
+//! Base class for TangentialDistortion 
+//! @ingroup DataCaptureGroup
+//=======================================================================================
+struct TangentialDistortion: Dgn::DgnElement::UniqueAspect
+    {
+    DGNASPECT_DECLARE_MEMBERS(BDCP_SCHEMA_NAME, BDCP_CLASS_TangentialDistortion, Dgn::DgnElement::UniqueAspect)
+
+private:
     double m_p1;
     double m_p2;
 
-public:
+protected:
     //! Constructor
-    CameraDistortionType(double k1, double k2, double k3, double p1, double p2):m_k1(k1),m_k2(k2),m_k3(k3),m_p1(p1),m_p2(p2) {}
+    TangentialDistortion(double p1, double p2) :m_p1(p1), m_p2(p2) {}
 
     //! Empty constructor 
-    CameraDistortionType():m_k1(0),m_k2(0),m_k3(0),m_p1(0),m_p2(0) {}
+    TangentialDistortion() :m_p1(0), m_p2(0) {}
 
     //! Copy constructor
-    CameraDistortionType(CameraDistortionTypeCR rhs) { *this = rhs; }
+    TangentialDistortion(TangentialDistortionCR rhs);
+
+    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+
+public:
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(TangentialDistortion)
+
+    //! Create a new TangentialDistortion 
+    DATACAPTURE_EXPORT static TangentialDistortionPtr Create();
+
+    //! Create a new TangentialDistortion 
+    DATACAPTURE_EXPORT static TangentialDistortionPtr Create(double p1, double p2);
+
+    DATACAPTURE_EXPORT TangentialDistortionPtr Clone() const;
 
     //! Assignment operator
-    CameraDistortionType& operator= (CameraDistortionTypeCR rhs)
-        {
-        m_k1 = rhs.m_k1;
-        m_k2 = rhs.m_k2;
-        m_k3 = rhs.m_k3;
-        m_p1 = rhs.m_p1;
-        m_p2 = rhs.m_p2;
-        return *this;
-        }
+    DATACAPTURE_EXPORT TangentialDistortion& operator= (TangentialDistortionCR rhs);
 
     //! Validates 
-    bool IsValid() const { return true; }
-    bool IsEqual(CameraDistortionTypeCR rhs) const
-        {
-        if (m_k1 == rhs.m_k1 && m_k2 == rhs.m_k2 && m_k3 == rhs.m_k3 && m_p1 == rhs.m_p1 && m_p2 == rhs.m_p2)
-            return true;
-        return false;
-        }
+    DATACAPTURE_EXPORT bool IsValid() const;
+    DATACAPTURE_EXPORT bool IsEqual(TangentialDistortionCR rhs) const;
 
 
-    double GetK1() const { return m_k1; }
-    double GetK2() const { return m_k2; }
-    double GetK3() const { return m_k3; }
-    double GetP1() const { return m_p1; }
-    double GetP2() const { return m_p2; }
-    void   SetK1(double val) { m_k1 = val; }
-    void   SetK2(double val) { m_k2 = val; }
-    void   SetK3(double val) { m_k3 = val; }
-    void   SetP1(double val) { m_p1=val; }
-    void   SetP2(double val) { m_p2=val; }
-
-    //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::ECSqlStatement& statement, uint32_t columnIndex, CameraDistortionTypeCR val);
-
-    //! Get the ImageDimensionType value at the specified column from a ECSQL statement
-    static CameraDistortionType GetValue(BeSQLite::EC::ECSqlStatement const& statement, uint32_t columnIndex);
+    DATACAPTURE_EXPORT double GetP1() const;
+    DATACAPTURE_EXPORT double GetP2() const;
+    DATACAPTURE_EXPORT void   SetP1(double val);
+    DATACAPTURE_EXPORT void   SetP2(double val);
     };
 
 //=======================================================================================
@@ -107,7 +148,6 @@ private:
     int                     m_imageWidth;
     int                     m_imageHeight;
     DPoint2d                m_principalPoint;
-    CameraDistortionType    m_Distortion;
     double                  m_aspectRatio;
     double                  m_skew;
 
@@ -174,14 +214,42 @@ public:
     DATACAPTURE_EXPORT void                     SetFocalLenghtPixels(double val);
     DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
     DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;
-    DATACAPTURE_EXPORT CameraDistortionType     GetDistortion() const;
-    DATACAPTURE_EXPORT void                     SetDistortion(CameraDistortionTypeCR val);
+    DATACAPTURE_EXPORT RadialDistortionCP       GetRadialDistortion() const;
+    DATACAPTURE_EXPORT RadialDistortionP        GetRadialDistortionP();
+    DATACAPTURE_EXPORT void                     SetRadialDistortion(RadialDistortionP value);
+    DATACAPTURE_EXPORT TangentialDistortionCP   GetTangentialDistortion() const;
+    DATACAPTURE_EXPORT TangentialDistortionP    GetTangentialDistortionP();
+    DATACAPTURE_EXPORT void                     SetTangentialDistortion(TangentialDistortionP value);
     DATACAPTURE_EXPORT double                   GetAspectRatio() const;
     DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
     DATACAPTURE_EXPORT double                   GetSkew() const;
     DATACAPTURE_EXPORT void                     SetSkew(double val);
    
 };
+
+//=================================================================================
+//! Handler for RadialDistortion
+//! @ingroup DataCaptureGroup
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE RadialDistortionHandler : Dgn::dgn_AspectHandler::Aspect
+    {
+    DOMAINHANDLER_DECLARE_MEMBERS(BDCP_CLASS_RadialDistortion, RadialDistortionHandler, Dgn::dgn_AspectHandler::Aspect, DATACAPTURE_EXPORT)
+
+    protected:
+        RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override;
+    };
+//=================================================================================
+//! Handler for RadialDistortion
+//! @ingroup DataCaptureGroup
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TangentialDistortionHandler : Dgn::dgn_AspectHandler::Aspect
+    {
+    DOMAINHANDLER_DECLARE_MEMBERS(BDCP_CLASS_TangentialDistortion, TangentialDistortionHandler, Dgn::dgn_AspectHandler::Aspect, DATACAPTURE_EXPORT)
+
+    protected:
+        RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override;
+    };
+
 
 //=================================================================================
 //! ElementHandler for Camera-s

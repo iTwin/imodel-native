@@ -9,13 +9,26 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     <ECSchemaReference name="dgn" version="02.00.00" prefix="dgn" />
 
     <!-- BEGIN Camera element classes -->
-    <ECStructClass typeName="CameraDistorsionType" >
+
+    <ECEntityClass typeName="RadialDistortion" >
+        <BaseClass>dgn:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="K1" typeName="double" />
         <ECProperty propertyName="K2" typeName="double" />
         <ECProperty propertyName="K3" typeName="double" />
+    </ECEntityClass>
+
+    <ECEntityClass typeName="TangentialDistortion" >
+        <BaseClass>dgn:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="P1" typeName="double" />
         <ECProperty propertyName="P2" typeName="double" />
-    </ECStructClass>
+    </ECEntityClass>
+
 
     <ECEntityClass typeName="Camera" modifier="Sealed" description="The camera model type.">
         <BaseClass>dgn:PhysicalElement</BaseClass>
@@ -27,7 +40,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECProperty         propertyName="ImageWidth"           typeName="int"                  displayLabel="Image Width" />
         <ECProperty         propertyName="ImageHeight"          typeName="int"                  displayLabel="Image Height" />
         <ECProperty         propertyName="PrincipalPoint"       typeName="point2d"              displayLabel="Principal Point"/>
-        <ECStructProperty   propertyName="Distortion"           typeName="CameraDistorsionType" displayLabel="Distortion" />
         <ECProperty         propertyName="AspectRatio"          typeName="double"               displayLabel="Aspect Ratio" />
         <ECProperty         propertyName="Skew"                 typeName="double"               displayLabel="Skew" />
     </ECEntityClass>
