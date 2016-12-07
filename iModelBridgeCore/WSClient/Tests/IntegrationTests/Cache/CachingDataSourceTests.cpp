@@ -644,27 +644,31 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     
 TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
     {
-    auto schemaPath = GetTestsAssetsDir();
-    schemaPath.AppendToPath(LR"(\ECSchemas\WSClient\Cache\DSCacheSchema.01.05.ecschema.xml)");
-
     // Setup ECDb
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(":memory:"));
 
     // Setup Schema
-    auto context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(context->GetCache()));
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" > 
+                <ECProperty propertyName="Name" typeName="string"/>
+                <ECProperty propertyName="Persistence" typeName="int"/>
+            </ECClass>
+        </ECSchema>)xml");
 
-    ECClassCP rootClass = db.GetClassLocater().LocateClass("DSCacheSchema", "Root");
+    auto sc = ECSchemaCache::Create();
+    sc->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*sc));
+
+    ECClassCP rootClass = db.GetClassLocater().LocateClass("TestSchema", "TestClass");
     ASSERT_NE(nullptr, rootClass);
 
     // Names
     Utf8String rootName = "Foo";
 
     // Test quety for same instance
-    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
+    Utf8String ecsql = "SELECT ECInstanceId FROM [TS].[TestClass] WHERE [Name] = ? LIMIT 1 ";
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
