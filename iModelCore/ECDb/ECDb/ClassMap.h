@@ -12,7 +12,7 @@
 #include "ClassMappingInfo.h"
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
-
+#include "DbColumnFactory.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECDbMap;
@@ -45,46 +45,9 @@ public:
 
 struct NativeSqlBuilder;
 struct StorageDescription;
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-struct ColumnFactory : NonCopyableClass
-    {
-    private:
-        ECDbCR m_ecdb;
-        ClassMapCR m_classMap;
-        bool m_usesSharedColumnStrategy;
-        mutable bset<DbColumnId> m_idsOfColumnsInUseByClassMap;
-
-        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId, int retryCount) const;
-
-        DbColumn* ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-        DbColumn* ApplySharedColumnStrategy(DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-
-        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8CP accessString) const;
-        bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
-        bool IsColumnInUseByClassMap(DbColumn const&) const;
-        void CacheUsedColumn(DbColumn const&) const;
-
-        bool CanEnforceColumnConstraints() const;
-        BentleyStatus GetDerivedColumnList(std::vector<DbColumn const*>&) const;
-
-        DbTable& GetTable() const;
-
-    public:
-        ColumnFactory(ECDbCR ecdb, ClassMapCR classMap);
-        ~ColumnFactory() {}
-
-        DbColumn* CreateColumn(ECN::ECPropertyCR, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation) const;
-        void Update(bool includeDerivedClasses) const;
-
-        bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
-    };
-
 struct ECSqlPrepareContext;
 struct ECInstanceIdPropertyMap;
 struct ECClassIdPropertyMap;
-
 struct DbClassMapLoadContext;
 struct DbMapSaveContext;
 
@@ -155,7 +118,7 @@ struct ClassMap : RefCountedBase
         bool m_isDirty;
         bool m_isECInstanceIdAutogenerationDisabled;
         ECN::ECClassCR m_ecClass;
-        ColumnFactory m_columnFactory;
+        DbColumnFactory m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
 
         BentleyStatus InitializeDisableECInstanceIdAutogeneration();
@@ -198,7 +161,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-        ColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
+        DbColumnFactory const& GetColumnFactory() const { return m_columnFactory; }
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
         DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }

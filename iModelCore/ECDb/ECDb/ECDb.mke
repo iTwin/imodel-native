@@ -119,6 +119,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECSchemaComparer.h \
                 $(baseDir)LightweightCache.h \
                 $(baseDir)SqlNames.h \
+                $(baseDir)DbColumnFactory.h \
                 $(baseDir)ECDbExpressionSymbolProvider.h
 
 
@@ -351,6 +352,7 @@ $(o)ECDbExpressionSymbolProvider$(oext):                      $(baseDir)ECDbExpr
 
 $(o)ECSchemaComparer$(oext):                                  $(baseDir)ECSchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)DbColumnFactory$(oext):                                   $(baseDir)DbColumnFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 
 %include MultiCppCompileGo.mki

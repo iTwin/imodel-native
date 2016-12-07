@@ -409,6 +409,9 @@
       <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="Nullable.h" />
+    <ClInclude Include="DbColumnFactory.h">
+      <Filter>ECDbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -747,6 +750,9 @@
     </ClCompile>
     <ClCompile Include="ECDbSqlFunctions.cpp">
       <Filter>ECDb</Filter>
+    </ClCompile>
+    <ClCompile Include="DbColumnFactory.cpp">
+      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

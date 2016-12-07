@@ -60,15 +60,7 @@ PropertyMap* ClassMapper::ProcessProperty(ECPropertyCR property)
         }
 
     if (propertyMap == nullptr)
-        {
-        if (!m_loadContext)
-            {
-            BeAssert(false && "Failed to created property map");
-            }
-
         return nullptr;
-        }
-
 
     if (m_classMap.GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         {
@@ -155,12 +147,13 @@ RelationshipConstraintMap const& ClassMapper::GetConstraintMap(ECN::NavigationEC
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECPropertyCR ecProp, Utf8CP propAccessString)
+BentleyStatus ClassMapper::DetermineColumnInfo(DbColumn::CreateParams& params, ECDbCR ecdb, ECPropertyCR ecProp, Utf8StringCR propAccessString)
     {
-    columnName.clear();
-    isNullable = true;
-    isUnique = false;
-    collation = DbColumn::Constraints::Collation::Default;
+    Utf8String columnName;
+    bool isNullable = true;
+    bool isUnique = false;
+    DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
+
     ECDbPropertyMap customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
@@ -179,7 +172,7 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         if (ECObjectsStatus::Success != customPropMap.TryGetCollation(collationStr))
             return ERROR;
 
-        if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr.c_str()))
+        if (!DbColumn::Constraints::TryParseCollationString(collation, collationStr))
             {
             ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
                                                           "Failed to map ECProperty '%s:%s': Custom attribute PropertyMap has an invalid value for the property 'Collation': %s",
@@ -189,6 +182,9 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
             }
         }
 
+    //return information whether the col name originates from the PropertyMap CA or whether a default name was used
+    const bool colNameIsFromPropertyMapCA = !columnName.empty();
+
     // PropertyMappingRule: if custom attribute PropertyMap does not supply a column name for an ECProperty, 
     // we use the ECProperty's propertyAccessString (and replace . by _)
     if (columnName.empty())
@@ -197,6 +193,7 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
         columnName.ReplaceAll(".", "_");
         }
 
+    params.Assign(columnName, colNameIsFromPropertyMapCA, !isNullable, isUnique, collation);
     return SUCCESS;
     }
 
@@ -204,23 +201,14 @@ BentleyStatus ClassMapper::DetermineColumnInfo(Utf8StringR columnName, bool& isN
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
-DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf8CP accessString, DbColumn::Type colType)
+DbColumn* ClassMapper::DoFindOrCreateColumnsInTable(ECPropertyCR ecProperty, Utf8StringCR accessString, DbColumn::Type colType)
     {
-    Utf8String colName;
-    bool isNullable = true;
-    bool isUnique = false;
-    DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-    if (SUCCESS != DetermineColumnInfo(colName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), ecProperty, accessString))
+    DbColumn::CreateParams params;
+    if (SUCCESS != DetermineColumnInfo(params, m_classMap.GetDbMap().GetECDb(), ecProperty, accessString))
         return nullptr;
 
-    DbColumn* col = m_classMap.GetColumnFactory().CreateColumn(ecProperty, accessString, colName.c_str(), colType, !isNullable, isUnique, collation);
-    if (col == nullptr)
-        {
-        BeAssert(col != nullptr);
-        return nullptr;
-        }
-
-    return col;
+    //can return nullptr if PropertyMap CA has invalid values.
+    return m_classMap.GetColumnFactory().CreateColumn(ecProperty, accessString, colType, params);
     }
 
 //---------------------------------------------------------------------------------------
@@ -237,7 +225,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".X").c_str());
+        columns = m_loadContext->FindColumnByAccessString((accessString + ".X"));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -245,7 +233,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
             }
 
         x = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y").c_str());
+        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y"));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -256,15 +244,14 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
         }
     else
         {
-        Utf8String columnName;
-        bool isNullable = true;
-        bool isUnique = false;
-        DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-        const DbColumn::Type colType = DbColumn::Type::Real;
-        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), property, accessString.c_str()))
+        DbColumn::CreateParams colParams;
+        if (SUCCESS != DetermineColumnInfo(colParams, m_classMap.GetDbMap().GetECDb(), property, accessString))
             return nullptr;
 
-        x = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_X").c_str(), colType, !isNullable, isUnique, collation);
+        const DbColumn::Type colType = DbColumn::Type::Real;
+        DbColumn::CreateParams coordColParams;
+        coordColParams.Assign(colParams.GetColumnName() + "_X", colParams.IsColumnNameFromPropertyMapCA(), colParams.AddNotNullConstraint(), colParams.AddUniqueConstraint(), colParams.GetCollation());
+        x = m_classMap.GetColumnFactory().CreateColumn(property, accessString, colType, coordColParams);
         if (x == nullptr)
             {
             BeAssert(false);
@@ -272,7 +259,9 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
             }
 
 
-        y = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_Y").c_str(), colType, !isNullable, isUnique, collation);
+        DbColumn::CreateParams yColParams;
+        coordColParams.Assign(colParams.GetColumnName() + "_Y", colParams.IsColumnNameFromPropertyMapCA(), colParams.AddNotNullConstraint(), colParams.AddUniqueConstraint(), colParams.GetCollation());
+        y = m_classMap.GetColumnFactory().CreateColumn(property, accessString, colType, coordColParams);
         if (x == nullptr)
             {
             BeAssert(false);
@@ -296,7 +285,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".X").c_str());
+        columns = m_loadContext->FindColumnByAccessString((accessString + ".X"));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -304,7 +293,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         x = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y").c_str());
+        columns = m_loadContext->FindColumnByAccessString((accessString + ".Y"));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -312,7 +301,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         y = columns->front();
-        columns = m_loadContext->FindColumnByAccessString((accessString + ".Z").c_str());
+        columns = m_loadContext->FindColumnByAccessString((accessString + ".Z"));
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -323,31 +312,31 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
         }
     else
         {
-        Utf8String columnName;
-        bool isNullable = true;
-        bool isUnique = false;
-        DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Default;
-        const DbColumn::Type colType = DbColumn::Type::Real;
-        if (SUCCESS != DetermineColumnInfo(columnName, isNullable, isUnique, collation, m_classMap.GetDbMap().GetECDb(), property, accessString.c_str()))
+        DbColumn::CreateParams colParams;
+        if (SUCCESS != DetermineColumnInfo(colParams, m_classMap.GetDbMap().GetECDb(), property, accessString))
             return nullptr;
 
-        x = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_X").c_str(), colType, !isNullable, isUnique, collation);
+        const DbColumn::Type colType = DbColumn::Type::Real;
+
+        DbColumn::CreateParams coordColParams;
+        coordColParams.Assign(colParams.GetColumnName() + "_X", colParams.IsColumnNameFromPropertyMapCA(), colParams.AddNotNullConstraint(), colParams.AddUniqueConstraint(), colParams.GetCollation());
+        x = m_classMap.GetColumnFactory().CreateColumn(property, accessString, colType, coordColParams);
         if (x == nullptr)
             {
             BeAssert(false);
             return nullptr;
             }
 
-
-        y = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_Y").c_str(), colType, !isNullable, isUnique, collation);
+        coordColParams.Assign(colParams.GetColumnName() + "_Y", colParams.IsColumnNameFromPropertyMapCA(), colParams.AddNotNullConstraint(), colParams.AddUniqueConstraint(), colParams.GetCollation());
+        y = m_classMap.GetColumnFactory().CreateColumn(property, accessString, colType, coordColParams);
         if (y == nullptr)
             {
             BeAssert(false);
             return nullptr;
             }
 
-
-        z = m_classMap.GetColumnFactory().CreateColumn(property, accessString.c_str(), (columnName + "_Z").c_str(), colType, !isNullable, isUnique, collation);
+        coordColParams.Assign(colParams.GetColumnName() + "_Z", colParams.IsColumnNameFromPropertyMapCA(), colParams.AddNotNullConstraint(), colParams.AddUniqueConstraint(), colParams.GetCollation());
+        z = m_classMap.GetColumnFactory().CreateColumn(property, accessString, colType, coordColParams);
         if (z == nullptr)
             {
             BeAssert(false);
@@ -377,7 +366,7 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString(accessString.c_str());
+        columns = m_loadContext->FindColumnByAccessString(accessString);
         if (columns == nullptr || columns->size() != 1)
             {
             return nullptr;
@@ -388,12 +377,9 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     else
         {
         const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(property.GetType());
-        column = DoFindOrCreateColumnsInTable(property, accessString.c_str(), colType);
+        column = DoFindOrCreateColumnsInTable(property, accessString, colType);
         if (column == nullptr)
-            {
-            BeAssert(false);
             return nullptr;
-            }
         }
 
     return PrimitivePropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
@@ -410,7 +396,7 @@ RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString(accessString.c_str());
+        columns = m_loadContext->FindColumnByAccessString(accessString);
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -421,12 +407,9 @@ RefCountedPtr<PrimitiveArrayPropertyMap> ClassMapper::MapPrimitiveArrayProperty(
         }
     else
         {
-        column = DoFindOrCreateColumnsInTable(property, accessString.c_str(), DbColumn::Type::Blob);
+        column = DoFindOrCreateColumnsInTable(property, accessString, DbColumn::Type::Blob);
         if (column == nullptr)
-            {
-            BeAssert(false);
             return nullptr;
-            }
         }
 
     return PrimitiveArrayPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
@@ -444,7 +427,7 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
     if (m_loadContext)
         {
         std::vector<DbColumn const*> const* columns;
-        columns = m_loadContext->FindColumnByAccessString(accessString.c_str());
+        columns = m_loadContext->FindColumnByAccessString(accessString);
         if (columns == nullptr || columns->size() != 1)
             {
             BeAssert(false);
@@ -455,12 +438,9 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
         }
     else
         {
-        column = DoFindOrCreateColumnsInTable(property, accessString.c_str(), DbColumn::Type::Text);
+        column = DoFindOrCreateColumnsInTable(property, accessString, DbColumn::Type::Text);
         if (column == nullptr)
-            {
-            BeAssert(false);
             return nullptr;
-            }
         }
 
     return StructArrayPropertyMap::CreateInstance(m_classMap, compoundPropMap, property, *column);
@@ -480,14 +460,14 @@ RefCountedPtr<NavigationPropertyMap> ClassMapper::MapNavigationProperty(ECN::Nav
 
     const DbColumn *id = nullptr, *relClassId = nullptr;
     std::vector<DbColumn const*> const* columns;
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME).c_str());
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME));
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;
         }
 
     id = columns->front();
-    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME).c_str());
+    columns = m_loadContext->FindColumnByAccessString((property.GetName() + "." + ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME));
     if (columns == nullptr || columns->size() != 1)
         {
         return nullptr;

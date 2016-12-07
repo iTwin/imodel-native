@@ -619,8 +619,12 @@
         - <CODE>NoCase</CODE>: The same as binary, except that the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note it only folds ASCII characters.
         - <CODE>RTrim</CODE>: The same as binary, except that trailing space characters are ignored.​
 
-    @note Property constraints like @em IsNullable, @em IsUnique, and @em Collation are ignored if the ECProperty maps to a column shared with other ECProperties
-    (see ShareColumns custom attribute in section @ref CustomClassMapDescription). ECDb will log a warning in these cases.
+        @note 
+        - You must not specify @em ColumnName or @em Collation for an ECProperty that maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
+        ECDb will fail to import the ECSchema in this case.
+        - @em IsNullable is ignored if the ECProperty maps to a shared column 
+        or if the ECProperty has base classes mapping to the same table (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
+        - @em IsUnique is ignored if the ECProperty maps to a shared column (see ShareColumns custom attribute in section @ref CustomClassMapDescription).
 
     ###Examples
 
@@ -711,10 +715,10 @@
                     <OnDeleteAction>Cascade</OnDeleteAction>
                 </ForeignKeyRelationshipMap>
             </ECCustomAttributes>
-            <Source multiplicity="(1..1)" polymorphic="True">
+            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Folder">
                 <Class class="Folder" />
             </Source>
-            <Target multiplicity="(0..*)" polymorphic="True">
+            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="File">
                 <Class class="File" />
             </Target>
         </ECRelationshipClass>

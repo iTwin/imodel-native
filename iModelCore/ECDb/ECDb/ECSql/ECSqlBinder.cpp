@@ -14,13 +14,6 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************** ECSqlBinder **************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-int ECSqlBinder::GetMappedSqlParameterCount() const
-    {
-    return m_mappedSqlParameterCount;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      08/2013
@@ -32,48 +25,8 @@ ECSqlStatus ECSqlBinder::SetOnBindEventHandler(IECSqlBinder& binder)
 
     BeAssert(std::find(m_onBindEventHandlers->begin(), m_onBindEventHandlers->end(), &binder) == m_onBindEventHandlers->end());
 
-#if 0
-    if (dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) == nullptr)
-        {
-        BeAssert(dynamic_cast<PrimitiveToSingleColumnECSqlBinder const*>(&binder) != nullptr && "Only PrimitiveToSingleColumnECSqlBinder is supported as EventHandlers");
-        return ECSqlStatus::Error;
-        }
-#endif
-
     m_onBindEventHandlers->push_back(&binder);
     return ECSqlStatus::Success;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-void ECSqlBinder::SetSqliteIndex(size_t sqliteIndex)
-    {
-    SetSqliteIndex(-1, sqliteIndex);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-void ECSqlBinder::SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
-    {
-    _SetSqliteIndex(ecsqlParameterComponentIndex, sqliteIndex);
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlBinder::OnBeforeStep()
-    {
-    return _OnBeforeStep();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-void ECSqlBinder::OnClearBindings()
-    {
-    _OnClearBindings();
     }
 
 //---------------------------------------------------------------------------------------
@@ -125,7 +78,7 @@ Statement::MakeCopy ECSqlBinder::ToBeSQliteBindMakeCopy(IECSqlBinder::MakeCopy m
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-bool ECSqlParameterMap::Contains(int& ecsqlParameterIndex, Utf8CP ecsqlParameterName) const
+bool ECSqlParameterMap::Contains(int& ecsqlParameterIndex, Utf8StringCR ecsqlParameterName) const
     {
     ecsqlParameterIndex = GetIndexForName(ecsqlParameterName);
     return ecsqlParameterIndex > 0;
@@ -134,7 +87,7 @@ bool ECSqlParameterMap::Contains(int& ecsqlParameterIndex, Utf8CP ecsqlParameter
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-bool ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, Utf8CP ecsqlParameterName) const
+bool ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, Utf8StringCR ecsqlParameterName) const
     {
     int ecsqlParameterIndex = -1;
     if (!Contains(ecsqlParameterIndex, ecsqlParameterName))
@@ -173,7 +126,7 @@ ECSqlStatus ECSqlParameterMap::TryGetInternalBinder(ECSqlBinder*& binder, size_t
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-int ECSqlParameterMap::GetIndexForName(Utf8CP ecsqlParameterName) const
+int ECSqlParameterMap::GetIndexForName(Utf8StringCR ecsqlParameterName) const
     {
     auto it = m_nameToIndexMapping.find(ecsqlParameterName);
     if (it != m_nameToIndexMapping.end())
@@ -185,14 +138,14 @@ int ECSqlParameterMap::GetIndexForName(Utf8CP ecsqlParameterName) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan          10/2015
 //---------------------------------------------------------------------------------------
-ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8CP parameterName)
+ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBinder& binder, Utf8StringCR parameterName)
     {
     BeAssert(ecsqlParameterIndex != 0);
     if (ecsqlParameterIndex == 0)
         return nullptr;
 
     ECSqlBinder* binderExist = nullptr;
-    if (!Utf8String::IsNullOrEmpty(parameterName) && TryGetBinder(binderExist, parameterName))
+    if (!parameterName.empty() && TryGetBinder(binderExist, parameterName))
         {
         BeAssert(false && "Binder with name already exist");
         return nullptr;
@@ -207,7 +160,7 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
             }
         }
 
-    if (!Utf8String::IsNullOrEmpty(parameterName))
+    if (!parameterName.empty())
         m_nameToIndexMapping[parameterName] = ecsqlParameterIndex;
 
     return &binder;
@@ -218,21 +171,20 @@ ECSqlBinder* ECSqlParameterMap::AddProxyBinder(int ecsqlParameterIndex, ECSqlBin
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     {
-    ECSqlStatus st = ECSqlStatus::Success;
-    auto joinInfo = ctx.GetJoinedTableInfo();
+    ECSqlPrepareContext::JoinedTableInfo const* joinInfo = ctx.GetJoinedTableInfo();
     if (joinInfo == nullptr)
-        return st;
+        return ECSqlStatus::Success;
 
-    auto joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParentOfJoinedTableECSqlStatement();
+    ParentOfJoinedTableECSqlStatement* joinedTableStmt = ctx.GetECSqlStatementR().GetPreparedStatementP()->GetParentOfJoinedTableECSqlStatement();
     if (joinedTableStmt == nullptr)
-        return st;
+        return ECSqlStatus::Success;
 
     auto& baseParameterMap = joinedTableStmt->GetPreparedStatementP()->GetParameterMapR();
-    auto& primaryMap = joinInfo->GetParameterMap().GetPrimary();
-    for (auto oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
+    ECSqlPrepareContext::JoinedTableInfo::ParameterSet const& primaryMap = joinInfo->GetParameterMap().GetPrimary();
+    for (size_t oi = primaryMap.First(); oi <= primaryMap.Last(); oi++)
         {
-        auto param = primaryMap.Find(oi);
-        if (auto orignalParam = param->GetOrignalParameter())
+        ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = primaryMap.Find(oi);
+        if (ECSqlPrepareContext::JoinedTableInfo::Parameter const* orignalParam = param->GetOrignalParameter())
             {
             ECSqlBinder* binder = nullptr;
             if (param->IsShared())
@@ -240,8 +192,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                 ECSqlBinder* cbinder = nullptr;
                 if (param->IsNamed())
                     {
-                    auto status = baseParameterMap.TryGetBinder(binder, param->GetName());
-                    if (!status)
+                    if (!baseParameterMap.TryGetBinder(binder, param->GetName()))
                         {
                         BeAssert(false && "Programmer Error: Failed to find named parameter in base");
                         return ECSqlStatus::Error;
@@ -253,16 +204,16 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                         return ECSqlStatus::Error;
                         }
 
-                    st = cbinder->SetOnBindEventHandler(*binder);
+                    ECSqlStatus st = cbinder->SetOnBindEventHandler(*binder);
                     if (st != ECSqlStatus::Success)
                         return st;
                     }
                 else
                     {
-                    st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
                     if (st != ECSqlStatus::Success)
                         {
-                        BeAssert(false && "Programmer Error: Pararameter order is not correct.");
+                        BeAssert(false && "Programmer Error: Parameter order is not correct.");
                         return st;
                         }
 
@@ -280,10 +231,10 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                 }
             else
                 {
-                st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                ECSqlStatus st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
                 if (st != ECSqlStatus::Success)
                     {
-                    BeAssert(false && "Programmer Error: Pararameter order is not correct.");
+                    BeAssert(false && "Programmer Error: Parameter order is not correct.");
                     return st;
                     }
 
@@ -295,8 +246,8 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
     auto& orignalMap = joinInfo->GetParameterMap().GetOrignal();
     for (auto oi = orignalMap.First(); oi <= orignalMap.Last(); oi++)
         {
-        auto param = orignalMap.Find(oi);
-        if (!param || !param->IsNamed())
+        ECSqlPrepareContext::JoinedTableInfo::Parameter const* param = orignalMap.Find(oi);
+        if (param == nullptr || !param->IsNamed())
             continue;
 
         ECSqlBinder* abinder = nullptr;
@@ -314,7 +265,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
             AddProxyBinder(static_cast<int>(param->GetIndex()), *abinder, param->GetName());
         }
 
-    return st;
+    return ECSqlStatus::Success;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
