@@ -165,6 +165,7 @@ struct Task : RefCounted<NonCopyableClass>
         FindNearestZ,
         ReadImage,
         DestroyTarget,
+        RenderTile,
     };
 
     //! The outcome of the processing of a Task.

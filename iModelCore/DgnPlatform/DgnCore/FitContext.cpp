@@ -117,11 +117,10 @@ struct FitQuery : SpatialViewController::SpatialQuery
 public:
     FitQuery(SpatialViewController::SpecialElements const* special, FitContextR context, ClipPrimitiveCP volume) : SpatialViewController::SpatialQuery(special, volume), m_context(context)
         {
-        if (context.m_params.m_limitByVolume)
+        if (context.GetParams().m_limitByVolume)
             SetFrustum(context.GetFrustum());
         }
     };
-
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
@@ -135,7 +134,7 @@ int FitQuery::_TestRTree(RTreeMatchFunction::QueryInfo const& info)
 
     // if we're limiting the elements we test by the view's range (to find the range of the currently visible elements vs. find all elements)
     // then we compare against the Frustum volume and potentially reject elements that are outside the view volume or active volume.
-    if (m_context.m_params.m_limitByVolume)
+    if (m_context.GetParams().m_limitByVolume)
         {
         Frustum box(*testRange);
         auto rangeTest = TestVolume(box, testRange);
