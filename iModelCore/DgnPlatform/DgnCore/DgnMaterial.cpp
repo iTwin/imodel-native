@@ -61,6 +61,47 @@ void DgnMaterial::_CopyFrom(DgnElementCR el)
         m_data = other->m_data;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::Material::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PROPNAME_Descr,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnMaterial& el = (DgnMaterial&) elIn;
+            value.SetUtf8CP(el.GetDescr().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnMaterial& el = (DgnMaterial&) elIn;
+            el.SetDescr(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROPNAME_Data,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnMaterial& el = (DgnMaterial&) elIn;
+            value.SetUtf8CP(el.GetValue().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            DgnMaterial& el = (DgnMaterial&) elIn;
+            el.SetValue(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
