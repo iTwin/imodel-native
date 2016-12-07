@@ -88,13 +88,13 @@ struct ECValue
                 bool m_isPointer = true;
                 union
                     {
-                    uint64_t                m_relClassId;
+                    ECClassId               m_relClassId;
                     ECRelationshipClassCP   m_relClass;
                     };
 
                 // If any more types are added make into a union or store everything as String and then parse
                 // into the different types
-                ::int64_t m_idLong;
+                BeInt64Id m_id;
 
             public:
                 //! Sets the relationship that is used to initialize the navigation value as a pointer to the relationship
@@ -102,8 +102,8 @@ struct ECValue
                 //! Sets the relationship that is used to initialize the navigation value as a long
                 ECObjectsStatus SetRelationship(ECClassId relationshipClassId);
 
-                //! Sets the navigation value as a long
-                ECObjectsStatus Set(::int64_t id);
+                //! Sets the navigation value
+                ECObjectsStatus Set(BeInt64Id id);
 
                 //! Returns the relationship class that this navigation value was initialized with
                 //! @return A pointer to the relationship class if it was used to set the value, otherwise returns nullptr
@@ -111,8 +111,8 @@ struct ECValue
                 //! Returns the relationship class id that this navigation value was initialized with.
                 //! @return The relationship ECClassId if it explicitly set or the ECRelationshipClass has a valid ECClassId, otherwise returns an invalid ECClassId
                 ECOBJECTS_EXPORT ECClassId GetRelationshipClassId() const;
-                //! Returns the long value, if this ECValue holds a long
-                ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
+                //! @return The id that was set in this navigation value
+                template <class TBeInt64Id> TBeInt64Id GetId() const { return TBeInt64Id(m_id.GetValueUnchecked()); }
             };
 
     private:
@@ -330,12 +330,12 @@ struct ECValue
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
         //! @param[in] value Value to initialize this ECValue from
         //! @param[in] relationship The relationship used to initialize this ECValue from
-        ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECRelationshipClassCP relationship);
+        ECOBJECTS_EXPORT explicit ECValue(BeInt64Id value, ECRelationshipClassCP relationship = nullptr);
 
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
         //! @param[in] value Value to initialize this ECValue from
         //! @param[in] relationshipClassId The relationship ECClassId used to initialize this ECValue from
-        ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECClassId relationshipClassId);
+        ECOBJECTS_EXPORT explicit ECValue(BeInt64Id value, ECClassId relationshipClassId);
 
         bool operator==(ECValueCR rhs) const { return Equals(rhs); }
         bool operator!=(ECValueCR rhs) const { return !(*this == rhs); }
@@ -504,12 +504,12 @@ struct ECValue
         //! Defines the navigation value for this ECValue
         //! @param[in] value The value to set
         //! @param[in] relationshipClass The relationship used to set this ECValue
-        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECRelationshipClassCP relationshipClass = nullptr);
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(BeInt64Id value, ECRelationshipClassCP relationshipClass = nullptr);
 
         //! Defines the navigation value for this ECValue
         //! @param[in] value The value to set
         //! @param[in] relationshipClassId The relationship ECClassId used to set this ECValue
-        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECClassId relationshipClassId);
+        ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(BeInt64Id value, ECClassId relationshipClassId);
 
         //! Returns the navigation information defining this ECValue
         ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;

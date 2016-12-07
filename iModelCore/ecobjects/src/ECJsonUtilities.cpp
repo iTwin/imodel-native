@@ -365,7 +365,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
         else if (ecProperty->GetIsNavigation())
             {
             //JSON structure for nav props:
-            //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
+            //"<NavPropName>" : {"id":"<Related id>"[, "relECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = ecProperty->GetAsNavigationProperty();
             if (navProp->IsMultiple())
                 {
@@ -380,7 +380,7 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 continue;
                 }
 
-            const int64_t navId = BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
+            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -390,13 +390,13 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
             ECValue v;
             if (!childJsonValue.isMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                 {
-                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     status = ERROR;
                 }
             else
                 {
                 const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(navId, ECClassId(relClassId)))
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     status = ERROR;
                 }
 
@@ -802,7 +802,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
         else if (propertyP->GetIsNavigation())
             {
             //JSON structure for nav props:
-            //"<NavPropName>" : {"Id":"<Related id>"[, "RelECClassId":"<RelECClassId>"]}
+            //"<NavPropName>" : {"id":"<Related id>"[, "relECClassId":"<RelECClassId>"]}
             NavigationECPropertyCP navProp = propertyP->GetAsNavigationProperty();
             if (navProp->IsMultiple())
                 {
@@ -813,13 +813,13 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
 
             RapidJsonValueCR json = it->value;
 
-            if (!json.IsObject() || !json.HasMember("Id"))
+            if (!json.IsObject() || !json.HasMember(ECINSTANCE_ID_ATTRIBUTE))
                 {
                 status = ERROR;
                 continue;
                 }
 
-            const int64_t navId = Int64FromJson(json["Id"], INT64_C(0));
+            const uint64_t navId = (uint64_t) Int64FromJson(json[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -827,15 +827,15 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 }
 
             ECValue v;
-            if (!json.HasMember("RelECClassId"))
+            if (!json.HasMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
                 {
-                if (ECObjectsStatus::Success != v.SetNavigationInfo(navId))
+                if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     status = ERROR;
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) Int64FromJson(json["RelECClassId"], INT64_C(0));
-                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(navId, ECClassId(relClassId)))
+                const uint64_t relClassId = (uint64_t) Int64FromJson(json[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
+                if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     status = ERROR;
                 }
 

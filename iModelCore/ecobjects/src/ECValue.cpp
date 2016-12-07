@@ -388,7 +388,7 @@ ECObjectsStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP r
 ECObjectsStatus ECValue::NavigationInfo::SetRelationship(ECClassId relationshipClassId)
     {
     m_isPointer = false;
-    m_relClassId = relationshipClassId.GetValueUnchecked();
+    m_relClassId = relationshipClassId;
     return ECObjectsStatus::Success;
     }
 
@@ -408,28 +408,17 @@ ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
 ECClassId ECValue::NavigationInfo::GetRelationshipClassId() const
     {
     if (m_isPointer)
-        return (nullptr == m_relClass) ? ECClassId() : m_relClass->GetId();
+        return (nullptr == m_relClass || !m_relClass->HasId()) ? ECClassId() : m_relClass->GetId();
     return ECClassId(m_relClassId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::NavigationInfo::Set(::int64_t id)
+ECObjectsStatus ECValue::NavigationInfo::Set(BeInt64Id id)
     {
-    //if (PrimitiveType::PRIMITIVETYPE_Long != m_primitiveType)
-    //    return ECObjectsStatus::DataTypeNotSupported;
-    m_idLong = id;
-
+    m_id = id;
     return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Caleb.Shafer    11/16
-//+---------------+---------------+---------------+---------------+---------------+------
-int64_t ECValue::NavigationInfo::GetIdAsLong() const
-    {
-    return m_idLong;
     }
 
 //*********************** ECValue ***************************************
@@ -782,7 +771,8 @@ void            ECValue::SetToNull()
 void            ECValue::SetNavigationToNull()
     {
     m_valueKind = VALUEKIND_Navigation;
-    m_navigationInfo.Set(0);
+    m_navigationInfo.Set(BeInt64Id());
+    m_navigationInfo.SetRelationship(nullptr);
     SetToNull();
     }
 
@@ -969,7 +959,7 @@ ECValue::ECValue(const Byte * data, size_t size)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECValue::ECValue (::int64_t value, ECRelationshipClassCP relationship)
+ECValue::ECValue (BeInt64Id value, ECRelationshipClassCP relationship)
     {
     ConstructUninitialized();
     SetNavigationInfo(value, relationship);
@@ -978,8 +968,10 @@ ECValue::ECValue (::int64_t value, ECRelationshipClassCP relationship)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECValue::ECValue(::int64_t value, ECClassId relationshipClassId)
+ECValue::ECValue(BeInt64Id value, ECClassId relationshipClassId)
     {
+    BeAssert(relationshipClassId.IsValid());
+
     ConstructUninitialized();
     SetNavigationInfo(value, relationshipClassId);
     }
@@ -1966,7 +1958,18 @@ bool              ECValue::Equals(ECValueCR v) const
     if (IsStruct())
         return m_structInstance == v.m_structInstance;
     if (IsNavigation())
-        return (GetNavigationInfo().GetIdAsLong() == v.GetNavigationInfo().GetIdAsLong()) && (GetNavigationInfo().GetRelationshipClassId() == v.GetNavigationInfo().GetRelationshipClassId());
+        {
+        if (m_navigationInfo.GetId<BeInt64Id>() != v.m_navigationInfo.GetId<BeInt64Id>())
+            return false;
+
+        if (m_navigationInfo.GetRelationshipClass() != v.m_navigationInfo.GetRelationshipClass())
+            return false;
+
+        if (m_navigationInfo.GetRelationshipClassId() != v.m_navigationInfo.GetRelationshipClassId())
+            return false;
+
+        return true;
+        }
     if (GetPrimitiveType() != v.GetPrimitiveType())
         return false;
     if (IsString())
@@ -2150,7 +2153,7 @@ bool            ArrayInfo::IsStructArray() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value, ECRelationshipClassCP relationshipClass)
+ECObjectsStatus ECValue::SetNavigationInfo(BeInt64Id value, ECRelationshipClassCP relationshipClass)
     {
     Clear();
     SetIsNull(false);
@@ -2166,8 +2169,10 @@ ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value, ECRelationshipClassC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Caleb.Shafer    11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECValue::SetNavigationInfo(::int64_t value, ECClassId relationshipClassId)
+ECObjectsStatus ECValue::SetNavigationInfo(BeInt64Id value, ECClassId relationshipClassId)
     {
+    BeAssert(relationshipClassId.IsValid());
+
     Clear();
     SetIsNull(false);
 
