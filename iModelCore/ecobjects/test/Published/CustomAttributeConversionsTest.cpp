@@ -1697,6 +1697,62 @@ TEST_F(StandardValueToEnumConversionTest, EnumName_NamingConvention)
 
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardValueToEnumConversionTest, PrimitiveArraySupport)
+    {
+    Utf8CP schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='test' version='1.0' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
+        "   <ECClass typeName='TestClass' isDomainClass='True'>"
+        "       <ECArrayProperty propertyName='testArray' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECArrayProperty>"
+        "   </ECClass>"
+        "   <ECClass typeName='TestClass2' isDomainClass='True'>"
+        "       <ECProperty propertyName='testProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "               <StandardValues xmlns='EditorCustomAttributes.01.00'>"
+        "                  <ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>0</Value>"
+        "                           <DisplayString>value0</DisplayString>"
+        "                       </ValueMap>"
+        "                       <ValueMap>"
+        "                           <Value>1</Value>"
+        "                           <DisplayString>value1</DisplayString>"
+        "                       </ValueMap>"
+        "                  </ValueMap>"
+        "               </StandardValues>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    ReadSchema(schemaXML);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*m_schema.get())) << "Schema conversion failed";
+
+    ASSERT_EQ(1, m_schema->GetEnumerationCount()) << "The number of enumerations created is not as expected.";
+
+    CheckTypeName("TestClass_testArray", *m_schema, "testArray", {"TestClass"});
+    CheckTypeName("TestClass_testArray", *m_schema, "testProp", {"TestClass2"});
+    }
+
 Utf8String GetDateTimeInfoValueAsString(IECInstancePtr instancePtr, Utf8String name)
     {
     ECPropertyP propertyP = instancePtr->GetClass().GetPropertyP(name);

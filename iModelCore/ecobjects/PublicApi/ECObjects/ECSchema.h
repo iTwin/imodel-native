@@ -1097,16 +1097,18 @@ friend struct ECClass;
 
 private: 
     PrimitiveType                               m_primitiveType;
+    ECEnumerationCP                             m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
 
 protected:
     PrimitiveArrayECProperty(ECClassCR ecClass)
-        : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String)
+        : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr)
         {
         m_arrayKind = ARRAYKIND_Primitive;
         };
 
     virtual Utf8String                  _GetTypeName() const override;
+    virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
     virtual bool                        _IsPrimitiveArray() const override { return true; }
     virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const override { return this; }
@@ -1123,6 +1125,10 @@ public:
     ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
     //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
     ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;
+    //! Sets an ECEnumeration as type of this ECProperty.
+    ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECEnumerationCR value);
+    //! Gets the Enumeration of this ECProperty or nullptr if none used.
+    ECOBJECTS_EXPORT ECEnumerationCP    GetEnumeration() const;
 };
 
 

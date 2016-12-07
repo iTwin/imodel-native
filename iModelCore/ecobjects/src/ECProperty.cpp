@@ -1321,7 +1321,21 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String PrimitiveArrayECProperty::_GetTypeName () const
     {    
-    return ECXml::GetPrimitiveTypeName (m_primitiveType);
+    if (nullptr == m_enumeration)
+        return ECXml::GetPrimitiveTypeName (m_primitiveType);
+
+    return ECEnumeration::GetQualifiedEnumerationName(this->GetClass().GetSchema(), *m_enumeration);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PrimitiveArrayECProperty::_GetTypeNameForXml(ECVersion ecXmlVersion) const
+    {
+    if (ecXmlVersion <= ECVersion::V2_0 && m_enumeration != nullptr)
+        return m_enumeration->GetTypeName();
+
+    return GetTypeName();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1334,6 +1348,12 @@ ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     if (ECObjectsStatus::Success == status)
         return SetPrimitiveElementType (primitiveType);
     
+    ECEnumerationCP enumeration;
+    if (ECObjectsStatus::Success == ResolveEnumerationType(enumeration, typeName, this->GetClass().GetSchema()))
+        {
+        return SetType(*enumeration);
+        }
+
     m_originalTypeName = typeName;
     LOG.warningv ("TypeName '%s' of '%s.%s.%s' was not recognized. We will use 'string' instead.",
                                     typeName.c_str(),
@@ -1351,6 +1371,14 @@ PrimitiveType PrimitiveArrayECProperty::GetPrimitiveElementType () const
     return m_primitiveType;
     }
 
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECEnumerationCP PrimitiveArrayECProperty::GetEnumeration() const
+    {
+    return m_enumeration;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer              09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1363,6 +1391,24 @@ ECObjectsStatus PrimitiveArrayECProperty::SetPrimitiveElementType(PrimitiveType 
     SetCachedMemberTypeAdapter(NULL);
     _AdjustMinMaxAfterTypeChange();
     InvalidateClassLayout();
+
+    return ECObjectsStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+ @bsimethod                                                     
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus PrimitiveArrayECProperty::SetType (ECEnumerationCR enumerationType)
+    {        
+    auto primitiveType = enumerationType.GetType();
+    if (m_primitiveType != primitiveType)
+        {
+        m_primitiveType = primitiveType;        
+        SetCachedTypeAdapter (NULL);
+        InvalidateClassLayout();
+        }
+
+    m_enumeration = &enumerationType;
 
     return ECObjectsStatus::Success;
     }

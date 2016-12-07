@@ -710,7 +710,7 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
     ECPropertyP prop = currentClass->GetPropertyP(propName, false);
     if (nullptr != prop)
         {
-        if (!prop->GetIsPrimitive())
+        if (!prop->GetIsPrimitive() && !prop->GetIsPrimitiveArray())
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s is not a primitive property but the base property from class %s is.",
                        currentClass->GetFullName(), propName, rootClass->GetFullName());
@@ -734,12 +734,16 @@ ECObjectsStatus StandardValuesConverter::ConvertToEnum(ECClassP rootClass, ECCla
     if (nullptr != prop && ECObjectsStatus::Success == status)
         {
         PrimitiveECPropertyP primitive = prop->GetAsPrimitivePropertyP();
-        if (nullptr == primitive->GetEnumeration())
-            status = primitive->SetType(*enumeration);
-        else if (primitive->GetEnumeration() != enumeration)
+        PrimitiveArrayECPropertyP primitiveArray = prop->GetAsPrimitiveArrayPropertyP();
+
+        ECEnumerationCP primitiveEnumeration = (nullptr != primitive) ? primitive->GetEnumeration() : primitiveArray->GetEnumeration();
+
+        if (nullptr == primitiveEnumeration)
+            status = (nullptr != primitive) ? primitive->SetType(*enumeration) : primitiveArray->SetType(*enumeration);
+        else if (primitiveEnumeration != enumeration)
             {
             LOG.errorv("Failed to convert to enumeration because the derived property %s.%s already has an ECEnumeration '%s' as its type but it is not the same as the type '%s' from the base property in class %s",
-                       currentClass->GetFullName(), propName, primitive->GetEnumeration()->GetFullName().c_str(), enumeration->GetFullName().c_str(), rootClass->GetFullName());
+                       currentClass->GetFullName(), propName, primitiveEnumeration->GetFullName().c_str(), enumeration->GetFullName().c_str(), rootClass->GetFullName());
             return ECObjectsStatus::DataTypeMismatch;
             }
 

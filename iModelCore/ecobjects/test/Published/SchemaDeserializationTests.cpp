@@ -602,6 +602,17 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithEnumer
 
     ECEnumerationCP ecEnum = prim->GetEnumeration();
     ASSERT_TRUE(ecEnum != nullptr);
+    EXPECT_STREQ("MyEnumeration", ecEnum->GetName().c_str());
+
+    ECPropertyP p2 = pClass->GetPropertyP("EnumeratedArray");
+    ASSERT_TRUE(p2 != nullptr);
+
+    PrimitiveArrayECPropertyCP primArr = p2->GetAsPrimitiveArrayProperty();
+    ASSERT_TRUE(primArr != nullptr);
+
+    ECEnumerationCP arrEnum = primArr->GetEnumeration();
+    ASSERT_TRUE(arrEnum != nullptr);
+    EXPECT_STREQ("MyEnumeration", arrEnum->GetName().c_str());
 
     ASSERT_TRUE(ecEnum->GetSchema().GetVersionWrite() == 12);
     }
