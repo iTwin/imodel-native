@@ -174,9 +174,9 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     BeAssert(GetDisplayStyleId().IsValid());
     BeAssert(GetCategorySelectorId().IsValid());
-    auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId(), ECClassId());
+    auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId(), ECClassId());
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindText(stmt.GetParameterIndex(str_Details()), ToDetailJson().c_str(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(ECSqlStatus::Success == stat);
@@ -343,7 +343,7 @@ void ViewDefinition2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindDouble(stmt.GetParameterIndex(str_RotationAngle()), Angle::FromRadians(m_rotAngle).Degrees());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId, ECClassId());
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId);
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -976,7 +976,7 @@ void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
     T_Super::_BindWriteParams(stmt, forInsert);
 
     BeAssert(GetModelSelectorId().IsValid());
-    stmt.BindNavigationValue(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId(), ECClassId());
+    stmt.BindNavigationValue(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId());
     }
 
 /*---------------------------------------------------------------------------------**//**

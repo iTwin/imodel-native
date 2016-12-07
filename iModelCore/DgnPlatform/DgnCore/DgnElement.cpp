@@ -955,7 +955,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     else
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthority), m_code.GetAuthority(), ECClassId());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeAuthority), m_code.GetAuthority());
     statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeNamespace), m_code.GetNamespace().c_str(), IECSqlBinder::MakeCopy::No);
 
     if (HasUserLabel())
@@ -974,7 +974,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         return;
 
     statement.BindId(statement.GetParameterIndex(BIS_ELEMENT_PROP_ECInstanceId), m_elementId);
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Model), m_modelId, ECClassId());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Model), m_modelId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3410,7 +3410,7 @@ void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     T_Super::_BindWriteParams(stmt, forInsert);
 
     //WIP_NAV_PROP: Why does GeometricElement have m_categoryid if the categoryid is only defined on GeometricElement3d/2d?
-    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_Category), m_categoryId, ECClassId());
+    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
     m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
     }
 

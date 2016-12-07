@@ -72,7 +72,7 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 void MarkupExternalLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindNavigationValue(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId, ECClassId());
+    stmt.BindNavigationValue(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
     }
 
 //---------------------------------------------------------------------------------------
