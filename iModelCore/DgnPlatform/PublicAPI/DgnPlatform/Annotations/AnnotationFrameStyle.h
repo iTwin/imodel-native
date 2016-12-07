@@ -211,6 +211,7 @@ namespace dgn_ElementHandler
     struct AnnotationFrameStyleHandler : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_AnnotationFrameStyle, AnnotationFrameStyle, AnnotationFrameStyleHandler, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

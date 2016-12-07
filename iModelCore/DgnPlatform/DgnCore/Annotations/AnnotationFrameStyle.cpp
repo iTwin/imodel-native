@@ -113,6 +113,52 @@ void AnnotationFrameStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forI
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::AnnotationFrameStyleHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PROP_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
+            value.SetUtf8CP(el.GetDescription().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROP_Data,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
+            bvector<Byte> data;
+            if (SUCCESS != AnnotationFrameStylePersistence::EncodeAsFlatBuf(data, el, AnnotationFrameStylePersistence::FlatBufEncodeOptions::Default))
+                return DgnDbStatus::BadArg;
+            value.SetBinary(data.data(), data.size());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            AnnotationFrameStyle& el = (AnnotationFrameStyle&) elIn;
+            size_t dataSize = 0;
+            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+            if (SUCCESS != AnnotationFrameStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
+                return DgnDbStatus::BadArg;
+            return DgnDbStatus::Success;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
 void AnnotationFrameStyle::_CopyFrom(DgnElementCR src)

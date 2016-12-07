@@ -545,7 +545,7 @@ TEST_F(TransactionManagerTests, UndoRedo)
     CloseDb();
     BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
     BeSQLite::Db::OpenMode mode = BeSQLite::Db::OpenMode::ReadWrite;
-    DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.dgndb");
+    DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
     
     auto& txns = m_db->Txns();

@@ -49,6 +49,7 @@ enum class ParamId
     DisplayGlobe,
     NoReplace,
     Incremental,
+    VerboseStatistics,
     Invalid,
 };
 
@@ -77,13 +78,14 @@ static CommandParam s_paramTable[] =
         { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"pl", L"polylines", L"Publish polylines", false, true },
+        { L"pl", L"polylines", L"Don't publish polylines", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
         { L"dg", L"displayGlobe", L"Display with globe, sky etc.)", false, true },
         { L"nr", L"noreplace", L"Do not replace existing files", false, true },
         { L"up", L"update", L"Update existing tileset from model changes", false, true },
+        { L"vs", L"verbose", L"Output verbose statistics during publishing", false, true },
     };
 
 static const size_t s_paramTableSize = _countof(s_paramTable);
@@ -157,7 +159,8 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
-    bool            m_polylines = false;
+    bool            m_polylines = true;
+    bool            m_verbose = false;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
     bool            m_displayGlobe = false;
@@ -178,6 +181,7 @@ public:
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
     bool WantPolylines() const { return m_polylines; }
+    bool WantVerboseStatistics() const { return m_verbose; }
     GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
     bool GetIncremental() const { return m_publish; }
@@ -331,7 +335,10 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     }
                 break;
             case ParamId::Polylines:
-                m_polylines = true;
+                m_polylines = false;
+                break;
+            case ParamId::VerboseStatistics:
+                m_verbose = true;
                 break;
             case ParamId::GeographicLocation:
                 if (2 != swscanf (arg.m_value.c_str(), L"%lf,%lf", &m_geoLocation.longitude, &m_geoLocation.latitude))
@@ -408,10 +415,17 @@ private:
     uint32_t                    m_publishedTileDepth;
     BeMutex                     m_mutex;
     DgnViewId                   m_defaultViewId;
+    bool                        m_verbose;
+    bset<Utf8String>            m_modelsInProgress;
+    Utf8String                  m_modelNameList;
+    StopWatch                   m_timer;
 
     virtual TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const override { return tile.GetFileName(TileUtil::GetRootNameForModel(tile.GetModel()).c_str(), fileExtension); }
     virtual bool _AllTilesPublished() const { return true; }
+
+    virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;
+    virtual TileGeneratorStatus _EndProcessModel(DgnModelCR, TileNodeP, TileGeneratorStatus) override;
 
     Status  GetViewsJson (Json::Value& value, DPoint3dCR groundPoint);
 
@@ -419,6 +433,7 @@ private:
 
     Status WriteWebApp(DPoint3dCR groundPoint, PublisherParams const& params);
     void OutputStatistics(TileGenerator::Statistics const& stats) const;
+    void GenerateModelNameList();
 
     //=======================================================================================
     // @bsistruct                                                   Paul.Connelly   08/16
@@ -435,9 +450,9 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental)
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental, bool verbose)
         : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental),
-          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId)
+          m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
         m_dataDir.AppendSeparator().AppendToPath(m_rootName.c_str()).AppendSeparator();
@@ -446,6 +461,23 @@ public:
     Status Publish(PublisherParams const& params);
 
     Status GetTileStatus() const { return m_acceptTileStatus; }
+
+    bool WantVerboseStatistics() const { return m_verbose; }
+
+    struct VerboseStatistics
+        {
+        Utf8String      m_modelNames;
+        uint32_t        m_numModels;
+        };
+
+    VerboseStatistics GetVerboseStatistics()
+        {
+        BeMutexHolder lock(m_mutex);
+        VerboseStatistics stats;
+        stats.m_modelNames = m_modelNameList;
+        stats.m_numModels = static_cast<uint32_t>(m_modelsInProgress.size());
+        return stats;
+        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -581,6 +613,12 @@ void TilesetPublisher::ProgressMeter::_IndicateProgress(uint32_t completed, uint
         }
     else
         {
+        if (m_publisher.WantVerboseStatistics())
+            {
+            auto stats = m_publisher.GetVerboseStatistics();
+            printf("\n%u models in progress: %s", stats.m_numModels, stats.m_modelNames.c_str());
+            }
+
         printf("\nGenerating Tiles: %3u%% (%u/%u models completed)%s", pctComplete, completed, total, completed == total ? "\n" : "");
         m_lastPercentCompleted = pctComplete;
         }
@@ -630,6 +668,57 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
         }
 
     return WriteWebApp(groundPoint, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeneratorStatus TilesetPublisher::_BeginProcessModel(DgnModelCR model)
+    {
+    auto status = PublisherContext::_BeginProcessModel(model);
+    if (TileGeneratorStatus::Success == status)
+        {
+        BeMutexHolder lock(m_mutex);
+        m_modelsInProgress.insert(model.GetName());
+        GenerateModelNameList();
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeneratorStatus TilesetPublisher::_EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status)
+    {
+        {
+        BeMutexHolder lock(m_mutex);
+        auto const& modelName = model.GetName();
+        m_modelsInProgress.erase(modelName);
+        printf("\nCompleted model %s (%f seconds elapsed)\n", modelName.c_str(), m_timer.GetCurrentSeconds());
+        GenerateModelNameList();
+        }
+
+    return PublisherContext::_EndProcessModel(model, rootTile, status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilesetPublisher::GenerateModelNameList()
+    {
+    m_modelNameList = "[";
+    for (auto const& modelName : m_modelsInProgress)
+        {
+        m_modelNameList.append(modelName);
+        m_modelNameList.append(1, ',');
+        }
+
+    auto len = m_modelNameList.length();
+    if (len > 1)
+        m_modelNameList[len-1] = ']';
+    else
+        m_modelNameList.append(1, ']');
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -724,7 +813,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
     TilesetPublisher publisher(*db, viewsToPublish, defaultView, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
-                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental());
+                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental(), createParams.WantVerboseStatistics());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

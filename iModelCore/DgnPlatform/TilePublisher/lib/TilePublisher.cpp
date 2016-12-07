@@ -48,51 +48,33 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
     switch (m_source)
         {
         case TileSource::None:
-            return;
         case TileSource::Model:
-            {
-            Json::Value modelIds(Json::arrayValue);
-            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
-                modelIds.append(idIter->ToString());
-
-            value["model"] = modelIds;
-            return;
-            }
         case TileSource::Element:
             {
-            static const Utf8CP s_3dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
-            static const Utf8CP s_2dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement2d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
+            static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+            static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
 
             Utf8CP sql = is2d ? s_2dSql : s_3dSql;
             BeSQLite::Statement stmt;
             stmt.Prepare(db, sql);
 
             Json::Value elementIds(Json::arrayValue);
-            Json::Value modelIds(Json::arrayValue);
             Json::Value categoryIds(Json::arrayValue);
 
             for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
                 {
                 elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-                DgnModelId modelId;
                 DgnCategoryId categoryId;
 
                 stmt.BindId(1, *elemIter);
                 if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-                    {
-                    modelId = stmt.GetValueId<DgnModelId>(0);
-                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
-                    }
+                    categoryId = stmt.GetValueId<DgnCategoryId>(0);
 
-                modelIds.append(modelId.ToString());
                 categoryIds.append(categoryId.ToString());
                 stmt.Reset();
                 }
 
             value["element"] = elementIds;
-            value["model"] = modelIds;
             value["category"] = categoryIds;
             }
         }
@@ -1529,8 +1511,12 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
     if (TileGeneratorStatus::Success == status)
         {
         BeAssert(nullptr != rootTile);
-        BeMutexHolder lock(m_mutex);
-        m_modelRoots.push_back(rootTile);
+            {
+            BeMutexHolder lock(m_mutex);
+            m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            }
+
+        WriteModelTileset(*rootTile);
         }
     else if (!m_publishIncremental)
         {
@@ -1538,6 +1524,25 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteModelTileset(TileNodeCR tile)
+    {
+    Json::Value root;
+    root["refine"] = "replace";
+    root[JSON_GeometricError] = tile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(root, tile.GetTileRange());
+
+    WString modelRootName;
+    BeFileName modelDataDir = GetDataDirForModel(tile.GetModel(), &modelRootName);
+
+    BeFileName tilesetFileName(nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+    root[JSON_Content]["url"] = Utf8String(modelRootName + L"/" + tilesetFileName.c_str()).c_str();
+
+    WriteTileset(BeFileName(nullptr, modelDataDir.c_str(), tilesetFileName.c_str(), nullptr), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1577,51 +1582,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
             }
         }
 
-    Json::Value     value;
-    value["asset"]["version"] = "0.0";
-
-    auto& root = value[JSON_Root];
-
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = 1.E6;
-
-    rootRange = DRange3d::NullRange();
-
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
-
-    if (m_modelRoots.empty())
-        return Status::NoGeometry;
-
-    for (auto childRootTile : m_modelRoots)
-        {
-        Json::Value childRoot;
-
-        rootRange.Extend(childRootTile->GetTileRange());
-        childRoot["refine"] = "replace";
-        childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
-        TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
-
-        WString modelRootName;
-        BeFileName modelDataDir = GetDataDirForModel(childRootTile->GetModel(), &modelRootName);
-
-        BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
-        childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
-
-        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-
-        root[JSON_Children].append(childRoot);
-        }
-
-    m_modelRoots.clear();
-
-    TilePublisher::WriteBoundingVolume(root, rootRange);
-
-    BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
-
-    TileUtil::WriteJsonToFile (metadataFileName.c_str(), value);
 
     return Status::Success;
     }
@@ -1651,7 +1615,13 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             modelJson["name"] = model->GetName();
             modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
 
-            DRange3d modelRange = model->ToGeometricModel()->QueryModelRange();
+            DRange3d modelRange;
+            auto modelRangeIter = m_modelRanges.find(modelId);
+            if (m_modelRanges.end() != modelRangeIter)
+                modelRange = modelRangeIter->second;
+            else
+                modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
+
             auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
             modelTransform.Multiply(modelRange, modelRange);
             modelJson["extents"] = RangeToJson(modelRange);

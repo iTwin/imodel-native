@@ -74,7 +74,7 @@ protected:
     Transform                               m_spatialToEcef;
     Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
-    bvector<TileNodePtr>                    m_modelRoots;
+    bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
     bool                                    m_publishPolylines;
     bool                                    m_publishIncremental;
@@ -101,8 +101,7 @@ protected:
     TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
-
-
+    void WriteModelTileset(TileNodeCR rootTile);
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
