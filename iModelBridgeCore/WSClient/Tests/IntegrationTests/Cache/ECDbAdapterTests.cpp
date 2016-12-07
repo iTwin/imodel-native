@@ -73,45 +73,6 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
     return db;
     }
 
-TEST_F(ECDbAdapterTests, ECDbBrokenCardinality)
-    {
-    auto schema = ParseSchema(R"xml(
-        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="A" />
-            <ECClass typeName="B" />
-            <ECClass typeName="C" />
-            <ECRelationshipClass typeName="Rel" isDomainClass="True" strength="holding" >
-                <Source cardinality="(0,N)" polymorphic="False">
-                    <Class class="A" />
-                </Source>
-                <Target cardinality="(1,1)" polymorphic="False">
-                    <Class class="B" />
-                    <Class class="C" />
-                </Target>
-            </ECRelationshipClass>
-        </ECSchema>)xml");
-
-    // Target cardinality (x,N) makes this work fine, (x,1) causes problems
-
-    auto db = CreateTestDb(schema);
-    ECDbAdapter adapter(*db);
-
-    ECInstanceKey a, b, rel;
-    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.A"), a);
-    INSERT_INSTANCE(*db, adapter.GetECClass("TestSchema.B"), b);
-    INSERT_RELATIONSHIP(*db, adapter.GetECRelationshipClass("TestSchema.Rel"), a, b, rel);
-    db->SaveChanges();
-
-    ECInstanceFinder finder(*db);
-    ECInstanceFinder::FindOptions options(ECInstanceFinder::RelatedDirection_HeldChildren, UINT8_MAX);
-
-    ECInstanceKeyMultiMap related, seed;
-    seed.Insert(a.GetECClassId(), a.GetECInstanceId());
-
-    EXPECT_EQ(SUCCESS, finder.FindInstances(related, seed, options));
-    EXPECT_EQ(2, related.size());
-    }
-
 TEST_F(ECDbAdapterTests, ECDbDeleteParent_ShouldNotDeleteChildThatHasOtherParent)
     {
     auto schema = ParseSchema(R"xml(
