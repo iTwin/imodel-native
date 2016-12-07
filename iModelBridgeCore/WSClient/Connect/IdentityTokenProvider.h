@@ -24,6 +24,7 @@ struct IdentityTokenProvider : IConnectTokenProvider, std::enable_shared_from_th
         IImsClientPtr m_client;
         ITokenStorePtr m_store;
         std::function<void()> m_tokenExpiredHandler;
+        UniqueTaskHolder<SamlTokenResult> m_tokenRetrieveTask;
 
         uint32_t m_tokenLifetime;
         uint32_t m_tokenRefreshRate;
