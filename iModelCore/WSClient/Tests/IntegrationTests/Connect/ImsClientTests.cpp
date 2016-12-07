@@ -107,3 +107,62 @@ TEST_F(ImsClientTests, RequestToken_UsingParentTokenAndLifetimeSpecified_Retriev
     EXPECT_TRUE(token->IsValidNow(2));
     EXPECT_EQ(5, token->GetLifetime());
     }
+    
+TEST_F(ImsClientTests, Login_QaImsStsWithOldAppliesTo_RetrievesValidTokensForValidRPUris)
+    {
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, NativeLogging::LOG_TRACE);
+
+    StubLocalState localState;
+    UrlProvider::Initialize(UrlProvider::Qa, UrlProvider::DefaultTimeout, &localState);
+
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+    auto client = ImsClient::Create (StubClientInfo(), proxy);
+
+    SamlTokenResult result;
+
+    // Legacy Graphite apps
+    result = client->RequestToken(credentials, "https://dev-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    result = client->RequestToken(credentials, "https://qa-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    result = client->RequestToken(credentials, "https://connect-wsg20.bentley.com")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // Navigator CONNECT Edition
+    result = client->RequestToken(credentials, "sso://wsfed_desktop/2545")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // Navigator Mobile
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2223")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // ProjectWise Mobile
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2530")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // ProjectWise Worksite
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2226")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // Structural navigator
+    result = client->RequestToken(credentials, "sso://wsfed_mobile/2067")->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_TRUE(result.GetValue()->IsSupported());
+
+    // Invalid RP URI
+    BeTest::SetFailOnAssert(false);
+    result = client->RequestToken(credentials, "https://zz-wsg20-eus.cloudapp.net")->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    BeTest::SetFailOnAssert(true);
+    }

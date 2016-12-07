@@ -303,8 +303,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
-    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fviltest2-10";
-    Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fps_edge_sp_2010.bentley.com~2F";
+    Credentials creds("ps_edge_sp_2010.bentley.com\\Administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -388,7 +388,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     BeFileName cachePath = GetTestCachePath();
 
     auto info = std::make_shared<ClientInfo>("Bentley-MapMobile", BeVersion(5, 4), "77def89a-7e50-4f0e-a4c7-24fb6044dbfb",
-                                             "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
+        "CLQIqB7y8eCUpdJe5uyRVVaaGbk=", "Windows 6.1", nullptr);
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
     client->SetCredentials(creds);
@@ -414,8 +414,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     BentleyStatus status;
 
     /* pw:\\VILTEST2-5.bentley.com:PW_Mobile_SS3\Documents\VRA\WSClientIntegrationTests\CachingDataSourceTests\Uploads\ */
-    ObjectId uploadsFolderId {"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
-    ObjectId uploadsFolderNavNodeId {"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
+    ObjectId uploadsFolderId{"PW_WSG", "Project", "30ff82ee-0a91-42ca-9dd6-c941e577be94"};
+    ObjectId uploadsFolderNavNodeId{"Navigation", "NavNode", "ECObjects--" + uploadsFolderId.schemaName + "-" + uploadsFolderId.className + "-" + uploadsFolderId.remoteId};
 
     if (true)
         {

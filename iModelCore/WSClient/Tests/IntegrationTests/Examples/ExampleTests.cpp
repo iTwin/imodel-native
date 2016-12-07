@@ -70,7 +70,7 @@ TEST_F(ExampleTests, WSRepositoryClient_PWConnectionCreationAndQuery)
 
 TEST_F(ExampleTests, WSRepositoryClient_ConnectConnectionCreationAndQuery)
     {
-    auto clientInfo = ClientInfo::Create("TestApp", {1, 0}, "TestAppGuid", "1654");
+    auto clientInfo = ClientInfo::Create("TestApp", {1, 0}, "TestAppGuid", "2545");
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net/";
     Utf8String repositoryId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
     Credentials credentials("8cc45bd041514b58947ea6c09c@gmail.com", "qwe12312");
