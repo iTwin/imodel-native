@@ -1109,8 +1109,8 @@ DbColumn* ColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR prop, DbCol
     if (params.IsColumnNameFromPropertyMapCA())
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                        "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'."
-                                                        "'ColumnName' cannot be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
+                                                        "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
+                                                        "'ColumnName' must not be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
                                                         prop.GetClass().GetFullName(), prop.GetName().c_str());
         return nullptr;
         }
