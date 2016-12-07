@@ -180,7 +180,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
         //!            if the relationshipECClassId is optional. ECDb does not validate the input.
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
+        ECSqlStatus BindNavigationValue(int parameterIndex, BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId()) { return GetBinder(parameterIndex).BindNavigation(relatedInstanceId, relationshipECClassId); }
 
         //! Binds a VirtualSet to the SQL function @b InVirtualSet.
         //! The parameter must be the first parameter in the InVirtualSet function.
