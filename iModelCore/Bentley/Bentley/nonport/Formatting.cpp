@@ -731,10 +731,11 @@ FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 Utf8StringCR FormatDictionary::CodeToName(ParameterCode paramCode)
-{
+    {
     FormatParameterP par = FindParameterByCode(paramCode);
     return (nullptr == par)? static_cast<Utf8StringCR>(nullptr) : par->GetName();
-}
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -943,7 +944,7 @@ bool UnicodeConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t inde
         {
         // calculate the shift 
         *outBits = 0;
-        size_t shift = (seqLength - index - 1);
+        int shift = ((int)seqLength - (int)index - 1);
         if(0 > shift || 2 < shift)
             return false;      
         if (m_trailingByteMark == (c & m_trailingByteMask))
