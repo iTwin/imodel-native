@@ -408,8 +408,9 @@ ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
 ECClassId ECValue::NavigationInfo::GetRelationshipClassId() const
     {
     if (m_isPointer)
-        return (nullptr == m_relClass || !m_relClass->HasId()) ? ECClassId() : m_relClass->GetId();
-    return ECClassId(m_relClassId);
+        return m_relClass ? m_relClass->GetId() : ECClassId();
+
+    return m_relClassId;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2185,7 +2186,7 @@ ECObjectsStatus ECValue::SetNavigationInfo(BeInt64Id value, ECRelationshipClassC
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECValue::SetNavigationInfo(BeInt64Id value, ECClassId relationshipClassId)
     {
-    BeAssert(relationshipClassId.IsValid());
+    BeAssert(relationshipClassId.IsValid() || !value.IsValid());
 
     Clear();
     SetIsNull(false);
