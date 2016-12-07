@@ -347,10 +347,7 @@ MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
         if (propMap == nullptr)
-            {
-            BeAssert(false);
             return MappingStatus::Error;
-            }
 
         if (property->GetIsNavigation())
             {
@@ -709,10 +706,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
             {
             PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
             if (propMap == nullptr)
-            	{
-                BeAssert(false);
                 return ERROR;
-                }
 
             if (!propMap->IsData())
                 {
@@ -917,7 +911,7 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
     {
-    return ViewGenerator::GenerateSelectViewSql(viewSql, m_ecdb, *this, isPolymorphic, prepareContext);
+    return ViewGenerator::GenerateSelectFromViewSql(viewSql, m_ecdb, *this, isPolymorphic, prepareContext);
     }
 
 //---------------------------------------------------------------------------------------

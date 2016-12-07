@@ -1071,10 +1071,8 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     if (!navPropName.EndsWithIAscii("id"))
         defaultFkColName.append("Id");
 
-    bool isNullable, isUnique; //unused
-    DbColumn::Constraints::Collation collation;//unused
-    Utf8String columnName;
-    if (SUCCESS != ClassMapper::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDb(), *singleNavProperty, defaultFkColName.c_str()))
+    DbColumn::CreateParams createColParams;
+    if (SUCCESS != ClassMapper::DetermineColumnInfo(createColParams, GetECDb(), *singleNavProperty, defaultFkColName.c_str()))
         return ERROR;
 
     ClassMap const* classMap = GetDbMap().GetClassMap(singleNavProperty->GetClass());
@@ -1082,7 +1080,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     if (tphInfo.IsValid() && tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
         {
         //table uses shared columns, so FK col position cannot depend on NavigationProperty position
-        fkColInfo.Assign(columnName.c_str(), true, nullptr, nullptr);
+        fkColInfo.Assign(createColParams.GetColumnName().c_str(), true, nullptr, nullptr);
         return SUCCESS;
         }
 
@@ -1115,7 +1113,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             }
         }
 
-    fkColInfo.Assign(columnName.c_str(), false, precedingPropMap, succeedingPropMap);
+    fkColInfo.Assign(createColParams.GetColumnName().c_str(), false, precedingPropMap, succeedingPropMap);
     return SUCCESS;
     }
 

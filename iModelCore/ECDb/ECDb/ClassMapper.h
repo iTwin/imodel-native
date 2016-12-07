@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include "ECDbPch.h"
+#include "PropertyMap.h"
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
 
@@ -17,13 +17,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct ClassMapper final
     {
-
     private:
         ClassMapR m_classMap;
         DbClassMapLoadContext const* m_loadContext;
 
-    private:
-        ClassMapper(ClassMapR classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
+        explicit ClassMapper(ClassMapR classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
         ClassMapper(ClassMapR classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
 
         PropertyMap* ProcessProperty(ECN::ECPropertyCR);
@@ -36,14 +34,12 @@ struct ClassMapper final
         RefCountedPtr<StructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR);
         Utf8String ComputeAccessString(ECN::ECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
-        DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR, Utf8CP accessString, DbColumn::Type);
+        DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type);
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
     public:
-        //Navigation property map is not finished. It require a second pass and Nav->Setup() method must be called on it.
-        //This method does not create system property maps
-        static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8CP propAccessString);
+        static BentleyStatus DetermineColumnInfo(DbColumn::CreateParams&, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString);
         static PropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
         static PropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);

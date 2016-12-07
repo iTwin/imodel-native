@@ -68,7 +68,6 @@ bool ECDbSystemSchemaHelper::IsSystemProperty(ECPropertyCR ecProperty, ECSqlSyst
     return ecProperty.GetName().Equals(requiredPropName) && ecProperty.GetClass().GetName().Equals(ECSQLSYSTEMPROPERTIES_CLASSNAME);
     }
 
-
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                09/2013
 //+---------------+---------------+---------------+---------------+---------------+-

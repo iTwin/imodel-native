@@ -1779,27 +1779,6 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
         "            </PropertyMap>"
         "           </ECCustomAttributes>"
         "        </ECProperty>"
-        "        <ECProperty propertyName='CollationBinaryProp' typeName='string'>"
-        "           <ECCustomAttributes>"
-        "            <PropertyMap xmlns='ECDbMap.02.00'>"
-        "                <Collation>Binary</Collation>"
-        "            </PropertyMap>"
-        "           </ECCustomAttributes>"
-        "        </ECProperty>"
-        "        <ECProperty propertyName='CollationNoCaseProp' typeName='string'>"
-        "           <ECCustomAttributes>"
-        "            <PropertyMap xmlns='ECDbMap.02.00'>"
-        "                <Collation>NoCase</Collation>"
-        "            </PropertyMap>"
-        "           </ECCustomAttributes>"
-        "        </ECProperty>"
-        "        <ECProperty propertyName='CollationRTrimProp' typeName='string'>"
-        "           <ECCustomAttributes>"
-        "            <PropertyMap xmlns='ECDbMap.02.00'>"
-        "                <Collation>RTrim</Collation>"
-        "            </PropertyMap>"
-        "           </ECCustomAttributes>"
-        "        </ECProperty>"
         "    </ECEntityClass>"
         "</ECSchema>", true, "Column constraints on property that maps to shared column");
 
@@ -6501,9 +6480,202 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
+    {
+    std::vector<SchemaItem> invalidSchemas;
+    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                        "<ECSchema schemaName='TestSchema' alias='ts0' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                        "    <ECEntityClass typeName='Base' modifier='None'>"
+                                        "           <ECCustomAttributes>"
+                                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                        "            </ClassMap>"
+                                        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+                                        "             </ShareColumns>"
+                                        "           </ECCustomAttributes>"
+                                        "        <ECProperty propertyName='P_Base' typeName='long'>"
+                                        "           <ECCustomAttributes>"
+                                        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                        "               <ColumnName>c_base</ColumnName>"
+                                        "            </PropertyMap>"
+                                        "           </ECCustomAttributes>"
+                                        "        </ECProperty>"
+                                        "    </ECEntityClass>"
+                                        "</ECSchema>", false, "ColumnName on shared column"));
+
+    invalidSchemas.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                        "<ECSchema schemaName='TestSchema' alias='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                        "    <ECEntityClass typeName='Base' modifier='None'>"
+                                        "           <ECCustomAttributes>"
+                                        "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                        "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                        "            </ClassMap>"
+                                        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                                        "                  <SharedColumnCount>2</SharedColumnCount>"
+                                        "                  <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+                                        "             </ShareColumns>"
+                                        "           </ECCustomAttributes>"
+                                        "        <ECProperty propertyName='P_Base' typeName='long'>"
+                                        "           <ECCustomAttributes>"
+                                        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                        "               <Collation>NoCase</Collation>"
+                                        "            </PropertyMap>"
+                                        "           </ECCustomAttributes>"
+                                        "        </ECProperty>"
+                                        "    </ECEntityClass>"
+                                        "</ECSchema>", false, "Collation on shared column"));
+
+    AssertSchemaImport(invalidSchemas, "propertymapcacolumnnamecollation_invalidcases.ecdb");
+
+    if (GetECDb().IsDbOpen())
+        GetECDb().CloseDb();
+
+    ECDbCR ecdb = SetupECDb("propertymapcacolumnnamecollationtests.ecdb",
+                            SchemaItem(
+                                "<?xml version='1.0' encoding='utf-8'?>"
+                                "<ECSchema schemaName='TestSchema' alias='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                "    <ECEntityClass typeName='Base' modifier='None'>"
+                                "           <ECCustomAttributes>"
+                                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                "               <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                "            </ClassMap>"
+                                "           </ECCustomAttributes>"
+                                "        <ECProperty propertyName='P_Base' typeName='long'>"
+                                "           <ECCustomAttributes>"
+                                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                "               <ColumnName>c_base</ColumnName>"
+                                "               <IsUnique>True</IsUnique>"
+                                "               <Collation>NoCase</Collation>"
+                                "            </PropertyMap>"
+                                "           </ECCustomAttributes>"
+                                "        </ECProperty>"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                                "        <BaseClass>Base</BaseClass>"
+                                "        <ECProperty propertyName='P_Sub1' typeName='long'>"
+                                "           <ECCustomAttributes>"
+                                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                "               <ColumnName>c_sub1</ColumnName>"
+                                "               <IsUnique>True</IsUnique>"
+                                "               <Collation>NoCase</Collation>"
+                                "            </PropertyMap>"
+                                "           </ECCustomAttributes>"
+                                "        </ECProperty>"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                                "           <ECCustomAttributes>"
+                                "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                "           </ECCustomAttributes>"
+                                "        <BaseClass>Base</BaseClass>"
+                                "        <ECProperty propertyName='P_Sub2' typeName='long'>"
+                                "           <ECCustomAttributes>"
+                                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                "               <ColumnName>c_sub2</ColumnName>"
+                                "               <IsUnique>True</IsUnique>"
+                                "               <Collation>NoCase</Collation>"
+                                "            </PropertyMap>"
+                                "           </ECCustomAttributes>"
+                                "        </ECProperty>"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Sub2Sub' modifier='None'>"
+                                "      <BaseClass>Sub2</BaseClass>"
+                                "        <ECProperty propertyName='P_Sub2Sub' typeName='long'>"
+                                "           <ECCustomAttributes>"
+                                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                "               <ColumnName>c_sub2sub</ColumnName>"
+                                "               <IsUnique>True</IsUnique>"
+                                "               <Collation>NoCase</Collation>"
+                                "            </PropertyMap>"
+                                "           </ECCustomAttributes>"
+                                "        </ECProperty>"
+                                "    </ECEntityClass>"
+                                "    <ECEntityClass typeName='Sub2Sub2' modifier='None'>"
+                                "      <ECCustomAttributes>"
+                                "        <ShareColumns xmlns='ECDbMap.02.00'>"
+                                "           <SharedColumnCount>2</SharedColumnCount>"
+                                "           <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                "        </ShareColumns>"
+                                "       </ECCustomAttributes>"
+                                "       <BaseClass>Sub2</BaseClass>"
+                                "        <ECProperty propertyName='P_Sub2Sub2' typeName='long'>"
+                                "           <ECCustomAttributes>"
+                                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                                "               <ColumnName>c_sub2sub2</ColumnName>"
+                                "               <IsUnique>True</IsUnique>"
+                                "               <Collation>NoCase</Collation>"
+                                "            </PropertyMap>"
+                                "           </ECCustomAttributes>"
+                                "        </ECProperty>"
+                                "    </ECEntityClass>"
+                                "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    auto getDdl = [] (Utf8StringR ddl, ECDbCR ecdb, Utf8CP tableName)
+        {
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE");
+        ASSERT_TRUE(stmt != nullptr);
+
+        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No)) << stmt->GetSql();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step()) << stmt->GetSql();
+        ddl.assign(stmt->GetValueText(0));
+        };
+
+
+    bvector<Utf8String> actualColNames;
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Base"));
+    ASSERT_EQ(5, actualColNames.size()) << "ts3_Base";
+    ASSERT_STRCASEEQ("ECInstanceId", actualColNames[0].c_str()) << "ts3_Base";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Base";
+    ASSERT_STRCASEEQ("c_base", actualColNames[2].c_str()) << "ts3_Base";
+    ASSERT_STRCASEEQ("c_sub1", actualColNames[3].c_str()) << "ts3_Base";
+    ASSERT_STRCASEEQ("c_sub2", actualColNames[4].c_str()) << "ts3_Base";
+
+
+    Utf8String tsBaseDdl;
+    getDdl(tsBaseDdl, ecdb, "ts3_Base");
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_base] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub1] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub2] INTEGER UNIQUE COLLATE NOCASE")) << tsBaseDdl.c_str();
+
+
+    actualColNames.clear();
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Sub2Sub"));
+    ASSERT_EQ(3, actualColNames.size()) << "ts3_Sub2Sub";
+    ASSERT_STRCASEEQ("BaseECInstanceId", actualColNames[0].c_str()) << "ts3_Sub2Sub";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Sub2Sub";
+    ASSERT_STRCASEEQ("c_sub2sub", actualColNames[2].c_str()) << "ts3_Sub2Sub";
+
+    Utf8String tsSub2SubDdl;
+    getDdl(tsSub2SubDdl, ecdb, "ts3_Sub2Sub");
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_Sub2Sub] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
+
+    actualColNames.clear();
+    ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Sub2Sub2"));
+    ASSERT_EQ(5, actualColNames.size()) << "ts3_Sub2Sub2";
+    ASSERT_STRCASEEQ("BaseECInstanceId", actualColNames[0].c_str()) << "ts3_Sub2Sub2";
+    ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Sub2Sub2";
+    ASSERT_STRCASEEQ("c_sub2sub2", actualColNames[2].c_str()) << "ts3_Sub2Sub2";
+    ASSERT_STRCASEEQ("sc1", actualColNames[3].c_str()) << "ts3_Sub2Sub2";
+    ASSERT_STRCASEEQ("scoverflow", actualColNames[4].c_str()) << "ts3_Sub2Sub2";
+
+    Utf8String tsSub2Sub2Ddl;
+    getDdl(tsSub2Sub2Ddl, ecdb, "ts3_Sub2Sub2");
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[c_sub2sub2] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
+    ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[scoverflow] TEXT,")) << tsSub2Sub2Ddl.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, PropertyMapCA)
+TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     {
     auto getDdl = [] (Utf8StringR ddl, ECDbCR ecdb, Utf8CP tableName)
         {
@@ -6532,7 +6704,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "               <ColumnName>c_base</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6545,7 +6716,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "               <ColumnName>c_sub1</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6561,7 +6731,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "               <ColumnName>c_sub2</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6574,7 +6743,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "               <ColumnName>c_sub2sub</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6587,7 +6755,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "               <ColumnName>c_sub2subsub</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6596,17 +6763,15 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "      <ECCustomAttributes>"
                                 "        <ShareColumns xmlns='ECDbMap.02.00'>"
                                 "           <SharedColumnCount>2</SharedColumnCount>"
-                                "           <AppliesToSubclassesOnly>False</AppliesToSubclassesOnly>"
+                                "           <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
                                 "        </ShareColumns>"
                                 "       </ECCustomAttributes>"
                                 "      <BaseClass>Sub2</BaseClass>"
                                 "        <ECProperty propertyName='P_Sub2Sub2' typeName='long'>"
                                 "           <ECCustomAttributes>"
                                 "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                                "               <ColumnName>c_sub2sub2</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
@@ -6616,20 +6781,16 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
                                 "        <ECProperty propertyName='P1_Sub2Sub2Sub' typeName='long'>"
                                 "           <ECCustomAttributes>"
                                 "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                                "               <ColumnName>c1_sub2sub2sub</ColumnName>"
                                 "               <IsNullable>false</IsNullable>"
                                 "               <IsUnique>true</IsUnique>"
-                                "               <Collation>NoCase</Collation>"
                                 "            </PropertyMap>"
                                 "           </ECCustomAttributes>"
                                 "        </ECProperty>"
                                     "        <ECProperty propertyName='P2_Sub2Sub2Sub' typeName='long'>"
                                     "           <ECCustomAttributes>"
                                     "            <PropertyMap xmlns='ECDbMap.02.00'>"
-                                    "               <ColumnName>c2_sub2sub2sub</ColumnName>"
                                     "               <IsNullable>false</IsNullable>"
                                     "               <IsUnique>true</IsUnique>"
-                                    "               <Collation>NoCase</Collation>"
                                     "            </PropertyMap>"
                                     "           </ECCustomAttributes>"
                                     "        </ECProperty>"
@@ -6650,9 +6811,9 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
 
     Utf8String tsBaseDdl;
     getDdl(tsBaseDdl, ecdb, "ts_Base");
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_base] INTEGER NOT NULL UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub1] INTEGER,")) << tsBaseDdl.c_str();
-    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub2] INTEGER")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_base] INTEGER NOT NULL UNIQUE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub1] INTEGER UNIQUE,")) << tsBaseDdl.c_str();
+    ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub2] INTEGER UNIQUE")) << tsBaseDdl.c_str();
 
 
     actualColNames.clear();
@@ -6665,8 +6826,8 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCA)
 
     Utf8String tsSub2SubDdl;
     getDdl(tsSub2SubDdl, ecdb, "ts_Sub2Sub");
-    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2sub] INTEGER NOT NULL UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
-    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2subsub] INTEGER,")) << tsSub2SubDdl.c_str();
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2sub] INTEGER NOT NULL UNIQUE,")) << tsSub2SubDdl.c_str();
+    ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2subsub] INTEGER UNIQUE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts_Sub2Sub2"));

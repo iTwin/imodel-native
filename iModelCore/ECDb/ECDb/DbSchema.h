@@ -111,7 +111,7 @@ public:
         public:
             enum class Collation
                 {
-                Default = 0, // Default is really Binary in sqlite. But we will not provide collation for property to sqlite in this case and assume sqlite default.
+                Unset = 0,
                 Binary = 1, // Compares string data using memcmp, regardless of text encoding
                 NoCase = 2, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
                 RTrim = 3  // The same as binary, except that trailing space characters are ignored.
@@ -125,7 +125,7 @@ public:
             Collation m_collation;
 
         public:
-            Constraints() : m_hasNotNullConstraint(false), m_hasUniqueConstraint(false), m_collation(Collation::Default) {}
+            Constraints() : m_hasNotNullConstraint(false), m_hasUniqueConstraint(false), m_collation(Collation::Unset) {}
 
             bool HasNotNullConstraint() const { return m_hasNotNullConstraint; }
             void SetNotNullConstraint() { m_hasNotNullConstraint = true; }
@@ -139,7 +139,28 @@ public:
             void SetCollation(Collation collation) { m_collation = collation; }
 
             static Utf8CP CollationToSql(Collation);
-            static bool TryParseCollationString(Collation&, Utf8CP);
+            static bool TryParseCollationString(Collation&, Utf8StringCR);
+        };
+
+    struct CreateParams final : NonCopyableClass
+        {
+        private:
+            Utf8String m_columnName;
+            bool m_columnNameIsFromPropertyMapCA = false;
+            bool m_addNotNullConstraint = false;
+            bool m_addUniqueConstraint = false;
+            Constraints::Collation m_collation = DbColumn::Constraints::Collation::Unset;
+
+        public:
+            CreateParams() {}
+
+            void Assign(Utf8StringCR colName, bool colNameIsFromPropertyMapCA, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation);
+            bool IsValid() const { return !m_columnName.empty(); }
+            Utf8StringCR GetColumnName() const { return m_columnName; }
+            bool IsColumnNameFromPropertyMapCA() const { return m_columnNameIsFromPropertyMapCA; }
+            bool AddNotNullConstraint() const { return m_addNotNullConstraint; }
+            bool AddUniqueConstraint() const { return m_addUniqueConstraint; }
+            Constraints::Collation GetCollation() const { return m_collation; }
         };
 
 private:
@@ -185,6 +206,7 @@ public:
     static bool IsCompatible(Type lhs, Type rhs);
     static Utf8CP KindToString(Kind);
     };
+
 
 //======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
@@ -387,7 +409,7 @@ public:
 
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persistenceType) { return CreateColumn(name, type, -1, kind, persistenceType); }
     BentleyStatus CreateSharedColumns(TablePerHierarchyInfo const&);
-    DbColumn* CreateOverflowSlaveColumn(DbColumn::Type, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation);
+    DbColumn* CreateOverflowSlaveColumn(DbColumn::Type);
     DbColumn* CreateColumn(Utf8StringCR name, DbColumn::Type type, int position, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(DbColumnId(), name, type, position, kind, persType); }
     DbColumn* CreateColumn(DbColumnId id, Utf8StringCR name, DbColumn::Type type, DbColumn::Kind kind, PersistenceType persType) { return CreateColumn(id, name, type, -1, kind, persType); }
     std::vector<DbTable const*> const& GetJoinedTables() const { return m_joinedTables; }

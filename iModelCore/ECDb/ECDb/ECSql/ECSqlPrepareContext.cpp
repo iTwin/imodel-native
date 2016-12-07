@@ -13,86 +13,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//****************************** ECSqlPrepareContext::StatementScope ********************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope::ExpScope(ExpCR exp, ExpScope const* parent, OptionsExp const* options)
-    : m_exp(exp), m_parent(parent), m_options(options), m_nativeSqlSelectClauseColumnCount(0), m_extendedOptions(ExtendedOptions::None)
-    {
-    m_ecsqlType = DetermineECSqlType(exp);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType(ExpCR exp) const
-    {
-    switch (exp.GetType())
-        {
-            case Exp::Type::SingleSelect:
-            case Exp::Type::Select:
-                return ECSqlType::Select;
-            case Exp::Type::Insert:
-                return ECSqlType::Insert;
-            case Exp::Type::Update:
-                return ECSqlType::Update;
-            case Exp::Type::Delete:
-                return ECSqlType::Delete;
-            default:
-            {
-            BeAssert(m_parent != nullptr && "DetermineECSqlType");
-            return m_parent->GetECSqlType();
-            }
-        }
-    }
-
-//****************************** ECSqlPrepareContext::StatementScopeStack ********************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScopeStack::Push(ExpCR exp, OptionsExp const* options)
-    {
-    ExpScope const* parent = nullptr;
-    if (Depth() > 0)
-        parent = &Current();
-
-    m_scopes.push_back(ExpScope(exp, parent, options));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlPrepareContext::ExpScopeStack::Pop()
-    {
-    m_scopes.pop_back();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-size_t ECSqlPrepareContext::ExpScopeStack::Depth() const
-    {
-    return m_scopes.size();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope const& ECSqlPrepareContext::ExpScopeStack::Current() const
-    {
-    BeAssert(!m_scopes.empty());
-    return m_scopes.back();
-    }
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ExpScope& ECSqlPrepareContext::ExpScopeStack::CurrentR()
-    {
-    BeAssert(!m_scopes.empty());
-    return m_scopes.back();
-    }
-
 //****************************** ECSqlPrepareContext ********************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
@@ -153,6 +73,123 @@ void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(si
     }
 
 //-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+int ECSqlPrepareContext::NextParameterIndex()
+    {
+    if (m_nextParamterIndex < 0)
+        m_nextParamterIndex = 1;
+    else
+        m_nextParamterIndex++;
+
+    return m_nextParamterIndex;
+    }
+
+//****************************** ECSqlPrepareContext::ExpScope ********************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::ExpScope::ExpScope(ExpCR exp, ExpScope const* parent, OptionsExp const* options)
+    : m_exp(exp), m_parent(parent), m_options(options), m_nativeSqlSelectClauseColumnCount(0), m_extendedOptions(ExtendedOptions::None)
+    {
+    m_ecsqlType = DetermineECSqlType(exp);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlType ECSqlPrepareContext::ExpScope::DetermineECSqlType(ExpCR exp) const
+    {
+    switch (exp.GetType())
+        {
+            case Exp::Type::SingleSelect:
+            case Exp::Type::Select:
+                return ECSqlType::Select;
+            case Exp::Type::Insert:
+                return ECSqlType::Insert;
+            case Exp::Type::Update:
+                return ECSqlType::Update;
+            case Exp::Type::Delete:
+                return ECSqlType::Delete;
+            default:
+            {
+            BeAssert(m_parent != nullptr && "DetermineECSqlType");
+            return m_parent->GetECSqlType();
+            }
+        }
+    }
+
+//****************************** ECSqlPrepareContext::ExpScopeStack ********************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                    11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlPrepareContext::ExpScopeStack::Push(ExpCR exp, OptionsExp const* options)
+    {
+    ExpScope const* parent = nullptr;
+    if (Depth() > 0)
+        parent = &Current();
+
+    m_scopes.push_back(ExpScope(exp, parent, options));
+    }
+
+//************************ ECSqlPrepareContext::SelectClauseInfo **************************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlPrepareContext::SelectClauseInfo::AddProperty(PropertyMap const& propertyMap)
+    {
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All, /*traverseCompoundProperties = */ true);
+    propertyMap.AcceptVisitor(typeVisitor);
+    for (PropertyMap const* propMap : typeVisitor.Results())
+        {
+        Utf8String path;
+        for (Utf8StringCR subPath : Split(propMap->GetAccessString(), '.'))
+            {
+            if (path.empty())
+                path.assign(subPath);
+            else
+                path.append(".").append(subPath);
+
+            m_selectClause.insert(path);
+            }
+        }
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ECSqlPrepareContext::SelectClauseInfo::IsSelected(Utf8StringCR accessString) const
+    {
+    if (m_selectClause.find(accessString) != m_selectClause.end())
+        return true;
+
+    //these system properties are always selected (? is this true??)
+    return accessString.EqualsIAscii(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME) ||
+        accessString.EqualsIAscii(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME) ||
+        accessString.EqualsIAscii(ECDbSystemSchemaHelper::SOURCEECCLASSID_PROPNAME) ||
+        accessString.EqualsIAscii(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME) ||
+        accessString.EqualsIAscii(ECDbSystemSchemaHelper::TARGETECCLASSID_PROPNAME) ||
+        accessString.EqualsIAscii(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       11/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+bvector<Utf8String> ECSqlPrepareContext::SelectClauseInfo::Split(Utf8StringCR accessString, Utf8Char separator)
+    {
+    bvector<Utf8String> output;
+    Utf8String::size_type prev_pos = 0, pos = 0;
+    while ((pos = accessString.find(separator, pos)) != Utf8String::npos)
+        {
+        output.push_back(accessString.substr(prev_pos, pos - prev_pos));
+        prev_pos = ++pos;
+        }
+
+    output.push_back(accessString.substr(prev_pos, pos - prev_pos)); // Last word
+    return output;
+    }
+
+//-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static 
@@ -190,14 +227,14 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     joinedTableECSQL.Append("INSERT INTO ").Append(classMap.GetClass().GetECSqlName().c_str());
     parentOfJoinedTableECSQL.Append("INSERT INTO ").Append(parentOfJoinedTableClass->GetECSqlName().c_str());
 
-    std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> info = std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo>(new JoinedTableInfo(classMap.GetClass()));
-    auto propertyList = exp.GetPropertyNameListExp();
-    auto valueList = exp.GetValuesExp();
+    std::unique_ptr<JoinedTableInfo> info(new JoinedTableInfo(classMap.GetClass()));
+    PropertyNameListExp const* propertyList = exp.GetPropertyNameListExp();
+    ValueExpListExp const* valueList = exp.GetValuesExp();
     for (size_t i = 0; i < propertyList->GetChildrenCount(); i++)
         {
         PropertyNameExp const* property = propertyList->GetPropertyNameExp(i);
         ValueExp const* value = valueList->GetValueExp(i);
-        std::vector<Parameter const*> thisValueParams;
+        bvector<Parameter const*> thisValueParams;
         for (Exp const* exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             ParameterExp const* param = static_cast<ParameterExp const*>(exp);
@@ -326,11 +363,11 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     auto assignmentList = exp.GetAssignmentListExp();
     for (size_t i = 0; i < assignmentList->GetChildrenCount(); i++)
         {
-        auto assignmentExp = assignmentList->GetAssignmentExp(i);
-        auto property = assignmentExp->GetPropertyNameExp();
-        auto value = assignmentExp->GetValueExp();
+        AssignmentExp const* assignmentExp = assignmentList->GetAssignmentExp(i);
+        PropertyNameExp const* property = assignmentExp->GetPropertyNameExp();
+        ValueExp const* value = assignmentExp->GetValueExp();
 
-        std::vector<Parameter const*> thisValueParams;
+        bvector<Parameter const*> thisValueParams;
         for (auto exp : value->Find(Exp::Type::Parameter, true /* recursive*/))
             {
             auto param = static_cast<ParameterExp const*>(exp);
@@ -365,12 +402,12 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     joinedTableECSQL.Append(BuildAssignmentExpression(joinedTableProperties, joinedTableValues));
     parentOfJoinedTableECSQL.Append(BuildAssignmentExpression(parentOfJoinedTableProperties, parentOfJoinedTableValues));
 
-    if (auto bwhere = exp.GetWhereClauseExp())
+    if (WhereExp const* bwhere = exp.GetWhereClauseExp())
         {
-        std::vector<Parameter const*> thisValueParams;
-        for (auto exp : bwhere->Find(Exp::Type::Parameter, true /* recursive*/))
+        bvector<Parameter const*> thisValueParams;
+        for (Exp const* exp : bwhere->Find(Exp::Type::Parameter, true /* recursive*/))
             {
-            auto param = static_cast<ParameterExp const*>(exp);
+            ParameterExp const* param = static_cast<ParameterExp const*>(exp);
             if (!(param->IsNamedParameter() && info->m_parameterMap.GetOrignal().Find(param->GetParameterName())))
                 thisValueParams.push_back(info->m_parameterMap.GetOrignalR().Add(*param));
             }
@@ -442,15 +479,15 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
         auto& secondary = info->m_parameterMap.GetSecondaryR();
         for (auto i = primary.First(); i > 0 && i <= primary.Last(); ++i)
             {
-            auto p = const_cast<Parameter*>(primary.Find(i));
-            if (p && p->GetOrignalParameter())
+            Parameter* p = const_cast<Parameter*>(primary.Find(i));
+            if (p != nullptr && p->GetOrignalParameter() != nullptr)
                 {
-                for (auto j = secondary.First(); j > 0 && j <= secondary.Last(); ++j)
+                for (size_t j = secondary.First(); j > 0 && j <= secondary.Last(); ++j)
                     {
-                    auto s = const_cast<Parameter*>(secondary.Find(j));
-                    if (s && p->GetOrignalParameter() == s->GetOrignalParameter())
+                    Parameter* s = const_cast<Parameter*>(secondary.Find(j));
+                    if (s != nullptr && p->GetOrignalParameter() == s->GetOrignalParameter())
                         {
-                        p->m_shared = s->m_shared = true;
+                        p->m_isShared = s->m_isShared = true;
                         }
                     }
                 }
@@ -462,6 +499,100 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
     return nullptr;
     }
 
+//********************** ECSqlPrepareContext::JoinedTableInfo::Parameter *****************
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo::Parameter const* ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Find(size_t index) const
+    {
+    if (index > m_parameters.size() || index == 0)
+        return nullptr;
+
+    return m_parameters.at(index - 1).get();
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo::Parameter const* ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Find(Utf8StringCR name) const
+    {
+    for (std::unique_ptr<Parameter> const& param : m_parameters)
+        {
+        if (param->IsNamed() && param->GetName().EqualsIAscii(name))
+            return param.get();
+        }
+
+    return nullptr;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo::Parameter const* ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Add(ParameterExp const& exp)
+    {
+    if (exp.IsNamedParameter())
+        {
+        if (ECSqlPrepareContext::JoinedTableInfo::Parameter const* r = Find(exp.GetParameterName()))
+            {
+            BeAssert(r->GetIndex() == exp.GetParameterIndex());
+            return r;
+            }
+        }
+
+    std::unique_ptr<Parameter> param = std::make_unique<Parameter>(exp.GetParameterIndex(), exp.GetParameterName(), nullptr);
+    Parameter const* paramCP = param.get();
+    m_parameters.push_back(std::move(param));
+    return paramCP;
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo::Parameter const* ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Add(Parameter const& orignalParam)
+    {
+    std::unique_ptr<Parameter> param = std::make_unique<Parameter>(m_parameters.size() + 1, orignalParam.GetName(), &orignalParam);
+    Parameter const* paramCP = param.get();
+    m_parameters.push_back(std::move(param));
+    return paramCP;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ECSqlPrepareContext::JoinedTableInfo::Parameter const* ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Add()
+    {
+    std::unique_ptr<Parameter> param = std::make_unique<Parameter>(m_parameters.size() + 1, Utf8String(), nullptr);
+    Parameter const* paramCP = param.get();
+    m_parameters.push_back(std::move(param));
+    return paramCP;
+    }
+    
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECSqlPrepareContext::JoinedTableInfo::ParameterSet::Add(bvector<Parameter const*> const& params)
+    {
+    for (Parameter const* param : params)
+        {
+        BeAssert(param != nullptr);
+        Add(*param);
+        }
+    }
+
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       01/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+size_t ECSqlPrepareContext::JoinedTableInfo::ParameterSet::First() const
+    {
+    if (m_parameters.size() > 0)
+        return 1;
+
+    return 0;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 
