@@ -1490,7 +1490,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
             }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
-            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
+            SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema, ecXmlVersionMajor);
             if (SchemaReadStatus::Success != status)
                 return status;
 
@@ -1607,7 +1607,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Colin.Kerr            09/2012
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema)
+SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, int ecXmlVersionMajor)
     {
     Utf8String qualifiedClassName;
     childNode->GetContent (qualifiedClassName);
@@ -1640,7 +1640,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    bool resolveConflicts = false;
+    bool resolveConflicts = ecXmlVersionMajor == 2 ? true : false;
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
@@ -1683,7 +1683,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    bool resolveConflicts = false;
+    bool resolveConflicts = ecXmlVersionMajor == 2 ? true : false;
     if (nullptr != conversionSchema)
         {
         resolveConflicts = conversionSchema->IsDefined("ResolvePropertyNameConflicts");

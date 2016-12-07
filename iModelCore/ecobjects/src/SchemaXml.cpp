@@ -37,7 +37,7 @@ struct SchemaXmlReaderImpl
         SchemaXmlReaderImpl(ECSchemaReadContextR context, BeXmlDomR xmlDom);
         SchemaReadStatus ReadSchemaReferencesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
 
-        virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes);
+        virtual SchemaReadStatus ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes, int ecXmlVersionMajor);
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         SchemaReadStatus ReadKindOfQuantitiesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
@@ -200,11 +200,13 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadSchemaReferencesFromXml(ECSchemaPtr& s
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes)
+SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode, ClassDeserializationVector& classes, int ecXmlVersionMajor)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
     bool resolveConflicts = false;
-    if (m_conversionSchema.IsValid())
+    if (2 == ecXmlVersionMajor)
+        resolveConflicts = true;
+    else if (m_conversionSchema.IsValid())
         resolveConflicts = m_conversionSchema->IsDefined("ResolveClassNameConflicts");
 
     bvector<Utf8String> comments;
@@ -876,7 +878,7 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     ClassDeserializationVector classes;
     StopWatch readingClassStubs("Reading class stubs", true);
-    status = reader->ReadClassStubsFromXml(schemaOut, *schemaNode, classes);
+    status = reader->ReadClassStubsFromXml(schemaOut, *schemaNode, classes, ecXmlMajorVersion);
 
     if (SchemaReadStatus::Success != status)
         return status;
