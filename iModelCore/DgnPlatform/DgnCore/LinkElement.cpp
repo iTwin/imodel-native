@@ -13,7 +13,9 @@
 #define URLLINK_UserLabel "UserLabel"
 #define URLLINK_Description "Descr"
 
+#define EMBEDDEDFILELINK_Name "Name"
 #define EMBEDDEDFILELINK_UserLabel "UserLabel"
+#define EMBEDDEDFILELINK_Description "Descr"
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -436,6 +438,47 @@ EmbeddedFileLinkCPtr EmbeddedFileLink::Update()
     EmbeddedFileLinkCPtr link = GetDgnDb().Elements().Update<EmbeddedFileLink>(*this);
     BeAssert(link.IsValid());
     return link;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+void EmbeddedFileLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
+    {
+    T_Super::_BindWriteParams(stmt, forInsert);
+
+    stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Name), m_name.empty() ? nullptr : m_name.c_str(), IECSqlBinder::MakeCopy::No);
+    stmt.BindText(stmt.GetParameterIndex(EMBEDDEDFILELINK_Description), m_name.empty() ? nullptr : m_description.c_str(), IECSqlBinder::MakeCopy::No);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+DgnDbStatus EmbeddedFileLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+    {
+    DgnDbStatus status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success != status)
+        return status;
+
+    m_name = stmt.GetValueText(params.GetSelectIndex(EMBEDDEDFILELINK_Name));
+    m_description = stmt.GetValueText(params.GetSelectIndex(EMBEDDEDFILELINK_Description));
+
+    return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    05/2016
+//---------------------------------------------------------------------------------------
+void EmbeddedFileLink::_CopyFrom(DgnElementCR other)
+    {
+    T_Super::_CopyFrom(other);
+
+    EmbeddedFileLinkCP otherLink = dynamic_cast<EmbeddedFileLinkCP> (&other);
+    if (otherLink)
+        {
+        m_name = otherLink->m_name;
+        m_description = otherLink->m_description;
+        }
     }
 
 //---------------------------------------------------------------------------------------
