@@ -129,3 +129,4 @@ RealityDataThreadPool.SpawnsThreads
 
 CategoryTests.UpdateSubCategory_VerifyPresistence  # TFS 518048
 
+DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
