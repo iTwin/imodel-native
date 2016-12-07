@@ -106,17 +106,13 @@ struct ECValue
                 ECObjectsStatus Set(::int64_t id);
 
                 //! Returns the relationship class that this navigation value was initialized with
-                //! @return A pointer to the relationship class if a it was set as a pointer, otherwise returns nullptr
+                //! @return A pointer to the relationship class if it was used to set the value, otherwise returns nullptr
                 ECOBJECTS_EXPORT ECRelationshipClassCP GetRelationshipClass() const;
-                //! Returns the relationship class id that this navigation value.
-                //! @return The relationship class id, will be an invalid ECClassId if was unset
+                //! Returns the relationship class id that this navigation value was initialized with.
+                //! @return The relationship ECClassId if it explicitly set or the ECRelationshipClass has a valid ECClassId, otherwise returns an invalid ECClassId
                 ECOBJECTS_EXPORT ECClassId GetRelationshipClassId() const;
                 //! Returns the long value, if this ECValue holds a long
                 ECOBJECTS_EXPORT ::int64_t GetIdAsLong() const;
-
-                //! Retuns whether the relationship class was stored as a pointer to the relationship. If false, than the relationship
-                //! class was stored as an id.
-                ECOBJECTS_EXPORT bool IsPointer() const;
             };
 
     private:
@@ -337,8 +333,8 @@ struct ECValue
         ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECRelationshipClassCP relationship);
 
         //! Initializes a new instance of ECValue from the given value. Type is set to BentleyApi::ECN::VALUEKIND_NAVIGATION
-        //! @param[in] value Value to inialize this ECValue from
-        //! @param[in] relationshipClassId The relationship classId use to initialize this ECValue from
+        //! @param[in] value Value to initialize this ECValue from
+        //! @param[in] relationshipClassId The relationship ECClassId used to initialize this ECValue from
         ECOBJECTS_EXPORT explicit ECValue(::int64_t value, ECClassId relationshipClassId);
 
         bool operator==(ECValueCR rhs) const { return Equals(rhs); }
@@ -506,16 +502,16 @@ struct ECValue
         ECOBJECTS_EXPORT ArrayInfo      GetArrayInfo() const;
 
         //! Defines the navigation value for this ECValue
+        //! @param[in] value The value to set
         //! @param[in] relationshipClass The relationship used to set this ECValue
-        //! @param[in] value             Value to set this ECValue to
         ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECRelationshipClassCP relationshipClass = nullptr);
 
         //! Defines the navigation value for this ECValue
-        //! @param[in] relationshipClassId ClassId for the relationship used to set this ECValue
-        //! @param[in] value               Value to set this ECValue to
+        //! @param[in] value The value to set
+        //! @param[in] relationshipClassId The relationship ECClassId used to set this ECValue
         ECOBJECTS_EXPORT ECObjectsStatus SetNavigationInfo(::int64_t value, ECClassId relationshipClassId);
 
-        //! Returns the navigation information definig this ECValue
+        //! Returns the navigation information defining this ECValue
         ECOBJECTS_EXPORT ECValue::NavigationInfo const& GetNavigationInfo() const;
 
         //! Returns the integer value, if this ECValue holds an Integer 
