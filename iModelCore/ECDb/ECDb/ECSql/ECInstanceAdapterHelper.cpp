@@ -442,7 +442,7 @@ BentleyStatus ECInstanceAdapterHelper::BindNavigationValue(IECSqlBinder& binder,
         return binder.BindNull() == ECSqlStatus::Success ? SUCCESS : ERROR;
 
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
-    ECInstanceId navId((uint64_t) navInfo.GetIdAsLong());
+    ECInstanceId navId = navInfo.GetId<ECInstanceId>();
     ECClassId relClassId = navInfo.GetRelationshipClassId();
     return binder.BindNavigation(navId, relClassId) == ECSqlStatus::Success ? SUCCESS : ERROR;
     }
