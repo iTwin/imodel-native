@@ -173,8 +173,8 @@ struct TileThread : BeFolly::ThreadPool
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> Attachment::Tile::Loader::::_SaveToDb() override {return SUCCESS;}
-folly::Future<BentleyStatus> Attachment::Tile::Loader::::_ReadFromDb() override {return ERROR;}
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_SaveToDb() {return SUCCESS;}
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_ReadFromDb() {return ERROR;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
