@@ -315,7 +315,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     }
 
 // WIP06: fails due to schema compatibility issues to 06xx ECv3 ECDb
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -398,8 +398,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-// Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.ForeignECInstanceId_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds)
+// WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.ForeignECInstanceId_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -522,8 +522,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
-// Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
-TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
+// WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
+TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
