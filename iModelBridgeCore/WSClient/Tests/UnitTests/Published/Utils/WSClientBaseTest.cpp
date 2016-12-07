@@ -70,6 +70,8 @@ void WSClientBaseTest::InitLibraries()
 
     L10N::SqlangFiles sqlangFiles(getDgnClientFxSqlangFile());
     DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
+
+    HttpClient::Initialize(s_pathProvider->GetDgnPlatformAssetsDirectory());
     }
 
 void WSClientBaseTest::InitLogging()
