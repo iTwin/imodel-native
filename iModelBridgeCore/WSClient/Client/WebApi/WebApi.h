@@ -78,7 +78,8 @@ struct WebApi : public std::enable_shared_from_this<WebApi>
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr
             ) const = 0;
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest

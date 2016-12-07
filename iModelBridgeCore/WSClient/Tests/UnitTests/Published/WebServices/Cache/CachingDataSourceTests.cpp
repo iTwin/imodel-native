@@ -2609,8 +2609,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledCreatedMo
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty" : "NewValue"})"));
@@ -2637,8 +2637,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", "A"}, WSChangeset::Existing, nullptr)
@@ -2670,8 +2670,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndDelete
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestRelationshipClass", "AB"}, WSChangeset::Deleted, nullptr);
@@ -2701,8 +2701,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", "ExistingId"}, WSChangeset::Existing, nullptr)
@@ -2734,8 +2734,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2767,8 +2767,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2800,8 +2800,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         changeset.AddInstance({"TestSchema.TestClassA", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"))
@@ -2848,8 +2848,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -2895,8 +2895,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         StubInstances instances;
         auto instance = instances.Add({"TestSchema.TestClassA", "RemoteIdA"});
@@ -2935,8 +2935,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndCreate
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         StubInstances instances;
         auto instance = instances.Add({"TestSchema.TestClassA", "ExistingIdA"});
@@ -2971,8 +2971,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledModifiedO
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -3000,8 +3000,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedOb
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -3034,8 +3034,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledDeletedRe
     txn.Commit();
 
     // Act & Assert
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         auto body = HttpStringBody::Create(R"({"changedInstances" : [{"instanceAfterChange" : {}}]})");
         return CreateCompletedAsyncTask(WSChangesetResult::Success(body));
@@ -3081,8 +3081,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
     // Act & Assert
     InSequence callsInSequence;
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -3102,8 +3102,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
         return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
         }));
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", "RemoteIdA"}, WSChangeset::Existing, nullptr);
@@ -3173,8 +3173,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
     // Act & Assert
     InSequence callsInSequence;
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", ""}, WSChangeset::Created, ToJsonPtr(R"({"TestProperty":"A"})"));
@@ -3193,8 +3193,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndChange
         return CreateCompletedAsyncTask(instances.ToWSChangesetResult());
         }));
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         WSChangeset changeset;
         auto& a = changeset.AddInstance({"TestSchema.TestClass", "RemoteIdA"}, WSChangeset::Existing, nullptr);
@@ -3265,8 +3265,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
     {
     InSequence callsInSequence;
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         EXPECT_EQ(expectedChangeset1, Json::Reader::DoParse(changesetBody->AsString()));
 
@@ -3295,8 +3295,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndOneObj
         return CreateCompletedAsyncTask(instances.ToWSObjectsResult());
         }));
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         EXPECT_EQ(expectedChangeset3, Json::Reader::DoParse(changesetBody->AsString()));
 
@@ -3369,8 +3369,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndRelate
     {
     InSequence callsInSequence;
 
-    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
-        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr)
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, Http::Request::ProgressCallbackCR, ICancellationTokenPtr, WSRepositoryClient::RequestOptionsPtr)
         {
         EXPECT_EQ(expectedChangeset1, Json::Reader::DoParse(changesetBody->AsString()));
 
