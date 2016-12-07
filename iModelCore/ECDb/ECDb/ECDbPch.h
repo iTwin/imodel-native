@@ -82,3 +82,4 @@
 #include "ECSchemaComparer.h"
 #include "LightweightCache.h"
 #include "SqlNames.h"
+#include "DbColumnFactory.h"
