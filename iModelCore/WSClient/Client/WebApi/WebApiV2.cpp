@@ -480,7 +480,8 @@ AsyncTaskPtr<WSChangesetResult> WebApiV2::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct
+ICancellationTokenPtr ct,
+IWSRepositoryClient::RequestOptionsPtr options
 ) const
     {
     if (m_info.GetWebApiVersion() < BeVersion(2, 1))
@@ -490,6 +491,13 @@ ICancellationTokenPtr ct
 
     Utf8String url = GetUrl("$changeset");
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
+    request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
+    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+
+    if (nullptr != options)
+        {
+        request.SetTransferTimeoutSeconds(options->GetTransferTimeOut());
+        }
 
     request.GetHeaders().SetContentType("application/json");
 

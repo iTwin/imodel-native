@@ -110,7 +110,8 @@ struct WebApiV2 : public WebApi
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR uploadProgressCallback = nullptr,
-            ICancellationTokenPtr ct = nullptr
+            ICancellationTokenPtr ct = nullptr,
+            IWSRepositoryClient::RequestOptionsPtr options = nullptr
             ) const override;
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest

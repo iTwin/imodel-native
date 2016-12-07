@@ -240,12 +240,13 @@ AsyncTaskPtr<WSChangesetResult> WSRepositoryClient::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct
+ICancellationTokenPtr ct,
+RequestOptionsPtr options
 ) const
     {
     return m_connection->GetWebApiAndReturnResponse<WSChangesetResult>([=] (WebApiPtr webApi)
         {
-        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct);
+        return webApi->SendChangesetRequest(changeset, uploadProgressCallback, ct, options);
         }, ct);
     }
 

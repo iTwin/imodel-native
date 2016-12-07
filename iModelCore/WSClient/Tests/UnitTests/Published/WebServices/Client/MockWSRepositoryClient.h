@@ -112,11 +112,12 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
-        MOCK_CONST_METHOD3(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
+        MOCK_CONST_METHOD4(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR,
-            ICancellationTokenPtr
+            ICancellationTokenPtr,
+            IWSRepositoryClient::RequestOptionsPtr
             ));
 
         MOCK_CONST_METHOD4(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>
