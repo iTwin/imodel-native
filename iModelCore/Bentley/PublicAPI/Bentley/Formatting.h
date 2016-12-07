@@ -494,6 +494,7 @@ public:
     BENTLEYDLL_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     BENTLEYDLL_EXPORT FormatParameterP GetParameterByIndex(int index);
     BENTLEYDLL_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
+    BENTLEYDLL_EXPORT Utf8StringCR SerializeFormatDefinition(NumericFormat format);
 };
 
 //=======================================================================================
@@ -582,7 +583,8 @@ private:
     BENTLEYDLL_EXPORT int AddTrailingByte();
     BENTLEYDLL_EXPORT size_t GetCurrentPosition() { return m_cursorPosition; }
     BENTLEYDLL_EXPORT size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
-    BENTLEYDLL_EXPORT int FormattingScannerCursor::ProcessTrailingByte(char c, int* bits);
+    BENTLEYDLL_EXPORT int ProcessTrailingByte(char c, int* bits);
+
 public:
     //! Construct a cursor attached to the given Utf8 string 
     BENTLEYDLL_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
