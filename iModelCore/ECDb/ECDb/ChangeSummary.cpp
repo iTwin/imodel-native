@@ -496,15 +496,15 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
         return;
         }
 
-    if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d)
+    if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d || propertyMap.GetType() == PropertyMap::Type::Navigation)
         {
-        CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
-        for (PropertyMap const* childPropMap : pointPropMap)
+        CompoundDataPropertyMap const& compoundDataPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
+        for (PropertyMap const* childPropMap : compoundDataPropMap)
             {
             BeAssert(childPropMap->IsData());
-            DataPropertyMap const* coordinatePropMap = static_cast<DataPropertyMap const*> (childPropMap);
+            DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap const*> (childPropMap);
             GetColumnsPropertyMapVisitor columnsDisp;
-            coordinatePropMap->AcceptVisitor(columnsDisp);
+            dataPropMap->AcceptVisitor(columnsDisp);
             BeAssert(columnsDisp.GetColumns().size() == 1);
             Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
             int columnIndex = GetColumnIndexByName(columnName);
@@ -1082,7 +1082,7 @@ bool ChangeExtractor::ChangeAffectsClass(ClassMapCR classMap) const
     DbTable const* dbTable = m_tableMap->GetDetail()->GetDbTable();
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
         {
-        if (propertyMap->GetType() == PropertyMap::Type::ECClassId)
+        if (propertyMap->IsSystem() || (PropertyMap::Type::Navigation == propertyMap->GetType())) // WIP: consider other PropertyMap::Type values like NavigationId/NavigationRelECClassId?
             continue;
 
         // ignore prop maps that map to more than one table or for which the table doesn't equal the table map's one
@@ -1116,7 +1116,7 @@ bool ChangeExtractor::ChangeAffectsProperty(PropertyMap const& propertyMap) cons
         return false;
         }
 
-    GetColumnsPropertyMapVisitor columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
     propertyMap.AcceptVisitor(columnsDisp);
     for (DbColumn const* column : columnsDisp.GetColumns())
         {
@@ -1142,7 +1142,7 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap) const
     if (propertyMap == nullptr)
         return -1;
 
-    GetColumnsPropertyMapVisitor columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
     propertyMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         return -1;
@@ -1398,7 +1398,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
         return ECClassId();
         }
 
-    GetColumnsPropertyMapVisitor columnsDisp;
+    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
     classIdPropMap->AcceptVisitor(columnsDisp);
     if (columnsDisp.GetColumns().size() != 1)
         {
@@ -1535,7 +1535,7 @@ void ChangeExtractor::RecordRelInstance(ClassMapCR classMap, ECInstanceId instan
 //---------------------------------------------------------------------------------------
 void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, PropertyMap const& propertyMap)
     {
-    if (propertyMap.IsSystem())
+    if (propertyMap.IsSystem() || (PropertyMap::Type::Navigation == propertyMap.GetType())) // WIP: Is there a better way to filter out non-existent RelECClassId?  Parallel to IsPropertyValueChanged?
         return;
 
     if (propertyMap.GetType() == PropertyMap::Type::Struct)
