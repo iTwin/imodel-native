@@ -24,32 +24,16 @@ DbColumnFactory::DbColumnFactory(ECDbCR ecdb, ClassMapCR classMap) : m_ecdb(ecdb
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessString, Utf8CP requestedColumnName, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
+DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8StringCR accessString, DbColumn::Type colType, DbColumn::CreateParams const& params) const
     {
-    if (!CanEnforceColumnConstraints() &&
-        (addNotNullConstraint || addUniqueConstraint || collation != DbColumn::Constraints::Collation::Default))
-        {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
-                                                        "For the ECProperty '%s' on ECClass '%s' either a NOT NULL, UNIQUE or COLLATE constraint is defined. The constraint cannot be enforced though because "
-                                                        "the ECProperty is mapped to a column shared with other ECProperties or the ECProperty has base ECClasses mapped to the same table.",
-                                                        ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
-
-        addNotNullConstraint = false;
-        addUniqueConstraint = false;
-        collation = DbColumn::Constraints::Collation::Default;
-        }
-
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
-        outColumn = ApplySharedColumnStrategy(colType, addNotNullConstraint, addUniqueConstraint, collation);
+        outColumn = ApplySharedColumnStrategy(ecProp, colType, params);
     else
-        outColumn = ApplyDefaultStrategy(requestedColumnName, ecProp, accessString, colType, addNotNullConstraint, addUniqueConstraint, collation);
+        outColumn = ApplyDefaultStrategy(ecProp, accessString, colType, params);
 
     if (outColumn == nullptr)
-        {
-        BeAssert(false);
         return nullptr;
-        }
 
     CacheUsedColumn(*outColumn);
     return outColumn;
@@ -58,25 +42,36 @@ DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8CP accessS
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //-----------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN::ECPropertyCR ecProp, Utf8CP accessString, DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
+DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, Utf8StringCR accessString, DbColumn::Type colType, DbColumn::CreateParams const& params) const
     {
-    BeAssert(!Utf8String::IsNullOrEmpty(requestedColumnName) && "Column name must not be null for default strategy");
+    BeAssert(!params.GetColumnName().empty() && "Column name must not be null for default strategy");
 
-    DbColumn* existingColumn = GetTable().FindColumnP(requestedColumnName);
+    DbColumn* existingColumn = GetTable().FindColumnP(params.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUseByClassMap(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraints().HasNotNullConstraint() == addNotNullConstraint &&
-                                            existingColumn->GetConstraints().HasUniqueConstraint() == addUniqueConstraint &&
-                                            existingColumn->GetConstraints().GetCollation() == collation))
+        if (!GetTable().IsOwnedByECDb() || (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
+                                            existingColumn->GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
+                                            existingColumn->GetConstraints().GetCollation() == params.GetCollation()))
             {
             return existingColumn;
             }
 
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Column %s in table %s is used by multiple property maps where property name and data type matches,"
-                                                        " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
-                                                        existingColumn->GetName().c_str(), GetTable().GetName().c_str());
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,"Column %s in table %s is used by multiple property maps where property name and data type matches,"
+                     " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
+                     existingColumn->GetName().c_str(), GetTable().GetName().c_str());
         return nullptr;
+        }
+
+    bool effectiveNotNullConstraint = params.AddNotNullConstraint();
+    if (params.AddNotNullConstraint() && (GetTable().HasExclusiveRootECClass() && GetTable().GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                                                        "For the ECProperty '%s' on ECClass '%s' a NOT NULL constraint is defined. The constraint cannot be enforced though because "
+                                                        "the ECProperty has base ECClasses mapped to the same table.",
+                                                        ecProp.GetName().c_str(), ecProp.GetClass().GetFullName());
+
+        effectiveNotNullConstraint = false;
         }
 
     const ECClassId classId = GetPersistenceClassId(ecProp, accessString);
@@ -85,7 +80,7 @@ DbColumn* DbColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN:
 
     Utf8String resolvedColumnName, tmp;
     int retryCount = 0;
-    if (SUCCESS != ResolveColumnName(tmp, requestedColumnName, classId, retryCount))
+    if (SUCCESS != ResolveColumnName(tmp, params.GetColumnName(), classId, retryCount))
         return nullptr;
 
     resolvedColumnName = tmp;
@@ -93,7 +88,7 @@ DbColumn* DbColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN:
         {
         retryCount++;
         resolvedColumnName = tmp;
-        if (SUCCESS != ResolveColumnName(resolvedColumnName, requestedColumnName, classId, retryCount))
+        if (SUCCESS != ResolveColumnName(resolvedColumnName, params.GetColumnName(), classId, retryCount))
             return nullptr;
         }
 
@@ -104,32 +99,85 @@ DbColumn* DbColumnFactory::ApplyDefaultStrategy(Utf8CP requestedColumnName, ECN:
         return nullptr;
         }
 
-    if (addNotNullConstraint)
+    if (effectiveNotNullConstraint)
         newColumn->GetConstraintsR().SetNotNullConstraint();
 
-    if (addUniqueConstraint)
+    if (params.AddUniqueConstraint())
         newColumn->GetConstraintsR().SetUniqueConstraint();
 
-    newColumn->GetConstraintsR().SetCollation(collation);
+    if (params.GetCollation() != DbColumn::Constraints::Collation::Unset)
+        newColumn->GetConstraintsR().SetCollation(params.GetCollation());
+    
     return newColumn;
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::ApplySharedColumnStrategy(DbColumn::Type colType, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation collation) const
+DbColumn* DbColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR prop, DbColumn::Type colType, DbColumn::CreateParams const& params) const
     {
+    //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
+    if (params.IsColumnNameFromPropertyMapCA())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                        "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'."
+                                                        "'ColumnName' cannot be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
+                                                        prop.GetClass().GetFullName(), prop.GetName().c_str());
+        return nullptr;
+        }
+
+    //Defining a collation which is not doable is an error because this is a DB thing and DB CAs are taken strictly.
+    if (params.GetCollation() != DbColumn::Constraints::Collation::Unset)
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
+                                                        "Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
+                                                        "which cannot be created because the ECProperty is mapped to a column shared with other ECProperties.",
+                                                        prop.GetClass().GetFullName(), prop.GetName().c_str());
+        return nullptr;
+        }
+
+    //NOT NULL and UNIQUE will soon become ECSchema level things. They are not an error, and can only be taken as hints because
+    //the ECSchema level doesn't say which layer (DB or API) has to enforce it
+    bool addNotNullConstraint = params.AddNotNullConstraint();
+    bool addUniqueConstraint = params.AddUniqueConstraint();
+    if (params.AddNotNullConstraint() || params.AddUniqueConstraint())
+        {
+        m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Warning,
+                                                        "For the ECProperty '%s' on ECClass '%s' either a NOT NULL or a UNIQUE constraint is defined. The constraint cannot be enforced though because "
+                                                        "the ECProperty is mapped to a column shared with other ECProperties.",
+                                                        prop.GetName().c_str(), prop.GetClass().GetFullName());
+
+        addNotNullConstraint = false;
+        addUniqueConstraint = false;
+        }
+
     DbColumn const* reusableColumn = nullptr;
     if (TryFindReusableSharedDataColumn(reusableColumn))
         return const_cast<DbColumn*>(reusableColumn);
+    
+    DbColumn* col = GetTable().CreateOverflowSlaveColumn(colType);
+    if (col == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
 
-    return GetTable().CreateOverflowSlaveColumn(colType, addNotNullConstraint, addUniqueConstraint, collation);
+    if (addNotNullConstraint)
+        col->GetConstraintsR().SetNotNullConstraint();
+
+    if (addUniqueConstraint)
+        col->GetConstraintsR().SetUniqueConstraint();
+
+    if (params.GetCollation() == DbColumn::Constraints::Collation::Unset)
+        col->GetConstraintsR().SetCollation(params.GetCollation());
+
+    return col;
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Utf8CP requestedColumnName, ECN::ECClassId classId, int retryCount) const
+BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId classId, int retryCount) const
     {
     if (retryCount > 0)
         {
@@ -138,19 +186,19 @@ BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, 
         return SUCCESS;
         }
 
-    if (Utf8String::IsNullOrEmpty(requestedColumnName))
+    if (requestedColumnName.empty())
         {
         //use name generator
         resolvedColumName.clear();
         return SUCCESS;
         }
 
-    DbColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName);
+    DbColumn const* existingColumn = GetTable().FindColumnP(requestedColumnName.c_str());
     if (existingColumn != nullptr && IsColumnInUseByClassMap(*existingColumn))
         {
         Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         classId.ToString(classIdStr);
-        resolvedColumName.Sprintf("c%s_%s", classIdStr, requestedColumnName);
+        resolvedColumName.Sprintf("c%s_%s", classIdStr, requestedColumnName.c_str());
         }
     else
         resolvedColumName.assign(requestedColumnName);
@@ -161,9 +209,8 @@ BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECClassId DbColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8CP accessString) const
+ECClassId DbColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString) const
     {
-    Utf8String propAccessString(accessString);
     const size_t dotPosition = propAccessString.find(".");
     ECPropertyCP property = nullptr;
     if (dotPosition != Utf8String::npos)
@@ -275,21 +322,13 @@ BentleyStatus DbColumnFactory::GetDerivedColumnList(std::vector<DbColumn const*>
     }
 
 //------------------------------------------------------------------------------------------
-//@bsimethod                                                    Krischan.Eberle    12/2016
-//------------------------------------------------------------------------------------------
-bool DbColumnFactory::CanEnforceColumnConstraints() const
-    {
-    return !m_usesSharedColumnStrategy && (!GetTable().HasExclusiveRootECClass() || GetTable().GetExclusiveRootECClassId() == m_classMap.GetClass().GetId());
-    }
-
-
-//------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 DbTable& DbColumnFactory::GetTable() const
     {
     return m_classMap.GetJoinedTable();
     }
+	
 //**************************ClassMapUsedSharedColumnQuery***********************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
@@ -305,6 +344,7 @@ BentleyStatus ClassMapUsedSharedColumnQuery::_Query(bset<DbColumn const*>& colum
         }
     return SUCCESS;
     }
+	
 //*************************DerivedClassUsedSharedColumnQuery********************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
