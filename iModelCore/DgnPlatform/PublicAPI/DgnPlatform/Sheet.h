@@ -133,6 +133,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
 
 protected:
     static Utf8CP str_ViewId() {return "ViewId";}
+    static Utf8CP str_DisplayPriority() {return "DisplayPriority";}
+    static Utf8CP str_Scale() {return "Scale";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     virtual DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
@@ -153,6 +155,10 @@ public:
     DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
     ClipVectorPtr GetClips() const;
     DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    int32_t GetDisplayPriority() const {return GetPropertyValueInt32(str_DisplayPriority());}
+    DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(str_DisplayPriority(), v);}
+    double GetScale() const {return GetPropertyValueDouble(str_Scale());}
+    DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
     };
 
 //=======================================================================================
@@ -160,6 +166,10 @@ public:
 //=======================================================================================
 namespace Attachment
 {
+    //=======================================================================================
+    //! TileTree for displaying raster tiles generated from a sheet's view attachment
+    // @bsiclass                                                    Keith.Bentley   11/16
+    //=======================================================================================
     struct Tree : TileTree::QuadTree::Root
     {
         DEFINE_T_SUPER(TileTree::QuadTree::Root)

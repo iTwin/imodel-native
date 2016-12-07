@@ -854,6 +854,24 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  11/2016
+//---------------------------------------------------------------------------------------
+uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId)
+    {
+    if (0 == nodeId)
+        {
+        uint32_t highestNodeId, lowestNodeId;
+
+        if (SUCCESS != FindNodeIdRange(entity, highestNodeId, lowestNodeId))
+            return 0;
+
+        nodeId = highestNodeId+1;
+        }
+
+    return (SUCCESS == AddNodeIdAttributes(entity, nodeId, false) ? nodeId : 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2396,9 +2414,6 @@ static void coverRubberFaces(PK_BODY_t bodyTag)
 BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, double defaultDistance, bvector<double> const& distances, StepFacesOption addStep)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
-    if (faces.empty())
-        return ERROR;
-
     PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
 
     if (PK_ENTITY_null == targetEntityTag)
@@ -2418,6 +2433,29 @@ BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<I
     PK_FACE_t*  bodyFaceTags = NULL;
 
     PK_BODY_ask_faces(targetEntityTag, &nBodyFaces, &bodyFaceTags);
+
+    // NOTE: Wanted to try not having the shell feature add it's node id to the product faces. Regardless of whether shelling
+    //       inwards or outwards, the original faces are always the outer faces, so you won't be able to identity the shell by face
+    //       reliably anyway. I'm currently incrementing the offset faces using the highest entity id for a given face's node id. 
+    //       The offset faces are then unique, but still identify the original feature(s). These ids will be more stable than just 
+    //       assigning the faces sequentially...and the user can still easily modify the shell thickness through handles or properties.
+    //       A shell is something that is typically done once per solid anyway...
+    bmap<uint32_t, uint32_t> nodeIdToHighestEntityIdMap;
+
+    for (int iFace=0; iFace < nBodyFaces; iFace++)
+        {
+        FaceId faceId;
+
+        if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, bodyFaceTags[iFace], true))
+            continue;
+
+        bmap<uint32_t, uint32_t>::iterator found = nodeIdToHighestEntityIdMap.find(faceId.nodeId);
+
+        if (found == nodeIdToHighestEntityIdMap.end())
+            nodeIdToHighestEntityIdMap[faceId.nodeId] = faceId.entityId;
+        else if (faceId.entityId > found->second)
+            found->second = faceId.entityId;
+        }
 
     bvector<double>     offsets;
     bvector<PK_FACE_t>  faceTags;
@@ -2474,13 +2512,37 @@ BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<I
 
     BentleyStatus   status = (SUCCESS == PK_FACE_hollow_3((int) faceTags.size(), &faceTags.front(), &offsets.front(), 1.0e-6, &options, &tracking, &results) && tracking.n_track_records > 0) ? SUCCESS : ERROR; // TFS# 157939 - treat no changes as error.
 
-    for (int i=0; i<tracking.n_track_records; i++)
+    if (SUCCESS == status && !nodeIdToHighestEntityIdMap.empty())
         {
-        if (PK_TOPOL_track_create_c != tracking.track_records[i].track)
-            continue; // Only want to remove IDs from new faces...
+        for (int i=0; i<tracking.n_track_records; i++)
+            {
+            if (PK_TOPOL_track_create_c != tracking.track_records[i].track)
+                continue; // Only want new IDs for offset faces...
 
-        for (int j = 0; j < tracking.track_records[i].n_product_topols; j++)
-            PSolidTopoId::DeleteEntityId(tracking.track_records[i].product_topols[j]);
+            for (int j = 0; j < tracking.track_records[i].n_product_topols; j++)
+                {
+                FaceId faceId;
+
+                if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, tracking.track_records[i].product_topols[j], true))
+                    continue;
+
+                PSolidTopoId::DeleteEntityId(tracking.track_records[i].product_topols[j]);
+
+                PK_CLASS_t entityClass;
+
+                PK_ENTITY_ask_class(tracking.track_records[i].product_topols[j], &entityClass);
+
+                if (PK_CLASS_face != entityClass)
+                    continue;
+
+                bmap<uint32_t, uint32_t>::iterator found = nodeIdToHighestEntityIdMap.find(faceId.nodeId);
+
+                if (found == nodeIdToHighestEntityIdMap.end())
+                    continue;
+
+                PSolidTopoId::AttachEntityId(tracking.track_records[i].product_topols[j], faceId.nodeId, faceId.entityId + found->second);
+                }
+            }
         }
 
     PK_TOPOL_local_r_f(&results);

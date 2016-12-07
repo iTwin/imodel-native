@@ -11,11 +11,11 @@
 #include <DgnPlatform/DgnChangeSummary.h>
 #include "DgnChangeIterator.h"
 
-// #define DEBUG_REVISION_KEEP_FILES 1
-
 USING_NAMESPACE_BENTLEY_SQLITE
 
 #define REVISION_LZMA_MARKER   "RevLzma"
+#define CURRENT_REV_END_TXN_ID "CurrentRevisionEndTxnId"
+// #define DEBUG_REVISION_KEEP_FILES 1
 
 //=======================================================================================
 // LZMA Header written to the top of the revision file
@@ -633,8 +633,6 @@ Utf8String RevisionManager::QueryInitialParentRevisionId() const
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
-#define CURRENT_REV_END_TXN_ID "CurrentRevisionEndTxnId"
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
@@ -818,7 +816,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, Change
     DbResult result = writer.FromChangeGroup(changeGroup);
     if (BE_SQLITE_OK != result)
         {
-        BeAssert("Could not write revision to a file");
+        BeAssert(false && "Could not write revision to a file");
         return RevisionStatus::FileWriteError;
         }
 

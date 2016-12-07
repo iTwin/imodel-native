@@ -165,6 +165,7 @@ struct Task : RefCounted<NonCopyableClass>
         FindNearestZ,
         ReadImage,
         DestroyTarget,
+        RenderTile,
     };
 
     //! The outcome of the processing of a Task.
@@ -1664,6 +1665,7 @@ struct GraphicBranch
 //=======================================================================================
 struct System
 {
+
     Target* m_nowPainting = nullptr;
     bool CheckPainting(Target* target) {return target==m_nowPainting;}
     bool IsPainting() {return !CheckPainting(nullptr);}
@@ -1704,8 +1706,9 @@ struct System
 struct FrameRateAdjuster
 {
 private:
-    uint32_t        m_drawCount = 0;
-    uint32_t        m_abortCount = 0;
+    uint32_t m_drawCount = 0;
+    uint32_t m_abortCount = 0;
+
 public:
     static uint32_t const FRAME_RATE_MIN = 1;
     static uint32_t const FRAME_RATE_MAX = 30;
@@ -1761,6 +1764,7 @@ protected:
     DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
+    static double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
 
 public:
     struct Debug
@@ -1819,6 +1823,8 @@ public:
 #endif
         }
 
+    static int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
+    static double DepthFromDisplayPriority(int32_t priority){return Get2dFrustumDepth() * (double) priority / (double) GetMaxDisplayPriority();}
     double GetFrameRateGoal() const {return m_frameRateGoal;}
     void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
     static int const FRAME_RATE_MIN_DEFAULT = 5;

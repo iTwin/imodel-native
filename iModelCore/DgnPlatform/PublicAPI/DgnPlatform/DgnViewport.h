@@ -116,33 +116,33 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 
 protected:
     mutable SyncFlags m_sync;
-    bool            m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
-    bool            m_is3dView = false;         // view is of a 3d model
-    bool            m_isCameraOn = false;       // view is 3d and the camera is turned on.
-    bool            m_undoActive = false;
-    Byte            m_dynamicsTransparency = 64;
-    Byte            m_flashingTransparency = 100;
-    size_t          m_maxUndoSteps = 20;
-    uint32_t        m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
-    DPoint3d        m_viewOrg;                  // view origin, potentially expanded
-    DVec3d          m_viewDelta;                // view delta, potentially expanded
-    DPoint3d        m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
-    DVec3d          m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
-    RotMatrix       m_rotMatrix;                // rotation matrix (from ViewController)
+    bool m_zClipAdjusted = false;    // were the view z clip planes adjusted due to front/back clipping off?
+    bool m_is3dView = false;         // view is of a 3d model
+    bool m_isCameraOn = false;       // view is 3d and the camera is turned on.
+    bool m_undoActive = false;
+    Byte m_dynamicsTransparency = 64;
+    Byte m_flashingTransparency = 100;
+    size_t m_maxUndoSteps = 20;
+    uint32_t m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
+    DPoint3d m_viewOrg;                  // view origin, potentially expanded
+    DVec3d m_viewDelta;                // view delta, potentially expanded
+    DPoint3d m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)
+    DVec3d m_viewDeltaUnexpanded;      // view delta (from ViewController, unexpanded)
+    RotMatrix m_rotMatrix;                // rotation matrix (from ViewController)
     CameraViewDefinition::Camera m_camera;
     Render::TargetPtr m_renderTarget;
-    ColorDef        m_hiliteColor = ColorDef::Magenta();
-    DMap4d          m_rootToView;
-    DMap4d                   m_rootToNpc;
-    double          m_frustFraction;
-    Utf8String      m_viewTitle;
+    ColorDef m_hiliteColor = ColorDef::Magenta();
+    DMap4d m_rootToView;
+    DMap4d m_rootToNpc;
+    double m_frustFraction;
+    Utf8String m_viewTitle;
     ViewControllerPtr m_viewController;
     ProgressiveTasks m_elementProgressiveTasks;
     ProgressiveTasks m_terrainProgressiveTasks;
-    DPoint3d        m_viewCmdTargetCenter;
+    DPoint3d m_viewCmdTargetCenter;
     ViewDefinitionPtr m_currentBaseline;
-    ViewUndoStack   m_forwardStack;
-    ViewUndoStack   m_backStack;
+    ViewUndoStack m_forwardStack;
+    ViewUndoStack m_backStack;
     EventHandlerList<Tracker> m_trackers;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
@@ -190,16 +190,12 @@ public:
     void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
     void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
-
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
     DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
-    DGNPLATFORM_EXPORT static int32_t GetMaxDisplayPriority();
-    DGNPLATFORM_EXPORT static int32_t GetDisplayPriorityFrontPlane();
-    DGNPLATFORM_EXPORT static ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
     DGNPLATFORM_EXPORT ViewportStatus SetupFromViewController();
     DGNPLATFORM_EXPORT ViewportStatus ChangeArea(DPoint3dCP pts);
@@ -561,9 +557,6 @@ public:
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
     DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = {{0,0},{-1,-1}}, Point2dCR targetSize={0,0});
-
-    static double GetMinViewDelta() {return DgnUnits::OneMillimeter() / 100.;}
-    static double GetMaxViewDelta() {return 2.0 * DgnUnits::DiameterOfEarth();}
 };
 
 //=======================================================================================
@@ -574,7 +567,7 @@ struct TileViewport : DgnViewport
     BeMutex m_mutex;
     BSIRect m_rect;
 
-    virtual folly::Future<BentleyStatus> _RenderTile(Render::Image&, ViewControllerR, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::Image&, ViewControllerR, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
     TileViewport() : DgnViewport(nullptr) {}
 };
