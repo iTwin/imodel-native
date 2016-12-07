@@ -3209,7 +3209,7 @@ ECObjectsStatus       ECDBuffer::SetNavigationValueToMemory(ECValueCR v, Propert
             relClassValue = (int64_t) relClass;
         }
     else
-        relClassValue = v.GetNavigationInfo().GetRelationshipClassId().GetValue();
+        relClassValue = v.GetNavigationInfo().GetRelationshipClassId().GetValueUnchecked();
 
     result = ModifyData(relClassValueP, &isPointerFlag, sizeof(isPointerFlag));
 

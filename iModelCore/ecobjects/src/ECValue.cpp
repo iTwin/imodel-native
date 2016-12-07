@@ -388,7 +388,7 @@ ECObjectsStatus ECValue::NavigationInfo::SetRelationship(ECRelationshipClassCP r
 ECObjectsStatus ECValue::NavigationInfo::SetRelationship(ECClassId relationshipClassId)
     {
     m_isPointer = false;
-    m_relClassId = relationshipClassId.GetValue();
+    m_relClassId = relationshipClassId.GetValueUnchecked();
     return ECObjectsStatus::Success;
     }
 
@@ -1973,6 +1973,8 @@ bool              ECValue::Equals(ECValueCR v) const
         }
     if (IsStruct())
         return m_structInstance == v.m_structInstance;
+    if (IsNavigation())
+        return (GetNavigationInfo().GetIdAsLong() == v.GetNavigationInfo().GetIdAsLong()) && (GetNavigationInfo().GetRelationshipClassId() == v.GetNavigationInfo().GetRelationshipClassId());
     if (GetPrimitiveType() != v.GetPrimitiveType())
         return false;
     if (IsString())
