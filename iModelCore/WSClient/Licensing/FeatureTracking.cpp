@@ -85,7 +85,7 @@ StatusInt FeatureTracking::RegisterFeatureUsage(bvector<FeatureTrackingData> usa
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(usageList));
     request.SetRequestBody(requestBody);
 
-    HttpResponse httpResponse = request.Perform();
+    HttpResponse httpResponse = request.Perform().get();
 
     if (httpResponse.GetConnectionStatus() != ConnectionStatus::OK)
         {
@@ -120,7 +120,7 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform();
+    HttpResponse httpResponse = request.Perform().get();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;
@@ -141,7 +141,7 @@ Json::Value FeatureTracking::GetUserFeatureUsages(Utf8StringCR userGuid, Utf8Str
     request.GetHeaders().SetContentType("application/json");
     request.GetHeaders().AddValue("ClientAuth", ver.c_str());
 
-    HttpResponse httpResponse = request.Perform();
+    HttpResponse httpResponse = request.Perform().get();
 
     Json::Value usages = httpResponse.GetBody().AsJson();
     return usages;
