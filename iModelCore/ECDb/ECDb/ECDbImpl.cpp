@@ -244,9 +244,13 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     while (BE_SQLITE_ROW == stmt.Step())
         {
+        BeAssert(!stmt.IsValueNull(0) && "OwnerECClassId must not be null as enforced in ECSchema");
         ownerClassIds.push_back(stmt.GetValueId<ECClassId>(0));
         }
     }
+
+    if (ownerClassIds.empty())
+        return SUCCESS; // ownership class is empty -> nothing to purge
 
     //Step 1: Purge ownership class from records for which owner doesn't exist anymore
     Utf8String purgeOwnershipByOwnersECSql("DELETE FROM " ECDBF_FILEINFOOWNERSHIP_FULLCLASSNAME " WHERE ");
@@ -276,7 +280,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
 
     if (BE_SQLITE_DONE != stmt.Step())
         return ERROR;
-    
+
     stmt.Finalize();
 
     //Step 2: Purge ownership class from records for which file info doesn't exist anymore
