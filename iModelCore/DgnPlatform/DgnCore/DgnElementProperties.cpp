@@ -447,7 +447,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
-        modelId = DgnModelId(static_cast<uint64_t>(v.GetNavigationInfo().GetIdAsLong()));
+        modelId = v.GetNavigationInfo().GetId<DgnModelId>();
         if (!modelId.IsValid())
             {
             stat = DgnDbStatus::BadModel;
@@ -470,7 +470,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
-        DgnAuthorityId authorityId(static_cast<uint64_t>(v.GetNavigationInfo().GetIdAsLong()));
+        DgnAuthorityId authorityId = v.GetNavigationInfo().GetId<DgnAuthorityId>();
 
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
             {
@@ -1253,7 +1253,7 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECCl
     {
     ECValue value;
     if (id.IsValid())
-        relClassId.IsValid() ? value.SetNavigationInfo(id.GetValue(), relClassId) : value.SetNavigationInfo(id.GetValue());
+        relClassId.IsValid() ? value.SetNavigationInfo(id, relClassId) : value.SetNavigationInfo(id);
     else
         value.SetToNull();
 
