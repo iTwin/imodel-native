@@ -26,6 +26,8 @@ USING_NAMESPACE_BENTLEY
 
 BEGIN_BENTLEY_DGN_TILE3D_NAMESPACE
 
+typedef BeSQLite::IdSet<DgnViewId> DgnViewIdSet;
+
 //=======================================================================================
 // Maps elements associated with vertices to indexes into a batch table in the b3dm.
 // @bsistruct                                                   Paul.Connelly   07/16
@@ -43,8 +45,6 @@ public:
     void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
 };
-
-
 
 //=======================================================================================
 //! Context in which tile publishing occurs.
@@ -65,19 +65,21 @@ struct PublisherContext : TileGenerator::ITileCollector
         };
 
 protected:
-    ViewControllerR                         m_viewController;
+    DgnDbR                                  m_db;
+    DgnViewIdSet                            m_viewIds;
     BeFileName                              m_outputDir;
     BeFileName                              m_dataDir;
     WString                                 m_rootName;
     Transform                               m_dbToTile;
-    Transform                               m_tileToEcef;
+    Transform                               m_spatialToEcef;
+    Transform                               m_nonSpatialToEcef;
     size_t                                  m_maxTilesetDepth;
-    bvector<TileNodePtr>                    m_modelRoots;
+    bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
     bool                                    m_publishPolylines;
     bool                                    m_publishIncremental;
 
-    TILEPUBLISHER_EXPORT PublisherContext(ViewControllerR viewController, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
@@ -99,15 +101,14 @@ protected:
     TILEPUBLISHER_EXPORT virtual TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
     TILEPUBLISHER_EXPORT virtual bool _DoIncrementalModelPublish (BeFileNameR dataDirectory, DgnModelCR model) override;
 
-
-
+    void WriteModelTileset(TileNodeCR rootTile);
 public:
     BeFileNameCR GetDataDirectory() const { return m_dataDir; }
     BeFileNameCR GetOutputDirectory() const { return m_outputDir; }
     WStringCR GetRootName() const { return m_rootName; }
-    TransformCR  GetTileToEcef() const { return m_tileToEcef; }
-    ViewControllerCR GetViewController() const { return m_viewController; }
-    DgnDbR GetDgnDb() const { return m_viewController.GetDgnDb(); }
+    TransformCR GetSpatialToEcef() const { return m_spatialToEcef; }
+    TransformCR GetNonSpatialToEcef() const { return m_nonSpatialToEcef; }
+    DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantPolylines() const { return m_publishPolylines; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
@@ -117,7 +118,7 @@ public:
 
     WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
-    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint);
+    TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
     TILEPUBLISHER_EXPORT Json::Value GetModelsJson (DgnModelIdSet const& modelIds);
     TILEPUBLISHER_EXPORT Json::Value GetCategoriesJson(DgnCategoryIdSet const& categoryIds);
@@ -137,6 +138,15 @@ public:
         json["x"] = pt.x;
         json["y"] = pt.y;
         json["z"] = pt.z;
+        return json;
+        }
+
+    static Json::Value TransformToJson(TransformCR);
+    static Json::Value RangeToJson(DRange3dCR range)
+        {
+        Json::Value json(Json::objectValue);
+        json["low"] = PointToJson(range.low);
+        json["high"] = PointToJson(range.high);
         return json;
         }
 };

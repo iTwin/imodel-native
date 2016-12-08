@@ -114,49 +114,50 @@ void AnnotationTextStyle::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIn
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
+// @bsimethod                                   Carole.MacDonald            12/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus AnnotationTextStyle::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
+void dgn_ElementHandler::AnnotationTextStyleHandler::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(PROP_Data, name))
-        {
-        size_t dataSize = 0;
-        ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
-        if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)))
-            return DgnDbStatus::BadArg;
-        return DgnDbStatus::Success;
-        }
-    else if (0 == strcmp(PROP_Description, name))
-        {
-        m_description.AssignOrClear(value.GetUtf8CP());
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
-    }
+    T_Super::_RegisterPropertyAccessors(params, layout);
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus AnnotationTextStyle::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(PROP_Data, name))
-        {
-        bvector<Byte> data;
-        if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, *this, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
-            return DgnDbStatus::BadArg;
-        value.SetBinary(data.data(), data.size());
-        return DgnDbStatus::Success;
-        }
-    else if (0 == strcmp(PROP_Description, name))
-        {
-        value.SetUtf8CP(m_description.c_str());
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
+    params.RegisterPropertyAccessors(layout, PROP_Description,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
+            value.SetUtf8CP(el.GetDescription().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, PROP_Data,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
+            bvector<Byte> data;
+            if (SUCCESS != AnnotationTextStylePersistence::EncodeAsFlatBuf(data, el, AnnotationTextStylePersistence::FlatBufEncodeOptions::Default))
+                return DgnDbStatus::BadArg;
+            value.SetBinary(data.data(), data.size());
+            return DgnDbStatus::Success;
+        },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsBinary())
+                return DgnDbStatus::BadArg;
+            AnnotationTextStyle& el = (AnnotationTextStyle&) elIn;
+            size_t dataSize = 0;
+            ByteCP data = static_cast<ByteCP>(value.GetBinary(dataSize));
+            if (SUCCESS != AnnotationTextStylePersistence::DecodeFromFlatBuf(el, data, static_cast<size_t>(dataSize)))
+                return DgnDbStatus::BadArg;
+            return DgnDbStatus::Success;
+            });
+
     }
 
 //---------------------------------------------------------------------------------------

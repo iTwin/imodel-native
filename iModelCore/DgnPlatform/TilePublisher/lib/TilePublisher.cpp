@@ -48,51 +48,33 @@ void BatchIdMap::ToJson(Json::Value& value, DgnDbR db, bool is2d) const
     switch (m_source)
         {
         case TileSource::None:
-            return;
         case TileSource::Model:
-            {
-            Json::Value modelIds(Json::arrayValue);
-            for (auto idIter = m_list.begin(); idIter != m_list.end(); ++idIter)
-                modelIds.append(idIter->ToString());
-
-            value["model"] = modelIds;
-            return;
-            }
         case TileSource::Element:
             {
-            static const Utf8CP s_3dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement3d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
-            static const Utf8CP s_2dSql = "SELECT e.ModelId,g.CategoryId FROM " BIS_TABLE(BIS_CLASS_Element) " AS e, " BIS_TABLE(BIS_CLASS_GeometricElement2d) " AS g "
-                "WHERE e.Id=? AND g.ElementId=e.Id";
+            static const Utf8CP s_3dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+            static const Utf8CP s_2dSql = "SELECT CategoryId FROM " BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
 
             Utf8CP sql = is2d ? s_2dSql : s_3dSql;
             BeSQLite::Statement stmt;
             stmt.Prepare(db, sql);
 
             Json::Value elementIds(Json::arrayValue);
-            Json::Value modelIds(Json::arrayValue);
             Json::Value categoryIds(Json::arrayValue);
 
             for (auto elemIter = m_list.begin(); elemIter != m_list.end(); ++elemIter)
                 {
                 elementIds.append(elemIter->ToString());    // NB: Javascript doesn't support full range of 64-bit integers...must convert to strings...
-                DgnModelId modelId;
                 DgnCategoryId categoryId;
 
                 stmt.BindId(1, *elemIter);
                 if (BeSQLite::BE_SQLITE_ROW == stmt.Step())
-                    {
-                    modelId = stmt.GetValueId<DgnModelId>(0);
-                    categoryId = stmt.GetValueId<DgnCategoryId>(1);
-                    }
+                    categoryId = stmt.GetValueId<DgnCategoryId>(0);
 
-                modelIds.append(modelId.ToString());
                 categoryIds.append(categoryId.ToString());
                 stmt.Reset();
                 }
 
             value["element"] = elementIds;
-            value["model"] = modelIds;
             value["category"] = categoryIds;
             }
         }
@@ -424,7 +406,6 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     rootNode["textures"][textureId]["internalFormat"] = hasAlpha ? GLTF_RGBA : GLTF_RGB;
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
-
 
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
@@ -817,7 +798,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
         AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
         AddTechniqueParameter(technique, "direction", GLTF_FLOAT_VEC3, "DIRECTION");
-        AddTechniqueParameter(technique, "vertexId", GLTF_FLOAT, "VERTEXID");
+        AddTechniqueParameter(technique, "vertexDelta", GLTF_FLOAT_VEC3, "VERTEXDELTA");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
         static char const   *s_programName                    = "polylineProgram",
@@ -834,11 +815,10 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
         auto& techniqueAttributes = technique["attributes"];
 
-        techniqueAttributes["a_next"] = "next";
         techniqueAttributes["a_batchId"] = "batch";
         techniqueAttributes["a_pos"]  = "pos";
         techniqueAttributes["a_direction"]  = "direction";
-        techniqueAttributes["a_vertexId"] = "vertexId";
+        techniqueAttributes["a_vertexDelta"] = "vertexDelta";
 
         auto& techniqueUniforms = technique["uniforms"];
         techniqueUniforms["u_mv"] = "mv";
@@ -848,7 +828,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         rootProgramNode["attributes"] = Json::arrayValue;
         AppendProgramAttribute(rootProgramNode, "a_pos");
         AppendProgramAttribute(rootProgramNode, "a_direction");
-        AppendProgramAttribute(rootProgramNode, "a_vertexId");
+        AppendProgramAttribute(rootProgramNode, "a_vertexDelta");
         AppendProgramAttribute(rootProgramNode, "a_batchId");
 
         rootProgramNode["vertexShader"]   = s_vertexShaderName;
@@ -1135,7 +1115,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
     bvector<DgnElementId>       entityIds;
     bvector<uint32_t>           indices;
-    bvector<double>             vertexIds;
+    bvector<DPoint3d>           vertexDeltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
@@ -1147,7 +1127,8 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             DPoint3d        p0 = meshPoints[polyline.m_indices[i]], 
                             p1 = meshPoints[polyline.m_indices[i+1]];
             DVec3d          direction = DVec3d::FromStartEnd (p0, p1);
-
+            bool            isStart  (i == 0),
+                            isEnd    (i == polyline.m_indices.size()-2);
             if (direction.Magnitude() < s_degenerateSegmentTolerance)
                 continue;
 
@@ -1166,7 +1147,22 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
             for (size_t j=0; j<4; j++)
                 {
-                vertexIds.push_back((double) j);
+                DPoint2d    delta;
+                double      uParam;
+                
+                if (j < 2)
+                    {
+                    uParam = 0.0;
+                    delta.x = isStart ? 0.0 : -1.0;
+                    }
+                else
+                    {
+                    uParam = 1.0;
+                    delta.x = isEnd ? 0.0 : 1.0;
+                    }
+                
+                delta.y = (0 == (j & 0x0001)) ? -1.0 : 1.0;
+                vertexDeltas.push_back (DPoint3d::From(delta.x, delta.y, uParam));
                 directions.push_back(direction);
                 }
 
@@ -1185,7 +1181,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
     Json::Value     primitive = Json::objectValue;
     DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
-    double          vertexIdLow = 0.0, vertexIdHigh = 3.0;
+    DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 
     static bool     s_doQuantize = false;
 
@@ -1195,7 +1191,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     Utf8String  accPositionId = AddMeshVertexAttribute (rootNode, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
     primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (rootNode, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", s_doQuantize, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXID"]  =  AddMeshVertexAttribute (rootNode, &vertexIds.front(), "VertexId", idStr.c_str(), 1, vertexIds.size(), "SCALAR", s_doQuantize, &vertexIdLow, &vertexIdHigh);
+    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (rootNode, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", s_doQuantize, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (rootNode, "Index", indices, idStr);
 
     AddMeshBatchIds(rootNode, primitive, entityIds, idStr);
@@ -1242,19 +1238,18 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
-    : m_viewController(view), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
-    // For now use view center... maybe should use the DgnDb range center.
-    DPoint3d        origin = m_viewController.GetCenter ();
-
+    // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
+    DPoint3d        origin = db.Units().GetProjectExtents().GetCenter();
     m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
-    DgnGCS*         dgnGCS = m_viewController.GetDgnDb().Units().GetDgnGCS();
+    DgnGCS*         dgnGCS = db.Units().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
 
     if (nullptr == dgnGCS)
@@ -1288,24 +1283,19 @@ PublisherContext::PublisherContext(ViewControllerR view, BeFileNameCR outputDir,
         }
 
     RotMatrix   rMatrix;
+    rMatrix.InitIdentity();
+    m_nonSpatialToEcef = Transform::From(rMatrix, ecfOrigin);
 
-    if (view.Is3d())
-        {
-        DVec3d      zVector, yVector;
+    DVec3d      zVector, yVector;
 
-        zVector.Normalize ((DVec3dCR) ecfOrigin);
-        yVector.NormalizedDifference (ecfNorth, ecfOrigin);
+    zVector.Normalize ((DVec3dCR) ecfOrigin);
+    yVector.NormalizedDifference (ecfNorth, ecfOrigin);
 
-        rMatrix.SetColumn (yVector, 1);
-        rMatrix.SetColumn (zVector, 2);
-        rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
-        }
-    else
-        {
-        rMatrix.InitIdentity();
-        }
+    rMatrix.SetColumn (yVector, 1);
+    rMatrix.SetColumn (zVector, 2);
+    rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
 
-    m_tileToEcef =  Transform::From (rMatrix, ecfOrigin);
+    m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1459,6 +1449,21 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::TransformToJson(TransformCR tf)
+    {
+    auto matrix = DMatrix4d::From(tf);
+    Json::Value json(Json::arrayValue);
+    for (size_t i=0;i<4; i++)
+        for (size_t j=0; j<4; j++)
+            json.append (matrix.coff[j][i]);
+
+
+    return json;
+    };
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth)
@@ -1468,13 +1473,15 @@ void PublisherContext::WriteTileset (BeFileNameCR metadataFileName, TileNodeCR r
     val["asset"]["version"] = "0.0";
 
     auto&       root = val[JSON_Root];
-    DRange3d    rootRange;
 
+    auto const& ecefTransform = rootTile.GetModel().IsSpatialModel() ? m_spatialToEcef : m_nonSpatialToEcef;
+    if (!ecefTransform.IsIdentity())
+        root[JSON_Transform] = TransformToJson(ecefTransform);
+
+    DRange3d    rootRange;
     WriteMetadataTree (rootRange, root, rootTile, maxDepth);
     TileUtil::WriteJsonToFile (metadataFileName.c_str(), val);
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1504,8 +1511,12 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
     if (TileGeneratorStatus::Success == status)
         {
         BeAssert(nullptr != rootTile);
-        BeMutexHolder lock(m_mutex);
-        m_modelRoots.push_back(rootTile);
+            {
+            BeMutexHolder lock(m_mutex);
+            m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            }
+
+        WriteModelTileset(*rootTile);
         }
     else if (!m_publishIncremental)
         {
@@ -1513,6 +1524,25 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteModelTileset(TileNodeCR tile)
+    {
+    Json::Value root;
+    root["refine"] = "replace";
+    root[JSON_GeometricError] = tile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(root, tile.GetTileRange());
+
+    WString modelRootName;
+    BeFileName modelDataDir = GetDataDirForModel(tile.GetModel(), &modelRootName);
+
+    BeFileName tilesetFileName(nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+    root[JSON_Content]["url"] = Utf8String(modelRootName + L"/" + tilesetFileName.c_str()).c_str();
+
+    WriteTileset(BeFileName(nullptr, modelDataDir.c_str(), tilesetFileName.c_str(), nullptr), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1536,77 +1566,26 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
     {
-    auto spatialView = m_viewController._ToSpatialView();
-    auto drawingView = m_viewController._ToDrawingView();
-
-    if (nullptr == spatialView && nullptr == drawingView)
-        {
-        BeAssert(false);
-        return Status::NoGeometry;
-        }
-
     DgnModelIdSet viewedModels;
-
-    if (nullptr != spatialView)
-        viewedModels = spatialView->GetViewedModels();
-    else
-        viewedModels.insert (drawingView->GetViewedModelId());
-
-    Json::Value     value;
-    value["asset"]["version"] = "0.0";
-
-    auto& root = value[JSON_Root];
-
-    if (!GetTileToEcef().IsIdentity())
+    for (auto const& viewId : m_viewIds)
         {
-        DMatrix4d   matrix  = DMatrix4d::From (GetTileToEcef());
-        auto&       transformValue = root[JSON_Transform];
-
-        for (size_t i=0;i<4; i++)
-            for (size_t j=0; j<4; j++)
-                transformValue.append (matrix.coff[j][i]);
+        SpatialViewDefinitionPtr spatialView = nullptr;
+        auto drawingView = GetDgnDb().Elements().Get<DrawingViewDefinition>(viewId);
+        if (drawingView.IsValid())
+            {
+            viewedModels.insert(drawingView->GetBaseModelId());
+            }
+        else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
+            {
+            auto spatialModels = spatialView->GetModelSelector().GetModels();
+            viewedModels.insert(spatialModels.begin(), spatialModels.end());
+            }
         }
-
-    root["refine"] = "replace";
-    root[JSON_GeometricError] = 1.E6;
-
-    rootRange = DRange3d::NullRange();
 
     static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
-
-    if (m_modelRoots.empty())
-        return Status::NoGeometry;
-
-    for (auto childRootTile : m_modelRoots)
-        {
-        Json::Value childRoot;
-
-        rootRange.Extend(childRootTile->GetTileRange());
-        childRoot["refine"] = "replace";
-        childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
-        TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
-
-        WString modelRootName;
-        BeFileName modelDataDir = GetDataDirForModel(childRootTile->GetModel(), &modelRootName);
-
-        BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
-        childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
-
-        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-
-        root[JSON_Children].append(childRoot);
-        }
-
-    m_modelRoots.clear();
-
-    TilePublisher::WriteBoundingVolume(root, rootRange);
-
-    BeFileName  metadataFileName (nullptr, GetDataDirectory().c_str(), m_rootName.c_str(), s_metadataExtension);
-
-    TileUtil::WriteJsonToFile (metadataFileName.c_str(), value);
 
     return Status::Success;
     }
@@ -1616,16 +1595,57 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 +---------------+---------------+---------------+---------------+---------------+------*/
 Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
     {
-    Json::Value     modelJson (Json::objectValue);
+    Json::Value     modelsJson (Json::objectValue);
     
     for (auto& modelId : modelIds)
         {
         auto const&  model = GetDgnDb().Models().GetModel (modelId);
         if (model.IsValid())
-            modelJson[modelId.ToString()] = model->GetName();
+            {
+            auto spatialModel = model->ToSpatialModel();
+            auto drawingModel = nullptr == spatialModel ? dynamic_cast<DrawingModelCP>(model.get()) : nullptr;
+            if (nullptr == spatialModel && nullptr == drawingModel)
+                {
+                BeAssert(false && "Unsupported model type");
+                continue;
+                }
+
+            Json::Value modelJson(Json::objectValue);
+
+            modelJson["name"] = model->GetName();
+            modelJson["type"] = nullptr != spatialModel ? "spatial" : "drawing";
+
+            DRange3d modelRange;
+            auto modelRangeIter = m_modelRanges.find(modelId);
+            if (m_modelRanges.end() != modelRangeIter)
+                modelRange = modelRangeIter->second;
+            else
+                modelRange = model->ToGeometricModel()->QueryModelRange(); // This gives a much larger range...
+
+            auto const& modelTransform = nullptr != spatialModel ? m_spatialToEcef : m_nonSpatialToEcef;
+            modelTransform.Multiply(modelRange, modelRange);
+            modelJson["extents"] = RangeToJson(modelRange);
+
+            if (nullptr == spatialModel && !modelTransform.IsIdentity())
+                modelJson["transform"] = TransformToJson(modelTransform);   // ###TODO? This may end up varying per model...
+
+            // ###TODO: Shouldn't have to compute this twice...
+            WString modelRootName;
+            BeFileName modelDataDir = GetDataDirForModel(*model, &modelRootName);
+
+            BeFileName relativePath (nullptr, m_rootName.c_str(), modelRootName.c_str(), nullptr);  // RootDir/ModelDir/
+            relativePath.AppendToPath(modelRootName.c_str());                                       // RootDir/ModelDir/ModelName
+            relativePath.AppendExtension(s_metadataExtension);                                      // RootDir/ModelDir/ModelName.json
+
+            auto utf8FileName = relativePath.GetNameUtf8();
+            utf8FileName.ReplaceAll("\\", "//");
+            modelJson["tilesetUrl"] = utf8FileName;
+
+            modelsJson[modelId.ToString()] = modelJson;
+            }
         }
 
-    return modelJson;
+    return modelsJson;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1718,28 +1738,30 @@ void PublisherContext::GetViewJson (Json::Value& json, ViewDefinitionCR view, Tr
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, TransformCR transform, DPoint3dCR groundPoint)
+PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId)
     {
     Utf8String rootNameUtf8(m_rootName.c_str());
     json["name"] = rootNameUtf8;
 
-    if (!m_tileToEcef.IsIdentity())
+    Transform spatialTransform = Transform::FromProduct(m_spatialToEcef, m_dbToTile);
+    Transform nonSpatialTransform = Transform::FromProduct(m_nonSpatialToEcef, m_dbToTile);
+
+    if (!m_spatialToEcef.IsIdentity())
         {
         DPoint3d groundEcefPoint;
-        transform.Multiply(groundEcefPoint, groundPoint);
+        spatialTransform.Multiply(groundEcefPoint, groundPoint);
         json["groundPoint"] = PointToJson(groundEcefPoint);
         }
 
-    DgnViewId defaultViewId;
     DgnElementIdSet allModelSelectors;
     DgnElementIdSet allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
     DgnModelIdSet all2dModelIds;
 
     auto& viewsJson = (json["views"] = Json::objectValue);
-    for (auto& view : ViewDefinition::MakeIterator(GetDgnDb()))
+    for (auto const& viewId : m_viewIds)
         {
-        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), view.GetId());
+        auto viewDefinition = ViewDefinition::Get(GetDgnDb(), viewId);
         if (!viewDefinition.IsValid())
             continue;
 
@@ -1757,12 +1779,12 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
         allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
-        GetViewJson(entry, *viewDefinition, transform);
-        viewsJson[view.GetId().ToString()] = entry;
+        GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : nonSpatialTransform);
+        viewsJson[viewId.ToString()] = entry;
 
         // If for some reason the default view is not in the published set, we'll use the first view as the default
-        if (!defaultViewId.IsValid() || view.GetId() == GetViewController().GetViewId())
-            defaultViewId = view.GetId();
+        if (!defaultViewId.IsValid())
+            defaultViewId = viewId;
         }
 
     if (!defaultViewId.IsValid())
@@ -1775,10 +1797,10 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, Tra
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
     AxisAlignedBox3d projectExtents = GetDgnDb().Units().GetProjectExtents();
-    transform.Multiply(projectExtents, projectExtents);
-    json["projectExtents"]["low"] = PointToJson(projectExtents.low);
-    json["projectExtents"]["high"] = PointToJson(projectExtents.high);
-
+    spatialTransform.Multiply(projectExtents, projectExtents);
+    json["projectExtents"] = RangeToJson(projectExtents);
+    json["projectTransform"] = TransformToJson(m_spatialToEcef);
+    
     return Status::Success;
     }
 

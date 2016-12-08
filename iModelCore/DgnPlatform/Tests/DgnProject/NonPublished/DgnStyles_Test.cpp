@@ -337,9 +337,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     ASSERT_TRUE(newStyleId.IsValid());
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
     ASSERT_TRUE(1 == LineStyleElement::QueryCount(*project));
-#ifdef WHY_RELOAD_MAP
-    styleTable.ReloadMap();
-#endif
+
     LsCacheP cache = &styleTable.GetCache();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);

@@ -176,7 +176,7 @@ public:
     //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
-    //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
+    //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
 
     //! Get the name of this Tile.
@@ -203,7 +203,8 @@ protected:
     BeFileName m_localCacheName;
     Transform m_location;
     double m_biasDistance = 0.0;  // for 2d display priority
-    double m_substitueBiasDistance = -1.0; // for moving "substitute" tiles behind real tiles.
+    double m_hiResBiasDistance = -0.5; // for moving higer resolution substitute tiles behind real tiles.
+    double m_loResBiasDistance = -1.0; // for moving lower resolution substitute tiles behind real tiles.
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
@@ -270,7 +271,7 @@ public:
 //=======================================================================================
 //! This object is created to read and load a single tile asynchronously. 
 //! If caching is enabled, it will first attempt to read the data from the cache. If it's
-//! not available it will call _ReadFromSource(). Once the data is available, _LoadTile is called. 
+//! not available it will call _GetFromSource(). Once the data is available, _LoadTile is called. 
 //! All methods of this class might be called from worker threads except for the constructor 
 //! which is guaranteed to run on the client thread. If something you required is not thread 
 //! safe you must capture it during construction.
@@ -298,15 +299,20 @@ protected:
     TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
         :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
-public:
     BentleyStatus LoadTile();
-    DGNPLATFORM_EXPORT virtual BentleyStatus _SaveToDb();
-    DGNPLATFORM_EXPORT virtual BentleyStatus _ReadFromDb();
+    BentleyStatus DoReadFromDb();
+    BentleyStatus DoSaveToDb();
 
-    //! Called from worker threads to get the data from the original location. E.g. disk, web, or created locally.
+public:
+    bool IsCanceledOrAbandoned() const { return (m_loads != nullptr && m_loads->IsCanceled()) || m_tile->IsAbandoned(); }
+
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _SaveToDb();
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _ReadFromDb();
+
+    //! Called to get the data from the original location. The call must be fast and execute any long running operation asynchronously.
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _GetFromSource();
 
-    //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data.
+    //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
 
     struct LoadFlag
@@ -316,8 +322,8 @@ public:
         ~LoadFlag() {m_root.DoneTileLoad();}
         };
 
-    //! Called from worker threads to create a tile. Could be from cache or from source.
-    folly::Future<BentleyStatus> CreateTile();
+    //! Perform the load asynchronously.
+    folly::Future<BentleyStatus> Perform();
 };
 
 //=======================================================================================
@@ -327,25 +333,20 @@ struct HttpDataQuery
 {
     Http::HttpByteStreamBodyPtr m_responseBody;
     Http::Request m_request;
-    Http::Response m_response;
     TileLoadStatePtr m_loads;
 
     DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads);
 
-    bool WasCanceled() const {return m_response.GetConnectionStatus() == Http::ConnectionStatus::Canceled;}
-
     Http::Request& GetRequest() {return m_request;}
 
-    //! Valid only after a call to perform.
-    Http::Response& GetResponse() {return m_response;}
-
-    Utf8CP GetContentType() const { return m_response.GetHeaders().GetContentType(); }
-
     //! Parse expiration date from the response. Return false if caching is not allowed.
-    DGNPLATFORM_EXPORT bool GetCacheContolExpirationDate(uint64_t& expiration);
+    DGNPLATFORM_EXPORT static bool GetCacheContolExpirationDate(uint64_t& expiration, Http::Response const& response);
 
+    //! Valid only after 'Perform' has completed.
+    ByteStream const& GetData() const {return m_responseBody->GetByteStream();}
+    
     //! Perform http request and wait for the result.
-    DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);
+    DGNPLATFORM_EXPORT folly::Future<Http::Response> Perform();
 };
 
 //=======================================================================================
@@ -359,7 +360,7 @@ struct FileDataQuery
     FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
 
     //! Read the entire file in a single chunk of memory.
-    DGNPLATFORM_EXPORT BentleyStatus Perform(ByteStream& data);
+    DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
 };
 
 //=======================================================================================
@@ -381,12 +382,14 @@ struct DrawArgs
     Transform m_location;
     double m_scale;
     Render::GraphicBranch m_graphics;
-    Render::GraphicBranch m_substitutes;
+    Render::GraphicBranch m_hiResSubstitutes;
+    Render::GraphicBranch m_loResSubstitutes;
     MissingNodes m_missing;
     TimePoint m_now;
     TimePoint m_purgeOlderThan;
     ClipVectorCP m_clip;
 
+    void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}

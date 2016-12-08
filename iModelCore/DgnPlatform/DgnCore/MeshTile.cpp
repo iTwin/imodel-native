@@ -437,12 +437,36 @@ GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemI
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGenerationCache::GetGeomPart(TileGeomPartPtr& tileGeomPart, DgnGeometryPartId partId) const
+    {
+    BeMutexHolder lock(m_mutex);
+    auto found = m_geomParts.find(partId);
+
+    if (found == m_geomParts.end())
+        return false;
+
+    tileGeomPart = found->second;
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGenerationCache::AddGeomPart(DgnGeometryPartId partId, TileGeomPartR tileGeomPart) const
+    {
+    m_geomParts.Insert (partId, &tileGeomPart);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGenerationCache::~TileGenerationCache()
     {
     //
     }
+
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -1119,6 +1143,7 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
         }
     }
 
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -1322,8 +1347,27 @@ void  InitGlyphCurves() const
             }
         }                                                                                                           
     }
-};
+};  // TextStringTileGeometry
 
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct GeomPartInstanceTileGeometry : TileGeometry
+{
+private:
+    TileGeomPartPtr     m_part;
+
+    GeomPartInstanceTileGeometry(TileGeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)
+        : TileGeometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
+
+public:
+    static TileGeometryPtr Create(TileGeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsPtr& params, DgnDbR db)  { return new GeomPartInstanceTileGeometry(part, tf, range, elemId, params, db); }
+
+    virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
+    virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
+
+};  // GeomPartInstanceTileGeometry 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -1349,6 +1393,14 @@ TileGeometryPtr TileGeometry::Create(IBRepEntityR solid, TransformCR tf, DRange3
     return SolidKernelTileGeometry::Create(solid, tf, range, entityId, params, db);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometryPtr TileGeometry::Create(TileGeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, TileDisplayParamsPtr& params, DgnDbR db)
+    {
+    return GeomPartInstanceTileGeometry::Create(part, transform, range, entityId, params, db);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -1999,90 +2051,6 @@ struct GeometrySelector2d
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   11/16
-//=======================================================================================
-template<typename T> struct TileGeometryProcessorContext : NullContext
-{
-private:
-    IGeometryProcessorR             m_processor;
-    TileGenerationCacheCR           m_cache;
-    BeSQLite::CachedStatementPtr    m_statement;
-
-    bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
-
-    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
-        {
-        return new SimplifyGraphic(params, m_processor, *this);
-        }
-
-    virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
-    virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
-public:
-    TileGeometryProcessorContext(IGeometryProcessorR processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
-    m_statement(db.GetCachedStatement(T::GetSql()))
-        {
-        SetDgnDb(db);
-        m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
-        }
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
-    {
-    GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
-    if (nullptr != pSrc)
-        return VisitGeometry(*pSrc);
-
-    // Never load elements - but do use them if they're already loaded
-    DgnElementCPtr el = GetDgnDb().Elements().FindLoadedElement(elementId);
-    if (el.IsValid())
-        {
-        GeometrySourceCP geomElem = el->ToGeometrySource();
-        return (nullptr == geomElem) ? ERROR : VisitGeometry(*geomElem);
-        }
-
-    // Load only the data we actually need for processing geometry
-    // NB: The Step() below as well as each column access requires acquiring the sqlite mutex.
-    // Prevent micro-contention by locking the db here
-    // Note we do not use a mutex holder because we want to release the mutex before processing the geometry.
-    m_cache.GetDbMutex().Enter();
-    StatusInt status = ERROR;
-    auto& stmt = *m_statement;
-    stmt.BindInt64(1, static_cast<int64_t>(elementId.GetValueUnchecked()));
-
-    if (BeSQLite::BE_SQLITE_ROW == stmt.Step() && !IsValueNull(1))
-        {
-        auto geomSrcPtr = T::ExtractGeometrySource(stmt, GetDgnDb());
-
-        stmt.Reset();
-        m_cache.GetDbMutex().Leave();
-
-        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
-
-        if (nullptr != pSrc)
-            status = VisitGeometry(*pSrc);
-        }
-    else
-        {
-        stmt.Reset();
-        m_cache.GetDbMutex().Leave();
-        }
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
-    {
-    Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
-    return WasAborted() ? nullptr : graphic;
-    }
-
-//=======================================================================================
 // @bsistruct                                                   Paul.Connelly   09/16
 //=======================================================================================
 struct TileGeometryProcessor : IGeometryProcessor
@@ -2154,6 +2122,8 @@ public:
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
+    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
     TileGenerationCacheCR GetCache() const { return m_cache; }
@@ -2208,6 +2178,113 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
         
     m_geometries.push_back(&geom);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
+    {
+    TileGeomPartPtr         tileGeomPart;
+    Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
+    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(&graphicParams, &geomParams);
+    DRange3d                range;
+
+    if (!m_cache.GetGeomPart(tileGeomPart, partId))
+        {
+        Transform                       inverseLocalToWorld;
+        AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
+        GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
+        
+        inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
+
+        auto                            partBuilder = graphic.CreateSubGraphic(inverseLocalToWorld);
+        TileGeometryList                saveCurrGeometries = m_curElemGeometries;;
+        
+        m_curElemGeometries.clear();
+        collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
+
+        m_cache.AddGeomPart (partId, *(tileGeomPart = TileGeomPart::Create(partId, geomPart, m_curElemGeometries)));
+        m_curElemGeometries = saveCurrGeometries;
+        }
+
+    tileGeomPart->IncrementInstanceCount();
+
+    Transform   tf = Transform::FromProduct(m_transformFromDgn, partToWorld);
+    
+    tf.Multiply(range, tileGeomPart->GetRange());
+    AddElementGeometry(*TileGeometry::Create(*tileGeomPart, tf, range, m_curElemId, displayParams, m_dgndb));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeomPart::TileGeomPart(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometries) : m_partId(partId), m_geomPart(&geomPart), m_instanceCount(0), m_facetCount(0), m_geometries(geometries)
+    { 
+    }                
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeomPart::IsCurved() const
+    {
+    for (auto& geometry : m_geometries)
+        if (geometry->IsCurved())
+            return true;
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d TileGeomPart::GetRange() const
+    {
+    return m_geomPart->GetBoundingBox();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance)
+    {
+    TileGeometry::T_TilePolyfaces   polyfaces;
+
+    for (auto& geometry : m_geometries) 
+        {
+        TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
+
+        if (!thisPolyfaces.empty())
+            polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
+        }
+
+    for (auto& polyface : polyfaces)
+        polyface.Transform(instance.GetTransform());
+
+    return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeometry::T_TileStrokes TileGeomPart::GetStrokes (IFacetOptionsR facetOptions, TileGeometryCR instance)
+    {
+    TileGeometry::T_TileStrokes strokes;
+
+    return strokes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+size_t TileGeomPart::GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const
+    {
+    if (0 == m_facetCount)
+        for (auto& geometry : m_geometries) 
+            m_facetCount += geometry->GetFacetCount(counter);
+            
+    return m_facetCount;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -2449,6 +2526,108 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
         }
 
     return status;
+    }
+
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+template<typename T> struct TileGeometryProcessorContext : NullContext
+{
+private:
+    TileGeometryProcessor&          m_processor;
+    TileGenerationCacheCR           m_cache;
+    BeSQLite::CachedStatementPtr    m_statement;
+
+    bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
+
+    virtual Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override
+        {
+        return new SimplifyGraphic(params, m_processor, *this);
+        }
+
+    virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
+    virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
+public:
+    TileGeometryProcessorContext(TileGeometryProcessor& processor, DgnDbR db, TileGenerationCacheCR cache) : m_processor(processor), m_cache(cache),
+    m_statement(db.GetCachedStatement(T::GetSql()))
+        {
+        SetDgnDb(db);
+    m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
+        }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
+    {
+    DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
+
+    if (!partGeometry.IsValid())
+        return nullptr;
+
+    GraphicParams graphicParams;
+    _CookGeometryParams(geomParams, graphicParams);
+
+    m_processor.AddGeomPart(graphic, partId, *partGeometry, subToGraphic, geomParams, graphicParams, *this);
+    return nullptr;
+    }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> StatusInt TileGeometryProcessorContext<T>::_VisitElement(DgnElementId elementId, bool allowLoad)
+    {
+    GeometrySourceCP pSrc = m_cache.GetCachedGeometrySource(elementId);
+    if (nullptr != pSrc)
+        return VisitGeometry(*pSrc);
+
+    // Never load elements - but do use them if they're already loaded
+    DgnElementCPtr el = GetDgnDb().Elements().FindLoadedElement(elementId);
+    if (el.IsValid())
+        {
+        GeometrySourceCP geomElem = el->ToGeometrySource();
+        return (nullptr == geomElem) ? ERROR : VisitGeometry(*geomElem);
+        }
+
+    // Load only the data we actually need for processing geometry
+    // NB: The Step() below as well as each column access requires acquiring the sqlite mutex.
+    // Prevent micro-contention by locking the db here
+    // Note we do not use a mutex holder because we want to release the mutex before processing the geometry.
+    m_cache.GetDbMutex().Enter();
+    StatusInt status = ERROR;
+    auto& stmt = *m_statement;
+    stmt.BindInt64(1, static_cast<int64_t>(elementId.GetValueUnchecked()));
+
+    if (BeSQLite::BE_SQLITE_ROW == stmt.Step() && !IsValueNull(1))
+        {
+        auto geomSrcPtr = T::ExtractGeometrySource(stmt, GetDgnDb());
+
+        stmt.Reset();
+        m_cache.GetDbMutex().Leave();
+
+        pSrc = m_cache.AddCachedGeometrySource(geomSrcPtr, elementId);
+
+        if (nullptr != pSrc)
+            status = VisitGeometry(*pSrc);
+        }
+    else
+        {
+        stmt.Reset();
+        m_cache.GetDbMutex().Leave();
+        }
+
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   09/16
++---------------+---------------+---------------+---------------+---------------+------*/
+template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_StrokeGeometry(GeometrySourceCR source, double pixelSize)
+    {
+    Render::GraphicPtr graphic = source.Draw(*this, pixelSize);
+    return WasAborted() ? nullptr : graphic;
     }
 
 /*---------------------------------------------------------------------------------**//**
