@@ -50,7 +50,7 @@ folly::Future<BentleyStatus> RasterFileTile::RasterTileLoader::_GetFromSource()
     return folly::via(&RasterFileThread::Get(), [me] ()
         {
         if (me->IsCanceledOrAbandoned())
-            return folly::makeFuture(ERROR);
+            return ERROR;
 
         return me->DoGetFromSource();
         });
