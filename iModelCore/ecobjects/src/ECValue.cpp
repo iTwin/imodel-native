@@ -408,7 +408,12 @@ ECRelationshipClassCP ECValue::NavigationInfo::GetRelationshipClass() const
 ECClassId ECValue::NavigationInfo::GetRelationshipClassId() const
     {
     if (m_isPointer)
-        return m_relClass ? m_relClass->GetId() : ECClassId();
+        {
+        if (m_relClass != nullptr && m_relClass->HasId())
+            return m_relClass->GetId();
+
+        return ECClassId();
+        }
 
     return m_relClassId;
     }
