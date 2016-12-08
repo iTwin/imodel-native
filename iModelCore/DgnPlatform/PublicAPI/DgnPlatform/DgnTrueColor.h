@@ -67,6 +67,9 @@ public:
     Utf8String GetBook() const { return GetCode().GetNamespace(); } //!< The name of this color's color book
     ColorDef GetColorDef() const { return m_colorDef; } //!< The value of this color
 
+    //! @private
+    void SetColorDef(uint32_t color) { m_colorDef = ColorDef(color); }
+
     //! Creates a code for a color with the given name and book name
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name, Utf8StringCR book) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_TrueColor, db, name, book); }
 
@@ -142,6 +145,7 @@ namespace dgn_ElementHandler
     struct TrueColor : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_TrueColor, DgnTrueColor, TrueColor, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

@@ -112,7 +112,7 @@ TilePublisher::IncrementalStatus   TilePublisher::IncrementalGenerate (TileModel
             geometryRemoved |= mesh->RemoveEntityGeometry(modelDelta.GetDeleted());
 
     if (!modelDelta.GetAdded().empty())
-        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), &modelDelta);
+        newMeshes =  m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), &modelDelta);
 
     if (newMeshes.empty())
         {
@@ -253,7 +253,7 @@ PublisherContext::Status TilePublisher::Publish()
                 return PublisherContext::Status::Success;
 
             case IncrementalStatus::Regenerate:
-                m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+                m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
                 break;
 
              case IncrementalStatus::Success:
@@ -262,7 +262,7 @@ PublisherContext::Status TilePublisher::Publish()
         }
     else
         {
-        m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantPolylines(), nullptr);
+        m_meshes = m_tile.GenerateMeshes(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, false, m_context.WantSurfacesOnly(), nullptr);
         }
 
     if (m_meshes.empty())
@@ -406,7 +406,6 @@ static int32_t  roundToMultipleOfTwo (int32_t value)
     rootNode["textures"][textureId]["internalFormat"] = hasAlpha ? GLTF_RGBA : GLTF_RGB;
     rootNode["textures"][textureId]["sampler"] = "sampler_0";
     rootNode["textures"][textureId]["source"] = imageId;
-
 
     rootNode["images"][imageId] = Json::objectValue;
     rootNode["images"][imageId]["extensions"]["KHR_binary_glTF"] = Json::objectValue;
@@ -799,7 +798,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
         AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
         AddTechniqueParameter(technique, "direction", GLTF_FLOAT_VEC3, "DIRECTION");
-        AddTechniqueParameter(technique, "vertexId", GLTF_FLOAT, "VERTEXID");
+        AddTechniqueParameter(technique, "vertexDelta", GLTF_FLOAT_VEC3, "VERTEXDELTA");
         AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
 
         static char const   *s_programName                    = "polylineProgram",
@@ -816,11 +815,10 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
 
         auto& techniqueAttributes = technique["attributes"];
 
-        techniqueAttributes["a_next"] = "next";
         techniqueAttributes["a_batchId"] = "batch";
         techniqueAttributes["a_pos"]  = "pos";
         techniqueAttributes["a_direction"]  = "direction";
-        techniqueAttributes["a_vertexId"] = "vertexId";
+        techniqueAttributes["a_vertexDelta"] = "vertexDelta";
 
         auto& techniqueUniforms = technique["uniforms"];
         techniqueUniforms["u_mv"] = "mv";
@@ -830,7 +828,7 @@ Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootNode, TileDispla
         rootProgramNode["attributes"] = Json::arrayValue;
         AppendProgramAttribute(rootProgramNode, "a_pos");
         AppendProgramAttribute(rootProgramNode, "a_direction");
-        AppendProgramAttribute(rootProgramNode, "a_vertexId");
+        AppendProgramAttribute(rootProgramNode, "a_vertexDelta");
         AppendProgramAttribute(rootProgramNode, "a_batchId");
 
         rootProgramNode["vertexShader"]   = s_vertexShaderName;
@@ -1117,7 +1115,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     bvector<DPoint3d> const&    meshPoints = mesh.Points();
     bvector<DgnElementId>       entityIds;
     bvector<uint32_t>           indices;
-    bvector<double>             vertexIds;
+    bvector<DPoint3d>           vertexDeltas;
     static double               s_degenerateSegmentTolerance = 1.0E-5;
 
     BeAssert (mesh.Triangles().empty());        // Meshes should contain either triangles or polylines but not both.
@@ -1129,7 +1127,8 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
             DPoint3d        p0 = meshPoints[polyline.m_indices[i]], 
                             p1 = meshPoints[polyline.m_indices[i+1]];
             DVec3d          direction = DVec3d::FromStartEnd (p0, p1);
-
+            bool            isStart  (i == 0),
+                            isEnd    (i == polyline.m_indices.size()-2);
             if (direction.Magnitude() < s_degenerateSegmentTolerance)
                 continue;
 
@@ -1148,7 +1147,22 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
             for (size_t j=0; j<4; j++)
                 {
-                vertexIds.push_back((double) j);
+                DPoint2d    delta;
+                double      uParam;
+                
+                if (j < 2)
+                    {
+                    uParam = 0.0;
+                    delta.x = isStart ? 0.0 : -1.0;
+                    }
+                else
+                    {
+                    uParam = 1.0;
+                    delta.x = isEnd ? 0.0 : 1.0;
+                    }
+                
+                delta.y = (0 == (j & 0x0001)) ? -1.0 : 1.0;
+                vertexDeltas.push_back (DPoint3d::From(delta.x, delta.y, uParam));
                 directions.push_back(direction);
                 }
 
@@ -1167,7 +1181,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
 
     Json::Value     primitive = Json::objectValue;
     DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
-    double          vertexIdLow = 0.0, vertexIdHigh = 3.0;
+    DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 
     static bool     s_doQuantize = false;
 
@@ -1177,7 +1191,7 @@ void TilePublisher::AddPolylines(Json::Value& rootNode, TileMeshR mesh, size_t i
     Utf8String  accPositionId = AddMeshVertexAttribute (rootNode, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
     primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (rootNode, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", s_doQuantize, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXID"]  =  AddMeshVertexAttribute (rootNode, &vertexIds.front(), "VertexId", idStr.c_str(), 1, vertexIds.size(), "SCALAR", s_doQuantize, &vertexIdLow, &vertexIdHigh);
+    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (rootNode, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", s_doQuantize, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (rootNode, "Index", indices, idStr);
 
     AddMeshBatchIds(rootNode, primitive, entityIds, idStr);
@@ -1224,8 +1238,8 @@ bool PublisherContext::IsGeolocated () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishPolylines, size_t maxTilesetDepth, bool publishIncremental)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishPolylines (publishPolylines), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1497,9 +1511,12 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
     if (TileGeneratorStatus::Success == status)
         {
         BeAssert(nullptr != rootTile);
-        BeMutexHolder lock(m_mutex);
-        m_modelRoots.push_back(rootTile);
-        m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            {
+            BeMutexHolder lock(m_mutex);
+            m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            }
+
+        WriteModelTileset(*rootTile);
         }
     else if (!m_publishIncremental)
         {
@@ -1507,6 +1524,25 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::WriteModelTileset(TileNodeCR tile)
+    {
+    Json::Value root;
+    root["refine"] = "replace";
+    root[JSON_GeometricError] = tile.GetTolerance();
+    TilePublisher::WriteBoundingVolume(root, tile.GetTileRange());
+
+    WString modelRootName;
+    BeFileName modelDataDir = GetDataDirForModel(tile.GetModel(), &modelRootName);
+
+    BeFileName tilesetFileName(nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
+    root[JSON_Content]["url"] = Utf8String(modelRootName + L"/" + tilesetFileName.c_str()).c_str();
+
+    WriteTileset(BeFileName(nullptr, modelDataDir.c_str(), tilesetFileName.c_str(), nullptr), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1528,7 +1564,7 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
     DgnModelIdSet viewedModels;
     for (auto const& viewId : m_viewIds)
@@ -1537,6 +1573,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         auto drawingView = GetDgnDb().Elements().Get<DrawingViewDefinition>(viewId);
         if (drawingView.IsValid())
             {
+            surfacesOnly = false;           // Always publish lines, text etc. in sheets.
             viewedModels.insert(drawingView->GetBaseModelId());
             }
         else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())
@@ -1547,31 +1584,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         }
 
     static size_t           s_maxPointsPerTile = 250000;
-    auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, s_maxPointsPerTile);
+    auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
-
-    if (m_modelRoots.empty())
-        return Status::NoGeometry;
-
-    for (auto childRootTile : m_modelRoots)
-        {
-        Json::Value childRoot;
-
-        childRoot["refine"] = "replace";
-        childRoot[JSON_GeometricError] = childRootTile->GetTolerance();
-        TilePublisher::WriteBoundingVolume(childRoot, childRootTile->GetTileRange());
-
-        WString modelRootName;
-        BeFileName modelDataDir = GetDataDirForModel(childRootTile->GetModel(), &modelRootName);
-
-        BeFileName      childTilesetFileName (nullptr, nullptr, modelRootName.c_str(), s_metadataExtension);
-        childRoot[JSON_Content]["url"] = Utf8String (modelRootName + L"/" + childTilesetFileName.c_str()).c_str();
-
-        WriteTileset (BeFileName(nullptr, modelDataDir.c_str(), childTilesetFileName.c_str(), nullptr), *childRootTile, GetMaxTilesetDepth());
-        }
-
-    m_modelRoots.clear();
 
     return Status::Success;
     }
