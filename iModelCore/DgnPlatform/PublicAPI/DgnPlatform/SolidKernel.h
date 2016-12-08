@@ -361,6 +361,9 @@ DGNPLATFORM_EXPORT static bool IsPlanarFace(ISubEntityCR);
 //! Return whether the angle between the normals of the supplied edge's faces never exceeds the internal smooth angle tolerance along the length of the edge.
 DGNPLATFORM_EXPORT static bool IsSmoothEdge(ISubEntityCR);
 
+//! Return whether the supplied entity is a sheet body with a single planar face.
+DGNPLATFORM_EXPORT static bool IsSingleFacePlanarSheetBody(IBRepEntityCR, bool& hasHoles);
+
 //! Return whether the supplied sheet or solid entity has all planar faces.
 DGNPLATFORM_EXPORT static bool HasOnlyPlanarFaces(IBRepEntityCR);
 
@@ -446,6 +449,11 @@ struct Create
     //! @return SUCCESS if body was created.
     DGNPLATFORM_EXPORT static BentleyStatus BodyFromCurveVector(IBRepEntityPtr& out, CurveVectorCR curve, uint32_t nodeId = 0L);
     
+    //! Represent a wire body or a single face planar sheet body as a CurveVector.
+    //! @param[in] entity The wire or sheet body to try to convert.
+    //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector. 
+    DGNPLATFORM_EXPORT static CurveVectorPtr BodyToCurveVector(IBRepEntityCR entity);
+
     //! Create a sheet body suitable for the BooleanCut operation from an open profile.
     //! @param[out] out The new sheet body.
     //! @param[in] curve The curve vector to create a body from. Closed regions are also supported and will just be handled by BodyFromVector.
@@ -563,10 +571,11 @@ struct Modify
         };
 
     //! Perform the specified boolean operation between the target body and tool body.
-    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] target The target body to modify (may be consumed in boolean).
     //! @param[in,out] tool The tool body (consumed in boolean).
     //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
+    //! @note: A successful boolean can produce no geometry, check IBRepEntity::EntityType::Invalid != target.GetEntityType().
     DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, IBRepEntityR tool, BooleanMode mode);
 
     //! Perform the specified boolean operation between the target body and one or more tool bodies.
@@ -748,17 +757,27 @@ struct TopologyID
     {
     //! Assign new topology ids to faces of the given body. If the caller does not supply a non-zero node id the next highest available will be used.
     //! @param[in,out] entity The body to modify.
-    //! @param[in] nodeId The topology node id to use in the new nodeId-entityId pairs or 0L for next available.
+    //! @param[in] nodeId The non-zero topology node id to use in the new nodeId-entityId pairs or 0 to find and use the next available.
     //! @return The node id assigned to any new faces or edges.
     //! @see AddNodeIdAttributes FindNodeIdRange
     DGNPLATFORM_EXPORT static uint32_t AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId = 0L);
 
     //! Assign new topology ids to faces of the given body. Resolves duplicate face ids such as from a face being split.
     //! @param[in,out] entity The body to modify.
-    //! @param[in] nodeId The topology node id to use in the new nodeId-entityId pairs.
+    //! @param[in] nodeId The non-zero topology node id to use in the new nodeId-entityId pairs.
     //! @param[in] overrideExisting false to assign new ids only to currently un-assigned faces and true to replace all existing ids.
     //! @return SUCCESS if ids could be added.
     DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting);
+
+    //! Change the topology ids for all faces of the given body to the supplied node id. Useful for ElementGeometryTool sub-classes where
+    //! converted geometry can be assigned a node id of 1, or where an existing BRep entity needs it's node ids changed to the current feature's.
+    //! The reason to call this over AddNodeIdAttributes is that preserves the non-sequentially assigned geometry and profile specific assigments.
+    //! @param[in,out] entity The body to modify.
+    //! @param[in] nodeId The non-zero topology node id to use in the nodeId-entityId pairs.
+    //! @return SUCCESS if ids were changed or removed.
+    //! @note This method does not assign the node id to currently un-assigned faces, it only updates or removes existing ids.
+    //!       You should still call AddNodeIdAttributes post-modify to assign any still un-assigned faces and to resolve any duplicates.
+    DGNPLATFORM_EXPORT static BentleyStatus ChangeNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId);
 
     //! Remove the topology ids from all faces of the given body.
     //! @param[in,out] entity The body to modify.
