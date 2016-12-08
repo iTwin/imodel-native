@@ -54,6 +54,8 @@ struct IScalableMeshNodeCreator : public IScalableMeshCreator
                                                            uint64_t nodeId = 0);
 
         BENTLEY_SM_EXPORT int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
+        
+        BENTLEY_SM_EXPORT void AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID);
 
         BENTLEY_SM_EXPORT void SetDataResolution(float resolution);
 

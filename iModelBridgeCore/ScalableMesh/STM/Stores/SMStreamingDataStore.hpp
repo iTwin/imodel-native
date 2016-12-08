@@ -51,9 +51,9 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_pathToHeaders.c_str());
-        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        BeFileName diskPath (m_dataSourceAccount->getPrefixPath().c_str());
+        diskPath.AppendToPath(m_pathToHeaders.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(diskPath);
         assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
