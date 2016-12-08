@@ -2548,6 +2548,7 @@ ICancellationTokenPtr       cancellationToken
         });
     }
 
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -2567,10 +2568,12 @@ ICancellationTokenPtr cancellationToken
     BeGuid id = fileId;
     Utf8String queryFilter;
     if (id.IsValid())
-        queryFilter.Sprintf("RevisionChild-backward-Revision.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Property::Id, revisionId.c_str(),
+        queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Relationship::FollowingRevision, ServerSchema::Class::Revision, 
+            ServerSchema::Property::Id, revisionId.c_str(),
             ServerSchema::Property::MasterFileId, id.ToString().c_str());
     else
-        queryFilter.Sprintf("RevisionChild-backward-Revision.%s+eq+'%s'", ServerSchema::Property::Id, revisionId.c_str());
+        queryFilter.Sprintf("%s-backward-%s.%s+eq+'%s'", ServerSchema::Relationship::FollowingRevision, ServerSchema::Class::Revision, 
+            ServerSchema::Property::Id, revisionId.c_str());
     query.SetFilter(queryFilter);
 
     return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
