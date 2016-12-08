@@ -44,7 +44,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderProduction
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNotSetSetValidateCertificateForRequests)
@@ -59,7 +59,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderQa_DoesNot
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNotSetSetValidateCertificateForRequests)
@@ -74,7 +74,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_UrlProviderDev_DoesNo
         return StubHttpResponse();
         });
 
-    Http::Request("https://foo.com", "GET", authHandler).Perform();
+    Http::Request("https://foo.com", "GET", authHandler).Perform().get();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest)
@@ -95,8 +95,8 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentUsingD
         .WillRepeatedly(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
     GetHandler().ForAnyRequest(StubImsTokenHttpResponse());
 
-    Http::Request("https://foo.com/a", "GET", authHandler1).Perform();
-    Http::Request("https://foo.com/b", "GET", authHandler2).Perform();
+    Http::Request("https://foo.com/a", "GET", authHandler1).Perform().get();
+    Http::Request("https://foo.com/b", "GET", authHandler2).Perform().get();
     }
 
 TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent)

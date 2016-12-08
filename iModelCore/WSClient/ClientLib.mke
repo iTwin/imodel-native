@@ -72,6 +72,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)Units$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeHttp$(stlibext)
     LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSecurity$(stlibext)
+    LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeFolly$(stlibext)
 
     %if $(TARGET_PLATFORM) != "WinRT"
         LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeOpenSSL$(stlibext)

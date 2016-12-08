@@ -58,6 +58,10 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
 
         MOCK_METHOD1(SetCredentials, void(Credentials credentials));
 
+        MOCK_METHOD1(SetCompressionOptions, void(CompressionOptions));
+
+        MOCK_CONST_METHOD0(GetCompressionOptions, CompressionOptionsCR());
+
         MOCK_CONST_METHOD1(VerifyAccess, AsyncTaskPtr<WSVoidResult>
             (
             ICancellationTokenPtr canncelationToken
@@ -108,11 +112,12 @@ struct MockWSRepositoryClient : public IWSRepositoryClient
             ICancellationTokenPtr ct
             ));
 
-        MOCK_CONST_METHOD3(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
+        MOCK_CONST_METHOD4(SendChangesetRequest, AsyncTaskPtr<WSChangesetResult>
             (
             HttpBodyPtr changeset,
             Http::Request::ProgressCallbackCR,
-            ICancellationTokenPtr
+            ICancellationTokenPtr,
+            IWSRepositoryClient::RequestOptionsPtr
             ));
 
         MOCK_CONST_METHOD4(SendCreateObjectRequest, AsyncTaskPtr<WSCreateObjectResult>

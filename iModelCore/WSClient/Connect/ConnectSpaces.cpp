@@ -257,7 +257,7 @@ void ConnectSpaces::ResetEula(bool getNewToken)
         }
     request.SetTimeoutSeconds(HTTP_DEFAULT_TIMEOUT);
     request.SetCancellationToken(m_cancelToken);
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
@@ -309,7 +309,7 @@ void ConnectSpaces::CheckEula(bool getNewToken)
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     m_credentialsCriticalSection.Leave();
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)
@@ -414,7 +414,7 @@ bool ConnectSpaces::DownloadEula(Utf8StringR eulaString, bool getNewToken)
     m_credentialsCriticalSection.Enter();
     request.GetHeaders().SetAuthorization(m_eulaToken.ToAuthorizationString());
     m_credentialsCriticalSection.Leave();
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
     bool retValue = false;
     if (IsRedirectToStsLogin(httpResponse))
         {
@@ -501,7 +501,7 @@ void ConnectSpaces::AcceptEula(bool getNewToken)
     params["accepted"] = true;
     HttpStringBodyPtr requestBody = HttpStringBody::Create(Json::FastWriter().write(params));
     request.SetRequestBody(requestBody);
-    Http::Response httpResponse = request.Perform();
+    Http::Response httpResponse = request.Perform().get();
     if (IsRedirectToStsLogin(httpResponse))
         {
         if (getNewToken)

@@ -129,6 +129,9 @@ IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
+    CompressionOptions options;
+    options.EnableRequestCompression(true, 1024);
+    m_wsRepositoryClient->SetCompressionOptions(options);
     m_wsRepositoryClient->SetCredentials(credentials);
     }
 
@@ -1193,7 +1196,8 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SendChangesetRequestInternal
 (
 std::shared_ptr<WSChangeset> changeset,
 IBriefcaseManager::ResponseOptions options,
-ICancellationTokenPtr cancellationToken
+ICancellationTokenPtr cancellationToken,
+IWSRepositoryClient::RequestOptionsPtr requestOptions
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::SendChangesetRequest";
@@ -1207,7 +1211,7 @@ ICancellationTokenPtr cancellationToken
         changeset->GetRequestOptions().SetCustomOption(ServerSchema::ExtendedParameters::DetailedError_Codes, "false");
 
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
-    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken)->Then<DgnDbServerStatusResult>
+    return m_wsRepositoryClient->SendChangesetRequest(request, nullptr, cancellationToken, requestOptions)->Then<DgnDbServerStatusResult>
         ([=] (const WSChangesetResult& result)
         {
         if (result.IsSuccess())
@@ -2558,51 +2562,32 @@ ICancellationTokenPtr cancellationToken
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
     std::shared_ptr<DgnDbServerRevisionsResult> finalResult = std::make_shared<DgnDbServerRevisionsResult>();
+
+    WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
+    BeGuid id = fileId;
+    Utf8String queryFilter;
+    if (id.IsValid())
+        queryFilter.Sprintf("RevisionChild-backward-Revision.%s+eq+'%s'+and+%s+eq+'%s'", ServerSchema::Property::Id, revisionId.c_str(),
+            ServerSchema::Property::MasterFileId, id.ToString().c_str());
+    else
+        queryFilter.Sprintf("RevisionChild-backward-Revision.%s+eq+'%s'", ServerSchema::Property::Id, revisionId.c_str());
+    query.SetFilter(queryFilter);
+
     return ExecutionManager::ExecuteWithRetry<bvector<DgnDbServerRevisionPtr>>([=]()
         {
-        return GetRevisionById(revisionId, cancellationToken)->Then([=](DgnDbServerRevisionResultCR result)
+        return RevisionsFromQueryInternal(query, cancellationToken)->Then([=](DgnDbServerRevisionsResultCR revisionsResult)
             {
-            if (!result.IsSuccess() && DgnDbServerError::Id::InvalidRevision != result.GetError().GetId())
+            if (revisionsResult.IsSuccess())
                 {
-                finalResult->SetError(result.GetError());
-                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                finalResult->SetSuccess(revisionsResult.GetValue());
+                double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
                 }
-
-            WSQuery query(ServerSchema::Schema::Repository, ServerSchema::Class::Revision);
-            uint64_t index = 0;
-            BeGuid id = fileId;
-            if (result.IsSuccess())
-                {
-                auto revision = result.GetValue();
-                index = revision->GetIndex() + 1;
-                if (!id.IsValid())
-                    {
-                    Utf8String dbGuid = revision->GetRevision()->GetDbGuid();
-                    id.FromString(dbGuid.c_str());
-                    }
-                }
-
-            Utf8String queryFilter;
-            if (id.IsValid())
-                queryFilter.Sprintf("%s+ge+%llu+and+%s+eq+'%s'", ServerSchema::Property::Index, index,
-                    ServerSchema::Property::MasterFileId, id.ToString().c_str());
             else
-                queryFilter.Sprintf("%s+ge+%llu", ServerSchema::Property::Index, index);
-            query.SetFilter(queryFilter);
-            RevisionsFromQueryInternal(query, cancellationToken)->Then([=](DgnDbServerRevisionsResultCR revisionsResult)
                 {
-                if (revisionsResult.IsSuccess())
-                    {
-                    finalResult->SetSuccess(revisionsResult.GetValue());
-                    double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-                    }
-                else
-                    {
-                    finalResult->SetError(revisionsResult.GetError());
-                    DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
-                    }
-                });
+                finalResult->SetError(revisionsResult.GetError());
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionsResult.GetError().GetMessage().c_str());
+                }
             })->Then<DgnDbServerRevisionsResult>([=]()
                 {
                 return *finalResult;
@@ -2775,7 +2760,11 @@ ICancellationTokenPtr           cancellationToken
     HttpStringBodyPtr request = HttpStringBody::Create(changeset->ToRequestString());
 
     std::shared_ptr<DgnDbServerStatusResult> finalResult = std::make_shared<DgnDbServerStatusResult>();
-    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken)
+
+    auto requestOptions = std::make_shared<WSRepositoryClient::RequestOptions>();
+    requestOptions->SetTransferTimeOut(WSRepositoryClient::Timeout::Transfer::LongUpload);
+
+    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, nullptr)
         ->Then([=] (const DgnDbServerStatusResult& initializeRevisionResult)
         {
         if (initializeRevisionResult.IsSuccess())

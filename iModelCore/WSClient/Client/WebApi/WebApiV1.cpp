@@ -932,7 +932,8 @@ AsyncTaskPtr<WSChangesetResult> WebApiV1::SendChangesetRequest
 (
 HttpBodyPtr changeset,
 Http::Request::ProgressCallbackCR uploadProgressCallback,
-ICancellationTokenPtr ct
+ICancellationTokenPtr ct,
+IWSRepositoryClient::RequestOptionsPtr options
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));

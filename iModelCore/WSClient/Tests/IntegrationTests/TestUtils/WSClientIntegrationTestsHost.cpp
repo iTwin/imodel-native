@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/TestUtils/WSClientIntegrationTestsHost.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -49,6 +49,7 @@ void WSClientIntegrationTestsHost::_GetDocumentsRoot(BeFileName& path)
 void WSClientIntegrationTestsHost::_GetDgnPlatformAssetsDirectory(BeFileName& path)
     {
     path = m_programDir;
+    path.AppendToPath(L"assets");
     }
 
 void WSClientIntegrationTestsHost::_GetOutputRoot(BeFileName& path)
@@ -67,7 +68,7 @@ void WSClientIntegrationTestsHost::_GetTempDir(BeFileName& path)
 
 void WSClientIntegrationTestsHost::_GetFrameworkSqlangFiles(BeFileName& path)
     {
-    path = m_programDir;
+    _GetDgnPlatformAssetsDirectory(path);
     path.AppendToPath(L"sqlang");
     path.AppendToPath(L"DgnClientFx_en.sqlang.db3");
     }
