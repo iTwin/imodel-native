@@ -259,7 +259,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
             if (meshP != 0)
                 {
                 pointsPtr->clear();
-                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
+                linearFeaturesPtr = node->GetLinearFeaturesPtr();
                 vector<POINT> nodePts(meshP->GetNbPoints());
                 bvector<DPoint3d> pts(meshP->GetNbPoints());
                 map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> pointsMap(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
@@ -276,7 +276,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                 std::string s;
                 s += "NPOINTS " + std::to_string(meshP->GetNbPoints())+"\n";
 #endif
-                bvector<bvector<int32_t>> defs;
+                defs.clear();
                 if (linearFeaturesPtr->size() > 0)node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
                 if (linearFeaturesPtr->size() > 0)
                     {
@@ -332,7 +332,7 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                         }*/
                         }
                         linearFeaturesPtr->reserve(count);
-                        for (size_t i = linearFeaturesPtr->size(); i < count; ++i) linearFeaturesPtr->push_back(INT_MAX);
+                        for (size_t j = linearFeaturesPtr->size(); j < count; ++j) linearFeaturesPtr->push_back(INT_MAX);
                         if (linearFeaturesPtr->size() > 0)node->SaveFeatureDefinitions(const_cast<int32_t*>(&*linearFeaturesPtr->begin()), count, defs);
 #if SM_TRACE_FEATURE_DEFS
                         s += "\n\n----\n\n";
@@ -366,8 +366,8 @@ template<class POINT, class EXTENT> bool ScalableMesh2DDelaunayMesher<POINT, EXT
                     MTGGraph* newGraph = new MTGGraph();
                     CreateGraphFromIndexBuffer(newGraph, (const long*)&faceIndexes[0], (int)faceIndexes.size(), (int)nodePts.size(), componentPointsId, &pts[0]);
                     //PrintGraph(LOG_PATH_STR, std::to_string(node->GetBlockID().m_integerID).c_str(), node->GetGraphPtr());
-                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>>  linearFeaturesPtr = node->GetLinearFeaturesPtr();
-                    bvector<bvector<int32_t>> defs;
+                     linearFeaturesPtr = node->GetLinearFeaturesPtr();
+                    defs.clear();
                     if (linearFeaturesPtr->size() > 0) node->GetFeatureDefinitions(defs, &*linearFeaturesPtr->begin(), linearFeaturesPtr->size());
                     for (size_t i = 0; i < defs.size(); ++i)
                         {
@@ -1561,15 +1561,15 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
                 if (allPts.size() >= 4)
                     {
                     bvector<DPoint3d> intersectBound;
-                    for (auto& pt : bound)
-                        intersectBound.push_back(DPoint3d::From(pt.x, pt.y, 0));
+                    for (auto& pt2 : bound)
+                        intersectBound.push_back(DPoint3d::From(pt2.x, pt2.y, 0));
                     if (voidFeatures.size() > 0) //if there are any features making holes in the original mesh, they must be merged with the outline of the stitched mesh
                         {
                         for (auto& feature : voidFeatures)
                             {
                             bvector<DPoint3d> voidFeature;
-                            for (auto& pt : feature)
-                                voidFeature.push_back(DPoint3d::From(pt.x, pt.y, 0));
+                            for (auto& pt3 : feature)
+                                voidFeature.push_back(DPoint3d::From(pt3.x, pt3.y, 0));
                             if (bsiDPoint3dArray_polygonClashXYZ(&intersectBound.front(), (int)intersectBound.size(), &voidFeature.front(), (int)voidFeature.size()))
                                 {
                                 skipFeatures[&feature - &voidFeatures[0]] = true;
@@ -1819,7 +1819,7 @@ if (stitchedPoints.size() != 0)// return false; //nothing to stitch here
 
     if (status == SUCCESS)
         {
-        IScalableMeshMeshPtr meshPtr;
+        meshPtr = nullptr;
 
         bcdtmInterruptLoad_triangleShadeMeshFromDtmObject(dtmPtr->GetBcDTM()->GetTinHandle(), 10000000, 2, 1, &draw, false, DTMFenceType::None, DTMFenceOption::None, 0, 0, &meshPtr);
 

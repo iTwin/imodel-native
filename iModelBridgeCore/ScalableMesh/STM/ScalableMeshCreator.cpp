@@ -80,7 +80,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 //NEEDS_WORK_SM : Temp global variable probably only for debug purpose, not sure we want to know if we are in editing.
 extern bool s_inEditing = false; 
 
-DataSourceManager IScalableMeshCreator::Impl::s_dataSourceManager;
+//extern DataSourceManager s_dataSourceManager;
 
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -198,7 +198,7 @@ IScalableMeshCreator::IScalableMeshCreator (Impl* implP)
 IScalableMeshCreator::~IScalableMeshCreator ()
     {
     }
-
+  
 
 StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
     {
@@ -347,7 +347,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     m_gcsDirty(false),
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
-    m_workingLayer(DEFAULT_WORKING_LAYER)
+    m_workingLayer(DEFAULT_WORKING_LAYER),
+    m_isCanceled(false)
     {
 
 
@@ -365,7 +366,8 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_lastSyncTime(Time::CreateSmallestPossible()),
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
-        m_workingLayer(DEFAULT_WORKING_LAYER)
+        m_workingLayer(DEFAULT_WORKING_LAYER),
+        m_isCanceled(false)
     {
   
 
@@ -536,8 +538,6 @@ int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restr
 * @bsimethod                                                  Raymond.Gauthier   12/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&                                    pDataIndex, 
-
-                                                       HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment& myMemMgr,
                                                        bool needBalancing) 
     {                                    
     HFCPtr<IScalableMeshDataStore<MTGGraph, Byte, Byte>> pGraphTileStore;
@@ -572,7 +572,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             }
 
         // Pip ToDo: Create manager?
-            DataSourceManager *manager = &s_dataSourceManager;                                    
+			DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
         
             ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         

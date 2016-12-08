@@ -135,10 +135,7 @@ int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool r
 
         m_smSQLitePtr->SetSingleFile(isSingleFile);
 
-        //NEEDS_WORK_SM : Try put it in CreateDataIndex as sharedptr
-        HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
-
-        StatusInt status = CreateDataIndex(m_pDataIndex, myMemMgr);
+        status = CreateDataIndex(m_pDataIndex);
 
         assert(status == SUCCESS && m_pDataIndex != 0);
 
@@ -285,7 +282,8 @@ int64_t  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int n
 #endif
         );
     SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-    m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    auto texPoolId = m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    m_pDataIndex->GetMemoryPool()->RemoveItem(texPoolId, texID, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()));
     return (int64_t) texID;
     }
 

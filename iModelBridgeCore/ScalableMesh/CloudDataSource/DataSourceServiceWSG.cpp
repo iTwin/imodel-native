@@ -24,7 +24,7 @@ DataSourceAccount * DataSourceServiceWSG::createAccount(const DataSourceAccount:
                                                             // Inform Service base classes
     DataSourceService::createAccount(getDataSourceManager(), *accountWSG);
                                                             // Add new account to management
-    return Manager<DataSourceAccount>::create(account, accountWSG);
+    return Manager<DataSourceAccount, true>::create(account, accountWSG);
 }
 
 DataSourceStatus DataSourceServiceWSG::destroyAccount(const AccountName & account)

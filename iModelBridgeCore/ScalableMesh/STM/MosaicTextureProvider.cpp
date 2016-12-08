@@ -62,8 +62,9 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     HFCPtr<HRABitmap> pTextureBitmap;
 
     HFCPtr<HRPPixelType> pPixelType(new HRPPixelTypeV32R8G8B8A8());
-
-   // HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
+#ifdef VANCOUVER_API
+    HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
+#endif
     texData.resize(3 * sizeof(int) + width * height * 3);
 
 #ifdef VANCOUVER_API

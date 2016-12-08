@@ -105,7 +105,7 @@ DRange3d RangeOfNodes (MTGFacets *facets, bvector<MTGNodeId> &nodes, size_t &num
             DPoint3d xyzEdges[3];
             MTGARRAY_FACE_LOOP (sector, graph, node)
                 {
-                DPoint3d xyz;
+
                 jmdlMTGFacets_getNodeCoordinates (facets, &xyz, sector);
 //                if (noisy > 9)
 //                    PrintNode (sector, xyz, false);
@@ -251,8 +251,8 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
         //PolyfaceHeaderPtr meshPtr(&mesh, true);
         PolyfaceHeaderPtr meshPtr(&mesh, true);
 
-        static double s_absTol = 1.0e-8;
-        static double s_relTol = 1.0e-11;
+        static double s_absTol2 = 1.0e-8;
+        static double s_relTol2 = 1.0e-11;
         // short time to integrated MGGraph
 /*        MTGFacets *mtgFacets = jmdlMTGFacets_new ();
         PolyfaceToMTG (mtgFacets,
@@ -561,11 +561,11 @@ DTMStatusInt ScalableMeshVolume::_ComputeVolumeCutAndFill(PolyfaceHeaderPtr& ter
                 builder4->AddTriStrip(triangle, NULL, NULL, 3, true);
                 /**/
 
-                bvector<DrapeSegment> drapeSegments2;
+                bvector<DrapeSegment> drapeSegments22;
                 DSegment3d segment;
                 segment = drapeSegments1[l].m_segment;
-                polyfaceSearch2.DoDrapeXY(segment, drapeSegments2);
-                size_t size = drapeSegments2.size();
+                polyfaceSearch2.DoDrapeXY(segment, drapeSegments22);
+                size_t size = drapeSegments22.size();
 #endif
 #if 0
                 for(int j=0; j<numDrapePts2-1; j++)
@@ -914,15 +914,15 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
                 segment = drapeSegments1[i].m_segment;
                 polyfaceSearch2.DoDrapeXY(segment, drapeSegments2);
                 size_t size = drapeSegments2.size();
-                DPoint3d triangle[4];
+                DPoint3d triangle2[4];
 
                 for(int j=0; j<size; j++)
                     {                
-                    triangle[0] = drapeSegments2[j].m_segment.point[0];
-                    triangle[1] = segment.point[0];
+                    triangle2[0] = drapeSegments2[j].m_segment.point[0];
+                    triangle2[1] = segment.point[0];
 
-                    triangle[2] = drapeSegments2[j].m_segment.point[1];
-                    builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
+                    triangle2[2] = drapeSegments2[j].m_segment.point[1];
+                    builder2->AddTriStrip(triangle2, NULL, NULL, 3, true);
 
                     DSegment3dSizeSize segmentTerrain(drapeSegments2[j].m_segment, drapeSegments2[j].m_facetReadIndex, NULL);
                     segmentsTerrain.push_back(segmentTerrain);
@@ -930,10 +930,10 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
                     }
                 if(size>0)
                     {
-                    triangle[0] = segment.point[0];
-                    triangle[1] = drapeSegments2[size-1].m_segment.point[1];
-                    triangle[2] = segment.point[1];
-                    builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
+                    triangle2[0] = segment.point[0];
+                    triangle2[1] = drapeSegments2[size-1].m_segment.point[1];
+                    triangle2[2] = segment.point[1];
+                    builder2->AddTriStrip(triangle2, NULL, NULL, 3, true);
                     }
                 }
                 }
@@ -1002,12 +1002,12 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
 
             for(size_t l=0; l<drapeSegments1.size(); l++)
                 {
-                bvector<DrapeSegment> drapeSegments2;
+                bvector<DrapeSegment> drapeSegments23;
                 DSegment3d segment;
                 segment = drapeSegments1[l].m_segment;
-                polyfaceSearch2.DoDrapeXY(segment, drapeSegments2);
-                size_t size = drapeSegments2.size();
-                DPoint3d triangle[4];
+                polyfaceSearch2.DoDrapeXY(segment, drapeSegments23);
+                size_t size = drapeSegments23.size();
+                DPoint3d triangle3[4];
 
             for(int j=0; j<size; j++)
                 {
@@ -1016,19 +1016,19 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
                 triangle[2] = segments[i].point[1];
                 builder2->AddTriStrip(triangle, NULL, NULL, 3, true);*/
                 
-                triangle[0] = drapeSegments2[j].m_segment.point[0];
-                triangle[1] = segment.point[0];
+                triangle3[0] = drapeSegments23[j].m_segment.point[0];
+                triangle3[1] = segment.point[0];
 
 //                triangle[1] = drapeSegments[j].m_drapeEdgeFraction[0] < 0.5 ? segments[i].point[0] : segments[i].point[1];
 //                triangle[1] = segment.point[0];
-                triangle[2] = drapeSegments2[j].m_segment.point[1];
-                builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
+                triangle3[2] = drapeSegments23[j].m_segment.point[1];
+                builder2->AddTriStrip(triangle3, NULL, NULL, 3, true);
                 // add facet between segments and drapeSegments.
                 //PolyfaceQuery::CopyFacetsWithSegmentSplitImprint (*builder2, mesh, drapeSegments[j], true);
 
                 //triangle[0]
                 //builder->AddTriStrip(triangle, NULL, NULL, 3, true);
-                DSegment3dSizeSize segmentTerrain(drapeSegments2[j].m_segment, drapeSegments2[j].m_facetReadIndex, NULL);
+                DSegment3dSizeSize segmentTerrain(drapeSegments23[j].m_segment, drapeSegments23[j].m_facetReadIndex, NULL);
                 segmentsTerrain.push_back(segmentTerrain);
                 areTriangle=true;
                 //points.push_back(drapeSegments[j].m_segment.point[0]);
@@ -1036,12 +1036,12 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
                 }
             if(size>0)
                 {
-                triangle[0] = segment.point[0];
+                triangle3[0] = segment.point[0];
 //                triangle[0] = segment.point[0];
-                triangle[1] = drapeSegments2[size-1].m_segment.point[1];
-                triangle[2] = segment.point[1];
+                triangle3[1] = drapeSegments23[size-1].m_segment.point[1];
+                triangle3[2] = segment.point[1];
 //                triangle[2] = segment.point[1];
-                builder2->AddTriStrip(triangle, NULL, NULL, 3, true);
+                builder2->AddTriStrip(triangle3, NULL, NULL, 3, true);
                 }
                 }
             }

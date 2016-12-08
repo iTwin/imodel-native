@@ -24,7 +24,7 @@ DataSourceAccount * DataSourceServiceAzure::createAccount(const DataSourceAccoun
                                                             // Inform Service base classes
     DataSourceService::createAccount(getDataSourceManager(), *accountAzure);
                                                             // Add new account to management
-    return Manager<DataSourceAccount>::create(account, accountAzure);
+    return Manager<DataSourceAccount, true>::create(account, accountAzure);
 }
 
 DataSourceStatus DataSourceServiceAzure::destroyAccount(const AccountName & account)
