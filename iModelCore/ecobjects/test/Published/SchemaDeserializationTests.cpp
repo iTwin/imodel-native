@@ -602,6 +602,17 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithEnumer
 
     ECEnumerationCP ecEnum = prim->GetEnumeration();
     ASSERT_TRUE(ecEnum != nullptr);
+    EXPECT_STREQ("MyEnumeration", ecEnum->GetName().c_str());
+
+    ECPropertyP p2 = pClass->GetPropertyP("EnumeratedArray");
+    ASSERT_TRUE(p2 != nullptr);
+
+    PrimitiveArrayECPropertyCP primArr = p2->GetAsPrimitiveArrayProperty();
+    ASSERT_TRUE(primArr != nullptr);
+
+    ECEnumerationCP arrEnum = primArr->GetEnumeration();
+    ASSERT_TRUE(arrEnum != nullptr);
+    EXPECT_STREQ("MyEnumeration", arrEnum->GetName().c_str());
 
     ASSERT_TRUE(ecEnum->GetSchema().GetVersionWrite() == 12);
     }
@@ -835,6 +846,14 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStri
     ASSERT_TRUE(property != nullptr);
     EXPECT_STREQ("Enumeration", property->GetTypeName().c_str());
 
+    PrimitiveArrayECPropertyP arrProperty;
+    status = entityClass->CreatePrimitiveArrayProperty(arrProperty, "EnumArrProperty");
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    ASSERT_TRUE(nullptr != arrProperty);
+    status = arrProperty->SetType(*enumeration);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_STREQ("Enumeration", arrProperty->GetTypeName().c_str());
+
     Utf8String ecSchemaXmlString;
     SchemaWriteStatus status2 = schema->WriteToXmlString(ecSchemaXmlString, ECVersion::V3_1);
     EXPECT_EQ(SchemaWriteStatus::Success, status2);
@@ -862,6 +881,11 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripEnumerationUsingStri
     EXPECT_STREQ("Enumeration", deserializedProperty->GetTypeName().c_str());
     PrimitiveECPropertyCP deserializedPrimitive = deserializedProperty->GetAsPrimitiveProperty();
     ASSERT_TRUE(nullptr != deserializedPrimitive);
+
+    ECPropertyP deserializedArrayProperty = deserializedClass->GetPropertyP("EnumArrProperty");
+    EXPECT_STREQ("Enumeration", deserializedArrayProperty->GetTypeName().c_str());
+    PrimitiveArrayECPropertyCP deserializedPrimitiveArray = deserializedArrayProperty->GetAsPrimitiveArrayProperty();
+    ASSERT_TRUE(nullptr != deserializedPrimitiveArray);
 
     ECEnumerationCP propertyEnumeration = deserializedPrimitive->GetEnumeration();
     ASSERT_TRUE(nullptr != propertyEnumeration);

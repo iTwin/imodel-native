@@ -2147,6 +2147,49 @@ TEST_F(ClassTest, TestOverridingArrayPropertyWithNonArray)
     TestOverriding("Bentley_Plant", 6, true);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ClassTest, TestPropertyEnumerationType)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP classA;
+    ECEntityClassP classB;
+    ECEnumerationP tsEnum;
+    PrimitiveECPropertyP primProp;
+    PrimitiveArrayECPropertyP primArrProp;
+
+    schema->CreateEntityClass(classA, "A");
+    schema->CreateEntityClass(classB, "B");
+    schema->CreateEnumeration(tsEnum, "TestEnum", PRIMITIVETYPE_String);
+
+    classA->CreatePrimitiveProperty(primProp, "PrimProp");
+    classA->CreatePrimitiveArrayProperty(primArrProp, "PrimArrProp");
+
+    classB->AddBaseClass(*classA);
+
+    EXPECT_EQ(ECObjectsStatus::Success, primProp->SetType(*tsEnum)) << "Failed to set the type as an Enumeration.";
+    EXPECT_EQ(ECObjectsStatus::Success, primArrProp->SetType(*tsEnum)) << "Failed to set the type as an Enumeration.";
+
+    // Test that the enumeration was actually set
+    ASSERT_NE(nullptr, classA->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetEnumeration()) << "There was not an Enumeration set when there should be";
+    EXPECT_EQ(tsEnum->GetName(), classA->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetEnumeration()->GetName()) << "The property did not have the expected Enumeration.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classA->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetType()) << "The property did not have the expected primitive type";
+    ASSERT_NE(nullptr, classA->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()) << "There was not an Enumeration set when there should be";
+    EXPECT_EQ(tsEnum->GetName(), classA->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()->GetName()) << "The property did not have the expected Enumeration.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classA->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property did not have the expected primitive type";
+
+    // Test the inheritance of a property with an Enumeration
+    ASSERT_NE(nullptr, classB->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetEnumeration()) << "There was not an Enumeration set when there should be";
+    EXPECT_EQ(tsEnum->GetName(), classB->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetEnumeration()->GetName()) << "The property did not have the expected Enumeration.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classB->GetPropertyP("PrimProp")->GetAsPrimitiveProperty()->GetType()) << "The property did not have the expected primitive type";
+    ASSERT_NE(nullptr, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()) << "There was not an Enumeration set when there should be";
+    EXPECT_EQ(tsEnum->GetName(), classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetEnumeration()->GetName()) << "The property did not have the expected Enumeration.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property did not have the expected primitive type";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
