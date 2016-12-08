@@ -903,6 +903,31 @@ std::map<Utf8String, std::set<Utf8String>> GetECViewNamesByPrefix(ECDbR ecdb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan Khan                        12/15
 //+---------------+---------------+---------------+---------------+---------------+------
+void AssertECClassViews(bmap<Utf8String, bset<Utf8String>>& ecclassViewInfo, bool& validationFailed, ECDbCR ecdb)
+    {
+    ecclassViewInfo.clear();
+    validationFailed = false;
+
+    Statement stmt;
+    stmt.Prepare(ecdb, "select  substr (name, 1,  instr (name,'.') - 1), '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')");
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        Utf8CP viewName = stmt.GetValueText(1);
+        ecclassViewInfo[stmt.GetValueText(0)].insert(viewName);
+
+        Utf8String sql("SELECT * FROM ");
+        sql.append(viewName);
+        Statement validStmt;
+        DbResult stat = validStmt.TryPrepare(ecdb, sql.c_str());
+        ASSERT_EQ(BE_SQLITE_OK, stat) << "ECClassView " << viewName << " has invalid DDL: " << ecdb.GetLastError().c_str();
+        if (BE_SQLITE_OK != stat)
+            validationFailed = true;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan Khan                        12/15
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     {
     ECDbR ecdb = SetupECDb("createecclassviews.ecdb");
@@ -910,7 +935,11 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
 
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
-    std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
+    bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
+    bool validationFailed = false;
+    AssertECClassViews(schemasWithECClassViews, validationFailed, ecdb);
+    ASSERT_FALSE(validationFailed);
+
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
 
@@ -925,7 +954,8 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
     ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
     ecdb.SaveChanges();
-    schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
+    AssertECClassViews(schemasWithECClassViews, validationFailed, ecdb);
+    ASSERT_FALSE(validationFailed);
     ASSERT_EQ(3, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     ASSERT_EQ(4, schemasWithECClassViews["ecdbf"].size()) << "Unexpected number of ECClassViews";
     ASSERT_EQ(37, schemasWithECClassViews["stco"].size()) << "Unexpected number of ECClassViews";
@@ -946,7 +976,7 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViews)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                   12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetofClasses)
+TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     {
     ECDbR ecdb = SetupECDb("createecclassviewspartially.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
     ASSERT_TRUE(ecdb.IsDbOpen());
@@ -964,18 +994,22 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetofClasses)
     ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb(classIds));
     ecdb.SaveChanges();
 
-    std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
+    bmap<Utf8String, bset<Utf8String>> schemasWithECClassViews;
+    bool validationFailed = false;
+    AssertECClassViews(schemasWithECClassViews, validationFailed, ecdb);
+    ASSERT_FALSE(validationFailed);
+
     ASSERT_EQ(2, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
     auto it = schemasWithECClassViews.find("ecdbf");
     ASSERT_TRUE(it != schemasWithECClassViews.end());
-    std::set<Utf8String> const& ecdbfViews = it->second;
+    bset<Utf8String> const& ecdbfViews = it->second;
     ASSERT_EQ(2, ecdbfViews.size());
     ASSERT_TRUE(ecdbfViews.find(Utf8String("[ecdbf.FileInfo]")) != ecdbfViews.end());
     ASSERT_TRUE(ecdbfViews.find(Utf8String("[ecdbf.FileInfoOwnership]")) != ecdbfViews.end());
 
     it = schemasWithECClassViews.find("stco");
     ASSERT_TRUE(it != schemasWithECClassViews.end());
-    std::set<Utf8String> const& stcoViews = it->second;
+    bset<Utf8String> const& stcoViews = it->second;
     ASSERT_EQ(4, stcoViews.size());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.AAA]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Cubicle]")) != stcoViews.end());

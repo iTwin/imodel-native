@@ -516,6 +516,8 @@ TEST_F(ECDbFileInfoTests, Purge)
     ASSERT_TRUE(id.IsValid());
     orphanEmbeddedFileInfoKey = ECInstanceKey(embeddedFileInfoClassId, ECInstanceId(id.GetValue()));
 
+    ASSERT_EQ(SUCCESS, ecdb.Purge(ECDb::PurgeMode::FileInfoOwnerships)) << "Purge if nothing is to purge should succeed";
+
     //Ownership
     //Foo - ExternalFile1
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecdbf.FileInfoOwnership(OwnerId, OwnerECClassId, FileInfoId, FileInfoECClassId) VALUES(?,?,?,?)"));

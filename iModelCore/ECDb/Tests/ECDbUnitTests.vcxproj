@@ -93,6 +93,7 @@
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\RandomECInstanceGenerator.cpp" />
     <ClCompile Include="Published\SchemaImportTestFixture.cpp" />
+    <ClCompile Include="Published\ThreadSafetyTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />
