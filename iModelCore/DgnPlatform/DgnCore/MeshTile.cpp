@@ -2127,7 +2127,7 @@ public:
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
     TileGeneratorStatus OutputGraphics(ViewContextR context);
-    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
+    void AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext);
 
 
     DgnDbR GetDgnDb() const { return m_dgndb; }
@@ -2187,7 +2187,7 @@ void TileGeometryProcessor::PushGeometry(TileGeometryR geom)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
+void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams, GraphicParamsR graphicParams, ViewContextR viewContext)
     {
     TileGeomPartPtr         tileGeomPart;
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
@@ -2196,9 +2196,14 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
 
     if (!m_cache.GetGeomPart(tileGeomPart, partId))
         {
+        DgnGeometryPartCPtr geomPart = m_dgndb.Elements().Get<DgnGeometryPart>(partId);
+
+        if (!geomPart.IsValid())
+            return;
+
         Transform                       inverseLocalToWorld;
         AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
-        GeometryStreamIO::Collection    collection(geomPart.GetGeometryStream().GetData(), geomPart.GetGeometryStream().GetSize());
+        GeometryStreamIO::Collection    collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
         
         inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
 
@@ -2206,9 +2211,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         TileGeometryList                saveCurrGeometries = m_curElemGeometries;;
         
         m_curElemGeometries.clear();
-        collection.Draw(*partBuilder, viewContext, geomParams, false, &geomPart);
+        collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
 
-        m_cache.AddGeomPart (partId, *(tileGeomPart = TileGeomPart::Create(partId, geomPart, m_curElemGeometries)));
+        m_cache.AddGeomPart (partId, *(tileGeomPart = TileGeomPart::Create(partId, geomPart->GetBoundingBox(), m_curElemGeometries)));
         m_curElemGeometries = saveCurrGeometries;
         }
 
@@ -2223,7 +2228,7 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeomPart::TileGeomPart(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometries) : m_partId(partId), m_geomPart(&geomPart), m_instanceCount(0), m_facetCount(0), m_geometries(geometries)
+TileGeomPart::TileGeomPart(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometries) : m_partId(partId), m_range (range), m_instanceCount(0), m_facetCount(0), m_geometries(geometries)
     { 
     }                
 
@@ -2237,14 +2242,6 @@ bool TileGeomPart::IsCurved() const
             return true;
 
     return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DRange3d TileGeomPart::GetRange() const
-    {
-    return m_geomPart->GetBoundingBox();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2595,15 +2592,10 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    DgnGeometryPartCPtr partGeometry = GetDgnDb().Elements().Get<DgnGeometryPart>(partId);
-
-    if (!partGeometry.IsValid())
-        return nullptr;
-
     GraphicParams graphicParams;
     _CookGeometryParams(geomParams, graphicParams);
 
-    m_processor.AddGeomPart(graphic, partId, *partGeometry, subToGraphic, geomParams, graphicParams, *this);
+    m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
     return nullptr;
     }
 };
