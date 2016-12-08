@@ -162,21 +162,22 @@ DataSourceStatus DataSourceManagerTest::testDataSourceFile(void)
     DataSourceURL            urlFile(L"C:\\Users\\Lee.Bull\\temp\\file1");
     DataSourceStatus        status;
     DataSourceService    *    service;
+    DataSourceManager   *       manager = DataSourceManager::Get();
 
-    if ((service = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+    if ((service = manager->getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
 
     service->createAccount(DataSourceAccount::AccountName(L"FileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey());
 
                                                             // Create DataSource
-    dataSource = dataSourceManager.createDataSource(std::wstring(L"MyFileDataSource"), DataSourceService::ServiceName(L"FileAccount"), nullptr);
+    dataSource = manager->createDataSource(std::wstring(L"MyFileDataSource"), DataSourceService::ServiceName(L"FileAccount"), nullptr);
     if (dataSource == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
                                                             // Run basic write/read test
     if ((status = testBasicWriteRead(dataSource, urlFile, 1024 * 1024 * 8)).isFailed())
         return status;
                                                             // Destroy the data source
-    dataSourceManager.destroyDataSource(dataSource);
+    manager->destroyDataSource(dataSource);
 
     return DataSourceStatus();
 }
@@ -193,14 +194,18 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
     DataSourceAccount                        *    accountAzure;
     DataSourceAccount                        *    accountCaching;
     DataSourceBuffer::BufferSize                testDataSize = 1024 * 1024 * 8;
+    DataSourceManager                       *       manager;
+
+    if((manager = DataSourceManager::Get()) == nullptr)
+        return DataSourceStatus(DataSourceStatus::Status_Error);
 
                                                             // Get the Azure service
-    if ((serviceAzure = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"))) == nullptr)
+    if ((serviceAzure = manager->getService(DataSourceService::ServiceName(L"DataSourceServiceAzure"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
                                                             // Create an account on Azure
     accountAzure = serviceAzure->createAccount(DataSourceAccount::AccountName(L"AzureAccount"), accountIdentifier, accountKey);
                                                             // Create an Azure specific DataSource
-    dataSourceAzure = dynamic_cast<DataSourceAzure *>(dataSourceManager.createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
+    dataSourceAzure = dynamic_cast<DataSourceAzure *>(manager->createDataSource(DataSourceManager::DataSourceName(L"MyAzureDataSource"), DataSourceAccount::AccountName(L"AzureAccount"), nullptr));
     if (dataSourceAzure == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error);
                                                             // Blobs will be split up into segments of this size
@@ -215,7 +220,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
                                                             // Create an account for a local file cache
 
                                                             // Get the file service
-    if ((serviceFile = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
+    if ((serviceFile = manager->getService(DataSourceService::ServiceName(L"DataSourceServiceFile"))) == nullptr)
         return DataSourceStatus(DataSourceStatus::Status_Error_Test_Failed);
                                                             // Create an account on the file service for caching
     if ((accountCaching = serviceFile->createAccount(DataSourceAccount::AccountName(L"FileAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
@@ -237,7 +242,7 @@ DataSourceStatus DataSourceManagerTest::testDataSourceAzure(void)
         return status;
 
                                                             // Destroy the DataSource
-    dataSourceManager.destroyDataSource(dataSourceAzure);
+    manager->destroyDataSource(dataSourceAzure);
 
                                                             // Return OK
     return DataSourceStatus();

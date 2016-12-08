@@ -640,7 +640,7 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
 
     IScalableMeshNodeQueryParamsPtr params = IScalableMeshNodeQueryParams::CreateParams();
     IScalableMeshNodeRayQueryPtr query = m_scmPtr->GetNodeQueryInterface();
-    if (m_type == DTMAnalysisType::Fast)
+    if (m_type == DTMAnalysisType::Fast || m_type == DTMAnalysisType::ViewOnly) //other modes use full resolution
         {
         params->SetLevel(std::min((size_t)5, m_scmPtr->GetTerrainDepth()));
         m_scmPtr->GetCurrentlyViewedNodes(m_nodeSelection);
@@ -650,7 +650,28 @@ bool ScalableMeshDraping::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction
     params->SetDirection(direction);
     QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
     m_nodeSelection.clear();
-    if (nodes.empty()) QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
+    if (m_type == DTMAnalysisType::ViewOnly && nodes.empty()) //not in view, only do a range intersect in this mode
+    {
+        DRange3d totalBox;
+        m_scmPtr->GetRange(totalBox);
+        DRay3d ray = DRay3d::FromOriginAndVector(startPt, direction);
+        DSegment3d segClipped;
+        DRange1d fraction;
+        if (ray.ClipToRange(totalBox, segClipped, fraction))
+        {
+            if (fraction.low < 0)
+            {
+                pointOnDTM = segClipped.point[1];//ray starts within box
+                if (fraction.high < 0) //ray completely outside box
+                    return false;
+            }
+            else pointOnDTM = segClipped.point[0];
+            m_transform.Multiply(pointOnDTM);
+            return true;
+        }
+        return false;
+    }
+    else if (nodes.empty()) QueryNodesBasedOnParams(nodes, startPt, params, m_scmPtr);
     bvector<bool> clips;
     for (auto& node : nodes)
         {
@@ -748,15 +769,26 @@ void ScalableMeshDraping::QueryNodesBasedOnParams(bvector<IScalableMeshNodePtr>&
 
         DRange3d range;
         targetedMeshPtr->GetRange(range);
+        ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
+            targetedMeshPtr->GetTerrainDepth(),
+            ray,
+            params->Get2d(),
+            params->GetDepth(),
+            params->GetUseUnboundedRay(),
+            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
+
+        size_t numberOfNodes = 0;
+        clock_t startClock = clock();
         for (auto& node : m_nodeSelection)
             {
-            ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d> query(range,
-                                                                                   node->GetLevel(),
-                                                                                   ray,
-                                                                                   params->Get2d(),
-                                                                                   params->GetDepth(),
-                                                                                   params->GetUseUnboundedRay(),
-                                                                                   ScalableMeshQuadTreeLevelIntersectIndexQuery<DPoint3d, DRange3d>::RaycastOptions::ALL_INTERSECT);
+            numberOfNodes++;
+            if (numberOfNodes % 30 == 0 && m_type == DTMAnalysisType::ViewOnly && !nodes.empty())
+            {
+                double endTime = 1.0*(clock() - startClock) / CLOCKS_PER_SEC;
+                if(endTime > 0.0005)
+                    return;
+            }
+            query.SetLevel(node->GetLevel());                                                                 
             node->RunQuery(query, nodes);
             }
         }

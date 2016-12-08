@@ -472,6 +472,7 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
     else
         {        
+        /*Small
         m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
         m_extractionArea.push_back(DPoint3d::From(194165.08343336626, 243603.61276573580, -3.6304642277846142));
         m_extractionArea.push_back(DPoint3d::From(194270.10891005833, 243574.39524382990, -4.7820067383618152));
@@ -479,7 +480,25 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.push_back(DPoint3d::From(194147.68657526391, 243662.26264426752, -3.6141459398750158));
         m_extractionArea.push_back(DPoint3d::From(194146.39791910816, 243662.47747898742, -3.6220131969348586));
         m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));       
+        */
+
+        m_extractionArea.push_back(DPoint3d::From(194534.61905953390, 243398.93278513860, -5.8858629763999488));
+        m_extractionArea.push_back(DPoint3d::From(194475.43182124716, 243320.97185519966, -5.5277979698057607));
+        m_extractionArea.push_back(DPoint3d::From(194520.70126835266, 243294.30101074686, -5.7520366628632473));
+        m_extractionArea.push_back(DPoint3d::From(194549.30599180690, 243253.81847898816, -5.6788048221951613));
+        m_extractionArea.push_back(DPoint3d::From(194556.74102235903, 243256.63943368991, -5.6507380919611023));
+        m_extractionArea.push_back(DPoint3d::From(194566.66660501724, 243248.11899908053, -5.7024422213071375));
+        m_extractionArea.push_back(DPoint3d::From(194583.99582471355, 243202.73250710749, -5.7479987083188462));
+        m_extractionArea.push_back(DPoint3d::From(194592.00640302146, 243196.44162111220, -5.8339865111793188));
+        m_extractionArea.push_back(DPoint3d::From(194598.22362684523, 243191.95373863229, -5.8671826917925500));
+        m_extractionArea.push_back(DPoint3d::From(194609.38532911500, 243161.44529671190, -5.8653291942937358));
+        m_extractionArea.push_back(DPoint3d::From(194673.99318080919, 243145.32555555910, -6.4341180118572083));
+        m_extractionArea.push_back(DPoint3d::From(194642.39430096268, 243262.27610941126, -6.5085839870498603));
+        m_extractionArea.push_back(DPoint3d::From(194588.10575891405, 243347.54587653195, -6.0620844558270619));
+        m_extractionArea.push_back(DPoint3d::From(194589.00309018759, 243358.31679448404, -6.2144776919703872));
+        m_extractionArea.push_back(DPoint3d::From(194534.61905953390, 243398.93278513860, -5.8858629763999488));
         }
+
     return SUCCESS;
     }
 

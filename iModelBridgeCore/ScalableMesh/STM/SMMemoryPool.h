@@ -26,6 +26,30 @@ USING_NAMESPACE_IMAGEPP
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
     
 
+class Spinlock
+{
+private:
+    std::atomic_flag lockFlag = ATOMIC_FLAG_INIT;
+public:
+
+    Spinlock()
+    {
+    }
+
+    void lock()
+    {
+        if (!lockFlag.test_and_set())
+            return;
+        while (lockFlag.test_and_set())
+               std::this_thread::yield();
+    }
+
+    void unlock()
+    {
+        lockFlag.clear();
+    }
+};
+
 //NEEDS_WORK_SM : Merge SMStoreDataType and SMStoreDataType together?
 SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType);
     
@@ -1143,7 +1167,7 @@ class SMMemoryPool : public RefCountedBase
         uint64_t                                  m_maxPoolSizeInBytes;
         atomic<uint64_t>                          m_currentPoolSizeInBytes;
         bvector<bvector<SMMemoryPoolItemBasePtr>> m_memPoolItems;
-        bvector<bvector<std::recursive_mutex*>>             m_memPoolItemMutex;
+        bvector<bvector<Spinlock*>>             m_memPoolItemMutex;
         bvector<bvector<clock_t>>                 m_lastAccessTime;
         uint64_t                                  m_nbBins;
         mutex                                     m_increaseBinMutex;
@@ -1265,10 +1289,19 @@ class SMMemoryPool : public RefCountedBase
 
         void NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int64_t sizeDelta);
 
+        size_t GetCurrentlyUsed()
+            {
+            return m_currentPoolSizeInBytes;
+            }
+
+
+        size_t GetMaxSize()
+        {
+            return m_maxPoolSizeInBytes;
+        }
+
         bool SetMaxSize(uint64_t maxSize)
             {
-            if (m_currentPoolSizeInBytes > 0)
-                return false;
 
             m_maxPoolSizeInBytes = maxSize;
 

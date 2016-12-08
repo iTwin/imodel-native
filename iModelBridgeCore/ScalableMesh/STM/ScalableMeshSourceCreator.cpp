@@ -366,7 +366,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     HPMMemoryMgrReuseAlreadyAllocatedBlocksWithAlignment myMemMgr(100, 2000 * sizeof(PointType));
 
-    CreateDataIndex(pDataIndex, myMemMgr, true);
+    CreateDataIndex(pDataIndex, true);
 
     m_dataIndex = pDataIndex;
 
@@ -394,9 +394,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     std::list<DRange3d> listRemoveExtent;
     IDTMSourceCollection::const_iterator it = m_sources.Begin();
 
-    for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
+    for (IDTMSourceCollection::iterator itSource = m_sources.BeginEdit(); itSource != m_sources.EndEdit(); itSource++)
         {
-        SourceImportConfig& conf = it->EditConfig();
+        SourceImportConfig& conf = itSource->EditConfig();
         ScalableMeshData data = conf.GetReplacementSMData();
         if (data.GetUpToDateState() != UpToDateState::ADD)
             {
@@ -417,14 +417,14 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
             for (size_t i = 1; i < data.GetLayerCount(); i++)
                 {
-                DRange3d sourceRange = data.GetExtentByLayer((int)i);
+                DRange3d sourceRangeI = data.GetExtentByLayer((int)i);
                 /*removeExtent.xMin = removeExtent.xMin > sourceRange.low.x ? sourceRange.low.x : removeExtent.xMin;
                 removeExtent.xMax = removeExtent.xMax > sourceRange.high.x ? removeExtent.xMax : sourceRange.high.x;
                 removeExtent.yMin = removeExtent.yMin > sourceRange.low.y ? sourceRange.low.y : removeExtent.yMin;
                 removeExtent.yMax = removeExtent.yMax > sourceRange.high.y ? removeExtent.yMax : sourceRange.high.y;
                 removeExtent.zMin = removeExtent.zMin > sourceRange.low.z ? sourceRange.low.z : removeExtent.zMin;
                 removeExtent.zMax = removeExtent.zMax > sourceRange.high.z ? removeExtent.zMax : sourceRange.high.z;*/
-                removeExtent.Extend(sourceRange);
+                removeExtent.Extend(sourceRangeI);
                 }
 
             if (data.GetUpToDateState() == UpToDateState::MODIFY)
@@ -436,7 +436,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             listRemoveExtent.push_back(removeExtent);
             for (IDTMSourceCollection::iterator itAdd = m_sources.BeginEdit(); itAdd != m_sources.EndEdit(); itAdd++)
                 {
-                if (itAdd == it)
+                if (itAdd == itSource)
                     continue;
                 SourceImportConfig& confAdd = itAdd->EditConfig();
                 ScalableMeshData dataAdd = confAdd.GetReplacementSMData();
@@ -489,9 +489,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     startClock = clock();
 #endif
     // Remove and Add sources
-    for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.End();)
+    for (IDTMSourceCollection::iterator itEdit = m_sources.BeginEdit(); itEdit != m_sources.End();)
         {
-        SourceImportConfig& conf = it->EditConfig();
+        SourceImportConfig& conf = itEdit->EditConfig();
         ScalableMeshData data = conf.GetReplacementSMData();
 
         if (data.GetUpToDateState() == UpToDateState::ADD || data.GetUpToDateState() == UpToDateState::PARTIAL_ADD)
@@ -500,9 +500,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             conf.SetReplacementSMData(data);
             }
         if (data.GetUpToDateState() == UpToDateState::REMOVE)
-            it = m_sources.Remove(it);
+            itEdit = m_sources.Remove(itEdit);
         else
-            it++;
+            itEdit++;
         }
 
 
@@ -598,9 +598,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         vector<DRange3d> source3dRanges;
 
         // Remove and Add sources
-        for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.End(); it++)
+        for (IDTMSourceCollection::iterator itVal = m_sources.BeginEdit(); itVal != m_sources.End(); itVal++)
             {
-            SourceImportConfig& conf = it->EditConfig();
+            SourceImportConfig& conf = itVal->EditConfig();
             ScalableMeshData data = conf.GetReplacementSMData();
 
             assert(data.GetExtent().size() > 0);
@@ -866,10 +866,10 @@ StatusInt IScalableMeshSourceCreator::Impl::RemoveSourcesFrom(PointIndex& pointI
     {
     //NEEDS_WORK_SM : Logic for determining the extent to remove should be here.  
     std::list<DRange3d>::const_iterator it = listRemoveExtent.begin();
-    for (std::list<DRange3d>::const_iterator it = listRemoveExtent.begin(); it != listRemoveExtent.end(); it++)
+    for (std::list<DRange3d>::const_iterator itRemove = listRemoveExtent.begin(); itRemove != listRemoveExtent.end(); itRemove++)
         {
             {
-            pointIndex.RemovePoints(*it);
+            pointIndex.RemovePoints(*itRemove);
             }
         }
 

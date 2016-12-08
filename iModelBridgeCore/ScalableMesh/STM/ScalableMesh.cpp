@@ -58,7 +58,8 @@ extern bool   GET_HIGHEST_RES;
 #include "MosaicTextureProvider.h"
 //#include "CGALEdgeCollapse.h"
 
-DataSourceManager ScalableMeshBase::s_dataSourceManager;
+//DataSourceManager s_dataSourceManager;
+
 extern bool s_stream_from_disk;
 extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
@@ -959,12 +960,11 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                        
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
-        m_scalableMeshDTM[DTMAnalysisType::Precise] = ScalableMeshDTM::Create(this);
-        m_scalableMeshDTM[DTMAnalysisType::Precise]->SetAnalysisType(DTMAnalysisType::Precise);
-        m_scalableMeshDTM[DTMAnalysisType::Fast] = ScalableMeshDTM::Create(this);
-        m_scalableMeshDTM[DTMAnalysisType::Fast]->SetAnalysisType(DTMAnalysisType::Fast);
-        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly] = ScalableMeshDTM::Create(this);
-        m_scalableMeshDTM[DTMAnalysisType::RawDataOnly]->SetAnalysisType(DTMAnalysisType::RawDataOnly);
+        for (int i = 0; i < (int)DTMAnalysisType::Qty; ++i)
+        {
+            m_scalableMeshDTM[i] = ScalableMeshDTM::Create(this);
+            m_scalableMeshDTM[i]->SetAnalysisType((DTMAnalysisType)i);
+        }
         return BSISUCCESS;  
         }
     catch(...)
@@ -2222,6 +2222,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         }
 #endif       
 
+#ifndef VANCOUVER_API
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
         {        
         IScalableMeshPtr scalableMeshPtr(this);
@@ -2232,7 +2233,6 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         int result = _wremove(newPath.c_str());
         assert(result == 0);
         */
-
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));        
 
         smGroundExtractor->SetExtractionArea(coverageData);
@@ -2250,7 +2250,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
             m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
             }                
         }
-
+#endif
 
     if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
@@ -2258,7 +2258,7 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
     skirts.push_back(coverageData);
    // _AddSkirt(skirts, id, false);
 
-    DRange3d extent = DRange3d::From(&coverageData[0], (int)coverageData.size());
+/*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
     m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
     return SUCCESS;
     }
@@ -2768,6 +2768,36 @@ void edgeCollapseShowMesh(WCharCP param, PolyfaceQueryP& outMesh)
     for (size_t i = 0; i < npts; ++i) pts[i].Scale(10000);
     outMesh = new PolyfaceQueryCarrier(3, false, indices.size(), npts, pts,indicesArray);
     }
+
+void IScalableMeshMemoryCounts::SetMaximumMemoryUsage(size_t maxNumberOfBytes)
+{
+    SMMemoryPool::GetInstance()->SetMaxSize(maxNumberOfBytes);
+}
+
+void IScalableMeshMemoryCounts::SetMaximumVideoMemoryUsage(size_t maxNumberOfBytes)
+{
+    SMMemoryPool::GetInstanceVideo()->SetMaxSize(maxNumberOfBytes);
+}
+
+size_t IScalableMeshMemoryCounts::GetAmountOfUsedMemory()
+{
+    return SMMemoryPool::GetInstance()->GetCurrentlyUsed();
+}
+
+size_t IScalableMeshMemoryCounts::GetAmountOfUsedVideoMemory()
+{
+    return SMMemoryPool::GetInstanceVideo()->GetCurrentlyUsed();
+}
+
+size_t IScalableMeshMemoryCounts::GetMaximumMemoryUsage()
+{
+    return SMMemoryPool::GetInstance()->GetMaxSize();
+}
+
+size_t IScalableMeshMemoryCounts::GetMaximumVideoMemoryUsage()
+{
+    return SMMemoryPool::GetInstanceVideo()->GetMaxSize();
+}
 
 template class ScalableMesh<DPoint3d>;
 template class ScalableMeshSingleResolutionPointIndexView<DPoint3d>;

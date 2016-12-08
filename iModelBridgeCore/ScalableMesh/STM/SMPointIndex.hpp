@@ -525,6 +525,16 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
     m_wasBalanced = true;
 
     SMPointIndexNode<POINT, EXTENT>* UNCONSTTHIS =  const_cast<SMPointIndexNode<POINT, EXTENT>* >(this);
+    if (this == m_SMIndex->GetRootNode())
+        {
+
+        CreatedNodeMap::iterator nodeIter(m_createdNodeMap->find(GetBlockID().m_integerID));
+
+        if (nodeIter == m_createdNodeMap->end())
+            {
+            m_createdNodeMap->insert(std::pair<__int64, HFCPtr<SMPointIndexNode<POINT, EXTENT>>>(GetBlockID().m_integerID, UNCONSTTHIS));
+            }
+        }
     
     UNCONSTTHIS->m_apSubNodes.resize(UNCONSTTHIS->m_nodeHeader.m_numberOfSubNodesOnSplit);
 
@@ -3631,7 +3641,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Propag
             }
         else if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
             {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> ptsPtr(GetPointsPtr());
+            ptsPtr = GetPointsPtr();
             size_t numberSpatial = ptsPtr->size();
             POINT* spatialArray = new POINT[numberSpatial];
             memcpy(spatialArray, &(*ptsPtr)[0], ptsPtr->size() * sizeof(DPoint3d));            
@@ -4380,8 +4390,7 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
 
     this->ValidateInvariantsSoft();
 
-    HFCPtr<SMPointIndexNode<POINT, EXTENT> > pulledNode;
-
+                HFCPtr<SMPointIndexNode<POINT, EXTENT> > pulledNode;
     if (m_pSubNodeNoSplit == 0)
         {
         bool hasParentFilteringInvalidated = false;
@@ -4392,7 +4401,7 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
                 {
                 assert(m_apSubNodes[indexNode]->m_nodeHeader.m_level <= levelToPullTo);
 
-                HFCPtr<SMPointIndexNode<POINT, EXTENT> > pulledNode(m_apSubNodes[indexNode]->PullSubNodeNoSplitUp(levelToPullTo));
+                 pulledNode= m_apSubNodes[indexNode]->PullSubNodeNoSplitUp(levelToPullTo);
 
                 if (m_apSubNodes[indexNode]->m_nodeHeader.m_level == levelToPullTo)
                     {
@@ -4452,6 +4461,8 @@ HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMPointIndexNode<POINT, EXTENT>::PullSu
         else
             if (m_pSubNodeNoSplit->m_nodeHeader.m_level == levelToPullTo)
                 {
+                
+
                 if (m_pSubNodeNoSplit->m_pSubNodeNoSplit != 0)
                     {
                     pulledNode = m_pSubNodeNoSplit->PullSubNodeNoSplitUp(levelToPullTo);
@@ -4610,10 +4621,10 @@ bool SMPointIndexNode<POINT, EXTENT>::UnsplitEmptyNode()
 
         if (indexNode == m_nodeHeader.m_numberOfSubNodesOnSplit)
             {
-            for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+            for (size_t indexNode2 = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode2++)
                 {
-                m_apSubNodes[indexNode]->Destroy();
-                m_apSubNodes[indexNode] = 0;
+                m_apSubNodes[indexNode2]->Destroy();
+                m_apSubNodes[indexNode2] = 0;
                 }
 
             m_nodeHeader.m_IsLeaf = true;
@@ -4624,9 +4635,9 @@ bool SMPointIndexNode<POINT, EXTENT>::UnsplitEmptyNode()
             }
         else
             {
-            for (size_t indexNode = 0; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+            for (size_t indexNode2 = 0; indexNode2 < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode2++)
                 {
-                unsplitDone |= m_apSubNodes[indexNode]->UnsplitEmptyNode();
+                unsplitDone |= m_apSubNodes[indexNode2]->UnsplitEmptyNode();
                 }
             /*
             if (unsplitOccurred)
@@ -5303,7 +5314,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
     // Check if node is still a leaf ...
     if (!HasRealChildren() || m_delayedDataPropagation)
         {
-        RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+        pointsPtr = GetPointsPtr();
 
         if (pointsPtr->size() + 1 >= pointsPtr->capacity())
             pointsPtr->reserve (pointsPtr->size() + m_nodeHeader.m_SplitTreshold / 10);
@@ -5342,7 +5353,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Add(co
         // Check if the object was not added in a subnode ...
         if (!Added)
             {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
+            pointsPtr = GetPointsPtr();
 
             // The object was not added, evidently because it is too large ...
             // We add it to current node.
@@ -5675,7 +5686,6 @@ template<class POINT, class EXTENT>
 bool SMPointIndexNode<POINT, EXTENT>::IsLeaf() const
     {
     // We do not call invariants for simple accessors as they are extensively called within reorganising methods
-
     if (!IsLoaded())
         Load();
 
@@ -6210,7 +6220,7 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::QueryO
                                                 
                     for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit() ; indexNodes++)
                         {                                      
-                        HFCPtr<SMPointIndexNode<POINT, EXTENT>> node(m_apSubNodes[queryNodeOrder[indexNodes]]);
+                        node = m_apSubNodes[queryNodeOrder[indexNodes]];
 
                         if (!node->IsEmpty())
                             nodesToSearch.AddNode(node);                            
@@ -6863,8 +6873,8 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::SaveGr
         for (auto rGroupIt = s_OpenGroups.rbegin(); rGroupIt != s_OpenGroups.rend(); ++rGroupIt)
             {
             auto& group = rGroupIt->second;
-            auto& groupID = rGroupIt->first;
-            if (newAncestor >= groupID) break;
+            auto& groupID2 = rGroupIt->first;
+            if (newAncestor >= groupID2) break;
             group->SetAncestor(newAncestor);
             }
 

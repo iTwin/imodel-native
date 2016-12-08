@@ -399,7 +399,7 @@ template <class POINT, class EXTENT> struct ProcessingQuery : public RefCountedB
     };
 
 //NEEDS_WORK_SM : Set to true it can lead to race condition, should be removed (and maybe m_areWorkingThreadRunning[threadId] too).
-static bool s_delayJoinThread = false;
+static bool s_delayJoinThread = true;
 
 class QueryProcessor
     {
@@ -944,8 +944,7 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
 void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, IScalableMesh* sMesh)
     {     
     if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
-    Transform reprojectTransform = sMesh->GetReprojectionTransform();
-    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, reprojectTransform));
+    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false);
            
     meshNode->ApplyAllExistingClips();
@@ -954,7 +953,6 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
 
     m_overviewNodes.push_back(meshNode);
-    m_smOverviews.push_back(sMesh);
         
     if (meshNode->GetLevel() < MAX_PRELOAD_OVERVIEW_LEVEL)
         {                
@@ -966,7 +964,8 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
             node = (dynamic_cast<ScalableMeshNode<DPoint3d>*>(childNode.get()))->GetNodePtr();            
             PreloadOverview(node, sMesh);
             }
-        }            
+        }     
+        m_smOverviews.push_back(sMesh);
     }             
 
 #define VALID_EXTENT_RATIO 0.5
@@ -1093,6 +1092,8 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
 
     viewDependentQueryP->SetMeanScreenPixelsPerPoint(queryParam->GetMinScreenPixelsPerPoint() * s_minScreenPixelCorrectionFactor);
+
+    viewDependentQueryP->SetMaxPixelError(queryParam->GetMaxPixelError());
 
     //MS : Might need to be done at the ScalableMeshReprojectionQuery level.    
     if ((queryParam->GetSourceGCS() != 0) && (queryParam->GetTargetGCS() != 0))

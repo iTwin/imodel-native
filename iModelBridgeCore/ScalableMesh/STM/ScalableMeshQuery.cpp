@@ -2167,6 +2167,11 @@ double IScalableMeshViewDependentMeshQueryParams::GetMinScreenPixelsPerPoint() c
     return _GetMinScreenPixelsPerPoint();
     }
 
+double IScalableMeshViewDependentMeshQueryParams::GetMaxPixelError() const
+{
+    return _GetMaxPixelError();
+}
+
 StopQueryCallbackFP IScalableMeshViewDependentMeshQueryParams::GetStopQueryCallback() const
     {
     return _GetStopQueryCallback();
@@ -2186,6 +2191,11 @@ void IScalableMeshViewDependentMeshQueryParams::SetMinScreenPixelsPerPoint(doubl
     {
     _SetMinScreenPixelsPerPoint(minScreenPixelsPerPoint);
     }
+
+void IScalableMeshViewDependentMeshQueryParams::SetMaxPixelError(double maxPixelError)
+{
+    _SetMaxPixelError(maxPixelError);
+}
 
 void IScalableMeshViewDependentMeshQueryParams::SetProgressiveDisplay(bool isProgressiveDisplay)
     {
