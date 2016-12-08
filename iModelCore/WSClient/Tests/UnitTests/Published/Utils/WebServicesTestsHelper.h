@@ -49,13 +49,10 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 namespace BackDoor
     {
-    namespace DgnClientFx
+    struct DgnClientFx_Device
         {
-        struct Device
-            {
-            static void Initialize();
-            };
-        }
+        static void Initialize();
+        };
     }
 
 // Operator for comparisons

@@ -11,13 +11,13 @@
 #include <WebServices/Cache/Util/JsonUtil.h>
 
 #include "../../../../../DgnClientFx/PublicAPI/DgnClientFx/Device.h"
-void BackDoor::DgnClientFx::Device::Initialize()
+void BackDoor::DgnClientFx_Device::Initialize()
     {
 #if defined (__ANDROID__)
     // WIP06 - DgnClientFx is not initialized, need to initialize APIs seperately
-    if (Device::GetDeviceId().empty())
+    if (DgnClientFx::Device::GetDeviceId().empty())
         {
-        Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
         }
 #endif
     }
