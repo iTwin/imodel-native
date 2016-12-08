@@ -477,7 +477,7 @@ private:
                 TraceEvent e;
                 e.type = EventType::EVT_CREATE_DISPLAY_LOAD;
                 e.refCount = -1;
-                e.threadId = (uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id());
+                //e.threadId = (uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id());
                 e.nodeId = visibleNode->GetBlockID().m_integerID;
                 e.texId = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr())->GetSingleTextureID();
                 e.meshId = (uint64_t)-1;
