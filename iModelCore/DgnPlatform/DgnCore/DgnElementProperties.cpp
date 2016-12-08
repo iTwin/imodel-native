@@ -1183,7 +1183,7 @@ DgnElement::NavigationPropertyInfo DgnElement::GetNavigationPropertyInfo(Utf8CP 
     DgnDbStatus status = GetPropertyValue(value, propertyName);
     BeAssert(DgnDbStatus::Success == status);
     UNUSED_VARIABLE(status);
-    return NavigationPropertyInfo(value.GetNavigationInfo().GetId<BeInt64Id>(), value.GetNavigationInfo().GetRelationshipClassId());
+    return value.IsNull() ? NavigationPropertyInfo() : NavigationPropertyInfo(value.GetNavigationInfo().GetId<BeInt64Id>(), value.GetNavigationInfo().GetRelationshipClassId());
     }
 
 /*---------------------------------------------------------------------------------**//**
