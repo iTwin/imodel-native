@@ -434,6 +434,7 @@ void ECValue::NavigationInfo::Clear()
     {
     m_relClass = nullptr;
     m_id = BeInt64Id();
+    m_isPointer = false;
     }
 
 //*********************** ECValue ***************************************
@@ -2163,6 +2164,9 @@ bool            ArrayInfo::IsStructArray() const
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECValue::SetNavigationInfo()
     {
+    if (IsNull())
+        m_navigationInfo.Clear();
+
     Clear();
     SetIsNull(true);
     m_valueKind = VALUEKIND_Navigation;

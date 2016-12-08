@@ -624,6 +624,9 @@ TEST_F(NavigationECPropertyTests, TestNullNavigationValue)
     v.SetNavigationInfo();
     EXPECT_TRUE(v.IsNull()) << "The value should be null but it is not";
     EXPECT_TRUE(v.IsNavigation()) << "The value should be a navigation value but it is not";
+    EXPECT_FALSE(v.GetNavigationInfo().GetId<BeInt64Id>().IsValid()) << "The navigation value should be invalid but it is not";
+    EXPECT_FALSE(v.GetNavigationInfo().GetRelationshipClassId().IsValid()) << "The relationship class id should be invald but it is not.";
+    EXPECT_EQ(nullptr, v.GetNavigationInfo().GetRelationshipClass()) << "The relationship class should be null but it is not.";
 
     BeInt64Id navId(12);
     v.SetNavigationInfo(navId);
