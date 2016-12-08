@@ -1758,13 +1758,16 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
     : ScalableMeshNode(nodePtr)
-    {    
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
+{
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
     if (!m_cachedDisplayMeshData.IsValid())  m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(false);
     if (meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.lock();
     if (!meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, true))
         meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, false);
+
+    TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
+
     if (meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
     }
 
@@ -1778,6 +1781,9 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     if(meshNode->GetParentNodePtr() != nullptr) meshNode->GetParentNodePtr()->m_sharedTexLock.lock();
     if (!meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, true))
         meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, false);
+
+    TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
+
     if (meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
     }
 
@@ -1791,11 +1797,17 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     if (meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.lock();
     if (!meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, true))
         meshNode->GetAllDisplayTextures(m_cachedDisplayTextureData, false);
+
+    TRACEPOINT(THREAD_ID(), EventType::EVT_LOAD_NODE, meshNode->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, (uint64_t)this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
+
     if (meshNode->GetParentNodePtr() != nullptr) m_node->GetParentNodePtr()->m_sharedTexLock.unlock();
 }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::~ScalableMeshCachedDisplayNode()
     {
+       
+        auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+        TRACEPOINT(THREAD_ID(), EventType::UNLOAD_NODE, m_node->GetBlockID().m_integerID, m_cachedDisplayMeshData.IsValid() ? (uint64_t)(*m_cachedDisplayMeshData)[0].GetCachedDisplayMesh() : (uint64_t)-1, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetData()->GetTextureID() : meshNode->GetSingleTextureID(), -1, this, !m_cachedDisplayTextureData.empty() && m_cachedDisplayTextureData.front() != nullptr ? m_cachedDisplayTextureData.front()->GetRefCount() : 0)
     }
 
 
@@ -2019,7 +2031,10 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
                                                                                       displayCacheManagerPtr,
                                                                                       width*height * 6
                                                                                       );
+
                     displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
+
+                    TRACEPOINT((uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id()), EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
                     }
                 else assert(false);
 
@@ -2358,9 +2373,13 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     qvMemorySizeEstimate,
                     appliedClips));
 
+
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->GetDisplayMeshes();
                 if (!m_cachedDisplayMeshData.IsValid()) m_cachedDisplayMeshData = meshNode->AddDisplayMesh(displayMeshData, sizeToReserve);
                 else m_cachedDisplayMeshData->push_back(*displayMeshData);
+
+                TRACEPOINT(THREAD_ID(), EventType::LOAD_MESH_CREATE_0, meshNode->GetBlockID().m_integerID, (uint64_t)cachedDisplayMesh, textureID, -1, -1, m_cachedDisplayMeshData->GetRefCount())
+
                 displayMeshData->m_cachedDisplayMesh = 0;
                 delete displayMeshData;
                 if (isClipped)
@@ -2395,7 +2414,12 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
         meshNode->RemoveDisplayMesh();
         SmCachedDisplayMeshData& meshData = const_cast<SmCachedDisplayMeshData&>((*m_cachedDisplayMeshData)[0]);
         meshData.SetIsInVRAM(true);
-        meshNode->AddDisplayMesh(m_cachedDisplayMeshData, true);
+        meshNode->AddDisplayMesh(m_cachedDisplayMeshData.get(), true);
+
+            uint64_t texid;
+            meshData.GetTextureInfo(texid);
+
+        TRACEPOINT(THREAD_ID(), EventType::SWITCH_VIDEO_MESH, meshNode->GetBlockID().m_integerID, (uint64_t)meshData.GetCachedDisplayMesh(), texid,-1, -1, m_cachedDisplayMeshData->GetRefCount())
 
 
         if (m_cachedDisplayTextureData.empty()) return;
@@ -2403,9 +2427,14 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
         SmCachedDisplayTextureData& texData = const_cast<SmCachedDisplayTextureData&>(*(m_cachedDisplayTextureData.front()->GetData()));
         if (texData.IsInVRAM())
 				return;
-        SMMemoryPool::GetInstance()->RemoveItem(m_cachedDisplayTextureData.front()->GetPoolItemId(), m_node->GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_node->m_SMIndex);
+
+        TRACEPOINT(THREAD_ID(), EventType::BEFORE_SWITCH_VIDEO_TEX, meshNode->GetBlockID().m_integerID, (uint64_t)meshData.GetCachedDisplayMesh(), texData.GetTextureID(), m_cachedDisplayTextureData.front()->GetPoolItemId(), -1, m_cachedDisplayTextureData.front()->GetRefCount())
+
+        SMMemoryPool::GetInstance()->RemoveItem(m_cachedDisplayTextureData.front()->GetPoolItemId(), texData.GetTextureID(), SMStoreDataType::DisplayTexture, (uint64_t)m_node->m_SMIndex);
         texData.SetIsInVRAM(true);
-        meshNode->AddDisplayTexture(m_cachedDisplayTextureData.front(), texData.GetTextureID(), true);
+        meshNode->AddDisplayTexture(m_cachedDisplayTextureData.front().get(), texData.GetTextureID(), true);
+
+        TRACEPOINT(THREAD_ID(), EventType::SWITCH_VIDEO_TEX, meshNode->GetBlockID().m_integerID, (uint64_t)meshData.GetCachedDisplayMesh(), texData.GetTextureID(), m_cachedDisplayTextureData.front()->GetPoolItemId(), -1, m_cachedDisplayTextureData.front()->GetRefCount())
 
         }
     }

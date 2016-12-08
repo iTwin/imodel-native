@@ -471,7 +471,24 @@ private:
         if (!inLoading)
             {                         
             ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode, scalableMeshPtr.get()));
-                                    
+                          
+
+            {
+                TraceEvent e;
+                e.type = EventType::EVT_CREATE_DISPLAY_LOAD;
+                e.refCount = -1;
+                e.threadId = (uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id());
+                e.nodeId = visibleNode->GetBlockID().m_integerID;
+                e.texId = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr())->GetSingleTextureID();
+                e.meshId = (uint64_t)-1;
+                e.timestamp = clock();
+                e.objVal = (uint64_t)meshNode;
+                CachedDataEventTracer::GetInstance()->logEvent(e);
+            }
+
+            TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_LOAD, visibleNode->GetBlockID().m_integerID, (uint64_t)-1, dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr())->GetSingleTextureID(), -1, (uint64_t)meshNode, -1)
+
+
             if ((meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false && meshNode->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
@@ -946,7 +963,11 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     if (std::find(m_smOverviews.begin(), m_smOverviews.end(), sMesh) != m_smOverviews.end()) return;
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, sMesh));
     assert(meshNode->IsLoaded(s_displayCacheManagerPtr.get()) == false);
-           
+    
+
+    TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(node.GetPtr())->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
+
+
     meshNode->ApplyAllExistingClips();
     meshNode->RemoveDisplayDataFromCache();                    
     meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true);                               
@@ -1128,9 +1149,13 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
         assert(!"Should not occurs");               
         return;
         }
-         
+    
 
     ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(parentNodePtr, scalableMeshPtr.get()));
+
+
+    TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_1, parentNodePtr->GetBlockID().m_integerID,(uint64_t)-1, dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(parentNodePtr.GetPtr())->GetSingleTextureID(), -1, (uint64_t)meshNodePtr.get(), -1)
+
     
     if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(clipVisibilities)) && !s_keepSomeInvalidate))
         {        

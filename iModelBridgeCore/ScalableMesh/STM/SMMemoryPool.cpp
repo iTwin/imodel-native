@@ -12,9 +12,13 @@
 
 #include <limits>   
 #include "SMMemoryPool.h"
-
+#include "Tracer.h"
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
+
+
+
 
 void GetAllDataTypesInCompositeDataType(bvector<SMStoreDataType>& dataTypes, SMStoreDataType compositeDataType) 
     {
@@ -64,6 +68,18 @@ SMMemoryPoolItemBase::SMMemoryPoolItemBase(Byte* data, uint64_t size, uint64_t n
     m_data = data;
     m_dirty = false;
     }
+
+uint32_t SMMemoryPoolItemBase::AddRef() const
+{
+    TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_ACQUIRE : EventType::CACHED_TEX_ACQUIRE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
+    return RefCounted <IRefCounted>::AddRef();
+}
+
+uint32_t SMMemoryPoolItemBase::Release() const
+{
+    TRACEPOINT(THREAD_ID(), m_dataType == SMStoreDataType::DisplayMesh ? EventType::CACHED_MESH_RELEASE : EventType::CACHED_TEX_RELEASE, m_nodeId, (uint64_t)-1, m_dataType == SMStoreDataType::DisplayTexture ? m_nodeId : -1, m_poolItemId, (uint64_t)this, GetRefCount())
+    return RefCounted <IRefCounted>::Release();
+}
    
 SMMemoryPoolItemBase::~SMMemoryPoolItemBase()
     {
@@ -208,6 +224,9 @@ bool SMMemoryPool::RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDat
 
     if (memItemPtr.IsValid() && memItemPtr->IsCorrect(nodeId, dataType, smId))
         {
+
+        TRACEPOINT(THREAD_ID(), EventType::POOL_REMOVEITEM, nodeId, (uint64_t)-1, dataType == SMStoreDataType::DisplayTexture ? nodeId : -1, memItemPtr->GetPoolItemId(), (uint64_t)&m_memPoolItems[binId][itemId], memItemPtr->GetRefCount())
+
         m_currentPoolSizeInBytes -= memItemPtr->GetSize();        
         memItemPtr = 0;        
         m_memPoolItems[binId][itemId] = 0;
@@ -303,7 +322,11 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
                 if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_lastAccessTime[binIndToDelete][itemIndToDelete] < flushTimeThreshold && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)                    
                     {
-                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();                                        
+                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize(); 
+
+                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), (uint64_t)-1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
+
+
                     m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
                     itemInd = itemIndToDelete;
                     binInd = binIndToDelete;
@@ -322,7 +345,10 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
                 if (m_memPoolItems[binIndToDelete][itemIndToDelete].IsValid() && m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount() == 1)
                     {
-                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();                
+                    m_currentPoolSizeInBytes -= m_memPoolItems[binIndToDelete][itemIndToDelete]->GetSize();    
+
+                    TRACEPOINT(THREAD_ID(), EventType::POOL_DELETEITEM, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId(), (uint64_t)-1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetDataType() == SMStoreDataType::DisplayTexture ? m_memPoolItems[binIndToDelete][itemIndToDelete]->GetNodeId() : -1, m_memPoolItems[binIndToDelete][itemIndToDelete]->GetPoolItemId(), (uint64_t)&m_memPoolItems[binIndToDelete][itemIndToDelete], m_memPoolItems[binIndToDelete][itemIndToDelete]->GetRefCount())
+
                     m_memPoolItems[binIndToDelete][itemIndToDelete] = 0; 
                     itemInd = itemIndToDelete;
                     binInd = binIndToDelete;
@@ -381,6 +407,9 @@ SMMemoryPoolItemId SMMemoryPool::AddItem(SMMemoryPoolItemBasePtr& poolItem)
 
     poolItem->SetPoolItemId(binInd*s_binSize + itemInd);
 
+    TRACEPOINT(THREAD_ID(), EventType::POOL_ADDITEM, poolItem->GetNodeId(), (uint64_t)-1, poolItem->GetDataType() == SMStoreDataType::DisplayTexture ? poolItem->GetNodeId() : -1, poolItem->GetPoolItemId(), (uint64_t)&m_memPoolItems[binInd][itemInd], poolItem->GetRefCount())
+
+
     m_memPoolItemMutex[binInd][itemInd]->unlock();
 
 #ifndef NDEBUG
@@ -417,5 +446,13 @@ void SMMemoryPool::NotifySizeChangePoolItem(SMMemoryPoolItemBase* poolItem, int6
         m_currentPoolSizeInBytes += sizeDelta;
         }
     }
+
+
+void SMMemoryPool::CleanVideoMemoryPool() 
+{
+    if (s_videoMemoryPool != 0)
+        s_videoMemoryPool = 0;
+
+}
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

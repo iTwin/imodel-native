@@ -386,11 +386,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
-        else if (m_nodeHeader.m_isTextured)
-            {
-            auto tex = GetSingleDisplayTexture();
-            if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
-            }
+
 
 
 
@@ -927,6 +923,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::AddEdit
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload() 
     {
+    if (IsLoaded() && m_nodeHeader.m_isTextured) // we must do this before Unload since the texID is stored in the header.
+    {
+        auto tex = GetSingleDisplayTexture();
+        if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
+    }
+
     SMPointIndexNode<POINT, EXTENT>::Unload();
     }
 
@@ -4407,11 +4409,13 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
     if (m_mesher3d != NULL)
         delete m_mesher3d;
     Store();
+
+    m_createdNodeMap.clear();
+
     if (m_pRootNode != NULL)
         m_pRootNode->Unload();
 
     m_pRootNode = NULL;
-    m_createdNodeMap.clear();
     }
 
 
