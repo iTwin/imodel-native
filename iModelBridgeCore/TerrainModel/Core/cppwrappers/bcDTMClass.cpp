@@ -1103,7 +1103,7 @@ DTMStatusInt BcDTM::GetFeatureById (BcDTMFeaturePtr& featurePP, DTMFeatureId ide
     long        memNbFeaturePts = 0;
    DTMStatusInt status=DTM_SUCCESS;
     DTMFeatureId    dtmFeatureId;
-    DTMUserTag memUserTag;
+    DTMUserTag memUserTag = 0;
     BC_DTM_USER_FEATURE dtmFeature ;
     long        featureFound = 0;
     long        firstCall = TRUE;
@@ -1402,9 +1402,10 @@ DTMStatusInt BcDTM::_DrapeLinear(Bentley::TerrainModel::DTMDrapedLinePtr& ret, D
     return status;
     }
 
+
 bool BcDTM::_ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
     {
-    return _GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
+    return GetProjectedPointOnDTM(pointOnDTM, w2vMap, testPoint);
     }
 
 bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
@@ -1417,7 +1418,7 @@ bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR 
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
     {
     long startFlag, endFlag;
-    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && endFlag == 0);
+    return (DTM_SUCCESS == _ShotVector(slope, aspect, triangle, drapedType, &startFlag, &endFlag, endPt, &const_cast<DPoint3dR>(point), directionOfVector, slopeOfVector) && (endFlag == 0 || endFlag == 2));
     }
 
 /*----------------------------------------------------------------------+
@@ -1558,7 +1559,7 @@ DTMStatusInt BcDTM::SaveAsGeopakDat
 
     if (transformedDTM.IsValid())
         return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(transformedDTM->GetTinHandle(), fileNameP);
-    
+
     return (DTMStatusInt)bcdtmWrite_geopakDatFileFromDtmObject(GetTinHandle(), fileNameP);
     }
 
@@ -1620,9 +1621,9 @@ DTMStatusInt BcDTM::SaveAsGeopakTinFile
 |   MathieuSt 4 april 2016                                              |
 |                                                                       |
 +----------------------------------------------------------------------*/
-DTMStatusInt BcDTM::_ExportToGeopakTinFile 
+DTMStatusInt BcDTM::_ExportToGeopakTinFile
     (
-    WCharCP fileNameP, 
+    WCharCP fileNameP,
     TransformCP transformation
     )
     {
@@ -1919,8 +1920,8 @@ DTMStatusInt BcDTM::OffsetDeltaElevation (double offset)
     status = (DTMStatusInt)bcdtmData_moveZDtmObject (GetTinHandle (), 2 /*increment*/, offset);
     return status ;
     }
-    
-    
+
+
 /*----------------------------------------------------------------------+
 |                                                                       |
 |   spu.06nov2003   -  Created.                                         |
@@ -2659,7 +2660,7 @@ DTMStatusInt BcDTM::BrowseSinglePointFeatures (DTMFeatureType featureType, doubl
     {
     DTMStatusInt status=DTM_SUCCESS;
     bool useFence = false;
-    int nPoints;
+    int nPoints = 0;
     SinglePointFeatureCallbackTransformHelper helper (callBackFunctP, userP, _dtmTransformHelper.get ());
     Dtm_Handler_t dtmHandlerArgs;
     dtmHandlerArgs.featuresSinglePointHandler = helper.GetCallBackFunc();
@@ -3960,14 +3961,14 @@ DTMStatusInt BcDTM::SetMemoryAccess (DTMAccessMode accessMode)
 ///*---------------------------------------------------------------------------------------
 //* @bsimethod                                                    Daryl.Holmwood  07/11
 //+---------------+---------------+---------------+---------------+---------------+------*/
-DTMStatusInt BcDTM::GetLastModifiedTime (Int64& lastModifiedTime)
+DTMStatusInt BcDTM::GetLastModifiedTime (int64_t& lastModifiedTime)
     {
     lastModifiedTime = GetTinHandle()->lastModifiedTime;
 
     if (lastModifiedTime == 0)
         {
-        const Int64 date1Jan1970 = 116444736000000000;
-        lastModifiedTime = date1Jan1970 + ((Int64)GetTinHandle()->modifiedTime) * 10000000;
+        const int64_t date1Jan1970 = 116444736000000000;
+        lastModifiedTime = date1Jan1970 + ((int64_t)GetTinHandle()->modifiedTime) * 10000000;
         }
     return DTM_SUCCESS;
     }
@@ -3975,7 +3976,7 @@ DTMStatusInt BcDTM::GetLastModifiedTime (Int64& lastModifiedTime)
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Daryl.Holmwood  09/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-Int64 BcDTM::_GetPointCount ()
+int64_t BcDTM::_GetPointCount ()
     {
     DTMFeatureStatisticsInfo info;
     CalculateFeatureStatistics (info);
@@ -4019,7 +4020,7 @@ BENTLEY_NAMESPACE_NAME::TerrainModel::IDTMVolume* BcDTM::_GetDTMVolume()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformedDTM, TransformCR transformation)
     {
-    if (transformation.isIdentity())
+    if (transformation.IsIdentity())
         transformedDTM = this;
     else
         {
@@ -4027,12 +4028,12 @@ DTMStatusInt BcDTM::_GetTransformDTM (Bentley::TerrainModel::DTMPtr& transformed
         Bentley::Transform curTrfs;
 
         if (_dtmTransformHelper.IsValid() && _dtmTransformHelper->GetTransformationFromDTM (curTrfs))
-            trfs.productOf (&curTrfs, &transformation);
+            trfs.InitProduct (curTrfs, transformation);
         else
             trfs = transformation;
 
         TMTransformHelper* transformHelper = nullptr;
-        if (!trfs.isIdentity())
+        if (!trfs.IsIdentity())
             transformHelper = TMTransformHelper::Create (trfs);
 
         BcDTMPtr bcDtm = new BcDTM (*GetTinHandle(), transformHelper);
@@ -4054,7 +4055,7 @@ bool BcDTM::_GetTransformation (TransformR transformation)
     {
     if (_dtmTransformHelper.IsValid ())
         return _dtmTransformHelper->GetTransformationFromDTM (transformation);
-    transformation.initIdentity();
+    transformation.InitIdentity();
     return true;
     }
 
@@ -4114,13 +4115,13 @@ struct DTMDrainageFeature : public Bentley::TerrainModel::IDTMDrainageFeature
             {
             m_count = 0;
             }
-        virtual UInt32 AddRef() const
+        virtual uint32_t AddRef() const
             {
             m_count++;
             return m_count;
             }
 
-        virtual UInt32 Release() const
+        virtual uint32_t Release() const
             {
             m_count--;
             if (m_count == 0)
@@ -4393,7 +4394,8 @@ bool BcDTM::IntersectVector (DPoint3dR intersectionPoint, DPoint3dCR startPoint,
         endPt.x -= startPt.x;
         endPt.y -= startPt.y;
         endPt.z -= startPt.z;
-        if (!range.intersectRay (nullptr, nullptr, &sP, &eP, &startPt, &endPt))
+        double out1, out2;
+        if (!range.IntersectRay (out1, out2, sP, eP, startPt, endPt))
             return false;
 
         // Non Top View
@@ -4521,77 +4523,6 @@ bool BcDTM::GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
     DPoint4d pt4;
     DPoint4d endPt4;
 
-    invW2vMap.qrInverseOf (&w2vMap);
-    w2vMap.multiplyAndRenormalize (&pt, &testPoint, 1);
-    pt.z -= 100;
-    invW2vMap.multiplyAndRenormalize (&endPt, &pt, 1);
-    pt4.init (&testPoint, 0);
-    w2vMap.multiply (&pt4, &pt4, 1);
-    pt4.z -= 100;
-    invW2vMap.multiply (&endPt4, &pt4, 1);
-    endPt.init (endPt4.x, endPt4.y, endPt4.z);
-
-    if (helper)
-        {
-        helper->convertPointToDTM (startPt);
-        helper->convertPointToDTM (endPt);
-        }
-
-    if (fabs (startPt.x - endPt.x) > 1e-5 || fabs (startPt.y - endPt.y) > 1e-5)
-        {
-        // Intersect line with the DTM Range
-        DRange3d range;
-        DPoint3d sP;
-        DPoint3d eP;
-        DPoint3d point;
-
-        GetRange (range);
-        endPt.x -= startPt.x;
-        endPt.y -= startPt.y;
-        endPt.z -= startPt.z;
-        if (!range.intersectRay (NULL, NULL, &sP, &eP, &startPt, &endPt))
-            return false;
-
-        // Non Top View
-        DPoint3d trianglePts[4];
-        long drapedType;
-        BC_DTM_OBJ* bcDTM = GetTinHandle ();
-        bool voidFlag;
-
-        if (bcdtmDrape_intersectTriangleDtmObject (bcDTM, ((DPoint3d*)&sP), ((DPoint3d*)&eP), &drapedType, (DPoint3d*)&point, (DPoint3d*)&trianglePts, voidFlag) != DTM_SUCCESS || drapedType == 0 || voidFlag != 0)
-            {
-            return false;
-            }
-
-        startPt = point;
-        }
-
-    // TopView
-    DPoint3d trianglePts[4];
-    int drapedType;
-    double elevation;
-
-    if (DTM_SUCCESS != _DrapePoint (&elevation, NULL, NULL, trianglePts, drapedType, startPt))
-        {
-        return false;
-        }
-    startPt.z = elevation;
-
-    pointOnDTM = startPt;
-    if (helper) helper->convertPointFromDTM (pointOnDTM);
-    return true;
-    }
-    
-bool BcDTM::_GetProjectedPointOnDTM (DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint)
-    {
-    TMTransformHelperP helper = GetTransformHelper ();
-    DPoint3d startPt = testPoint;
-    DPoint3d endPt;
-    DPoint3d pt;
-    DMatrix4d invW2vMap;
-    DPoint4d pt4;
-    DPoint4d endPt4;
-
     invW2vMap.QrInverseOf (w2vMap);
     w2vMap.MultiplyAndRenormalize (&pt, &testPoint, 1);
     pt.z -= 100;
@@ -4668,7 +4599,7 @@ DTMStatusInt BcDTM::FilterPoints (long numPointsToRemove, double percentageToRem
 DTMStatusInt BcDTM::DrapeLinearPoints(bvector<DTMDrapePoint>& drapedPts, DPoint3dCP pointsP, int nPts, bool getFeatures)
     {
     DTMStatusInt status = DTM_SUCCESS;
-    
+
     drapedPts.clear();
     if (_dtmTransformHelper.IsValid())
         {

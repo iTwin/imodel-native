@@ -212,10 +212,10 @@
 
                                    /* Sizes for file I/O                      */
 #define CIVdtmpntSize     (  sizeof(DPoint3d)   + \
-			     sizeof(byte)        )
+			     sizeof(unsigned char)        )
 #define CIVdtmtinSize     (3*sizeof(long) + \
 			   3*sizeof(long) + \
-			     sizeof(byte)        )
+			     sizeof(unsigned char)        )
 #define CIVdtmftrSize (offsetof (struct CIVdtmftr, flg) + 8)
 #define CIVdtmftrV8Size (offsetof (struct CIVdtmftrV8, flg) + 8)
 #define CIVdtmftrV7Size (offsetof (struct CIVdtmftrV7, flg) + 8)
@@ -228,5 +228,5 @@
 #define CIVdtmfilSize     (2*sizeof(DPoint3d)   + \
 			     sizeof(long) + \
 			   3*sizeof(long)               + \
-			     sizeof(byte)        )
+			     sizeof(unsigned char)        )
 

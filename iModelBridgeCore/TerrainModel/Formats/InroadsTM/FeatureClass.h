@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -38,11 +38,11 @@ public:
 
     // Point manipulation methods.
     int     AddPoints ( CFeaturePnt *pntsP, long numPnts );
-    int     AddPoints ( DPoint3d *pntsP, byte *flgsP, long numPnts );
+    int     AddPoints ( DPoint3d *pntsP, unsigned char *flgsP, long numPnts );
     int     AddPoints ( DPoint3d *pntsP, long numPnts );
     int     RemovePoints ( long index, long numPnts );
     int     GetPoints ( CFeaturePnt **flgPntsPP, long *numPntsP );
-    int     GetPoints ( DPoint3d **pntsPP, byte **pntFlgsPP, long *numPntsP );
+    int     GetPoints ( DPoint3d **pntsPP, unsigned char **pntFlgsPP, long *numPntsP );
     int     GetPoints ( DPoint3d **pntsPP, long *numPntsP );
     int     GetPoints ( std::vector<CFeaturePnt>& points );
     int     GetPoints ( std::vector<DPoint3d>& points );
@@ -80,7 +80,7 @@ public: // IPlanLinearEntity implementation
     wchar_t           m_sName[DTM_C_NAMSIZ];
     wchar_t           m_sDesc[DTM_C_NAMSIZ];
     wchar_t           m_sParent[DTM_C_NAMSIZ];
-    byte              m_flag;
+    unsigned char              m_flag;
 
     // Feature points member variables.
     CFeaturePnt      *m_pntsP;

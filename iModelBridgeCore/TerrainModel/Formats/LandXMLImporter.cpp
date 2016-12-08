@@ -9,7 +9,7 @@
 #include <BeXml/BeXml.h>
 #include <list>
 #include "TerrainModel/Formats/LandXMLImporter.h"
-#include <TerrainModel/Core/bcdtmInlines.h> 
+#include <TerrainModel/Core/bcdtmInlines.h>
 #include "TriangulationPreserver.h"
 
 USING_NAMESPACE_BENTLEY
@@ -31,7 +31,7 @@ Utf8CP cSurfType("surfType");
 Utf8CP cLinearUnit("linearUnit");
 Utf8CP cSurface("Surface");
 Utf8CP cPntList2D ("PntList2D");
-Utf8CP cPntList3D ("PntList3D"); 
+Utf8CP cPntList3D ("PntList3D");
 Utf8CP cContour ("Contour");
 Utf8CP cContours ("Contours");
 Utf8CP cBreakline ("Breakline");
@@ -93,7 +93,7 @@ class XmlAttributes
         WStringCR GetAttribute (Utf8String name)
             {
             bmap<Utf8String, WString>::const_iterator attribute = m_attributes.find (name);
-            
+
             if (attribute != m_attributes.end())
                 return attribute->second;
 
@@ -158,12 +158,12 @@ FileUnit LandXMLImporter::_GetFileUnit () const
     }
 
 
-Int64 ConvertToInt64 (WCharCP s)
+int64_t ConvertToInt64 (WCharCP s)
     {
 #if defined (_WIN32)
     return _wtoi64 (s);
 #elif defined (__unix__)
-    Int64 i = 0;
+    int64_t i = 0;
     Swscanf (s, L"%I64d", &i);
     return i;
 #endif
@@ -769,7 +769,7 @@ void LandXMLImporter::ReadContour ()
 
                                 tmpSegments.swap(m_segments);
                                 }
-                            
+
                             randomPoints = attrs.GetAttribute(cCode).EqualsI(wRandomPoints);
                             ReadFeatureAttributes(featureAttributes);
 
@@ -879,7 +879,7 @@ void LandXMLImporter::ReadContour ()
                             if (pntRef.length() == 0)
                                 {
                                 m_reader->Read ();  // ToDo needs work.
-                                
+
                                 m_reader->GetCurrentNodeValue (value);
                                 adjust.AddPoint (ReadPoint (value, true), ptNum);
                                 }

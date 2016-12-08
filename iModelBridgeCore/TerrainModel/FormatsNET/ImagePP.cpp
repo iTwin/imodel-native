@@ -2,7 +2,7 @@
 |
 |     $Source: FormatsNET/ImagePP.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -44,17 +44,17 @@ Bentley::TerrainModelNET::DTM^ ImagePPConverter::ImportAndTriangulateImage (doub
     return dtm.IsValid () ? Bentley::TerrainModelNET::DTM::FromHandle ((System::IntPtr)dtm.get ()) : nullptr;
     }
 
-UInt64 ImagePPConverter::Width::get()
+uint64_t ImagePPConverter::Width::get()
     {
     return m_unmanaged->m_converter->GetWidth ();
     }
 
-UInt64 ImagePPConverter::Height::get ()
+uint64_t ImagePPConverter::Height::get ()
     {
     return m_unmanaged->m_converter->GetHeight();
     }
 
-UInt64 ImagePPConverter::NumberOfPixels::get ()
+uint64_t ImagePPConverter::NumberOfPixels::get ()
     {
     return m_unmanaged->m_converter->GetNumberOfPixels ();
     }

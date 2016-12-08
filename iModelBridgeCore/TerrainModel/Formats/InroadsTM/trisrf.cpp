@@ -93,7 +93,7 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
   struct CIVdtmsrf *srfP,                /* => surface to triangulate         */
   int options,                           /* => options                        */
   double *maxTriangleLengthP,            /* => max. tri length (or NULL)      */
-  byte *extDataChecksP,                  /* => TRUE, FALSE (or NULL)          */
+  unsigned char *extDataChecksP,                  /* => TRUE, FALSE (or NULL)          */
   double *ftrFilterToleranceP,           /* => feature filter tol. (or NULL)  */
   struct CIVdistri *distriP,             /* => triangle display pars (or NULL)*/
   boolean useAltMoveMethod // = FALSE     /* => user alternate move to 0,0,0 method */
@@ -138,20 +138,20 @@ int aecDTM_triangulate        /* <= TRUE if error                  */
             {
               aecDTM_delaunayTriangleInitRecursionDepthCheck();
               aecStatus_initialize(TRUE);
-              sts = aecDTM_triangulateProcess ( srfP, opt, ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) );
+              sts = aecDTM_triangulateProcess ( srfP, opt, ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) );
               aecStatus_close();
 
               if ( sts == SUCCESS ) sts = aecDTM_markBoundaryTriangles ( srfP );
               aecDTM_applyMaximumTriangleLengthAndMarkRangeTriangles ( srfP, (maxTriangleLengthP == (double *)0 ) ? srfP->par.maxsid : *maxTriangleLengthP );
 
-              if ( srfP->ptrIndexTableP != (void *)0 ) 
+              if ( srfP->ptrIndexTableP != (void *)0 )
                 if ( sts == SUCCESS )
                   sts = aecDTM_indexTableBuild ( srfP );
             }
       }
   }
 
-  if ( sts == SUCCESS && ((extDataChecksP == (byte *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
+  if ( sts == SUCCESS && ((extDataChecksP == (unsigned char *)0 ) ? srfP->par.extDatChk : *extDataChecksP) )
      sts = aecDTM_alignTriangleDiagonals ( srfP );
 
   // Removing duplicate points during the triangulation process may result in
@@ -1163,12 +1163,12 @@ int aecDTM_triangulateLinearFree /* <= TRUE if error               */
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_alignTriangleDiagonals
- DESC: Post process that searches for rectangular triangle pairs and reassigns 
+ DESC: Post process that searches for rectangular triangle pairs and reassigns
        their points so that diaglonals are formed in a consistent manner.  If a
        rectangular pair is found, points will be arragned so that the diagonal
-       appears from the lower left to the upper right of the rectangle.  If a 
+       appears from the lower left to the upper right of the rectangle.  If a
        non-orthogonal rectanglular pair is found, points will be arranged so that
-       the diagonal appears from the lowest corner to the corner opposite the 
+       the diagonal appears from the lowest corner to the corner opposite the
        lowest in the rectangle.
  HIST: Original - twl 16-Aug-1998
  MISC:
@@ -1243,10 +1243,10 @@ static int aecDTM_isRectangle
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_alignTriangleDiagonalsProcess
- DESC: Compares the input triangle with each of it's neighbors to see if a 
+ DESC: Compares the input triangle with each of it's neighbors to see if a
        rectangular pair is formed.  If a rectangular pair is found, the diagonal
        formed by the triangle pair is checked to see if it runs from the lowest
-       corner of the rectangle to the corner opposite the lowest, or from the 
+       corner of the rectangle to the corner opposite the lowest, or from the
        lower left corner to the upper right corner in the case of an orthogonal
        rectangle.  If not, triangle points are rearranged and neibors reassigned
        so that it does.
@@ -1293,18 +1293,18 @@ static int aecDTM_alignTriangleDiagonalsProcess
   // deleted or removed from the network, we don't process it.
 
   if ( aecDTM_isTriangleProcessedFlagSet ( tin1.tin )   ||
-       aecDTM_isTriangleDeletedFlagSet   ( tin1.tin )   || 
+       aecDTM_isTriangleDeletedFlagSet   ( tin1.tin )   ||
        aecDTM_isTriangleRemovedFlagSet   ( tin1.tin ) )
   {
     bStop = TRUE;
   }
-  
+
 
   // Loop through the triangle's neigbors. We'll set up pointers to the
-  // triangle's points and neibors so that the triangle corner opposite 
+  // triangle's points and neibors so that the triangle corner opposite
   // the diagonal will always be pointed to by p3P and; p1P and p2P will
-  // point to the endpoints of the diagonal.  
- 
+  // point to the endpoints of the diagonal.
+
   for ( i = 0; i < 3 && !bStop; i++ )
   {
     switch ( i )
@@ -1314,7 +1314,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
 
       // If side 12 is a breakline we can't touch it.
 
-      if ( tin1.tin->flg & DTM_C_TINB12 )  
+      if ( tin1.tin->flg & DTM_C_TINB12 )
         continue;
 
       tin1.p1P  = &tin->p1;
@@ -1368,7 +1368,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
     // deleted or removed from the network, we don't process it.
 
     if ( aecDTM_isTriangleProcessedFlagSet ( tin2.tin )   ||
-         aecDTM_isTriangleDeletedFlagSet   ( tin2.tin )   || 
+         aecDTM_isTriangleDeletedFlagSet   ( tin2.tin )   ||
          aecDTM_isTriangleRemovedFlagSet   ( tin2.tin ) )
     {
       continue;
@@ -1376,9 +1376,9 @@ static int aecDTM_alignTriangleDiagonalsProcess
 
 
     // Setup the neigboring triangle's pointers.  We'll set up pointers to the
-    // triangle's points and neibors so that the triangle corner opposite 
+    // triangle's points and neibors so that the triangle corner opposite
     // the diagonal will always be pointed to by p3P and; p1P and p2P will
-    // point to the endpoints of the diagonal.   
+    // point to the endpoints of the diagonal.
 
     if ( tin == tin2.tin->n12 )
     {
@@ -1416,7 +1416,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
 
 
     //  If p1P and p2P on tin1 and tin2 are coincident, swap p1P and p2P on
-    //  tin2.  We want p3P on both triangles to point to the corners of the 
+    //  tin2.  We want p3P on both triangles to point to the corners of the
     //  polygon opposite the diagonal.  We want p1P and p2P on both triangles
     //  to point to the endpoints of the diagonal, but we want p1P and p2P of
     //  each triangle to be on opposite ends of the diagonal.  This will have
@@ -1453,7 +1453,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
 
     // Check the length of each possible diagonal of the triangle pair polygon
     // to see if a rectangle is formed.
- 
+
     length1 = DISTANCE ( rectPnts[0]->cor.x, rectPnts[0]->cor.y, rectPnts[2]->cor.x, rectPnts[2]->cor.y );
     length2 = DISTANCE ( rectPnts[1]->cor.x, rectPnts[1]->cor.y, rectPnts[3]->cor.x, rectPnts[3]->cor.y );
 
@@ -1472,7 +1472,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
         }
       }
 
-      
+
       // If the lowest or lower left corner is not rectPnts[0] or rectPnts[2],
       // the diagonal runs between the wrong corners of the rectangle.  We have
       // some work to do to change it.
@@ -1490,7 +1490,7 @@ static int aecDTM_alignTriangleDiagonalsProcess
            (*srfP->dis.tinfnc)(srfP,tin2.tin,0,srfP->dis.tinsym);
          }
 
-         
+
          // Swap appropriate points and neigbors so that diagonal is
          // properly formed.
 
@@ -1528,8 +1528,8 @@ static int aecDTM_alignTriangleDiagonalsProcess
          }
       }
 
-   
-      // Set the processed bit on both triangles to prevent 
+
+      // Set the processed bit on both triangles to prevent
       // unnecessary processing later on.
 
       aecDTM_setTriangleProcessedFlag ( tin1.tin );

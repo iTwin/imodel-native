@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 #include "stdafx.h"
@@ -18,7 +18,7 @@ void aecTicker_initialize( void )
     {
     if( !s_bSuppress )
         {
-        byte first = TRUE;
+        unsigned char first = TRUE;
 
         if ( first )
             {
@@ -43,7 +43,7 @@ void aecTicker_show( void )
             unsigned long curtim = (unsigned long) time ( NULL );
             if ( curtim - prvtim >= TIME_INCREMENT )
                 {
-                if ( dots > 10 ) 
+                if ( dots > 10 )
                     dots = 1;
                 wchar_t string[40];
                 swprintf ( string, L"%s %.*s", processMessage, dots++, L".........." ); /* DO_NOT_TRANSLATE */
@@ -56,7 +56,7 @@ void aecTicker_show( void )
     unsigned long curtim = (unsigned long) time ( NULL );
     if ( curtim - responsePrvtim >= RESPONSE_TIME_INCREMENT )
         {
-        MSG msg; 
+        MSG msg;
         ::PeekMessage ( &msg, NULL, 0, 0, PM_NOREMOVE );
         responsePrvtim = curtim;
         }

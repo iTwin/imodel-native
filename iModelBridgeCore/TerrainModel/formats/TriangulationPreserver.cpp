@@ -300,7 +300,7 @@ BcDTMPtr TriangulationPreserver::Finish ()
 
 void TriangulationPreserver::MatchEdges()
     {
-    bmap<UInt64, bool> edgeMap;
+    bmap<uint64_t, bool> edgeMap;
 
     for (size_t i = 0; i < m_pointIndex.size(); i++)
         {
@@ -310,7 +310,7 @@ void TriangulationPreserver::MatchEdges()
         int p1 = m_pointIndex[i];
         int p2 = m_pointIndex[endPointIndex];
 
-        auto it = edgeMap.find((UInt64)p2 << 32 | p1);
+        auto it = edgeMap.find((uint64_t)p2 << 32 | p1);
 
         if (it != edgeMap.end())
             {
@@ -319,13 +319,13 @@ void TriangulationPreserver::MatchEdges()
             }
         else
             {
-            it = edgeMap.find((UInt64)p1 << 32 | p2);
+            it = edgeMap.find((uint64_t)p1 << 32 | p2);
 
             if (it != edgeMap.end())
                 BeAssert(false);
             else
                 {
-                edgeMap[(UInt64)p1 << 32 | p2] = false;
+                edgeMap[(uint64_t)p1 << 32 | p2] = false;
                 }
             }
         }
