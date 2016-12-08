@@ -4119,12 +4119,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             }
        // if (d.addedFaces.size() == 0 && d.removedFaces.size() == 0 && d.addedVertices.size() == 0 && d.removedVertices.size() == 0) emptyClip = true;
 
-        if (isVisible && !emptyClip)
+        //On large datasets doing everything in the main thread is costly, but so would be adding a mutex in AddClip, so not sure what to do with this for now.
+       /* if (isVisible && !emptyClip) 
             {
             PropagateClipUpwards(clipId, ClipAction::ACTION_ADD);
             PropagateClipToNeighbors(clipId, ClipAction::ACTION_ADD);
             }
-        PropagateClip(clipId, ClipAction::ACTION_ADD);
+        PropagateClip(clipId, ClipAction::ACTION_ADD);*/
         return !emptyClip;
         }
 
