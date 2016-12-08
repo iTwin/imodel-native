@@ -80,7 +80,7 @@ ConversionOptions   options
     WString schemaName;
     if (options.ChangeVersion)
         {
-        schema.SetVersionMajor(options.MajorVersion);
+        schema.SetVersionRead(options.MajorVersion);
         schema.SetVersionWrite(options.WriteVersion);
         schema.SetVersionMinor(options.MinorVersion);
         }
