@@ -2,14 +2,13 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatus.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
-#include <BeSQLite/BeSQLite.h>
 #include <ECDb/ECDbTypes.h>
+#include <BeSQLite/BeSQLite.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

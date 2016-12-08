@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-PropertyMap* ClassMapper::MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty)
+PropertyMap* ClassMapper::MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty)
     {
     ClassMapper mapper(classMap);
     return mapper.ProcessProperty(ecProperty);
@@ -25,7 +25,7 @@ PropertyMap* ClassMapper::MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecPr
 // @bsimethod                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
 //static
-PropertyMap* ClassMapper::LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext)
+PropertyMap* ClassMapper::LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext)
     {
     ClassMapper mapper(classMap, loadContext);
     return mapper.ProcessProperty(ecProperty);

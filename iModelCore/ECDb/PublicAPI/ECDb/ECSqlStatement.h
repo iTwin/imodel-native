@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
+#include <ECDb/ECDb.h>
+#include <ECDb/ECInstanceId.h>
 #include <ECDb/IECSqlValue.h>
 #include <ECDb/IECSqlBinder.h>
-#include <ECDb/ECDb.h>
 #include <list>
 #include <json/json.h>
 
