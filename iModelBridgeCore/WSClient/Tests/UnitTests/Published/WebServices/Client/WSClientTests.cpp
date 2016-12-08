@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 void WSClientTests::SetUp() 
     {
     BaseMockHttpHandlerTest::SetUp();
-    BackDoor::DgnClientFx::Device::Initialize();
+    BackDoor::DgnClientFx_Device::Initialize();
     }
 
 TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)

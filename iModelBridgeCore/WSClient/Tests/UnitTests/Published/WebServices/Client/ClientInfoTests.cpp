@@ -12,7 +12,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 void ClientInfoTests::SetUp()
     {
-    BackDoor::DgnClientFx::Device::Initialize();
+    BackDoor::DgnClientFx_Device::Initialize();
     }
 
 TEST_F(ClientInfoTests, DefaultLanguage_Constant_NotEmpty)
