@@ -1271,7 +1271,7 @@ virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override
     if (polyface.IsValid() && polyface->HasFacets())
         {
         polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+        polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), *polyface));
         }
 
     return polyfaces;
@@ -1416,7 +1416,7 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
             polyface->ClearParameters(false);
 
         BeAssertOnce(GetTransform().IsIdentity()); // Polyfaces are transformed during collection.
-        return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+        return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), *polyface));
         }
 
     CurveVectorPtr      curveVector = m_geometry->GetAsCurveVector();
@@ -1436,11 +1436,15 @@ TileGeometry::T_TilePolyfaces PrimitiveTileGeometry::_GetPolyfaces(IFacetOptions
     else if (bsplineSurface.IsValid())
         polyfaceBuilder->Add(*bsplineSurface);
 
+    T_TilePolyfaces     polyfaces;
+
     polyface = polyfaceBuilder->GetClientMeshPtr();
     if (polyface.IsValid())
+        {
         polyface->Transform(GetTransform());
-
-    return TileGeometry::T_TilePolyfaces (1, TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+        polyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), *polyface));
+        }
+    return polyfaces;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1515,7 +1519,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
 
                 TileDisplayParamsPtr displayParams = TileDisplayParams::Create (GetDisplayParams()->GetFillColor(), faceParams);
 
-                tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, polyface));
+                tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
                 }
             }
         }
@@ -1524,7 +1528,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
         auto polyface = BRepUtil::FacetEntity(*m_entity, *pFacetOptions);
     
         if (polyface.IsValid() && polyface->HasFacets())
-            tilePolyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), polyface));
+            tilePolyfaces.push_back (TileGeometry::TilePolyface (*GetDisplayParams(), *polyface));
 
         }
 
@@ -1583,7 +1587,7 @@ TileGenerator::TileGenerator(TransformCR transformFromDgn, DgnDbR dgndb, ITileGe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
+TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
     {
     auto nModels = static_cast<uint32_t>(modelIds.size());
     if (0 == nModels)
@@ -1604,7 +1608,7 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
     m_totalModels = nModels;
     m_progressMeter._IndicateProgress(0, nModels);
 
-    auto future = GenerateTilesFromModels(collector, modelIds, leafTolerance, maxPointsPerTile);
+    auto future = GenerateTilesFromModels(collector, modelIds, leafTolerance, surfacesOnly, maxPointsPerTile);
     /* unused - auto status = */ future.get();
 
     m_completedModels.store(0);
@@ -1622,14 +1626,14 @@ TileGeneratorStatus TileGenerator::GenerateTiles(ITileCollector& collector, DgnM
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, size_t maxPointsPerTile)
+TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile)
     {
     std::vector<FutureStatus> modelFutures;
     for (auto const& modelId : modelIds)
         {
         auto model = GetDgnDb().Models().GetModel(modelId);
         if (model.IsValid())
-            modelFutures.push_back(GenerateTiles(collector, leafTolerance, maxPointsPerTile, *model));
+            modelFutures.push_back(GenerateTiles(collector, leafTolerance, surfacesOnly, maxPointsPerTile, *model));
         }
 
     return folly::unorderedReduce(modelFutures, TileGeneratorStatus::Success, [=](TileGeneratorStatus reduced, TileGeneratorStatus next)
@@ -1641,7 +1645,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromModels(ITileCollecto
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model)
+TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model)
     {
     DgnModelPtr     modelPtr(&model);
     auto            pCollector = &collector;
@@ -1680,7 +1684,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         .then([=](TileGeneratorStatus status)
             {
             if (TileGeneratorStatus::Success == status)
-                return GenerateElementTiles(*pCollector, leafTolerance, maxPointsPerTile, *modelPtr, modelDelta.get());
+                return GenerateElementTiles(*pCollector, leafTolerance, surfacesOnly, maxPointsPerTile, *modelPtr, modelDelta.get());
 
             return folly::makeFuture(ElementTileResult(status, nullptr));
             })
@@ -1705,10 +1709,10 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta)
+TileGenerator::FutureElementTileResult TileGenerator::GenerateElementTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model, TileModelDeltaP modelDelta)
     {
     auto                cache = TileGenerationCache::Create(TileGenerationCache::Options::CacheGeometrySources);
-    ElementTileContext  context(*cache, model, modelDelta, collector, leafTolerance, maxPointsPerTile);
+    ElementTileContext  context(*cache, model, modelDelta, collector, leafTolerance, surfacesOnly, maxPointsPerTile);
 
     return PopulateCache(context).then([=](TileGeneratorStatus status)
         {
@@ -1769,7 +1773,7 @@ TileGenerator::FutureElementTileResult TileGenerator::ProcessParentTile(ElementT
         // If maxPointsPerTile is exceeded, we will keep that geometry, but adjust this tile's target tolerance
         // Later that tolerance will be used in _GenerateMeshes() to facet appropriately (and to filter out 
         // elements too small to be included in this tile)
-        tile.CollectGeometry(generationCache, m_dgndb, context.m_modelDelta, &leafThresholdExceeded, leafTolerance, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
+        tile.CollectGeometry(generationCache, m_dgndb, context.m_modelDelta, &leafThresholdExceeded, leafTolerance, context.m_surfacesOnly, isLeaf ? 0 : maxPointsPerTile); // ###TODO: Check return status
 
         if (!isLeaf && !leafThresholdExceeded)
             isLeaf = true;
@@ -2073,6 +2077,7 @@ private:
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
     bool                        m_is2d;
+    bool                        m_surfacesOnly;
 
 
     void PushGeometry(TileGeometryR geom);
@@ -2108,9 +2113,9 @@ private:
     virtual UnhandledPreference _GetUnhandledPreference(IBRepEntityCR, SimplifyGraphic&)     const override { return UnhandledPreference::Facet; }
 
 public:
-    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold, bool is2d) 
+    TileGeometryProcessor(TileGeometryList& geometries, TileGenerationCacheCR cache, DgnDbR db, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
         : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_cache(cache), m_dgndb(db), m_range(range), m_transformFromDgn(transformFromDgn), m_modelDelta(modelDelta),
-          m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
+          m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
         {
         static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
@@ -2248,14 +2253,37 @@ DRange3d TileGeomPart::GetRange() const
 TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance)
     {
     TileGeometry::T_TilePolyfaces   polyfaces;
+    double  tolerance = facetOptions.GetChordTolerance();  
+    auto    found = m_cachedPolyfaces.find(tolerance);
 
-    for (auto& geometry : m_geometries) 
+    if (found == m_cachedPolyfaces.end())
         {
-        TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
+        static  size_t s_minCacheCount = 3;        // Cache the polyfaces if count exceeds...
 
-        if (!thisPolyfaces.empty())
-            polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
+        for (auto& geometry : m_geometries) 
+            {
+            TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
+
+            if (!thisPolyfaces.empty())
+                polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
+            }
+        if (m_instanceCount > s_minCacheCount)
+            {
+            TileGeometry::T_TilePolyfaces   cachePolyfaces;
+
+            for (auto& polyface : polyfaces)
+                cachePolyfaces.push_back(polyface.Clone());
+
+            m_cachedPolyfaces.Insert (tolerance, cachePolyfaces);
+            }
         }
+    else
+        {
+        for (auto& cachedPolyface : found->second)
+            polyfaces.push_back (cachedPolyface.Clone());
+        }
+
+    if (m_instanceCount > 0)
 
     for (auto& polyface : polyfaces)
         polyface.Transform(instance.GetTransform());
@@ -2362,6 +2390,9 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
     {
+    if (m_surfacesOnly && !curves.IsAnyRegionType())
+        return true;
+
     if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
         return false;   // process as facets.
 
@@ -2441,6 +2472,9 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, SimplifyGraphic& gf) 
     {
+    if (m_surfacesOnly)
+        return true;
+
     static BeMutex s_tempFontMutex;
     BeMutexHolder lock(s_tempFontMutex);        // Temporary - until we resolve the font threading issues.
 
@@ -2633,12 +2667,12 @@ template<typename T> Render::GraphicPtr TileGeometryProcessorContext<T>::_Stroke
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, size_t leafCountThreshold)
+TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, TileModelDeltaP modelDelta, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
     {
     // Collect geometry from elements in this node, sorted by size
     auto is2d = cache.GetModel().Is2dModel();
     IFacetOptionsPtr                facetOptions = createTileFacetOptions(tolerance);
-    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, leafCountThreshold, is2d);
+    TileGeometryProcessor           processor(m_geometries, cache, db, GetDgnRange(), *facetOptions, m_transformFromDgn, modelDelta, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
@@ -2655,7 +2689,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter) const
+TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, ITileGenerationFilterCP filter) const
     {
     static const double s_vertexToleranceRatio    = .1;
     static const double s_vertexClusterThresholdPixels = 5.0;
@@ -2727,7 +2761,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                     }
                 }
             }
-        if (doPolylines)
+        if (!doSurfacesOnly)
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
         
