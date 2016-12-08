@@ -19,9 +19,9 @@ void ConnectWebServicesClientCTests::SetUpTestCase()
 
 void ConnectWebServicesClientCTests::SetUp ()
     {
-    auto proxy = ProxyHttpHandler::GetProxyIfReachable ("http://127.0.0.1:8888", Credentials ("1", "1"), nullptr);
-    if (!Utf8String::IsNullOrEmpty (proxy->GetProxyUrl ().c_str ()))
-        m_fiddlerProxyUrl.AssignUtf8 (proxy->GetProxyUrl ().c_str ());
+    auto proxy = ProxyHttpHandler::GetProxyIfReachable ("http://127.0.0.1:8888");
+    if (proxy)
+        m_fiddlerProxyUrl = L"http://127.0.0.1:8888";
     else
         m_fiddlerProxyUrl = L"";
     }
