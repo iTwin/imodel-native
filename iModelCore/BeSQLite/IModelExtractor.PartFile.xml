@@ -11,7 +11,7 @@
         <Directories DirectoryListName="IModelExtractorDirList"/>
     </Product>
     
-    <Part Name="IModelExtractorExe" BentleyBuildMakeFile="IModelExtractor/IModelExtractor.mke">
+    <Part Name="IModelExtractorExe" DeferType="BuildSamples" BentleyBuildMakeFile="IModelExtractor/IModelExtractor.mke">
         <SubPart PartName="BeSQLite" PartFile="BeSQLite"/>
         <Bindings>
             <Files ProductDirectoryName="IModelExeDir">Delivery/imodel.exe</Files>
