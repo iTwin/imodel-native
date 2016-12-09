@@ -125,7 +125,7 @@ BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
 struct IoThreadPoolImp : ThreadPool
 {
-    IoThreadPoolImp() : ThreadPool(BeThreadUtilities::GetHardwareConcurrency()*2, "IO"){}
+    IoThreadPoolImp() : ThreadPool(std::max<uint32_t>(10, BeThreadUtilities::GetHardwareConcurrency()*2), "IO"){}
     ~IoThreadPoolImp() {}
 };
 //=======================================================================================
