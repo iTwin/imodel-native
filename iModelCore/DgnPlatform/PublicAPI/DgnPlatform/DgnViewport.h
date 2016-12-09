@@ -75,7 +75,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     {
     private:
         bool m_decorations = false;
-        bool m_query = false;
         bool m_scene = false;
         bool m_renderPlan = false;
         bool m_controller = false;
@@ -84,21 +83,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 
     public:
         void InvalidateDecorations() {m_decorations=false;}
-        void InvalidateQuery() {m_query=false;}
-        void InvalidateScene() {m_scene=false; InvalidateQuery(); InvalidateDecorations();}
+        void InvalidateScene() {m_scene=false; InvalidateDecorations();}
         void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
         void InvalidateController() {m_controller=false; InvalidateRenderPlan();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
         void SetValidDecorations() {m_decorations=true;}
-        void SetValidQuery() {m_query=true;}
         void SetFirstDrawComplete() {m_firstDrawComplete=true;}
         void SetValidScene() {m_scene=true;}
         void SetValidController() {m_controller=true;}
         void SetValidRenderPlan() {m_renderPlan=true;}
         void SetValidRotatePoint() {m_rotatePoint=true;}
         bool IsValidDecorations() const {return m_decorations;}
-        bool IsValidQuery() const {return m_query;}
         bool IsValidScene() const {return m_scene;}
         bool IsValidRenderPlan() const {return m_renderPlan;}
         bool IsValidController() const {return m_controller;}
@@ -164,7 +160,7 @@ protected:
     void ShowChanges(ViewManagerCR, Render::Task::Priority);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void CreateTerrain(UpdatePlan const& plan);
-    StatusInt CreateScene(UpdatePlan const& plan);
+    void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
     ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context, bvector<ProgressiveTaskPtr>& tasks);
 
@@ -214,7 +210,6 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    void ValidateQuery(UpdatePlan const&);
     StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
@@ -578,7 +573,7 @@ struct TileViewport : DgnViewport
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
+    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:
     NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}

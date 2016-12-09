@@ -10,6 +10,7 @@
 
 #include "DgnPlatform.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -247,21 +248,24 @@ struct DgnQueryQueue
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Task : RefCounted<NonCopyableClass>
     {
-        SpatialViewControllerCR m_view;
-        UpdatePlan::Query m_plan;
+        DgnViewportR m_vp;
+        ViewController& m_view;
+        UpdatePlan m_plan;
+        folly::Promise<BentleyStatus> m_promise;
 
     public:
-        Task(SpatialViewControllerCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
+        Task(DgnViewportR vp, ViewController& view, UpdatePlan const& plan) : m_vp(vp), m_view(view), m_plan(plan) {}
         virtual void _Go() = 0;
-        uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
-        bool IsForView(SpatialViewControllerCR view) const {return &m_view == &view;}
+        uint32_t GetDelayAfter() {return m_plan.m_query.GetDelayAfter();}
+        bool IsForView(ViewController const& view) const {return &m_view == &view;}
+        folly::Promise<BentleyStatus>& GetPromise() {return m_promise;}
         void RequestAbort();
     };
 
     typedef RefCountedPtr<Task> TaskPtr;
 
 private:
-    enum class State { Active, TerminateRequested, Terminated };
+    enum class State {Active, TerminateRequested, Terminated};
 
     DgnDbR              m_db;
     BeConditionVariable m_cv;
@@ -269,7 +273,7 @@ private:
     TaskPtr             m_active;
     State               m_state;
     bool WaitForWork();
-    bool HasActiveOrPending(SpatialViewControllerCR);
+    bool HasActiveOrPending(ViewControllerCR);
     void Process();
     THREAD_MAIN_DECL Main(void* arg);
 
@@ -278,15 +282,15 @@ public:
 
     void Terminate();
 
-    //! Enqueue a request to execute the query for a QueryModel
+    //! Enqueue a request to execute the query
     DGNPLATFORM_EXPORT void Add(Task& task);
 
     //! Cancel any pending requests to process the specified QueryView.
     //! @param[in] view The view whose processing is to be canceled
-    DGNPLATFORM_EXPORT void RemovePending(SpatialViewControllerCR view);
+    DGNPLATFORM_EXPORT void RemovePending(ViewControllerCR view);
 
     //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitFor(SpatialViewControllerCR);
+    DGNPLATFORM_EXPORT void WaitFor(ViewControllerCR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
 };

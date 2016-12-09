@@ -219,6 +219,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
+#define DEBUG_TILES 1
 #if defined (DEBUG_TILES)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
     graphic->AddRangeBox(tile.m_range);

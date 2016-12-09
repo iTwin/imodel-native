@@ -45,7 +45,7 @@ void DgnViewport::InvalidateScene() const
     m_sync.InvalidateScene();
 
     if (m_viewController.IsValid())
-        m_viewController->_InvalidateScene();
+        m_viewController->InvalidateScene();
     }
 
 /*---------------------------------------------------------------------------------**//**
