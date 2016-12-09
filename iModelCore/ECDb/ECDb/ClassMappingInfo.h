@@ -19,7 +19,7 @@ struct ClassMap;
 struct ClassMappingInfo;
 struct SchemaImportContext;
 
-enum class MappingStatus
+enum class ClassMappingStatus
     {
     Success = 0,
     BaseClassesNotMapped = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because
@@ -39,7 +39,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECDb const&, ECN::ECClassCR);
+    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, ECDb const&, ECN::ECClassCR);
     };
 
 struct IndexMappingInfo;
@@ -67,10 +67,10 @@ protected:
     ClassMap const* m_tphBaseClassMap;
 
 private:
-    MappingStatus EvaluateMapStrategy();
-    virtual MappingStatus _EvaluateMapStrategy();
+    ClassMappingStatus EvaluateMapStrategy();
+    virtual ClassMappingStatus _EvaluateMapStrategy();
 
-    MappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
+    ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
@@ -87,7 +87,7 @@ public:
     ClassMappingInfo(ECDb const&, ECN::ECClassCR);
     virtual ~ClassMappingInfo() {}
 
-    MappingStatus Initialize();
+    ClassMappingStatus Initialize();
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
@@ -156,7 +156,7 @@ private:
     std::set<DbTable const*> m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
-    virtual MappingStatus _EvaluateMapStrategy();
+    virtual ClassMappingStatus _EvaluateMapStrategy();
 
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);

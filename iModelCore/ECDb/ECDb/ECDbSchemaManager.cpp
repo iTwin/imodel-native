@@ -201,11 +201,10 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
-    //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MappingStatus::Error == GetDbMap().MapSchemas(context))
+    if (SUCCESS != GetDbMap().MapSchemas(context))
         return ERROR;
 
     return ViewGenerator::CreateUpdatableViews(GetECDb());

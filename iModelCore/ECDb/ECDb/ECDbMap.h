@@ -31,8 +31,8 @@ struct ECDbMap :NonCopyableClass
 
         ClassMapPtr DoGetClassMap(ECN::ECClassCR) const;
         BentleyStatus TryLoadClassMap(ClassMapPtr&, ClassMapLoadContext& ctx, ECN::ECClassCR) const;
-        MappingStatus DoMapSchemas() const;
-        MappingStatus MapClass(ECN::ECClassCR) const;
+        BentleyStatus DoMapSchemas() const;
+        ClassMappingStatus MapClass(ECN::ECClassCR) const;
         BentleyStatus SaveDbSchema() const;
         BentleyStatus CreateOrUpdateRequiredTables() const;
         BentleyStatus CreateOrUpdateIndexesInDb() const;
@@ -40,7 +40,7 @@ struct ECDbMap :NonCopyableClass
         BentleyStatus PurgeOrphanColumns() const;
         BentleyStatus FinishTableDefinitions(bool onlyCreateClassIdColumns = false) const;
         DbColumn const* CreateClassIdColumn(DbTable&, bset<ClassMap*> const&) const;
-        MappingStatus AddClassMap(ClassMapPtr&) const;
+        ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         ClassMapsByTable GetClassMapsByTable() const;
         BentleyStatus GetClassMapsFromRelationshipEnd(std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         std::vector<ECN::ECClassCP> GetBaseClassesNotAlreadyMapped(ECN::ECClassCR ecclass) const;
@@ -58,7 +58,7 @@ struct ECDbMap :NonCopyableClass
         std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(ECN::ECRelationshipConstraintCR) const;
-        MappingStatus MapSchemas(SchemaImportContext&) const;
+        BentleyStatus MapSchemas(SchemaImportContext&) const;
 
         bool IsImportingSchema() const;
         SchemaImportContext* GetSchemaImportContext() const;

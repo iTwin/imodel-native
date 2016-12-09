@@ -34,10 +34,10 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
+ClassMappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mapInfo)
     {
-    MappingStatus stat = DoMapPart1(schemaImportContext, mapInfo);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = DoMapPart1(schemaImportContext, mapInfo);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     return DoMapPart2(schemaImportContext, mapInfo);
@@ -46,7 +46,7 @@ MappingStatus ClassMap::_Map(SchemaImportContext& schemaImportContext, ClassMapp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
+ClassMappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
     {
     DbTable::Type tableType = DbTable::Type::Primary;
     const bool isTph = mappingInfo.GetMapStrategy().IsTablePerHierarchy();
@@ -58,7 +58,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
         if (tphBaseClassMap == nullptr)
             {
             BeAssert(false);
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         }
     else if (mappingInfo.GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
@@ -89,7 +89,7 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
                                                                            isExclusiveRootClassOfTable ? mappingInfo.GetECClass().GetId() : ECClassId(),
                                                                            primaryTable);
         if (table == nullptr)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
 
         AddTable(*table);
         }
@@ -101,25 +101,25 @@ MappingStatus ClassMap::DoMapPart1(SchemaImportContext& schemaImportContext, Cla
             Issues().Report(ECDbIssueSeverity::Error,
                             "Only one ECClass per table can specify a shared column count. Found duplicate definition on ECClass '%s'.",
                             m_ecClass.GetFullName());
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         }
 
     //Add ECInstanceId property map
     //check if it already exists
     if (GetECInstanceIdPropertyMap() != nullptr)
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
 
     //does not exist yet
     PropertyMapPtr ecInstanceIdPropertyMap = ECInstanceIdPropertyMap::Create(m_ecdb.Schemas(), *this);
     if (ecInstanceIdPropertyMap == nullptr)
         //log and assert already done in child method
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     if (GetPropertyMapsR().AddPropertyMap(ecInstanceIdPropertyMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 
@@ -164,17 +164,17 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
+ClassMappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, ClassMappingInfo const& mappingInfo)
     {
-    MappingStatus stat = MapProperties(schemaImportContext);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = MapProperties(schemaImportContext);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     ECPropertyCP currentTimeStampProp = mappingInfo.GetClassHasCurrentTimeStampProperty();
     if (currentTimeStampProp != nullptr)
         {
         if (SUCCESS != CreateCurrentTimeStampTrigger(*currentTimeStampProp))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
     //Add cascade delete for joinedTable;
@@ -185,7 +185,7 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
         if (tphBaseClassMap == nullptr)
             {
             BeAssert(false);
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         
         DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
@@ -193,8 +193,8 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
             {
             DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
             DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-            PRECONDITION(primaryKeyColumn != nullptr, MappingStatus::Error);
-            PRECONDITION(foreignKeyColumn != nullptr, MappingStatus::Error);
+            PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
+            PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
             bool createFKConstraint = true;
             for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
                 {
@@ -215,12 +215,12 @@ MappingStatus ClassMap::DoMapPart2(SchemaImportContext& schemaImportContext, Cla
             if (createFKConstraint)
                 {
                 if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
-                    return MappingStatus::Error;
+                    return ClassMappingStatus::Error;
                 }
             }
         }
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 #define CURRENTIMESTAMP_SQLEXP "julianday('now')"
@@ -341,7 +341,7 @@ BentleyStatus ClassMap::ConfigureECClassId(DbColumn const& classIdColumn, bool l
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
+ClassMappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
@@ -353,7 +353,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
                 }
 
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
@@ -390,7 +390,7 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
 
         PropertyMapPtr propertyMap = PropertyMapFactory::ClonePropertyMap(ctx.GetClassMapLoadContext(), *baseClassPropMap, m_ecClass, nullptr);
         if (GetPropertyMapsR().AddPropertyMap(propertyMap) != SUCCESS)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
     GetColumnFactory().Update(false);
@@ -400,18 +400,18 @@ MappingStatus ClassMap::MapProperties(SchemaImportContext& ctx)
         Utf8CP propertyAccessString = property->GetName().c_str();
         PropertyMapPtr propMap = PropertyMapFactory::CreatePropertyMap(ctx.GetClassMapLoadContext(), m_ecdb, GetClass(), *property, propertyAccessString, nullptr);
         if (propMap == nullptr)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
 
         if (SUCCESS != propMap->FindOrCreateColumnsInTable(*this))
             {
             BeAssert(false);
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
 
         if (GetPropertyMapsR().AddPropertyMap(propMap) != SUCCESS)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1281,12 +1281,12 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MappingStatus NotMappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
+ClassMappingStatus NotMappedClassMap::_Map(SchemaImportContext&, ClassMappingInfo const& classMapInfo)
     {
     DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
