@@ -44,6 +44,7 @@ LINKER_LIBRARIES    =  $(ContextSubpartsLibs)$(libprefix)Bentley$(libext) \
                        $(ContextSubpartsLibs)$(libprefix)RealityPlatform$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)RealityAdmin$(libext)\
                        $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(libext) \
+                       $(ContextSubpartsLibs)CCApi$(libext) \
                        odbc32$(libext)
 
 # windows specific for Unzipfile

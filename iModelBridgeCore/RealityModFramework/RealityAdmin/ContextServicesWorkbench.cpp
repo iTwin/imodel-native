@@ -167,10 +167,13 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
     {
     case ServerType::DEV:
         tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
+        break;
     case ServerType::PROD:
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";
+        break;
     default:
         tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
+        break;
     }
 
     Utf8String listUrl = tempRealityServerUrl.append("/Repositories/IndexECPlugin--Server");

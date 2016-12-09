@@ -61,6 +61,7 @@
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
+        <SubPart PartName="ConnectClientAPI"           PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <Bindings>
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
@@ -388,6 +389,8 @@
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
+        <!--<ProductDirectory Name="BentleyDesktopClient"           Path=""/>-->
+        <ProductDirectory Name="BentleyDesktopClient-Api"       Path=""/>
 
         <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
         <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>
