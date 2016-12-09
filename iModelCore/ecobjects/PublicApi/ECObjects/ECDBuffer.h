@@ -488,7 +488,7 @@ typedef ECDHeader_v0 ECDHeader;
 //! e.g. StandaloneECInstance and ECXInstance
 //! @bsiclass
 //=======================================================================================
-struct ECDBuffer
+struct EXPORT_VTABLE_ATTRIBUTE ECDBuffer
     {
     friend  struct ArrayResizer;
     friend  struct ECDBufferScope;
