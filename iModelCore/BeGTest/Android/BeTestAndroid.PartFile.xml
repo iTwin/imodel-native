@@ -25,7 +25,7 @@
     <Part Name="BuildApk" BentleyBuildMakeFile="BuildApk.mke" BMakeOptions="+dBETEST_RUN_TESTS"  ExcludeLibType="Dynamic" OnlyPlatforms="Android*">
     </Part>
 
-    <Part Name="RunBeTestAndroid" BentleyBuildMakeFile="RunBeTestAndroid.mke" BMakeOptions="+dBETEST_RUN_TESTS" OnlyPlatforms="Android*">
+    <Part Name="RunBeTestAndroid" DeferType="RunUnitTests" BentleyBuildMakeFile="RunBeTestAndroid.mke" BMakeOptions="+dBETEST_RUN_TESTS" OnlyPlatforms="Android*">
         <SubProduct ProductName="BeTestAndroid"/>
     </Part>
 
