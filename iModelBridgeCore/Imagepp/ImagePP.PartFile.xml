@@ -185,7 +185,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <SubPart PartName="ImagePPSqlang"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ImagePP" SubPartDirectory="UnitTests/ImagePP">Delivery/UnitTests/ignore_list.txt</Files>
@@ -193,14 +193,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Common" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Common">
+    <Part Name="UnitTests-Common" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Common">
         <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ImagePP/Common" SourceName="Delivery/UnitTests/Objects/Common"/>
         </Bindings>
     </Part>
     
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <Bindings>
@@ -208,7 +208,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-FileFormat" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
+    <Part Name="UnitTests-FileFormat" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BMakeOptions="-dTestDir=FileFormat">
         <SubPart PartName="PrewireForUnitTests"/>
         <SubPart PartName="UnitTests-Common"/>
         <SubPart PartName="BeJsonCpp"           PartFile="BeJsonCpp"    Repository="Libsrc-JsonCpp"/>
@@ -230,7 +230,7 @@
     </Product>    
     
     <!--&&MM need one per test(UnitTests-NonPublished and UnitTests-FileFormat) Define a gtest program to run the tests -->
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ImagePPTests -dTEST_COLLECTION_PRODUCT=ImagePP-Tests -dTEST_FRAMEWORK_SQLANG=ImagePP_en.sqlang.db3 -dGUNITTEST_NTLIBS=Urlmon.lib" OnlyPlatforms="x86,x64,Linux*,MacOS*">
          <SubProduct ProductName="ImagePP-Tests"/>
          <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -245,7 +245,7 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>    
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ImagePP-GTest/ImagePPTests" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ImagePP-GTest"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -299,7 +299,7 @@
         <Directories DirectoryListName="ImagePPGTestsDir"/>
     </Product>
 
-    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=AndroidJUnit-ImagePP-TestCollection"   OnlyPlatforms="Android*">
         <SubProduct ProductName="AndroidJUnit-ImagePP-TestCollection"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/AndroidJUnit-ImagePP-TestCollection.log</Files>
