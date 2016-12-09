@@ -19,6 +19,7 @@
 #if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
     namespace folly {
     template <class T> class Future {};
+    template <class T> class Promise {};
     };
 #else
 
