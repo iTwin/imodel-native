@@ -103,8 +103,8 @@ $(o)ThreadCurlHttpHandler$(oext)          : $(BeHttpSourceDir)Curl/ThreadCurlHtt
     LINKER_LIBRARIES            + "Winhttp.Lib"
 %endif
 
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(stlibext)
-LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(stlibext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeCurl$(libext)
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeOpenSSL$(libext)
 
 #---------------------------------------------------------------------------------------+
 #   Deliver assets
