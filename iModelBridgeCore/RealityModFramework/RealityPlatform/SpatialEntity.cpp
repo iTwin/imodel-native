@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: RealityPlatform/SpatialEntityData.cpp $
+|     $Source: RealityPlatform/SpatialEntity.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,7 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 
-#include <RealityPlatform/SpatialEntityData.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataDownload.h>
 
 
@@ -104,73 +104,73 @@ SpatialEntityDataSource::SpatialEntityDataSource()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr SpatialEntityData::Create()
+SpatialEntityPtr SpatialEntity::Create()
     {
-    return new SpatialEntityData();
+    return new SpatialEntity();
     }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-Utf8StringCR SpatialEntityData::GetName() const { return m_name; }
-void SpatialEntityData::SetName(Utf8CP name) { m_name = name; }
+Utf8StringCR SpatialEntity::GetName() const { return m_name; }
+void SpatialEntity::SetName(Utf8CP name) { m_name = name; }
 
-Utf8StringCR SpatialEntityData::GetResolution() const { return m_resolution; }
-void SpatialEntityData::SetResolution(Utf8CP res) { m_resolution = res; }
+Utf8StringCR SpatialEntity::GetResolution() const { return m_resolution; }
+void SpatialEntity::SetResolution(Utf8CP res) { m_resolution = res; }
 
-Utf8StringCR SpatialEntityData::GetProvider() const { return m_provider; }
-void SpatialEntityData::SetProvider(Utf8CP provider) { m_provider = provider; }
+Utf8StringCR SpatialEntity::GetProvider() const { return m_provider; }
+void SpatialEntity::SetProvider(Utf8CP provider) { m_provider = provider; }
 
-Utf8StringCR SpatialEntityData::GetProviderName() const { return m_providerName; }
-void SpatialEntityData::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
+Utf8StringCR SpatialEntity::GetProviderName() const { return m_providerName; }
+void SpatialEntity::SetProviderName(Utf8CP providerName) { m_providerName = providerName; }
 
-Utf8StringCR SpatialEntityData::GetDataset() const { return m_dataset; }
-void SpatialEntityData::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
+Utf8StringCR SpatialEntity::GetDataset() const { return m_dataset; }
+void SpatialEntity::SetDataset(Utf8CP dataset) { m_dataset = dataset; }
 
-Utf8StringCR SpatialEntityData::GetThumbnailURL() const { return m_thumbnailURL; }
-void SpatialEntityData::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
+Utf8StringCR SpatialEntity::GetThumbnailURL() const { return m_thumbnailURL; }
+void SpatialEntity::SetThumbnailURL(Utf8CP thumbnailURL) { m_thumbnailURL = thumbnailURL; }
 
-Utf8StringCR SpatialEntityData::GetThumbnailLoginKey() const { return m_thumbnailLoginKey; }
-void SpatialEntityData::SetThumbnailLoginKey(Utf8CP thumbnailLoginKey) { m_thumbnailLoginKey = thumbnailLoginKey; }
+Utf8StringCR SpatialEntity::GetThumbnailLoginKey() const { return m_thumbnailLoginKey; }
+void SpatialEntity::SetThumbnailLoginKey(Utf8CP thumbnailLoginKey) { m_thumbnailLoginKey = thumbnailLoginKey; }
 
-Utf8StringCR SpatialEntityData::GetClassification() const { return m_classification; }
-void SpatialEntityData::SetClassification(Utf8CP classification) { m_classification = classification; }
+Utf8StringCR SpatialEntity::GetClassification() const { return m_classification; }
+void SpatialEntity::SetClassification(Utf8CP classification) { m_classification = classification; }
 
-Utf8StringCR SpatialEntityData::GetDataType() const { return m_dataType; }
-void SpatialEntityData::SetDataType(Utf8CP type) { m_dataType = type; }
+Utf8StringCR SpatialEntity::GetDataType() const { return m_dataType; }
+void SpatialEntity::SetDataType(Utf8CP type) { m_dataType = type; }
 
-DateTimeCR SpatialEntityData::GetDate() const { return m_date; }
-void SpatialEntityData::SetDate(DateTimeCR date) { m_date = date; }
+DateTimeCR SpatialEntity::GetDate() const { return m_date; }
+void SpatialEntity::SetDate(DateTimeCR date) { m_date = date; }
 
-const bvector<DPoint2d>& SpatialEntityData::GetFootprint() const { return m_footprint; }
-void SpatialEntityData::SetFootprint(bvector<DPoint2d>& footprint) { m_footprint = footprint; }
+const bvector<DPoint2d>& SpatialEntity::GetFootprint() const { return m_footprint; }
+void SpatialEntity::SetFootprint(bvector<DPoint2d>& footprint) { m_footprint = footprint; }
 
-DRange2dCR SpatialEntityData::GetFootprintExtents() const { return m_footprintExtents; }
-void SpatialEntityData::SetFootprintExtents(DRange2dCR footprintExtents) { m_footprintExtents = footprintExtents; }
+DRange2dCR SpatialEntity::GetFootprintExtents() const { return m_footprintExtents; }
+void SpatialEntity::SetFootprintExtents(DRange2dCR footprintExtents) { m_footprintExtents = footprintExtents; }
 
-bool SpatialEntityData::HasApproximateFootprint() const {return m_approximateFootprint;}
-void SpatialEntityData::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
+bool SpatialEntity::HasApproximateFootprint() const {return m_approximateFootprint;}
+void SpatialEntity::SetApproximateFootprint(bool approximateFootprint) {m_approximateFootprint = approximateFootprint;}
 
-SpatialEntityMetadataCP SpatialEntityData::GetMetadataCP() const { return m_pMetadata.get(); }
-void SpatialEntityData::SetMetadata(SpatialEntityMetadataP metadata) { m_pMetadata = metadata; }
+SpatialEntityMetadataCP SpatialEntity::GetMetadataCP() const { return m_pMetadata.get(); }
+void SpatialEntity::SetMetadata(SpatialEntityMetadataP metadata) { m_pMetadata = metadata; }
 
-SpatialEntityDataSourceCR SpatialEntityData::GetDataSource(size_t index) const { return *m_DataSources[index]; }
-SpatialEntityDataSourceR SpatialEntityData::GetDataSource(size_t index) { return *m_DataSources[index]; }
-void SpatialEntityData::AddDataSource(SpatialEntityDataSourceR dataSource) { m_DataSources.push_back(&dataSource); }
-size_t SpatialEntityData::GetDataSourceCount() const {return m_DataSources.size();}
+SpatialEntityDataSourceCR SpatialEntity::GetDataSource(size_t index) const { return *m_DataSources[index]; }
+SpatialEntityDataSourceR SpatialEntity::GetDataSource(size_t index) { return *m_DataSources[index]; }
+void SpatialEntity::AddDataSource(SpatialEntityDataSourceR dataSource) { m_DataSources.push_back(&dataSource); }
+size_t SpatialEntity::GetDataSourceCount() const {return m_DataSources.size();}
 
-float SpatialEntityData::GetCloudCover() const { return m_cloudCover; }
-void SpatialEntityData::SetCloudCover(float cover) { m_cloudCover = cover; }
+float SpatialEntity::GetOcclusion() const { return m_occlusion; }
+void SpatialEntity::SetOcclusion(float cover) { BeAssert(cover <=100.0); m_occlusion = cover; }
 
-uint64_t SpatialEntityData::GetApproximateFileSize() const {return m_approximateFileSize;}
-void SpatialEntityData::SetApproximateFileSize(uint64_t size) {m_approximateFileSize = size;}
+uint64_t SpatialEntity::GetApproximateFileSize() const {return m_approximateFileSize;}
+void SpatialEntity::SetApproximateFileSize(uint64_t size) {m_approximateFileSize = size;}
 
 
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityData::SpatialEntityData()
+SpatialEntity::SpatialEntity()
     {
     m_date = DateTime();
     m_footprint = bvector<DPoint2d>();
@@ -210,9 +210,6 @@ void SpatialEntityThumbnail::SetData(const bvector<Byte>& data) { m_data = data;
 
 Utf8StringCR SpatialEntityThumbnail::GetGenerationDetails() const { return m_generationDetails; }
 void SpatialEntityThumbnail::SetGenerationDetails(Utf8CP details) { m_generationDetails = details;  m_isEmpty = false;}
-
-Utf8StringCR SpatialEntityThumbnail::GetThumbnailUrl() const { return m_thumbnailUrl; }
-void SpatialEntityThumbnail::SetThumbnailUrl(Utf8CP thumbnailUrl) { m_thumbnailUrl = thumbnailUrl;  m_isEmpty = false;}
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert       	    11/2016
@@ -266,9 +263,6 @@ void SpatialEntityMetadata::SetLegal(Utf8CP legal) { m_legal = legal;  m_isEmpty
 Utf8StringCR SpatialEntityMetadata::GetFormat() const { return m_format; }
 void SpatialEntityMetadata::SetFormat(Utf8CP format) { m_format = format;  m_isEmpty = false;}
 
-Utf8StringCR SpatialEntityMetadata::GetData() const { return m_data; }
-void SpatialEntityMetadata::SetData(Utf8CP data) { m_data = data; m_isEmpty = false; }
-
 Utf8StringCR SpatialEntityMetadata::GetMetadataUrl() const { return m_metadataUrl; }
 void SpatialEntityMetadata::SetMetadataUrl(Utf8CP metadataUrl) { m_metadataUrl = metadataUrl; m_isEmpty = false;}
 
@@ -303,7 +297,8 @@ SpatialEntityMetadata::SpatialEntityMetadata(Utf8CP filePath) : m_isEmpty(false)
         if (NULL != pRootNode)
             {
             // Convert to string.
-            pRootNode->GetXmlString(m_data);
+//&&AR We do not keep raw data anymore.
+            // pRootNode->GetXmlString(m_data);
             }
         }
     }
@@ -398,124 +393,4 @@ SpatialEntityServer::SpatialEntityServer(Utf8CP url, Utf8CP name)
         }
     }
 
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    5/2016
-//-------------------------------------------------------------------------------------
-SpatialEntityStatus SpatialEntityDataHandler::UnzipFiles(Utf8CP inputDirPath, Utf8CP outputDirPath)
-    {
-    // Get a list of zip files to process.
-    bvector<BeFileName> fileFoundList;
-    BeFileName rootDir(inputDirPath);
-    BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, rootDir, L"*.zip", true);
-
-    // Unzip files.    
-    for (size_t i = 0; i < fileFoundList.size(); ++i)
-        {
-        WString outputDirPathW(outputDirPath, BentleyCharEncoding::Utf8);
-        AString outputDirPathA(outputDirPath);
-
-        // Construct output path.
-        WString outputFolderName;
-        RealityDataDownload::ExtractFileName(outputFolderName, fileFoundList[i].GetNameUtf8());
-        outputFolderName.erase(outputFolderName.find_last_of('.'));
-        outputDirPathW.append(outputFolderName);
-        BeFileName::CreateNewDirectory(outputDirPathW.c_str());
-
-        WString filenameW(fileFoundList[i].GetName());
-        RealityDataDownload::UnZipFile(filenameW, outputDirPathW);
-        }
-
-    return SpatialEntityStatus::Success;
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    4/2016
-//-------------------------------------------------------------------------------------
-BeFileName SpatialEntityDataHandler::BuildMetadataFilename(Utf8CP dirPath)
-    {
-    bvector<BeFileName> fileFoundList;
-    BeFileName rootDir(dirPath);
-    BeDirectoryIterator::WalkDirsAndMatch(fileFoundList, rootDir, L"*.xml", false);
-
-    if (fileFoundList.empty())
-        return BeFileName();
-
-    // Find the xml file corresponding to the metadata.
-    for (BeFileNameCR file : fileFoundList)
-        {
-        // Create xmlDom from file.
-        BeXmlStatus xmlStatus = BEXML_Success;
-        BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, file.GetNameUtf8().c_str());
-        if (BEXML_Success != xmlStatus)
-            {
-            return BeFileName();
-            }
-
-        // Make sure the root node is <gmd:MD_Metadata>.
-        BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
-        if (NULL == pRootNode)
-            return BeFileName();
-
-        if (pRootNode->IsIName("MD_Metadata"))
-            return file;
-        }
-
-    // No metadata file found.
-    return BeFileName();
-    }
-
-//-------------------------------------------------------------------------------------
-// @bsimethod                                   Jean-Francois.Cote         	    6/2016
-//-------------------------------------------------------------------------------------
-Utf8String SpatialEntityDataHandler::RetrieveGeocodingFromMetadata(BeFileNameCR filename)
-    {
-    Utf8String geocoding;
-
-    // Create xmlDom from metadata file.
-    BeXmlStatus xmlStatus = BEXML_Success;
-    BeXmlDomPtr pXmlDom = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.GetNameUtf8().c_str());
-    if (BEXML_Success != xmlStatus)
-        {
-        return NULL;
-        }
-
-    pXmlDom->RegisterNamespace("gmd", "http://www.isotc211.org/2005/gmd");
-
-    // Get root node.
-    BeXmlNodeP pRootNode = pXmlDom->GetRootElement();
-    if (NULL == pRootNode)
-        return NULL;
-
-    // Get reference system info node.
-    BeXmlNodeP pRefSysNode = pRootNode->SelectSingleNode("gmd:referenceSystemInfo");
-    if (NULL == pRefSysNode)
-        return NULL;
-
-    // Get md reference system node.
-    BeXmlNodeP pMdRefNode = pRefSysNode->SelectSingleNode("gmd:MD_ReferenceSystem");
-    if (NULL == pMdRefNode)
-        return NULL;
-
-    // Get reference system identifier node.
-    BeXmlNodeP pRefSysIdNode = pMdRefNode->SelectSingleNode("gmd:referenceSystemIdentifier");
-    if (NULL == pRefSysIdNode)
-        return NULL;
-
-    // Get rs identifier node.
-    BeXmlNodeP pRsIdNode = pRefSysIdNode->SelectSingleNode("gmd:RS_Identifier");
-    if (NULL == pRsIdNode)
-        return NULL;
-
-    // Get code.
-    BeXmlNodeP pCodeNode = pRsIdNode->SelectSingleNode("gmd:code");
-    if (NULL == pCodeNode)
-        return NULL;
-
-    xmlStatus = pCodeNode->GetContent(geocoding);
-    if (BEXML_Success != xmlStatus)
-        return NULL;
-
-    return geocoding.Trim();
-    }
 

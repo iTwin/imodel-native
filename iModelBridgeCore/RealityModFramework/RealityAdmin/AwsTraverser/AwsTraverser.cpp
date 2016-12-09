@@ -362,10 +362,10 @@ int main(int argc, char *argv[])
 
         size_t comma;
         std::string id, rest, downloadUrl;
-        float cloudCover, min_lat, min_lon, max_lat, max_lon;
+        float occlusion, min_lat, min_lon, max_lat, max_lon;
         size_t idx;
         AwsPinger& pinger = AwsPinger::GetInstance();
-        SpatialEntityDataPtr data;
+        SpatialEntityPtr data;
         SpatialEntityMetadataPtr metaData = SpatialEntityMetadata::Create();
         metaData->SetDescription("Landsat data provided by Amazon Web Services");
         metaData->SetProvenance("Landsat 8 raw imagery.");
@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
             comma = rest.find(",");
             if(!log->ValidateLine(comma, line))
                 continue;
-            cloudCover = std::stof(rest.substr(0, comma), &idx); //convert
+            occlusion = std::stof(rest.substr(0, comma), &idx); //convert
             comma++;
             rest = rest.substr(comma); 
 
@@ -501,10 +501,10 @@ int main(int argc, char *argv[])
                 Utf8String metadataUrl = baseUrl;
                 metadataUrl.append("_MTL.txt");
 
-                data = SpatialEntityData::Create();
+                data = SpatialEntity::Create();
                 data->SetName(Utf8CP(id.c_str()));
                 data->SetThumbnailURL(thumbUrl.c_str());
-                data->SetCloudCover(cloudCover);
+                data->SetOcclusion(occlusion);
                 data->SetApproximateFootprint(true);
                 data->SetDate(acquisitionDate);
                 data->SetFootprintExtents(DRange2d::From(min_lon, min_lat, max_lon, max_lat));
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
                 data->SetMetadata(metaData.get());
 
                 // Check cloud cover value
-                if (data->GetCloudCover() < 0.0f)
+                if (data->GetOcclusion() < 0.0f)
                     {
                     log->Log("Invalid cloud cover value ... likely a scambled sample:" + line);
                     }

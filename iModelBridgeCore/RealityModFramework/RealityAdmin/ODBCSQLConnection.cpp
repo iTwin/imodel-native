@@ -672,7 +672,7 @@ ODBCConnectionStatus ServerConnection::SaveDataSource(SpatialEntityDataSourceCR 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityDataCR data, SQLINTEGER metadataId, SQLINTEGER thumbnailId, SQLINTEGER& entityId)
+ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityCR data, SQLINTEGER metadataId, SQLINTEGER thumbnailId, SQLINTEGER& entityId)
     {
     ODBCConnectionStatus result = ODBCConnectionStatus::Success;
     RETCODE retCode;
@@ -711,7 +711,7 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityData
     // Bounding box is mandatory
     entityBaseQuery += ", [MinX], [MinY], [MaxX], [MaxY]";
 
-    if(data.GetCloudCover() >= 0.0f)
+    if(data.GetOcclusion() >= 0.0f)
         entityBaseQuery += ", [Occlusion]";
 
     if (date.IsValid())
@@ -756,12 +756,12 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityData
     sprintf(boundingBoxString, ", %f, %f, %f, %f", xMin, yMin, xMax, yMax);
     entityBaseQuery += boundingBoxString;
 
-    if(data.GetCloudCover() >= 0.0f)
+    if(data.GetOcclusion() >= 0.0f)
         {
-        char cloudCoverStr[25];
-        sprintf(cloudCoverStr, "%f", data.GetCloudCover());
+        char occlusionStr[25];
+        sprintf(occlusionStr, "%f", data.GetOcclusion());
         entityBaseQuery += ", ";
-        entityBaseQuery += cloudCoverStr;
+        entityBaseQuery += occlusionStr;
         }
 
     if (date.IsValid())
@@ -820,11 +820,11 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityData
 
 #if (0)
     CHAR entityQuery[256];
-    if(data.GetCloudCover() >= 0.0f)
+    if(data.GetOcclusion() >= 0.0f)
         sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id], [Occlusion]) VALUES (%d, %f)",
             m_dbName.c_str(),
             entityId,
-            data.GetCloudCover());
+            data.GetOcclusion());
     else
         sprintf(entityQuery, "INSERT INTO [%s].[dbo].[SpatialEntities] ([Id]) VALUES (%d)",
             m_dbName.c_str(),
@@ -842,7 +842,7 @@ ODBCConnectionStatus ServerConnection::InsertBareSpatialEntity(SpatialEntityData
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityDataCR data, bool dualMode)
+ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityCR data, bool dualMode)
     {
     // CHAR preQuery[512];
     ODBCConnectionStatus result;
@@ -911,7 +911,7 @@ ODBCConnectionStatus ServerConnection::SaveSpatialEntity(SpatialEntityDataCR dat
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Alain.Robert                   11/2016
 //-------------------------------------------------------------------------------------
-ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityDataCR data, SQLINTEGER spatialEntityId)
+ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityCR data, SQLINTEGER spatialEntityId)
     {
     DRange2dCR Fpt = data.GetFootprintExtents();
     double xMin = std::min(Fpt.low.x, Fpt.high.x);
@@ -946,8 +946,8 @@ ODBCConnectionStatus ServerConnection::UpdateBareSpatialEntity(SpatialEntityData
     if (data.HasApproximateFootprint())
         sprintf(entityBaseQuery, "%s, [ApproximateFootprint] = %d", entityBaseQuery, 1);
 
-    if(data.GetCloudCover() >= 0.0f)
-        sprintf(entityBaseQuery, "%s, [Occlusion] = %f", entityBaseQuery, data.GetCloudCover());
+    if(data.GetOcclusion() >= 0.0f)
+        sprintf(entityBaseQuery, "%s, [Occlusion] = %f", entityBaseQuery, data.GetOcclusion());
 
     if (date.IsValid())
         sprintf(entityBaseQuery, "%s, [Date] = '%d-%d-%d'", entityBaseQuery, date.GetYear(), date.GetMonth(), date.GetDay());
@@ -1346,7 +1346,7 @@ ODBCConnectionStatus ServerConnection::GetThumbnailIdFromSpatialEntity(SQLINTEGE
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-ODBCConnectionStatus ServerConnection::Update(SpatialEntityDataCR data)
+ODBCConnectionStatus ServerConnection::Update(SpatialEntityCR data)
     {
     ODBCConnectionStatus result;
     RETCODE retCode;

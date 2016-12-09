@@ -49,7 +49,7 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)md5$(oext) : $(baseDir)md5.cpp $(PublicApiDir)md5.h ${MultiCompileDepends}
 
-$(o)SpatialEntityData$(oext) : $(baseDir)SpatialEntityData.cpp $(PublicApiDir)SpatialEntityData.h ${MultiCompileDepends}
+$(o)SpatialEntity$(oext) : $(baseDir)SpatialEntity.cpp $(PublicApiDir)SpatialEntity.h ${MultiCompileDepends}
 
 $(o)RealityConversionTools$(oext) : $(baseDir)RealityConversionTools.cpp $(PublicApiDir)RealityConversionTools.h ${MultiCompileDepends}
 

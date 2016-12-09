@@ -11,11 +11,14 @@
 
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include "ISpatialEntityTraversalObserver.h"
+#include "SpatialEntityHandler.h"
 
 #include <Bentley/DateTime.h>
 #include <curl/curl.h>
 #include <sql.h>
 #include <sqlext.h>
+
+
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -31,14 +34,14 @@ public:
     typedef bvector<bpair<Utf8String, Utf8String>> RepositoryMapping;
 
     //! Download all files from root and saved them in the specified directory. Default is temp directory.
-    REALITYDATAPLATFORM_EXPORT SpatialEntityStatus DownloadContent(Utf8CP outputDirPath = NULL) const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityHandlerStatus DownloadContent(Utf8CP outputDirPath = NULL) const;
 
     //! Get a list of all files from all directories starting at root.
-    REALITYDATAPLATFORM_EXPORT SpatialEntityStatus GetFileList(bvector<Utf8String>& fileList) const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityHandlerStatus GetFileList(bvector<Utf8String>& fileList) const;
 
     //! Get complete data from root. This includes base, source, thumbnail, metadata and server details.
     //! An observer must be set to catch the data after each extraction.
-    REALITYDATAPLATFORM_EXPORT SpatialEntityStatus GetData() const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityHandlerStatus GetData() const;
 
     //! Get server url.
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetServerUrl() const;
@@ -68,9 +71,9 @@ protected:
     REALITYDATAPLATFORM_EXPORT ~SpatialEntityClient();
 
     //! Recurse into sub directories and create a list of all files.
-    virtual SpatialEntityStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const = 0;
+    virtual SpatialEntityHandlerStatus _GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const = 0;
 
-    virtual SpatialEntityDataPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const = 0;
+    virtual SpatialEntityPtr ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const = 0;
 
     //! Check if content is a directory or not.
     REALITYDATAPLATFORM_EXPORT bool IsDirectory(Utf8CP content) const;
@@ -131,11 +134,11 @@ protected:
 struct SpatialEntityResponse : public RefCountedBase
 {
 public:
-    //! Create invalid response with SpatialEntityStatus::UnknownError.
+    //! Create invalid response with SpatialEntityHandlerStatus::UnknownError.
     static SpatialEntityResponsePtr Create();
 
     //! Create response.
-    REALITYDATAPLATFORM_EXPORT static SpatialEntityResponsePtr Create(Utf8CP effectiveUrl, Utf8CP m_content, SpatialEntityStatus traversalStatus);
+    REALITYDATAPLATFORM_EXPORT static SpatialEntityResponsePtr Create(Utf8CP effectiveUrl, Utf8CP m_content, SpatialEntityHandlerStatus traversalStatus);
 
     //! Get url.
     Utf8StringCR GetUrl() const;
@@ -144,17 +147,17 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetContent() const;
 
     //! Get status.
-    REALITYDATAPLATFORM_EXPORT SpatialEntityStatus GetStatus() const;
+    REALITYDATAPLATFORM_EXPORT SpatialEntityHandlerStatus GetStatus() const;
 
     //! Return if request was a success or not.
     REALITYDATAPLATFORM_EXPORT bool IsSuccess() const;
 
 protected:
-    SpatialEntityResponse(Utf8CP effectiveUrl, Utf8CP content, SpatialEntityStatus status);
+    SpatialEntityResponse(Utf8CP effectiveUrl, Utf8CP content, SpatialEntityHandlerStatus status);
 
     Utf8String m_effectiveUrl;
     Utf8String m_content;
-    SpatialEntityStatus m_status;
+    SpatialEntityHandlerStatus m_status;
 };
 
 END_BENTLEY_REALITYPLATFORM_NAMESPACE

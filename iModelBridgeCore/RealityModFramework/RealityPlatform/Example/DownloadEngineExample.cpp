@@ -21,7 +21,7 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 USING_NAMESPACE_BENTLEY_REALITYPACKAGE
 
-WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be override by parameter at the execution.
+WString sOutputFolder = L"d:\\tmp\\data\\";     // Could be overriden by parameter at the execution.
 
 static int callback_progress_func (int index,void *pClient, size_t ByteCurrent,size_t ByteTotal)
     {

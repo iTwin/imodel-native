@@ -11,13 +11,9 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 
 /*----------------------------------------------------------------------------------**//**
-* Fills a bvector with SpatialEntityData objects, created with data extracted from JSON
-* Currently parses JSON for Name, DataType, Classification, Provider, Date, Size, 
-* Resolution and Footprint. 
-* None of these fields are guaranteed, and should be validated by the user 
 * @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bvector<SpatialEntityDataPtr>* outData)
+StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bvector<SpatialEntityPtr>* outData)
     {
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
@@ -40,14 +36,14 @@ StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bvector<S
 
         const Json::Value properties = instance["properties"];
 
-        SpatialEntityDataPtr data = JsonToSpatialEntityData(properties);
+        SpatialEntityPtr data = JsonToSpatialEntity(properties);
 
         outData->push_back(data);
         }
     return SUCCESS;
     }
 
-StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bmap<Utf8String, SpatialEntityDataPtr>* outData)
+StatusInt RealityConversionTools::JsonToSpatialEntity(Utf8CP data, bmap<Utf8String, SpatialEntityPtr>* outData)
     {
     // Make sure data exists.
     if (Utf8String::IsNullOrEmpty(data))
@@ -70,7 +66,7 @@ StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bmap<Utf8
 
         const Json::Value properties = instance["properties"];
 
-        SpatialEntityDataPtr data = JsonToSpatialEntityData(properties);
+        SpatialEntityPtr data = JsonToSpatialEntity(properties);
 
         outData->Insert(data->GetName(), data);
         }
@@ -80,14 +76,14 @@ StatusInt RealityConversionTools::JsonToSpatialEntityData(Utf8CP data, bmap<Utf8
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            11/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-SpatialEntityDataPtr RealityConversionTools::JsonToSpatialEntityData(Json::Value properties)
+SpatialEntityPtr RealityConversionTools::JsonToSpatialEntity(Json::Value properties)
     {
     // Required information to get.
     DateTime date;
 
     Utf8String footprintStr;
 
-    SpatialEntityDataPtr data = SpatialEntityData::Create();
+    SpatialEntityPtr data = SpatialEntity::Create();
 
     // Name
     if (properties.isMember("Name") && !properties["Name"].isNull())

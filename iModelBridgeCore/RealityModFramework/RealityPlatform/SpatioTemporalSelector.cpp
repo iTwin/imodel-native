@@ -8,6 +8,7 @@
 
 #include "StdAfx.h"
 
+#include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/SpatioTemporalSelector.h>
 #include <RealityPlatform/SpatioTemporalData.h>
 

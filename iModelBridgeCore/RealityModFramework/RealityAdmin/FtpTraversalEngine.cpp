@@ -41,7 +41,7 @@ FtpClientPtr FtpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP da
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr FtpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
+SpatialEntityPtr FtpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
     return FtpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
     }
@@ -55,7 +55,7 @@ FtpClient::FtpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, Ut
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
+SpatialEntityHandlerStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
     // Create request to get a list of all the files from the given path.
     FtpRequestPtr pRequest = FtpRequest::Create(url);
@@ -97,7 +97,7 @@ SpatialEntityStatus FtpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fil
             }
         }
 
-    return SpatialEntityStatus::Success;
+    return SpatialEntityHandlerStatus::Success;
     }
 
 //-------------------------------------------------------------------------------------
@@ -135,9 +135,9 @@ SpatialEntityResponsePtr FtpRequest::Perform()
     res = curl_easy_perform(curl.Get());
 
     // Check for errors.
-    SpatialEntityStatus status = SpatialEntityStatus::Success;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::Success;
     if (CURLE_OK != res || response.empty())
-        status = SpatialEntityStatus::CurlError;
+        status = SpatialEntityHandlerStatus::CurlError;
 
     return SpatialEntityResponse::Create(m_url.c_str(), response.c_str(), status);
     }
@@ -153,7 +153,7 @@ FtpRequest::FtpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
+SpatialEntityPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -183,7 +183,7 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
         return NULL;
 
     // Create empty data.
-    SpatialEntityDataPtr pExtractedData = SpatialEntityData::Create();    
+    SpatialEntityPtr pExtractedData = SpatialEntity::Create();    
 
     // Data extraction.
     // &&AR Not all traversed files are raster ... we must try out other types or introduce a generic creater.
@@ -301,9 +301,9 @@ SpatialEntityDataPtr FtpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Ut
     if (extractThumbnail)
         {
         SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
-        pThumbnail->SetProvenance("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetProvenance("Created by SpatialEntityHandler tool");
         pThumbnail->SetFormat("png");
-        pThumbnail->SetGenerationDetails("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetGenerationDetails("Created by SpatialEntityHandler tool");
         bvector<Byte> data;
         uint32_t width = THUMBNAIL_WIDTH;
         uint32_t height = THUMBNAIL_HEIGHT;

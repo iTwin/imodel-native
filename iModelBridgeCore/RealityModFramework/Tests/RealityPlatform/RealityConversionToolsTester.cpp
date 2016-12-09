@@ -27,15 +27,15 @@ class RealityConversionTestFixture : public testing::Test
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Spencer.Mason                            10/2016
 //-------------------------------------------------------------------------------------
-TEST_F(RealityConversionTestFixture, JsonToSpatialEntityData)
+TEST_F(RealityConversionTestFixture, JsonToSpatialEntity)
     {
     Utf8CP jsonString = "{\n \"instances\": [ \n{\n \"instanceId\": \"14812\",\n \"schemaName\" : \"RealityModeling\",\n \"className\" : \"SpatialEntityWithDetailsView\",\n \"properties\" : {\n \"Id\": \"14812\",\n \"Footprint\" : \"{ \\\"points\\\" : [[-92,39],[-92,38],[-93,38],[-93,39],[-92,39]], \\\"coordinate_system\\\" : \\\"4326\\\" }\",\n \"Name\" : \"N38W093\",\n \"Description\" : null,\n \"ContactInformation\" : null,\n \"Keywords\" : null,\n \"Legal\" : \"Data available from the U.S. Geological Survey\",\n  \"ProcessingDescription\" : null,\n \"DataSourceType\" : \"hgt\",\n \"AccuracyResolutionDensity\" : null,\n \"Date\" : \"2005-07-05T00:00:00\",\n \"Classification\" : \"Terrain\",\n \"FileSize\" : \"7066\",\n \"SpatialDataSourceId\" : \"14812\",\n \"ResolutionInMeters\" : \"24.2x30.922\",\n \"DataProvider\" : \"USGS\",\n \"DataProviderName\" : \"USGS\",\n \"ThumbnailURL\" : null,\n \"MetadataURL\" : null,\n \"RawMetadataURL\" : null,\n \"RawMetadataFormat\" : null,\n \"SubAPI\" : null\n },\n \"eTag\": \"gZIS2SFbXqohdwLlTRXkJOTCHz0=\"\n }\n ]\n }";
 
-    bvector<SpatialEntityDataPtr> spatialVector = bvector<SpatialEntityDataPtr>();
-    StatusInt status = RealityConversionTools::JsonToSpatialEntityData(jsonString, &spatialVector);
+    bvector<SpatialEntityPtr> spatialVector = bvector<SpatialEntityPtr>();
+    StatusInt status = RealityConversionTools::JsonToSpatialEntity(jsonString, &spatialVector);
     ASSERT_EQ(SUCCESS, status);
     ASSERT_EQ(spatialVector.size(), 1);
-    SpatialEntityDataPtr spatialData = spatialVector[0];
+    SpatialEntityPtr spatialData = spatialVector[0];
     ASSERT_TRUE(spatialData.IsValid());
 
     ASSERT_EQ(spatialData->GetName(), "N38W093");

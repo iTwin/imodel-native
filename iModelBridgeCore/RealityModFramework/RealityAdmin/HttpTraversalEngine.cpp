@@ -38,7 +38,7 @@ HttpClientPtr HttpClient::ConnectTo(Utf8CP serverUrl, Utf8CP serverName, Utf8CP 
     return new HttpClient(serverUrl, serverName, datasetName, filePattern, extractThumbnails, classification);
     }
 
-SpatialEntityDataPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
+SpatialEntityPtr HttpClient::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath) const
     {
     return HttpDataHandler::ExtractDataFromPath(inputDirPath, outputDirPath, m_filePattern.c_str(), m_extractThumbnails);
     }
@@ -69,7 +69,7 @@ HttpClient::HttpClient(Utf8CP serverUrl, Utf8CP serverName, Utf8CP datasetName, 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
+SpatialEntityHandlerStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fileList) const
     {
     // Create request to get page content.
     HttpRequestPtr pRequest = HttpRequest::Create(url);
@@ -129,7 +129,7 @@ SpatialEntityStatus HttpClient::_GetFileList(Utf8CP url, bvector<Utf8String>& fi
             }
         }
 
-    return SpatialEntityStatus::Success;
+    return SpatialEntityHandlerStatus::Success;
     }
 
 //-------------------------------------------------------------------------------------
@@ -174,9 +174,9 @@ SpatialEntityResponsePtr HttpRequest::Perform()
     res = curl_easy_perform(curl.Get());
 
     // Check for errors.
-    SpatialEntityStatus status = SpatialEntityStatus::Success;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::Success;
     if (CURLE_OK != res || response.empty())
-        status = SpatialEntityStatus::CurlError;
+        status = SpatialEntityHandlerStatus::CurlError;
 
     return SpatialEntityResponse::Create(m_url.c_str(), response.c_str(), status);
     }
@@ -191,7 +191,7 @@ HttpRequest::HttpRequest(Utf8CP url)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
+SpatialEntityPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, Utf8CP outputDirPath, Utf8CP filePattern, bool extractThumbnail)
     { 
     BeFileName inputName(inputDirPath);
     bvector<BeFileName> fileList;
@@ -236,7 +236,7 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
         return NULL;
 
     // Create empty data.
-    SpatialEntityDataPtr pExtractedData = SpatialEntityData::Create();    
+    SpatialEntityPtr pExtractedData = SpatialEntity::Create();    
 
     // Data extraction.
     // &&AR Not all traversed files are raster ... we must try out other types or introduce a generic creater.
@@ -319,9 +319,9 @@ SpatialEntityDataPtr HttpDataHandler::ExtractDataFromPath(Utf8CP inputDirPath, U
     if (extractThumbnail)
         {
         SpatialEntityThumbnailPtr pThumbnail = SpatialEntityThumbnail::Create();
-        pThumbnail->SetProvenance("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetProvenance("Created by SpatialEntityHandler tool");
         pThumbnail->SetFormat("png");
-        pThumbnail->SetGenerationDetails("Created by SpatialEntityDataHandler tool");
+        pThumbnail->SetGenerationDetails("Created by SpatialEntityHandler tool");
         bvector<Byte> data;
         uint32_t width = THUMBNAIL_WIDTH;
         uint32_t height = THUMBNAIL_HEIGHT;

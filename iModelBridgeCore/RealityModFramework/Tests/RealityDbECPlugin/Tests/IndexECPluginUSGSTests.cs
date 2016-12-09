@@ -101,7 +101,7 @@ namespace IndexECPlugin.Tests
 
         private IECInstance CreateParentSED ()
             {
-            IECInstance instance = m_schema.GetClass("SpatialEntityDataset").CreateInstance();
+            IECInstance instance = m_schema.GetClass("SpatialEntityset").CreateInstance();
             instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
 
             instance["Id"].StringValue = "543e6b86e4b0fd76af69cf4c";
@@ -1143,9 +1143,9 @@ namespace IndexECPlugin.Tests
 
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToView") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToView") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
 
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1245,9 +1245,9 @@ namespace IndexECPlugin.Tests
 
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToView") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToView") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
 
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityWithDetailsView"));
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1295,9 +1295,9 @@ namespace IndexECPlugin.Tests
                 }
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToSpatialEntityBase") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
                 query.SelectClause.SelectAllProperties = true;
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1347,9 +1347,9 @@ namespace IndexECPlugin.Tests
                 }
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToSpatialEntityBase") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
                 query.SelectClause.SelectAllProperties = true;
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1402,9 +1402,9 @@ namespace IndexECPlugin.Tests
                 }
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToSpatialEntityBase") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
                 query.SelectClause.SelectAllProperties = true;
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1457,9 +1457,9 @@ namespace IndexECPlugin.Tests
                 }
             using ( m_mock.Playback() )
                 {
-                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+                IECRelationshipClass relClass = m_schema.GetClass("SpatialEntitysetToSpatialEntityBase") as IECRelationshipClass;
 
-                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClass, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
                 ECQuery query = new ECQuery(m_schema.GetClass("SpatialEntityBase"));
                 query.SelectClause.SelectAllProperties = true;
                 query.SelectClause.SelectedRelatedInstances.Add(relCrit);
@@ -1513,10 +1513,10 @@ namespace IndexECPlugin.Tests
             using ( m_mock.Playback() )
                 {
                 IECRelationshipClass relClassMetadata = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
-                IECRelationshipClass relClassParent = m_schema.GetClass("SpatialEntityDatasetToSpatialEntityBase") as IECRelationshipClass;
+                IECRelationshipClass relClassParent = m_schema.GetClass("SpatialEntitysetToSpatialEntityBase") as IECRelationshipClass;
 
                 RelatedInstanceSelectCriteria relCrit = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClassMetadata, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityBase")), false);
-                RelatedInstanceSelectCriteria relCrit2 = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClassParent, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityDataset")), false);
+                RelatedInstanceSelectCriteria relCrit2 = new RelatedInstanceSelectCriteria(new QueryRelatedClassSpecifier(relClassParent, RelatedInstanceDirection.Backward, m_schema.GetClass("SpatialEntityset")), false);
                 ECQuery query = new ECQuery(m_schema.GetClass("Metadata"));
                 query.SelectClause.SelectAllProperties = true;
                 relCrit.SelectedRelatedInstances.Add(relCrit2);
@@ -1537,7 +1537,7 @@ namespace IndexECPlugin.Tests
 
                 Assert.AreEqual(2, relInst.GetRelationshipInstances().Count, "There should be two related instances to the SpatialEntityBase");
 
-                IECRelationshipInstance relationshipInst2 = relInst.GetRelationshipInstances().First(inst => inst.ClassDefinition.Name == "SpatialEntityDatasetToSpatialEntityBase");
+                IECRelationshipInstance relationshipInst2 = relInst.GetRelationshipInstances().First(inst => inst.ClassDefinition.Name == "SpatialEntitysetToSpatialEntityBase");
                 IECInstance relInst2 = relationshipInst2.Source;
 
                 Assert.IsTrue(instanceList.First().InstanceId == "553690bfe4b0b22a15807df2", "The metadata does not have the expected ID.");

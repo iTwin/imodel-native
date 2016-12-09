@@ -10,7 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/SpatialEntityData.h>
+#include <RealityPlatform/SpatialEntity.h>
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE
 
@@ -75,9 +75,9 @@ public:
     //! The Id of the new record is returned.
     //! Note that spatial entities using the pair Dataset/Name must be unique and can be use as (dual)key
     //! If the entry already exists then an error is returned; the UpdateBaseSpatialEntity should be used instead.
-    ODBCConnectionStatus InsertBareSpatialEntity(SpatialEntityDataCR data, SQLINTEGER metadataId, SQLINTEGER thumbnailId, SQLINTEGER& entityId);
+    ODBCConnectionStatus InsertBareSpatialEntity(SpatialEntityCR data, SQLINTEGER metadataId, SQLINTEGER thumbnailId, SQLINTEGER& entityId);
 
-    ODBCConnectionStatus UpdateBareSpatialEntity(SpatialEntityDataCR data, SQLINTEGER spatialEntityId);
+    ODBCConnectionStatus UpdateBareSpatialEntity(SpatialEntityCR data, SQLINTEGER spatialEntityId);
     ODBCConnectionStatus UpdateDataSource(SpatialEntityDataSourceCR dataSource, SQLINTEGER dataSourceId);
     ODBCConnectionStatus UpdateMetadata(SpatialEntityMetadataCR metadata, SQLINTEGER metadataId);
 //    ODBCConnectionStatus UpdateThumbnail(SpatialEntityThumbnailCR dataSource, SQLINTEGER thumbnailId);
@@ -92,8 +92,8 @@ public:
     ODBCConnectionStatus SaveDataSource(SpatialEntityDataSourceCR source, SQLINTEGER dataId, SQLINTEGER serverId, SQLINTEGER& dataSourceId);
 
 
-    REALITYDATAPLATFORM_EXPORT ODBCConnectionStatus SaveSpatialEntity(SpatialEntityDataCR data, bool dualMode);
-    REALITYDATAPLATFORM_EXPORT ODBCConnectionStatus Update(SpatialEntityDataCR data);
+    REALITYDATAPLATFORM_EXPORT ODBCConnectionStatus SaveSpatialEntity(SpatialEntityCR data, bool dualMode);
+    REALITYDATAPLATFORM_EXPORT ODBCConnectionStatus Update(SpatialEntityCR data);
     REALITYDATAPLATFORM_EXPORT bool CheckExists(Utf8String id);
     REALITYDATAPLATFORM_EXPORT SQLINTEGER SaveServer(SpatialEntityServerCR server);
 };

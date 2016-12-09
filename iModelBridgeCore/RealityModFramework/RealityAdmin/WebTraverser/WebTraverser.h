@@ -10,7 +10,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <RealityPlatform/RealityPlatformAPI.h>
-#include <RealityPlatform/SpatialEntityData.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include "RealityAdmin/ISpatialEntityTraversalObserver.h"
 
 #include <curl/curl.h>
@@ -34,7 +34,7 @@ public:
 
     virtual void OnFileListed(bvector<Utf8String>& fileList, Utf8CP file, Utf8CP dataset);
     virtual void OnFileDownloaded(Utf8CP file);
-    virtual void OnDataExtracted(SpatialEntityDataCR data);
+    virtual void OnDataExtracted(SpatialEntityCR data);
     };
 
 

@@ -43,6 +43,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 
 $(o)SpatialEntityClient$(oext) : $(baseDir)SpatialEntityClient.cpp $(PublicApiDir)SpatialEntityClient.h ${MultiCompileDepends}
 
+$(o)SpatialEntityHandler$(oext) : $(baseDir)SpatialEntityHandler.cpp $(PublicApiDir)SpatialEntityHandler.h ${MultiCompileDepends}
+
 $(o)RealityPlatformUtil$(oext) : $(baseDir)RealityPlatformUtil.cpp $(PublicApiDir)RealityPlatformUtil.h ${MultiCompileDepends}
 
 $(o)RealityDataHandler$(oext) : $(baseDir)RealityDataHandler.cpp $(PublicApiDir)RealityDataHandler.h ${MultiCompileDepends}

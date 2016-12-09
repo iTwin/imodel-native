@@ -70,19 +70,19 @@ void ShowUsage()
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-Utf8CP EnumString(SpatialEntityStatus status)
+Utf8CP EnumString(SpatialEntityHandlerStatus status)
     {
     switch (status)
         {
-        case SpatialEntityStatus::Success:
+        case SpatialEntityHandlerStatus::Success:
             return "Success";
-        case SpatialEntityStatus::ClientError:
+        case SpatialEntityHandlerStatus::ClientError:
             return "Client Error";
-        case SpatialEntityStatus::CurlError:
+        case SpatialEntityHandlerStatus::CurlError:
             return "Curl Error";
-        case SpatialEntityStatus::DataExtractError:
+        case SpatialEntityHandlerStatus::DataExtractError:
             return "Data Extract Error";
-        case SpatialEntityStatus::DownloadError:
+        case SpatialEntityHandlerStatus::DownloadError:
             return "Download Error";
         default:
             return "Unknown Error";
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
         return 0;
         }
 
-    SpatialEntityStatus status = SpatialEntityStatus::UnknownError;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::UnknownError;
     SpatialEntityClientPtr client = nullptr;
     for (int i = 0; i < UrlCount; ++i)
         {
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
             client->SetObserver(new WebTraversalObserver(updateMode, dualMode, dbName.c_str(), pwszConnStr.c_str(), true));
             status = client->GetData();
-            if (status != SpatialEntityStatus::Success)
+            if (status != SpatialEntityHandlerStatus::Success)
                 {
                 std::cout << "Status: Failed, " << EnumString(status) << std::endl;
                 continue;
@@ -300,7 +300,7 @@ void WebTraversalObserver::OnFileDownloaded(Utf8CP file)
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Spencer.Mason            	    8/2016
 //-------------------------------------------------------------------------------------
-void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityDataCR data)
+void WebTraversalObserver::OnDataExtracted(RealityPlatform::SpatialEntityCR data)
     {
     for (size_t index = 0 ; index < data.GetDataSourceCount() ; index++)
         {

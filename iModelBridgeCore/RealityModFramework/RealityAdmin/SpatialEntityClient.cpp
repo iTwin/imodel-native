@@ -9,7 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <BeXml/BeXml.h>
 
-#include <RealityPlatform/SpatialEntityData.h>
+#include <RealityPlatform/SpatialEntity.h>
 #include <RealityPlatform/RealityDataDownload.h>
 #include <RealityAdmin/SpatialEntityClient.h>
 #include <RealityAdmin/ISpatialEntityTraversalObserver.h>
@@ -35,9 +35,9 @@ int SpatialEntityClient::m_retryCount = 0;
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) const
+SpatialEntityHandlerStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) const
 {
-    SpatialEntityStatus status = SpatialEntityStatus::UnknownError;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::UnknownError;
 
     // Set working directory.
     Utf8String workingDir = outputDirPath;
@@ -48,7 +48,7 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
         BeFileName::BeGetTempPath(tempDirPath);
         if (!tempDirPath.IsEmpty())
         {
-            tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\SpatialEntityData\\");
+            tempDirPath.AppendToPath(L"Bentley\\ConceptStationApp\\.RealityData\\SpatialEntity\\");
             BeFileName::CreateNewDirectory(tempDirPath.GetName());
             workingDir = tempDirPath.GetNameUtf8().c_str();
         }
@@ -57,11 +57,11 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
     // Perform file listing request.
     bvector<Utf8String> fileList;
     status = GetFileList(fileList);
-    if (SpatialEntityStatus::Success != status)
+    if (SpatialEntityHandlerStatus::Success != status)
         return status;
 
     if (fileList.empty())
-        return SpatialEntityStatus::Success; // There is no file to download. This is not an error because all files may already be in the cache and there is no need to redownload them.
+        return SpatialEntityHandlerStatus::Success; // There is no file to download. This is not an error because all files may already be in the cache and there is no need to redownload them.
 
                                              // Construct data mapping (FileFullPathAndName, FileNameOnly) for files to download.
     RealityDataDownload::UrlLink_UrlFile urlList;
@@ -91,7 +91,7 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
     // Download files.
     RealityDataDownloadPtr pDownload = RealityDataDownload::Create(urlList);
     if (pDownload == NULL)
-        return SpatialEntityStatus::DownloadError;
+        return SpatialEntityHandlerStatus::DownloadError;
 
     if (!m_certificatePath.IsEmpty())
         pDownload->SetCertificatePath(m_certificatePath.GetName());
@@ -99,7 +99,7 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
     pDownload->SetStatusCallBack(ConstructRepositoryMapping);
     RealityDataDownload::DownloadReport* dlReport = pDownload->Perform();
     if (dlReport == nullptr) // This means that no new file were downloaded (all from cache)
-        return SpatialEntityStatus::Success;
+        return SpatialEntityHandlerStatus::Success;
 
     /*Utf8String report;
     dlReport->ToXml(report);*/
@@ -110,7 +110,7 @@ SpatialEntityStatus SpatialEntityClient::DownloadContent(Utf8CP outputDirPath) c
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus SpatialEntityClient::GetFileList(bvector<Utf8String>& fileList) const
+SpatialEntityHandlerStatus SpatialEntityClient::GetFileList(bvector<Utf8String>& fileList) const
 {
     return _GetFileList(m_pServer->GetUrl().c_str(), fileList);
 }
@@ -118,17 +118,17 @@ SpatialEntityStatus SpatialEntityClient::GetFileList(bvector<Utf8String>& fileLi
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    5/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus SpatialEntityClient::GetData() const
+SpatialEntityHandlerStatus SpatialEntityClient::GetData() const
 {
-    SpatialEntityStatus status = SpatialEntityStatus::UnknownError;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::UnknownError;
 
     // Download files from root. Store them in our temp directory.
     status = DownloadContent();
-    if (SpatialEntityStatus::Success != status)
+    if (SpatialEntityHandlerStatus::Success != status)
         return status;
 
     // Data extraction.
-    SpatialEntityDataPtr pExtractedData = SpatialEntityData::Create();
+    SpatialEntityPtr pExtractedData = SpatialEntity::Create();
     for (size_t i = 0; i < m_dataRepositories.size(); ++i)
     {
         //&&JFC TODO: Can do better ?
@@ -347,9 +347,9 @@ SpatialEntityResponsePtr SpatialEntityRequest::Perform()
     res = curl_easy_perform(curl.Get());
 
     // Check for errors.
-    SpatialEntityStatus status = SpatialEntityStatus::Success;
+    SpatialEntityHandlerStatus status = SpatialEntityHandlerStatus::Success;
     if (CURLE_OK != res || response.empty())
-        status = SpatialEntityStatus::CurlError;
+        status = SpatialEntityHandlerStatus::CurlError;
 
     return SpatialEntityResponse::Create(m_url.c_str(), response.c_str(), status);
 }
@@ -359,13 +359,13 @@ SpatialEntityResponsePtr SpatialEntityRequest::Perform()
 //-------------------------------------------------------------------------------------
 SpatialEntityResponsePtr SpatialEntityResponse::Create()
 {
-    return new SpatialEntityResponse("", "", SpatialEntityStatus::UnknownError);
+    return new SpatialEntityResponse("", "", SpatialEntityHandlerStatus::UnknownError);
 }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityResponsePtr SpatialEntityResponse::Create(Utf8CP effectiveUrl, Utf8CP m_content, SpatialEntityStatus traversalStatus)
+SpatialEntityResponsePtr SpatialEntityResponse::Create(Utf8CP effectiveUrl, Utf8CP m_content, SpatialEntityHandlerStatus traversalStatus)
 {
     return new SpatialEntityResponse(effectiveUrl, m_content, traversalStatus);
 }
@@ -389,7 +389,7 @@ Utf8StringCR SpatialEntityResponse::GetContent() const
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityStatus SpatialEntityResponse::GetStatus() const
+SpatialEntityHandlerStatus SpatialEntityResponse::GetStatus() const
 {
     return m_status;
 }
@@ -401,12 +401,12 @@ bool SpatialEntityResponse::IsSuccess() const
 {
     return (!m_effectiveUrl.empty() &&
         !m_content.empty() &&
-        (SpatialEntityStatus::Success == m_status));
+        (SpatialEntityHandlerStatus::Success == m_status));
 }
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    4/2016
 //-------------------------------------------------------------------------------------
-SpatialEntityResponse::SpatialEntityResponse(Utf8CP effectiveUrl, Utf8CP content, SpatialEntityStatus status)
+SpatialEntityResponse::SpatialEntityResponse(Utf8CP effectiveUrl, Utf8CP content, SpatialEntityHandlerStatus status)
     : m_effectiveUrl(effectiveUrl), m_content(content), m_status(status)
 {}
