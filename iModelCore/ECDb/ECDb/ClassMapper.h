@@ -18,11 +18,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ClassMapper final
     {
     private:
-        ClassMapR m_classMap;
+        ClassMap& m_classMap;
         DbClassMapLoadContext const* m_loadContext;
 
-        explicit ClassMapper(ClassMapR classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
-        ClassMapper(ClassMapR classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
+        explicit ClassMapper(ClassMap& classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
+        ClassMapper(ClassMap& classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
 
         PropertyMap* ProcessProperty(ECN::ECPropertyCR);
 
@@ -40,8 +40,8 @@ struct ClassMapper final
 
     public:
         static BentleyStatus DetermineColumnInfo(DbColumn::CreateParams&, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString);
-        static PropertyMap* MapProperty(ClassMapR classMap, ECN::ECPropertyCR ecProperty);
-        static PropertyMap* LoadPropertyMap(ClassMapR classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
+        static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);
+        static PropertyMap* LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);
         static BentleyStatus CreateECClassIdPropertyMap(ClassMap& classMap);
         static BentleyStatus SetupNavigationPropertyMap(NavigationPropertyMap& propertyMap);

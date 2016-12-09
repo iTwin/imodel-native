@@ -7,10 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
-#include <ECDb/ECInstanceId.h>
-#include <ECDb/ECDbTypes.h>
 #include <ECDb/ECSqlStatus.h>
+#include <ECObjects/ECObjectsAPI.h>
+#include <BeSQLite/BeSQLite.h>
+#include <Bentley/BeId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -158,7 +158,7 @@ public:
     //!            If an invalid @p relationshipECClassId is passed, NULL will be bound to it. This is only correct
     //!            if the relationshipECClassId is optional. ECDb does not validate the input.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId);
+    ECDB_EXPORT ECSqlStatus BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId = ECN::ECClassId());
     
     //! Binds a VirtualSet to the SQL function @b InVirtualSet.
     //! The parameter must be the first parameter in the InVirtualSet function.

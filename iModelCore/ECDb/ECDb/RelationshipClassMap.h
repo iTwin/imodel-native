@@ -87,6 +87,8 @@ struct RelationshipClassMap : ClassMap
         static bool ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const&);
     };
 
+typedef RelationshipClassMap const& RelationshipClassMapCR;
+
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/

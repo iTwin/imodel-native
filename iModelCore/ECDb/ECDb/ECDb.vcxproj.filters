@@ -412,6 +412,9 @@
     <ClInclude Include="DbColumnFactory.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h">
+      <Filter>PublicApi</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">

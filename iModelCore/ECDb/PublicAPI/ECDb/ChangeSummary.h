@@ -7,8 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
 #include <ECDb/ECInstanceId.h>
+#include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 
 ECDB_TYPEDEFS(ChangeSummary);

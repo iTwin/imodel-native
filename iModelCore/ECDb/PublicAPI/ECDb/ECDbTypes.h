@@ -9,8 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/Bentley.h>
-#include <BeSQLite/BeSQLite.h>
-#include <ECObjects/ECObjectsAPI.h>
 
 #if defined (__ECDB_BUILD__)
     #define ECDB_EXPORT EXPORT_ATTRIBUTE
@@ -24,22 +22,4 @@
 
 #define ECDB_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_SQLITE_EC_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) END_BENTLEY_SQLITE_EC_NAMESPACE
-
-#if !defined (DOCUMENTATION_GENERATOR)
-#define ECDB_TYPEDEFS_PTR(_name_)   \
-    ECDB_TYPEDEFS(_name_)           \
-    BEGIN_BENTLEY_SQLITE_EC_NAMESPACE    \
-    typedef RefCountedPtr<_name_>         _name_##Ptr;  \
-    END_BENTLEY_SQLITE_EC_NAMESPACE
-
-#define ECDB_TYPEDEFS2(_type_,_name_) \
-    BEGIN_BENTLEY_SQLITE_EC_NAMESPACE \
-        typedef _type_  _name_; \
-        typedef _name_*          _name_##P;  \
-        typedef _name_&          _name_##R;  \
-        typedef _name_ const*    _name_##CP; \
-        typedef _name_ const&    _name_##CR; \
-    END_BENTLEY_SQLITE_EC_NAMESPACE
-
-#endif
 

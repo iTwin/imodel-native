@@ -51,6 +51,11 @@ struct ECClassIdPropertyMap;
 struct DbClassMapLoadContext;
 struct DbMapSaveContext;
 
+struct ClassMap;
+typedef RefCountedPtr<ClassMap> ClassMapPtr;
+typedef ClassMap const& ClassMapCR;
+typedef ClassMap const* ClassMapCP;
+
 //=======================================================================================
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======

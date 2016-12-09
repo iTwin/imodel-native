@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
 #include <ECDb/ECSqlStatement.h>
 #include <Bentley/NonCopyableClass.h>
 

@@ -7,9 +7,10 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
 #include <ECDb/ECSqlColumnInfo.h>
-#include <ECDb/ECInstanceId.h>
+#include <ECDb/ECSqlStatus.h>
+#include <BeSQLite/BeSQLite.h>
+#include <Bentley/BeId.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

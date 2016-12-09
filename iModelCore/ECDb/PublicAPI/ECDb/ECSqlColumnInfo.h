@@ -8,6 +8,7 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 #include <ECDb/ECDbTypes.h>
+#include <ECObjects/ECObjectsAPI.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

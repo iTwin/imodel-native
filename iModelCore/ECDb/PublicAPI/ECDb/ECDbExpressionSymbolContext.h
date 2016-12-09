@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
-
 #include <ECDb/ECDb.h>
 #include <ECObjects/ECExpressions.h>
 

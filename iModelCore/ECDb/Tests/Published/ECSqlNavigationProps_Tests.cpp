@@ -1321,7 +1321,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
 
     IECInstancePtr elementInst = elementClass->GetDefaultStandaloneEnabler()->CreateInstance();
     ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Code", ECValue("TestCode-1", true)));
-    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", ECValue(modelKey.GetECInstanceId().GetValue(), &relClass)));
+    ASSERT_EQ(ECObjectsStatus::Success, elementInst->SetValue("Model", ECValue(modelKey.GetECInstanceId(), &relClass)));
 
     ASSERT_EQ(BE_SQLITE_OK, elementInserter.Insert(elementKey, *elementInst));
     ecdb.SaveChanges();
@@ -1370,7 +1370,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ECInstanceAdapter)
             ASSERT_EQ(ECObjectsStatus::Success, inst->GetValue(v, "Model"));
             ASSERT_FALSE(v.IsNull()) << "Model is not expected to be null in the read ECInstance";
             ECValue::NavigationInfo const& navInfo = v.GetNavigationInfo();
-            ASSERT_EQ(modelKey.GetECInstanceId().GetValue(), navInfo.GetIdAsLong()) << "Model via ECInstance";
+            ASSERT_EQ(modelKey.GetECInstanceId(), navInfo.GetId<ECInstanceId>()) << "Model via ECInstance";
             ASSERT_EQ(relClass.GetId().GetValue(), navInfo.GetRelationshipClassId().GetValue()) << "Model via ECInstance";
             }
         else
@@ -1435,7 +1435,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, JsonAdapter)
 
     Utf8String newElementJsonStr;
     newElementJsonStr.Sprintf("{\"Code\":\"TestCode-1\","
-                              " \"Model\":{\"Id\":\"%s\"}}", modelKey.GetECInstanceId().ToString().c_str());
+                              " \"Model\":{\"id\":\"%s\"}}", modelKey.GetECInstanceId().ToString().c_str());
 
     rapidjson::Document newElementJson;
     ASSERT_FALSE(newElementJson.Parse<0>(newElementJsonStr.c_str()).HasParseError());
