@@ -420,19 +420,20 @@ struct  PublishTileNode : ModelTileNode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
+virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override
     {
-    TileMeshList        tileMeshes;
-    Transform           sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
+    PublishableTileGeometry publishableGeometry;
+    TileMeshList&           tileMeshes =  publishableGeometry.Meshes();
+    Transform               sceneToTile = Transform::FromProduct(GetTransformFromDgn(), m_scene->GetLocation());
 
     if (nullptr == m_node->_GetChildren(true))
         {
         BeAssert(false);
-        return tileMeshes;
+        return publishableGeometry;
         }
 
     if (0.0 == m_node->_GetMaximumSize())       // Don't bother returning meshes - this node will never be displayed.
-        return tileMeshes;
+        return publishableGeometry;
 
     bmap <Publish3mxTexture*, TileMeshBuilderPtr>  builderMap;
 
@@ -509,7 +510,7 @@ virtual TileMeshList _GenerateMeshes(DgnDbR dgnDb, TileGeometry::NormalMode norm
         if (!builder.second->GetMesh()->IsEmpty())
             tileMeshes.push_back(builder.second->GetMesh());
         
-    return tileMeshes;
+    return publishableGeometry;
     }
 
 };  //  PublishTileNode
