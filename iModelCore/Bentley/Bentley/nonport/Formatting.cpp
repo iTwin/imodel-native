@@ -1004,7 +1004,7 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     Rewind();
     m_unicodeConst = new UnicodeConstant();
     m_totalScanLength = (nullptr == utf8Text)? 0 : strlen(utf8Text);
-    if (scanLength > 0 && scanLength <= m_totalScanLength)
+    if (scanLength > 0 && (size_t)scanLength <= m_totalScanLength)
         m_totalScanLength = scanLength;
     }
 
