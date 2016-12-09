@@ -96,7 +96,7 @@
     </Part>
 
     <!-- Check that code samples in docs/samplecode actually compile -->
-    <Part Name="DgnPlatformDoc-Build-SampleCode" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
+    <Part Name="DgnPlatformDoc-Build-SampleCode" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SUB_DIR=samplecode -dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnPlatform/docs/samplecode">
         <SubPart PartName="PublishedApi"/>
     </Part>
 
@@ -143,7 +143,7 @@
     <!-- These tests are linked into various test products. -->
     <!-- ********************************************************************************************** -->
 
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
         <Bindings>
@@ -176,7 +176,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-NonPublished" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
+    <Part Name="UnitTests-NonPublished" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
@@ -186,7 +186,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="TestFixtureForUnitTests" />
         <!-- Performance tests use DgnDbTestDgnManager, which is implemented in BackDoor -->
@@ -196,7 +196,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="BackdoorForUnitTests"/> <!-- BuildTests.mke cannot be called in parallel because it always makes a static symlink; ensure it was run once in isolation -->
         <SubPart PartName="PublishedApi" />
         <Bindings>
@@ -391,7 +391,7 @@
       <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGtest.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatformTest -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -405,7 +405,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnPlatform-Gtest/DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/DgnPlatform-Gtest/DgnPlatformTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="DgnPlatform-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -416,7 +416,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_DELIVERY_SUBDIR=ANJUP -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -429,7 +429,7 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=DgnPlatform-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="DgnPlatform-AndroidJUnit"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/DgnPlatform-AndroidJUnit.log</Files>
@@ -439,7 +439,7 @@
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
-    <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-Tests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -452,7 +452,7 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=DgnPlatform-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="DgnPlatform-iOSXCTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/DgnPlatform-iOSXCTest.log</Files>
@@ -464,7 +464,7 @@
     <!-- *********************************************************** -->
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
-        Name="UwpTest"
+        Name="UwpTest" DeferType="BuildUnitTests"
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=DgnPlatform -dTEST_COLLECTION_PRODUCT=DgnPlatform-Tests"
         OnlyPlatforms="WinRT*"
@@ -555,7 +555,7 @@
         <Directories DirectoryListName="BimConsoleDirList" />
     </Product>
 
-    <Part Name="BimConsoleExe" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64">
+    <Part Name="BimConsoleExe" DeferType="BuildSamples" BentleyBuildMakeFile="BimConsole/BimConsole.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnPlatformLib"/>
         <SubPart PartName="DgnPlatformSqlang"/>
         <Bindings>
@@ -576,20 +576,20 @@
     <!-- // TilePublisher                                                           // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="TilePublisherPrewire" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
+    <Part Name="TilePublisherPrewire" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisher.prewire.mke">
         <SubPart PartName="DgnPlatformLib" />
         <Bindings>
             <Files SubPartDirectory="TilePublisher/include/TilePublisher">Delivery/TilePublisher/TilePublisher.h</Files>
         </Bindings>
     </Part>
 
-    <Part Name="CesiumJs" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
+    <Part Name="CesiumJs" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/CesiumJs.mke">
         <Bindings>
             <Directory SourceName="Delivery/TilePublisher/scripts" ProductDirectoryName="Assets" ProductSubDirectory="scripts" />
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherLib" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
+    <Part Name="TilePublisherLib" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/lib/TilePublisherLib.mke">
         <SubPart PartName="CesiumJs" />
         <SubPart PartName="TilePublisherPrewire" />
         <SubPart PartName="GeoCoord"            PartFile="GeoCoord"             Repository="geocoord"/>
@@ -601,7 +601,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="TilePublisherExe" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <Part Name="TilePublisherExe" DeferType="BuildSamples" BentleyBuildMakeFile="TilePublisher/exe/TilePublisherExe.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubPart PartName="TilePublisherLib" />
         <SubPart PartName="DgnPlatformSqlang" />
         <Bindings>
