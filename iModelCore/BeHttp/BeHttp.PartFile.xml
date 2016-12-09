@@ -26,8 +26,9 @@
         <SubPart PartName="PublicAPI"            PartFile="BeCasablanca"     Repository="Libsrc-casablanca"/>
     </Part>
          
-    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi">
+    <Part Name="PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=folly">
         <SubPart PartName="PublicAPI" />
+        <SubPart PartName="FollyShim"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" SubPartDirectory="PublishedApi/BeHttp" />
         </Bindings>
