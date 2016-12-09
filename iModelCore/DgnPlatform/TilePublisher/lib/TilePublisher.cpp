@@ -360,6 +360,21 @@ static void addTransform(Json::Value& nodeValue, TransformCR transform)
     translationValue.append(translation.x);
     translationValue.append(translation.y);
     translationValue.append(translation.z);
+
+    RotMatrix   rotation = RotMatrix::From(transform);
+
+    if (!rotation.IsIdentity())
+        {
+        DPoint4d    quaternion;
+
+        rotation.GetQuaternion(quaternion, false);
+
+        Json::Value&    rotationValue = nodeValue["rotation"];
+        rotationValue.append (quaternion.x);
+        rotationValue.append (quaternion.y);
+        rotationValue.append (quaternion.z);
+        rotationValue.append (quaternion.w);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
