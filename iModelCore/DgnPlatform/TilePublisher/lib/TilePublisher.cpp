@@ -871,7 +871,7 @@ Utf8String TilePublisher::AddMeshMaterial (Json::Value& rootValue, bool& isTextu
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String TilePublisher::AddPolylineMaterial (Json::Value& rootValue, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix)
     {
-    Utf8String      materialName = Utf8String ("Material_") + suffix;
+    Utf8String      materialName = Utf8String ("PolylineMaterial_") + suffix;
 
     if (nullptr == displayParams)
         return materialName;
