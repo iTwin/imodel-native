@@ -47,6 +47,8 @@ public:
         {
         Render::Image m_image;  // filled by _ReadFromSource
 
+        BentleyStatus DoGetFromSource();
+
         RasterTileLoader(TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Utf8StringCR cacheKey) : TileTree::TileLoader("", tile, loads, cacheKey) {}
             
         virtual ~RasterTileLoader(){}

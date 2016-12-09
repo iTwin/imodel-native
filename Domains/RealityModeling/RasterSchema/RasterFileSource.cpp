@@ -30,10 +30,36 @@ static HFCPtr<HRPPixelType> getTileQueryPixelType(HRARaster const& raster, Rende
     return new HRPPixelTypeV24R8G8B8();
     }
 
+//=======================================================================================
+// Since we can only create one tile at a time, we serialize all requests through a single thread.
+// This avoids all of the requests blocking in the IoPool.
+// @bsiclass                                                    Mathieu.Marchand 12/16
+//=======================================================================================
+struct RasterFileThread : BeFolly::ThreadPool
+    {
+    RasterFileThread() : ThreadPool(1, "RasterFile") {}
+    static RasterFileThread& Get() { static folly::Singleton<RasterFileThread> s_pool; return *s_pool.try_get_fast(); }
+    };
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> RasterFileTile::RasterTileLoader::_GetFromSource()
+    {
+    RefCountedPtr<RasterTileLoader> me(this);
+    return folly::via(&RasterFileThread::Get(), [me] ()
+        {
+        if (me->IsCanceledOrAbandoned())
+            return ERROR;
+
+        return me->DoGetFromSource();
+        });
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+BentleyStatus RasterFileTile::RasterTileLoader::DoGetFromSource()
     {
     RasterFileTile& rasterTile = static_cast<RasterFileTile&>(*m_tile.get());
 
@@ -162,8 +188,9 @@ RasterFileSource::RasterFileSource(RasterFileR rasterFile, RasterFileModel& mode
 Render::Image RasterFileSource::QueryTile(TileId const& id, bool& alphaBlend)
     {
     // Imagepp CopyFrom is not thread safe. sequentialize the queries.
-    static std::mutex s_ippMutex;
-    std::unique_lock<std::mutex> __ippLock(s_ippMutex);
+    // >>> We now run all qeury thru a single thread pool 'RasterFileThread' so no more than one request will run at the same time.
+//     static std::mutex s_ippMutex;
+//     std::unique_lock<std::mutex> __ippLock(s_ippMutex);
 
     // Must be done within lock because GetRasterP might load the raster.
     if (m_rasterFile == nullptr || m_rasterFile->GetRasterP() == nullptr)
@@ -194,7 +221,7 @@ Render::Image RasterFileSource::QueryTile(TileId const& id, bool& alphaBlend)
     if (ImagePPStatus::IMAGEPP_STATUS_Success != pTileBitmap->CopyFrom(*m_rasterFile->GetRasterP(), opts))
         return Render::Image();
 
-    __ippLock.unlock(); // done with imagepp...
+    //__ippLock.unlock(); // done with imagepp...
 
 #if defined (NEEDS_WORK_READ_IMAGE)
     alphaBlend = (Render::Image::Format::Rgba == imageFormat || Render::Image::Format::Bgra == imageFormat);
