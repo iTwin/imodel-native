@@ -118,7 +118,7 @@ TEST (BeStringUtilitiesTests, Strupr)
         EXPECT_STREQ("HELLO 5! THERE?", outStr) << outStr;
         }
         {
-            wchar_t* nonasc = L"\u20AC"; // this is the Euro symbol
+            wchar_t const* nonasc = L"\u20AC"; // this is the Euro symbol
             Utf8String nonasc_utf8(nonasc);    // s/ be E2 82 AC 00
             ScopedArray<char> nonascbuf(nonasc_utf8.size() + 1);
             strcpy(nonascbuf.GetData(), nonasc_utf8.c_str());
@@ -276,16 +276,16 @@ TEST (BeStringUtilitiesTests, ReverseStr)
 TEST (BeStringUtilitiesTests, Duplicate)
     {
         {
-        char * inStr = TESTDATA_String;
-        char * outStr = BeStringUtilities::Strdup(inStr);
+        char const* inStr = TESTDATA_String;
+        char const* outStr = BeStringUtilities::Strdup(inStr);
         EXPECT_TRUE(inStr != outStr);
         EXPECT_STREQ(inStr, outStr) ;
         delete outStr;
         }
 
         {
-        wchar_t * inStr = TESTDATA_StringW;
-        wchar_t * outStr = BeStringUtilities::Wcsdup(inStr);
+        wchar_t const* inStr = TESTDATA_StringW;
+        wchar_t const* outStr = BeStringUtilities::Wcsdup(inStr);
         EXPECT_TRUE(inStr != outStr);
         EXPECT_STREQ(inStr, outStr);
         delete outStr;
@@ -1257,7 +1257,7 @@ TEST (BeStringUtilitiesTests, Wcsupr)
     EXPECT_STREQ(L"DGN V8", BeStringUtilities::Wcsupr(str3));
 
     // Start with a non-ascii string. In this case, it has no upper-case version. So, upr should do nothing.
-    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    WCharCP nonasc = L"\u20AC"; // this is the Euro symbol
     WChar nonasc_buf[2] = {L'\u20AC', L'\0'};
     EXPECT_STREQ(nonasc, BeStringUtilities::Wcsupr(nonasc_buf));
     }

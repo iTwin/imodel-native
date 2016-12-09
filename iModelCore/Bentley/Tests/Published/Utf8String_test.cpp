@@ -371,7 +371,7 @@ TEST(Utf8StringTest, ToUpper)
     EXPECT_STREQ("123$%^ ABC", Utf8String("123$%^ AbC").ToUpper().c_str());
 
     // To Upper Non Ascii
-    WCharP nonasc = L"\u20AC"; // this is the Euro symbol
+    WCharCP nonasc = L"\u20AC"; // this is the Euro symbol
     //  Convert to UTF8 and lowercase it
     Utf8String nonasc_utf8(nonasc);    // s/ be E2 82 AC 00
     Utf8String nonasc_utf8_src(nonasc);    // s/ be E2 82 AC 00
