@@ -22,3 +22,7 @@ ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
+
+#following catch diamand issues
+ECDbMappingTestFixture.DiamondProblem_Case1
+ECDbMappingTestFixture.DiamondProblem_Case2
