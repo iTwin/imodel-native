@@ -298,7 +298,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithSource_SchemaHasOneMatchingBac
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "B");
     auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "A");
@@ -406,7 +406,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingBac
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "B");
     auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "A");
@@ -572,7 +572,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasOneMatc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.A");
@@ -626,7 +626,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.AA");
@@ -680,7 +680,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasParentC
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.BB");
@@ -725,7 +725,7 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
     auto sourceClass = adapter.GetECClass("TestSchema.A");
@@ -789,7 +789,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesWithSource_SchemaHasThreeMatchin
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
 
@@ -932,7 +932,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasTwoMatchingRel
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
     auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
@@ -1034,7 +1034,7 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelClassOne
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     auto sourceClass = db.GetClassLocater().LocateClass("TestSchema", "A");
     auto targetClass = db.GetClassLocater().LocateClass("TestSchema", "B");
@@ -2161,7 +2161,7 @@ TEST_F(ECDbAdapterTests, ExtractECInstanceKeys_StatementWithIdsPassed_ReturnsKey
 
     auto cache = ECSchemaCache::Create();
     cache->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*cache));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(cache->GetSchemas()));
 
     ECDbAdapter adapter(db);
 
