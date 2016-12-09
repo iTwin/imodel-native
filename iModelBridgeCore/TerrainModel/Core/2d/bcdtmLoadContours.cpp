@@ -1604,10 +1604,11 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              testTime = bcdtmClock();
              intOffset = (long)((contourParams.conMin - contourParams.conReg) / contourParams.interval);
              firstContour = contourParams.conReg + ((double)intOffset) * contourParams.interval;
+             long firstContourIndex = intOffset;
              intOffset = (long)((contourParams.conMax - contourParams.conReg) / contourParams.interval) + 1;
              lastContour = contourParams.conReg + ((double)intOffset) * contourParams.interval;
 
-             long numContours = (long)((lastContour - firstContour) / contourParams.interval);
+             long numContours = intOffset - firstContourIndex;
 
              ContourProcessing processing(contourParams, numContours, firstContour, tinLine2P, dtmP, clipDtmP, voidsInDtm, contourIndex, fenceParamsP, pondAppData, loadFunctionP, userP);
              if (processing.Process()) goto errexit;
