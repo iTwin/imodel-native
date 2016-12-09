@@ -23,6 +23,7 @@ USING_NAMESPACE_BENTLEY_TASKS
 +---------------+---------------+---------------+---------------+---------------+------*/
 ApplicationEventsManager& ApplicationEventsManager::GetInstance()
     {
+    // NOTE: This is not thread safe!
     static ApplicationEventsManager* s_instance;
 
     if (s_instance == nullptr)
