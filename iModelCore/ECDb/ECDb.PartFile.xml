@@ -41,14 +41,14 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECDbPrepareDocGeneration">
+    <Part Name="ECDbPrepareDocGeneration" DeferType="BuildDocs">
         <SubPart PartName="PublishedApi" />
         <SubPart PartName="ECDbExtractCodeSamples" />
         <SubPart PartName="ECDbBuildCodeSamples" />
         <SubPart PartName="StandardSchemasBim" PartFile="ECStandards"  Repository="ECStandards"/>
     </Part>
 
-    <Part Name="ECDbExtractCodeSamples" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECDb">
+    <Part Name="ECDbExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=ECDb/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/ECDb">
         <SubPart PartName="ECDbLibrary" />
         <SubPart PartName="PublishedApi" />
         <Bindings>
@@ -56,7 +56,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="ECDbBuildCodeSamples" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)ECDb/ECDb/ECDbPolicy.mki">
+    <Part Name="ECDbBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)ECDb/ECDb/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=ecdbsamplecode -dPolicyFile=$(SrcRoot)ECDb/ECDb/ECDbPolicy.mki">
         <SubPart PartName="ECDbLibrary" />
         <SubPart PartName="PublishedApi" />
     </Part>
@@ -69,7 +69,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PrewireForUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
+    <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/Prewire.mke">
         <SubPart PartName="ECDb"/>
         <SubPart PartName="Zlib"                             PartFile="Zlib"         Repository="Libsrc-Compress" />
         <Bindings>
@@ -84,7 +84,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Performance" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
+    <Part Name="UnitTests-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="BackDoorForUnitTests"/>
         <Bindings>
@@ -92,7 +92,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="UnitTests-Published" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
+    <Part Name="UnitTests-Published" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi">
         <SubPart PartName="BackDoorForUnitTests" />
         <SubPart PartName="PublishedApi" />
         <Bindings>
@@ -112,7 +112,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTest -dTEST_COLLECTION_PRODUCT=ECDb-Tests" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -126,7 +126,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest/ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest/ECDbTest" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECDb-Gtest" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -137,7 +137,7 @@
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
     <!-- ********************** -->
-    <Part Name="AndroidJUnit" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
+    <Part Name="AndroidJUnit" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/MakeJUnitTestProject.mke" BentleyBuildMakeOptions="-dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1 -dTEST_ANDROID_MIN_SDK_VERSION=19" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="AndroidJUnitTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -150,7 +150,7 @@
         <Directories DirectoryListName="AndroidJUnitProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunAndroidJUnitTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECDb-AndroidJUnit" OnlyPlatforms="Android*">
+    <Part Name="RunAndroidJUnitTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/Android/RunAndroidJUnitTest.mke" BentleyBuildMakeOptions="-dANDROIDJUNIT_PRODUCT=ECDb-AndroidJUnit" OnlyPlatforms="Android*">
         <SubProduct ProductName="ECDb-AndroidJUnit"/>
         <Bindings>
           <Files Required="false" SubPartDirectory="ANJU/Logs">Delivery/ANJU/Logs/ECDb-AndroidJUnit.log</Files>
@@ -160,7 +160,7 @@
     <!-- ********************** -->
     <!-- **** iOSXCTest **** -->
     <!-- ********************** -->
-    <Part Name="iOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*">
         <SubProduct ProductName="ECDb-Tests"/>
         <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -173,7 +173,7 @@
         <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RuniOSXCTest" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECDb-iOSXCTest" OnlyPlatforms="iOS*">
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=ECDb-iOSXCTest" OnlyPlatforms="iOS*">
         <SubProduct ProductName="ECDb-iOSXCTest"/>
         <Bindings>
             <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/ECDb-iOSXCTest.log</Files>
@@ -185,7 +185,7 @@
     <!-- *********************************************************** -->
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
-        Name="UwpTest"
+        Name="UwpTest" DeferType="BuildUnitTests"
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
         OnlyPlatforms="WinRT*"
@@ -220,7 +220,7 @@
     <!-- *********************************************************** -->
     <!-- N.B. ApiNumber is important here because we must manually reference some DLLs, and thus need an accruate suffix to find them. -->
     <Part
-        Name="UwpTest"
+        Name="UwpTest" DeferType="BuildUnitTests"
         BentleyBuildMakeFile="${SrcRoot}BeGTest/uwp/MakeUwpTestProject.mke"
         BentleyBuildMakeOptions="-dTEST_NAME=ECDb -dTEST_COLLECTION_PRODUCT=ECDb-Tests"
         OnlyPlatforms="WinRT*"
@@ -257,7 +257,7 @@
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="Gtest-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTestPerformance -dTEST_COLLECTION_PRODUCT=ECDb-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
+    <Part Name="Gtest-Performance" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" BentleyBuildMakeOptions="-dTEST_NAME=ECDbTestPerformance -dTEST_COLLECTION_PRODUCT=ECDb-Tests-Performance" OnlyPlatforms="x86,x64,Linux*,MacOS*">
         <SubProduct ProductName="ECDb-Tests-Performance"/>
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
@@ -271,7 +271,7 @@
         <Directories DirectoryListName="GtestProduct" Repository="BeGTest" PartFile="BeGTest"/>
     </Product>
 
-    <Part Name="RunGtest-Performance" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest-Performance/ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
+    <Part Name="RunGtest-Performance" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGTest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ECDb-Gtest-Performance/ECDbTestPerformance -dGTEST_OUTPUT_DIR=$(OutputRootDir)build/ECDb" OnlyPlatforms="x86,x64,MacOs*,Linux*">
         <SubProduct ProductName="ECDb-Gtest-Performance" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
