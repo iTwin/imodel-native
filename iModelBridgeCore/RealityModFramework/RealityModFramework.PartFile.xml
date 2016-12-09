@@ -57,11 +57,18 @@
         </Bindings>
     </Part>
     
+    <Part Name="BentleyDesktopClient-Api" BentleyBuildMakeFile="RealityModFrameworkBentleyDesktopClient.prewire.mke" OnlyPlatforms="x64">
+        <SubPart PartName="ConnectClientAPI"           PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        <Bindings>
+            <Assemblies>Delivery/*.dll</Assemblies>
+        </Bindings>
+    </Part>
+    
     <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="RealityPlatform"/>
         <SubPart PartName="RealityAdmin"/>
-        <SubPart PartName="ConnectClientAPI"           PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
+        <SubPart PartName="BentleyDesktopClient-Api"/>
         <Bindings>
             <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
         </Bindings>
