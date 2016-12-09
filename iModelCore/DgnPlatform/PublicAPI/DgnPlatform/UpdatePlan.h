@@ -251,6 +251,7 @@ struct DgnQueryQueue
         DgnViewportR m_vp;
         ViewController& m_view;
         UpdatePlan m_plan;
+        bool m_abortFlag = false;
         folly::Promise<BentleyStatus> m_promise;
 
     public:
@@ -259,7 +260,8 @@ struct DgnQueryQueue
         uint32_t GetDelayAfter() {return m_plan.m_query.GetDelayAfter();}
         bool IsForView(ViewController const& view) const {return &m_view == &view;}
         folly::Promise<BentleyStatus>& GetPromise() {return m_promise;}
-        void RequestAbort();
+        void RequestAbort() {m_abortFlag = true;}
+        bool IsAborted() {return m_abortFlag;}
     };
 
     typedef RefCountedPtr<Task> TaskPtr;

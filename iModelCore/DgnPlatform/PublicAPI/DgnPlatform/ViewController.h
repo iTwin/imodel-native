@@ -121,6 +121,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         bool m_complete = false;
         uint32_t m_progressiveTotal = 0;
         bool Contains(DgnElementId id) const {return m_members.find(id) != m_members.end();}
+        ~Scene() {}
     };
     typedef RefCountedPtr<Scene> ScenePtr;
 
@@ -133,19 +134,17 @@ protected:
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
-    enum class SceneState : int {Invalid=0, Queued=1, Loading=2, Ready=3, };
-
+    mutable BeMutex m_mutex;
     DgnDbR m_dgndb;
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     RotMatrix m_defaultDeviceOrientation;
     bool m_defaultDeviceOrientationValid = false;
     bool m_noQuery = false;
-    mutable bool m_abortScene = false;
     SpecialElements m_special;
-    BeAtomic<SceneState> m_sceneState;
-    ScenePtr m_scene;
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
+    ScenePtr m_currentScene;
+    ScenePtr m_readyScene;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -160,7 +159,7 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) = 0;
+    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -202,9 +201,9 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
-    void InvalidateScene() {RequestAbort(false); m_sceneState.store(SceneState::Invalid);}
-    bool IsSceneReady() const {return m_sceneState.load() == SceneState::Ready;}
-
+    DGNPLATFORM_EXPORT void InvalidateScene();
+    bool IsSceneReady() const;
+    ScenePtr UseReadyScene() {BeMutexHolder lock(m_mutex); std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     virtual void _DoHeal(HealContext&) {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
@@ -252,9 +251,9 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
-    ScenePtr GetScene() const {return m_scene;}
+    ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
@@ -589,7 +588,7 @@ public:
 
     public:
         RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
-        void DoQuery();
+        void DoQuery(DgnQueryQueue::Task&);
     };
 
     //=======================================================================================
@@ -646,7 +645,7 @@ protected:
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -912,7 +911,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;

@@ -145,8 +145,6 @@ void ViewController::RequestAbort(bool wait)
     auto& queue = GetDgnDb().GetQueryQueue();
     queue.RemovePending(*this);
 
-    m_abortScene = true;
-
     if (wait)
         queue.WaitFor(*this);
     }
@@ -154,7 +152,7 @@ void ViewController::RequestAbort(bool wait)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan) 
+ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) 
     {
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
@@ -168,7 +166,7 @@ ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp,
     query.SetSizeFilter(vp, GetSceneLODSize());
 
     if (!m_noQuery)
-        query.DoQuery();
+        query.DoQuery(task);
 
     return results;
     }
@@ -493,8 +491,8 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 THREAD_MAIN_IMPL DgnQueryQueue::Main(void* arg)
     {
-    BeThreadUtilities::SetCurrentThreadName("QueryModel");
-    DgnDb::SetThreadId(DgnDb::ThreadId::Query);
+    BeThreadUtilities::SetCurrentThreadName("SceneCreate");
+    DgnDb::SetThreadId(DgnDb::ThreadId::Scene);
 
     ((DgnQueryQueue*)arg)->Process();
 
@@ -533,10 +531,16 @@ void DgnQueryQueue::RemovePending(ViewControllerCR view)
     // But remove any other previously-queued processing requests for this model.
     BeMutexHolder lock(m_cv.GetMutex());
 
+    if (m_active.IsValid() && m_active->IsForView(view))
+        m_active->RequestAbort();  // if we're working on a query tell it to stop
+
     for (auto iter = m_pending.begin(); iter != m_pending.end(); )
         {
         if ((*iter)->IsForView(view))
+            {
+            (*iter)->RequestAbort();
             iter = m_pending.erase(iter);
+            }
         else
             ++iter;
         }
@@ -562,7 +566,6 @@ void DgnQueryQueue::Add(Task& task)
     m_cv.notify_all();
     }
 
-void DgnQueryQueue::Task::RequestAbort() {m_view.m_abortScene = true;}
 
 /*---------------------------------------------------------------------------------**//**
 * Note: Must be called with query queue mutex held!
@@ -632,7 +635,7 @@ bool DgnQueryQueue::WaitForWork()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnQueryQueue::Process()
     {
-    DgnDb::VerifyQueryThread();
+    DgnDb::VerifySceneThread();
 
     while (WaitForWork())
         {
@@ -683,7 +686,7 @@ void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::RangeQuery::DoQuery()
+void SpatialViewController::RangeQuery::DoQuery(DgnQueryQueue::Task& task)
     {
     StopWatch watch(true);
 
@@ -716,7 +719,7 @@ void SpatialViewController::RangeQuery::DoQuery()
             break;
 
         BeAssert(m_lastId==thisId.GetValueUnchecked());
-        if (m_view.m_abortScene)
+        if (task.IsAborted())
             {
             ERROR_PRINTF("Query aborted");
             return;
@@ -838,9 +841,10 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
     PROGRESSIVE_PRINTF("begin progressive display");
 
     DgnElementId thisId;
+    ScenePtr scene = m_view.GetScene();
     while ((thisId=GetNextId()).IsValid())
         {
-        if (!m_view.m_scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
+        if (!scene->Contains(thisId) && m_rangeQuery.TestElement(thisId))
             {
             if (SUCCESS != context.VisitElement(thisId, true)) // no, draw it now
                 {
@@ -854,7 +858,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
                 m_setTimeout = true;
                 }
 
-            ++m_view.m_scene->m_progressiveTotal;
+            ++scene->m_progressiveTotal;
             }
 
         if (m_batchSize && ++m_thisBatch >= m_batchSize) // limit the number or elements added per batch
@@ -881,7 +885,7 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 
     // alway show the last batch.
     wantShow = WantShow::Yes;
-    PROGRESSIVE_PRINTF("finished progressive. Total=%d", m_view.m_scene->m_progressiveTotal);
+    PROGRESSIVE_PRINTF("finished progressive. Total=%d", scene->m_progressiveTotal);
     return Completion::Finished;
     }
 
@@ -890,10 +894,11 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_DoHeal(HealContext& context)
     {
-    if (!m_scene.IsValid() || m_scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
+    ScenePtr scene = GetScene();
+    if (!scene.IsValid() || scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
        return;
 
-    if (m_scene->m_progressiveTotal == 0) // temporary
+    if (scene->m_progressiveTotal == 0) // temporary
         return;
 
     HEAL_PRINTF("begin heal ");
@@ -904,14 +909,14 @@ void SpatialViewController::_DoHeal(HealContext& context)
     uint32_t total=0;
     while (!context.CheckStop() && (thisId=query.StepRtree()).IsValid())
         {
-        if (!m_scene->Contains(thisId) && query.TestElement(thisId))
+        if (!scene->Contains(thisId) && query.TestElement(thisId))
             {
             ++total;
             context._HealElement(thisId); 
             }
         }
 
-    BeAssert(m_scene->m_progressiveTotal >= total);
+    BeAssert(scene->m_progressiveTotal >= total);
     HEAL_PRINTF("done heal, total=%d, abort=%d", total, context.WasAborted());
     }
 

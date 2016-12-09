@@ -164,6 +164,16 @@ DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::InvalidateScene()
+    {
+    RequestAbort(false); 
+    BeMutexHolder lock(m_mutex);
+    m_readyScene = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * return the extents of the target model, if there is one.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1703,7 +1713,7 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan) 
+ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) 
     {
     QueryResults results;
     return results;
