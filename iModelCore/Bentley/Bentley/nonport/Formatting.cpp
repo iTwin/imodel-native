@@ -21,6 +21,81 @@ USING_NAMESPACE_BENTLEY
 #define   RMINI4                  (-2147483648.0)
 #define   RMAXUI4                 4294967295.0
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String PresentationTypeName(PresentationType type)
+    {
+    switch (type)
+        {
+        case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
+        case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
+        case PresentationType::ScientificNorm: return FormatConstant::FPN_Scientific();
+        default:
+        case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String SignOptionName(ShowSignOption opt)
+    {
+    switch (opt)
+        {
+        case ShowSignOption::NoSign: return FormatConstant::FPN_NoSign();
+        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
+        case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
+        default:
+        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String DecimalPrecisionName(DecimalPrecision prec)
+    {
+    switch (prec)
+        {
+        case DecimalPrecision::Precision1: return FormatConstant::FPN_Precision1();
+        case DecimalPrecision::Precision2: return FormatConstant::FPN_Precision2();
+        case DecimalPrecision::Precision3: return FormatConstant::FPN_Precision3();
+        case DecimalPrecision::Precision4: return FormatConstant::FPN_Precision4();
+        case DecimalPrecision::Precision5: return FormatConstant::FPN_Precision5();
+        case DecimalPrecision::Precision6: return FormatConstant::FPN_Precision6();
+        case DecimalPrecision::Precision7: return FormatConstant::FPN_Precision7();
+        case DecimalPrecision::Precision8: return FormatConstant::FPN_Precision8();
+        case DecimalPrecision::Precision9: return FormatConstant::FPN_Precision9();
+        case DecimalPrecision::Precision10: return FormatConstant::FPN_Precision10();
+        case DecimalPrecision::Precision11: return FormatConstant::FPN_Precision11();
+        case DecimalPrecision::Precision12: return FormatConstant::FPN_Precision12();
+        default:
+        case DecimalPrecision::Precision0: return FormatConstant::FPN_Precision0();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String FractionallPrecisionName(FractionalPrecision prec)
+    {
+    switch (prec)
+        {
+        case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec2();
+        default:
+        case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
+        }
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -34,7 +109,7 @@ double NumericFormat::PrecisionFactor() const
 
 DecimalPrecision NumericFormat::ConvertToPrecision(size_t num)
     {
-        switch (num)
+    switch (num)
         {
         case 1: return DecimalPrecision::Precision1;
         case 2: return DecimalPrecision::Precision2;        
@@ -52,19 +127,18 @@ DecimalPrecision NumericFormat::ConvertToPrecision(size_t num)
         }
     }
 
-void NumericFormat::DefaultInit(size_t precision)
+void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
     {
-    m_minTreshold = 1.0e-16;
-    m_presentationType = PresentationType::Decimal;
-    m_signOption = ShowSignOption::OnlyNegative;
-    m_showDotZero = false;
-    m_replace0Empty = false;
+    m_name = name;
     m_decPrecision = ConvertToPrecision(precision);
-    m_fractPrecision = FractionalPrecision::Sixteenth;
+    m_minTreshold = FormatConstant::FPV_minTreshold();
+    m_presentationType = FormatConstant::DefaultPresentaitonType();
+    m_signOption = FormatConstant::DefaultSignOption();
+    m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
     m_useThousandsSeparator = false;
-    m_decimalSeparator = '.';
-    m_thousandsSeparator = ',';
-    m_ZeroControl = ZeroControl::DefaultZeroes;
+    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    m_ZeroControl = FormatConstant::DefaultZeroControl();
     SetKeepSingleZero(true);
     SetKeepDecimalPoint(true);
     }
@@ -126,27 +200,27 @@ void NumericFormat::SetKeepSingleZero(bool keep)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 void NumericFormat::SetZeroEmpty(bool empty)
-{
+    {
     size_t temp = static_cast<int>(m_ZeroControl);
     if (empty)
         temp |= static_cast<int>(ZeroControl::ZeroEmpty);
     else
         temp &= ~static_cast<int>(ZeroControl::ZeroEmpty);
     m_ZeroControl = static_cast<ZeroControl>(temp);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 void NumericFormat::SetExponentZero(bool empty)
-{
+    {
     size_t temp = static_cast<int>(m_ZeroControl);
     if (empty)
         temp |= static_cast<int>(ZeroControl::ExponentZero);
     else
         temp &= ~static_cast<int>(ZeroControl::ExponentZero);
     m_ZeroControl = static_cast<ZeroControl>(temp);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -308,7 +382,7 @@ int NumericFormat::FormatInteger (int n, char* bufOut,  int bufLen)
         textLen = bufLen;
     memcpy(bufOut, &buf[ind], textLen--);
     return textLen;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -322,7 +396,7 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
     while (buf[i] == '0' && index > 0)
         {
         if (m_decimalSeparator == buf[i - 1])
-         {
+            {
             if (IfKeepSingleZero()) // preserve decimal separator and a single zero after it
                 break;
             i--;
@@ -330,7 +404,7 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
                 break;
             i--;
             break;
-         }
+            }
         i--;
         }
 
@@ -736,6 +810,63 @@ Utf8StringCR FormatDictionary::CodeToName(ParameterCode paramCode)
     return (nullptr == par)? static_cast<Utf8StringCR>(nullptr) : par->GetName();
     }
 
+Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix)
+    {
+    Utf8StringP str = new Utf8String();
+    if (!name.empty())
+        {
+        str->append( prefix + name);
+        if (!value.empty())
+            {
+            str->push_back('=');
+            if (0 != quote)
+                str->push_back(quote);
+            str->append(value);
+            if (0 != quote)
+                str->push_back(quote);
+            }
+        }
+    return str;
+    }
+
+Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
+    {
+    Utf8StringP str = new Utf8String();
+
+
+    str->append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetName(), '\"', ""));
+    str->append(" " + PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
+    str->append(" " + SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    str->append(" " + DecimalPrecisionName(format.GetDecimalPrecision()));
+    str->append(" " + FractionallPrecisionName(format.GetFractionalPrecision()));
+    if (format.IfKeepTrailingZeroes())
+        str->append(" " + FormatConstant::FPN_TrailingZeroes());
+    if (format.IfUseLeadingZeroes())
+        str->append(" " + FormatConstant::FPN_LeadingZeroes());
+    if (format.IfKeepDecimalPoint())
+        str->append(" " + FormatConstant::FPN_KeepDecimalPoint());
+    if (format.IfKeepSingleZero())
+        str->append(" " + FormatConstant::FPN_KeepSingleZero());
+
+    //Utf8String          m_name;                  // name or ID of the format
+    //double              m_minTreshold;
+    //PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
+    //ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    //ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+    //bool                m_showDotZero;
+    //bool                m_replace0Empty;
+    //DecimalPrecision    m_decPrecision;          // Precision0...12
+    //FractionalPrecision m_fractPrecision;
+    //bool                m_useThousandsSeparator; // UseThousandSeparator
+    //Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+    //Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+
+
+
+    return str;
+    }
+
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -827,7 +958,7 @@ NumericTriad::NumericTriad()
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
     {
-    NumericFormat fmt;
+    NumericFormat fmt("FW");
     fmt.SetDecimalPrecision(prec);
     return fmt.FormatDouble(GetWhole());
     }
@@ -837,7 +968,7 @@ Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatTriad(Utf8StringCP topName, Utf8StringCP midName, Utf8StringCP lowName, bool includeZero)
     {
-    NumericFormat fmt;
+    NumericFormat fmt("FT");
     Utf8String blank = Utf8String(" ");
     if (nullptr == topName || topName->size() < 1)
         topName = &blank;
@@ -1004,7 +1135,7 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     Rewind();
     m_unicodeConst = new UnicodeConstant();
     m_totalScanLength = (nullptr == utf8Text)? 0 : strlen(utf8Text);
-    if (scanLength > 0 && scanLength <= m_totalScanLength)
+    if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
     }
 
@@ -1177,7 +1308,7 @@ Utf8String FormatStopWatch::LastIntervalMetrics(size_t amount)
     m_totalElapsed += m_lastInterval;
     m_lastAmount = amount;
     m_totalAmount += amount;
-    NumericFormat nfmt = NumericFormat(6);
+    NumericFormat nfmt = NumericFormat("LIM", 6);
     nfmt.SetUseSeparator(true);
     Utf8String amTxt = nfmt.FormatInteger((int)amount);
     Utf8String duraTxt = (amount > 0) ? nfmt.FormatDouble(m_lastInterval / (double)amount) : "n/a";
