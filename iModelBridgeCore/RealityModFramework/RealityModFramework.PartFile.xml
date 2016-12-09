@@ -56,6 +56,15 @@
             <Assemblies>Delivery/AwsTraverser.exe</Assemblies>
         </Bindings>
     </Part>
+    
+    <Part Name="RealityContextTest" BentleyBuildMakeFile="RealityAdmin\RealityContextTest\RealityContextTest.mke">
+        <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityAdmin"/>
+        <Bindings>
+            <Assemblies>Delivery/RealityContextTest.exe</Assemblies>
+        </Bindings>
+    </Part>
 
     <Part Name="RealityCrawler" BMakeFile="RealityCrawler\RealityCrawler.mke">
         <SubPart PartName="BentleyCrawlerLibNet"/>
@@ -145,6 +154,7 @@
         <SubPart PartName="ConversionToolsTester"/>
         <SubPart PartName="WebTraverser"/>
         <SubPart PartName="AwsTraverser"/>
+        <SubPart PartName="RealityContextTest"/>
     </Part>
 
     <Part Name="RealityDbECPlugin" BMakeFile="RealityDbECPlugin\RealityDbECPlugin.mke" OnlyPlatforms="x86,x64">
