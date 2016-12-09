@@ -632,12 +632,13 @@ struct Modify
     //! @return SUCCESS if spin could be completed.
     DGNPLATFORM_EXPORT static BentleyStatus SpinBody(IBRepEntityR target, DRay3dCR axis, double angle);
 
-    //! Modify the target body by adding a pad or pocket constructed from the sheet tool body and its imprint on the target body.
+    //! Modify the target body by adding a pad or pocket constructed from the sheet tool body and its swept imprint on the target body.
     //! @param[in,out] target The target body to modify, can be a sheet or solid.
-    //! @param[in] tool The planar sheet body for the emboss profile.
-    //! @param[in] reverseDirection true to reverse tool surface normal. Material is added in the opposite direction as the surface normal (points outwards from solid).
+    //! @param[in] tool The sheet body for the emboss end cap.
+    //! @param[in] reverseDirection true to reverse tool surface normal. Material is added in the opposite direction as the surface normal when creating a pad (points outwards from solid).
+    //! @param[in] direction Optional direction for swept sidewall (aligned with outward normal of end cap). If not specified tool surface normal at center of uv range is used.
     //! @return SUCCESS if emboss operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus Emboss(IBRepEntityR target, IBRepEntityCR tool, bool reverseDirection);
+    DGNPLATFORM_EXPORT static BentleyStatus Emboss(IBRepEntityR target, IBRepEntityCR tool, bool reverseDirection, DVec3dCP direction = nullptr);
 
     //! Modify the target sheet body by thickening to create a solid body.
     //! @param[in,out] target The target sheet body to thicken.

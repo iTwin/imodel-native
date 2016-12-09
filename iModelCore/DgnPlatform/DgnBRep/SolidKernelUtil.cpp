@@ -2024,7 +2024,7 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection)
+BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection, DVec3dCP direction)
     {                           
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType()) 
@@ -2040,12 +2040,6 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     if (PK_ENTITY_null == toolTag)
         return ERROR;
 
-    DRange3d targetRange;
-
-    if (SUCCESS != PSolidUtil::GetEntityRange(targetRange, targetTag))
-        return ERROR;
- 
-    DRay3d      toolRay = DRay3d::FromOriginAndVector(DPoint3d::FromZero(), DVec3d::UnitZ());
     Transform   invTargetTransform, toolTransform;
 
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
@@ -2056,14 +2050,22 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag))
         return ERROR;
 
-    PSolidUtil::GetPlanarFaceData(&toolRay.origin, &toolRay.direction, toolFaces.front()); // Don't check status, allow non-planar surface...
+    DVec3d      drawDir = DVec3d::UnitZ();
 
-    toolTransform.Multiply(toolRay.origin);
-    toolTransform.MultiplyMatrixOnly(toolRay.direction);
-    toolRay.direction.Normalize();
+    if (nullptr == direction)
+        {
+        PSolidUtil::GetPlanarFaceData(nullptr, &drawDir, toolFaces.front()); // Don't check status, allow non-planar surface...
+        toolTransform.MultiplyMatrixOnly(drawDir);
+        }
+    else
+        {
+        invTargetTransform.MultiplyMatrixOnly(drawDir, *direction);
+        }
+
+    drawDir.Normalize();
 
     if (reverseDirection)
-        toolRay.direction.Negate();
+        drawDir.Negate();
             
     PK_BODY_emboss_o_t  options;
     PK_TOPOL_track_r_t  tracking;
@@ -2076,7 +2078,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     options.sidewall_data.sidewall = PK_emboss_sidewall_swept_c;
     options.convexity = PK_emboss_convexity_both_c; // Let pad or pocket be determined by whether cap is "above" or "below" target body according to emboss direction...
     options.overflow_data.laminar_walled = true;
-    toolRay.direction.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
+    drawDir.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
 
     PK_MARK_t   markTag = PK_ENTITY_null;
 
