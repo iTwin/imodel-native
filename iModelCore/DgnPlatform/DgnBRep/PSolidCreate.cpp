@@ -1198,7 +1198,7 @@ BentleyStatus PSolidGeom::BodyFromGPA (PK_BODY_t* body, PK_VERTEX_t* startVertex
         if (i > 0 && gpa->IsMajorBreak (i-1) && cap && SUCCESS == PSolidUtil::CoverWires (currBody))
             {
             if (0 != holeBody)
-                PSolidUtil::Boolean (NULL, NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
+                PSolidUtil::Boolean (NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
 
             pki_make_minimal_body (&holeBody);
             currBody = holeBody;
@@ -1352,7 +1352,7 @@ BentleyStatus PSolidGeom::BodyFromGPA (PK_BODY_t* body, PK_VERTEX_t* startVertex
         if (cap)
             {
             if (SUCCESS == (status = PSolidUtil::CoverWires (currBody)) && 0 != holeBody)
-                PSolidUtil::Boolean (NULL, NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
+                PSolidUtil::Boolean (NULL, PK_boolean_subtract, false, *body, &holeBody, 1, PKI_BOOLEAN_OPTION_AllowDisjoint);
 
             // TR# 270092. - For some reason the cover function will sometimes create bad bodies that contain cone rather than
             // planar surfaces and cause "hangs" when queried. Apparently Nick Shulga is alive and well and working on ParaSolid.
@@ -1421,7 +1421,7 @@ static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* start
             }
 
         if (SUCCESS == status && regions.size () > 0)
-            status = PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, &regions[0], (int) regions.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
+            status = PSolidUtil::Boolean (NULL, PK_boolean_unite, false, bodyTag, &regions[0], (int) regions.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
 
         if (SUCCESS != status)
             {
@@ -1466,7 +1466,7 @@ static BentleyStatus bodyFromCurveVector (PK_BODY_t& bodyTag, PK_VERTEX_t* start
             }
 
         if (SUCCESS == status && holes.size () > 0)
-            status = PSolidUtil::Boolean (NULL, NULL, coverClosed ? PK_boolean_subtract : PK_boolean_unite, !coverClosed, bodyTag, &holes[0], (int) holes.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
+            status = PSolidUtil::Boolean (NULL, coverClosed ? PK_boolean_subtract : PK_boolean_unite, !coverClosed, bodyTag, &holes[0], (int) holes.size (), PKI_BOOLEAN_OPTION_AllowDisjoint);
 
         if (SUCCESS != status)
             {
@@ -2679,7 +2679,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 
                         if (resultTags.size () > 1)
                             {
-                            status = PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, &resultTags.at (1), (int) resultTags.size ()-1, PKI_BOOLEAN_OPTION_None);
+                            status = PSolidUtil::Boolean (NULL, PK_boolean_unite, false, bodyTag, &resultTags.at (1), (int) resultTags.size ()-1, PKI_BOOLEAN_OPTION_None);
 
                             if (SUCCESS == status && primitive.GetCapped ())
                                 pki_create_solid_by_capping (&bodyTag);
