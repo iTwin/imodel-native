@@ -3931,7 +3931,7 @@ public:
     //! @return A status code indicating whether the ECversion was successfully parsed into the a major and minor version.
     static ECObjectsStatus          ParseECVersion(uint32_t &ecVersionMajor, uint32_t &ecVersionMinor, ECVersion ecVersion);
 
-    //! Writes an ECSchema from an ECSchemaXML-formatted file
+    //! Reads an ECSchema from an ECSchemaXML-formatted file
     //! @code
     //! // The IECSchemaOwner determines the lifespan of any ECSchema objects that are created using it.
     //! // ECSchemaCache also caches ECSchemas and implements IStandaloneEnablerLocater for use by ECSchemaReadContext
