@@ -19,15 +19,23 @@ TEST_F(DataCaptureTests, CreateCamera)
     DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
     ASSERT_TRUE(spatialModelPtr.IsValid());
     ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
 
     // Create Camera
+    auto cameraTypePtr = CameraType::Create(*definitonModelP);
+    cameraTypePtr->Insert();
+
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
-    auto cameraPtr = Camera::Create(*spatialModelP);
+    auto cameraPtr = Camera::Create(*spatialModelP,cameraTypePtr->GetId());
     ASSERT_TRUE(cameraPtr.IsValid());
 
     //Change camera properties
     cameraPtr->SetLabel("BasicCamera1");
-    cameraPtr->SetFocalLenghtPixels(4798.35);
+    cameraPtr->SetFocalLength(4798.35);
     cameraPtr->SetImageWidth(5456);
     cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint={2677.8,1772};
@@ -50,7 +58,8 @@ TEST_F(DataCaptureTests, CreateCamera)
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Camera failed";
 
     //Close project to flush memory
-    cameraPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    cameraTypePtr=nullptr;
     cameraInsertedPtr=nullptr;
     CloseProject();
 
@@ -64,7 +73,7 @@ TEST_F(DataCaptureTests, CreateCamera)
     ASSERT_EQ(cameraId, myCamPtr->GetElementId());
 
     //read back camera properties and check if equal
-    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),4798.35);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLength(),4798.35);
     ASSERT_EQ(5456,myCamPtr->GetImageWidth());
     ASSERT_EQ(3632,myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
@@ -91,6 +100,10 @@ TEST_F(DataCaptureTests, ModifyCamera)
     DgnModelPtr spatialModelPtr =projectPtr->Models().GetModel(spatialModelId);
     ASSERT_TRUE(spatialModelPtr.IsValid());
     ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
 
     // Query Camera element
     DgnElementId cameraId  = Camera::QueryForIdByLabel(*projectPtr,cameraLabel.c_str());
@@ -99,7 +112,7 @@ TEST_F(DataCaptureTests, ModifyCamera)
     ASSERT_TRUE(cameraPtr.IsValid());
 
     //Change camera properties
-    cameraPtr->SetFocalLenghtPixels(12);
+    cameraPtr->SetFocalLength(12);
     cameraPtr->SetImageWidth(13);
     cameraPtr->SetImageHeight(14);
     DPoint2d principalPoint={15,16};
@@ -139,13 +152,13 @@ TEST_F(DataCaptureTests, ModifyCamera)
     ASSERT_EQ(cameraId, myCamPtr->GetElementId());
 
     //read back camera properties and check if equal
-    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLenghtPixels(),12);
+    ASSERT_DOUBLE_EQ(myCamPtr->GetFocalLength(),12);
     ASSERT_EQ(13, myCamPtr->GetImageWidth());
     ASSERT_EQ(14, myCamPtr->GetImageHeight());
     ASSERT_TRUE(principalPoint.IsEqual(myCamPtr->GetPrincipalPoint()));
     ASSERT_TRUE(nullptr != myCamPtr->GetRadialDistortion());
     ASSERT_TRUE(pRadialDistortion->IsEqual(*(myCamPtr->GetRadialDistortion())));
-    ASSERT_TRUE(nullptr !=myCamPtr->GetTangentialDistortion());
+    ASSERT_TRUE(nullptr != myCamPtr->GetTangentialDistortion());
     ASSERT_TRUE(pTangentialDistortion->IsEqual(*(myCamPtr->GetTangentialDistortion())));
     ASSERT_DOUBLE_EQ(myCamPtr->GetAspectRatio(),2.0);
     ASSERT_DOUBLE_EQ(myCamPtr->GetSkew(),3.0);
@@ -217,12 +230,20 @@ TEST_F(DataCaptureTests, CreatePhoto)
     ASSERT_TRUE(spatialModelPtr.IsValid());
     ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
 
     // Create Camera
-    auto cameraPtr = Camera::Create(*spatialModelP);
+    auto cameraTypePtr = CameraType::Create(*definitonModelP);
+    cameraTypePtr->Insert();
+
+    auto cameraPtr = Camera::Create(*spatialModelP,cameraTypePtr->GetId());
     ASSERT_TRUE(cameraPtr.IsValid());
     cameraPtr->SetLabel("BasicCamera1");
-    cameraPtr->SetFocalLenghtPixels(4798.35);
+    cameraPtr->SetFocalLength(4798.35);
     cameraPtr->SetImageWidth(5456);
     cameraPtr->SetImageHeight(3632);
     DPoint2d principalPoint = { 2677.8,1772 };
@@ -268,6 +289,7 @@ TEST_F(DataCaptureTests, CreatePhoto)
     PhotoPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
     PhotoInsertedPtr=nullptr;
     cameraPtr=nullptr;
+    cameraTypePtr = nullptr;
     cameraInsertedPtr=nullptr;
     CloseProject();
 
@@ -509,13 +531,17 @@ TEST_F(DataCaptureTests, ImportXMLFile)
     ASSERT_TRUE(modelPtr.IsValid());
     ASSERT_TRUE(modelPtr->IsSpatialModel());
     SpatialModelPtr spatialModelPtr =  modelPtr->ToSpatialModelP();
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
 
 
     BeFileName assetsDirectory = GetHost().GetDgnPlatformAssetsDirectory();
     BeFileName xmlFileName = assetsDirectory;
     xmlFileName.AppendToPath(L"TestFiles/BLOCK_DEF_SOL_AERIEN.xml");
 
-    XmlReader myReader(*spatialModelPtr);
+    XmlReader myReader(*spatialModelPtr, *(definitonModelPtr->ToDefinitionModelP()));
     ASSERT_EQ(SUCCESS, myReader.ReadXml(xmlFileName));
 
     }
@@ -533,13 +559,17 @@ TEST_F(CCPhotoPlannerTests, ImportXMLFileFormat2)
     ASSERT_TRUE(modelPtr.IsValid());
     ASSERT_TRUE(modelPtr->IsSpatialModel());
     SpatialModelPtr spatialModelPtr =  modelPtr->ToSpatialModelP();
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(*projectPtr);
+    DgnModelPtr definitonModelPtr = projectPtr->Models().GetModel(definitionModelId);
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
 
 
     BeFileName assetsDirectory = GetHost().GetDgnPlatformAssetsDirectory();
     BeFileName xmlFileName = assetsDirectory;
     xmlFileName.AppendToPath(L"TestFiles/myBlock.xml");
 
-    XmlReader myReader(*spatialModelPtr);
+    XmlReader myReader(*spatialModelPtr,*(definitonModelPtr->ToDefinitionModelP()));
     ASSERT_EQ(SUCCESS, myReader.ReadXml(xmlFileName));
 
     }

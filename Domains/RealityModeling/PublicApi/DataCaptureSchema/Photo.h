@@ -109,7 +109,7 @@ private:
 
 protected:
 
-    Photo(CreateParams const& params, CameraElementId camera=CameraElementId()) : T_Super(params), m_camera(camera) {}
+    explicit Photo(CreateParams const& params, CameraElementId camera=CameraElementId()) : T_Super(params), m_camera(camera) {}
 
     static BentleyStatus InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb, PhotoElementId photoElmId, CameraElementId cameraElmId);
     static CameraElementId QueryPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb,  PhotoElementId photoElmId);

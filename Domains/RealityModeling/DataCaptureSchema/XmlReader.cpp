@@ -12,6 +12,14 @@
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+XmlReader::XmlReader(Dgn::SpatialModelR spatialModel, Dgn::DefinitionModelR definitionModel)
+:m_spatialModel(spatialModel), m_definitionModel(definitionModel), m_dgndb(spatialModel.GetDgnDb()), m_photoGroupNumber(0) 
+    {}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Marc.Bedard                          11/2016
 //---------------------------------------------------------------------------------------
@@ -75,17 +83,17 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         photoGroupName = Utf8PrintfString("Unnamed photo group %d", photoGroupNumber);
         }
 
-    BeXmlStatus status(BEXML_Success);
+    BeXmlStatus status(BEXML_Success);                          
     Utf8String              cameraModelType;
     if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraModelType, "CameraModelType")))
         {
         //NEEDSWORK: Not Yet
-        //cameraInfo.SetCameraModel(focalLengthPixels);
+        //cameraInfo.SetCameraModel(cameraModelType);
         }
-    double                  focalLengthPixels;
-    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLengthPixels, "FocalLengthPixels")))
+    double                  focalLength;
+    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLength, "FocalLength")))
         {
-        cameraInfo.SetFocalLenghtPixels(focalLengthPixels);
+        cameraInfo.SetFocalLength(focalLength);
         }
 
     int                     ImgDimWidth(0);
@@ -221,14 +229,21 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
         photoGroupName = Utf8PrintfString("Unnamed photo group %d", m_photoGroupNumber);
         }
 
-    CameraPtr pCameraInfo(Camera::Create(m_model));
+    
+    //Assume one camera type by photo group
+    CameraTypePtr pCameraTypeInfo(CameraType::Create(m_definitionModel));
+    //Insert into the database
+    Dgn::DgnDbStatus dbStatus;
+    pCameraTypeInfo->Insert(&dbStatus);
+
+
+    CameraPtr pCameraInfo(Camera::Create(m_spatialModel,pCameraTypeInfo->GetId()));
     if (BEXML_Success != (status = ReadCameraInfo(photoGroupNode, *pCameraInfo, m_photoGroupNumber)))
         {
         return status;
         }
 
     //Insert into the database
-    Dgn::DgnDbStatus dbStatus;
     pCameraInfo->Insert(&dbStatus);
 
     BeXmlDom::IterableNodeSet photoList;
@@ -236,7 +251,7 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
 
     for (BeXmlNodeP const& photoNode : photoList)
         {
-        PhotoPtr pPhoto(Photo::Create(m_model,pCameraInfo->GetId()));
+        PhotoPtr pPhoto(Photo::Create(m_spatialModel,pCameraInfo->GetId()));
         BeXmlStatus status = ReadPhotoNode(*photoNode,*pPhoto);
         if (BEXML_Success != status)
             return status;

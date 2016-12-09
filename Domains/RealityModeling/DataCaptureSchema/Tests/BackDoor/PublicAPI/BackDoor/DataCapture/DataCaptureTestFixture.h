@@ -40,6 +40,8 @@ struct DataCaptureTestsFixture : ::testing::Test
         static DataCaptureProjectHost& GetHost() { return *m_host; }
 
         static Dgn::DgnModelId QueryFirstSpatialModelId(Dgn::DgnDbR db);
+        static Dgn::DgnModelId QueryFirstDefinitionModelId(DgnDbR db);
+
 
         //! Creates and caches a fresh "created" file to make the whole process faster
         static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);

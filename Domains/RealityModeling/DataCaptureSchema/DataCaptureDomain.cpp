@@ -18,6 +18,7 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
     RegisterHandler(RadialDistortionHandler::GetHandler());
     RegisterHandler(TangentialDistortionHandler::GetHandler());
     RegisterHandler(CameraHandler::GetHandler());    
+    RegisterHandler(CameraTypeHandler::GetHandler());
     RegisterHandler(PhotoHandler::GetHandler());
     }
 

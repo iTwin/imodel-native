@@ -51,6 +51,36 @@ DgnModelId DataCaptureTestsFixture::QueryFirstSpatialModelId(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId DataCaptureTestsFixture::QueryFirstDefinitionModelId(DgnDbR db)
+    {
+    for (auto const& modelEntry : db.Models().MakeIterator())
+        {
+        if ((DgnModel::DictionaryId() == modelEntry.GetModelId()))
+            continue;
+
+        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
+        if (model->IsDefinitionModel() && dynamic_cast<DefinitionModelP>(model.get()))
+            return modelEntry.GetModelId();
+        }
+
+    //Create a definition model
+    auto& handler = dgn_ModelHandler::Definition::GetHandler();
+    DgnClassId classId = db.Domains().GetClassId(handler);
+    DgnCode modelCode = DgnModel::CreateModelCode("DataCaptureDefinition");
+    DefinitionModelPtr model = DefinitionModel::Create(DefinitionModel::CreateParams(db, classId, modelCode));
+    if (DgnDbStatus::Success == model->Insert())
+        {
+        return model->GetModelId();
+        }
+
+    BeAssert(false && "No DefinitionModelP found");
+    return DgnModelId();
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr DataCaptureTestsFixture::CreateProject(WCharCP baseName, bool needsSetBriefcase)
@@ -149,13 +179,14 @@ void DataCaptureTestsFixture::CloseProject()
 void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCamera(Dgn::DgnDbR dgndb, Utf8CP cameraLable)
     {
     DgnModelId spatialModelId = QueryFirstSpatialModelId(dgndb);
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(dgndb);
     DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
 
     // Create Camera
     auto cameraPtr = Camera::Create(*spatialModelP);
     cameraPtr->SetLabel(cameraLable);
-    cameraPtr->SetFocalLenghtPixels(4798.35);
+    cameraPtr->SetFocalLength(4798.35);
     ImageDimensionType imgDimension(5456, 3632);
     cameraPtr->SetImageDimension(imgDimension);
     DPoint2d principalPoint = { 2677.8,1772 };

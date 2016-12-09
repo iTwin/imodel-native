@@ -22,9 +22,10 @@ struct XmlReader
 {
 
 private:
-    Dgn::SpatialModelR m_model;  //Data capture information can be store on any spatial model
-    Dgn::DgnDbR        m_dgndb;
-    long               m_photoGroupNumber;
+    Dgn::SpatialModelR      m_spatialModel;     //Data capture information can be store on any spatial model
+    Dgn::DefinitionModelR   m_definitionModel;  //Data capture definition can be store on any definition model
+    Dgn::DgnDbR             m_dgndb;
+    long                    m_photoGroupNumber;
 
 
 
@@ -38,7 +39,7 @@ private:
 
 public:
     //! Constructor
-    DATACAPTURE_EXPORT XmlReader(Dgn::SpatialModelR model) : m_model(model), m_dgndb(model.GetDgnDb()),m_photoGroupNumber(0) {}
+    DATACAPTURE_EXPORT XmlReader(Dgn::SpatialModelR spatialModel, Dgn::DefinitionModelR definitionModel);
     
     //! Read an XML file containing the  Data Capture Model
     DATACAPTURE_EXPORT BentleyStatus ReadXml(BeFileNameCR xmlPathname);
