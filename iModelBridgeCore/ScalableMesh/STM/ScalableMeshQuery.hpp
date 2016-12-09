@@ -2034,7 +2034,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::GetOrLoadAllTe
 
                     displayTextureDataPtr = meshNode->AddDisplayTexture(data, data->GetTextureID());
 
-                    TRACEPOINT((uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id()), EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
+                    TRACEPOINT(THREAD_ID(), EventType::LOAD_TEX_CREATE_0, meshNode->GetBlockID().m_integerID,-1, data->GetTextureID(), -1,-1, displayTextureDataPtr->GetRefCount())
                     }
                 else assert(false);
 

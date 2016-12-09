@@ -34,7 +34,7 @@ enum class EventType
 
 struct TraceEvent
 {
-    uint32_t threadId;
+    uint64_t threadId;
     EventType type;
     clock_t timestamp;
     uint64_t nodeId;
@@ -138,7 +138,7 @@ public:
 
 };
 
-#define THREAD_ID() (uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id())
+#define THREAD_ID() (uint64_t)std::hash<std::thread::id>()(std::this_thread::get_id())
 
 #if TRACE_ON
 #define TRACEPOINT(thread,type,id,meshid,texid,poolid,val, rc) \
@@ -146,7 +146,7 @@ public:
 TraceEvent e; \
 e.type = (type); \
 e.refCount = (rc); \
-e.threadId = (uint32_t)(thread);\
+e.threadId = (uint64_t)(thread);\
 e.nodeId = (id); \
 e.texId = (texid); \
 e.meshId = (meshid); \

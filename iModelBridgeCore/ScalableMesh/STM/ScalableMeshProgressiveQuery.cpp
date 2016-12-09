@@ -471,20 +471,7 @@ private:
         if (!inLoading)
             {                         
             ScalableMeshCachedDisplayNode<DPoint3d>* meshNode(ScalableMeshCachedDisplayNode<DPoint3d>::Create(visibleNode, scalableMeshPtr.get()));
-                          
-
-            {
-                TraceEvent e;
-                e.type = EventType::EVT_CREATE_DISPLAY_LOAD;
-                e.refCount = -1;
-                //e.threadId = (uint32_t)std::hash<std::thread::id>()(std::this_thread::get_id());
-                e.nodeId = visibleNode->GetBlockID().m_integerID;
-                e.texId = dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr())->GetSingleTextureID();
-                e.meshId = (uint64_t)-1;
-                e.timestamp = clock();
-                e.objVal = (uint64_t)meshNode;
-                CachedDataEventTracer::GetInstance()->logEvent(e);
-            }
+                         
 
             TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_LOAD, visibleNode->GetBlockID().m_integerID, (uint64_t)-1, dynamic_cast<SMMeshIndexNode<DPoint3d, Extent3dType>*>(visibleNode.GetPtr())->GetSingleTextureID(), -1, (uint64_t)meshNode, -1)
 
