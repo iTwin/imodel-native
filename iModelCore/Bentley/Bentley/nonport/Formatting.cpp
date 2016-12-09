@@ -21,6 +21,81 @@ USING_NAMESPACE_BENTLEY
 #define   RMINI4                  (-2147483648.0)
 #define   RMAXUI4                 4294967295.0
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String PresentationTypeName(PresentationType type)
+    {
+    switch (type)
+        {
+        case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
+        case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
+        case PresentationType::ScientificNorm: return FormatConstant::FPN_Scientific();
+        default:
+        case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String SignOptionName(ShowSignOption opt)
+    {
+    switch (opt)
+        {
+        case ShowSignOption::NoSign: return FormatConstant::FPN_NoSign();
+        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
+        case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
+        default:
+        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String DecimalPrecisionName(DecimalPrecision prec)
+    {
+    switch (prec)
+        {
+        case DecimalPrecision::Precision1: return FormatConstant::FPN_Precision1();
+        case DecimalPrecision::Precision2: return FormatConstant::FPN_Precision2();
+        case DecimalPrecision::Precision3: return FormatConstant::FPN_Precision3();
+        case DecimalPrecision::Precision4: return FormatConstant::FPN_Precision4();
+        case DecimalPrecision::Precision5: return FormatConstant::FPN_Precision5();
+        case DecimalPrecision::Precision6: return FormatConstant::FPN_Precision6();
+        case DecimalPrecision::Precision7: return FormatConstant::FPN_Precision7();
+        case DecimalPrecision::Precision8: return FormatConstant::FPN_Precision8();
+        case DecimalPrecision::Precision9: return FormatConstant::FPN_Precision9();
+        case DecimalPrecision::Precision10: return FormatConstant::FPN_Precision10();
+        case DecimalPrecision::Precision11: return FormatConstant::FPN_Precision11();
+        case DecimalPrecision::Precision12: return FormatConstant::FPN_Precision12();
+        default:
+        case DecimalPrecision::Precision0: return FormatConstant::FPN_Precision0();
+        }
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String FractionallPrecisionName(FractionalPrecision prec)
+    {
+    switch (prec)
+        {
+        case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec2();
+        default:
+        case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
+        }
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -28,23 +103,23 @@ int NumericFormat::PrecisionValue() const { return (int)m_decPrecision; }
 
 double NumericFormat::PrecisionFactor() const
     {
-    static double FactorSet[13] = {1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12};
+    static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
     return FactorSet[PrecisionValue()];
     }
 
 DecimalPrecision NumericFormat::ConvertToPrecision(size_t num)
     {
-        switch (num)
+    switch (num)
         {
         case 1: return DecimalPrecision::Precision1;
-        case 2: return DecimalPrecision::Precision2;        
-        case 3: return DecimalPrecision::Precision3;        
-        case 4: return DecimalPrecision::Precision4;        
+        case 2: return DecimalPrecision::Precision2;
+        case 3: return DecimalPrecision::Precision3;
+        case 4: return DecimalPrecision::Precision4;
         case 5: return DecimalPrecision::Precision5;
         case 6: return DecimalPrecision::Precision6;
-        case 7: return DecimalPrecision::Precision7;        
-        case 8: return DecimalPrecision::Precision8;        
-        case 9: return DecimalPrecision::Precision9;        
+        case 7: return DecimalPrecision::Precision7;
+        case 8: return DecimalPrecision::Precision8;
+        case 9: return DecimalPrecision::Precision9;
         case 10: return DecimalPrecision::Precision10;
         case 11: return DecimalPrecision::Precision11;
         case 12: return DecimalPrecision::Precision12;
@@ -52,19 +127,18 @@ DecimalPrecision NumericFormat::ConvertToPrecision(size_t num)
         }
     }
 
-void NumericFormat::DefaultInit(size_t precision)
+void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
     {
-    m_minTreshold = 1.0e-16;
-    m_presentationType = PresentationType::Decimal;
-    m_signOption = ShowSignOption::OnlyNegative;
-    m_showDotZero = false;
-    m_replace0Empty = false;
+    m_name = name;
     m_decPrecision = ConvertToPrecision(precision);
-    m_fractPrecision = FractionalPrecision::Sixteenth;
+    m_minTreshold = FormatConstant::FPV_minTreshold();
+    m_presentationType = FormatConstant::DefaultPresentaitonType();
+    m_signOption = FormatConstant::DefaultSignOption();
+    m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
     m_useThousandsSeparator = false;
-    m_decimalSeparator = '.';
-    m_thousandsSeparator = ',';
-    m_ZeroControl = ZeroControl::DefaultZeroes;
+    m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
+    m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
+    m_ZeroControl = FormatConstant::DefaultZeroControl();
     SetKeepSingleZero(true);
     SetKeepDecimalPoint(true);
     }
@@ -126,27 +200,27 @@ void NumericFormat::SetKeepSingleZero(bool keep)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 void NumericFormat::SetZeroEmpty(bool empty)
-{
+    {
     size_t temp = static_cast<int>(m_ZeroControl);
     if (empty)
         temp |= static_cast<int>(ZeroControl::ZeroEmpty);
     else
         temp &= ~static_cast<int>(ZeroControl::ZeroEmpty);
     m_ZeroControl = static_cast<ZeroControl>(temp);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 void NumericFormat::SetExponentZero(bool empty)
-{
+    {
     size_t temp = static_cast<int>(m_ZeroControl);
     if (empty)
         temp |= static_cast<int>(ZeroControl::ExponentZero);
     else
         temp &= ~static_cast<int>(ZeroControl::ExponentZero);
     m_ZeroControl = static_cast<ZeroControl>(temp);
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -238,22 +312,22 @@ int NumericFormat::IntPartToText (double n, char * bufOut, int bufLen, bool useS
             }
         } while (n > 0 && ind >= 0);
 
-    if (m_signOption == ShowSignOption::SignAlways ||
-        ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+        if (m_signOption == ShowSignOption::SignAlways ||
+            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
             buf[--ind] = sign;
 
-    int textLen = sizeof(buf) - ind;
-    if (textLen > (--bufLen))
-        textLen = bufLen;
-    memcpy(bufOut, &buf[ind], textLen--);
-    return textLen;
+        int textLen = sizeof(buf) - ind;
+        if (textLen > (--bufLen))
+            textLen = bufLen;
+        memcpy(bufOut, &buf[ind], textLen--);
+        return textLen;
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-int NumericFormat::FormatInteger (int n, char* bufOut,  int bufLen)
+int NumericFormat::FormatInteger (int n, char* bufOut, int bufLen)
     {
     char sign = '+';
     char buf[64];
@@ -262,7 +336,7 @@ int NumericFormat::FormatInteger (int n, char* bufOut,  int bufLen)
 
     if (bufLen < 2)  // if output buffer is too short make it empty and return
         {
-        if(nullptr == bufOut)
+        if (nullptr == bufOut)
             *bufOut = 0;
         return 0;
         }
@@ -299,16 +373,16 @@ int NumericFormat::FormatInteger (int n, char* bufOut,  int bufLen)
             }
         } while (n > 0 && ind >= 0);
 
-    if (m_signOption == ShowSignOption::SignAlways ||
-         ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
-        buf[--ind] = sign;
+        if (m_signOption == ShowSignOption::SignAlways ||
+            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+            buf[--ind] = sign;
 
-    int textLen = sizeof(buf) - ind;
-    if (textLen > (--bufLen))
-        textLen = bufLen;
-    memcpy(bufOut, &buf[ind], textLen--);
-    return textLen;
-}
+        int textLen = sizeof(buf) - ind;
+        if (textLen > (--bufLen))
+            textLen = bufLen;
+        memcpy(bufOut, &buf[ind], textLen--);
+        return textLen;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -322,7 +396,7 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
     while (buf[i] == '0' && index > 0)
         {
         if (m_decimalSeparator == buf[i - 1])
-         {
+            {
             if (IfKeepSingleZero()) // preserve decimal separator and a single zero after it
                 break;
             i--;
@@ -330,7 +404,7 @@ int NumericFormat::TrimTrailingZeroes(CharP buf, int index)
                 break;
             i--;
             break;
-         }
+            }
         i--;
         }
 
@@ -341,7 +415,7 @@ int NumericFormat::InsertChar(CharP buf, int index, char c, int num)
     {
     if (nullptr != buf && 0 < num)
         {
-        for(int i = 0; i < num; buf[index++] = c, i++){}
+        for (int i = 0; i < num; buf[index++] = c, i++) {}
         }
     return index;
     }
@@ -394,9 +468,9 @@ int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
         double rounding = 0.501;
         memset(locBuf, 0, sizeof(locBuf));
 
-        fract = modf(IsPrecisionZero()? dval + rounding: dval, &ival);
+        fract = modf(IsPrecisionZero() ? dval + rounding : dval, &ival);
         int iLen = IntPartToText(ival, intBuf, sizeof(intBuf), true);
-        if (m_signOption == ShowSignOption::SignAlways || 
+        if (m_signOption == ShowSignOption::SignAlways ||
             ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
             locBuf[ind++] = sign;
 
@@ -420,16 +494,16 @@ int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
 
             locBuf[ind++] = m_decimalSeparator;
             ind = InsertChar(locBuf, ind, '0', totFractLen - fLen);
-           /* while (fLen < totFractLen)
+            /* while (fLen < totFractLen)
             {
-                locBuf[ind++] = '0';
-                fLen++;
+            locBuf[ind++] = '0';
+            fLen++;
             }*/
             memcpy(&locBuf[ind], fractBuf, fLen);
             ind += fLen;
             // handling trailing zeroes
             if (!IfKeepTrailingZeroes() && locBuf[ind - 1] == '0')
-                ind = TrimTrailingZeroes(locBuf, ind-1);
+                ind = TrimTrailingZeroes(locBuf, ind - 1);
             }
         if (sci && expInt != 0)
             {
@@ -440,7 +514,7 @@ int NumericFormat::FormatDouble(double dval, char* buf, int bufLen)
             ind += expLen;
             }
         } // decimal
-    // closing formatting
+          // closing formatting
     if ('(' == sign)
         locBuf[ind++] = ')';
     locBuf[ind++] = '\0';
@@ -469,158 +543,158 @@ Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::FormatInteger(int ival)
+Utf8String NumericFormat::FormatInteger(int ival)
     {
-        char buf[64];
-        FormatInteger(ival, buf, sizeof(buf));
-        return Utf8String(buf);
+    char buf[64];
+    FormatInteger(ival, buf, sizeof(buf));
+    return Utf8String(buf);
     }
 
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- // the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
- // this function returns the number of bytes that was not populated - in case of success it will 0
- int NumericFormat::FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen)
- {
-     char binBuf[8];
-     unsigned char mask = 0x80;
-     int i = 0;
-     while (mask != 0)
-     {
-         binBuf[i++] = (n & mask) ? '1' : '0';
-         mask >>= 1;
-     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+// the caller provided buffer must be at least 9 byte long with the 9th byte for the terminating 0
+// this function returns the number of bytes that was not populated - in case of success it will 0
+int NumericFormat::FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen)
+    {
+    char binBuf[8];
+    unsigned char mask = 0x80;
+    int i = 0;
+    while (mask != 0)
+        {
+        binBuf[i++] = (n & mask) ? '1' : '0';
+        mask >>= 1;
+        }
 
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
- }
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, sizeof(binBuf));
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- int NumericFormat::FormatBinaryShort (short int n, char* bufOut, int bufLen, bool useSeparator)
- {
-     char binBuf[64];
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+int NumericFormat::FormatBinaryShort (short int n, char* bufOut, int bufLen, bool useSeparator)
+    {
+    char binBuf[64];
 
-     unsigned char c = (n & 0xFF00) >> 8;
-     FormatBinaryByte (c, binBuf, 9);
-     int ind = 8;
-     if (IfInsertSeparator(useSeparator))
-         binBuf[ind++] = m_thousandsSeparator;
-     c = n & 0xFF;
-     FormatBinaryByte (c, &binBuf[ind], 9);
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
- }
+    unsigned char c = (n & 0xFF00) >> 8;
+    FormatBinaryByte (c, binBuf, 9);
+    int ind = 8;
+    if (IfInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    c = n & 0xFF;
+    FormatBinaryByte (c, &binBuf[ind], 9);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- int NumericFormat::FormatBinaryInt (int n, char* bufOut, int bufLen, bool useSeparator)
- {
-     char binBuf[80];
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+int NumericFormat::FormatBinaryInt (int n, char* bufOut, int bufLen, bool useSeparator)
+    {
+    char binBuf[80];
 
-     memset(binBuf, 0, sizeof(binBuf));
-     unsigned int temp = (size_t)n;
-     unsigned short int c = (temp & 0xFFFF0000) >> 16;
-     FormatBinaryShort (c, binBuf, sizeof(binBuf), useSeparator);
-     size_t ind = strlen(binBuf);
-     if (IfInsertSeparator(useSeparator))
-         binBuf[ind++] = m_thousandsSeparator;
-     c = n & 0xFFFF;
-     FormatBinaryShort (c, &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
- }
+    memset(binBuf, 0, sizeof(binBuf));
+    unsigned int temp = (size_t)n;
+    unsigned short int c = (temp & 0xFFFF0000) >> 16;
+    FormatBinaryShort (c, binBuf, sizeof(binBuf), useSeparator);
+    size_t ind = strlen(binBuf);
+    if (IfInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    c = n & 0xFFFF;
+    FormatBinaryShort (c, &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
 
- int NumericFormat::FormatBinaryDouble (double x, char* bufOut, int bufLen, bool useSeparator)
- {
-     char binBuf[80];
-     union { unsigned int ival[2]; double x; }temp;
-     temp.x = x;
-     memset(binBuf, 0, sizeof(binBuf));
-     FormatBinaryInt (temp.ival[1], binBuf, sizeof(binBuf), useSeparator);
-     size_t ind = strlen(binBuf);
-     if (IfInsertSeparator(useSeparator))
-         binBuf[ind++] = m_thousandsSeparator;
-     FormatBinaryInt (temp.ival[0], &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
-     return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
- }
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
+int NumericFormat::FormatBinaryDouble (double x, char* bufOut, int bufLen, bool useSeparator)
+    {
+    char binBuf[80];
+    union { unsigned int ival[2]; double x; }temp;
+    temp.x = x;
+    memset(binBuf, 0, sizeof(binBuf));
+    FormatBinaryInt (temp.ival[1], binBuf, sizeof(binBuf), useSeparator);
+    size_t ind = strlen(binBuf);
+    if (IfInsertSeparator(useSeparator))
+        binBuf[ind++] = m_thousandsSeparator;
+    FormatBinaryInt (temp.ival[0], &binBuf[ind], (int)(sizeof(binBuf) - ind), useSeparator);
+    return RightAlignedCopy(bufOut, bufLen, true, binBuf, -1);
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 
- Utf8String NumericFormat::ByteToBinaryText(unsigned char n)
- {
-     char buf[64];
-     FormatBinaryByte(n, buf, sizeof(buf));
-     return Utf8String(buf);
- }
+Utf8String NumericFormat::ByteToBinaryText(unsigned char n)
+    {
+    char buf[64];
+    FormatBinaryByte(n, buf, sizeof(buf));
+    return Utf8String(buf);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::ShortToBinaryText(short int n, bool useSeparator)
- {
-     char buf[64];
-     FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
-     return Utf8String(buf);
- }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormat::ShortToBinaryText(short int n, bool useSeparator)
+    {
+    char buf[64];
+    FormatBinaryShort(n, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::IntToBinaryText(int n, bool useSeparator)
- {
-     char buf[80];
-     FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
-     return Utf8String(buf);
- }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormat::IntToBinaryText(int n, bool useSeparator)
+    {
+    char buf[80];
+    FormatBinaryInt(n, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- Utf8String NumericFormat::DoubleToBinaryText(double x, bool useSeparator)
- {
-     char buf[80];
-     FormatBinaryDouble(x, buf, sizeof(buf), useSeparator);
-     return Utf8String(buf);
- }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormat::DoubleToBinaryText(double x, bool useSeparator)
+    {
+    char buf[80];
+    FormatBinaryDouble(x, buf, sizeof(buf), useSeparator);
+    return Utf8String(buf);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
- //Utf8String NumericFormat::ToText()
- //{
- //    Utf8String str;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+//Utf8String NumericFormat::ToText()
+//{
+//    Utf8String str;
 
- //    switch (m_presentationType)
- //    {
- //    case PresentationType::Decimal:
+//    switch (m_presentationType)
+//    {
+//    case PresentationType::Decimal:
 
- //    }
+//    }
 
- //    //PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
- //    //ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
- //    //ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
- //    //bool                m_showDotZero;
- //    //bool                m_replace0Empty;
- //    //DecimalPrecision    m_decPrecision;          // Precision0...12
- //    //FractionalPrecision m_fractPrecision;
- //    //bool                m_useThousandsSeparator; // UseThousandSeparator
- //    //Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
- //    //Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+//    //PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
+//    //ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+//    //ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+//    //bool                m_showDotZero;
+//    //bool                m_replace0Empty;
+//    //DecimalPrecision    m_decPrecision;          // Precision0...12
+//    //FractionalPrecision m_fractPrecision;
+//    //bool                m_useThousandsSeparator; // UseThousandSeparator
+//    //Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+//    //Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
 
- //    return str;
- //}
+//    return str;
+//}
 
- static int ZeroControlBit(ZeroControl zcValue)
- {
-     return static_cast<int>(zcValue);
- }
+static int ZeroControlBit(ZeroControl zcValue)
+    {
+    return static_cast<int>(zcValue);
+    }
 
- //---------------------------------------------------------------------------------------
- // @bsimethod                                                   David Fox-Rabinovitz 11/16
- //---------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
 void FormatDictionary::InitLoad()
     {
     AddParameter(FormatParameter(FormatConstant::FPN_NoSign(), ParameterCategory::Sign, ParameterCode::NoSign, ParameterDataType::Flag));
@@ -718,7 +792,7 @@ FormatParameterP FormatDictionary::FindParameterByName(Utf8StringCR paramName)
 FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
     {
     FormatParameterP par;
-        for (auto curr = m_paramList.begin(), end = m_paramList.end(); curr != end; curr++)
+    for (auto curr = m_paramList.begin(), end = m_paramList.end(); curr != end; curr++)
         {
         par = curr;
         if (paramCode == par->GetParameterCode())
@@ -733,8 +807,65 @@ FormatParameterP FormatDictionary::FindParameterByCode(ParameterCode paramCode)
 Utf8StringCR FormatDictionary::CodeToName(ParameterCode paramCode)
     {
     FormatParameterP par = FindParameterByCode(paramCode);
-    return (nullptr == par)? static_cast<Utf8StringCR>(nullptr) : par->GetName();
+    return (nullptr == par) ? static_cast<Utf8StringCR>(nullptr) : par->GetName();
     }
+
+Utf8StringP FormatDictionary::ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix)
+    {
+    Utf8StringP str = new Utf8String();
+    if (!name.empty())
+        {
+        str->append(prefix + name);
+        if (!value.empty())
+            {
+            str->push_back('=');
+            if (0 != quote)
+                str->push_back(quote);
+            str->append(value);
+            if (0 != quote)
+                str->push_back(quote);
+            }
+        }
+    return str;
+    }
+
+Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
+    {
+    Utf8StringP str = new Utf8String();
+
+
+    str->append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetName(), '\"', ""));
+    str->append(" " + PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
+    str->append(" " + SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    str->append(" " + DecimalPrecisionName(format.GetDecimalPrecision()));
+    str->append(" " + FractionallPrecisionName(format.GetFractionalPrecision()));
+    if (format.IfKeepTrailingZeroes())
+        str->append(" " + FormatConstant::FPN_TrailingZeroes());
+    if (format.IfUseLeadingZeroes())
+        str->append(" " + FormatConstant::FPN_LeadingZeroes());
+    if (format.IfKeepDecimalPoint())
+        str->append(" " + FormatConstant::FPN_KeepDecimalPoint());
+    if (format.IfKeepSingleZero())
+        str->append(" " + FormatConstant::FPN_KeepSingleZero());
+
+    //Utf8String          m_name;                  // name or ID of the format
+    //double              m_minTreshold;
+    //PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
+    //ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    //ZeroControl         m_ZeroControl;           // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
+    //bool                m_showDotZero;
+    //bool                m_replace0Empty;
+    //DecimalPrecision    m_decPrecision;          // Precision0...12
+    //FractionalPrecision m_fractPrecision;
+    //bool                m_useThousandsSeparator; // UseThousandSeparator
+    //Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
+    //Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
+
+
+
+    return str;
+    }
+
 
 
 //---------------------------------------------------------------------------------------
@@ -827,7 +958,7 @@ NumericTriad::NumericTriad()
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
     {
-    NumericFormat fmt;
+    NumericFormat fmt("FW");
     fmt.SetDecimalPrecision(prec);
     return fmt.FormatDouble(GetWhole());
     }
@@ -837,7 +968,7 @@ Utf8String NumericTriad::FormatWhole(DecimalPrecision prec)
 //---------------------------------------------------------------------------------------
 Utf8String NumericTriad::FormatTriad(Utf8StringCP topName, Utf8StringCP midName, Utf8StringCP lowName, bool includeZero)
     {
-    NumericFormat fmt;
+    NumericFormat fmt("FT");
     Utf8String blank = Utf8String(" ");
     if (nullptr == topName || topName->size() < 1)
         topName = &blank;
@@ -919,7 +1050,7 @@ bool UnicodeConstant::IsTrailingByteValid(unsigned char c)
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 bool UnicodeConstant::GetTrailingBits(unsigned char c, CharP outBits)
-    {	
+    {
     if (nullptr != outBits)
         {
         *outBits = 0;
@@ -945,8 +1076,8 @@ bool UnicodeConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t inde
         // calculate the shift 
         *outBits = 0;
         int shift = ((int)seqLength - (int)index - 1);
-        if(0 > shift || 2 < shift)
-            return false;      
+        if (0 > shift || 2 < shift)
+            return false;
         if (m_trailingByteMark == (c & m_trailingByteMask))
             {
             size_t temp = c & ~m_trailingByteMask;
@@ -962,8 +1093,8 @@ bool UnicodeConstant::GetCodeBits(unsigned char c, size_t seqLength, size_t inde
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
 bool UnicodeConstant::IsLittleEndian()
-    { 
-    return m_isLittleEndian; 
+    {
+    return m_isLittleEndian;
     }
 
 //---------------------------------------------------------------------------------------
@@ -971,8 +1102,8 @@ bool UnicodeConstant::IsLittleEndian()
 //---------------------------------------------------------------------------------------
 bool UnicodeConstant::ForceBigEndian()
     {
-    m_isLittleEndian = false; 
-    return m_isLittleEndian; 
+    m_isLittleEndian = false;
+    return m_isLittleEndian;
     }
 
 //bool UnicodeConstant::GetSymbolBits(unsigned char c, CharP outBits)
@@ -993,8 +1124,8 @@ size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
 // Constructor
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength) 
-    { 
+FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength)
+    {
     m_text = utf8Text;
     /*m_cursorPosition = 0;
     m_lastScannedCount = 0;
@@ -1003,8 +1134,8 @@ FormattingScannerCursor::FormattingScannerCursor(CharCP utf8Text, int scanLength
     m_status = ScannerCursorStatus::Success;*/
     Rewind();
     m_unicodeConst = new UnicodeConstant();
-    m_totalScanLength = (nullptr == utf8Text)? 0 : strlen(utf8Text);
-    if (scanLength > 0 && (size_t)scanLength <= m_totalScanLength)
+    m_totalScanLength = (nullptr == utf8Text) ? 0 : strlen(utf8Text);
+    if (scanLength > 0 && scanLength <= (int)m_totalScanLength)
         m_totalScanLength = scanLength;
     }
 
@@ -1013,14 +1144,14 @@ FormattingScannerCursor::FormattingScannerCursor(FormattingScannerCursorCR other
     }
 
 void FormattingScannerCursor::Rewind()
-{
+    {
     m_cursorPosition = 0;
     m_lastScannedCount = 0;
     m_uniCode = 0;
     m_isASCII = false;
     m_status = ScannerCursorStatus::Success;
     return;
-}
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1055,7 +1186,7 @@ size_t FormattingScannerCursor::GetNextSymbol()
     char c = m_text.c_str()[m_cursorPosition];
     m_temp = 0;
     size_t seqLen = m_unicodeConst->GetSequenceLength(c);
-    if(0 == seqLen)
+    if (0 == seqLen)
         m_status = ScannerCursorStatus::InvalidSymbol;
     if ('\0' == c || m_cursorPosition >= m_totalScanLength)
         return m_uniCode;
@@ -1071,14 +1202,14 @@ size_t FormattingScannerCursor::GetNextSymbol()
             m_isASCII = false;
             break;
         case 3: // Three byte sequence
-           // m_code.octet[TrueIndex(2, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
+                // m_code.octet[TrueIndex(2, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
             m_uniCode = (size_t)(c &  ~m_unicodeConst->Get3ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
             m_isASCII = false;
             break;
         case 4: // Three byte sequence
-            //m_code.octet[TrueIndex(3, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
+                //m_code.octet[TrueIndex(3, sizeof(m_code.octet))] = c & ~m_unicodeConst->Get3ByteMask();
             m_uniCode = (size_t)(c &  ~m_unicodeConst->Get4ByteMask());
             m_lastScannedCount += AddTrailingByte();
             m_lastScannedCount += AddTrailingByte();
@@ -1139,7 +1270,7 @@ size_t FormattingScannerCursor::GetNextSymbol()
 //
 
 
-size_t FormattingScannerCursor::SkipBlanks() 
+size_t FormattingScannerCursor::SkipBlanks()
     {
     size_t code = GetNextSymbol();
     while (IsASCII() && isspace((int)code))
@@ -1161,32 +1292,32 @@ size_t FormattingScannerCursor::SkipBlanks()
 //    }
 
 FormatStopWatch::FormatStopWatch()
-{
+    {
     m_start = std::chrono::steady_clock::now();
     m_lastInterval = 0.0;
     m_totalElapsed = 0.0;
     m_lastAmount = 0;
     m_totalAmount = 0;
-}
+    }
 
 Utf8String FormatStopWatch::LastIntervalMetrics(size_t amount)
-{
+    {
     //m_lastInterval = GetElapsedSeconds();
     std::chrono::steady_clock::time_point moment = std::chrono::steady_clock::now();
     m_lastInterval = (double)std::chrono::duration_cast<std::chrono::microseconds>(moment - m_start).count();
     m_totalElapsed += m_lastInterval;
     m_lastAmount = amount;
     m_totalAmount += amount;
-    NumericFormat nfmt = NumericFormat(6);
+    NumericFormat nfmt = NumericFormat("LIM", 6);
     nfmt.SetUseSeparator(true);
     Utf8String amTxt = nfmt.FormatInteger((int)amount);
     Utf8String duraTxt = (amount > 0) ? nfmt.FormatDouble(m_lastInterval / (double)amount) : "n/a";
-    Utf8String perfTxt = (m_lastInterval > 0.0) ? nfmt.FormatRoundedDouble((double)amount * 1.0e6/ m_lastInterval, 0.5) : "n/a";
+    Utf8String perfTxt = (m_lastInterval > 0.0) ? nfmt.FormatRoundedDouble((double)amount * 1.0e6 / m_lastInterval, 0.5) : "n/a";
 
     char buf[256];
     sprintf(buf, "Completed %s op's average duration %s mksec performance: %s op/sec", amTxt.c_str(), duraTxt.c_str(), perfTxt.c_str());
     return buf;
-}
+    }
 
 Utf8String FormatStopWatch::LastInterval(double factor)
     {

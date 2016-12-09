@@ -15,33 +15,27 @@
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
 
 TEST(FormattingTest, Simple)
-{
+    {
 
-    //ShowSignOption sigOpt = ShowSignOption::OnlyNegative;
-    NumericFormat numFmt = NumericFormat();
+
+    FormatDictionary fd = FormatDictionary();
+    NumericFormat numFmt = NumericFormat("Default");
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
-    //EXPECT_TRUE(false) << "Integer Formatting:  ShowSignOption::OnlyNegative";
     EXPECT_STREQ ("135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("135689", numFmt.FormatInteger(135689).c_str());
     EXPECT_STREQ ("-846356", numFmt.FormatInteger(-846356).c_str());
     numFmt.SetSignOption(ShowSignOption::SignAlways);
-    //EXPECT_TRUE(false) << "Integer Formatting:  ShowSignOption::SignAlways";
     EXPECT_STREQ ("+135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("+135689", numFmt.FormatInteger(135689).c_str());
     EXPECT_STREQ ("-846356", numFmt.FormatInteger(-846356).c_str());
     numFmt.SetSignOption(ShowSignOption::NoSign);
-    //EXPECT_TRUE(false) << "Integer Formatting:  ShowSignOption::NoSign";
     EXPECT_STREQ ("135", numFmt.FormatInteger(135).c_str());
     EXPECT_STREQ ("135689", numFmt.FormatInteger(135689).c_str());
     EXPECT_STREQ ("846356", numFmt.FormatInteger(-846356).c_str());
 
-    //EXPECT_TRUE(false) << "Double Formatting:  ShowSignOption::OnlyNegative Precision10 Scientific";
     numFmt.SetDecimalPrecision(DecimalPrecision::Precision10);
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
 
-
-
-    numFmt.SetSignOption(ShowSignOption::OnlyNegative);
     double dval1 = 123.0004567;
     EXPECT_STREQ ("123.0004567", numFmt.FormatDouble(dval1).c_str());
     EXPECT_STREQ ("-123.0004567", numFmt.FormatDouble(-dval1).c_str());
@@ -57,6 +51,8 @@ TEST(FormattingTest, Simple)
     numFmt.SetKeepTrailingZeroes(true);
     numFmt.SetKeepSingleZero(true);
     numFmt.SetKeepDecimalPoint(true);
+
+    LOG.infov("FormatDescr1 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
 
     EXPECT_STREQ ("3456.0000000000", numFmt.FormatDouble(dval1).c_str());
     EXPECT_STREQ ("-3456.0000000000", numFmt.FormatDouble(-dval1).c_str());
@@ -85,7 +81,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-2.7182818285e-3", numFmt.FormatDouble(-0.0027182818284590).c_str());
     EXPECT_STREQ ("-2.7182818285e-1", numFmt.FormatDouble(-0.2718281828459045).c_str());
 
-
     EXPECT_STREQ ("01000001", numFmt.ByteToBinaryText('A').c_str());
     EXPECT_STREQ ("01100110", numFmt.ByteToBinaryText('f').c_str());
     numFmt.SetThousandSeparator(' ');
@@ -94,8 +89,8 @@ TEST(FormattingTest, Simple)
     numFmt.SetThousandSeparator('.');
     EXPECT_STREQ ("00000001.00000011", numFmt.ShortToBinaryText(259, true).c_str());
     EXPECT_STREQ ("11111111.11111111.11111111.11111111", numFmt.IntToBinaryText(-1, true).c_str());
-    EXPECT_STREQ ("00000000.00000001.00000001.00000011", numFmt.IntToBinaryText(65536+259, true).c_str());
-    EXPECT_STREQ ("00000001.00000001.00000001.00000011", numFmt.IntToBinaryText(65536*257 + 259, true).c_str());
+    EXPECT_STREQ ("00000000.00000001.00000001.00000011", numFmt.IntToBinaryText(65536 + 259, true).c_str());
+    EXPECT_STREQ ("00000001.00000001.00000001.00000011", numFmt.IntToBinaryText(65536 * 257 + 259, true).c_str());
     EXPECT_STREQ ("00000010.00000001.00000001.00000011", numFmt.IntToBinaryText(65536 * 513 + 259, true).c_str());
 
     EXPECT_STREQ ("11111111111111111111111111111111", numFmt.IntToBinaryText(-1, false).c_str());
@@ -106,8 +101,6 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("00111111.11110000.00000000.00000000.00000000.00000000.00000000.00000000", numFmt.DoubleToBinaryText(1.0, true).c_str());
     EXPECT_STREQ ("10111111.11100000.00000000.00000000.00000000.00000000.00000000.00000000", numFmt.DoubleToBinaryText(-0.5, true).c_str());
 
-
-    FormatDictionary fd = FormatDictionary();
     FormatParameterP fp, fp1, fp2;
     int count = fd.GetCount();
 
@@ -119,6 +112,8 @@ TEST(FormattingTest, Simple)
         EXPECT_EQ(fp, fp1);
         EXPECT_EQ(fp, fp2);
         }
+
+    LOG.infov("FormatDescr2 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
 
     const char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);   // just a core scanner
@@ -134,83 +129,86 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("11000000", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingByteMask()).c_str());
     EXPECT_STREQ ("10000000", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingByteMark()).c_str());
     EXPECT_STREQ ("00111111", numFmt.ByteToBinaryText(curs.GetConstants()->GetTrailingBitsMask()).c_str());
- 
+
 
     for (char c = 'A'; c < 'z'; c++)
-    {
+        {
         EXPECT_EQ(1, curs.GetConstants()->GetSequenceLength(c));
-    }
+        }
 
 
     EXPECT_EQ(2, curs.GetConstants()->GetSequenceLength(uni[0]));
     EXPECT_TRUE(curs.GetConstants()->IsTrailingByteValid(uni[1]));
+    }
 
-
+TEST(FormattingTest, DictionaryValidation)
+    {
     FormatDictionary dict = FormatDictionary();
 
-    EXPECT_STREQ(FormatConstant::FPN_NoSign(), dict.CodeToName(ParameterCode::NoSign).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_OnlyNegative(), dict.CodeToName(ParameterCode::OnlyNegative).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_SignAlways(), dict.CodeToName(ParameterCode::SignAlways).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_NegativeParenths(), dict.CodeToName(ParameterCode::NegativeParenths).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Decimal(), dict.CodeToName(ParameterCode::Decimal).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Fractional(), dict.CodeToName(ParameterCode::Fractional).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Scientific(), dict.CodeToName(ParameterCode::Scientific).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ScientificNorm(), dict.CodeToName(ParameterCode::ScientificNorm).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Binary(), dict.CodeToName(ParameterCode::Binary).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_DefaultZeroes(), dict.CodeToName(ParameterCode::DefaultZeroes).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_LeadingZeroes(), dict.CodeToName(ParameterCode::LeadingZeroes).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_TrailingZeroes(), dict.CodeToName(ParameterCode::TrailingZeroes).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_KeepDecimalPoint(), dict.CodeToName(ParameterCode::KeepDecimalPoint).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ZeroEmpty(), dict.CodeToName(ParameterCode::ZeroEmpty).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_KeepSingleZero(), dict.CodeToName(ParameterCode::KeepSingleZero).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ExponentZero(), dict.CodeToName(ParameterCode::ExponentZero).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision0(), dict.CodeToName(ParameterCode::DecPrec0).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision1(), dict.CodeToName(ParameterCode::DecPrec1).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision2(), dict.CodeToName(ParameterCode::DecPrec2).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision3(), dict.CodeToName(ParameterCode::DecPrec3).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision4(), dict.CodeToName(ParameterCode::DecPrec4).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision5(), dict.CodeToName(ParameterCode::DecPrec5).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision6(), dict.CodeToName(ParameterCode::DecPrec6).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision7(), dict.CodeToName(ParameterCode::DecPrec7).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision8(), dict.CodeToName(ParameterCode::DecPrec8).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision9(), dict.CodeToName(ParameterCode::DecPrec9).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision10(), dict.CodeToName(ParameterCode::DecPrec10).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision11(), dict.CodeToName(ParameterCode::DecPrec11).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_Precision12(), dict.CodeToName(ParameterCode::DecPrec12).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec1(), dict.CodeToName(ParameterCode::FractPrec1).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec2(), dict.CodeToName(ParameterCode::FractPrec2).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec4(), dict.CodeToName(ParameterCode::FractPrec4).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec8(), dict.CodeToName(ParameterCode::FractPrec8).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec16(), dict.CodeToName(ParameterCode::FractPrec16).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec32(), dict.CodeToName(ParameterCode::FractPrec32).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec64(), dict.CodeToName(ParameterCode::FractPrec64).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec128(), dict.CodeToName(ParameterCode::FractPrec128).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractPrec256(), dict.CodeToName(ParameterCode::FractPrec256).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_DecimalComma(), dict.CodeToName(ParameterCode::DecimalComma).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_DecimalPoint(), dict.CodeToName(ParameterCode::DecimalPoint).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_DecimalSepar(), dict.CodeToName(ParameterCode::DecimalSepar).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ThousandSepComma(), dict.CodeToName(ParameterCode::ThousandSepComma).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ThousandSepPoint(), dict.CodeToName(ParameterCode::ThousandSepPoint).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_ThousandsSepar(), dict.CodeToName(ParameterCode::ThousandsSepar).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_RoundUp(), dict.CodeToName(ParameterCode::RoundUp).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_RoundDown(), dict.CodeToName(ParameterCode::RoundDown).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_RoundToward0(), dict.CodeToName(ParameterCode::RoundToward0).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_RoundAwayFrom0(), dict.CodeToName(ParameterCode::RoundAwayFrom0).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractBarHoriz(), dict.CodeToName(ParameterCode::FractBarHoriz).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractBarOblique(), dict.CodeToName(ParameterCode::FractBarOblique).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_FractBarDiagonal(), dict.CodeToName(ParameterCode::FractBarDiagonal).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_AngleRegular(), dict.CodeToName(ParameterCode::AngleRegular).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_AngleDegMin(), dict.CodeToName(ParameterCode::AngleDegMin).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_AngleDegMinSec(), dict.CodeToName(ParameterCode::AngleDegMinSec).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_PaddingSymbol(), dict.CodeToName(ParameterCode::PaddingSymbol).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_CenterAlign(), dict.CodeToName(ParameterCode::CenterAlign).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_LeftAlign(), dict.CodeToName(ParameterCode::LeftAlign).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_RightAlign(), dict.CodeToName(ParameterCode::RightAlign).c_str());
-    EXPECT_STREQ(FormatConstant::FPN_MapName(), dict.CodeToName(ParameterCode::MapName).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_NoSign().c_str(), dict.CodeToName(ParameterCode::NoSign).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_OnlyNegative().c_str(), dict.CodeToName(ParameterCode::OnlyNegative).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_SignAlways().c_str(), dict.CodeToName(ParameterCode::SignAlways).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_NegativeParenths().c_str(), dict.CodeToName(ParameterCode::NegativeParenths).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Decimal().c_str(), dict.CodeToName(ParameterCode::Decimal).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Fractional().c_str(), dict.CodeToName(ParameterCode::Fractional).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Scientific().c_str(), dict.CodeToName(ParameterCode::Scientific).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ScientificNorm().c_str(), dict.CodeToName(ParameterCode::ScientificNorm).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Binary().c_str(), dict.CodeToName(ParameterCode::Binary).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_DefaultZeroes().c_str(), dict.CodeToName(ParameterCode::DefaultZeroes).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_LeadingZeroes().c_str(), dict.CodeToName(ParameterCode::LeadingZeroes).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_TrailingZeroes().c_str(), dict.CodeToName(ParameterCode::TrailingZeroes).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_KeepDecimalPoint().c_str(), dict.CodeToName(ParameterCode::KeepDecimalPoint).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ZeroEmpty().c_str(), dict.CodeToName(ParameterCode::ZeroEmpty).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_KeepSingleZero().c_str(), dict.CodeToName(ParameterCode::KeepSingleZero).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ExponentZero().c_str(), dict.CodeToName(ParameterCode::ExponentZero).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision0().c_str(), dict.CodeToName(ParameterCode::DecPrec0).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision1().c_str(), dict.CodeToName(ParameterCode::DecPrec1).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision2().c_str(), dict.CodeToName(ParameterCode::DecPrec2).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision3().c_str(), dict.CodeToName(ParameterCode::DecPrec3).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision4().c_str(), dict.CodeToName(ParameterCode::DecPrec4).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision5().c_str(), dict.CodeToName(ParameterCode::DecPrec5).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision6().c_str(), dict.CodeToName(ParameterCode::DecPrec6).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision7().c_str(), dict.CodeToName(ParameterCode::DecPrec7).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision8().c_str(), dict.CodeToName(ParameterCode::DecPrec8).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision9().c_str(), dict.CodeToName(ParameterCode::DecPrec9).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision10().c_str(), dict.CodeToName(ParameterCode::DecPrec10).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision11().c_str(), dict.CodeToName(ParameterCode::DecPrec11).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_Precision12().c_str(), dict.CodeToName(ParameterCode::DecPrec12).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec1().c_str(), dict.CodeToName(ParameterCode::FractPrec1).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec2().c_str(), dict.CodeToName(ParameterCode::FractPrec2).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec4().c_str(), dict.CodeToName(ParameterCode::FractPrec4).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec8().c_str(), dict.CodeToName(ParameterCode::FractPrec8).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec16().c_str(), dict.CodeToName(ParameterCode::FractPrec16).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec32().c_str(), dict.CodeToName(ParameterCode::FractPrec32).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec64().c_str(), dict.CodeToName(ParameterCode::FractPrec64).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec128().c_str(), dict.CodeToName(ParameterCode::FractPrec128).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractPrec256().c_str(), dict.CodeToName(ParameterCode::FractPrec256).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_DecimalComma().c_str(), dict.CodeToName(ParameterCode::DecimalComma).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_DecimalPoint().c_str(), dict.CodeToName(ParameterCode::DecimalPoint).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_DecimalSepar().c_str(), dict.CodeToName(ParameterCode::DecimalSepar).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ThousandSepComma().c_str(), dict.CodeToName(ParameterCode::ThousandSepComma).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ThousandSepPoint().c_str(), dict.CodeToName(ParameterCode::ThousandSepPoint).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_ThousandsSepar().c_str(), dict.CodeToName(ParameterCode::ThousandsSepar).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_RoundUp().c_str(), dict.CodeToName(ParameterCode::RoundUp).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_RoundDown().c_str(), dict.CodeToName(ParameterCode::RoundDown).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_RoundToward0().c_str(), dict.CodeToName(ParameterCode::RoundToward0).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_RoundAwayFrom0().c_str(), dict.CodeToName(ParameterCode::RoundAwayFrom0).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractBarHoriz().c_str(), dict.CodeToName(ParameterCode::FractBarHoriz).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractBarOblique().c_str(), dict.CodeToName(ParameterCode::FractBarOblique).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_FractBarDiagonal().c_str(), dict.CodeToName(ParameterCode::FractBarDiagonal).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_AngleRegular().c_str(), dict.CodeToName(ParameterCode::AngleRegular).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_AngleDegMin().c_str(), dict.CodeToName(ParameterCode::AngleDegMin).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_AngleDegMinSec().c_str(), dict.CodeToName(ParameterCode::AngleDegMinSec).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_PaddingSymbol().c_str(), dict.CodeToName(ParameterCode::PaddingSymbol).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_CenterAlign().c_str(), dict.CodeToName(ParameterCode::CenterAlign).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_LeftAlign().c_str(), dict.CodeToName(ParameterCode::LeftAlign).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_RightAlign().c_str(), dict.CodeToName(ParameterCode::RightAlign).c_str());
+    EXPECT_STREQ(FormatConstant::FPN_MapName().c_str(), dict.CodeToName(ParameterCode::MapName).c_str());
+
 
 
     LOG.infov("Formatting test End");
-}
+    }
 
 
 #ifdef DFR_DEBUG
@@ -245,9 +243,9 @@ int repet = 1000000;
 FormatStopWatch* sw = new FormatStopWatch();
 Utf8String repStr;
 for (int i = 0; i < repet; i++)
-{
+    {
     repStr = numFmt.FormatDouble(-tnum);
-}
+    }
 LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
 LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
 LOG.infov("End of Testing Double Formats =================");
@@ -255,19 +253,19 @@ LOG.infov("End of Testing Double Formats =================");
 sw = new FormatStopWatch();
 char dbuf[128];
 for (int i = 0; i < repet; i++)
-{
+    {
     //repStr = numFmt.FormatDouble(dval2);
     numFmt.FormatDouble(dval2, dbuf, sizeof(dbuf));
-}
+    }
 LOG.infov("Metrics for %s    %s", dbuf, sw->LastIntervalMetrics(repet));
 
 
 sw = new FormatStopWatch();
 for (int i = 0; i < repet; i++)
-{
+    {
     sprintf(dbuf, "sprintf %.10e", dval2);
     //repStr = dbuf;
-}
+    }
 
 LOG.infov("Metrics for %s    %s", dbuf, sw->LastIntervalMetrics(repet));
 
@@ -285,19 +283,19 @@ repet = 100000000; //100 000 000;
                    //LOG.infov("x=%.6f",  x, repet);
 
 for (int i = 0; i < 10; i++)
-{
+    {
     LOG.infov("[%0d] %0x    BIN:%s", i, uni[i], numFmt.ByteToBinaryText(uni[i]).c_str());
-}
+    }
 
 size_t ucode = curs.GetNextSymbol();
 size_t scanned = curs.GetLastScanned();
 
 while (ucode != 0)
-{
+    {
     LOG.infov("Scanned %d chars  unicode %0x   %s", scanned, ucode, curs.IsASCII() ? "ASCII" : "Unicode");
     ucode = curs.GetNextSymbol();
     scanned = curs.GetLastScanned();
-}
+    }
 
 repet = 1000000;
 //01234567890123456789012345678901234567890123456789
@@ -305,13 +303,13 @@ uni = u8"ЯABГCDE型号sautéςερτcañónЯABГCDE型号sautéςερτcañó
 curs = FormattingScannerCursor(uni, -1);
 sw = new FormatStopWatch();
 for (int i = 0; i < repet; i++)
-{
+    {
     curs.Rewind();
     ucode = curs.GetNextSymbol();
     while (ucode != 0)
-    {
+        {
         ucode = curs.GetNextSymbol();
+        }
     }
-}
 LOG.infov("Processed string %s", sw->LastIntervalMetrics(repet));
 #endif
