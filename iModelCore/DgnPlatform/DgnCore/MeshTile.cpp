@@ -456,6 +456,7 @@ bool TileGenerationCache::GetGeomPart(TileGeomPartPtr& tileGeomPart, DgnGeometry
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileGenerationCache::AddGeomPart(DgnGeometryPartId partId, TileGeomPartR tileGeomPart) const
     {
+    BeMutexHolder lock(m_mutex);
     m_geomParts.Insert (partId, &tileGeomPart);
     }
 
@@ -1144,6 +1145,15 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileGeometry::TileStrokes::Transform(TransformCR transform)
+    {
+    for (auto& stroke : m_strokes)
+        transform.Multiply (stroke, stroke);
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
 //=======================================================================================
@@ -1366,6 +1376,7 @@ public:
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
     virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
+    virtual TileGeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
 
@@ -2251,36 +2262,14 @@ TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOpt
     {
     TileGeometry::T_TilePolyfaces   polyfaces;
     double  tolerance = facetOptions.GetChordTolerance();  
-    auto    found = m_cachedPolyfaces.find(tolerance);
 
-    if (found == m_cachedPolyfaces.end())
+    for (auto& geometry : m_geometries) 
         {
-        static  size_t s_minCacheCount = 3;        // Cache the polyfaces if count exceeds...
+        TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
 
-        for (auto& geometry : m_geometries) 
-            {
-            TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
-
-            if (!thisPolyfaces.empty())
-                polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
-            }
-        if (m_instanceCount > s_minCacheCount)
-            {
-            TileGeometry::T_TilePolyfaces   cachePolyfaces;
-
-            for (auto& polyface : polyfaces)
-                cachePolyfaces.push_back(polyface.Clone());
-
-            m_cachedPolyfaces.Insert (tolerance, cachePolyfaces);
-            }
+        if (!thisPolyfaces.empty())
+            polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
         }
-    else
-        {
-        for (auto& cachedPolyface : found->second)
-            polyfaces.push_back (cachedPolyface.Clone());
-        }
-
-    if (m_instanceCount > 0)
 
     for (auto& polyface : polyfaces)
         polyface.Transform(instance.GetTransform());
@@ -2294,6 +2283,17 @@ TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOpt
 TileGeometry::T_TileStrokes TileGeomPart::GetStrokes (IFacetOptionsR facetOptions, TileGeometryCR instance)
     {
     TileGeometry::T_TileStrokes strokes;
+
+    for (auto& geometry : m_geometries) 
+        {
+        TileGeometry::T_TileStrokes   thisStrokes = geometry->GetStrokes(facetOptions);
+
+        if (!thisStrokes.empty())
+            strokes.insert (strokes.end(), thisStrokes.begin(), thisStrokes.end());
+        }
+
+    for (auto& stroke : strokes)
+        stroke.Transform(instance.GetTransform());
 
     return strokes;
     }
@@ -2679,25 +2679,77 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, ITileGenerationFilterCP filter) const
+    {
+    bmap<DgnGeometryPartId, TileMeshPartPtr>   partMap;
+    TileGeometryList            uninstancedGeometry;
+    PublishableTileGeometry     publishedTileGeometry;
+    TileMeshList&               meshes = publishedTileGeometry.Meshes();
+    static size_t               s_minInstanceCount = 1;
+
+    // Extract instances first...
+    for (auto& geom : m_geometries)
+        {
+        auto const&   part = geom->GetPart();
+
+        if (part.IsValid() && part->GetInstanceCount() > s_minInstanceCount)
+            {
+            auto const&         found = partMap.find(part->GetPartId());
+            TileMeshPartPtr     meshPart;
+
+            if (found == partMap.end())
+                {           
+                TileMeshList    partMeshes = GenerateMeshes(db, normalMode, twoSidedTriangles, doSurfacesOnly, false, filter, part->GetGeometries());
+
+                if (partMeshes.empty())
+                    {
+                    BeAssert (false && "Part did not generate meshes");
+                    continue;
+                    }
+                    
+                publishedTileGeometry.Parts().push_back(meshPart = TileMeshPart::Create (std::move(partMeshes)));
+                partMap.Insert(part->GetPartId(), meshPart);
+                }
+            else
+                {
+                meshPart = found->second;
+                }
+            publishedTileGeometry.Instances().push_back(TileMeshInstance(meshPart, geom->GetTransform()));
+            }
+        else
+            {
+            uninstancedGeometry.push_back(geom);
+            }
+        }
+    TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, twoSidedTriangles, doSurfacesOnly, true, filter, uninstancedGeometry);
+    meshes.insert (meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
+
+    return publishedTileGeometry;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, ITileGenerationFilterCP filter) const
+TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const
     {
-    static const double s_vertexToleranceRatio    = .1;
-    static const double s_vertexClusterThresholdPixels = 5.0;
-    static const double s_facetAreaToleranceRatio = .1;
-    static const size_t s_decimatePolyfacePointCount = 100;
+    static const double         s_vertexToleranceRatio    = .1;
+    static const double         s_vertexClusterThresholdPixels = 5.0;
+    static const double         s_facetAreaToleranceRatio = .1;
+    static const size_t         s_decimatePolyfacePointCount = 100;
 
-    double          tolerance = GetTolerance();
-    double          vertexTolerance = tolerance * s_vertexToleranceRatio;
-    double          facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
+    double                      tolerance = GetTolerance();
+    double                      vertexTolerance = tolerance * s_vertexToleranceRatio;
+    double                      facetAreaTolerance   = tolerance * tolerance * s_facetAreaToleranceRatio;
 
     // Convert to meshes
-    MeshBuilderMap  builderMap;
-    size_t          geometryCount = 0;
-    DRange3d        myTileRange = GetTileRange();
+    MeshBuilderMap      builderMap;
+    size_t              geometryCount = 0;
+    DRange3d            myTileRange = GetTileRange();
 
-    for (auto& geom : m_geometries)
+
+    for (auto& geom : geometries)
         {
         if (nullptr != filter && !filter->AcceptElement(DgnElementId(geom->GetEntityId().GetValue())))
             continue;
@@ -2709,7 +2761,7 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
             continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
 
         auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
-        bool        isContained = geomRange.IsContained(myTileRange);
+        bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
         bool        maxGeometryCountExceeded = (++geometryCount > s_maxGeometryIdCount);
 
         for (auto& tilePolyface : polyfaces)
@@ -2768,7 +2820,6 @@ TileMeshList ElementTileNode::_GenerateMeshes(DgnDbR db, TileGeometry::NormalMod
                     meshBuilder = found->second;
                 else
                     builderMap[key] = meshBuilder = TileMeshBuilder::Create(displayParams, vertexTolerance, facetAreaTolerance);
-
 
                 DgnElementId elemId;
                 if (geometryCount < s_maxGeometryIdCount)
