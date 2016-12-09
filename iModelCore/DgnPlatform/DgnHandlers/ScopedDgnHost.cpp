@@ -272,7 +272,7 @@ BentleyStatus   TestDataManager::OpenTestFile(bool needBriefcase)
     if (needBriefcase)
         MustBeBriefcase(m_dgndb, m_openMode);
 
-    for (auto const& entry : m_dgndb->Models().MakeIterator())
+    for (ModelIteratorEntryCR entry : m_dgndb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
         {
         DgnModelPtr dgnModel = m_dgndb->Models().GetModel(entry.GetModelId());
         if (m_model == NULL)
