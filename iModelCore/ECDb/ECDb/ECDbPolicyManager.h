@@ -23,7 +23,8 @@ struct ECDbPolicy
         bool m_isSupported;
         Utf8String m_notSupportedMessage;
 
-        ECDbPolicy(bool isSupported, Utf8CP notSupportedMessage) : m_isSupported(isSupported), m_notSupportedMessage(notSupportedMessage) {}
+        ECDbPolicy(bool isSupported) : m_isSupported(isSupported) {}
+        ECDbPolicy(Utf8StringCR notSupportedMessage) : m_isSupported(false), m_notSupportedMessage(notSupportedMessage) {}
 
     public:
         ~ECDbPolicy() {}
@@ -41,14 +42,15 @@ struct ECDbPolicy
 
         //! Gets the reason why a policy is not supported in the given context
         //! @return Reason why policy is not supported. Returns nullptr if ECDbPolicy::IsSupported is true.
-        Utf8CP GetNotSupportedMessage() const { return m_notSupportedMessage.c_str(); }
+        Utf8StringCR GetNotSupportedMessage() const { return m_notSupportedMessage; }
 
         //Factory
         //! Creates a 'Supported' policy
-        static ECDbPolicy CreateSupported() { return ECDbPolicy(true, nullptr); }
+        static ECDbPolicy CreateSupported() { return ECDbPolicy(true); }
 
         //! Creates a 'Not supported' policy
-        static ECDbPolicy CreateNotSupported(Utf8CP notSupportedMessage = nullptr) { return ECDbPolicy(false, notSupportedMessage); }
+        static ECDbPolicy CreateNotSupported() { return ECDbPolicy(false); }
+        static ECDbPolicy CreateNotSupported(Utf8StringCR notSupportedMessage) { return ECDbPolicy(notSupportedMessage); }
     };
 
 //=======================================================================================
@@ -65,7 +67,8 @@ struct ECDbPolicyAssertion
         enum class Type
             {
             ClassIsValidInECSql, //!< @see ClassIsValidInECSqlPolicyAssertion
-            ECSqlPermission
+            ECSqlPermission,
+            MayModifyDbSchema
             };
 
     private:
@@ -142,6 +145,24 @@ struct ECSqlPermissionPolicyAssertion : ECDbPolicyAssertion
     };
 
 //=======================================================================================
+// @bsiclass                                                Krischan.Eberle      12/2016
+//+===============+===============+===============+===============+===============+======
+struct MayModifyDbSchemaPolicyAssertion : ECDbPolicyAssertion
+    {
+    private:
+        ECDbCR m_ecdb;
+        DbSchemaModificationToken const* m_token;
+
+    public:
+        MayModifyDbSchemaPolicyAssertion(ECDbCR ecdb, DbSchemaModificationToken const* token)
+            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::MayModifyDbSchema), m_ecdb(ecdb), m_token(token)
+            {}
+
+        ECDbCR GetECDb() const { return m_ecdb; }
+        DbSchemaModificationToken const* GetToken() const { return m_token; }
+    };
+
+//=======================================================================================
 //! Determines whether a given ECDb feature is supported in a given context.
 // @bsiclass                                                Krischan.Eberle      12/2013
 //+===============+===============+===============+===============+===============+======
@@ -153,6 +174,7 @@ struct ECDbPolicyManager
 
         static ECDbPolicy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
         static ECDbPolicy DoGetPolicy(ECSqlPermissionPolicyAssertion const&);
+        static ECDbPolicy DoGetPolicy(MayModifyDbSchemaPolicyAssertion const&);
 
     public:
         static ECDbPolicy GetPolicy(ECDbPolicyAssertion const&);

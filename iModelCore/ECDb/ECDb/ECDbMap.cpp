@@ -165,7 +165,7 @@ bool ECDbMap::AssertIfIsNotImportingSchema() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Krischan.Eberle    04/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
+BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
     {
     if (m_schemaImportContext != nullptr)
         {
@@ -191,7 +191,7 @@ BentleyStatus ECDbMap::MapSchemas(SchemaImportContext& ctx) const
         return ERROR;
         }
 
-    if (SUCCESS != CreateOrUpdateRequiredTables())
+    if (SUCCESS != CreateOrUpdateRequiredTables(mayModifyDbSchemaToken))
         {
         ClearCache();
         m_schemaImportContext = nullptr;
@@ -643,7 +643,7 @@ ECDbMap::ClassMapsByTable ECDbMap::GetClassMapsByTable() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      12/2011
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
+BentleyStatus ECDbMap::CreateOrUpdateRequiredTables(DbSchemaModificationToken const* mayModifyDbSchemaToken) const
     {
     if (AssertIfIsNotImportingSchema())
         return ERROR;
@@ -657,7 +657,7 @@ BentleyStatus ECDbMap::CreateOrUpdateRequiredTables() const
 
     for (DbTable const* table : GetDbSchemaR().GetCachedTables())
         {
-        const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table);
+        const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table, mayModifyDbSchemaToken);
         switch (result)
             {
                 case DbSchemaPersistenceManager::CreateOrUpdateTableResult::Created:

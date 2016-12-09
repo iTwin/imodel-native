@@ -26,6 +26,21 @@ public:
         IndexInfo(Utf8CP name, Utf8CP tableName, Utf8CP ddl) : m_name(name), m_tableName(tableName), m_ddl(ddl) {}
         };
 
+    struct NoDbSchemaModificationsECDb : ECDb
+        {
+        private:
+            DbSchemaModificationToken const* m_token;
+
+        public:
+            NoDbSchemaModificationsECDb() : ECDb()
+                {
+                m_token = &EnableDbSchemaModificationTokenValidation();
+                }
+
+            DbSchemaModificationToken const* GetToken() const { return m_token; }
+        };
+
+
 protected:
     void AssertSchemaImport(SchemaItem const&, Utf8CP ecdbFileName) const;
     void AssertSchemaImport(std::vector<SchemaItem> const&, Utf8CP ecdbFileName) const;

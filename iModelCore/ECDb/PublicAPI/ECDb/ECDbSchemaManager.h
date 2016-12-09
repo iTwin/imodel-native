@@ -80,7 +80,7 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         ECDbMap* m_dbMap;
         BeMutex& m_mutex;
 
-        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
+        BentleyStatus DoImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, DbSchemaModificationToken const*) const;
         BentleyStatus PersistECSchemas(SchemaImportContext&, bvector<ECN::ECSchemaCP> const&) const;
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;
@@ -109,26 +109,12 @@ struct ECDbSchemaManager : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCopya
         //!                     (the method detects that they are already imported, and simply skips them)
         //!                     All schemas should have been deserialized from a single ECN::ECSchemaReadContext. 
         //!                     If any duplicates are found in @p schemas an error will returned.
+        //! @param [in] token Token required to perform ECSchema imports that modify the DB schema if the
+        //! the ECDb file was set-up with the option "DB Schema modification token validation".
+        //! If the option is not set or if the import does not modify the DB schema, nullptr can be passed for @p token.
         //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
         //! @see @ref ECDbECSchemaImportAndUpdate
-        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas) const;
-
-        //! @deprecated Instead use overload that takes bvector of ECSchemas.
-        //!
-        //! Imports all @ref ECN::ECSchema "ECSchemas" contained by the @p schemaCache (which must
-        //! include all referenced ECSChemas) into the @ref ECDbFile "ECDb file".
-        //! ECSchemas that already exist in the file are updated (see @ref ECDbECSchemaUpdateSupportedFeatures).
-        //! @note After importing the schemas, any pointers to the existing schemas should be discarded and
-        //! they should be obtained as needed through the ECDbECSchemaManager API.
-        //!
-        //! @param[in] schemaCache Typically obtained from ECSchemaReadContext.GetCache() that contains the imported ECSchema and all of its referenced ECSchemas.
-        //!                     If the referenced ECSchemas are known to have already been imported, they are not required, but it does no harm to include them again
-        //!                     (the method detects that they are already imported, and simply skips them)
-        //!                     All schemas should be read from a single ECN::ECSchemaReadContext. 
-        //!                     If any duplicates are found in @p schemaCache an error will returned.
-        //! @return BentleyStatus::SUCCESS or BentleyStatus::ERROR (error details are being logged)
-        //! @see @ref ECDbECSchemaImportAndUpdate
-        BentleyStatus ImportECSchemas(ECN::ECSchemaCacheR schemaCache) const { return ImportECSchemas(schemaCache.GetSchemas()); }
+        ECDB_EXPORT BentleyStatus ImportECSchemas(bvector<ECN::ECSchemaCP> const& schemas, DbSchemaModificationToken const* token = nullptr) const;
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
         //! @param[in] schemaName Name of the ECSchema to check for

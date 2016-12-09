@@ -123,7 +123,15 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //---------------+---------------+---------------+---------------+---------------+------
 ECSqlWriteToken const& ECDb::EnableECSqlWriteTokenValidation() 
     {
-    return m_pimpl->EnableECSqlWriteTokenValidation(); 
+    return m_pimpl->m_tokenManager.EnableECSqlWriteTokenValidation(); 
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2016
+//---------------+---------------+---------------+---------------+---------------+------
+DbSchemaModificationToken const& ECDb::EnableDbSchemaModificationTokenValidation()
+    {
+    return m_pimpl->m_tokenManager.EnableDbSchemaModificationTokenValidation();
     }
 
 //--------------------------------------------------------------------------------------
