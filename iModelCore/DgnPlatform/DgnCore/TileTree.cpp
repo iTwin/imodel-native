@@ -37,7 +37,7 @@ END_UNNAMED_NAMESPACE
 BentleyStatus TileLoader::LoadTile()
     {
     // During the read we may have abandoned the tile. Do not waste time loading it.
-    if (m_tile->IsAbandoned())
+    if (IsCanceledOrAbandoned())
         return ERROR;
 
     BeAssert(m_tile->IsQueued());
@@ -47,20 +47,48 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::CreateTile()
+folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    if (m_loads != nullptr && m_loads->IsCanceled())
+    DgnDb::VerifyClientThread();
+
+    if (m_loads)
+        m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
+
+    m_tile->SetIsQueued(); // mark as queued so we don't request it again.
+
+    TileLoaderPtr me(this);
+    auto loadFlag = std::make_shared<LoadFlag>(m_tile->GetRootR());  // Keep track of running requests so we can exit gracefully.
+
+    return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
-        m_tile->SetNotLoaded();
-        return ERROR;
-        }
+        if (SUCCESS == status)
+            return folly::makeFuture(SUCCESS);
+            
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+       
+        return me->_GetFromSource();
+        }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
+            {
+            DgnDb::SetThreadId(DgnDb::ThreadId::CpuPool); // for debugging
 
-    LoadFlag loadFlag(m_tile->GetRootR());
+            auto& tile = *me->m_tile;
 
-    if (!m_tile->IsQueued())
-        return ERROR; // this node was abandoned.
-
-    return (SUCCESS == _ReadFromDb()) ? SUCCESS : _GetFromSource();
+            if (SUCCESS != status || SUCCESS != me->LoadTile())
+                {
+                if (me->m_loads != nullptr && me->m_loads->IsCanceled())
+                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
+                else
+                    tile.SetNotFound();
+                return ERROR;
+                }
+            
+            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+            
+            // On a successful load, potentially store the tile in the cache.   
+            me->_SaveToDb();    // don't wait on the save.
+            return SUCCESS;
+            });
     }
 
 //----------------------------------------------------------------------------------------
@@ -72,33 +100,63 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
     if (isHttp)
         {
-        HttpDataQuery query(m_fileName, m_loads);
+        auto query = std::make_shared<HttpDataQuery>(m_fileName, m_loads);
 
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
+        TileLoaderPtr me(this);
+        return query->Perform().then([me, query] (Http::Response const& response)
+            {
+            if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
+                return ERROR;
 
-        m_contentType = query.GetContentType();
-        m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
-        }
-    else
+            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream());
+            me->m_contentType = response.GetHeaders().GetContentType();
+            me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
+
+            return SUCCESS;
+            });
+        }                                           
+
+    auto query = std::make_shared<FileDataQuery>(m_fileName, m_loads);
+ 
+    TileLoaderPtr me(this);
+    return query->Perform().then([me, query](ByteStream const& data)
         {
-        FileDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
+        if (!data.HasData())
             return ERROR;
 
-        m_contentType = "";     // unknown 
-        m_expirationDate = 0;   // unknown 
-        }
+        me->m_tileBytes = std::move(data);
+        me->m_contentType = "";     // unknown 
+        me->m_expirationDate = 0;   // unknown 
 
-    return SUCCESS;
+        return SUCCESS;
+        });         
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
+    {
+    auto cache = m_tile->GetRootR().GetCache();
+    if (!cache.IsValid())
+        return ERROR;
+
+    TileLoaderPtr me(this);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
+        {
+        if (me->IsCanceledOrAbandoned())
+            return ERROR;
+
+        return me->DoReadFromDb();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::_ReadFromDb()
+BentleyStatus TileLoader::DoReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -121,6 +179,8 @@ BentleyStatus TileLoader::_ReadFromDb()
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(2);    
         m_expirationDate = stmt->GetValueInt64(3);
+        
+        m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         uint64_t rowId = stmt->GetValueInt64(2);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
@@ -143,11 +203,32 @@ BentleyStatus TileLoader::_ReadFromDb()
     return SUCCESS;
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> TileLoader::_SaveToDb()
+    {
+    if (!m_saveToCache)
+        return SUCCESS;
+
+    auto cache = m_tile->GetRootR().GetCache();
+    if (!cache.IsValid())
+        return ERROR;
+
+    TileLoaderPtr me(this);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
+        {
+        return me->DoSaveToDb();
+        });
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::_SaveToDb()
+BentleyStatus TileLoader::DoSaveToDb()
     {
     if (!m_saveToCache)
         return SUCCESS;
@@ -199,35 +280,33 @@ HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_reque
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus HttpDataQuery::Perform(ByteStream& data)
+folly::Future<Http::Response> HttpDataQuery::Perform()
     {
-    m_response = GetRequest().Perform();
+    TileLoadStatePtr loads = m_loads;
 
-    if (Http::ConnectionStatus::OK != m_response.GetConnectionStatus() || Http::HttpStatus::OK != m_response.GetHttpStatus())
-        return ERROR;
-
-    data = std::move(m_responseBody->GetByteStream());
-
-    if (m_loads != nullptr)
+    return GetRequest().Perform().then([loads] (Http::Response response)
         {
-        m_loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
-        m_loads = nullptr; // for debugging, mostly
-        }
+        if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus() &&
+            loads != nullptr)
+            {
+            loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
+            }
 
-    return SUCCESS;
+        return response;
+        });
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
+bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http::Response const& response)
     {
     expirationDate = 0;
 
-    if (!m_response.IsSuccess())
+    if (!response.IsSuccess())
         return false;
          
-    Utf8String cacheControl = m_response.GetHeaders().GetCacheControl();
+    Utf8String cacheControl = response.GetHeaders().GetCacheControl();
     size_t offset = 0;
     Utf8String directive;
     while ((offset = cacheControl.GetNextToken(directive, ",", offset)) != Utf8String::npos)
@@ -254,7 +333,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
     // if cache-control did not provide a max-age we must use 'Expires' directive if present.
     if (0 == expirationDate)
         {        
-        Utf8CP expiresStr = m_response.GetHeaders().GetValue("Expires");
+        Utf8CP expiresStr = response.GetHeaders().GetValue("Expires");
         if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
             {
             // if we cannot find an expiration date we are still allowed to cache.
@@ -267,22 +346,25 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileDataQuery::Perform(ByteStream& data)
+folly::Future<ByteStream> FileDataQuery::Perform()
     {
-    BeFile dataFile;
-    if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
-        return ERROR;
-
-    if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
-        return ERROR;
-
-    if (m_loads != nullptr)
+    auto filename = m_fileName;
+    TileLoadStatePtr loads = m_loads;
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [filename, loads] ()
         {
-        m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-        m_loads = nullptr;
-        }
+        ByteStream data;
+        BeFile dataFile;
+        if (BeFileStatus::Success != dataFile.Open(filename.c_str(), BeFileAccess::Read))
+            return data;
 
-    return SUCCESS;
+        if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
+            return data;
+
+        if (loads != nullptr)
+            loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
+            
+        return data;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -410,35 +492,8 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   
-
-    if (loads)
-        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
-    tile.SetIsQueued(); // mark as queued so we don't request it again.
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [loader,loads,&tile]() 
-        {
-        DgnDb::SetThreadId(DgnDb::ThreadId::IoPool); // for debugging
-
-        return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
-            {
-            if (SUCCESS != status || SUCCESS != loader->LoadTile())
-                {
-                if (loads != nullptr && loads->IsCanceled())
-                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
-                else
-                    tile.SetNotFound();
-
-                return ERROR;
-                }
-
-            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-            // On a successful load, potentially store the tile in the cache.   
-            loader->_SaveToDb();
-            return SUCCESS;
-            });
-        });    
+    
+    return loader->Perform();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -13,11 +13,10 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   PSolidUtil::Boolean
 (
-PK_BODY_t**             ppResultBodies,     // <= array of resultant bodies
-int*                    pNumResultBodies,   // <= number of manifold bodies in result
+bvector<PK_BODY_t>*     resultBodies,       // <= vector of resultant bodies
 PK_boolean_function_t   boolOpIn,           // => input boolean operation type
 bool                    generalTopology,    // => allow non reqular result (normally false!)
-PK_BODY_t               blankBodyIn,        // => input blank body (may be same as resultant body)
+PK_BODY_t&              blankBodyIn,        // => input blank body (may be same as resultant body)
 PK_BODY_t*              pToolBodies,        // => input tool bodies (consumed)
 int                     numToolBodiesIn,    // => input tool bodies count
 PKIBooleanOptionEnum    booleanOptions      // => options for boolean
@@ -80,48 +79,41 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 
     failureCode = PK_BODY_boolean_2 (blankBodyIn, numToolBodiesIn, pToolBodies, &options, &tracking, &results);
 
-    // NOTE: PK_boolean_result_no_clash_C is not considered a failure condition...
-    if (SUCCESS != failureCode || 0 == results.n_bodies)
+    if (SUCCESS == failureCode)
         {
-        failureCode = failureCode ? failureCode : ERROR;
-        }
-    else if (SUCCESS == failureCode && results.result != PK_boolean_result_success_c)
-        {
-        failureCode = PK_boolean_result_failed_c == results.result ? PK_boolean_result_failed_c : SUCCESS;
-        }
-    else
-        {
-        PK_BODY_type_t body_type;
-
-        if (1 == results.n_bodies)
+        if (PK_boolean_result_success_c == results.result)
             {
-            PK_BODY_ask_type(results.bodies[0], &body_type);
+            if (1 == results.n_bodies)
+                {
+                PK_BODY_type_t body_type;
+
+                PK_BODY_ask_type(results.bodies[0], &body_type);
             
-            if (PK_BODY_type_empty_c == body_type) // TR349612
-                failureCode = PK_boolean_result_failed_c;
+                if (PK_BODY_type_empty_c == body_type) // TR349612
+                    failureCode = PK_boolean_result_failed_c;
+                }
+            else if (nullptr == resultBodies && results.n_bodies > 1)
+                {
+                failureCode = PK_boolean_result_failed_c; // Require resultBodies to return disjoint result as separate bodies...
+                }
+            }
+        else
+            {
+            failureCode = PK_boolean_result_failed_c;
             }
         }
 
     if (SUCCESS != failureCode)
         {
-        if (pNumResultBodies)
-            *pNumResultBodies = 0;
-
-        if (ppResultBodies)
-            *ppResultBodies = NULL;
-
         PK_MARK_goto (boolStartMark);
         }
     else
         {
-        if (pNumResultBodies)
-            *pNumResultBodies = results.n_bodies;
+        if (0 == results.n_bodies)
+            blankBodyIn = PK_ENTITY_null; // Target fully consumed, tag no longer valid...
 
-        if (ppResultBodies)
-            {
-            PK_MEMORY_alloc (results.n_bodies * sizeof (PK_BODY_t), (void **) ppResultBodies);
-            memcpy (*ppResultBodies, &results.bodies[0], results.n_bodies * sizeof (PK_BODY_t));
-            }
+        if (nullptr != resultBodies && results.n_bodies > 0)
+            resultBodies->insert(resultBodies->end(), &results.bodies[0], &results.bodies[results.n_bodies]);
         }
 
     PK_boolean_r_f (&results);
@@ -210,10 +202,13 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* t
             }
         }
 
-    BentleyStatus   status = (SUCCESS == PSolidUtil::Boolean (NULL, NULL, operation, false, targetEntityTag, &toolEntityTags.front (), (int) toolEntityTags.size (), options) ? SUCCESS : ERROR);
+    BentleyStatus   status = (SUCCESS == PSolidUtil::Boolean(nullptr, operation, false, targetEntityTag, &toolEntityTags.front(), (int) toolEntityTags.size(), options) ? SUCCESS : ERROR);
 
     if (SUCCESS == status)
         {
+        if (PK_ENTITY_null == targetEntityTag)
+            PSolidUtil::ExtractEntityTag(targetEntity); // Invalidate target if successful result produced no geometry...
+
         // Invalidate tool entities that were consumed in boolean...
         for (size_t iTool = 0; iTool < nTools; ++iTool)
             PSolidUtil::ExtractEntityTag(*toolEntities[iTool]);
