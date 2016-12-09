@@ -78,7 +78,7 @@ static CommandParam s_paramTable[] =
         { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"su", L"surfaces", L"Publish surfaces only (no polylines, text etc.)", false, true },
+        { L"su", L"surfaces", L"Publish only surfaces for 3D models. (no polylines, text etc.)", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },

@@ -1573,6 +1573,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         auto drawingView = GetDgnDb().Elements().Get<DrawingViewDefinition>(viewId);
         if (drawingView.IsValid())
             {
+            surfacesOnly = false;           // Always publish lines, text etc. in sheets.
             viewedModels.insert(drawingView->GetBaseModelId());
             }
         else if ((spatialView = GetDgnDb().Elements().GetForEdit<SpatialViewDefinition>(viewId)).IsValid())

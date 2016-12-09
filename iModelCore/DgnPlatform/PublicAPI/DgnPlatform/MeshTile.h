@@ -429,7 +429,7 @@ struct TileGeomPart : RefCountedBase
 {
 private:
     DgnGeometryPartId       m_partId;
-    DgnGeometryPartCPtr     m_geomPart;
+    DRange3d                m_range;
     TileGeometryList        m_geometries;
     size_t                  m_instanceCount;
     mutable size_t          m_facetCount;
@@ -437,17 +437,17 @@ private:
 
 
 protected:
-    TileGeomPart(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometry);
+    TileGeomPart(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry);
 
 public:
-    DRange3d    GetRange() const;
 
-    static TileGeomPartPtr Create(DgnGeometryPartId partId, DgnGeometryPartCR geomPart, TileGeometryList const& geometry) { return new TileGeomPart(partId, geomPart, geometry); }
+    static TileGeomPartPtr Create(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(partId, range, geometry); }
     TileGeometry::T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance);
     TileGeometry::T_TileStrokes GetStrokes(IFacetOptionsR facetOptions, TileGeometryCR instance);
     size_t GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const;
     bool IsCurved() const;
     void IncrementInstanceCount() { m_instanceCount++; }
+    DRange3d    GetRange() const { return m_range; };
 
 
 };  // TileGeomPart

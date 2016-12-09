@@ -199,6 +199,8 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
         DgnDb::SetThreadId(DgnDb::ThreadId::SheetTile);
         Tile& tile = static_cast<Tile&>(*me->m_tile);
         Tree& root = tile.GetTree();
+        if (tile.IsAbandoned())
+            return folly::Future<BentleyStatus>(ERROR);
 
         auto vp = DgnViewport::GetTileViewport();
         return vp ? vp->_CreateTile(me->m_loads, me->m_image, *root.m_view, tile, root.m_pixels) : ERROR;
