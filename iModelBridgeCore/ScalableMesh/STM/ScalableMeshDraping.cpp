@@ -1206,8 +1206,16 @@ DTMStatusInt ScalableMeshDraping::_DrapeLinear(DTMDrapedLinePtr& ret, DPoint3dCP
         for (size_t ptPosition = finalOrder.second.idxFirst; ptPosition < finalOrder.second.idxLast; ++ptPosition) drapedLine.push_back(drapedPointsTemp[finalOrder.second.chunkId][ptPosition]);
         }
 
-    if(drapedLine.size() > 0) m_transform.Multiply(&drapedLine[0],(int) drapedLine.size());
-    ret = SMDrapedLine::Create(drapedLine, orderedList.begin()->first);
+    if(drapedLine.size() > 0) 
+        { 
+        m_transform.Multiply(&drapedLine[0],(int) drapedLine.size());
+        ret = SMDrapedLine::Create(drapedLine, orderedList.begin()->first);
+        }
+    else
+        { 
+        ret = SMDrapedLine::Create(drapedLine, 0);
+        }
+    
     return DTMStatusInt::DTM_SUCCESS;
 #if 0
     if (!queue.TryStartTraversal(findTriangleAlongRay, 0))
