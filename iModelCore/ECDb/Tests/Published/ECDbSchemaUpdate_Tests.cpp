@@ -2217,8 +2217,12 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
 
-    SchemaItem updatedSchema(
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+
+    Utf8CP updatedSchema =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2238,11 +2242,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
+    AssertSchemaUpdate(asserted, updatedSchema, filePath, true, true, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
+    AssertSchemaUpdate(asserted, updatedSchema, filePath, false, true, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7697,6 +7701,8 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "</ECSchema>");
     SetupECDb("schemaupdate_addsharedcolumncount.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
 
     Utf8CP editedSchemaXml = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"

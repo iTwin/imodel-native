@@ -37,7 +37,7 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
 ClassMappingStatus ClassMap::_Map(ClassMappingContext& ctx)
     {
     ClassMappingStatus stat = DoMapPart1(ctx);
-    if (stat != MappingStatus::Success)
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     return DoMapPart2(ctx);
@@ -204,8 +204,8 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
 
     DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    PRECONDITION(primaryKeyColumn != nullptr, MappingStatus::Error);
-    PRECONDITION(foreignKeyColumn != nullptr, MappingStatus::Error);
+    PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
+    PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
     for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
         {
