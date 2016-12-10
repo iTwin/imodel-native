@@ -47,6 +47,10 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
     m_ecsqlWriteToken = nullptr;
     //uncomment this (and remove line above) once API for modifying Aspects has been implemented
     //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
+
+    m_dbSchemaModificationToken = nullptr;
+    //uncomment this (and remove line above) once BIS ECSchema is set up so that domains don't modify the DB schema anymore
+    //m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
     }
 
 //--------------------------------------------------------------------------------------
@@ -54,6 +58,12 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
 ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteToken; }
+
+//--------------------------------------------------------------------------------------
+//not inlined as it must not be called externally
+// @bsimethod                                Krischan.Eberle                12/2016
+//---------------+---------------+---------------+---------------+---------------+------
+DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const { return m_dbSchemaModificationToken; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/12

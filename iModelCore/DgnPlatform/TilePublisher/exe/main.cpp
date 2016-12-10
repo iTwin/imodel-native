@@ -42,7 +42,7 @@ enum class ParamId
     GroundPoint,
     Tolerance,
     Depth,
-    Polylines,
+    SurfacesOnly,
     GeographicLocation,
     GlobeImagery,
     GlobeTerrain,
@@ -78,7 +78,7 @@ static CommandParam s_paramTable[] =
         { L"gp", L"groundpoint",L"Ground Location in database coordinates (meters).", false},
         { L"t",  L"tolerance",L"Tolerance (meters).", false},
         { L"d",  L"depth",L"Publish tiles to specified depth. e.g. 0=publish only the root tile.", false},
-        { L"pl", L"polylines", L"Don't publish polylines", false, true },
+        { L"su", L"surfaces", L"Publish only surfaces for 3D models. (no polylines, text etc.)", false, true },
         { L"l",  L"geographicLocation", L"Geographic location (longitude, latitude)", false },
         { L"ip", L"imageryProvider", L"Imagery Provider", false, false },
         { L"tp", L"terrainProvider", L"Terrain Provider", false, false },
@@ -159,7 +159,7 @@ private:
     GroundMode      m_groundMode;
     double          m_tolerance;
     uint32_t        m_depth = 0xffffffff;
-    bool            m_polylines = true;
+    bool            m_surfacesOnly = false;
     bool            m_verbose = false;
     Utf8String      m_imageryProvider;
     Utf8String      m_terrainProvider;
@@ -180,7 +180,7 @@ public:
     DPoint3dCR GetGroundPoint() const { return  m_groundPoint; }
     double GetTolerance() const { return m_tolerance; }
     uint32_t GetDepth() const { return m_depth; }
-    bool WantPolylines() const { return m_polylines; }
+    bool SurfacesOnly() const { return m_surfacesOnly; }
     bool WantVerboseStatistics() const { return m_verbose; }
     GeoPointCP GetGeoLocation() const { return m_displayGlobe ? &m_geoLocation : nullptr; }
     bool GetOverwriteExistingOutputFile() const { return m_overwriteExisting; }
@@ -334,8 +334,8 @@ bool PublisherParams::ParseArgs(int ac, wchar_t const** av)
                     return false;
                     }
                 break;
-            case ParamId::Polylines:
-                m_polylines = false;
+            case ParamId::SurfacesOnly:
+                m_surfacesOnly = true;
                 break;
             case ParamId::VerboseStatistics:
                 m_verbose = true;
@@ -450,8 +450,8 @@ private:
         virtual void _IndicateProgress(uint32_t completed, uint32_t total) override;
     };
 public:
-    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishPolylines, bool publishIncremental, bool verbose)
-        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishPolylines, maxTilesetDepth, publishIncremental),
+    TilesetPublisher(DgnDbR db, DgnViewIdSet const& viewIds, DgnViewId defaultViewId, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation, size_t maxTilesetDepth,  uint32_t publishDepth, bool publishNonSurfaces, bool publishIncremental, bool verbose)
+        : PublisherContext(db, viewIds, outputDir, tilesetName, geoLocation, publishNonSurfaces, maxTilesetDepth, publishIncremental),
           m_publishedTileDepth(publishDepth), m_defaultViewId(defaultViewId), m_verbose(verbose), m_timer(true)
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
@@ -639,7 +639,7 @@ PublisherContext::Status TilesetPublisher::Publish(PublisherParams const& params
     DRange3d            range;
 
     m_generator = &generator;
-    status = PublishViewModels(generator, range, params.GetTolerance(), progressMeter);
+    status = PublishViewModels(generator, range, params.GetTolerance(), params.SurfacesOnly(), progressMeter);
     m_generator = nullptr;
 
     if (Status::Success != status)
@@ -813,7 +813,7 @@ int wmain(int ac, wchar_t const** av)
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
     TilesetPublisher publisher(*db, viewsToPublish, defaultView, createParams.GetOutputDirectory(), createParams.GetTilesetName(), createParams.GetGeoLocation(), s_maxTilesetDepth, 
-                                                createParams.GetDepth(), createParams.WantPolylines(), createParams.GetIncremental(), createParams.WantVerboseStatistics());
+                                createParams.GetDepth(), createParams.SurfacesOnly(), createParams.GetIncremental(), createParams.WantVerboseStatistics());
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {

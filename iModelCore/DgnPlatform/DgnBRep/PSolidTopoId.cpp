@@ -653,24 +653,48 @@ BentleyStatus   PSolidTopoId::FindNodeIdRange (PK_BODY_t bodyTag, uint32_t& high
 
     PK_BODY_ask_faces (bodyTag, &numFaces, &pFaceTagArray);
 
-    if (0 == numFaces)
-        return ERROR;
-
-    for (int faceInd = 0; faceInd < numFaces; faceInd++)
+    if (0 != numFaces)
         {
-        FaceId  entityId;
+        for (int faceInd = 0; faceInd < numFaces; faceInd++)
+            {
+            FaceId  entityId;
 
-        if (SUCCESS != PSolidTopoId::IdFromEntity (entityId, pFaceTagArray[faceInd], true))
-            continue;
+            if (SUCCESS != PSolidTopoId::IdFromEntity (entityId, pFaceTagArray[faceInd], true))
+                continue;
 
-        if (entityId.nodeId > highestNodeId)
-            highestNodeId = entityId.nodeId;
+            if (entityId.nodeId > highestNodeId)
+                highestNodeId = entityId.nodeId;
 
-        if (entityId.nodeId < lowestNodeId)
-            lowestNodeId = entityId.nodeId;
+            if (entityId.nodeId < lowestNodeId)
+                lowestNodeId = entityId.nodeId;
+            }
+
+        PK_MEMORY_free (pFaceTagArray);
         }
 
-    PK_MEMORY_free (pFaceTagArray);
+    int         numEdges = 0;
+    PK_EDGE_t*  pEdgeTagArray = NULL;
+
+    PK_BODY_ask_edges (bodyTag, &numEdges, &pEdgeTagArray);
+
+    if (0 != numEdges)
+        {
+        for (int edgeInd = 0; edgeInd < numEdges; edgeInd++)
+            {
+            FaceId  entityId;
+
+            if (SUCCESS != PSolidTopoId::IdFromEntity (entityId, pEdgeTagArray[edgeInd], true))
+                continue;
+
+            if (entityId.nodeId > highestNodeId)
+                highestNodeId = entityId.nodeId;
+
+            if (entityId.nodeId < lowestNodeId)
+                lowestNodeId = entityId.nodeId;
+            }
+
+        PK_MEMORY_free (pEdgeTagArray);
+        }
 
     return (highestNodeId > 0 ? SUCCESS : ERROR);
     }
@@ -714,6 +738,10 @@ BentleyStatus   PSolidTopoId::AddNodeIdAttributes (PK_BODY_t bodyTag, uint32_t n
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   PSolidTopoId::AddNewNodeIdAttributes (PK_BODY_t bodyTag, uint32_t nodeId)
     {
+    // NOTE: This method attempted to assign new face ids by sorting existing face ids,
+    //       i.e. collapse a multi-node id solid to a single node id solid and have the ids
+    //       be a little more stable than just assigning them sequentially. Feature solids
+    //       would use this when a smart solid was used as a leaf node...
     int         numFaces = 0;
     PK_FACE_t*  pFaceTagArray = NULL;
 
@@ -781,7 +809,7 @@ BentleyStatus   PSolidTopoId::DeleteNodeIdAttributes (PK_BODY_t bodyTag)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void incrementIdAttribute (PK_ENTITY_t entityTag, int32_t increment)
     {
-    int           numAttrib;
+    int           numAttrib = 0;
     PK_ATTRIB_t*  pAttribArray = NULL;
 
     PSolidAttrib::GetAttrib (&numAttrib, &pAttribArray, entityTag, PKI_ENTITY_ID_ATTRIB_NAME);
@@ -825,6 +853,73 @@ BentleyStatus   PSolidTopoId::IncrementNodeIdAttributes (PK_BODY_t bodyTag, int3
         {
         for (int edgeInd = 0; edgeInd < numEdges; edgeInd++)
             incrementIdAttribute (pEdgeTagArray[edgeInd], increment);
+
+        PK_MEMORY_free (pEdgeTagArray);
+        }
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void changeIdAttribute (PK_ENTITY_t entityTag, uint32_t newNodeId, uint32_t oldNodeId)
+    {
+    int           numAttrib = 0;
+    PK_ATTRIB_t*  pAttribArray = NULL;
+
+    PSolidAttrib::GetAttrib (&numAttrib, &pAttribArray, entityTag, PKI_ENTITY_ID_ATTRIB_NAME);
+
+    for (int i = 0; i < numAttrib; i++)
+        {
+        uint32_t nodeId, entityId;
+
+        PSolidTopoId::AskEntityId (&nodeId, &entityId, pAttribArray[i]);
+
+        if (nodeId == newNodeId)
+            continue;
+
+        if (nodeId == oldNodeId)
+            PSolidTopoId::AttachEntityId (entityTag, newNodeId, entityId);
+
+        PK_ENTITY_delete (1, &pAttribArray[i]);
+        }
+
+    PK_MEMORY_free (pAttribArray);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus   PSolidTopoId::ChangeNodeIdAttributes (PK_BODY_t bodyTag, uint32_t nodeId)
+    {
+    uint32_t highestNodeId, lowestNodeId;
+
+    if (SUCCESS != PSolidTopoId::FindNodeIdRange(bodyTag, highestNodeId, lowestNodeId))
+        return ERROR;
+
+    int         numFaces = 0;
+    PK_FACE_t*  pFaceTagArray = NULL;
+
+    PK_BODY_ask_faces (bodyTag, &numFaces, &pFaceTagArray);
+
+    if (0 != numFaces)
+        {
+        for (int faceInd = 0; faceInd < numFaces; faceInd++)
+            changeIdAttribute (pFaceTagArray[faceInd], nodeId, highestNodeId);
+
+        PK_MEMORY_free (pFaceTagArray);
+        }
+
+    int         numEdges = 0;
+    PK_EDGE_t*  pEdgeTagArray = NULL;
+
+    PK_BODY_ask_edges (bodyTag, &numEdges, &pEdgeTagArray);
+
+    if (0 != numEdges)
+        {
+        for (int edgeInd = 0; edgeInd < numEdges; edgeInd++)
+            changeIdAttribute (pEdgeTagArray[edgeInd], nodeId, highestNodeId);
 
         PK_MEMORY_free (pEdgeTagArray);
         }
