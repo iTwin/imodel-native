@@ -52,6 +52,10 @@ namespace ServerSchema
         static Utf8CP EventSubscription = "EventSubscription";
         static Utf8CP UserDefinition = "UserDefinition";
         }
+    namespace Relationship
+        {
+        static Utf8CP FollowingRevision = "FollowingRevision";
+        }
     namespace Property
         {
         static Utf8CP Id = "Id";
