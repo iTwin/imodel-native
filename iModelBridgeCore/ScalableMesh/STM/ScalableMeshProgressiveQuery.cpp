@@ -1138,7 +1138,13 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
+        DRange3d clipExtent(extentToCover);
 
+        if (clipExtent.IsEmpty())
+            {
+            clipExtent = meshNodePtr->GetNodeExtent();
+            }
+        
         ConvexClipPlaneSet clipPlaneSet;
         DPlane3d planes[4] = { DPlane3d::From3Points(DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z)),
             DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z)),
@@ -1229,16 +1235,25 @@ class NewQueryStartingNodeProcessor
                 {                              
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
                 
-                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
-              
-                if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
-                    {            
-                    FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
+                if (!m_nodesToSearch->GetNodes()[nodeInd]->IsLoaded())
+                    {                     
+                    DRange3d range3d(DRange3d::NullRange());
+
+                    FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
                     }
                 else
-                    {
-                    m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    }            
+                    {                 
+                    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd]));
+              
+                    if (!meshNodePtr->IsLoaded(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                        {            
+                        FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips);
+                        }
+                    else
+                        {
+                        m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
+                        }            
+                    }
                 }                    
         
             for (size_t nodeInd = 0; nodeInd < m_foundNodes->GetNodes().size(); nodeInd++)        
@@ -1268,7 +1283,7 @@ class NewQueryStartingNodeProcessor
                     }
                 }
             }
-
+            
         void Execute(RequestedQuery&                                            newQuery, 
                      bvector<IScalableMeshCachedDisplayNodePtr>&                lowerResOverviewNodes,
                      bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& searchingNodes,
