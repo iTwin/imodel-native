@@ -1413,6 +1413,10 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
      
     while (currentInd < nodesToSearch.GetNodes().size())
         {
+        //Increase display responsiveness, especially for streaming.
+        if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded())
+            break;
+
         nodesToSearch.GetNodes()[currentInd]->QueryVisibleNode (queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, nullptr);
         
         if ((clock() - startTime) > s_firstNodeSearchingDelay)
