@@ -469,7 +469,7 @@ static bool WriteSchema(Options const& options)
     cultureForName.ReplaceAll("-", "_");
     Utf8PrintfString supplementalSchemaName("%s_Supplemental_Localization_%s", schemaKey.GetName(), cultureForName.c_str());
     Utf8String encodedName = ECNameValidation::EncodeToValidName(supplementalSchemaName);
-    SchemaKey supplementalKey(encodedName.c_str(), schemaKey.GetVersionMajor(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor());
+    SchemaKey supplementalKey(encodedName.c_str(), schemaKey.GetVersionRead(), schemaKey.GetVersionWrite(), schemaKey.GetVersionMinor());
 
     //example: House_Supplemental_Localization_en_GB.01.00.ecschema.xml
     Utf8PrintfString outputFileName("%s.ecschema.xml", supplementalKey.GetFullSchemaName().c_str());
@@ -488,7 +488,7 @@ static bool WriteSchema(Options const& options)
     ECSchemaPtr schema;
     Utf8PrintfString namespacePrefix("loc_%s", cultureForName.c_str());
     if (ECSchema::CreateSchema(schema, supplementalKey.GetName(), namespacePrefix,
-                               supplementalKey.GetVersionMajor(), supplementalKey.GetVersionWrite(), supplementalKey.GetVersionMinor()) != ECObjectsStatus::Success || !schema.IsValid())
+                               supplementalKey.GetVersionRead(), supplementalKey.GetVersionWrite(), supplementalKey.GetVersionMinor()) != ECObjectsStatus::Success || !schema.IsValid())
         {
         s_logger->errorv("Unable to create schema %s", supplementalKey.GetName().c_str());
         return false;
@@ -509,7 +509,7 @@ static bool WriteSchema(Options const& options)
         }
     schema->AddReferencedSchema(*bsCASchema);
 
-    auto supInfo = SupplementalSchemaMetaData::Create(schemaKey.GetName(), schemaKey.GetVersionMajor(), schemaKey.GetVersionMinor(), options.Precendence, "Localization", false);
+    auto supInfo = SupplementalSchemaMetaData::Create(schemaKey.GetName(), schemaKey.GetVersionRead(), schemaKey.GetVersionMinor(), options.Precendence, "Localization", false);
     IECInstancePtr instance = supInfo->CreateCustomAttribute();
     schema->SetCustomAttribute(*instance);
 
