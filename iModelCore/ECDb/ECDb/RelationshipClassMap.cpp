@@ -270,7 +270,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
+ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     {   
     //Don't call base class method as end table map requires its own handling
     BeAssert(GetClass().GetRelationshipClassCP() != nullptr && MapStrategyExtendedInfo::IsForeignKeyMapping(ctx.GetClassMappingInfo().GetMapStrategy()));
@@ -278,13 +278,13 @@ MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     RelationshipMappingInfo const& relClassMappingInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
     if (GetClass().HasBaseClasses())
-        return MapSubClass(relClassMappingInfo) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        return MapSubClass(relClassMappingInfo) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
     //root class (no base class) mapping
 
     ColumnLists columns;
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     //Set tables
     for (DbColumn const* fkTablePkCol : columns.m_ecInstanceIdColumnsPerFkTable)
@@ -297,32 +297,32 @@ MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (ecInstanceIdPropMap == nullptr)
         {
         BeAssert(false && "Failed to create PropertyMapECInstanceId");
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(ecInstanceIdPropMap, 0) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns.m_relECClassIdColumnsPerFkTable);
     if (ecClassIdPropMap == nullptr)
         {
         BeAssert(false && "Failed to create ECClassIdPropertyMap");
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(ecClassIdPropMap, 1) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     //ForeignEnd ECInstanceId PropMap
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> foreignEndIdPropertyMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, GetForeignEnd(), columns.m_ecInstanceIdColumnsPerFkTable);
     if (foreignEndIdPropertyMap == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(foreignEndIdPropertyMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     GetConstraintMapR(GetForeignEnd()).SetECInstanceIdPropMap(foreignEndIdPropertyMap.get());
 
@@ -333,11 +333,11 @@ MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (foreignEndClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(foreignEndClassIdPropertyMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     GetConstraintMapR(GetForeignEnd()).SetECClassIdPropMap(foreignEndClassIdPropertyMap.get());
 
@@ -346,11 +346,11 @@ MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (referencePropertyMap == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(referencePropertyMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     GetConstraintMapR(GetReferencedEnd()).SetECInstanceIdPropMap(referencePropertyMap.get());
 
@@ -361,20 +361,20 @@ MappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (referenceClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(referenceClassIdPropertyMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     GetConstraintMapR(GetReferencedEnd()).SetECClassIdPropMap(referenceClassIdPropertyMap.get());
 
     //map non-system properties
-    if (MappingStatus::Error == MapProperties(ctx))
-        return MappingStatus::Error;
+    if (ClassMappingStatus::Error == MapProperties(ctx))
+        return ClassMappingStatus::Error;
 
     AddIndexToRelationshipEnd(ctx);
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1183,14 +1183,14 @@ RelationshipClassLinkTableMap::RelationshipClassLinkTableMap(ECDb const& ecdb, E
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Ramanujam.Raman                   06 / 12
 //---------------------------------------------------------------------------------------
-MappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
+ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     {
     BeAssert(!MapStrategyExtendedInfo::IsForeignKeyMapping(GetMapStrategy()) &&
              "RelationshipClassLinkTableMap is not meant to be used with other map strategies.");
     BeAssert(GetRelationshipClass().GetStrength() != StrengthType::Embedding && "Should have been caught already in ClassMapInfo");
 
-    MappingStatus stat = DoMapPart1(ctx);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = DoMapPart1(ctx);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
@@ -1209,11 +1209,11 @@ MappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     ECClassId defaultTargetECClassId;
     DetermineConstraintClassIdColumnHandling(addTargetECClassIdColumnToTable, defaultTargetECClassId, targetConstraint);
     stat = CreateConstraintPropMaps(relationClassMapInfo, addSourceECClassIdColumnToTable, defaultSourceECClassId, addTargetECClassIdColumnToTable, defaultTargetECClassId);
-    if (stat != MappingStatus::Success)
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     stat = DoMapPart2(ctx);
-    if (stat != MappingStatus::Success)
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     //only create constraints on TPH root or if not TPH and not existing table
@@ -1235,7 +1235,7 @@ MappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
 
 
     AddIndices(ctx);
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1304,7 +1304,7 @@ RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassLinkTableMap::
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(RelationshipMappingInfo const& mapInfo, bool addSourceECClassIdColumnToTable, ECClassId defaultSourceECClassId,
+ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(RelationshipMappingInfo const& mapInfo, bool addSourceECClassIdColumnToTable, ECClassId defaultSourceECClassId,
     bool addTargetECClassIdColumnToTable, ECClassId defaultTargetECClassId)
     {
     //**** SourceECInstanceId prop map 
@@ -1312,26 +1312,26 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relationsh
     if (columnName.empty())
         {
         if (!GetConstraintECInstanceIdColumnName(columnName, ECRelationshipEnd_Source, GetPrimaryTable()))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
     auto sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::SourceECInstanceId, PersistenceType::Persisted);
     if (sourceECInstanceIdColumn == nullptr)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     auto sourceECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceIdColumn});
-    PRECONDITION(sourceECInstanceIdPropMap.IsValid(), MappingStatus::Error);
+    PRECONDITION(sourceECInstanceIdPropMap.IsValid(), ClassMappingStatus::Error);
     if (GetPropertyMapsR().Insert(sourceECInstanceIdPropMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     m_sourceConstraintMap.SetECInstanceIdPropMap(sourceECInstanceIdPropMap.get());
 
     //**** SourceECClassId prop map
     DbColumn const* sourceECClassIdColumn = ConfigureForeignECClassIdKey(mapInfo, ECRelationshipEnd_Source);
     auto sourceECClassIdPropMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, defaultSourceECClassId, ECRelationshipEnd_Source, {sourceECClassIdColumn} );
-    PRECONDITION(sourceECClassIdPropMap.IsValid(), MappingStatus::Error);
+    PRECONDITION(sourceECClassIdPropMap.IsValid(), ClassMappingStatus::Error);
     if (GetPropertyMapsR().Insert(sourceECClassIdPropMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     m_sourceConstraintMap.SetECClassIdPropMap(sourceECClassIdPropMap.get());
 
@@ -1341,17 +1341,17 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relationsh
     if (columnName.empty())
         {
         if (!GetConstraintECInstanceIdColumnName(columnName, ECRelationshipEnd_Target, GetPrimaryTable()))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
     auto targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::TargetECInstanceId, PersistenceType::Persisted);
     if (targetECInstanceIdColumn == nullptr)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     auto targetECInstanceIdPropMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECInstanceIdColumn});
-    PRECONDITION(targetECInstanceIdPropMap.IsValid(), MappingStatus::Error);
+    PRECONDITION(targetECInstanceIdPropMap.IsValid(), ClassMappingStatus::Error);
     if (GetPropertyMapsR().Insert(targetECInstanceIdPropMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     m_targetConstraintMap.SetECInstanceIdPropMap(targetECInstanceIdPropMap.get());
 
@@ -1362,14 +1362,14 @@ MappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relationsh
     if (targetECClassIdPropMap == nullptr)
         {
         BeAssert(targetECClassIdPropMap != nullptr);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     if (GetPropertyMapsR().Insert(targetECClassIdPropMap) != SUCCESS)
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     m_targetConstraintMap.SetECClassIdPropMap(targetECClassIdPropMap.get());
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

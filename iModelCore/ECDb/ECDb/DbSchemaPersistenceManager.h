@@ -51,7 +51,7 @@ private:
 public:
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
-    static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
+    static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&, DbSchemaModificationToken const*);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
     };

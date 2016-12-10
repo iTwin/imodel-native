@@ -27,6 +27,7 @@ enum class ECDbIssueSeverity
     };
 
 struct ECSqlWriteToken;
+struct DbSchemaModificationToken;
 
 //=======================================================================================
 //! ECDb is the %EC API used to access %EC data in an @ref ECDbFile "ECDb file".
@@ -106,6 +107,11 @@ protected:
     //! Subclasses can call this if they don't want consumers to modify data via ECSQL directly,
     //! and provide their own data modifying APIs.
     ECDB_EXPORT ECSqlWriteToken const& EnableECSqlWriteTokenValidation();
+
+    //! If called, consumers can only perform DB-schema-modifying ECSchema imports or updates
+    //! with the token returned from this method. 
+    //! Subclasses can call this if they don't want consumers to modify the DB schema
+    ECDB_EXPORT DbSchemaModificationToken const& EnableDbSchemaModificationTokenValidation();
 #endif
 
     virtual void _OnAfterECSchemaImport() const {}

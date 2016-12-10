@@ -84,14 +84,12 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 // @bsimethod                                                    Affan.Khan        01/2015
 //---------------------------------------------------------------------------------------
 //static
-DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
+DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table, DbSchemaModificationToken const* mayModifyDbSchemaToken)
     {
     if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
     Utf8CP tableName = table.GetName().c_str();
-    BeBriefcaseId briefcaseId = ecdb.GetBriefcaseId();
-    const bool allowDbSchemaChange = briefcaseId.IsMasterId() || briefcaseId.IsStandaloneId();
 
     CreateOrUpdateTableResult mode;
     if (ecdb.TableExists(tableName))
@@ -102,10 +100,12 @@ DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager
     if (mode == CreateOrUpdateTableResult::WasUpToDate)
         return mode;
 
-    if (!allowDbSchemaChange)
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(MayModifyDbSchemaPolicyAssertion(ecdb, mayModifyDbSchemaToken));
+    if (!policy.IsSupported())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Failed to import ECSchemas: Imported ECSchemas would change the database schema. "
-                                                      "This is only allowed for standalone briefcases or the master briefcase. Briefcase id: %" PRIu32, briefcaseId.GetValue());
+        ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, 
+               "Failed to import ECSchemas: Imported ECSchemas would change the database schema. ECDb would have to %s table '%s'.",
+                      mode == CreateOrUpdateTableResult::Created ? "create" : "modify", table.GetName().c_str());
         return CreateOrUpdateTableResult::Error;
         }
 

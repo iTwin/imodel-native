@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                02/2014
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus& mapStatus, ECDb const& ecdb, ECN::ECClassCR ecClass)
+std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(ClassMappingStatus& mapStatus, ECDb const& ecdb, ECN::ECClassCR ecClass)
     {
     std::unique_ptr<ClassMappingInfo> info = nullptr;
     ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
@@ -29,7 +29,7 @@ std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(MappingStatus&
     else
         info = std::unique_ptr<ClassMappingInfo>(new ClassMappingInfo(ecdb, ecClass));
 
-    if (info == nullptr || (mapStatus = info->Initialize()) != MappingStatus::Success)
+    if (info == nullptr || (mapStatus = info->Initialize()) != ClassMappingStatus::Success)
         return nullptr;
 
     return info;
@@ -49,10 +49,10 @@ ClassMappingInfo::ClassMappingInfo(ECDb const& ecdb, ECClassCR ecClass)
 //---------------------------------------------------------------------------------
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ClassMappingInfo::Initialize()
+ClassMappingStatus ClassMappingInfo::Initialize()
     {
     if (SUCCESS != _InitializeFromSchema())
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     return EvaluateMapStrategy();
     }
@@ -60,48 +60,48 @@ MappingStatus ClassMappingInfo::Initialize()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                 Krischan.Eberle                    05/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ClassMappingInfo::EvaluateMapStrategy()
+ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
     {
     //Default values for table name and primary key column name
     if (m_tableName.empty())
         {
         // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
         if (SUCCESS != ClassMap::DetermineTableName(m_tableName, m_ecClass))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
-    MappingStatus stat = _EvaluateMapStrategy();
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = _EvaluateMapStrategy();
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     //! We override m_mapsToVirtualTable if TablePerHierarchy was used.
     if (m_mapsToVirtualTable && m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy)
         m_mapsToVirtualTable = false;
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
+ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy()
     {
     if (m_ecClass.IsCustomAttributeClass() || m_ecClass.IsStructClass())
         {
         LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.");
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     if (ClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     ClassMap const* baseClassMap = nullptr;
-    MappingStatus stat = TryGetBaseClassMap(baseClassMap);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = TryGetBaseClassMap(baseClassMap);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     BeAssert(GetDbMap().GetSchemaImportContext() != nullptr);
@@ -109,7 +109,7 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
     if (caCacheCP == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     ClassMappingCACache const& caCache = *caCacheCP;
@@ -123,11 +123,11 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
                 caCache.GetStrategy() == MapStrategy::SharedTable))
                 {
                 Issues().Report(ECDbIssueSeverity::Error, "Invalid MapStrategy '%s' on abstract ECClass '%s'. Only MapStrategies 'TablePerHierarchy' or 'NotMapped' are allowed on abstract classes.", MapStrategyExtendedInfo::ToString(caCache.GetStrategy()), m_ecClass.GetFullName());
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
                 }
             }
 
-        return AssignMapStrategy(caCache) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        return AssignMapStrategy(caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
         }
 
     BeAssert(baseClassMap != nullptr);
@@ -139,7 +139,7 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
             case MapStrategy::ExistingTable:
             case MapStrategy::SharedTable:
                 //Those parent strategies are not inherited to subclasses.
-                return AssignMapStrategy(caCache) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+                return AssignMapStrategy(caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
             case MapStrategy::NotMapped:
             {
@@ -148,19 +148,19 @@ MappingStatus ClassMappingInfo::_EvaluateMapStrategy()
                 Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
                                 "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
                                 m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(caCache.GetStrategy()));
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
                 }
 
             m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
             }
 
             case MapStrategy::TablePerHierarchy:
-             return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+             return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
             default:
                 BeAssert(false && "should not be called");
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
         }
     }
 
@@ -389,12 +389,12 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseClassMap) const
+ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseClassMap) const
     {
     if (!m_ecClass.HasBaseClasses())
         {
         foundBaseClassMap = nullptr;
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     ClassMap const* tphBaseClassMap = nullptr;
@@ -406,12 +406,12 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
         {
         ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
         if (baseClassMap == nullptr)
-            return MappingStatus::BaseClassesNotMapped;
+            return ClassMappingStatus::BaseClassesNotMapped;
 
         if (!isMultiInheritance)
             {
             foundBaseClassMap = baseClassMap;
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
             }
 
         MapStrategy baseMapStrategy = baseClassMap->GetMapStrategy().GetStrategy();
@@ -434,7 +434,7 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
                                     m_ecClass.GetFullName(), tphBaseClassMap->GetClass().GetFullName(),
                                     tphBaseClassMap->GetPrimaryTable().GetName().c_str(), tphBaseClassMap->GetJoinedTable().GetName().c_str(),
                                     baseClassMap->GetClass().GetFullName(), baseClassMap->GetPrimaryTable().GetName().c_str(), baseClassMap->GetJoinedTable().GetName().c_str());
-                    return MappingStatus::Error;
+                    return ClassMappingStatus::Error;
                     }
 
                 break;
@@ -466,7 +466,7 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
         if (notMappedBaseClassMap == nullptr && ownTableBaseClassMap == nullptr)
             {
             foundBaseClassMap = tphBaseClassMap;
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
             }
 
         ClassMap const* violatingClassMap = notMappedBaseClassMap != nullptr ? notMappedBaseClassMap : ownTableBaseClassMap;
@@ -481,19 +481,19 @@ MappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBaseCla
                             violatingClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(violatingClassMap->GetMapStrategy().GetStrategy()));
             }
 
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     //As NotMapped applies to subclasses, it always overrides OwnTable.
     if (notMappedBaseClassMap != nullptr)
         {
         foundBaseClassMap = notMappedBaseClassMap;
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     BeAssert(ownTableBaseClassMap != nullptr);
     foundBaseClassMap = ownTableBaseClassMap;
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -644,7 +644,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07 / 2012
 //+---------------+---------------+---------------+---------------+---------------+------
-MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
+ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     {
     DetermineCardinality();
 
@@ -655,7 +655,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         {
         LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "The source or target constraint contains at least one ECClass which is not mapped. Therefore the ECRelationshipClass is not mapped either.");
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     BeAssert(GetDbMap().GetSchemaImportContext() != nullptr);
@@ -663,7 +663,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     if (caCache == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     const bool hasBaseClasses = m_ecClass.HasBaseClasses();
@@ -674,7 +674,7 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             {
             ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
             if (baseClassMap == nullptr)
-                return MappingStatus::BaseClassesNotMapped;
+                return ClassMappingStatus::BaseClassesNotMapped;
 
             if (firstBaseClassMap == nullptr)
                 firstBaseClassMap = baseClassMap;
@@ -688,36 +688,36 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
                 Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECClass %s. Its MapStrategy '%s' does not match the base class's MapStrategy 'NotMapped'. "
                                 "Subclasses of an ECClass with MapStrategy 'NotMapped' must not define a MapStrategy.",
                                 m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(caCache->GetStrategy()));
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
                 }
 
             m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
             }
 
         if (baseStrategy == MapStrategy::ExistingTable || baseStrategy == MapStrategy::SharedTable)
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'ExistingTable' or 'SharedTable' which is not supported in an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
 
         if (caCache->HasMapStrategy() && caCache->GetStrategy() == MapStrategy::NotMapped)
             {
             m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
             }
 
         if (firstBaseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             if (SUCCESS != EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap))
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
             }
         else
             {
             BeAssert(firstBaseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
             if (SUCCESS != EvaluateLinkTableStrategy(*caCache, firstBaseClassMap))
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
             }
 
         if (baseStrategy != m_mapStrategyExtInfo.GetStrategy())
@@ -725,23 +725,23 @@ MappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its mapping type (%s) differs from the mapping type of its base relationship class %s (%s). The mapping type must not change within an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_mapStrategyExtInfo.GetStrategy()), 
                             firstBaseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
 
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     //no base class
     if (caCache->HasMapStrategy() && caCache->GetStrategy() == MapStrategy::NotMapped)
         {
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
         }
 
     if (m_customMapType == CustomMapType::LinkTable || m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0)
-        return EvaluateLinkTableStrategy(*caCache, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+        return EvaluateLinkTableStrategy(*caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
-    return EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap) == SUCCESS ? MappingStatus::Success : MappingStatus::Error;
+    return EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
 
 

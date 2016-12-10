@@ -46,6 +46,111 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, ImportToken)
+    {
+  /*  auto assertImport = [this] (BeFileName const& filePath, Utf8CP ecschemaXml, bool expectedToSucceedInRestrictedMode)
+        {
+        bool asserted = false;
+        ECDb ecdb;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(ecschemaXml, true));
+        ASSERT_FALSE(asserted);
+        ecdb.CloseDb();
+
+        asserted = false;
+        NoDbSchemaModificationsECDb restrictedECDb;
+        AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, expectedToSucceedInRestrictedMode), "importtokentest.ecdb");
+        ASSERT_FALSE(asserted);
+        restrictedECDb.CloseDb();
+        };
+
+
+    assertImport()
+    {
+            ECDb ecdb;
+            NoDbSchemaModificationsECDb restrictedECDb;
+
+            Utf8CP testSchemaXml = "<?xml version='1.0' encoding='utf-8' ?>"
+                "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "    <ECEntityClass typeName='Foo' displayLabel='Spatial Element'>"
+                "        <ECProperty propertyName='Pet' typeName='string'/>"
+                "        <ECProperty propertyName='LastMod' typeName='DateTime'/>"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, SchemaItem(testSchemaXml, true), "importtokentest.ecdb");
+            ASSERT_FALSE(asserted);
+            ecdb.CloseDb();
+
+            asserted = false;
+            AssertSchemaImport(restrictedECDb, asserted, SchemaItem(testSchemaXml, false), "importtokentest.ecdb");
+            ASSERT_FALSE(asserted);
+            restrictedECDb.CloseDb();
+            }
+
+            {
+            SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                               "<ECSchema schemaName='Base Schema' alias='base' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                               "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                                               "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                                               "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                               "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                               "    </ECEntityClass>"
+                                               "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                                               "          <ECCustomAttributes>"
+                                               "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                               "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                               "            </ClassMap>"
+                                               "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                               "          </ECCustomAttributes>"
+                                               "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                               "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                               "    </ECEntityClass>"
+                                               "    <ECEntityClass typeName='Sub1' modifier='None'>"
+                                               "          <ECCustomAttributes>"
+                                               "            <ShareColumns xmlns='ECDbMap.02.00' >"
+                                               "               <SharedColumnCount>5</SharedColumnCount>"
+                                               "            </ShareColumns>"
+                                               "          </ECCustomAttributes>"
+                                               "        <BaseClass>TphBase</BaseClass>"
+                                               "        <ECProperty propertyName='Sub1Prop1' typeName='long' />"
+                                               "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                                               "    </ECEntityClass>"
+                                               "</ECSchema>", true));
+            ASSERT_TRUE(GetECDb().IsDbOpen());
+
+            BeFileName filePath(GetECDb().GetDbFileName());
+            GetECDb().CloseDb();
+
+            ECDb ecdb;
+            NoDbSchemaModificationsECDb restrictedECDb;
+
+            Utf8CP testSchemaXml = "<?xml version='1.0' encoding='utf-8' ?>"
+                "<ECSchema schemaName='SubSchema' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                "        <BaseClass>BaseNoTph</BaseClass>"
+                "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                "    </ECEntityClass>"
+                "</ECSchema>";
+
+            bool asserted = false;
+            AssertSchemaImport(ecdb, asserted, SchemaItem(testSchemaXml, true), "importtokentest.ecdb");
+            ASSERT_FALSE(asserted);
+            ecdb.CloseDb();
+
+            asserted = false;
+            AssertSchemaImport(restrictedECDb, asserted, SchemaItem(testSchemaXml, false), "importtokentest.ecdb");
+            ASSERT_FALSE(asserted);
+            restrictedECDb.CloseDb();
+            }
+            */
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
@@ -1379,10 +1484,10 @@ TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
 
     ECDb& ecdb = SetupECDb("duplicateInMemorySchemaTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas())) << "Failed because locater was not added for schemas that already exist in ECDb";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -17,6 +17,29 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct ECSqlWriteToken final
     {};
 
+struct DbSchemaModificationToken final
+    {};
+
+//=======================================================================================
+// Holds and issues the tokens used to restrict certain ECDb APIs
+// @bsiclass                                                Krischan.Eberle      12/2016
+//+===============+===============+===============+===============+===============+======
+struct TokenManager final : NonCopyableClass
+    {
+private:
+    std::unique_ptr<ECSqlWriteToken> m_ecsqlWriteToken;
+    std::unique_ptr<DbSchemaModificationToken> m_dbSchemaModificationToken;
+
+public:
+    TokenManager() : m_ecsqlWriteToken(nullptr), m_dbSchemaModificationToken(nullptr) {}
+
+    ECSqlWriteToken const& EnableECSqlWriteTokenValidation() { m_ecsqlWriteToken = std::unique_ptr<ECSqlWriteToken>(new ECSqlWriteToken()); return *m_ecsqlWriteToken; }
+    ECSqlWriteToken const* GetECSqlWriteToken() const { return m_ecsqlWriteToken.get(); }
+
+    DbSchemaModificationToken const& EnableDbSchemaModificationTokenValidation() { m_dbSchemaModificationToken = std::unique_ptr<DbSchemaModificationToken>(new DbSchemaModificationToken()); return *m_dbSchemaModificationToken; }
+    DbSchemaModificationToken const* GetDbSchemaModificationToken() const { return m_dbSchemaModificationToken.get(); }
+    };
+
 //=======================================================================================
 //! ECDb::Impl is the private implementation of ECDb hidden from the public headers
 //! (PIMPL idiom)
@@ -73,7 +96,7 @@ private:
     mutable BeMutex m_mutex;
     ECDbR m_ecdb;
     std::unique_ptr<ECDbSchemaManager> m_schemaManager;
-    std::unique_ptr<ECSqlWriteToken> m_expectedECSqlWriteToken;
+    TokenManager m_tokenManager;
 
     mutable BeBriefcaseBasedIdSequence m_ecInstanceIdSequence;
     BeBriefcaseBasedIdSequence m_ecSchemaIdSequence;
@@ -124,8 +147,6 @@ private:
     void RegisterBuiltinFunctions() const;
     void UnregisterBuiltinFunctions() const;
 
-    ECSqlWriteToken const& EnableECSqlWriteTokenValidation() { m_expectedECSqlWriteToken = std::unique_ptr<ECSqlWriteToken>(new ECSqlWriteToken()); return *m_expectedECSqlWriteToken; }
-
 public:
     ~Impl() {}
 
@@ -142,7 +163,7 @@ public:
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
 
-    bool IsECSqlWriteTokenValid(ECSqlWriteToken const* token) const { return m_expectedECSqlWriteToken == nullptr || m_expectedECSqlWriteToken.get() == token; }
+    TokenManager const& GetTokenManager() const { return m_tokenManager; }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used
     //! by code that refers to objects held in the cache to invalidate itself.

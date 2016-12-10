@@ -45,24 +45,28 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
         //+---------------+---------------+---------------+---------------+---------------+------
-        void AssertSchemaUpdate(bool &asserted, Utf8CP SchemaXml, BeFileName seedFilePath, BeBriefcaseId briefcaseId, bool expectedToSucceed, Utf8CP assertMessage)
+        void AssertSchemaUpdate(bool &asserted, Utf8CP SchemaXml, BeFileName seedFilePath, bool mayModifyDbSchema, bool expectedToSucceed, Utf8CP assertMessage)
             {
             Utf8String dbFileName;
-            dbFileName.Sprintf("schemaupdate_briefcaseId_%" PRIu32 ".ecdb", briefcaseId.GetValue());
+            dbFileName.Sprintf("schemaupdate_%s.ecdb", mayModifyDbSchema ? "maymodifydbschema" : "maynotmodifydbschema");
 
-            ECDb ecdb;
-            CloneECDb(ecdb, dbFileName.c_str(), seedFilePath);
-            ASSERT_TRUE(ecdb.IsDbOpen());
+            std::unique_ptr<ECDb> ecdb = nullptr;
 
-            if (briefcaseId != ecdb.GetBriefcaseId())
-                ASSERT_EQ(BE_SQLITE_OK, ecdb.ChangeBriefcaseId(briefcaseId));
+            if (mayModifyDbSchema)
+                ecdb = std::make_unique<ECDb>();
+            else
+                ecdb = std::make_unique<NoDbSchemaModificationsECDb>();
 
-            AssertSchemaImport(asserted, ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
+            ASSERT_TRUE(ecdb != nullptr);
+            CloneECDb(*ecdb, dbFileName.c_str(), seedFilePath);
+            ASSERT_TRUE(ecdb->IsDbOpen());
+
+            AssertSchemaImport(asserted, *ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
 
             if (expectedToSucceed)
-                m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
+                m_updatedDbs.push_back((Utf8String) ecdb->GetDbFileName());
 
-            ecdb.CloseDb();
+            ecdb->CloseDb();
             }
     };
 
@@ -652,15 +656,11 @@ TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
         "</ECSchema>");
 
     bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
+    AssertSchemaUpdate(asserted, deleteECProperty, filePath, true, false, "DB schema modification allowed: Deleting ECProperty is not supported as property is mapped to OwnTable");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteECProperty, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Deleting ECProperty is not supported as property is mapped to OwnTable");
+    AssertSchemaUpdate(asserted, deleteECProperty, filePath, false, false, "DB schema modification not allowed: Deleting ECProperty is not supported as property is mapped to OwnTable");
     ASSERT_FALSE(asserted);
     }
 
@@ -946,15 +946,11 @@ TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Addition or Deletion of Virtual column is expected to be supported");
+    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, true, true, "May modify DB schema: Addition or Deletion of Virtual column is expected to be supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Addition or Deletion of Virtual column is expected to be supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Addition or Deletion of Virtual column is expected to be supported");
+    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, false, true, "May not modify DB schema: Addition or Deletion of Virtual column is expected to be supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1021,15 +1017,11 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
         "</ECSchema>";
 
     bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deletion of Overridden properties is not supported");
+    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, true, false, "May modify DB schema: Deletion of Overridden properties is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deletion of Overridden properties is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Deletion of Overridden properties is not supported");
+    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, false, false, "May not modify DB schema: Deletion of Overridden properties is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -1224,15 +1216,11 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Modifying CA Properties is supported");
+    AssertSchemaUpdate(asserted, editedCAProperties, filePath, true, true, "May modify DB schema: Modifying CA Properties is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Modifying CA Properties is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedCAProperties, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Modifying CA Properties is supported");
+    AssertSchemaUpdate(asserted, editedCAProperties, filePath, false, true, "May not modify DB schema: Modifying CA Properties is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1322,15 +1310,11 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New Entity Class is supported");
+    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, true, true, "May modify DB schema: Adding New Entity Class is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New Entity Class is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Db Tables Modifications not allowed");
+    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, false, false, "May not modify DB schema: Adding New Entity Class is not supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1389,9 +1373,12 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
 
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
+    BeFileName filePath(GetECDb().GetDbFileName());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    GetECDb().CloseDb();
 
-    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+    NoDbSchemaModificationsECDb restrictedECDb;
+    ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     SchemaItem schemaWithNewSubClass(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1411,7 +1398,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
         "</ECSchema>", true, "Adding new Class to SharedTable is expected to succeed");
 
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClass);
+    AssertSchemaImport(asserted, restrictedECDb, schemaWithNewSubClass);
     ASSERT_FALSE(asserted);
 
     SchemaItem schemaWithNewSubClassWithNewProperty(
@@ -1433,7 +1420,7 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
         "</ECSchema>", false, "Adding new column to SharedTable is expected to fail");
 
     asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClassWithNewProperty);
+    AssertSchemaImport(asserted, restrictedECDb, schemaWithNewSubClassWithNewProperty);
     ASSERT_FALSE(asserted);
     }
 
@@ -1467,8 +1454,11 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
 
-    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
+    NoDbSchemaModificationsECDb restrictedECDb;
+    ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     SchemaItem schemaWithNewSubClassWithProperty(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1497,7 +1487,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClass_NewProperty_TPH_ShareColumns)
         "</ECSchema>", true, "Adding new Class with new property to SharedTable_SharedColumns is expected to fail");
 
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithNewSubClassWithProperty);
+    AssertSchemaImport(asserted, restrictedECDb, schemaWithNewSubClassWithProperty);
     ASSERT_FALSE(asserted);
     }
 
@@ -1535,15 +1525,11 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New Entity Class is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Adding New Entity Class is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New Entity Class is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Db Tables Modifications not allowed");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Db Tables Modifications not allowed");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1654,15 +1640,11 @@ TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
         "</ECSchema>";
 
     bool asserted = false;
-    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Adding New ECDbMapCA is supposed to be not supported");
+    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, true, false, "May modify DB schema: Adding New ECDbMapCA is supposed to be not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Adding New ECDbMapCA is supposed to be not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Adding New ECDbMapCA is supposed to be not supported");
+    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, false, false, "May not modify DB schema: Adding New ECDbMapCA is supposed to be not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -1700,15 +1682,11 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding New CA is supported");
+    AssertSchemaUpdate(asserted, addCAOnClass, filePath, true, true, "May modify DB schema: Adding New CA is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding New CA is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addCAOnClass, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Adding New CA is supported");
+    AssertSchemaUpdate(asserted, addCAOnClass, filePath, false, true, "May not modify DB schema: Adding New CA is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1790,15 +1768,11 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new property should be successful");
+    AssertSchemaUpdate(asserted, schemaXml, filePath, true, true, "May modify DB schema: add new property should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new property should fail");
+    AssertSchemaUpdate(asserted, schemaXml, filePath, false, false, "May not modify DB schema: add new property should not be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -1983,15 +1957,11 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Add Delete New Property to sharedColumns should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add Delete New Property to sharedColumns should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Add Delete New Property to sharedColumns should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add Delete New Property to sharedColumns should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add Delete New Property to sharedColumns should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -2045,15 +2015,11 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new property should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new property should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Db Tables Modifications not allowed");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new property should not be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -2160,15 +2126,11 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: New CA on Property should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: New CA on Property should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: New CA on Property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: New CA on Property should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: New CA on Property should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -2272,11 +2234,15 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Changing ShareColumns CA is not supported in ECSchema Update");
+        "</ECSchema>";
 
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), updatedSchema);
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
     ASSERT_FALSE(asserted);
+
+    asserted = false;
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2346,15 +2312,11 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Add new property to sharedColumns in TPH should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add new property to sharedColumns in TPH should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Add new property to sharedColumns in TPH should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Add new property to sharedColumns in TPH should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add new property to sharedColumns in TPH should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -2440,15 +2402,11 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(0), true, "Master Briefcase: Add new property to sharedColumns in a JoinedTable should be successful");
+    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, true, true, "May modify DB schema: Add new property to sharedColumns in a JoinedTable should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Add new property to sharedColumns in a JoinedTable should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Add new property to sharedColumns in a JoinedTable should be successful");
+    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, false, true, "May not modify DB schema: Add new property to sharedColumns in a JoinedTable should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -2773,15 +2731,11 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
         "</ECSchema>";
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting ECDbMap CustomAttribute Not supported");
+    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, true, false, "May modify DB schema: Deleting ECDbMap CustomAttribute Not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting ECDbMap CustomAttribute Not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting ECDbMap CustomAttribute Not supported");
+    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, false, false, "May not modify DB schema: Deleting ECDbMap CustomAttribute Not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -4411,15 +4365,11 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "</ECSchema>";
 
     bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, true, true, "May modify DB schema: ConstraintClass can be deleted unless it's the last relationship constraint");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: ConstraintClass can be deleted unless it's the last relationship constraint");
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, false, true, "May not modify DB schema: ConstraintClass can be deleted unless it's the last relationship constraint");
     ASSERT_FALSE(asserted);
     }
 
@@ -4517,15 +4467,11 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "     </ECRelationshipClass>"
         "</ECSchema>";
     bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Only Direct relationship constraint classes can't be deleted");
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, true, true, "May modify DB schema: Only Direct relationship constraint classes can't be deleted");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Only Direct relationship constraint classes can't be deleted");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Only Direct relationship constraint classes can't be deleted");
+    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, false, true, "May not modify DB schema: Only Direct relationship constraint classes can't be deleted");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -4598,15 +4544,11 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "</ECSchema>";
 
     bool asserted = false;
-    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
+    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath,true, false, "May modify DB schema: Deleting ECRelationship with ForeignKey Mapping is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Deleting ECRelationship with ForeignKey Mapping is supported");
+    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, false, false, "May not modify DB schema: Deleting ECRelationship with ForeignKey Mapping is supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP linkTableECRelationship =
@@ -4629,15 +4571,11 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "</ECSchema>";
 
     asserted = false;
-    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Deletion of LinkTable mapped relationship is supported");
+    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, true, true, "May modify DB schema: Deletion of LinkTable mapped relationship is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Deletion of LinkTable mapped relationship is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Sql Db changes are not supported");
+    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, false, true, "May not modify DB schema: Deletion of LinkTable mapped relationship is supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -4766,15 +4704,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Updating ECDbMapCA, modifying index Name is supported");
+    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, true, true, "May modify DB schema: Updating ECDbMapCA, modifying index Name is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Updating ECDbMapCA, modifying index Name is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Updating ECDbMapCA, modifying index Name is supported");
+    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, false, true, "May not modify DB schema: Updating ECDbMapCA, modifying index Name is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -4827,15 +4761,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
 
     m_updatedDbs.clear();
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
+    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, true, false, "May modify DB schema: Updating ECDbMapCA, deleting DbIndexes is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Updating ECDbMapCA, deleting DbIndexes is not supported");
+    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, false, false, "May not modify DB schema: Updating ECDbMapCA, deleting DbIndexes is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -4881,15 +4811,11 @@ TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Adding Classes and Navigation property simultaneously is supported");
+    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, true, true, "May modify DB schema: Adding Classes and Navigation property simultaneously is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Adding Classes and Navigation property simultaneously is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, BeBriefcaseId(123), false, "ClientsideBriefcase: Adding Classes and Navigation property simultaneously is not supported");
+    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, false, false, "May not modify DB schema: Adding Classes and Navigation property simultaneously is not supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -5547,15 +5473,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     bool asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECProperty typeName is not supported");
+    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, true, false, "May modify DB schema: Modifying ECProperty typeName is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECProperty typeName is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECProperty typeName is not supported");
+    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECProperty typeName is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedECStructPropertyType =
@@ -5574,15 +5496,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECStructProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, true, false, "May modify DB schema: Modifying ECStructProperty is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECStructProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECStructProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECStructProperty is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedECStructArrayPropertyType =
@@ -5601,15 +5519,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECStructArrayProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, true, false, "May modify DB schema: Modifying ECStructArrayProperty is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECStructArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECStructArrayProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECStructArrayProperty is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedPrimitiveArrayType =
@@ -5628,15 +5542,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECArrayProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, true, false, "May modify DB schema: Modifying ECArrayProperty is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECArrayProperty is not supported");
+    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, false, false, "May not modify DB schema: Modifying ECArrayProperty is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedPrimitiveType =
@@ -5655,15 +5565,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying IsPrimitiveType is not supported");
+    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, true, false, "May modify DB schema: Modifying IsPrimitiveType is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying IsPrimitiveType is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying IsPrimitiveType is not supported");
+    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, false, false, "May not modify DB schema: Modifying IsPrimitiveType is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedECPropertyArrayMixOccurs =
@@ -5682,15 +5588,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
+    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, true, false, "May modify DB schema: Modifying ECPropertyArray minOccurs is not Supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECPropertyArray minOccurs is not Supported");
+    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, false, false, "May not modify DB schema: Modifying ECPropertyArray minOccurs is not Supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedECArrayPropertyMaxOccurs =
@@ -5709,15 +5611,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(0), false, "MasterBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
+    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, true, false, "May modify DB schema: Modifying ECArrayProperty maxOccuers is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(1), false, "StandaloneBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, BeBriefcaseId(123), false, "ClientBriefcase: Modifying ECArrayProperty maxOccuers is not supported");
+    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, false, false, "May not modify DB schema: Modifying ECArrayProperty maxOccuers is not supported");
     ASSERT_FALSE(asserted);
 
     Utf8CP modifiedExtendedType =
@@ -5736,15 +5634,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Modifying extendedTypeName is expected to be successful");
+    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, true, true, "May modify DB schema: Modifying extendedTypeName is expected to be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Modifying extendedTypeName is expected to be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, BeBriefcaseId(123), true, "ClientBriefcase: Modifying extendedTypeName is expected to be successful");
+    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, false, true, "May not modify DB schema: Modifying extendedTypeName is expected to be successful");
     ASSERT_FALSE(asserted);
     }
 
@@ -6061,15 +5955,11 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(0), true, "Master Briefcase: Modifying CA Properties values is supported");
+    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, true, true, "May modify DB schema: Modifying CA Properties values is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Modifying CA Properties values is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Modifying CA Properties values is supported");
+    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, false, true, "May not modify DB schema: Modifying CA Properties values is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6110,15 +6000,11 @@ TEST_F(ECSchemaUpdateTests, DeleteECCustomAttributeClass)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting a ECCustomAttributeClass is not supported");
+    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, true, false, "May modify DB schema: Deleting a ECCustomAttributeClass is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting a ECCustomAttributeClass is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting a ECCustomAttributeClass is not supported");
+    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, false, false, "May not modify DB schema: Deleting a ECCustomAttributeClass is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -6378,15 +6264,11 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(0), true, "Master Briefcase: Deleting CA without Properties are expected to be supported");
+    AssertSchemaUpdate(asserted, deleteAllCA, filePath, true, true, "May modify DB schema: Deleting CA without Properties are expected to be supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(1), true, "standalone Briefcase: Deleting CA without Properties are expected to be supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteAllCA, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: Deleting CA without Properties are expected to be supported");
+    AssertSchemaUpdate(asserted, deleteAllCA, filePath, false, true, "May not modify DB schema: Deleting CA without Properties are expected to be supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6449,15 +6331,11 @@ TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: AddKoQAndUpdatePropertiesWithKoQ is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: AddKoQAndUpdatePropertiesWithKoQ is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: AddKoQAndUpdatePropertiesWithKoQ is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: AddKoQAndUpdatePropertiesWithKoQ is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: AddKoQAndUpdatePropertiesWithKoQ is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6523,15 +6401,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing primitive to NonString Enum is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing primitive to NonString Enum is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing primitive to NonString Enum is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing primitive to NonString Enum is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing primitive to NonString Enum is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6586,15 +6460,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: changing primitive to Strict Enum is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: changing primitive to Strict Enum is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: changing primitive to Strict Enum is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: changing primitive to Strict Enum is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: changing primitive to Strict Enum is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -6639,15 +6509,11 @@ TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "Standalone Briefcase: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "Clientside BriefcaseId: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6702,17 +6568,12 @@ TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting KindOfQuantity from an ECSchema is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: Deleting KindOfQuantity from an ECSchema is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "Standalone Briefcase:Deleting KindOfQuantity from an ECSchema is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Deleting KindOfQuantity from an ECSchema is not supported");
     ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "Clientside BriefcaseId:Deleting KindOfQuantity from an ECSchema is not supported");
-    ASSERT_FALSE(asserted);
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -6759,15 +6620,11 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "Standalone Briefcase: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "Clientside BriefcaseId: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -6838,7 +6695,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Removing KindOfQuantity from an ECArrayProperty is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Removing KindOfQuantity from an ECArrayProperty is supported");
     ASSERT_FALSE(asserted);
 
     //Verifying the property no longer has KOQ
@@ -6893,7 +6750,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: Removing KindOfQuantity from an ECProperty is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Removing KindOfQuantity from an ECProperty is supported");
     ASSERT_FALSE(asserted);
 
     //Verifying the property no longer has KOQ
@@ -6933,15 +6790,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: changing primitive to another primitive is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: changing primitive to another primitive is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: changing primitive to another primitive is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: changing primitive to another primitive is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: changing primitive to another primitive is not supported");
     ASSERT_FALSE(asserted);
     }
 
@@ -6983,15 +6836,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing Enum to primitive should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing Enum to primitive should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing Enum to primitive should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing Enum to primitive should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing Enum to primitive should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7065,15 +6914,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing Enum to Enum should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing Enum to Enum should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing Enum to Enum should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing Enum to Enum should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing Enum to Enum should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7140,15 +6985,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing String Enum to String should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing String Enum to String should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing String Enum to String should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing String Enum to String should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing String Enum to String should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7204,15 +7045,11 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: changing String to Unstrict Enum is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema : changing String to Unstrict Enum is supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: changing String to Unstrict Enum is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: changing String to Unstrict Enum is supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing String to Unstrict Enum is supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7267,15 +7104,11 @@ TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), false, "Master Briefcase: Deleting Enum is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: Deleting Enum is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), false, "standalone Briefcase: Deleting Enum is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: Deleting Enum is not supported");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Deleting Enum is not supported");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7338,18 +7171,14 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    //verify Adding new EndTable relationship for different briefcaseIds.
+    //verify Adding new EndTable relationship
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new endtable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new endtable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new endtable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new endtable relationship should fail");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new endtable relationship should not be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7386,15 +7215,11 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
     //verify Adding new linkTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new LinkTable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new LinkTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new LinkTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), false, "clientside BriefcaseId: add new LinkTable relationship should fail");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new LinkTable relationship should not be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7497,15 +7322,11 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
     //verify Adding new derived endtable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "MasterBriefcase: Add new Derived EndTable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add new Derived EndTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "StandaloneBriefcase: Add new Derived EndTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "ClientsideBriefcase: Add new Derived EndTable relationship should succeed as it doens't change db schema");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add new Derived EndTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7763,15 +7584,11 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
     //verify Adding new derived LinkTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(0), true, "Master Briefcase: add new Derived LinkTable relationship should be successful");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new Derived LinkTable relationship should be successful");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(1), true, "standalone Briefcase: add new Derived LinkTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, BeBriefcaseId(123), true, "clientside BriefcaseId: add new Derived LinkTable relationship should be successful as it do not modify Db");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: add new Derived LinkTable relationship should be successful as it do not modify Db");
     ASSERT_FALSE(asserted);
 
     //Verify updated schemas
@@ -7905,9 +7722,11 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-  
+
+    //verify Adding new EndTable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, false, "Modifying ShareColumns CA in schema update is not allowed"));
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "Adding SharedColumnCount should be supported.");
     ASSERT_FALSE(asserted);
     }
 
@@ -7967,8 +7786,10 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "   </ECEntityClass>"
         "</ECSchema>";
 
+    //verify Adding new EndTable relationship for different briefcaseIds.
+    m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), SchemaItem(editedSchemaXml, false, "Modifying ShareColumns CA in schema update is not allowed"));
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "Deleting SharedColumnCount should be supported.");
     ASSERT_FALSE(asserted);
     }
 

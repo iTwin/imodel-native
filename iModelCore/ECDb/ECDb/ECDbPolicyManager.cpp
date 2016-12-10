@@ -58,6 +58,9 @@ ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
             case ECDbPolicyAssertion::Type::ECSqlPermission:
                 return DoGetPolicy(static_cast<ECSqlPermissionPolicyAssertion const&> (assertion));
 
+            case ECDbPolicyAssertion::Type::MayModifyDbSchema:
+                return DoGetPolicy(static_cast<MayModifyDbSchemaPolicyAssertion const&> (assertion));
+
             default:
                 return ECDbPolicy::CreateNotSupported();
         }
@@ -77,7 +80,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECClass '%s' is not supported in ECSQL as it is neither an entity class nor a relationship class.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
         }
 
     if (assertion.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
@@ -87,7 +90,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                                     " The ECClass might have been marked with 'NotMapped' in the ECSchema or is generally not supported by ECDb."
                                     " In that case, please see the log for details about why the class was not mapped.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
         }
 
     BeAssert(!ecClass.GetSchema().IsStandardSchema() || (!className.Equals("AnyClass") && !className.Equals("InstanceCount")) && "AnyClass or InstanceCount class should already be caught by IsNotMapped check.");
@@ -97,7 +100,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
         Utf8String notSupportedMessage;
         notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to more than one table on its Foreign Key end. Therefore it cannot be used in ECSQL. Consider exposing the ECRelationshipClass as NavigationECProperty.",
                                     className.c_str());
-        return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+        return ECDbPolicy::CreateNotSupported(notSupportedMessage);
         }
 
     //if policy for specific ECSQL type was requested, check that now
@@ -112,7 +115,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                 notSupportedMessage.Sprintf("ECClass '%s' is mapped to an existing table not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the class.",
                                             className.c_str());
 
-                return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                return ECDbPolicy::CreateNotSupported(notSupportedMessage);
                 }
 
             if (assertion.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
@@ -124,7 +127,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("Programmer error: ECRelationshipClass '%s' is not mapped to a table.",
                                                 className.c_str());
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
                     }
 
                 if (tables[0]->GetType() == DbTable::Type::Existing)
@@ -132,7 +135,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     Utf8String notSupportedMessage;
                     notSupportedMessage.Sprintf("ECRelationshipClass '%s' is mapped to an existing table on its Foreign Key end, not owned by ECDb. Therefore only ECSQL SELECT statements can be used against the relationship class.",
                                                 className.c_str());
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
                     }
                 }
 
@@ -145,7 +148,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
                     notSupportedMessage.Sprintf("ECClass '%s' is an abstract class which is not instantiable and therefore cannot be used in an ECSQL INSERT statement.",
                                                 className.c_str());
 
-                    return ECDbPolicy::CreateNotSupported(notSupportedMessage.c_str());
+                    return ECDbPolicy::CreateNotSupported(notSupportedMessage);
                     }
 
                 }
@@ -156,7 +159,7 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    12/2013
+// @bsimethod                                 Krischan.Eberle                    11/2016
 //---------------------------------------------------------------------------------------
 //static
 ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSqlPermissionPolicyAssertion const& assertion)
@@ -166,10 +169,24 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSqlPermissionPolicyAssertion const& 
 
     ECDbCR ecdb = assertion.GetECDb();
     if (ecdb.IsReadonly())
-        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE on a file opened in read-only mode");
+        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot execute an ECSQL INSERT, UPDATE, DELETE on a file opened in read-only mode"));
 
-    if (!ecdb.GetECDbImplR().IsECSqlWriteTokenValid(assertion.GetToken()))
-        return ECDbPolicy::CreateNotSupported("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlWriteToken.");
+    ECSqlWriteToken const* expectedToken = ecdb.GetECDbImplR().GetTokenManager().GetECSqlWriteToken();
+    if (expectedToken != nullptr && expectedToken != assertion.GetToken())
+        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlWriteToken."));
+
+    return ECDbPolicy::CreateSupported();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    12/2016
+//---------------------------------------------------------------------------------------
+//static
+ECDbPolicy ECDbPolicyManager::DoGetPolicy(MayModifyDbSchemaPolicyAssertion const& assertion)
+    {
+    DbSchemaModificationToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetTokenManager().GetDbSchemaModificationToken();
+    if (expectedToken != nullptr && expectedToken != assertion.GetToken())
+        return ECDbPolicy::CreateNotSupported();
 
     return ECDbPolicy::CreateSupported();
     }
