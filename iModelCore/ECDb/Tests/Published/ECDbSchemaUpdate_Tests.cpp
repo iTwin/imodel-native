@@ -7768,6 +7768,8 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "</ECSchema>");
     SetupECDb("schemaupdate_deletesharedcolumncount.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
+    BeFileName filePath(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
 
     Utf8CP editedSchemaXml = "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
