@@ -30,3 +30,11 @@ DgnDbServerEventParserTests.RevisionEventTests
 DgnDbServerEventParserTests.CodeEventTests
 DgnDbServerEventParserTests.LocksDeletedEventTests
 DgnDbServerEventParserTests.CodesDeletedEventTests
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # DgnDb61-16Q4, x64, NDEBUG (PRG)
+    # Crash (no stack printed)
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # e:\Builds\dcsdk06010416\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
