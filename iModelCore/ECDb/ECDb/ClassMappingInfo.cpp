@@ -689,9 +689,9 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
             return ClassMappingStatus::Success;
             }
 
-        if (baseStrategy == MapStrategy::ExistingTable || baseStrategy == MapStrategy::SharedTable)
+        if (baseStrategy == MapStrategy::OwnTable || baseStrategy == MapStrategy::ExistingTable || baseStrategy == MapStrategy::SharedTable)
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'ExistingTable' or 'SharedTable' which is not supported in an ECRelationshipClass hierarchy.",
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its base class %s has the MapStrategy 'OwnTable', 'ExistingTable' or 'SharedTable' which is not supported in an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), firstBaseClassMap->GetClass().GetFullName());
             return ClassMappingStatus::Error;
             }
@@ -778,23 +778,11 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 
     if (baseClassMap != nullptr)
         {
+        BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
         BeAssert(!m_allowDuplicateRelationships && "m_allowDuplicateRelationships is expected to only be set in root class");
         m_allowDuplicateRelationships = DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP());
 
-        if (baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
-            return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
-
-        if (caCache.GetClassMap().IsValid())
-            {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. ECRelationship subclasses may not define the ClassMap custom attribute.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-
-
-        BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::OwnTable && "all other strategy cases shoudld have been caught before");
-        m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::OwnTable);
-        return SUCCESS;
+        return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
         }
 
     //*** root rel class
@@ -837,7 +825,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         return AssignMapStrategy(caCache);
 
     //sealed rel classes without base class get own table
-    const MapStrategy strat = m_ecClass.GetClassModifier() == ECClassModifier::Abstract ? MapStrategy::TablePerHierarchy : MapStrategy::OwnTable;
+    const MapStrategy strat = m_ecClass.GetClassModifier() != ECClassModifier::Sealed ? MapStrategy::TablePerHierarchy : MapStrategy::OwnTable;
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(strat);
     return SUCCESS;
     }
