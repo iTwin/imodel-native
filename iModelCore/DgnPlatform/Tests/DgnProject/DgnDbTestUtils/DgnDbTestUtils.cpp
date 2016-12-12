@@ -32,18 +32,14 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //---------------------------------------------------------------------------------------
 DgnModelId DgnDbTestUtils::QueryFirstGeometricModelId(DgnDbR db)
     {
-    for (auto const& modelEntry : db.Models().MakeIterator())
+    ModelIterator iterator = db.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel));
+    if (iterator.begin() == iterator.end())
         {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
-        
-        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel())
-            return modelEntry.GetModelId();
+        BeAssert(false && "No GeometricModel found");
+        return DgnModelId();
         }
 
-    BeAssert(false && "No GeometricModel found");
-    return DgnModelId();
+    return (*iterator.begin()).GetModelId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -323,7 +319,7 @@ DrawingViewDefinitionPtr DgnDbTestUtils::InsertDrawingView(DrawingModelR model, 
     auto& db = model.GetDgnDb();
     DrawingViewDefinitionPtr viewDef = new DrawingViewDefinition(db, model.GetName(), DrawingViewDefinition::QueryClassId(db), model.GetModelId(), *new CategorySelector(db,""), *new DisplayStyle(db,""));
 
-    for (ElementIteratorEntry categoryEntry : DrawingCategory::MakeIterator(db))
+    for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         viewDef->GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     EXPECT_TRUE(viewDef->Insert().IsValid());
@@ -338,7 +334,7 @@ DgnViewId DgnDbTestUtils::InsertCameraView(SpatialModelR model, Utf8CP viewName,
     auto& db = model.GetDgnDb();
     CameraViewDefinition viewDef(db, viewName ? viewName : model.GetName(), *new CategorySelector(db,""), *new DisplayStyle3d(db,""), *new ModelSelector(db,""));
 
-    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(db))
+    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(db))
         viewDef.GetCategorySelector().AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     EXPECT_TRUE(viewDef.Insert().IsValid());
