@@ -1713,7 +1713,7 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) 
+ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
     {
     QueryResults results;
     return results;

@@ -77,7 +77,7 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
-    friend struct DgnQueryQueue::Task;
+    friend struct SceneQueue::Task;
     friend struct CreateSceneTask;
 
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
@@ -118,8 +118,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
     {
         bset<DgnElementId> m_members;
         Render::GraphicListPtr m_graphics;
-        bool m_complete = false;
+        ProgressiveTaskPtr m_progressive;
+        double m_lowestScore = 0.0;
         uint32_t m_progressiveTotal = 0;
+        bool m_complete = false;
         bool Contains(DgnElementId id) const {return m_members.find(id) != m_members.end();}
         ~Scene() {}
     };
@@ -159,7 +161,8 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) = 0;
+    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
+    virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -251,7 +254,7 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task);
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
     ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
@@ -588,7 +591,7 @@ public:
 
     public:
         RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
-        void DoQuery(DgnQueryQueue::Task&);
+        void DoQuery(SceneQueue::Task&);
     };
 
     //=======================================================================================
@@ -615,7 +618,7 @@ public:
         NonSceneQuery m_rangeQuery;
         SpatialViewControllerR m_view;
         DgnElementId GetNextId();
-        explicit ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
+        DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
@@ -642,10 +645,11 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) override;
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -689,7 +693,6 @@ public:
     //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
-
 };
 
 //=======================================================================================
@@ -911,7 +914,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) override;
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;

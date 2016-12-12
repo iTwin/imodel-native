@@ -12,8 +12,7 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    m_elementProgressiveTasks.clear();
-    m_terrainProgressiveTasks.clear();
+    ClearProgressiveTasks();
     if (m_renderTarget.IsValid())
         RenderQueue().WaitForIdle();
 
@@ -32,8 +31,7 @@ void DgnViewport::DestroyViewport()
 //---------------------------------------------------------------------------------------
 void DgnViewport::SuspendViewport()
     {
-    m_elementProgressiveTasks.clear();
-    m_terrainProgressiveTasks.clear();
+    ClearProgressiveTasks();
     SetRenderTarget(nullptr);
     }
 
@@ -1121,19 +1119,25 @@ ColorDef DgnViewport::GetBackgroundColor() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleElementProgressiveTask(ProgressiveTask& task)
+void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
     {
     DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_elementProgressiveTasks.push_back(&task);
+    m_progressiveTasks.push_back(&task);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    04/2016
-//---------------------------------------------------------------------------------------
-void DgnViewport::ScheduleTerrainProgressiveTask(ProgressiveTask& task)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::ClearProgressiveTasks()
     {
     DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_terrainProgressiveTasks.push_back(&task);
+    m_progressiveTasks.clear();
+    if (!m_viewController.IsValid())
+        return;
+
+    auto scene = m_viewController->GetScene();
+    if (scene.IsValid())
+        scene->m_progressive = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

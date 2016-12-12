@@ -142,7 +142,7 @@ void ViewController::RequestAbort(bool wait)
     {
     DgnDb::VerifyClientThread();
 
-    auto& queue = GetDgnDb().GetQueryQueue();
+    auto& queue = GetDgnDb().GetSceneQueue();
     queue.RemovePending(*this);
 
     if (wait)
@@ -152,7 +152,7 @@ void ViewController::RequestAbort(bool wait)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, DgnQueryQueue::Task& task) 
+ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
     {
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
@@ -292,43 +292,6 @@ SpatialViewController::ProgressiveTask::ProgressiveTask(SpatialViewControllerR v
     {
     }
 
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* Add graphics for all elements that are: a) already loaded b) have an appropriate previously-created graphic
-* We do this first so that if any elements need to be loaded or stroked (which can take time), the available ones
-* are in the scene if we abort
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>& missing)
-    {
-    context.SetNoStroking(true); // tell the context to not create any graphics - just return existing ones
-    DgnElements& pool = GetDgnDb().Elements();
-
-    // first, run through the query results seeing if all of the elements are loaded and have their graphics ready
-    // NOTE: This is not CheckStop'ed! It must be fast.
-    auto end = results.m_scores.rend();
-    for (auto thisScore=results.m_scores.rbegin(); thisScore!=end; ++thisScore)
-        {
-        DgnElementCPtr el = pool.FindLoadedElement(thisScore->second);
-        if (!el.IsValid())
-            continue;
-
-        GeometrySourceCP geomElem = el->ToGeometrySource();
-        if (nullptr == geomElem)
-            continue;
-
-        if (SUCCESS == context.VisitGeometry(*geomElem))
-            m_scene->Insert(thisScore->second, el);
-        else
-            missing.push_back(thisScore->second);
-        }
-
-    context.SetNoStroking(false); // reset the context
-
-    DEBUG_PRINTF("QuickCreate count=%d/%d", (int) m_scene->size(), results.GetCount());
-    }
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -355,100 +318,6 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
             m_copyrightMsgs.insert(message);
         }
     }
-
-#if defined (NEEDS_WORK_RANGE_INDEX)
-/*---------------------------------------------------------------------------------**//**
-* Create the scene and potentially schedule progressive tasks
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_CreateScene(SceneContextR context)
-    {
-#if defined (DEBUG_LOGGING)
-    StopWatch watch(true);
-#endif
-
-    DEBUG_PRINTF("Begin create scene");
-
-    QueryResultsPtr results;
-    std::swap(results, m_results);
-
-    DgnViewportR vp = *context.GetViewport();
-    if (!results.IsValid())
-        return;
-
-    if (!results->m_scores.empty())
-        context.SetSAESNpcSq(results->m_scores.begin()->first);
-
-    if (m_activeVolume.IsValid())
-        context.SetActiveVolume(*m_activeVolume);
-
-    SceneMembersPtr oldMembers = m_scene; // save the previous scene so that the ref count of elements-in-common won't go to zero
-    m_scene = new SceneMembers();   
-
-    bvector<DgnElementId> missing;
-    AddtoSceneQuick(context, *results, missing);
-    DEBUG_PRINTF("Done create quick time=%lf", watch.GetCurrentSeconds());
-
-    // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
-    auto& models = GetDgnDb().Models();
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = models.GetModel(modelId);
-        auto geomModel = model.IsValid() ? model->ToGeometricModel3d() : nullptr;
-        if (nullptr != geomModel)
-            geomModel->_AddSceneGraphics(context);
-        }
-
-    uint32_t missingCount = (uint32_t) missing.size();
-    if (!missing.empty())
-        {
-        DgnElements& pool = GetDgnDb().Elements();
-
-        DEBUG_PRINTF("Begin create scene with load, missing=%d", missingCount);
-        BeAssert(false==m_loading);
-        AutoRestore<bool> loadFlag(&m_loading,true); // this tells the query thread to pause temporarily so we don't fight over the SQLite mutex
-
-        for (auto& it : missing)
-            {
-            DgnElementCPtr el = pool.GetElement(it);
-            if (!el.IsValid())
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            GeometrySourceCP geomElem = el->ToGeometrySource();
-            if (nullptr == geomElem)
-                {
-                BeAssert(false);
-                continue;
-                }
-
-            if (SUCCESS == context.VisitGeometry(*geomElem))
-                {
-                --missingCount;
-                m_scene->Insert(it, el);
-                }
-
-            if (context.WasAborted())
-                {
-                WARN_PRINTF("Create Scene aborted on element %ld", it.GetValue());
-                break;
-                }
-            }
-        }
-
-    BeAssert(m_scene->GetCount() <= results->GetCount());
-    m_scene->m_complete = (0 == missingCount) && !results->m_incomplete;
-    if (!m_scene->m_complete)
-        {
-        DEBUG_PRINTF("schedule progressive, incomplete=%d, still missing=%d", results->m_incomplete, missingCount);
-        vp.ScheduleElementProgressiveTask(*new ProgressiveTask(*this, vp));
-        }
-
-    DEBUG_PRINTF("Done create scene=%ld entries, aborted=%ld, time=%lf", m_scene->size(), context.WasAborted(), watch.GetCurrentSeconds());
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * Visit all of the elements in a SpatialViewController. This is used for picking, etc.
@@ -489,12 +358,12 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-THREAD_MAIN_IMPL DgnQueryQueue::Main(void* arg)
+THREAD_MAIN_IMPL SceneQueue::Main(void* arg)
     {
     BeThreadUtilities::SetCurrentThreadName("SceneCreate");
     DgnDb::SetThreadId(DgnDb::ThreadId::Scene);
 
-    ((DgnQueryQueue*)arg)->Process();
+    ((SceneQueue*)arg)->Process();
 
     // After the owning DgnDb calls Terminate()
     return 0;
@@ -503,7 +372,7 @@ THREAD_MAIN_IMPL DgnQueryQueue::Main(void* arg)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::Terminate()
+void SceneQueue::Terminate()
     {
     DgnDb::VerifyClientThread();
 
@@ -525,7 +394,7 @@ void DgnQueryQueue::Terminate()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::RemovePending(ViewControllerCR view)
+void SceneQueue::RemovePending(ViewControllerCR view)
     {
     // We may currently be processing a query for this model. If so, let it complete and queue up another one.
     // But remove any other previously-queued processing requests for this model.
@@ -549,7 +418,7 @@ void DgnQueryQueue::RemovePending(ViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::Add(Task& task)
+void SceneQueue::Add(Task& task)
     {
     if (&task.m_view.GetDgnDb() != &m_db)
         {
@@ -571,7 +440,7 @@ void DgnQueryQueue::Add(Task& task)
 * Note: Must be called with query queue mutex held!
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryQueue::HasActiveOrPending(ViewControllerCR view)
+bool SceneQueue::HasActiveOrPending(ViewControllerCR view)
     {
     if (m_active.IsValid() && m_active->IsForView(view))
         return true;
@@ -588,7 +457,7 @@ bool DgnQueryQueue::HasActiveOrPending(ViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::WaitFor(ViewControllerCR view)
+void SceneQueue::WaitFor(ViewControllerCR view)
     {
     BeMutexHolder holder(m_cv.GetMutex());
     while (HasActiveOrPending(view))
@@ -598,7 +467,7 @@ void DgnQueryQueue::WaitFor(ViewControllerCR view)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnQueryQueue::DgnQueryQueue(DgnDbR db) : m_db(db), m_state(State::Active)
+SceneQueue::SceneQueue(DgnDbR db) : m_db(db), m_state(State::Active)
     {
     BeThreadUtilities::StartNewThread(50*1024, Main, this);
     }
@@ -606,7 +475,7 @@ DgnQueryQueue::DgnQueryQueue(DgnDbR db) : m_db(db), m_state(State::Active)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryQueue::IsIdle() const
+bool SceneQueue::IsIdle() const
     {
     BeMutexHolder holder(m_cv.GetMutex());
     return m_pending.empty() && !m_active.IsValid();
@@ -615,7 +484,7 @@ bool DgnQueryQueue::IsIdle() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnQueryQueue::WaitForWork()
+bool SceneQueue::WaitForWork()
     {
     BeMutexHolder holder(m_cv.GetMutex());
     while (m_pending.empty() && State::Active == m_state)
@@ -633,7 +502,7 @@ bool DgnQueryQueue::WaitForWork()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnQueryQueue::Process()
+void SceneQueue::Process()
     {
     DgnDb::VerifySceneThread();
 
@@ -686,7 +555,7 @@ void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::RangeQuery::DoQuery(DgnQueryQueue::Task& task)
+void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
     {
     StopWatch watch(true);
 
@@ -895,13 +764,14 @@ ProgressiveTask::Completion SpatialViewController::ProgressiveTask::_DoProgressi
 void SpatialViewController::_DoHeal(HealContext& context)
     {
     ScenePtr scene = GetScene();
+
     if (!scene.IsValid() || scene->m_complete) // if the scene is "complete", we don't need to draw any other elements to heal
        return;
 
     if (scene->m_progressiveTotal == 0) // temporary
         return;
 
-    HEAL_PRINTF("begin heal ");
+    HEAL_PRINTF("begin heal");
 
     NonSceneQuery query(*this, context.GetFrustum(), *context.GetViewport());
 

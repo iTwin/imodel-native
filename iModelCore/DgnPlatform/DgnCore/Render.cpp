@@ -546,7 +546,7 @@ GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, double saesNpcSq)
+double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, double lowestScore)
     {
     double frameRateGoal = target.GetFrameRateGoal();
 
@@ -561,7 +561,7 @@ double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, doubl
     double pixelsPerInch = target.GetDevice()->PixelsFromInches(1.0);
     double inchesPerNpc = pixelsPerNpc / pixelsPerInch; // inches/NPC = pixels/NPC * inches/pixel
     
-    double smallestRangeDrawnNpc = sqrt(saesNpcSq);
+    double smallestRangeDrawnNpc = sqrt(lowestScore);
 
     // from here on, all measurements are in inches
     double smallestRangeDrawn = smallestRangeDrawnNpc * inchesPerNpc;   // size of the diagonal of the smallest range returned by the query

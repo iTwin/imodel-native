@@ -147,7 +147,7 @@ protected:
     DgnSearchableText   m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    DgnQueryQueue m_queryQueue;
+    SceneQueue m_sceneQueue;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -214,7 +214,7 @@ public:
     MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
-    DgnQueryQueue& GetQueryQueue() const {return const_cast<DgnQueryQueue&>(m_queryQueue);}
+    SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
     //! Inserts a new ECRelationship
     //! @param[out] relKey key of the new ECRelationship

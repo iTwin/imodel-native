@@ -379,17 +379,8 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-    friend struct SpatialViewController;
-
-private:
     bool _CheckStop() override;
-    double m_saesNpcSq;     // smallest attempted element size (NPC squared)
-
-public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
-
-    void SetSAESNpcSq(double v) { m_saesNpcSq = v; }
-    double GetSAESNpcSq() const { return m_saesNpcSq; }
 };
 
 //=======================================================================================

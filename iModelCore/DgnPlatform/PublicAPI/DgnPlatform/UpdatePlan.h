@@ -236,14 +236,14 @@ public:
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
-    {
+{
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeoutPct(75);} // You can use up 75% of frame time for the query
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
-struct DgnQueryQueue
+struct SceneQueue
 {
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Task : RefCounted<NonCopyableClass>
@@ -269,18 +269,18 @@ struct DgnQueryQueue
 private:
     enum class State {Active, TerminateRequested, Terminated};
 
-    DgnDbR              m_db;
+    DgnDbR m_db;
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_pending;
-    TaskPtr             m_active;
-    State               m_state;
+    TaskPtr m_active;
+    State m_state;
     bool WaitForWork();
     bool HasActiveOrPending(ViewControllerCR);
     void Process();
     THREAD_MAIN_DECL Main(void* arg);
 
 public:
-    DgnQueryQueue(DgnDbR db);
+    SceneQueue(DgnDbR db);
 
     void Terminate();
 
