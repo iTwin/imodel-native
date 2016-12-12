@@ -486,5 +486,97 @@ struct ProgressiveTask : Dgn::ProgressiveTask
     
 } // end QuadTree
 
+//=======================================================================================
+//! An OctTree is a 3d TileTree that subdivides each tile into 8 child tiles. The subdivision
+//! of a parent tile into its children is not necessarily equal.
+//! A tile in an OctTree can be addressed by a TileId comprised of a depth level and 3 indices.
+//! The root tile is {0,0,0,0}.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+namespace OctTree
+{
+//=======================================================================================
+//! Identifies a tile in an OctTree
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileId
+{
+    uint8_t     m_level;
+    uint32_t    m_i;
+    uint32_t    m_j;
+    uint32_t    m_k;
+
+    TileId(uint8_t level, uint32_t i, uint32_t j, uint32_t k) : m_level(level), m_i(i), m_j(j), m_k(k) { }
+    TileId() : TileId(0,0,0,0) { }
+
+    TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+i, m_k*2+k); }
+};
+
+//=======================================================================================
+//! The root of an OctTree
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Root : TileTree::Root
+{
+    DEFINE_T_SUPER(TileTree::Root);
+
+    Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
+
+    virtual Utf8CP _GetName() const = 0;
+
+    void DrawInView(RenderContextR context);
+};
+
+//=======================================================================================
+//! An OctTree tile. May or may not have its graphics present.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct Tile : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile);
+protected:
+    bool                m_isLeaf;
+    TileId              m_id;
+    Render::GraphicPtr  m_graphic;
+
+    Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
+public:
+    virtual TilePtr _CreateChild(TileId) const = 0;
+    virtual bool _HasChildren() const override { return !m_isLeaf; }
+    virtual ChildTiles const* _GetChildren(bool load) const override;
+    virtual void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    virtual Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
+    
+    TileId GetTileId() const { return m_id; }
+    bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
+    Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
+    Render::GraphicP GetGraphic() const { return m_graphic.get(); }
+    bool IsLeaf() const { return m_isLeaf; }
+
+    void SetIsLeaf() { m_isLeaf = true; m_children.clear(); }
+
+    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
+    void TryHigherRes(TileTree::DrawArgsR args) const;
+};
+
+//=======================================================================================
+//! The ProgressiveTask for drawing OctTree tiles as they arrive asynchronously.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct ProgressiveTask : Dgn::ProgressiveTask
+{
+    Root&                   m_root;
+    DrawArgs::MissingNodes  m_missing;
+    TimePoint               m_nextShow;
+    TileLoadStatePtr        m_loads;
+    Utf8String              m_name;
+
+    ProgressiveTask(Root& root, DrawArgs::MissingNodes&& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) { }
+    virtual ~ProgressiveTask() { if (nullptr != m_loads) m_loads->SetCanceled(); }
+
+    virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+};
+
+} // end OctTree
 END_TILETREE_NAMESPACE
 

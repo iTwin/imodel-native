@@ -19,6 +19,7 @@
 BEGIN_ELEMENT_TILETREE_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureImage);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
@@ -46,6 +47,7 @@ DEFINE_REF_COUNTED_PTR(Mesh);
 DEFINE_REF_COUNTED_PTR(MeshBuilder);
 DEFINE_REF_COUNTED_PTR(Geometry);
 DEFINE_REF_COUNTED_PTR(GeomPart);
+DEFINE_REF_COUNTED_PTR(Root);
 
 typedef bvector<MeshPtr>            MeshList;
 typedef bvector<MeshInstance>       MeshInstanceList;
@@ -471,10 +473,10 @@ public:
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
     void IncrementInstanceCount() { m_instanceCount++; }
-    size_t GetInstanceCount() const { return m_instanceCount; }
+    size_t GetInstanceCount() const { return m_instanceCount; }
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
-    DgnGeometryPartId GetPartId() const { return m_partId; }
+    DgnGeometryPartId GetPartId() const { return m_partId; }
 };
 
 //=======================================================================================
@@ -496,9 +498,45 @@ public:
 //// //=======================================================================================
 //// // @bsistruct                                                   Paul.Connelly   12/16
 //// //=======================================================================================
+//// struct Loader : TileTree::TileLoader
+//// {
+////     DEFINE_T_SUPER(TileTree::TileLoader);
+//// 
+//// private:
+////     DgnModelPtr     m_model;
+//// 
+////     virtual folly::Future<BentleyStatus> _GetFromSource() override;
+////     virtual BentleyStatus _LoadTile() override;
+//// public:
+////     Loader(DgnModelR model, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads""), m_model(&model) { }
+//// };
+//// 
+//// //=======================================================================================
+//// // @bsistruct                                                   Paul.Connelly   12/16
+//// //=======================================================================================
 //// struct Node : TileTree::Tile
 //// {
+////     DEFINE_T_SUPER(TileTree::Tile);
+//// protected:
+////     double          m_tolerance;
+////     GeometryList    m_geometries;
+////     uint32_t        m_depth;
+////     uint32_t        m_siblingIndex;
+////     bool            m_isLeaf;
+////     bool            m_isEmpty;
 //// 
+////     Node(DRange3dCR range, double tolerance, uint32_t depth, uint32_t siblingIndex, double tolerance = 0.0);
+//// 
+////     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+////     virtual void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+////     virtual Utf8String _GetTileName() const override;
+////     virtual bool _HasChildren() const override;
+////     virtual ChildTiles const* _GetChildren(bool load) const override;
+////     virtual double _GetMaximumSize() const override;
+////     virtual void _OnChildrenUnloaded() const override;
+////     virtual void _UnloadChildren(TileTree::TimePoint olderThan) const override;
+//// public:
+////     void ClearGeometry() { m_geometries.clear(); }
 //// };
 //// 
 //// //=======================================================================================
@@ -506,7 +544,14 @@ public:
 //// //=======================================================================================
 //// struct Root : TileTree::Root
 //// {
+////     DEFINE_T_SUPER(TileTree::Root);
+//// private:
+////     DgnModelId      m_modelId;
+////     // ###TODO: Cache
 //// 
+//// public:
+////     Root(DgnModelId modelId, DgnDbR db, TransformCR transform, Utf8CP rootUrl, Render::SystemP system);
+////     virtual ~Root() { ClearAllTiles(); }
 //// };
 
 END_ELEMENT_TILETREE_NAMESPACE

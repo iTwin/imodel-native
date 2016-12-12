@@ -892,3 +892,160 @@ ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(Progressiv
 
     return Completion::Aborted;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
+    : T_Super(db, location, rootUrl, system)
+    {
+    // 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctTree::Root::DrawInView(RenderContextR context)
+    {
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, GetLocation(), *this, now, now - GetExpirationTime());
+    Draw(args);
+
+    args.DrawGraphics(context);
+
+    if (!args.m_missing.empty())
+        {
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
+        args.RequestMissingTiles(*this, loads);
+        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, std::move(args.m_missing), loads));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
+    {
+    if (m_isLeaf)
+        return nullptr;
+
+    if (load && m_children.empty())
+        {
+        for (int i = 0; i < 2; i++)
+            {
+            for (int j = 0; j < 2; j++)
+                {
+                for (int k = 0; k < 2; k++)
+                    {
+                    auto child = _CreateChild(m_id.CreateChildId(i, j, k));
+                    if (child.IsValid())
+                        m_children.push_back(child);
+                    }
+                }
+            }
+        }
+
+    return &m_children;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
+    {
+    if (!IsReady())
+        {
+        if (!IsNotFound())
+            args.m_missing.Insert(depth, this);
+
+        TryLowerRes(args, 10);
+        TryHigherRes(args);
+
+        return;
+        }
+
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool OctTree::Tile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
+    {
+    auto parent = static_cast<Tile const*>(m_parent);
+    if (depth <= 0 || nullptr == parent)
+        return false;
+
+    if (parent->HasGraphics())
+        {
+        args.m_loResSubstitutes.Add(*parent->GetGraphic());
+        return true;
+        }
+
+    return parent->TryLowerRes(args, depth-1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void OctTree::Tile::TryHigherRes(TileTree::DrawArgsR args) const
+    {
+    for (auto const& child : m_children)
+        {
+        auto octChild = static_cast<Tile const*>(child.get());
+        if (octChild->HasGraphics())
+            args.m_hiResSubstitutes.Add(*octChild->GetGraphic());
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTask::Completion OctTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+    {
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now - m_root.GetExpirationTime());
+
+    for (auto const& node : m_missing)
+        {
+        switch (node.second->GetLoadStatus())
+            {
+            case Tile::LoadStatus::Ready:
+                node.second->Draw(args, node.first);
+                break;
+            case Tile::LoadStatus::NotFound:
+                break;
+            default:
+                args.m_missing.Insert(node.first, node.second);
+                break;
+            }
+        }
+
+    args.RequestMissingTiles(m_root, m_loads);
+    args.DrawGraphics(context);
+
+    m_missing.swap(args.m_missing);
+
+    if (m_missing.empty())
+        {
+        m_loads = nullptr;
+        context.GetViewport()->SetNeedsHeal();
+        return Completion::Finished;
+        }
+
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + std::chrono::seconds(1);
+        wantShow = WantShow::Yes;
+        }
+
+    return Completion::Aborted;
+    }
+
