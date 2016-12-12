@@ -178,13 +178,6 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
             info->m_index = properties[ServerSchema::Property::Index].GetInt();
         }
 
-    if (-1 == info->m_index)
-        {
-        uint64_t index64;
-        BeStringUtilities::ParseUInt64(index64, instanceId.c_str());
-        info->m_index = (int32_t) (index64 & INT32_MAX);
-        }
-
     Utf8String fileName = GetProperty(properties, ServerSchema::Property::FileName);
 
     if (!fileName.empty())
@@ -280,10 +273,7 @@ void FileInfo::ToPropertiesJson(JsonValueR json) const
 //---------------------------------------------------------------------------------------
 WebServices::ObjectId FileInfo::GetObjectId() const
     {
-    Utf8String index = "";
-    if (-1 != GetIndex())
-        index.Sprintf("%d", GetIndex());
-    return WebServices::ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::File, index);
+    return WebServices::ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::File, GetFileId().ToString());
     }
 
 //---------------------------------------------------------------------------------------
