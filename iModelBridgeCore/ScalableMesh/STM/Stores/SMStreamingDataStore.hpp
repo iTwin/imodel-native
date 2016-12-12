@@ -194,7 +194,8 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
 template <class EXTENT> uint64_t SMStreamingStore<EXTENT>::GetNextID() const
     {
-    assert(!"Not implemented yet");
+    // NEEDS_WORK_STREAMING: do we need this for streaming?
+    //assert(!"Not implemented yet");
     return 0; 
     }
             
