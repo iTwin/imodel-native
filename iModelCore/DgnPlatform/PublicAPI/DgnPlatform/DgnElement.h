@@ -115,7 +115,7 @@ public:
 //=======================================================================================
 //! Helps models, elements, aspects and other data structures copy themselves between DgnDbs
 //=======================================================================================
-struct DgnImportContext : DgnCloneContext
+struct EXPORT_VTABLE_ATTRIBUTE DgnImportContext : DgnCloneContext
 {
 private:
     bool            m_areCompatibleDbs;
