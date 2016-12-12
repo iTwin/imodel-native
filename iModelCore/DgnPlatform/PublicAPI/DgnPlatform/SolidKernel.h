@@ -361,6 +361,9 @@ DGNPLATFORM_EXPORT static bool IsPlanarFace(ISubEntityCR);
 //! Return whether the angle between the normals of the supplied edge's faces never exceeds the internal smooth angle tolerance along the length of the edge.
 DGNPLATFORM_EXPORT static bool IsSmoothEdge(ISubEntityCR);
 
+//! Return whether the supplied entity is a laminar edge of a sheet body, i.e. boundary of a single face.
+DGNPLATFORM_EXPORT static bool IsLaminarEdge(ISubEntityCR);
+
 //! Return whether the supplied entity is a sheet body with a single planar face.
 DGNPLATFORM_EXPORT static bool IsSingleFacePlanarSheetBody(IBRepEntityCR, bool& hasHoles);
 
