@@ -20,7 +20,7 @@ namespace BeFolly {
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct ThreadPool : folly::Executor
+struct EXPORT_VTABLE_ATTRIBUTE ThreadPool : folly::Executor
 {
 private:
     struct Worker : BentleyApi::RefCountedBase
