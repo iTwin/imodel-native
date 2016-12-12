@@ -50,14 +50,14 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
     //                           and do this in the Cloud API...
-    if (s_stream_from_disk)
-        {
-        // Create base directory structure to store information if not already done
-        BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_pathToHeaders.c_str());
-        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
-        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
-        }
+    //if (s_stream_from_disk)
+    //    {
+    //    // Create base directory structure to store information if not already done
+    //    BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
+    //    path.AppendToPath(m_pathToHeaders.c_str());
+    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
+    //    }
     }
 
 template <class EXTENT> SMStreamingStore<EXTENT>::~SMStreamingStore()
@@ -587,7 +587,7 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::SerializeHeaderToCesium3D
     auto& rootTile = tile["root"];
     SMStreamingStore<EXTENT>::SerializeHeaderToCesium3DTileJSON(header, blockID, rootTile);
 
-    Json::Value& children = tile["children"];
+    Json::Value& children = rootTile["children"];
     for (auto& childExtent : header->m_childrenExtents)
         {
         Json::Value child;
@@ -1405,14 +1405,14 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
     m_dataSourceURL.setSeparator(m_dataSourceAccount->getPrefixPath().getSeparator());
 
     // NEEDS_WORK_SM_STREAMING : create only directory structure if and only if in creation mode
-    if (s_stream_from_disk)
-        {
-        // Create base directory structure to store information if not already done
-        BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_dataSourceURL.c_str());
-        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
-        assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
-        }
+    //if (s_stream_from_disk)
+    //    {
+    //    // Create base directory structure to store information if not already done
+    //    BeFileName path(m_dataSourceAccount->getPrefixPath().c_str());
+    //    path.AppendToPath(m_dataSourceURL.c_str());
+    //    BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+    //    assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
+    //    }
     //else
     //    {
     //    // stream from azure
@@ -1585,7 +1585,8 @@ template <class DATATYPE, class EXTENT> size_t SMStreamingNodeDataStore<DATATYPE
     else
         {
         Cesium3DTilesBase* pData = (Cesium3DTilesBase*)(DataTypeArray);
-        assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0 && pData->m_uvData != 0 && pData->m_textureData != 0);
+        assert(pData != 0 && pData->m_pointData != 0 && pData->m_indicesData != 0);
+        assert(!m_nodeHeader->m_isTextured || (m_nodeHeader->m_isTextured && pData->m_uvData != 0 && pData->m_textureData != 0));
         assert(maxCountData >= block.GetNumberOfPoints() * sizeof(DPoint3d) + block.GetNumberOfUvs() * sizeof(DPoint2d) + block.GetNumberOfIndices() * sizeof(int32_t) + block.GetTextureSize());
         memmove(pData->m_textureData, block.GetTexture(), block.GetTextureSize());
         memmove(pData->m_uvData, block.GetUVs(), block.GetNumberOfUvs() * sizeof(DPoint2d));
@@ -1884,23 +1885,16 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     auto textureAccName = primitives[0]["material"].asString();
     auto& attributes = primitives[0]["attributes"];
     auto pointAccName = attributes["POSITION"].asString();
-    auto uvAccName = attributes["TEXCOORD_0"].asString();
+
+    auto isTextured = attributes.isMember("TEXCOORD_0");
+    auto uvAccName = isTextured ? attributes["TEXCOORD_0"].asString() : "";
 
     auto& accessors = cesiumBatchTableHeader["accessors"];
     auto& indiceAccessor = accessors[indiceAccName];
     auto& pointAccessor = accessors[pointAccName];
-    auto& uvAccessor = accessors[uvAccName];
     auto indiceBufferName = indiceAccessor["bufferView"].asString();
     auto pointBufferName = pointAccessor["bufferView"].asString();
     auto points_are_quantized = pointAccessor.isMember("extensions") && pointAccessor["extensions"].isMember("WEB3D_quantized_attributes");
-    auto uvBufferName = uvAccessor["bufferView"].asString();
-    auto uvs_are_quantized = uvAccessor.isMember("extensions") && uvAccessor["extensions"].isMember("WEB3D_quantized_attributes");
-
-    auto textureName = cesiumBatchTableHeader["materials"][textureAccName]["values"]["tex"].asString();
-    auto imageSourceName = cesiumBatchTableHeader["textures"][textureName]["source"].asString();
-    auto imageSourceBufferName = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["bufferView"].asString();
-    auto imageHeight = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["height"].asUInt();
-    auto imageWidth = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["width"].asUInt();
 
     struct buffer_object_pointer
         {
@@ -1911,116 +1905,142 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
     auto& bufferViews = cesiumBatchTableHeader["bufferViews"];
     auto& indiceBV = bufferViews[indiceBufferName];
     auto& pointBV = bufferViews[pointBufferName];
-    auto& uvBV = bufferViews[uvBufferName];
-    auto& textureBV = bufferViews[imageSourceBufferName];
 
     buffer_object_pointer indice_buffer_pointer = { indiceAccessor["count"].asUInt(), indiceBV["byteLength"].asUInt(), indiceBV["byteOffset"].asUInt() };
     buffer_object_pointer point_buffer_pointer = { pointAccessor["count"].asUInt(), pointBV["byteLength"].asUInt(), pointBV["byteOffset"].asUInt() };
-    buffer_object_pointer uv_buffer_pointer = { uvAccessor["count"].asUInt(), uvBV["byteLength"].asUInt(), uvBV["byteOffset"].asUInt() };
-    buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
 
     m_tileData.numPoints = point_buffer_pointer.count;
     m_tileData.numIndices = indice_buffer_pointer.count;
-    m_tileData.numUvs = uv_buffer_pointer.count;
-    m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
 
-    this->resize(m_tileData.numIndices*sizeof(int32_t) + m_tileData.numPoints*sizeof(DPoint3d) + m_tileData.numUvs*sizeof(DPoint2d) + m_tileData.textureSize);
     auto buffer = batchTable + gltfBinaryStartOffset;
-    m_tileData.m_indicesData = reinterpret_cast<int32_t *>(this->data());
-    m_tileData.indiceOffset = 0;
-    if (indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint16_t))
+    if (isTextured)
         {
-        auto indice_array = (int16_t*)(buffer + indice_buffer_pointer.offset);
-        for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
+        auto& uvAccessor = accessors[uvAccName];
+        auto uvBufferName = uvAccessor["bufferView"].asString();
+        auto uvs_are_quantized = uvAccessor.isMember("extensions") && uvAccessor["extensions"].isMember("WEB3D_quantized_attributes");
+        auto textureName = cesiumBatchTableHeader["materials"][textureAccName]["values"]["tex"].asString();
+        auto imageSourceName = cesiumBatchTableHeader["textures"][textureName]["source"].asString();
+        auto imageSourceBufferName = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["bufferView"].asString();
+        auto imageHeight = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["height"].asUInt();
+        auto imageWidth = cesiumBatchTableHeader["images"][imageSourceName]["extensions"]["KHR_binary_glTF"]["width"].asUInt();
+        auto& uvBV = bufferViews[uvBufferName];
+        auto& textureBV = bufferViews[imageSourceBufferName];
+        buffer_object_pointer uv_buffer_pointer = { uvAccessor["count"].asUInt(), uvBV["byteLength"].asUInt(), uvBV["byteOffset"].asUInt() };
+        buffer_object_pointer texture_buffer_pointer = { 3 * imageHeight * imageWidth, textureBV["byteLength"].asUInt(), textureBV["byteOffset"].asUInt() };
+        m_tileData.numUvs = uv_buffer_pointer.count;
+        m_tileData.textureSize = texture_buffer_pointer.count + 3 * sizeof(uint32_t);
+        auto& uvDecodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
+
+        this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d) + m_tileData.numUvs * sizeof(DPoint2d) + m_tileData.textureSize);
+
+        if (m_tileData.numUvs > 0)
             {
-            m_tileData.m_indicesData[i] = (int32_t)indice_array[i];
+            m_tileData.uvOffset = 0; // m_tileData.pointOffset + m_tileData.numPoints * sizeof(DPoint3d);
+            m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
+            if (uvs_are_quantized)
+                {
+                const FPoint3d scale = { uvDecodeMatrixJson[0].asFloat(), uvDecodeMatrixJson[4].asFloat() };
+                const FPoint3d translate = { uvDecodeMatrixJson[6].asFloat(), uvDecodeMatrixJson[7].asFloat() };
+                //const DPoint3d scale = { uvDecodeMatrixJson[0].asDouble(), uvDecodeMatrixJson[4].asDouble() };
+                //const DPoint3d translate = { uvDecodeMatrixJson[6].asDouble(), uvDecodeMatrixJson[7].asDouble() };
+
+                auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
+                for (uint32_t i = 0; i < m_tileData.numUvs; i++)
+                    {
+                    m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
+                    }
+
+                }
+            else
+                {
+                auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
+                for (uint32_t i = 0; i < m_tileData.numUvs; i++)
+                    {
+                    m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], uv_array[2 * i + 1]);
+                    }
+                }
+            }
+
+        if (m_tileData.textureSize > 3 * sizeof(uint32_t))
+            {
+            m_tileData.textureOffset = m_tileData.uvOffset + m_tileData.numUvs * sizeof(DPoint2d);
+            m_tileData.m_textureData = reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
+            memcpy(m_tileData.m_textureData, &imageWidth, sizeof(uint32_t));
+            memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
+            memset(m_tileData.m_textureData + 2 * sizeof(uint32_t), 0, sizeof(uint32_t));
+
+            // Decompress texture
+            try {
+                auto texture_jpeg = (Byte*)(buffer + texture_buffer_pointer.offset);
+                auto codec = new HCDCodecIJG(imageWidth, imageHeight, 3 * 8);// 3 * 8 bits per pixels (rgb)
+                codec->SetQuality(70);
+                codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
+                HFCPtr<HCDCodec> pCodec = codec;
+                auto textureSize = (uint32_t)(imageWidth*imageHeight * 3);
+                const size_t uncompressedDataSize = pCodec->DecompressSubset(texture_jpeg, texture_buffer_pointer.byte_size, m_tileData.m_textureData + 3 * sizeof(uint32_t), textureSize);
+                assert(textureSize == uncompressedDataSize);
+                }
+            catch (const std::exception& e)
+                {
+                assert(!"There is an error decompressing texture");
+                std::wcout << L"Error: " << e.what() << std::endl;
+                }
             }
         }
     else
         {
-        memcpy(m_tileData.m_indicesData, buffer + indice_buffer_pointer.offset, indice_buffer_pointer.count * sizeof(int32_t));
+        this->resize(m_tileData.numIndices * sizeof(int32_t) + m_tileData.numPoints * sizeof(DPoint3d));
         }
-    m_tileData.m_uvIndicesData = m_tileData.m_indicesData;
 
-    m_tileData.pointOffset = indice_buffer_pointer.count*sizeof(int32_t);
-    m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
-    if (points_are_quantized)
+    if (m_tileData.numIndices > 0)
         {
-        auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
-        // decode matrix is stored as column major
-
-        //const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[5].asFloat(), decodeMatrixJson[10].asFloat() };
-        //const FPoint3d translate = { decodeMatrixJson[12].asFloat(), decodeMatrixJson[13].asFloat(), decodeMatrixJson[14].asFloat() };
-        const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble() };
-        const DPoint3d translate = { decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble() };
-
-        auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
-        for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+        m_tileData.indiceOffset = m_tileData.textureOffset + m_tileData.textureSize;
+        m_tileData.m_indicesData = reinterpret_cast<int32_t *>(this->data() + m_tileData.indiceOffset);
+        if (indice_buffer_pointer.byte_size / indice_buffer_pointer.count == sizeof(uint16_t))
             {
-            m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+            auto indice_array = (int16_t*)(buffer + indice_buffer_pointer.offset);
+            for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
+                {
+                m_tileData.m_indicesData[i] = (int32_t)indice_array[i];
+                }
+            }
+        else
+            {
+            memcpy(m_tileData.m_indicesData, buffer + indice_buffer_pointer.offset, indice_buffer_pointer.count * sizeof(int32_t));
             }
 
+        if (isTextured) m_tileData.m_uvIndicesData = m_tileData.m_indicesData;
         }
-    else
+    if (m_tileData.numPoints > 0)
         {
-        auto point_array = (float*)(buffer + point_buffer_pointer.offset);
-        for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+        m_tileData.pointOffset = m_tileData.indiceOffset + indice_buffer_pointer.count * sizeof(int32_t);
+        m_tileData.m_pointData = reinterpret_cast<DPoint3d *>(this->data() + m_tileData.pointOffset);
+        if (points_are_quantized)
             {
-            m_tileData.m_pointData[i] = DPoint3d::From(point_array[3*i], point_array[3*i+1], point_array[3*i+2]);
+            auto& decodeMatrixJson = pointAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
+            // decode matrix is stored as column major
+
+            //const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[5].asFloat(), decodeMatrixJson[10].asFloat() };
+            //const FPoint3d translate = { decodeMatrixJson[12].asFloat(), decodeMatrixJson[13].asFloat(), decodeMatrixJson[14].asFloat() };
+            const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[5].asDouble(), decodeMatrixJson[10].asDouble() };
+            const DPoint3d translate = { decodeMatrixJson[12].asDouble(), decodeMatrixJson[13].asDouble(), decodeMatrixJson[14].asDouble() };
+
+            auto point_array = (uint16_t*)(buffer + point_buffer_pointer.offset);
+            for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+                {
+                m_tileData.m_pointData[i] = DPoint3d::From(scale.x*(point_array[3 * i] - 0.5f) + translate.x, scale.y*(point_array[3 * i + 1] - 0.5f) + translate.y, scale.z*(point_array[3 * i + 2] - 0.5f) + translate.z);
+                }
+
+            }
+        else
+            {
+            auto point_array = (float*)(buffer + point_buffer_pointer.offset);
+            for (uint32_t i = 0; i < m_tileData.numPoints; i++)
+                {
+                m_tileData.m_pointData[i] = DPoint3d::From(point_array[3 * i], point_array[3 * i + 1], point_array[3 * i + 2]);
+                }
             }
         }
-
-    m_tileData.uvOffset = m_tileData.pointOffset + m_tileData.numPoints*sizeof(DPoint3d);
-    m_tileData.m_uvData = reinterpret_cast<DPoint2d *>(this->data() + m_tileData.uvOffset);
-    if (uvs_are_quantized)
-        {
-        auto& decodeMatrixJson = uvAccessor["extensions"]["WEB3D_quantized_attributes"]["decodeMatrix"];
-        // decode matrix is stored as column major
-
-        const FPoint3d scale = { decodeMatrixJson[0].asFloat(), decodeMatrixJson[4].asFloat() };
-        const FPoint3d translate = { decodeMatrixJson[6].asFloat(), decodeMatrixJson[7].asFloat() };
-        //const DPoint3d scale = { decodeMatrixJson[0].asDouble(), decodeMatrixJson[4].asDouble() };
-        //const DPoint3d translate = { decodeMatrixJson[6].asDouble(), decodeMatrixJson[7].asDouble() };
-
-        auto uv_array = (uint16_t*)(buffer + uv_buffer_pointer.offset);
-        for (uint32_t i = 0; i < m_tileData.numUvs; i++)
-            {
-            m_tileData.m_uvData[i] = DPoint2d::From(scale.x*(uv_array[2 * i] - 0.5f) + translate.x, 1.0 - (scale.y*(uv_array[2 * i + 1] - 0.5f) + translate.y));
-            }
-
-        }
-    else
-        {
-        auto uv_array = (float*)(buffer + uv_buffer_pointer.offset);
-        for (uint32_t i = 0; i < m_tileData.numUvs; i++)
-            {
-            m_tileData.m_uvData[i] = DPoint2d::From(uv_array[2 * i], uv_array[2 * i + 1]);
-            }
-        }
-
-    m_tileData.textureOffset = m_tileData.uvOffset + m_tileData.numUvs*sizeof(DPoint2d);
-    m_tileData.m_textureData = reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
-    memcpy(m_tileData.m_textureData, &imageWidth, sizeof(uint32_t));
-    memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
-    memset(m_tileData.m_textureData + 2 * sizeof(uint32_t), 0, sizeof(uint32_t));
-
-    // Decompress texture
-    try {
-        auto texture_jpeg = (Byte*)(buffer + texture_buffer_pointer.offset);
-        auto codec = new HCDCodecIJG(imageWidth, imageHeight, 3 * 8);// 3 * 8 bits per pixels (rgb)
-        codec->SetQuality(70);
-        codec->SetSubsamplingMode(HCDCodecIJG::SubsamplingModes::SNONE);
-        HFCPtr<HCDCodec> pCodec = codec;
-        auto textureSize = (uint32_t)(imageWidth*imageHeight*3);
-        const size_t uncompressedDataSize = pCodec->DecompressSubset(texture_jpeg, texture_buffer_pointer.byte_size, m_tileData.m_textureData + 3 * sizeof(uint32_t), textureSize);
-        assert(textureSize == uncompressedDataSize);
-        }
-    catch (const std::exception& e)
-        {
-        assert(!"There is an error decompressing texture");
-        std::wcout << L"Error: " << e.what() << std::endl;
-        }
-
     }
 
 template <class DATATYPE, class EXTENT> StreamingTextureBlock& StreamingNodeTextureStore<DATATYPE, EXTENT>::GetTexture(HPMBlockID blockID) const
