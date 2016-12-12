@@ -103,13 +103,25 @@ ICurvePrimitivePtr PSolidGeom::GetAsCurvePrimitive (PK_CURVE_t curve, PK_INTERVA
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   PSolidGeom::EdgeToCurvePrimitive (ICurvePrimitivePtr& curvePrimitive, PK_EDGE_t edgeTag)
     {
-    PK_CURVE_t      curveTag = 0;
-    PK_LOGICAL_t    orientation;
+    PK_CURVE_t      curveTag = PK_ENTITY_null;
+    PK_FIN_t        finTag = PK_ENTITY_null;
+    PK_LOGICAL_t    orientation = PK_LOGICAL_true;
     PK_INTERVAL_t   interval;
 
-    if (SUCCESS != PK_EDGE_ask_oriented_curve (edgeTag, &curveTag, &orientation) ||
-        SUCCESS != PK_EDGE_find_interval (edgeTag, &interval))
+    if (SUCCESS == PK_EDGE_ask_oriented_curve(edgeTag, &curveTag, &orientation) && PK_ENTITY_null != curveTag)
+        {
+        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval))
+            PK_CURVE_ask_interval(curveTag, &interval);
+        }
+    else if (SUCCESS == PK_EDGE_ask_first_fin(edgeTag, &finTag) && SUCCESS == PK_FIN_ask_oriented_curve(finTag, &curveTag, &orientation) && PK_ENTITY_null != curveTag)
+        {
+        if (SUCCESS != PK_FIN_find_interval(finTag, &interval))
+            PK_CURVE_ask_interval(curveTag, &interval);
+        }
+    else
+        {
         return ERROR;
+        }
 
     curvePrimitive = PSolidGeom::GetAsCurvePrimitive (curveTag, interval, !orientation);
     
@@ -147,7 +159,6 @@ static CurveVectorPtr planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurv
         PK_INTERVAL_t       interval;
         ICurvePrimitivePtr  primitive;
         PK_LOGICAL_t        orientation;
-
 
         if (SUCCESS == PK_FIN_ask_oriented_curve (fins[iFin], &curveTag, &orientation) &&
             SUCCESS == PK_FIN_find_interval (fins[iFin], &interval))

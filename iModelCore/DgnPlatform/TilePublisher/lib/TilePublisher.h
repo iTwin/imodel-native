@@ -161,7 +161,6 @@ struct TilePublisher
 private:
     BatchIdMap              m_batchIds;
     DPoint3d                m_centroid;
-    TileMeshList            m_meshes;
     TileNodeCR              m_tile;
     ByteStream              m_binaryData;
     PublisherContext&       m_context;
@@ -175,7 +174,8 @@ private:
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
-    void ProcessMeshes(Json::Value& value);
+    void AddGeometry(Json::Value& value, PublishableTileGeometryR geometry);
+    void AddDefaultScene (Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
@@ -183,14 +183,12 @@ private:
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
-
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootNode);
     BeFileName  GetBinaryDataFileName() const;
-
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
-
-    void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
-    void AddPolylines(Json::Value& value, TileMeshR mesh, size_t index);
+    void AddMeshPrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
+    void AddPolylinePrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
 
     Utf8String AddMeshMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
