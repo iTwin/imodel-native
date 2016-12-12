@@ -267,7 +267,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         {
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*m_scene, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
+        context.GetViewport()->ScheduleProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
         }
     }
 
