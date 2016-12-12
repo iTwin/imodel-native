@@ -429,7 +429,7 @@
     determines the mapping for the entire hierarchy.
     - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
     not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
-    - Link tables implicity use the @b SharedTable strategy if they store an ECRelationshipClass hierarchy.
+    - Link tables implicity use the @b TablePerHierarchy strategy if they store an ECRelationshipClass hierarchy.
     - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
 
     @see @ref ECDbRelationshipRules
