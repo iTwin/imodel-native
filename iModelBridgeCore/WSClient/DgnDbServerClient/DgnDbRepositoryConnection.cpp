@@ -1984,9 +1984,16 @@ DgnDbServerRevisionPtr ParseRevision (WSObjectsReader::Instance instance)
         DateTime::FromString(pushDate, properties[ServerSchema::Property::PushDate].GetString());
         indexedRevision->GetRevision()->SetDateTime(pushDate);
         indexedRevision->GetRevision()->SetUserName(properties[ServerSchema::Property::UserCreated].GetString());
-        indexedRevision->SetIndex(properties[ServerSchema::Property::Index].GetUint64());
         Utf8String url = properties[ServerSchema::Property::URL].IsString() ? properties[ServerSchema::Property::URL].GetString() : "";
         indexedRevision->SetURL(url);
+
+        Utf8String revIndex = properties[ServerSchema::Property::Index].GetString();
+        if (!revIndex.empty())
+            {
+            uint64_t index;
+            BeStringUtilities::ParseUInt64(index, revIndex.c_str());
+            indexedRevision->SetIndex(index);
+            }
         }
     return indexedRevision;
     }
