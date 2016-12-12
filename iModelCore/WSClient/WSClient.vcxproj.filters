@@ -510,6 +510,12 @@
     <ClCompile Include="DgnDbServerClient\FileInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\FileInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">

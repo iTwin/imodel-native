@@ -370,6 +370,9 @@
     <!-- Define a test collection part. This is included in DgnClientFx's TestsAggregate -->
     <Part Name="Tests">
         <SubPart PartName="UnitTests-Published"/>
+
+        <!-- Ensure that builds, run manually if needed -->
+        <SubPart PartName="WSClientIntegrationTests"/>
     </Part>
 
     <!-- Define a gtest program to run the tests. 
@@ -501,7 +504,20 @@
     <!-- // Integration Tests - used for debugging                                 // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke">
+    <Part Name="WSClientIntegrationTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
+        <!--
+            This MKE file uses:
+                $(DGNCLIENTSDK_ROOT)build/DgnClientSdk.mki
+                $(DGNCLIENTSDK_DIR_BuildPlatform)deliver.mki
+            From $(OutputRootDir)Product/DgnClientSdk-Winx64/
+            
+            This is wrong because:
+                1. need to rely on its BuildContext, not a product
+                2. should not hard-code an architecture directory
+            But since I don't understand the intent, the shortest solution is to add more SubParts.
+        -->
+        <SubPart PartName="DgnClientSdk" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="ConnectWebServicesClientC" />
@@ -514,7 +530,7 @@
     <!-- // Compatibility Tests - tool for WSG server developers                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
-    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke">
+    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x86,x64">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />

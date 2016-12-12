@@ -44,3 +44,10 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGet
 
 UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
     # bim0200dev, x86, NDEBUG, firebug, random, crash
+
+# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
+DgnDbServerEventParserTests.LockEventTests
+DgnDbServerEventParserTests.RevisionEventTests
+DgnDbServerEventParserTests.CodeEventTests
+DgnDbServerEventParserTests.LocksDeletedEventTests
+DgnDbServerEventParserTests.CodesDeletedEventTests

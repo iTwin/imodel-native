@@ -140,7 +140,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidRowParameterAndRowsDefaultsT
     Json::Value resultUserData = result.GetValue()["response"]["docs"][0];
 
     EXPECT_EQ(1, numResultsFound);
-    EXPECT_EQ(32, resultUserData.size());
+    EXPECT_EQ(35, resultUserData.size());
     }
 
 
@@ -163,7 +163,7 @@ TEST_F(SolrClientTests, SendQueryRequest_SetsInvalidStartParameterAndStartDefaul
     Json::Value resultUserData = result.GetValue()["response"]["docs"][0];
 
     EXPECT_EQ(1, numResultsFound);
-    EXPECT_EQ(32, resultUserData.size());
+    EXPECT_EQ(35, resultUserData.size());
     }
 
 TEST_F(SolrClientTests, SendQueryRequest_SendsVanillaRequestToGetAllTokenInformationForImsUserService_HttpResponseSuccessful)

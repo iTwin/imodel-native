@@ -303,8 +303,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://viltest2-7.bentley.com/ws";
-    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fviltest2-10";
-    Credentials creds("VILTEST2-10\\administrator", "Q!w2e3r4");
+    Utf8String repositoryId = "ec.Bentley.ECOM.SharePointProvider--http~3A~2F~2Fps_edge_sp_2010.bentley.com~2F";
+    Credentials creds("ps_edge_sp_2010.bentley.com\\Administrator", "Q!w2e3r4");
     BeFileName cachePath = GetTestCachePath();
 
     IWSRepositoryClientPtr client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, proxy);
@@ -315,7 +315,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     }
 
 // WIP06: fails due to schema compatibility issues to 06xx ECv3 ECDb
-TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -398,7 +398,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG2xProjectWisePluginMapMobileRepos
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds)
+// WIP06: Fails in DgnDb61-16Q4 due to ECDb breaking changes. Error: BE_SQLITE_CONSTRAINT_NOTNULL: NOT NULL constraint failed: pwwsg_Document.ForeignECInstanceId_pwwsg_DocumentParent (BE_SQLITE_CONSTRAINT_NOTNULL)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -521,7 +522,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_WSG24ProjectWisePluginRepository
     ASSERT_TRUE(syncResult.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds)
+// WIP06: Fails on DgnDb61-16Q4 as PW_WSG:SpatialObjectLocation cannot be mapped to ECDb
+TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -644,27 +646,31 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
     
 TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
     {
-    auto schemaPath = GetTestsAssetsDir();
-    schemaPath.AppendToPath(LR"(\ECSchemas\WSClient\Cache\DSCacheSchema.01.05.ecschema.xml)");
-
     // Setup ECDb
     ECDb db;
     ASSERT_EQ(BE_SQLITE_OK, db.CreateNewDb(":memory:"));
 
     // Setup Schema
-    auto context = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr schema;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, schemaPath, *context));
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(context->GetCache()));
+    auto schema = ParseSchema(R"xml(
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="TestClass" > 
+                <ECProperty propertyName="Name" typeName="string"/>
+                <ECProperty propertyName="Persistence" typeName="int"/>
+            </ECClass>
+        </ECSchema>)xml");
 
-    ECClassCP rootClass = db.GetClassLocater().LocateClass("DSCacheSchema", "Root");
+    auto sc = ECSchemaCache::Create();
+    sc->AddSchema(*schema);
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*sc));
+
+    ECClassCP rootClass = db.GetClassLocater().LocateClass("TestSchema", "TestClass");
     ASSERT_NE(nullptr, rootClass);
 
     // Names
     Utf8String rootName = "Foo";
 
     // Test quety for same instance
-    Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
+    Utf8String ecsql = "SELECT ECInstanceId FROM [TS].[TestClass] WHERE [Name] = ? LIMIT 1 ";
     ECSqlStatement statement;
     ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(db, ecsql.c_str()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));

@@ -10,6 +10,11 @@
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
+void ClientInfoTests::SetUp()
+    {
+    BackDoor::DgnClientFx_Device::Initialize();
+    }
+
 TEST_F(ClientInfoTests, DefaultLanguage_Constant_NotEmpty)
     {
     EXPECT_STRNE("", ClientInfo::DefaultLanguage);
@@ -26,8 +31,8 @@ TEST_F(ClientInfoTests, Create_PassedMandatoryValues_SetsValues)
     EXPECT_EQ(BeVersion(4, 2, 6, 9), info->GetApplicationVersion());
 
     EXPECT_STRNE("", info->GetSystemDescription().c_str());
-    EXPECT_STRNE("", info->GetDeviceId().c_str());
     EXPECT_STREQ("en", info->GetLanguage().c_str());
+    EXPECT_STRNE("", info->GetDeviceId().c_str());
     }
 
 TEST_F(ClientInfoTests, Create_PassedProductId_SetsProductId)

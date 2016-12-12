@@ -47,6 +47,14 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
         EXPECT_GE(biggerValue, value);
 #endif
 
+namespace BackDoor
+    {
+    struct DgnClientFx_Device
+        {
+        static void Initialize();
+        };
+    }
+
 // Operator for comparisons
 bool operator <= (const DateTime& lhs, const DateTime& rhs);
 bool operator >= (const DateTime& lhs, const DateTime& rhs);
