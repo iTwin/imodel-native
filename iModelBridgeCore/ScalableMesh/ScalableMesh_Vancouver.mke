@@ -9,7 +9,7 @@
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
-BUILD_USING_VS2013=1
+#BUILD_USING_VS2013=1
 VANCOUVER=1
 OPTIMIZE_FOR_SPEED=1
 
@@ -23,8 +23,6 @@ OPTIMIZE_FOR_SPEED=1
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/CGAL
-%include cincapnd.mki
 
 dirToSearch=$(BuildContext)VendorAPI/Boost
 %include cincapnd.mki
@@ -480,8 +478,13 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)RmgrTools.lib \
     $(ContextSubpartsLibs)DgnGeoCoord.lib \
+%if defined (BUILD_USING_VS2013)
     $(ContextSubpartsLibs)libboost_system-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_thread-vc120-mt-1_57$(libext) \
+%elif defined (BUILD_USING_VS2015)
+    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+%endif
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
  #   $(ContextSubpartsLibs)AutomaticGroundDetection.lib

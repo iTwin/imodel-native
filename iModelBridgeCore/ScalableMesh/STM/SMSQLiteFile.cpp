@@ -1385,22 +1385,22 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
             stmtTest->BindInt(2, pos);
             stmtTest->Step();
             size_t nRows = stmtTest->GetValueInt64(0);
-            CachedStatementPtr stmt;
+            CachedStatementPtr stmtSeq;
             if (nRows > 0)
                 {
-                m_database->GetCachedStatement(stmt, "UPDATE SMImportSequences SET SourceLayer=?, TargetLayer=?, SourceType=?, TargetType=? WHERE SourceID=? AND CommandPosition=?");
+                m_database->GetCachedStatement(stmtSeq, "UPDATE SMImportSequences SET SourceLayer=?, TargetLayer=?, SourceType=?, TargetType=? WHERE SourceID=? AND CommandPosition=?");
                 }
             else
                 {
-                m_database->GetCachedStatement(stmt, "INSERT INTO SMImportSequences (SourceLayer,TargetLayer,SourceType,TargetType,SourceID,CommandPosition) VALUES (?,?,?,?,?,?)");
+                m_database->GetCachedStatement(stmtSeq, "INSERT INTO SMImportSequences (SourceLayer,TargetLayer,SourceType,TargetType,SourceID,CommandPosition) VALUES (?,?,?,?,?,?)");
                 }
-            if (cmdData.sourceLayerSet) stmt->BindInt(1, cmdData.sourceLayerID);
-            if (cmdData.targetLayerSet) stmt->BindInt(2, cmdData.targetLayerID);
-            if (cmdData.sourceTypeSet) stmt->BindInt(3, cmdData.sourceTypeID);
-            if (cmdData.targetTypeSet) stmt->BindInt(4, cmdData.targetTypeID);
-            stmt->BindInt64(5, sourceData.GetSourceID());
-            stmt->BindInt(6, pos);
-            stmt->Step();
+            if (cmdData.sourceLayerSet) stmtSeq->BindInt(1, cmdData.sourceLayerID);
+            if (cmdData.targetLayerSet) stmtSeq->BindInt(2, cmdData.targetLayerID);
+            if (cmdData.sourceTypeSet) stmtSeq->BindInt(3, cmdData.sourceTypeID);
+            if (cmdData.targetTypeSet) stmtSeq->BindInt(4, cmdData.targetTypeID);
+            stmtSeq->BindInt64(5, sourceData.GetSourceID());
+            stmtSeq->BindInt(6, pos);
+            stmtSeq->Step();
             }
 #ifdef VANCOUVER_API
         s.Save();
