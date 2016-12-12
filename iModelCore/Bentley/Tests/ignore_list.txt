@@ -24,6 +24,9 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
 Utf8PrintfStringTests.Ctor_FormatAndArgumentPassed_FormattedString
     # Crashes, probably a bug
 
+#TFS 633328: randomly Crash on iosArm64
+DirectoryObserverTests.*
+
 UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
     # bim0200dev, x86, DEBUG, random
     # [ RUN      ] UniqueTaskHolderTests.GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens
