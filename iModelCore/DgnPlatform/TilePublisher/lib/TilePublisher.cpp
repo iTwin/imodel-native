@@ -332,15 +332,18 @@ PublisherContext::Status TilePublisher::Publish()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootValue)
+Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootValue, size_t& primitiveIndex)
     {
     Json::Value     jsonMesh = Json::objectValue;
     Json::Value     primitives;
 
-    for (size_t i = 0; i < tileMeshes.size(); i++)
+    for (auto& tileMesh : tileMeshes)
         {
-        AddMeshPrimitive(primitives, rootValue, *tileMeshes[i], i);
-        AddPolylinePrimitive(primitives, rootValue, *tileMeshes[i], i); 
+        if (!tileMesh->Triangles().empty())
+            AddMeshPrimitive(primitives, rootValue, *tileMesh, primitiveIndex++);
+
+        if (!tileMesh->Polylines().empty())
+            AddPolylinePrimitive(primitives, rootValue, *tileMesh, primitiveIndex++); 
         }
     BeAssert (!primitives.empty());
     jsonMesh["primitives"] = primitives;
@@ -407,7 +410,7 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 void TilePublisher::AddGeometry(Json::Value& rootValue, PublishableTileGeometryR geometry)
     {
     bmap <TileMeshPartCP, Utf8String> partMap;
-    size_t          partIndex = 0, instanceIndex = 0, meshIndex = 0;
+    size_t          partIndex = 0, instanceIndex = 0, meshIndex = 0, primitiveIndex;
     Json::Value     meshes     = Json::objectValue;
     Json::Value     nodes      = Json::objectValue;
     Json::Value     rootNode   = Json::objectValue;
@@ -419,7 +422,7 @@ void TilePublisher::AddGeometry(Json::Value& rootValue, PublishableTileGeometryR
         Utf8PrintfString    meshName("Mesh_%d", meshIndex++);
 
         extendRange (publishedRange, geometry.Meshes(), nullptr);
-        meshes[meshName] = CreateMesh (geometry.Meshes(), rootValue);
+        meshes[meshName] = CreateMesh (geometry.Meshes(), rootValue, primitiveIndex);
         rootNode["meshes"].append (meshName);
         }
     // Parts...
@@ -427,7 +430,7 @@ void TilePublisher::AddGeometry(Json::Value& rootValue, PublishableTileGeometryR
         {
         Utf8PrintfString    meshName("Mesh_%d", meshIndex++);
          
-        meshes[meshName] = CreateMesh(part->Meshes(), rootValue);
+        meshes[meshName] = CreateMesh(part->Meshes(), rootValue, primitiveIndex);
         partMap.Insert(part.get(), meshName);
         }
     // Instances...
