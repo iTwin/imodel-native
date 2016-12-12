@@ -37,7 +37,7 @@ LPCWSCC api,
 HCWSCCBUFFER buf
 )
     {
-    for (uint64_t index = 0; index < buf->lItems.size(); index++)
+    for (size_t index = 0; index < buf->lItems.size(); index++)
         {
         if (buf->lItems[index] != nullptr)
             {
