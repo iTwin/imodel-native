@@ -32,9 +32,9 @@ private:
     BeXmlStatus ReadBlocks(BeXmlNodeR parentNode);
     BeXmlStatus ReadPhotoGroups(BeXmlNodeR photoGroups);
     BeXmlStatus ReadPhotoGroupNode(BeXmlNodeR photoGroupNode);
-    BeXmlStatus ReadCameraInfo(BeXmlNodeR sourceNodeRef, CameraR cameraInfo, long photoGroupNumber);
+    BeXmlStatus ReadCameraDeviceInfo(BeXmlNodeR sourceNodeRef, CameraDeviceR cameraDeviceInfo, long photoGroupNumber);
     BeXmlStatus ReadPhotoNode(BeXmlNodeR sourceNodeRef, PhotoR photo);
-    BeXmlStatus ReadRotationFromCameraPose(BeXmlNodeR photoNode, RotationMatrixTypeR rotation);
+    BeXmlStatus ReadRotationFromCameraDevicePose(BeXmlNodeR photoNode, RotationMatrixTypeR rotation);
 
 
 public:

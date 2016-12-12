@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DataCaptureSchema/Camera.cpp $
+|     $Source: DataCaptureSchema/CameraDevice.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,8 +9,8 @@
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(CameraHandler)
-HANDLER_DEFINE_MEMBERS(CameraTypeHandler)
+HANDLER_DEFINE_MEMBERS(CameraDeviceHandler)
+HANDLER_DEFINE_MEMBERS(CameraDeviceModelHandler)
 HANDLER_DEFINE_MEMBERS(RadialDistortionHandler)
 HANDLER_DEFINE_MEMBERS(TangentialDistortionHandler)
 
@@ -230,7 +230,7 @@ DgnDbStatus TangentialDistortion::_UpdateProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraTypeHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
+void CameraDeviceModelHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(CAMERA_PROPNAME_ImageWidth);
@@ -245,7 +245,7 @@ void CameraTypeHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
+void CameraDeviceHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
     params.Add(CAMERA_PROPNAME_ImageWidth);
@@ -260,35 +260,35 @@ void CameraHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraTypePtr CameraType::Create(Dgn::DefinitionModelR model)
+CameraDeviceModelPtr CameraDeviceModel::Create(Dgn::DefinitionModelR model)
     {
     DgnClassId classId = QueryClassId(model.GetDgnDb());
 
-    CameraTypePtr cp = new CameraType(CreateParams(model.GetDgnDb(), model.GetModelId(), classId));
+    CameraDeviceModelPtr cp = new CameraDeviceModel(CreateParams(model.GetDgnDb(), model.GetModelId(), classId));
     return cp;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-int                     CameraType::GetImageWidth() const { return m_imageWidth; }
-int                     CameraType::GetImageHeight() const { return m_imageHeight; }
-void                    CameraType::SetImageWidth(int val) { m_imageWidth = val; }
-void                    CameraType::SetImageHeight(int val) { m_imageHeight = val; }
-CameraTypeElementId     CameraType::GetId() const { return CameraTypeElementId(GetElementId().GetValueUnchecked()); }
-double                  CameraType::GetFocalLength() const { return m_focalLength; }
-DPoint2d                CameraType::GetPrincipalPoint() const { return m_principalPoint; }
-double                  CameraType::GetAspectRatio() const { return m_aspectRatio; }
-double                  CameraType::GetSkew() const { return m_skew; }
-void                    CameraType::SetFocalLength(double val) { m_focalLength = val; }
-void                    CameraType::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
-void                    CameraType::SetAspectRatio(double val) { m_aspectRatio = val; }
-void                    CameraType::SetSkew(double val) { m_skew = val; }
+int                     CameraDeviceModel::GetImageWidth() const { return m_imageWidth; }
+int                     CameraDeviceModel::GetImageHeight() const { return m_imageHeight; }
+void                    CameraDeviceModel::SetImageWidth(int val) { m_imageWidth = val; }
+void                    CameraDeviceModel::SetImageHeight(int val) { m_imageHeight = val; }
+CameraDeviceModelElementId     CameraDeviceModel::GetId() const { return CameraDeviceModelElementId(GetElementId().GetValueUnchecked()); }
+double                  CameraDeviceModel::GetFocalLength() const { return m_focalLength; }
+DPoint2d                CameraDeviceModel::GetPrincipalPoint() const { return m_principalPoint; }
+double                  CameraDeviceModel::GetAspectRatio() const { return m_aspectRatio; }
+double                  CameraDeviceModel::GetSkew() const { return m_skew; }
+void                    CameraDeviceModel::SetFocalLength(double val) { m_focalLength = val; }
+void                    CameraDeviceModel::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
+void                    CameraDeviceModel::SetAspectRatio(double val) { m_aspectRatio = val; }
+void                    CameraDeviceModel::SetSkew(double val) { m_skew = val; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraType::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDeviceModel::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
     if (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_FocalLength), GetFocalLength()) ||
         ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageWidth),GetImageWidth()) ||
@@ -305,7 +305,7 @@ DgnDbStatus CameraType::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraType::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDeviceModel::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -316,7 +316,7 @@ DgnDbStatus CameraType::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraType::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDeviceModel::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -327,12 +327,12 @@ DgnDbStatus CameraType::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statemen
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus CameraType::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus CameraDeviceModel::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        //read camera properties
+        //read cameraDevice properties
         SetFocalLength (stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_FocalLength)));
         SetImageWidth(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageWidth)));
         SetImageHeight(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageHeight)));
@@ -347,14 +347,14 @@ DgnDbStatus CameraType::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus CameraType::_OnDelete() const
+Dgn::DgnDbStatus CameraDeviceModel::_OnDelete() const
     {
-    //If we delete a camera, we should also delete all related photos
-    for (CameraEntry const& camera : MakeCameraIterator(GetDgnDb(), GetId()))
+    //If we delete a cameraDevice, we should also delete all related photos
+    for (CameraDeviceEntry const& cameraDevice : MakeCameraDeviceIterator(GetDgnDb(), GetId()))
         {
-        CameraCPtr myCameraPtr = Camera::Get(GetDgnDb(), camera.GeCameraElementId());
+        CameraDeviceCPtr myCameraDevicePtr = CameraDevice::Get(GetDgnDb(), cameraDevice.GeCameraDeviceElementId());
         //delete them all
-        myCameraPtr->Delete();
+        myCameraDevicePtr->Delete();
         }
     return DgnDbStatus::Success;
     }
@@ -363,10 +363,10 @@ Dgn::DgnDbStatus CameraType::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void CameraType::_CopyFrom(DgnElementCR el)
+void CameraDeviceModel::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
-    auto other = dynamic_cast<CameraTypeCP>(&el);
+    auto other = dynamic_cast<CameraDeviceModelCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
@@ -382,40 +382,40 @@ void CameraType::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraTypeElementId CameraType::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+CameraDeviceModelElementId CameraDeviceModel::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     {
-    Utf8CP ecSql = "SELECT cameraType.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_CameraType) " cameraType " \
-        "WHERE cameraType.Label=?";
+    Utf8CP ecSql = "SELECT cameraDeviceModel.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_CameraDeviceModel) " cameraDeviceModel " \
+        "WHERE cameraDeviceModel.Label=?";
 
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
         {
         BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
-        return CameraTypeElementId();
+        return CameraDeviceModelElementId();
         }
 
     statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
-        return CameraTypeElementId();
+        return CameraDeviceModelElementId();
                                                                  
-    return statement->GetValueId<CameraTypeElementId>(0);
+    return statement->GetValueId<CameraDeviceModelElementId>(0);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraType::CameraIterator CameraType::MakeCameraIterator(Dgn::DgnDbCR dgndb, CameraTypeElementId cameraTypeId)
+CameraDeviceModel::CameraDeviceIterator CameraDeviceModel::MakeCameraDeviceIterator(Dgn::DgnDbCR dgndb, CameraDeviceModelElementId cameraDeviceModelId)
     {
-    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_CameraIsDefinedByCameraType) " WHERE TargetECInstanceId=?";
+    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel) " WHERE TargetECInstanceId=?";
 
-    CameraType::CameraIterator iterator;
+    CameraDeviceModel::CameraDeviceIterator iterator;
     int idSelectColumnIndex = 0;
     ECSqlStatement* statement = iterator.Prepare(dgndb, ecSql, idSelectColumnIndex);
     if (statement != nullptr)
-        statement->BindId(1, cameraTypeId);
+        statement->BindId(1, cameraDeviceModelId);
 
     return iterator;
     }
@@ -425,97 +425,97 @@ CameraType::CameraIterator CameraType::MakeCameraIterator(Dgn::DgnDbCR dgndb, Ca
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraPtr Camera::Create(Dgn::SpatialModelR model, CameraTypeElementId cameraType)
+CameraDevicePtr CameraDevice::Create(Dgn::SpatialModelR model, CameraDeviceModelElementId cameraDeviceModel)
     {
-    if (!cameraType.IsValid())
+    if (!cameraDeviceModel.IsValid())
         {
-        BeAssert(false && "Cannot create a camera with an invalid cameraType");
+        BeAssert(false && "Cannot create a cameraDevice with an invalid cameraDeviceModel");
         return nullptr;
         }
 
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Camera, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_CameraDevice, model.GetDgnDb());
 
-    CameraPtr cp = new Camera(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraType);
+    CameraDevicePtr cp = new CameraDevice(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraDeviceModel);
     return cp;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraTypeElementId  Camera::QueryCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb, CameraElementId cameraElmId)
+CameraDeviceModelElementId  CameraDevice::QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId)
     {
-    Utf8CP ecSql = "SELECT [TargetECInstanceId]  FROM " BDCP_SCHEMA(BDCP_REL_CameraIsDefinedByCameraType) " WHERE SourceECInstanceId=?";
+    Utf8CP ecSql = "SELECT [TargetECInstanceId]  FROM " BDCP_SCHEMA(BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel) " WHERE SourceECInstanceId=?";
 
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
         {
         BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
-        return CameraTypeElementId();
+        return CameraDeviceModelElementId();
         }
 
-    statement->BindId(1, cameraElmId);
+    statement->BindId(1, cameraDeviceElmId);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
-        return CameraTypeElementId();
+        return CameraDeviceModelElementId();
 
-    return statement->GetValueId<CameraTypeElementId>(0);
+    return statement->GetValueId<CameraDeviceModelElementId>(0);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void   Camera::SetCameraTypeId(CameraTypeElementId val) { m_cameraType = val; }
+void   CameraDevice::SetCameraDeviceModelId(CameraDeviceModelElementId val) { m_cameraDeviceModel = val; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraTypeElementId  Camera::GetCameraTypeId() const
+CameraDeviceModelElementId  CameraDevice::GetCameraDeviceModelId() const
     {
     //Query and cache the result
-    if (!m_cameraType.IsValid())
-        m_cameraType = QueryCameraIsDefinedByCameraTypeRelationship(GetDgnDb(),GetId());
-    return m_cameraType;
+    if (!m_cameraDeviceModel.IsValid())
+        m_cameraDeviceModel = QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(GetDgnDb(),GetId());
+    return m_cameraDeviceModel;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-int                     Camera::GetImageWidth() const { return m_imageWidth; }
-void                    Camera::SetImageWidth(int val) { m_imageWidth = val; }
-int                     Camera::GetImageHeight() const { return m_imageHeight; }
-void                    Camera::SetImageHeight(int val) { m_imageHeight = val; }
-CameraElementId         Camera::GetId() const { return CameraElementId(GetElementId().GetValueUnchecked()); }
-double                  Camera::GetFocalLength() const { return m_focalLength; }
-void                    Camera::SetFocalLength(double val) { m_focalLength = val; }
-DPoint2d                Camera::GetPrincipalPoint() const { return m_principalPoint; }
-void                    Camera::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
-double                  Camera::GetAspectRatio() const { return m_aspectRatio; }
-void                    Camera::SetAspectRatio(double val) { m_aspectRatio = val; }
-double                  Camera::GetSkew() const { return m_skew; }
-void                    Camera::SetSkew(double val) { m_skew = val; }
+int                     CameraDevice::GetImageWidth() const { return m_imageWidth; }
+void                    CameraDevice::SetImageWidth(int val) { m_imageWidth = val; }
+int                     CameraDevice::GetImageHeight() const { return m_imageHeight; }
+void                    CameraDevice::SetImageHeight(int val) { m_imageHeight = val; }
+CameraDeviceElementId         CameraDevice::GetId() const { return CameraDeviceElementId(GetElementId().GetValueUnchecked()); }
+double                  CameraDevice::GetFocalLength() const { return m_focalLength; }
+void                    CameraDevice::SetFocalLength(double val) { m_focalLength = val; }
+DPoint2d                CameraDevice::GetPrincipalPoint() const { return m_principalPoint; }
+void                    CameraDevice::SetPrincipalPoint(DPoint2dCR val) { m_principalPoint = val; }
+double                  CameraDevice::GetAspectRatio() const { return m_aspectRatio; }
+void                    CameraDevice::SetAspectRatio(double val) { m_aspectRatio = val; }
+double                  CameraDevice::GetSkew() const { return m_skew; }
+void                    CameraDevice::SetSkew(double val) { m_skew = val; }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RadialDistortionP       Camera::GetRadialDistortionP()
+RadialDistortionP       CameraDevice::GetRadialDistortionP()
     {
     return DgnElement::UniqueAspect::GetP<RadialDistortion>(*this, *RadialDistortion::QueryClass(GetDgnDb()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RadialDistortionCP       Camera::GetRadialDistortion() const
+RadialDistortionCP       CameraDevice::GetRadialDistortion() const
     {
     return DgnElement::UniqueAspect::Get<RadialDistortion>(*this, *RadialDistortion::QueryClass(GetDgnDb()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::SetRadialDistortion(RadialDistortionP pValue)
+void CameraDevice::SetRadialDistortion(RadialDistortionP pValue)
     {
     if (nullptr == pValue)
         {
@@ -530,21 +530,21 @@ void Camera::SetRadialDistortion(RadialDistortionP pValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TangentialDistortionP       Camera::GetTangentialDistortionP()
+TangentialDistortionP       CameraDevice::GetTangentialDistortionP()
     {
     return DgnElement::UniqueAspect::GetP<TangentialDistortion>(*this, *TangentialDistortion::QueryClass(GetDgnDb()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TangentialDistortionCP       Camera::GetTangentialDistortion() const
+TangentialDistortionCP       CameraDevice::GetTangentialDistortion() const
     {
     return DgnElement::UniqueAspect::Get<TangentialDistortion>(*this, *TangentialDistortion::QueryClass(GetDgnDb()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::SetTangentialDistortion(TangentialDistortionP pValue)
+void CameraDevice::SetTangentialDistortion(TangentialDistortionP pValue)
     {
     if (nullptr == pValue)
         {
@@ -561,7 +561,7 @@ void Camera::SetTangentialDistortion(TangentialDistortionP pValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDevice::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
     if (ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(CAMERA_PROPNAME_FocalLength), GetFocalLength()) ||
         ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(CAMERA_PROPNAME_ImageWidth), GetImageWidth()) ||
@@ -578,7 +578,7 @@ DgnDbStatus Camera::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDevice::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -589,7 +589,7 @@ DgnDbStatus Camera::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus CameraDevice::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -600,12 +600,12 @@ DgnDbStatus Camera::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus CameraDevice::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        //read camera properties
+        //read cameraDevice properties
         SetFocalLength(stmt.GetValueDouble(params.GetSelectIndex(CAMERA_PROPNAME_FocalLength)));
         SetImageWidth(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageWidth)));
         SetImageHeight(stmt.GetValueInt(params.GetSelectIndex(CAMERA_PROPNAME_ImageHeight)));
@@ -620,11 +620,11 @@ DgnDbStatus Camera::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Camera::_OnInsert()
+DgnDbStatus CameraDevice::_OnInsert()
     {
-    if (!m_cameraType.IsValid())
+    if (!m_cameraDeviceModel.IsValid())
         {
-        BeAssert(false && "Cannot insert a camera with an invalid cameraType");
+        BeAssert(false && "Cannot insert a cameraDevice with an invalid cameraDeviceModel");
         return DgnDbStatus::ValidationFailed;
         }
 
@@ -634,33 +634,33 @@ DgnDbStatus Camera::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::InsertCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb) const
+void CameraDevice::InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb) const
     {
-    InsertCameraIsDefinedByCameraTypeRelationship(dgndb,GetId(),GetCameraTypeId());
+    InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(dgndb,GetId(),GetCameraDeviceModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Camera::InsertCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb, CameraElementId cameraElmId, CameraTypeElementId cameraTypeElmId)
+BentleyStatus CameraDevice::InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId, CameraDeviceModelElementId cameraDeviceModelElmId)
     {
-    if (!cameraElmId.IsValid() || !cameraTypeElmId.IsValid())
+    if (!cameraDeviceElmId.IsValid() || !cameraDeviceModelElmId.IsValid())
         {
-        BeAssert(false && "Attempt to add invalid camera Is Defined By CameraType relationship");
+        BeAssert(false && "Attempt to add invalid cameraDevice Is Defined By CameraDeviceModel relationship");
         return ERROR;
         }
 
-    Utf8CP ecSql = "INSERT INTO " BDCP_SCHEMA(BDCP_REL_CameraIsDefinedByCameraType) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
+    Utf8CP ecSql = "INSERT INTO " BDCP_SCHEMA(BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(statement.IsValid());
 
-    statement->BindId(1, cameraElmId);
-    statement->BindId(2, cameraTypeElmId);
+    statement->BindId(1, cameraDeviceElmId);
+    statement->BindId(2, cameraDeviceModelElmId);
 
     DbResult stepStatus = statement->Step();
     if (BE_SQLITE_DONE != stepStatus)
         {
-        BeAssert(false && "Error creating camera Is Defined By CameraType Relationship");
+        BeAssert(false && "Error creating cameraDevice Is Defined By CameraDeviceModel Relationship");
         return ERROR;
         }
     return SUCCESS;
@@ -668,34 +668,34 @@ BentleyStatus Camera::InsertCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::_OnInserted(DgnElementP copiedFrom) const
+void CameraDevice::_OnInserted(DgnElementP copiedFrom) const
     {
     T_Super::_OnInserted(copiedFrom);
 
     //Update relationship
-    InsertCameraIsDefinedByCameraTypeRelationship(GetDgnDb());
+    InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::DeleteCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb) const
+void CameraDevice::DeleteCameraDeviceIsDefinedByCameraDeviceModelRelationship(DgnDbR dgndb) const
     {
     if (!GetId().IsValid())
         {
-        BeAssert(false && "Attempt to delete an invalid camera Is Defined By CameraType relationship");
+        BeAssert(false && "Attempt to delete an invalid cameraDevice Is Defined By CameraDeviceModel relationship");
         return;
         }
 
     //Delete old one 
-    Utf8CP ecSql = "DELETE FROM " BDCP_SCHEMA(BDCP_REL_CameraIsDefinedByCameraType) " WHERE SourceECInstanceId=?";
+    Utf8CP ecSql = "DELETE FROM " BDCP_SCHEMA(BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel) " WHERE SourceECInstanceId=?";
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(statement.IsValid());
     statement->BindId(1, GetId());        //Source
     DbResult stepStatus = statement->Step();
     if (BE_SQLITE_DONE != stepStatus)
         {
-        BeAssert(false && "Error deleting camera Is Defined By CameraType Relationship");
+        BeAssert(false && "Error deleting cameraDevice Is Defined By CameraDeviceModel Relationship");
         }
     
     }
@@ -703,38 +703,38 @@ void Camera::DeleteCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::UpdateCameraIsDefinedByCameraTypeRelationship(DgnDbR dgndb) const
+void CameraDevice::UpdateCameraDeviceIsDefinedByCameraDeviceModelRelationship(DgnDbR dgndb) const
     {
     //Delete old one 
-    DeleteCameraIsDefinedByCameraTypeRelationship(dgndb);
+    DeleteCameraDeviceIsDefinedByCameraDeviceModelRelationship(dgndb);
     //and then insert new one
-    InsertCameraIsDefinedByCameraTypeRelationship(dgndb);
+    InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::_OnUpdated(DgnElementCR original) const
+void CameraDevice::_OnUpdated(DgnElementCR original) const
     {
     T_Super::_OnUpdated(original);
 
-    auto other = dynamic_cast<CameraCP>(&original);
+    auto other = dynamic_cast<CameraDeviceCP>(&original);
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
     
     //Update relationship
-    if (GetCameraTypeId() != other->GetCameraTypeId())
-        UpdateCameraIsDefinedByCameraTypeRelationship(GetDgnDb());
+    if (GetCameraDeviceModelId() != other->GetCameraDeviceModelId())
+        UpdateCameraDeviceIsDefinedByCameraDeviceModelRelationship(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::_OnDeleted() const
+void CameraDevice::_OnDeleted() const
     {
     T_Super::_OnDeleted();
-    DeleteCameraIsDefinedByCameraTypeRelationship(GetDgnDb());
+    DeleteCameraDeviceIsDefinedByCameraDeviceModelRelationship(GetDgnDb());
     }
 
 
@@ -742,9 +742,9 @@ void Camera::_OnDeleted() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::DgnDbStatus Camera::_OnDelete() const
+Dgn::DgnDbStatus CameraDevice::_OnDelete() const
     {
-    //If we delete a camera, we should also delete all related photos
+    //If we delete a cameraDevice, we should also delete all related photos
     for (PhotoEntry const& photo : MakePhotoIterator(GetDgnDb(), GetId()))
         {
         PhotoCPtr myPhotoPtr = Photo::Get(GetDgnDb(), photo.GePhotoElementId());
@@ -758,56 +758,56 @@ Dgn::DgnDbStatus Camera::_OnDelete() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Camera::_CopyFrom(DgnElementCR el)
+void CameraDevice::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
-    auto other = dynamic_cast<CameraCP>(&el);
+    auto other = dynamic_cast<CameraDeviceCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
 
     SetFocalLength(other->GetFocalLength());
     SetPrincipalPoint(other->GetPrincipalPoint());
-    SetCameraTypeId(other->GetCameraTypeId());
+    SetCameraDeviceModelId(other->GetCameraDeviceModelId());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraElementId Camera::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+CameraDeviceElementId CameraDevice::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     {
-    Utf8CP ecSql = "SELECT camera.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Camera) " camera " \
-        "WHERE camera.Label=?";
+    Utf8CP ecSql = "SELECT cameraDevice.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_CameraDevice) " cameraDevice " \
+        "WHERE cameraDevice.Label=?";
 
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
         {
         BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
-        return CameraElementId();
+        return CameraDeviceElementId();
         }
 
     statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
-        return CameraElementId();
+        return CameraDeviceElementId();
                                                                  
-    return statement->GetValueId<CameraElementId>(0);
+    return statement->GetValueId<CameraDeviceElementId>(0);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Camera::PhotoIterator Camera::MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraElementId cameraId)
+CameraDevice::PhotoIterator CameraDevice::MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId)
     {
-    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCamera) " WHERE TargetECInstanceId=?";
+    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCameraDevice) " WHERE TargetECInstanceId=?";
 
-    Camera::PhotoIterator iterator;
+    CameraDevice::PhotoIterator iterator;
     int idSelectColumnIndex = 0;
     ECSqlStatement* statement = iterator.Prepare(dgndb, ecSql, idSelectColumnIndex);
     if (statement != nullptr)
-        statement->BindId(1, cameraId);
+        statement->BindId(1, cameraDeviceId);
 
     return iterator;
     }

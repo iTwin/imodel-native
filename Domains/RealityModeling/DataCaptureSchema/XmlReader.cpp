@@ -72,7 +72,7 @@ BeXmlStatus XmlReader::ReadPhotoGroups(BeXmlNodeR photoGroups)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraInfo, long photoGroupNumber)
+BeXmlStatus XmlReader::ReadCameraDeviceInfo (BeXmlNodeR sourceNodeRef, CameraDeviceR cameraDeviceInfo, long photoGroupNumber)
     {
 
     // Photo group name is optional - make up one if not specified
@@ -84,16 +84,16 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         }
 
     BeXmlStatus status(BEXML_Success);                          
-    Utf8String              cameraModelType;
-    if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraModelType, "CameraModelType")))
+    Utf8String              cameraDeviceModelType;
+    if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraDeviceModelType, "CameraDeviceModelType")))
         {
         //NEEDSWORK: Not Yet
-        //cameraInfo.SetCameraModel(cameraModelType);
+        //cameraDeviceInfo.SetCameraDeviceModel(cameraDeviceModelType);
         }
     double                  focalLength;
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLength, "FocalLength")))
         {
-        cameraInfo.SetFocalLength(focalLength);
+        cameraDeviceInfo.SetFocalLength(focalLength);
         }
 
     int                     ImgDimWidth(0);
@@ -101,8 +101,8 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
     if (BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimWidth,           "ImageDimensions/Width")) &&
         BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimHeight,          "ImageDimensions/Height")))
         {
-        cameraInfo.SetImageWidth(ImgDimWidth);
-        cameraInfo.SetImageHeight(ImgDimHeight);
+        cameraDeviceInfo.SetImageWidth(ImgDimWidth);
+        cameraDeviceInfo.SetImageHeight(ImgDimHeight);
         }
 
     // if Principal Point not specified, use center of pixel array
@@ -113,7 +113,7 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         principalPoint.x = (double)ImgDimWidth  / 2.0; 
         principalPoint.y = (double)ImgDimHeight / 2.0; 
         }
-    cameraInfo.SetPrincipalPoint(principalPoint);
+    cameraDeviceInfo.SetPrincipalPoint(principalPoint);
 
 
     // if distortion not specified, set parameters to zero     
@@ -139,8 +139,8 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         {
         RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(k1, k2, k3);
         TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(p1, p2);
-        cameraInfo.SetRadialDistortion(pRadialDistortion.get());
-        cameraInfo.SetTangentialDistortion(pTangentialDistortion.get());
+        cameraDeviceInfo.SetRadialDistortion(pRadialDistortion.get());
+        cameraDeviceInfo.SetTangentialDistortion(pTangentialDistortion.get());
         }
 
     return BEXML_Success;
@@ -149,7 +149,7 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadRotationFromCameraPose(BeXmlNodeR sourceNodeRef, RotationMatrixTypeR rotation)
+BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, RotationMatrixTypeR rotation)
     {
     BeXmlStatus status(BEXML_Success);
 
@@ -204,7 +204,7 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, PhotoR photo)
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")) &&
-        BEXML_Success == (status = ReadRotationFromCameraPose(sourceNodeRef, rotation)))
+        BEXML_Success == (status = ReadRotationFromCameraDevicePose(sourceNodeRef, rotation)))
         {
         //set pose in photo
         PoseType pose(poseCenter, rotation);
@@ -230,28 +230,28 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
         }
 
     
-    //Assume one camera type by photo group
-    CameraTypePtr pCameraTypeInfo(CameraType::Create(m_definitionModel));
+    //Assume one cameraDevice type by photo group
+    CameraDeviceModelPtr pCameraDeviceModelInfo(CameraDeviceModel::Create(m_definitionModel));
     //Insert into the database
     Dgn::DgnDbStatus dbStatus;
-    pCameraTypeInfo->Insert(&dbStatus);
+    pCameraDeviceModelInfo->Insert(&dbStatus);
 
 
-    CameraPtr pCameraInfo(Camera::Create(m_spatialModel,pCameraTypeInfo->GetId()));
-    if (BEXML_Success != (status = ReadCameraInfo(photoGroupNode, *pCameraInfo, m_photoGroupNumber)))
+    CameraDevicePtr pCameraDeviceInfo(CameraDevice::Create(m_spatialModel,pCameraDeviceModelInfo->GetId()));
+    if (BEXML_Success != (status = ReadCameraDeviceInfo(photoGroupNode, *pCameraDeviceInfo, m_photoGroupNumber)))
         {
         return status;
         }
 
     //Insert into the database
-    pCameraInfo->Insert(&dbStatus);
+    pCameraDeviceInfo->Insert(&dbStatus);
 
     BeXmlDom::IterableNodeSet photoList;
     photoGroupNode.SelectChildNodes(photoList, "Photo");
 
     for (BeXmlNodeP const& photoNode : photoList)
         {
-        PhotoPtr pPhoto(Photo::Create(m_spatialModel,pCameraInfo->GetId()));
+        PhotoPtr pPhoto(Photo::Create(m_spatialModel,pCameraDeviceInfo->GetId()));
         BeXmlStatus status = ReadPhotoNode(*photoNode,*pPhoto);
         if (BEXML_Success != status)
             return status;

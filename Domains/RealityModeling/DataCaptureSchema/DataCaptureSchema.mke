@@ -45,7 +45,7 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 $(o)DataCaptureDomain$(oext) : $(_MakeFilePath)DataCaptureDomain.cpp ${MultiCompileDepends} $(appPublicApi)DataCaptureDomain.h
 
-$(o)Camera$(oext) : $(_MakeFilePath)Camera.cpp ${MultiCompileDepends} $(appPublicApi)Camera.h
+$(o)CameraDevice$(oext) : $(_MakeFilePath)CameraDevice.cpp ${MultiCompileDepends} $(appPublicApi)CameraDevice.h
 
 $(o)Photo$(oext) : $(_MakeFilePath)Photo.cpp ${MultiCompileDepends} $(appPublicApi)Photo.h
 

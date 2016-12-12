@@ -101,7 +101,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Photo : Dgn::SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Photo, Dgn::SpatialLocationElement);
 
 private:
-    mutable CameraElementId m_camera;//Query and cached from DgnDb or given at creation time
+    mutable CameraDeviceElementId m_cameraDevice;//Query and cached from DgnDb or given at creation time
     int                  m_photoId;
     PoseType             m_pose;
 
@@ -109,14 +109,14 @@ private:
 
 protected:
 
-    explicit Photo(CreateParams const& params, CameraElementId camera=CameraElementId()) : T_Super(params), m_camera(camera) {}
+    explicit Photo(CreateParams const& params, CameraDeviceElementId cameraDevice=CameraDeviceElementId()) : T_Super(params), m_cameraDevice(cameraDevice) {}
 
-    static BentleyStatus InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb, PhotoElementId photoElmId, CameraElementId cameraElmId);
-    static CameraElementId QueryPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb,  PhotoElementId photoElmId);
+    static BentleyStatus InsertPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb, PhotoElementId photoElmId, CameraDeviceElementId cameraDeviceElmId);
+    static CameraDeviceElementId QueryPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb,  PhotoElementId photoElmId);
 
-    void InsertPhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdatePhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
-    void DeletePhotoIsTakenByCameraRelationship(Dgn::DgnDbR dgndb) const;
+    void InsertPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdatePhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
+    void DeletePhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -163,7 +163,7 @@ public:
     DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Photo)
 
     //! Create a new Photo 
-    DATACAPTURE_EXPORT static PhotoPtr Create(Dgn::SpatialModelR model, CameraElementId camera);
+    DATACAPTURE_EXPORT static PhotoPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice);
 
     //! Query for an Photo (Id) by label
     //! @return Id of the Photo or invalid Id if an Photo was not found
@@ -177,8 +177,8 @@ public:
     DATACAPTURE_EXPORT void             SetPhotoId(int val);
     DATACAPTURE_EXPORT void             SetPose(PoseTypeCR val);
 
-    DATACAPTURE_EXPORT CameraElementId  GetCameraId() const;
-    DATACAPTURE_EXPORT void             SetCameraId(CameraElementId val);
+    DATACAPTURE_EXPORT CameraDeviceElementId  GetCameraDeviceId() const;
+    DATACAPTURE_EXPORT void             SetCameraDeviceId(CameraDeviceElementId val);
 
 };
 

@@ -70,21 +70,21 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 //-----------------------------------------------------------------------------------------
 
 // Elements
-#define BDCP_CLASS_CameraType                                    "CameraType"
-#define BDCP_CLASS_Camera                                        "Camera"
+#define BDCP_CLASS_CameraDeviceModel                                    "CameraDeviceModel"
+#define BDCP_CLASS_CameraDevice                                        "CameraDevice"
 #define BDCP_CLASS_Photo                                         "Photo"
 #define BDCP_CLASS_RadialDistortion                              "RadialDistortion"
 #define BDCP_CLASS_TangentialDistortion                          "TangentialDistortion"
 
 // Relationships
-#define BDCP_REL_CameraIsDefinedByCameraType                   "CameraIsDefinedByCameraType"
-#define BDCP_REL_PhotoIsTakenByCamera                          "PhotoIsTakenByCamera"
+#define BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel                   "CameraDeviceIsDefinedByCameraDeviceModel"
+#define BDCP_REL_PhotoIsTakenByCameraDevice                          "PhotoIsTakenByCameraDevice"
 
 
 //-----------------------------------------------------------------------------------------
 // Category names
 //-----------------------------------------------------------------------------------------
-#define BDCP_CATEGORY_Camera                                         "Camera"
+#define BDCP_CATEGORY_CameraDevice                                         "CameraDevice"
 #define BDCP_CATEGORY_Photo                                          "Photo"
 
 
@@ -127,8 +127,8 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Define typedefs and Ptrs in the DataCapture namespace
 //-----------------------------------------------------------------------------------------
-DATACAPTURE_TYPEDEFS(Camera)
-DATACAPTURE_TYPEDEFS(CameraType)
+DATACAPTURE_TYPEDEFS(CameraDevice)
+DATACAPTURE_TYPEDEFS(CameraDeviceModel)
 DATACAPTURE_TYPEDEFS(RadialDistortion)
 DATACAPTURE_TYPEDEFS(TangentialDistortion)
 DATACAPTURE_TYPEDEFS(Photo)
@@ -138,14 +138,14 @@ DATACAPTURE_TYPEDEFS(RotationMatrixType)
 
 DATACAPTURE_REFCOUNTED_PTR(RadialDistortion)
 DATACAPTURE_REFCOUNTED_PTR(TangentialDistortion)
-DATACAPTURE_REFCOUNTED_PTR(CameraType)
-DATACAPTURE_REFCOUNTED_PTR(Camera)
+DATACAPTURE_REFCOUNTED_PTR(CameraDeviceModel)
+DATACAPTURE_REFCOUNTED_PTR(CameraDevice)
 DATACAPTURE_REFCOUNTED_PTR(Photo)
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-BEBRIEFCASEBASED_ID_SUBCLASS(CameraTypeElementId, Dgn::DgnElementId)
-BEBRIEFCASEBASED_ID_SUBCLASS(CameraElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceModelElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(PhotoElementId, Dgn::DgnElementId)
 
 /**

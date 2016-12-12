@@ -17,8 +17,8 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
     {
     RegisterHandler(RadialDistortionHandler::GetHandler());
     RegisterHandler(TangentialDistortionHandler::GetHandler());
-    RegisterHandler(CameraHandler::GetHandler());    
-    RegisterHandler(CameraTypeHandler::GetHandler());
+    RegisterHandler(CameraDeviceHandler::GetHandler());    
+    RegisterHandler(CameraDeviceModelHandler::GetHandler());
     RegisterHandler(PhotoHandler::GetHandler());
     }
 
@@ -30,9 +30,9 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
 
-    DgnCategory cameraCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Camera, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
-    cameraCategory.Insert(defaultApperance);
-    BeAssert(cameraCategory.GetCategoryId().IsValid());
+    DgnCategory cameraDeviceCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_CameraDevice, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    cameraDeviceCategory.Insert(defaultApperance);
+    BeAssert(cameraDeviceCategory.GetCategoryId().IsValid());
     DgnCategory photoCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Photo, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
     photoCategory.Insert(defaultApperance);
     BeAssert(photoCategory.GetCategoryId().IsValid());

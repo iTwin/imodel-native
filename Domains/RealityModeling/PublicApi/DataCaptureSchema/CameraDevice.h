@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/DataCaptureSchema/Camera.h $
+|     $Source: PublicApi/DataCaptureSchema/CameraDevice.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -117,28 +117,28 @@ public:
     };
 
 //=======================================================================================
-//! Base class for Camera 
+//! Base class for CameraDevice 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraType : Dgn::DefinitionElement
+struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
     {
-    friend struct CameraTypeHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_CameraType, Dgn::DefinitionElement)
+    friend struct CameraDeviceModelHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_CameraDeviceModel, Dgn::DefinitionElement)
 
     public:
-        //! Entry in Camera iterator
-        struct CameraEntry : Dgn::ECSqlStatementEntry
+        //! Entry in CameraDevice iterator
+        struct CameraDeviceEntry : Dgn::ECSqlStatementEntry
             {
-            friend struct Dgn::ECSqlStatementIterator < CameraType::CameraEntry >;
-            friend struct CameraType;
+            friend struct Dgn::ECSqlStatementIterator < CameraDeviceModel::CameraDeviceEntry >;
+            friend struct CameraDeviceModel;
             private:
-                CameraEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
+                CameraDeviceEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
             public:
-                CameraElementId GeCameraElementId() const { return m_statement->GetValueId<CameraElementId>(0); }
+                CameraDeviceElementId GeCameraDeviceElementId() const { return m_statement->GetValueId<CameraDeviceElementId>(0); }
             };
 
-        //! Iterator over Camera
-        struct CameraIterator : Dgn::ECSqlStatementIterator < CameraType::CameraEntry >
+        //! Iterator over CameraDevice
+        struct CameraDeviceIterator : Dgn::ECSqlStatementIterator < CameraDeviceModel::CameraDeviceEntry >
             {
             };
 
@@ -156,7 +156,7 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraType : Dgn::DefinitionElement
 
     protected:
 
-        explicit CameraType(CreateParams const& params) : T_Super(params) {}
+        explicit CameraDeviceModel(CreateParams const& params) : T_Super(params) {}
 
 
         //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -188,22 +188,22 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraType : Dgn::DefinitionElement
 
 
     public:
-        DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(CameraType)
-        DECLARE_DATACAPTURE_QUERYCLASS_METHODS(CameraType)
+        DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(CameraDeviceModel)
+        DECLARE_DATACAPTURE_QUERYCLASS_METHODS(CameraDeviceModel)
 
-        //! Create a new Camera 
-        DATACAPTURE_EXPORT static CameraTypePtr Create(Dgn::DefinitionModelR model);
+        //! Create a new CameraDevice 
+        DATACAPTURE_EXPORT static CameraDeviceModelPtr Create(Dgn::DefinitionModelR model);
 
-        //! Query for an Camera (Id) by label
-        //! @return Id of the Camera or invalid Id if an Camera was not found
-        DATACAPTURE_EXPORT static CameraTypeElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+        //! Query for an CameraDevice (Id) by label
+        //! @return Id of the CameraDevice or invalid Id if an CameraDevice was not found
+        DATACAPTURE_EXPORT static CameraDeviceModelElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
-        //! Make an iterator over all camera-s relevant to a CameraType
-        DATACAPTURE_EXPORT static CameraType::CameraIterator MakeCameraIterator(Dgn::DgnDbCR dgndb, CameraTypeElementId cameraTypeId);
+        //! Make an iterator over all cameraDevice-s relevant to a CameraDeviceModel
+        DATACAPTURE_EXPORT static CameraDeviceModel::CameraDeviceIterator MakeCameraDeviceIterator(Dgn::DgnDbCR dgndb, CameraDeviceModelElementId cameraDeviceModelId);
 
 
-        //! Get the id of this Camera
-        DATACAPTURE_EXPORT CameraTypeElementId GetId() const;
+        //! Get the id of this CameraDevice
+        DATACAPTURE_EXPORT CameraDeviceModelElementId GetId() const;
 
         //Properties Get/Set
         DATACAPTURE_EXPORT int                      GetImageWidth() const;
@@ -221,20 +221,20 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraType : Dgn::DefinitionElement
     };
 
 //=======================================================================================
-//! Base class for Camera 
+//! Base class for CameraDevice 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Camera : Dgn::PhysicalElement
+struct EXPORT_VTABLE_ATTRIBUTE CameraDevice : Dgn::PhysicalElement
 {
-    friend struct CameraHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Camera, Dgn::PhysicalElement)
+    friend struct CameraDeviceHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_CameraDevice, Dgn::PhysicalElement)
 
 public:
     //! Entry in Photo iterator
     struct PhotoEntry : Dgn::ECSqlStatementEntry
     {
-        friend struct Dgn::ECSqlStatementIterator < Camera::PhotoEntry >;
-        friend struct Camera;
+        friend struct Dgn::ECSqlStatementIterator < CameraDevice::PhotoEntry >;
+        friend struct CameraDevice;
     private:
         PhotoEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
     public:
@@ -242,13 +242,13 @@ public:
     };
 
     //! Iterator over timelines
-    struct PhotoIterator : Dgn::ECSqlStatementIterator < Camera::PhotoEntry >
+    struct PhotoIterator : Dgn::ECSqlStatementIterator < CameraDevice::PhotoEntry >
     {
     };
 
 
 private:
-    mutable CameraTypeElementId m_cameraType;//Query and cached from DgnDb or given at creation time
+    mutable CameraDeviceModelElementId m_cameraDeviceModel;//Query and cached from DgnDb or given at creation time
     double                  m_focalLength;
     DPoint2d                m_principalPoint;
     int                     m_imageWidth;
@@ -261,14 +261,14 @@ private:
 
 protected:
 
-    explicit Camera(CreateParams const& params, CameraTypeElementId cameraType=CameraTypeElementId()) : T_Super(params), m_cameraType(cameraType) {}
+    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) {}
 
-    static BentleyStatus InsertCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb, CameraElementId cameraElmId, CameraTypeElementId cameraTypeElmId);
-    static CameraTypeElementId QueryCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb, CameraElementId cameraElmId);
+    static BentleyStatus InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId, CameraDeviceModelElementId cameraDeviceModelElmId);
+    static CameraDeviceModelElementId QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId);
 
-    void InsertCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdateCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb) const;
-    void DeleteCameraIsDefinedByCameraTypeRelationship(Dgn::DgnDbR dgndb) const;
+    void InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdateCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb) const;
+    void DeleteCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb) const;
 
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -313,22 +313,22 @@ protected:
 
 
 public:
-    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Camera)
-    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Camera)
+    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(CameraDevice)
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(CameraDevice)
 
-    //! Create a new Camera 
-    DATACAPTURE_EXPORT static CameraPtr Create(Dgn::SpatialModelR model, CameraTypeElementId camera);
+    //! Create a new CameraDevice 
+    DATACAPTURE_EXPORT static CameraDevicePtr Create(Dgn::SpatialModelR model, CameraDeviceModelElementId cameraDevice);
 
-    //! Query for an Camera (Id) by label
-    //! @return Id of the Camera or invalid Id if an Camera was not found
-    DATACAPTURE_EXPORT static CameraElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+    //! Query for an CameraDevice (Id) by label
+    //! @return Id of the CameraDevice or invalid Id if an CameraDevice was not found
+    DATACAPTURE_EXPORT static CameraDeviceElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
-    //! Make an iterator over all Photo-s relevant to a Camera
-    DATACAPTURE_EXPORT static Camera::PhotoIterator MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraElementId cameraId);
+    //! Make an iterator over all Photo-s relevant to a CameraDevice
+    DATACAPTURE_EXPORT static CameraDevice::PhotoIterator MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId);
 
 
-    //! Get the id of this Camera
-    DATACAPTURE_EXPORT CameraElementId GetId() const;
+    //! Get the id of this CameraDevice
+    DATACAPTURE_EXPORT CameraDeviceElementId GetId() const;
 
     //Properties Get/Set
     DATACAPTURE_EXPORT int                      GetImageWidth() const; 
@@ -350,8 +350,8 @@ public:
     DATACAPTURE_EXPORT double                   GetSkew() const;
     DATACAPTURE_EXPORT void                     SetSkew(double val);
 
-    DATACAPTURE_EXPORT CameraTypeElementId  GetCameraTypeId() const;
-    DATACAPTURE_EXPORT void                 SetCameraTypeId(CameraTypeElementId val);
+    DATACAPTURE_EXPORT CameraDeviceModelElementId  GetCameraDeviceModelId() const;
+    DATACAPTURE_EXPORT void                 SetCameraDeviceModelId(CameraDeviceModelElementId val);
   
 };
 
@@ -379,22 +379,22 @@ struct EXPORT_VTABLE_ATTRIBUTE TangentialDistortionHandler : Dgn::dgn_AspectHand
     };
 
 //=======================================================================================
-//! Singleton CameraTypeHandler for the Cameratype class
+//! Singleton CameraDeviceModelHandler for the CameraDeviceModel class
 //=======================================================================================
-struct CameraTypeHandler : Dgn::dgn_ElementHandler::Element
+struct CameraDeviceModelHandler : Dgn::dgn_ElementHandler::Element
     {
-    ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_CameraType, CameraType, CameraTypeHandler, Dgn::dgn_ElementHandler::Element, DATACAPTURE_EXPORT)
+    ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_CameraDeviceModel, CameraDeviceModel, CameraDeviceModelHandler, Dgn::dgn_ElementHandler::Element, DATACAPTURE_EXPORT)
     protected:
         virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
-    }; // CameraTypeHandler
+    }; // CameraDeviceModelHandler
 
 //=================================================================================
-//! ElementHandler for Camera-s
+//! ElementHandler for CameraDevice-s
 //! @ingroup DataCaptureGroup
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE CameraHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Camera, Camera, CameraHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_CameraDevice, CameraDevice, CameraDeviceHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };
