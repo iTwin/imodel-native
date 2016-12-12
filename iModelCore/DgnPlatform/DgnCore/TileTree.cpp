@@ -11,8 +11,7 @@
 
 USING_NAMESPACE_TILETREE
 
-//#define TABLE_NAME_TileTree "TileTree"    // Initial version with "Filename, Data, DataSize, Created"
-#define TABLE_NAME_TileTree "TileTree_v2"   // Added 'ContentType' and 'Expires'.
+#define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -38,7 +37,7 @@ END_UNNAMED_NAMESPACE
 BentleyStatus TileLoader::LoadTile()
     {
     // During the read we may have abandoned the tile. Do not waste time loading it.
-    if (m_tile->IsAbandoned())
+    if (IsCanceledOrAbandoned())
         return ERROR;
 
     BeAssert(m_tile->IsQueued());
@@ -48,20 +47,48 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-folly::Future<BentleyStatus> TileLoader::CreateTile()
+folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    if (m_loads != nullptr && m_loads->IsCanceled())
+    DgnDb::VerifyClientThread();
+
+    if (m_loads)
+        m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
+
+    m_tile->SetIsQueued(); // mark as queued so we don't request it again.
+
+    TileLoaderPtr me(this);
+    auto loadFlag = std::make_shared<LoadFlag>(m_tile->GetRootR());  // Keep track of running requests so we can exit gracefully.
+
+    return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
-        m_tile->SetNotLoaded();
-        return ERROR;
-        }
+        if (SUCCESS == status)
+            return folly::makeFuture(SUCCESS);
+            
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+       
+        return me->_GetFromSource();
+        }).then(&BeFolly::ThreadPool::GetCpuPool(), [me, loadFlag] (BentleyStatus status)
+            {
+            DgnDb::SetThreadId(DgnDb::ThreadId::CpuPool); // for debugging
 
-    LoadFlag loadFlag(m_tile->GetRootR());
+            auto& tile = *me->m_tile;
 
-    if (!m_tile->IsQueued())
-        return ERROR; // this node was abandoned.
-
-    return (SUCCESS == _ReadFromDb()) ? SUCCESS : _GetFromSource();
+            if (SUCCESS != status || SUCCESS != me->LoadTile())
+                {
+                if (me->m_loads != nullptr && me->m_loads->IsCanceled())
+                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
+                else
+                    tile.SetNotFound();
+                return ERROR;
+                }
+            
+            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
+            
+            // On a successful load, potentially store the tile in the cache.   
+            me->_SaveToDb();    // don't wait on the save.
+            return SUCCESS;
+            });
     }
 
 //----------------------------------------------------------------------------------------
@@ -73,33 +100,63 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
 
     if (isHttp)
         {
-        HttpDataQuery query(m_fileName, m_loads);
+        auto query = std::make_shared<HttpDataQuery>(m_fileName, m_loads);
 
-        if (SUCCESS != query.Perform(m_tileBytes))
-            return ERROR;
+        TileLoaderPtr me(this);
+        return query->Perform().then([me, query] (Http::Response const& response)
+            {
+            if (Http::ConnectionStatus::OK != response.GetConnectionStatus() || Http::HttpStatus::OK != response.GetHttpStatus())
+                return ERROR;
 
-        m_contentType = query.GetContentType();
-        m_saveToCache = query.GetCacheContolExpirationDate(m_expirationDate);
-        }
-    else
+            me->m_tileBytes = std::move(query->m_responseBody->GetByteStream());
+            me->m_contentType = response.GetHeaders().GetContentType();
+            me->m_saveToCache = query->GetCacheContolExpirationDate(me->m_expirationDate, response);
+
+            return SUCCESS;
+            });
+        }                                           
+
+    auto query = std::make_shared<FileDataQuery>(m_fileName, m_loads);
+ 
+    TileLoaderPtr me(this);
+    return query->Perform().then([me, query](ByteStream const& data)
         {
-        FileDataQuery query(m_fileName, m_loads);
-
-        if (SUCCESS != query.Perform(m_tileBytes))
+        if (!data.HasData())
             return ERROR;
 
-        m_contentType = "";     // unknown 
-        m_expirationDate = 0;   // unknown 
-        }
+        me->m_tileBytes = std::move(data);
+        me->m_contentType = "";     // unknown 
+        me->m_expirationDate = 0;   // unknown 
 
-    return SUCCESS;
+        return SUCCESS;
+        });         
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> TileLoader::_ReadFromDb()
+    {
+    auto cache = m_tile->GetRootR().GetCache();
+    if (!cache.IsValid())
+        return ERROR;
+
+    TileLoaderPtr me(this);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
+        {
+        if (me->IsCanceledOrAbandoned())
+            return ERROR;
+
+        return me->DoReadFromDb();
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Attempt to load a node from the local cache.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::_ReadFromDb()
+BentleyStatus TileLoader::DoReadFromDb()
     {
     auto cache = m_tile->GetRootR().GetCache();
     if (!cache.IsValid())
@@ -122,6 +179,8 @@ BentleyStatus TileLoader::_ReadFromDb()
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(2);    
         m_expirationDate = stmt->GetValueInt64(3);
+        
+        m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
         uint64_t rowId = stmt->GetValueInt64(2);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTree " SET Created=? WHERE ROWID=?"))
@@ -144,11 +203,32 @@ BentleyStatus TileLoader::_ReadFromDb()
     return SUCCESS;
     }
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  12/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> TileLoader::_SaveToDb()
+    {
+    if (!m_saveToCache)
+        return SUCCESS;
+
+    auto cache = m_tile->GetRootR().GetCache();
+    if (!cache.IsValid())
+        return ERROR;
+
+    TileLoaderPtr me(this);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [me] ()
+        {
+        return me->DoSaveToDb();
+        });
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * Save the data for a tile into the tile cache. Note that this is also called for the non-tile files.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileLoader::_SaveToDb()
+BentleyStatus TileLoader::DoSaveToDb()
     {
     if (!m_saveToCache)
         return SUCCESS;
@@ -190,7 +270,7 @@ BentleyStatus TileLoader::_SaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)
@@ -200,35 +280,33 @@ HttpDataQuery::HttpDataQuery(Utf8StringCR url, LoadStatePtr loads) : m_request(u
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus HttpDataQuery::Perform(ByteStream& data)
+folly::Future<Http::Response> HttpDataQuery::Perform()
     {
-    m_response = GetRequest().Perform();
+    TileLoadStatePtr loads = m_loads;
 
-    if (Http::ConnectionStatus::OK != m_response.GetConnectionStatus() || Http::HttpStatus::OK != m_response.GetHttpStatus())
-        return ERROR;
-
-    data = std::move(m_responseBody->GetByteStream());
-
-    if (m_loads != nullptr)
+    return GetRequest().Perform().then([loads] (Http::Response response)
         {
-        m_loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
-        m_loads = nullptr; // for debugging, mostly
-        }
+        if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus() &&
+            loads != nullptr)
+            {
+            loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
+            }
 
-    return SUCCESS;
+        return response;
+        });
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
+bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http::Response const& response)
     {
     expirationDate = 0;
 
-    if (!m_response.IsSuccess())
+    if (!response.IsSuccess())
         return false;
          
-    Utf8String cacheControl = m_response.GetHeaders().GetCacheControl();
+    Utf8String cacheControl = response.GetHeaders().GetCacheControl();
     size_t offset = 0;
     Utf8String directive;
     while ((offset = cacheControl.GetNextToken(directive, ",", offset)) != Utf8String::npos)
@@ -255,7 +333,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
     // if cache-control did not provide a max-age we must use 'Expires' directive if present.
     if (0 == expirationDate)
         {        
-        Utf8CP expiresStr = m_response.GetHeaders().GetValue("Expires");
+        Utf8CP expiresStr = response.GetHeaders().GetValue("Expires");
         if (nullptr == expiresStr || SUCCESS != Http::HttpClient::HttpDateToUnixMillis(expirationDate, expiresStr))
             {
             // if we cannot find an expiration date we are still allowed to cache.
@@ -268,22 +346,25 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus FileDataQuery::Perform(ByteStream& data)
+folly::Future<ByteStream> FileDataQuery::Perform()
     {
-    BeFile dataFile;
-    if (BeFileStatus::Success != dataFile.Open(m_fileName.c_str(), BeFileAccess::Read))
-        return ERROR;
-
-    if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
-        return ERROR;
-
-    if (m_loads != nullptr)
+    auto filename = m_fileName;
+    TileLoadStatePtr loads = m_loads;
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [filename, loads] ()
         {
-        m_loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-        m_loads = nullptr;
-        }
+        ByteStream data;
+        BeFile dataFile;
+        if (BeFileStatus::Success != dataFile.Open(filename.c_str(), BeFileAccess::Read))
+            return data;
 
-    return SUCCESS;
+        if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
+            return data;
+
+        if (loads != nullptr)
+            loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
+            
+        return data;
+        });
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -400,10 +481,8 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
-    DgnDb::VerifyClientThread();
-
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
         BeAssert(false);
@@ -413,38 +492,8 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, LoadStatePtr loads)
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   
-
-    if (loads)
-        loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
-    tile.SetIsQueued(); // mark as queued so we don't request it again.
-
-    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [loader,loads,&tile]() 
-        {
-        return loader->CreateTile().then([loader,loads,&tile](BentleyStatus status)
-            {
-            if (status != SUCCESS)
-                {
-                if (loads != nullptr && loads->IsCanceled())
-                    tile.SetNotLoaded();     // Mark it as not loaded so we can retry again.
-                else
-                    tile.SetNotFound();
-                return ERROR;
-                }
-
-            if (SUCCESS != loader->LoadTile())
-                {
-                tile.SetNotFound();
-                return ERROR;
-                }
-
-            tile.SetIsReady();   // OK, we're all done loading and the other thread may now use this data. Set the "ready" flag.
-
-            // On a successful load, potentially store the tile in the cache.   
-            loader->_SaveToDb();
-            return SUCCESS;
-            });
-        });    
+    
+    return loader->Perform();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -533,7 +582,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        box = box.TransformBy(args.m_location);
+        box = box.TransformBy(args.GetLocation());
 
         if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
             {
@@ -620,9 +669,26 @@ int Tile::CountTiles() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-LoadState::~LoadState()
+TileLoadState::~TileLoadState()
     {
     DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double branchOffset, Utf8CP title)
+    {
+    if (branch.m_entries.empty())
+        return;
+
+    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance + branchOffset};
+    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
+    DEBUG_PRINTF("drawing %d %s Tiles", branch.m_entries.size(), title);
+    branch.SetViewFlags(flags);
+    auto drawBranch = m_context.CreateBranch(branch, &location, m_clip);
+    BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
+    m_context.OutputGraphic(*drawBranch, nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -631,9 +697,6 @@ LoadState::~LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::DrawGraphics(ViewContextR context)
     {
-    if (m_graphics.m_entries.empty() && m_substitutes.m_entries.empty())
-        return;
-
     ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.m_textures = true;
@@ -641,37 +704,16 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
 
-    DPoint3d offset = {0.0, 0.0, m_biasDistance};
-    Transform location = Transform::FromProduct(m_location, Transform::From(offset));
-
-    if (!m_graphics.m_entries.empty())
-        {
-        DEBUG_PRINTF("drawing %d Tiles", m_graphics.m_entries.size());
-        m_graphics.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_graphics, &location, m_clip);
-        BeAssert(m_graphics.m_entries.empty()); // CreateBranch should have moved them
-        m_context.OutputGraphic(*branch, nullptr);
-        }
-
-    // Substitute tiles are drawn behind "real" tiles so that when they arrive the better tiles overwrite the substitute ones.
-    if (!m_substitutes.m_entries.empty())
-        {
-        DEBUG_PRINTF("drawing %d substitute Tiles", m_substitutes.m_entries.size());
-        offset.z = m_substitueBiasDistance;
-        location = Transform::FromProduct(location, Transform::From(offset));
-
-        m_substitutes.SetViewFlags(flags);
-        auto branch = m_context.CreateBranch(m_substitutes, &location, m_clip);
-        BeAssert(m_substitutes.m_entries.empty()); // CreateBranch should have moved them
-        m_context.OutputGraphic(*branch, nullptr);
-        }
+    DrawBranch(flags, m_graphics, 0.0, "Main");
+    DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
+    DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root, LoadStatePtr loads)
+void DrawArgs::RequestMissingTiles(RootR root, TileLoadStatePtr loads)
     {
     // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
     for (auto const& tile : m_missing)
@@ -725,7 +767,7 @@ bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
     if (parent->HasGraphics())
         {
         //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_substitutes.Add(*parent->m_graphic);
+        args.m_loResSubstitutes.Add(*parent->m_graphic);
         return true;
         }
 
@@ -745,7 +787,7 @@ void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
         if (quadChild->HasGraphics())
             {
             //DEBUG_PRINTF("using higher res");
-            args.m_substitutes.Add(*quadChild->m_graphic);
+            args.m_hiResSubstitutes.Add(*quadChild->m_graphic);
             }
         }
     }
@@ -760,8 +802,8 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        if (!TryLowerRes(args, 10))
-            TryHigherRes(args);
+        TryLowerRes(args, 10);
+        TryHigherRes(args);
 
         return;
         }
@@ -793,9 +835,9 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), now, now-GetExpirationTime());
+    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
     Draw(args);
-    DEBUG_PRINTF("SheetView draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
     args.DrawGraphics(context);
 
@@ -803,20 +845,20 @@ void QuadTree::Root::DrawInView(RenderContextR context)
     if (!args.m_missing.empty())
         {
         // yes, request them and schedule a progressive task to draw them as they arrive.
-        LoadStatePtr loads = std::make_shared<LoadState>();
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
         context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the main thread to check for arrival of missing tiles.
+* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), now, now-m_root.GetExpirationTime());
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 

@@ -1235,6 +1235,16 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int32_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx)
+    {
+    DgnDbStatus status = SetPropertyValue(propertyName, ECValue(value), arrayIdx);
+    BeAssert(DgnDbStatus::Success == status);
+    return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    08/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, PropertyArrayIndex const& arrayIdx)
     {
     ECValue value(id.GetValueUnchecked());

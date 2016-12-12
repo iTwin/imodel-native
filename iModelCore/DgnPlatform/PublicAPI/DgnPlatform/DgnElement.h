@@ -115,7 +115,7 @@ public:
 //=======================================================================================
 //! Helps models, elements, aspects and other data structures copy themselves between DgnDbs
 //=======================================================================================
-struct DgnImportContext : DgnCloneContext
+struct EXPORT_VTABLE_ATTRIBUTE DgnImportContext : DgnCloneContext
 {
 private:
     bool            m_areCompatibleDbs;
@@ -230,15 +230,15 @@ struct ElementIteratorEntry : ECSqlStatementEntry
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
 public:
-    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current DgnElement
-    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current DgnElement
-    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current DgnElement
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current DgnElement
-    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current DgnElement
-    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current DgnElement
-    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current DgnElement
-    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current DgnElement
-    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current DgnElement
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of this ElementIteratorEntry
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of this ElementIteratorEntry
 };
 
 //=======================================================================================
@@ -1599,6 +1599,10 @@ public:
     //! Set an integer ECProperty by name
     //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
+
+    //! Set an int64_t ECProperty by name
+    //! @see SetPropertyValue
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.

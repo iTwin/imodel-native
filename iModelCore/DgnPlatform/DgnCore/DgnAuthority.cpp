@@ -358,7 +358,7 @@ ElementScopeAuthorityPtr ElementScopeAuthority::Create(Utf8CP authorityName, Dgn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DatabaseScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, Utf8StringCR value, Utf8StringCR nameSpace)
+DgnCode DatabaseScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace)
     {
     DatabaseScopeAuthorityCPtr authority = db.Authorities().Get<DatabaseScopeAuthority>(authorityName);
     BeAssert(authority.IsValid());
@@ -378,7 +378,7 @@ DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnModelCR model, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, DgnModelId modelId, Utf8StringCR value)
+DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value)
     {
     ModelScopeAuthorityCPtr authority = db.Authorities().Get<ModelScopeAuthority>(authorityName);
     BeAssert(authority.IsValid() && db.Models().GetModel(modelId).IsValid());
@@ -487,7 +487,8 @@ DbResult DgnDb::CreateAuthorities()
         (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Sheet, *this)) ||
         // ElementScopeAuthorities
         (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_InformationPartitionElement, *this)) ||
-        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)))
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)) ||
+        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_Subject, *this)))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;

@@ -22,35 +22,31 @@ struct DgnElementTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (DgnElementTests, ResetStatistics)
+// Test will fail if the number of Element inserted during Db creating change and stats will need to be updated
+TEST_F(DgnElementTests, ResetStatistics)
     {
     SetupSeedProject();
 
     //Inserts a model
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
-    EXPECT_TRUE(m1.IsValid());
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
+    EXPECT_TRUE(model.IsValid());
     m_db->SaveChanges("changeSet1");
 
-    DgnModelId m1id = m1->GetModelId();
-    EXPECT_TRUE (m1id.IsValid());
+    DgnModelId modelId = model->GetModelId();
+    EXPECT_TRUE(modelId.IsValid());
 
     //Inserts 2 elements.
-    auto keyE1 = InsertElement(m1id);
-    DgnElementId E1id = keyE1->GetElementId();
-    DgnElementCPtr E1 = m_db->Elements().GetElement(E1id);
-    EXPECT_TRUE (E1 != nullptr);
+    auto keyE1 = InsertElement(modelId);
+    DgnElementCPtr E1 = m_db->Elements().GetElement(keyE1->GetElementId());
+    EXPECT_TRUE(E1 != nullptr);
 
-    auto keyE2 = InsertElement(m1id);
-    DgnElementId E2id = keyE2->GetElementId();
-    DgnElementCPtr E2 = m_db->Elements().GetElement(E2id);
-    EXPECT_TRUE (E2 != nullptr);
-
-    DgnModelId model_id = m_db->Elements().QueryModelId(E1id);
-    EXPECT_EQ (m1id, model_id);
+    auto keyE2 = InsertElement(modelId);
+    DgnElementCPtr E2 = m_db->Elements().GetElement(keyE2->GetElementId());
+    EXPECT_TRUE(E2 != nullptr);
 
     //Deletes the first element.
-    DgnDbStatus status=E2->Delete();
-    EXPECT_EQ ((DgnDbStatus)SUCCESS, status);
+    DgnDbStatus status = E2->Delete();
+    EXPECT_EQ((DgnDbStatus) SUCCESS, status);
     m_db->SaveChanges();
 
     uint64_t memTarget = 0;
@@ -60,16 +56,16 @@ TEST_F (DgnElementTests, ResetStatistics)
     DgnElements::Statistics stats = m_db->Elements().GetStatistics();
 
     uint32_t NewElements = stats.m_newElements;
-    EXPECT_EQ (2, NewElements);
+    EXPECT_EQ(5, NewElements);
 
     uint32_t RefElements = stats.m_reReferenced;
-    EXPECT_EQ (0, RefElements);
+    EXPECT_EQ(1, RefElements);
 
     uint32_t UnrefElements = stats.m_unReferenced;
-    EXPECT_EQ (0, UnrefElements);
+    EXPECT_EQ(4, UnrefElements);
 
     uint32_t PurgedElements = stats.m_purged;
-    EXPECT_EQ (1, PurgedElements);
+    EXPECT_EQ(4, PurgedElements);
 
     m_db->Elements().ResetStatistics();
 
@@ -77,16 +73,16 @@ TEST_F (DgnElementTests, ResetStatistics)
 
     //Statistics after reset.
     NewElements = stats.m_newElements;
-    EXPECT_EQ (0, NewElements);
+    EXPECT_EQ(0, NewElements);
 
     PurgedElements = stats.m_purged;
-    EXPECT_EQ (0, PurgedElements);
+    EXPECT_EQ(0, PurgedElements);
 
     RefElements = stats.m_reReferenced;
-    EXPECT_EQ (0, RefElements);
+    EXPECT_EQ(0, RefElements);
 
     UnrefElements = stats.m_unReferenced;
-    EXPECT_EQ (0, UnrefElements);
+    EXPECT_EQ(0, UnrefElements);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2141,12 +2137,16 @@ TEST_F(DgnElementTests, ElementIterator)
     ASSERT_EQ(numPhysicalObjects, iterator.BuildIdSet<DgnElementId>().size());
     ASSERT_EQ(numPhysicalObjects, iterator.BuildIdList<DgnElementId>().size());
 
+    bvector<DgnElementId> idList;
+    iterator.BuildIdList(idList);
+    ASSERT_EQ(numPhysicalObjects, idList.size());
+
     iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), "WHERE [UserLabel]='UserLabel1'");
     ASSERT_EQ(1, iterator.BuildIdSet<DgnElementId>().size());
     ASSERT_EQ(1, iterator.BuildIdList<DgnElementId>().size());
 
     int count=0;
-    for (ElementIteratorEntry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
+    for (ElementIteratorEntryCR entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
         {
         ASSERT_TRUE(entry.GetClassId().IsValid());
         ASSERT_EQ(entry.GetModelId(), model->GetModelId());

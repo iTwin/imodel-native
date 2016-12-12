@@ -383,7 +383,7 @@ ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     DVec3d viewDelta;
     viewRot.Multiply(viewDelta, viewDiagRoot);
 
-    ViewportStatus validSize = DgnViewport::ValidateViewDelta(viewDelta, false);
+    ViewportStatus validSize = ValidateViewDelta(viewDelta, false);
     if (validSize != ViewportStatus::Success)
         return validSize;
 
@@ -527,7 +527,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
             newDelta.z = diag;
         }
 
-    DgnViewport::ValidateViewDelta(newDelta, true);
+    ValidateViewDelta(newDelta, true);
 
     SetExtents(newDelta);
     if (aspect)
@@ -1033,7 +1033,7 @@ ViewportStatus CameraViewDefinition::LookAt(DPoint3dCR eyePoint, DPoint3dCR targ
     delta.z =(backDist - frontDist);
 
     DVec3d frontDelta = DVec3d::FromScale(delta, frontDist/focusDist);
-    ViewportStatus stat = DgnViewport::ValidateViewDelta(frontDelta, false); // validate window size on front (smallest) plane
+    ViewportStatus stat = ValidateViewDelta(frontDelta, false); // validate window size on front (smallest) plane
     if (ViewportStatus::Success != stat)
         return  stat;
 
@@ -1207,26 +1207,28 @@ void ViewDefinition3d::_AdjustAspectRatio(double windowAspect, bool expandView)
             delta.x = delta.y;
         }
 
+    double maxExtent, minExtent;
+    _GetExtentLimits(minExtent, maxExtent);
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = delta.x / windowAspect;
-        if (rtmp < DgnViewport::GetMaxViewDelta())
+        if (rtmp < maxExtent)
             delta.y = rtmp;
         else
             {
-            delta.y = DgnViewport::GetMaxViewDelta();
-            delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
+            delta.y = maxExtent;
+            delta.x = maxExtent * windowAspect;
             }
         }
     else
         {
         double rtmp = delta.y * windowAspect;
-        if (rtmp < DgnViewport::GetMaxViewDelta())
+        if (rtmp < maxExtent)
             delta.x = rtmp;
         else
             {
-            delta.x = DgnViewport::GetMaxViewDelta();
-            delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
+            delta.x = maxExtent;
+            delta.y = maxExtent / windowAspect;
             }
         }
 
@@ -1271,26 +1273,29 @@ void ViewDefinition2d::_AdjustAspectRatio(double windowAspect, bool expandView)
             m_delta.x = m_delta.y;
         }
 
+
+    double maxExtent, minExtent;
+    _GetExtentLimits(minExtent, maxExtent);
     if (expandView ?(viewAspect > windowAspect) :(windowAspect > 1.0))
         {
         double rtmp = m_delta.x / windowAspect;
-        if (rtmp < DgnViewport::GetMaxViewDelta())
+        if (rtmp < maxExtent)
             m_delta.y = rtmp;
         else
             {
-            m_delta.y = DgnViewport::GetMaxViewDelta();
-            m_delta.x = DgnViewport::GetMaxViewDelta() * windowAspect;
+            m_delta.y = maxExtent;
+            m_delta.x = maxExtent * windowAspect;
             }
         }
     else
         {
         double rtmp = m_delta.y * windowAspect;
-        if (rtmp < DgnViewport::GetMaxViewDelta())
+        if (rtmp < maxExtent)
             m_delta.x = rtmp;
         else
             {
-            m_delta.x = DgnViewport::GetMaxViewDelta();
-            m_delta.y = DgnViewport::GetMaxViewDelta() / windowAspect;
+            m_delta.x = maxExtent;
+            m_delta.y = maxExtent / windowAspect;
             }
         }
 

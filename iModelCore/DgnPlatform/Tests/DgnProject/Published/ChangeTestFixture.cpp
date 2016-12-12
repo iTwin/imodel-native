@@ -32,7 +32,7 @@ void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
         return;
 
     CreateDgnDbParams createDgnDbParams;
-    createDgnDbParams.SetRootSubjectLabel("ChangeTestFixture");
+    createDgnDbParams.SetRootSubjectName("ChangeTestFixture");
     createDgnDbParams.SetOverwriteExisting(true);
 
     DbResult createStatus;
@@ -210,7 +210,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
     auto categories = new CategorySelector(*m_testDb,"");
-    for (ElementIteratorEntry categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
+    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
     auto style = new DisplayStyle3d(*m_testDb,"");
@@ -219,13 +219,13 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     style->SetViewFlags(flags);
 
     auto models = new ModelSelector(*m_testDb,"");
-    DgnModels::Iterator modIter = m_testDb->Models().MakeIterator();
-    for (auto& entry : modIter)
+    ModelIterator modIter = m_testDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+    for (ModelIteratorEntryCR entry : modIter)
         {
         auto id = entry.GetModelId();
         auto model = m_testDb->Models().GetModel(id);
 
-        if (model.IsValid() && model->IsSpatialModel())
+        if (model.IsValid())
             models->AddModel(id);
         }
 

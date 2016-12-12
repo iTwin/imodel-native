@@ -33,6 +33,7 @@
 #define BIS_AUTHORITY_Sheet                         BIS_AUTHORITY(BIS_CLASS_Sheet)
 #define BIS_AUTHORITY_SpatialCategory               BIS_AUTHORITY(BIS_CLASS_SpatialCategory)
 #define BIS_AUTHORITY_SubCategory                   BIS_AUTHORITY(BIS_CLASS_SubCategory)
+#define BIS_AUTHORITY_Subject                       BIS_AUTHORITY(BIS_CLASS_Subject)
 #define BIS_AUTHORITY_TextAnnotationSeed            BIS_AUTHORITY(BIS_CLASS_TextAnnotationSeed)
 #define BIS_AUTHORITY_Texture                       BIS_AUTHORITY(BIS_CLASS_Texture)
 #define BIS_AUTHORITY_TrueColor                     BIS_AUTHORITY(BIS_CLASS_TrueColor)
@@ -167,7 +168,7 @@ public:
     DGNPLATFORM_EXPORT static DatabaseScopeAuthorityPtr Create(Utf8CP name, DgnDbR dgndb);
 
     //! Create a DgnCode using the DatabaseScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, Utf8StringCR value, Utf8StringCR nameSpace="");
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace="");
     //! Create a DgnCode using this DatabaseScopeAuthority
     DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const {return DgnCode(GetAuthorityId(), value, nameSpace);}
 };
@@ -176,7 +177,7 @@ public:
 //! A generic DgnAuthority which enforces uniquess within the scope of a DgnModel.
 // @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct ModelScopeAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE ModelScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
     friend struct dgn_AuthorityHandler::ModelScope;
@@ -193,7 +194,7 @@ public:
     //! Create a DgnCode using the ModelScopeAuthority of the specified name
     DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value);
     //! Create a DgnCode using the ModelScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, DgnModelId modelId, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value);
     //! Create a DgnCode using this ModelScopeAuthority
     DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR model, Utf8StringCR value) const;
     //! Create a DgnCode using this ModelScopeAuthority
@@ -204,7 +205,7 @@ public:
 //! A generic DgnAuthority which enforces uniquess within another DgnElement that is providing the scope.
 // @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct ElementScopeAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE ElementScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
     friend struct dgn_AuthorityHandler::ElementScope;

@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/TileTree.h>
-
-USING_NAMESPACE_TILETREE
+#include <folly/BeFolly.h>
 
 BEGIN_SHEET_NAMESPACE
 namespace Handlers
@@ -19,6 +18,7 @@ HANDLER_DEFINE_MEMBERS(Model)
 }
 END_SHEET_NAMESPACE
 
+USING_NAMESPACE_TILETREE
 USING_NAMESPACE_SHEET
 using namespace Attachment;
 
@@ -88,6 +88,7 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
     auto sheet = new Element(CreateParams(db, model.GetModelId(), classId, CreateCode(model, name)));
     sheet->SetScale(scale);
     sheet->SetTemplate(sheetTemplate);
+
 #ifdef WIP_SHEETS
     sheet->SetHeight(sheetTemplateElem->GetHeight());
     sheet->SetWidth(sheetTemplateElem->GetWidth());
@@ -158,46 +159,82 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     return new Sheet::ViewController(*this);
     }
 
+//=======================================================================================
+// Since we can only create one tile at a time, we serialize all requests through a single thread.
+// This avoids all of the requests blocking in the IoPool.
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct TileThread : BeFolly::ThreadPool
+{
+    TileThread() : ThreadPool(1, "SheetTile") {}
+    static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.try_get_fast();}
+};
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_SaveToDb() {return SUCCESS;}
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_ReadFromDb() {return ERROR;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource() 
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     {
-    Tile& tile = static_cast<Tile&>(*m_tile);
-    Tree& root = tile.GetTree();
+    RefCountedPtr<Attachment::Tile::Loader> me = this;
 
-    auto vp = DgnViewport::GetTileViewport();
-    if (!vp)
-        return ERROR;
+    // This method is called asynchronously on many IoPool threads. Its job is to create a sheet tile.
+    // Creating at sheet tile happens in 3 steps:
+    //   1) create the scene/terrain
+    //   2) render the scene with QV to get a raster image
+    //   3) convert the raster image into a texture and "fulfill" the Tile load.
+    // Steps 1 & 2 are synchronous (may only work on one tile at a time), but they can overlap each other and both can overlap step 3.
 
-    return vp->_RenderTile(m_image, *root.m_view, tile, root.m_pixels);
+    // Step 1 is done on the "TileThread". When it finishes, it creates a promise for Step 2 on the Render thread, in _CreateTile().
+    auto stat = folly::via(&TileThread::Get(), [me]() 
+        {
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+
+        DgnDb::SetThreadId(DgnDb::ThreadId::SheetTile);
+        Tile& tile = static_cast<Tile&>(*me->m_tile);
+        Tree& root = tile.GetTree();
+        if (tile.IsAbandoned())
+            return folly::Future<BentleyStatus>(ERROR);
+
+        auto vp = DgnViewport::GetTileViewport();
+        return vp ? vp->_CreateTile(me->m_loads, me->m_image, *root.m_view, tile, root.m_pixels) : ERROR;
+        });
+    
+    // When Step 2 completes, continue Step 3 on a thread from the CpuPool
+    return stat.via(&BeFolly::ThreadPool::GetCpuPool());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This sheet tile just became available from some source (cache, or created). Create a 
-* a Render::Graphic to draw it. Only when finished, set the "ready" flag.
-* @note this method can be called on many threads, simultaneously.
+* This sheet tile just became available from some source (cache, or created). Create a
+* Render::Graphic to draw it. Only when finished, set the "ready" flag.
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Attachment::Tile::Loader::_LoadTile() 
+BentleyStatus Attachment::Tile::Loader::_LoadTile()
     {
-    Tile& tile = static_cast<Tile&>(*m_tile);
+    auto& tile = static_cast<Tile&>(*m_tile);
     Tree& tree = tile.GetTree();
+    auto system = tree.GetRenderSystem();
 
-    auto graphic = tree.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams(nullptr));
+    auto graphic = system->_CreateGraphic(Graphic::CreateParams(nullptr));
 
     Texture::CreateParams textureParams;
     textureParams.SetIsTileSection();
-    auto texture = tree.GetRenderSystem()->_CreateTexture(m_image, textureParams);
+    auto texture = system->_CreateTexture(m_image, textureParams);
 
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
 #if defined (DEBUG_TILES)
-    graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);  // debugging
-    graphic->AddRangeBox(tile.m_range);                              // debugging
+    graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
+    graphic->AddRangeBox(tile.m_range);
 #endif
-    
+
     auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
     BeAssert(SUCCESS==stat);
     UNUSED_VARIABLE(stat);
@@ -218,7 +255,7 @@ Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_
     double west  = east + tileSize;
     double north = id.m_row * tileSize;
     double south = north + tileSize;
-    
+
     m_corners.m_pts[0].Init(east, north, 0.0);   //  | [0]     [1]
     m_corners.m_pts[1].Init(west, north, 0.0);   //  y
     m_corners.m_pts[2].Init(east, south, 0.0);   //  | [2]     [3]
@@ -251,7 +288,7 @@ void Attachment::Tree::Draw(RenderContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)  
+Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -283,17 +320,22 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
         env.m_skybox.m_enabled = false;
         }
 
-    // max pixel size is half the length of the diagonal. 
+    // max pixel size is half the length of the diagonal.
     m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
 
     auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
 
+    range.low.z = 0.0; // make sure we're exactly on the sheet.
     Transform location = Transform::From(range.low);
     location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
+
+    m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
+    m_loResBiasDistance = m_hiResBiasDistance * 2.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -346,7 +388,7 @@ void Sheet::ViewController::_LoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::_CreateTerrain(TerrainContextR context) 
+void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     {
     DgnDb::VerifyClientThread();
 

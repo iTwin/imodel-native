@@ -22,9 +22,10 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ScanCriteria : RangeIndex::Traverser
 {
 public:
+    enum class Reject {Yes=1, No=0};
     struct Callback
     {
-        virtual Stop _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) = 0;
+        virtual Reject _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) = 0;
         virtual Stop _OnRangeElementFound(DgnElementCR) = 0;
     };
 
@@ -49,7 +50,7 @@ public:
 
     DgnCategoryIdSet const* GetCategories() const {return m_categories;}
 
-    DGNPLATFORM_EXPORT Stop CheckRange(RangeIndex::FBoxCR elemRange, bool isElem3d) const;
+    DGNPLATFORM_EXPORT Reject CheckRange(RangeIndex::FBoxCR elemRange, bool isElem3d) const;
 
     void SetSkewRangeTest(RangeIndex::FBoxCR mainRange, RangeIndex::FBoxCR skewRange, DPoint3dCR skewVector) {SetRangeTest(mainRange); m_skewRange = skewRange; m_skewVector = skewVector; m_testSkewScan = true;}
 
@@ -74,7 +75,7 @@ public:
     //! Check one particular element agains this ScanCriteria
     //! @param[in] element The element to test.
     //! @param[in] doRangeTest Check the range.
-    DGNPLATFORM_EXPORT Stop CheckElement(DgnElementCR element, bool doRangeTest) const;
+    DGNPLATFORM_EXPORT Reject CheckElement(DgnElementCR element, bool doRangeTest) const;
 };
 
 END_BENTLEY_DGN_NAMESPACE

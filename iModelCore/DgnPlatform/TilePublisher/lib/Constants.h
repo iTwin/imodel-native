@@ -169,6 +169,72 @@ static std::string s_unlitFragmentShader =
 "uniform vec4 u_color;\n"
 "void main(void) {gl_FragColor = vec4(u_color);}\n";
 
+// Polyline shaders.
+static std::string s_polylineVertexShader =
+                                                                                                                                                 
+"precision highp float;\n" 
+"attribute vec3 a_pos;\n"
+"attribute vec3 a_direction;\n"
+"attribute float a_batchId;\n"
+"attribute vec3 a_vertexDelta;\n"
+"uniform mat4 u_mv;\n"
+"uniform mat4 u_proj;\n"
+"uniform float u_width;\n"
+"varying vec2 v_texture;\n"
+"varying float v_length;\n"
+"varying float v_widthScale;\n"
+"void main(void) {\n"
+"v_length = length(a_direction);\n"
+"float pixelWidthRatio = 2. / (czm_viewport.z * czm_projection[0][0]);\n"
+"vec3 toEye = czm_inverseNormal * vec3(0.0, 0.0, 1.0);\n"
+"vec4 projection = czm_modelViewProjection * vec4(a_pos, 1.0);\n"
+"float width = projection.w * u_width * pixelWidthRatio;\n"
+"v_widthScale = 1.0 / width;\n"
+"vec3 extrusion = normalize(cross (a_direction, toEye));\n"
+"v_texture.x = a_vertexDelta.z * v_length + width * a_vertexDelta.x;\n"
+"v_texture.y = a_vertexDelta.y;\n"
+"gl_Position = czm_modelViewProjection * vec4(a_pos + (width * a_vertexDelta.x / v_length) * a_direction + width * a_vertexDelta.y * extrusion, 1.0);\n"
+"}\n";
+
+
+static std::string s_polylineFragmentShader =
+"uniform float u_feather;\n"
+
+"bool computePolylineColor (vec4 color, float distance)\n"
+"    {\n"
+"    if (distance > 1.0)\n"
+"        return false;\n"
+"    float alpha = distance > (1.0 - u_feather) ?  ((1.0 - distance)/u_feather) : 1.0;\n"
+"    gl_FragColor = vec4 (color.rgb, alpha);\n"
+"    return true;\n" 
+"    }\n"
+"uniform vec4 u_color;\n"
+"varying vec2 v_texture;\n"
+"varying float v_length;\n"
+"varying float v_widthScale;\n"
+"void main()\n"
+" {\n"
+" float centerDistance;\n"
+"\n"     
+" if (v_texture.x < 0.0)\n"
+"   {\n"
+"   float xTexture = -v_texture.x * v_widthScale;\n"
+"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
+"   }\n"
+"else if (v_texture.x > v_length)\n"
+"   {\n"
+"   float xTexture = (v_texture.x - v_length) * v_widthScale;\n"
+"   centerDistance = sqrt (xTexture * xTexture + v_texture.y * v_texture.y);\n"
+"   }\n"
+"else\n"
+"   {\n"
+"   centerDistance = abs (v_texture.y);\n"
+"   }\n"
+"if (!computePolylineColor (u_color, centerDistance))\n"
+"       discard;\n"
+"}\n";
+
+
 // From DgnViewMaterial.cpp
 static double const s_qvExponentMultiplier  = 48.0,
                     s_qvAmbient             = 1.0,
@@ -181,4 +247,9 @@ static double const s_qvExponentMultiplier  = 48.0,
 
 static const WCharCP s_metadataExtension    = L"json";
 static const WCharCP s_binaryDataExtension  = L"b3dm";
+
+
+
+
+
 

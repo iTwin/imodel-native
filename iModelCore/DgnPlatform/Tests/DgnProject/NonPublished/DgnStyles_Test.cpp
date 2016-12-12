@@ -124,9 +124,8 @@ TEST_F(DgnLineStyleTest, InsertnReadLineStyles)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     {
-#ifdef WIP_NO_PRE_PUBLISHED_FILES
-    SetupWithPrePublishedFile(L"SubStation_NoFence.i.ibim", L"InsertAndQueryWithoutCacheReLoad.ibim", Db::OpenMode::ReadWrite);
-    DgnDbPtr      project = m_db;
+    SetupSeedProject();
+    DgnDbPtr project = m_db;
 
     //Get line styles
     DgnLineStyles& styleTable = project->LineStyles();
@@ -151,7 +150,6 @@ TEST_F(DgnLineStyleTest, InsertAndQueryWithoutCacheReLoad)
     expectedTestStyle.SetTestStyleProperties(LsComponentType::LineCode, STYLE_NAME, "");
     testStyle.SetTestStyleProperties(lsComponent->GetComponentType(), lsDef->GetStyleName(), lsComponent->GetDescription());
     expectedTestStyle.IsEqual(testStyle);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -339,9 +337,7 @@ TEST_F(DgnLineStyleTest, InsertRasterComponentAsJson)
     ASSERT_TRUE(newStyleId.IsValid());
     EXPECT_TRUE(DbResult::BE_SQLITE_OK == project->SaveChanges());
     ASSERT_TRUE(1 == LineStyleElement::QueryCount(*project));
-#ifdef WHY_RELOAD_MAP
-    styleTable.ReloadMap();
-#endif
+
     LsCacheP cache = &styleTable.GetCache();
     LsDefinitionP  lsDef = cache->GetLineStyleP(newStyleId);
     ASSERT_TRUE(nullptr != lsDef);

@@ -20,25 +20,13 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 //=======================================================================================
 struct DgnRevision : RefCountedBase
 {
-    friend struct TxnManager;
-
-    //! Options for additional information to include in a DgnRevision
-    enum class Include
-    {
-        None = 0, //!< Include no additional data
-        Locks = 1 << 0, //!< Include any locks required for the changes within a revision
-        Codes = 1 << 1, //!< Include any DgnCodes which were assigned or discarded within a revision
-        CodesAndLocks = Codes | Locks, //!< Include both locks and codes
-        All = CodesAndLocks, //!< Include all additional information
-    };
-
 private:
     Utf8String m_id;
     Utf8String m_parentId;
     Utf8String m_initialParentId;
     Utf8String m_dbGuid;
 
-    BeFileName m_changeStreamFile;
+    BeFileName m_revChangesFile;
 
     Utf8String m_userName;
     DateTime m_dateTime;
@@ -48,10 +36,9 @@ private:
     DgnCodeSet  m_discardedCodes;
     DgnLockSet  m_usedLocks;
 
-    void SetChangeStreamFile(BeFileNameCR changeStreamFile) { m_changeStreamFile = changeStreamFile; }
-    static BeFileName BuildChangeStreamPathname(Utf8String revisionId);
+    void SetRevisionChangesFile(BeFileNameCR revChangesFile) { m_revChangesFile = revChangesFile; }
+    static BeFileName BuildRevisionChangesPathname(Utf8String revisionId);
 
-    void CollectCodesFromChangeSet(DgnDbCR dgndb, BeSQLite::IChangeSet& changeSet);
 protected:    
     //! Constructor
     DgnRevision(Utf8StringCR revisionId, Utf8StringCR parentRevisionId, Utf8StringCR dbGuid) : m_id(revisionId), m_parentId(parentRevisionId), m_dbGuid(dbGuid) {}
@@ -84,7 +71,7 @@ public:
     Utf8StringCR GetDbGuid() const { return m_dbGuid; }
 
     //! Get the name of the file that should contain the change contents of this revision
-    BeFileNameCR GetChangeStreamFile() const { return m_changeStreamFile; }
+    BeFileNameCR GetRevisionChangesFile() const { return m_revChangesFile; }
 
     //! Get or set the user name
     Utf8StringCR GetUserName() const { return m_userName; }
@@ -98,32 +85,25 @@ public:
     Utf8StringCR GetSummary() const { return m_summary; }
     void SetSummary(Utf8CP summary) { m_summary = summary; }
 
+    //! Extract the set of locks which are required for this revision's changes
+    DGNPLATFORM_EXPORT void ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const;
+    
+    //! Extract the set of codes which were assigned to objects within this revision's changes
+    DGNPLATFORM_EXPORT void ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const;
+
     //! Validate the contents of the revision
     //! @remarks Validates the contents of the ChangeStreamFile against the revision Id.
     DGNPLATFORM_EXPORT RevisionStatus Validate(DgnDbCR dgndb) const;
 
     //! Dump to stdout for debugging purposes.
     DGNPLATFORM_EXPORT void Dump(DgnDbCR dgndb) const;
-
-    //! Get the set of locks which are required for this revision's changes, if Include::Locks was specified
-    DgnLockSet const& GetLocks() const { return m_usedLocks; }
-    //! Get the set of codes which were assigned to objects within this revision's changes, if Include::Codes was specified
-    DgnCodeSet const& GetAssignedCodes() const { return m_assignedCodes; }
-    //! Get the set of codes which became discarded within this revision's changes, if Include::Codes was specified
-    DgnCodeSet const& GetDiscardedCodes() const { return m_discardedCodes; }
-
-    void IncludeChangeGroupData(BeSQLite::ChangeGroup& changeGroup, Include include, DgnDbR db); //!< @private
-    void ExtractUsedLocks(DgnLockSet& locks); //!< @private
-    void ExtractAssignedCodes(DgnCodeSet& codes); //!< @private
 };
-
-ENUM_IS_FLAGS(DgnRevision::Include);
 
 //=======================================================================================
 //! Streams the contents of a file containing serialized change streams
 // @bsiclass                                                 Ramanujam.Raman   10/15
 //=======================================================================================
-struct RevisionFileStreamReader : BeSQLite::ChangeStream
+struct EXPORT_VTABLE_ATTRIBUTE RevisionChangesFileReader : BeSQLite::ChangeStream
 {
 private:
     DgnDbCR m_dgndb; // Used only for debugging
@@ -135,13 +115,13 @@ private:
     BentleyStatus StartInput();
     void FinishInput();
 
-    virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
-    virtual void _Reset() override;
-    virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
+    DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _InputPage(void *pData, int *pnData) override;
+    DGNPLATFORM_EXPORT virtual void _Reset() override;
+    DGNPLATFORM_EXPORT virtual BeSQLite::ChangeSet::ConflictResolution _OnConflict(BeSQLite::ChangeSet::ConflictCause clause, BeSQLite::Changes::Change iter);
 
 public:
-    RevisionFileStreamReader(BeFileNameCR pathname, DgnDbCR dgnDb) : m_pathname(pathname), m_dgndb(dgnDb), m_inLzmaFileStream(nullptr) {}
-    ~RevisionFileStreamReader() {}
+    RevisionChangesFileReader(BeFileNameCR pathname, DgnDbCR dgndb) : m_pathname(pathname), m_dgndb(dgndb), m_inLzmaFileStream(nullptr) {}
+    ~RevisionChangesFileReader() {}
 };
 
 //=======================================================================================
@@ -156,23 +136,28 @@ private:
     DgnDbR m_dgndb;
 
     DgnRevisionPtr m_currentRevision;
-    TxnManager::TxnId m_currentRevisionEndTxnId; // If valid, currently creating a revision with all transactions upto *but* excluding this id
 
-    RevisionStatus SetParentRevisionId(Utf8StringCR revisionId);
+    RevisionStatus SaveParentRevisionId(Utf8StringCR revisionId);
 
-    Utf8String GetInitialParentRevisionId() const;
+    Utf8String QueryInitialParentRevisionId() const;
     RevisionStatus UpdateInitialParentRevisionId();
 
-    RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup) const;
-    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup, DgnRevision::Include include);
+    RevisionStatus GroupChanges(BeSQLite::ChangeGroup& changeGroup, TxnManager::TxnId endTxnId) const;
+    DgnRevisionPtr CreateRevisionObject(RevisionStatus* outStatus, BeSQLite::ChangeGroup& changeGroup);
     RevisionStatus WriteChangesToFile(BeFileNameCR pathname, BeSQLite::ChangeGroup& changeGroup);
 
+    // If valid, currently creating a revision with all transactions upto *but* excluding this id
+    RevisionStatus SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId);
+    RevisionStatus DeleteCurrentRevisionEndTxnId();
+
+    DgnRevisionPtr CreateRevision(RevisionStatus* outStatus, TxnManager::TxnId endTxnId);
+    
 public:
     //! Constructor
     RevisionManager(DgnDbR dgndb) : m_dgndb(dgndb) {}
 
     //! Destructor
-    DGNPLATFORM_EXPORT ~RevisionManager();
+    ~RevisionManager();
 
     //! Get the DgnDb for this RevisionManager
     DgnDbR GetDgnDb() { return m_dgndb; }
@@ -200,10 +185,14 @@ public:
     //! @param[out] status Optional (can pass null). Set to RevisionStatus::Success if the revision was successfully 
     //! finished or some error status otherwise.
     //! @see FinishCreateRevision, AbandonCreateRevision
-    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr, DgnRevision::Include = DgnRevision::Include::All);
+    DGNPLATFORM_EXPORT DgnRevisionPtr StartCreateRevision(RevisionStatus* status = nullptr);
     
     //! Return true if in the process of creating a revision
-    bool IsCreatingRevision() const { return m_currentRevision.IsValid(); }
+    DGNPLATFORM_EXPORT bool IsCreatingRevision() const;
+        
+    //! Returns the revision currently being created
+    //! @remarks Is valid only if in the process of creating a revision
+    DGNPLATFORM_EXPORT DgnRevisionPtr GetCreatingRevision();
 
     //! Finish creating a new revision
     //! @return RevisionStatus::Success if the revision was successfully finished or some error status otherwise.
@@ -215,7 +204,7 @@ public:
     //! @see StartCreateRevision
     DGNPLATFORM_EXPORT void AbandonCreateRevision();
 
-    TxnManager::TxnId GetCurrentRevisionEndTxnId() const; //!< @private
+    TxnManager::TxnId QueryCurrentRevisionEndTxnId() const; //!< @private
 };
 
 END_BENTLEY_DGNPLATFORM_NAMESPACE

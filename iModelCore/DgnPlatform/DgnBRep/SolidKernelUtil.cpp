@@ -563,6 +563,51 @@ BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    PK_ENTITY_t     entityTag = PSolidUtil::GetEntityTag(entity);
+    PK_BODY_type_t  bodyType;
+
+    PK_BODY_ask_type(entityTag, &bodyType);
+
+    if (PK_BODY_type_sheet_c != bodyType)
+        return false;
+    
+    int nFaces = 0;
+
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 1 != nFaces)
+        return false;
+
+    PK_FACE_t faceTag = PK_ENTITY_null;
+
+    if (SUCCESS != PK_BODY_ask_first_face(entityTag, &faceTag) || PK_ENTITY_null == faceTag)
+        return false;
+
+    PK_SURF_t    surfaceTag;
+    PK_CLASS_t   surfaceClass;
+    int          nLoops = 0;
+    PK_LOOP_t*   loops = nullptr;
+    PK_LOGICAL_t orientation;
+
+    if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &orientation) ||
+        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
+        SUCCESS != PK_FACE_ask_loops(faceTag, &nLoops, &loops) || nLoops < 1)
+        return false;
+
+    PK_MEMORY_free(loops);
+    hasHoles = (nLoops > 1);
+
+    return true;
+#else
+    return false;
+#endif
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
@@ -854,18 +899,59 @@ BentleyStatus BRepUtil::MassProperties(IBRepEntityCR entity, double* amount, dou
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Brien.Bastings  11/2016
+//---------------------------------------------------------------------------------------
+uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_t nodeId)
+    {
+    if (0 == nodeId)
+        {
+        uint32_t highestNodeId, lowestNodeId;
+
+        if (SUCCESS != FindNodeIdRange(entity, highestNodeId, lowestNodeId))
+            return 0;
+
+        nodeId = highestNodeId+1;
+        }
+
+    return (SUCCESS == AddNodeIdAttributes(entity, nodeId, false) ? nodeId : 0);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::TopologyID::AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == nodeId)
+        return ERROR;
+
     PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
 
     if (PK_ENTITY_null == bodyTag)
         return ERROR;
 
     return PSolidTopoId::AddNodeIdAttributes(bodyTag, nodeId, overrideExisting);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::ChangeNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == nodeId)
+        return ERROR;
+
+    PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
+
+    if (PK_ENTITY_null == bodyTag)
+        return ERROR;
+
+    return PSolidTopoId::ChangeNodeIdAttributes(bodyTag, nodeId);
 #else
     return ERROR;
 #endif
@@ -894,6 +980,9 @@ BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttributes(IBRepEntityR entity)
 BentleyStatus BRepUtil::TopologyID::IncrementNodeIdAttributes(IBRepEntityR entity, int32_t increment)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == increment)
+        return ERROR;
+
     PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
 
     if (PK_ENTITY_null == bodyTag)
@@ -1031,6 +1120,28 @@ BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, C
     return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
 #else
     return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr BRepUtil::Create::BodyToCurveVector(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    switch (entity.GetEntityType())
+        {
+        case IBRepEntity::EntityType::Wire:
+            return PSolidGeom::WireBodyToCurveVector(entity);
+
+        case IBRepEntity::EntityType::Sheet:
+            return PSolidGeom::PlanarSheetBodyToCurveVector(entity);
+
+        default:
+            return nullptr;
+        }
+#else
+    return nullptr;
 #endif
     }
 
@@ -1554,6 +1665,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityR target, IBRepEntityCR pl
     //       4) Does not resolve node Id conflicts between the target and tool body, this is likely just a bug and not intended.
     //       I prefer keeping this method simple and instead providing helper methods for creating the tool body.
     //       See BRepUtil::Create::CutProfileBodyFromOpenCurveVector and BRepUtil::Create::SweptBodyFromOpenCurveVector.
+    //       The Connect result can be achieved using BRepUtil::Create::SweptBodyFromOpenCurveVector and a solid/surface boolean subtract.
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t planarToolTag = PSolidUtil::GetEntityTag(planarTool);
 
@@ -1912,7 +2024,7 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection)
+BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection, DVec3dCP direction)
     {                           
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType()) 
@@ -1928,12 +2040,6 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     if (PK_ENTITY_null == toolTag)
         return ERROR;
 
-    DRange3d targetRange;
-
-    if (SUCCESS != PSolidUtil::GetEntityRange(targetRange, targetTag))
-        return ERROR;
- 
-    DRay3d      toolRay;
     Transform   invTargetTransform, toolTransform;
 
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
@@ -1941,20 +2047,26 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
 
     bvector<PK_FACE_t> toolFaces;
 
-    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag) ||
-        SUCCESS != PSolidUtil::GetPlanarFaceData(&toolRay.origin, &toolRay.direction, toolFaces.front()))
+    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag))
         return ERROR;
 
-    toolTransform.Multiply(toolRay.origin);
-    toolTransform.MultiplyMatrixOnly(toolRay.direction);
-    toolRay.direction.Normalize();
+    DVec3d      drawDir = DVec3d::UnitZ();
+
+    if (nullptr == direction)
+        {
+        PSolidUtil::GetPlanarFaceData(nullptr, &drawDir, toolFaces.front()); // Don't check status, allow non-planar surface...
+        toolTransform.MultiplyMatrixOnly(drawDir);
+        }
+    else
+        {
+        invTargetTransform.MultiplyMatrixOnly(drawDir, *direction);
+        }
+
+    drawDir.Normalize();
 
     if (reverseDirection)
-        toolRay.direction.Negate();
+        drawDir.Negate();
             
-    DRange1d  targetDepthRange = targetRange.GetCornerRange(toolRay);
-    double    toolDepth = toolRay.direction.DotProduct(toolRay.origin);
-
     PK_BODY_emboss_o_t  options;
     PK_TOPOL_track_r_t  tracking;
     PK_TOPOL_local_r_t  results;
@@ -1966,7 +2078,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     options.sidewall_data.sidewall = PK_emboss_sidewall_swept_c;
     options.convexity = PK_emboss_convexity_both_c; // Let pad or pocket be determined by whether cap is "above" or "below" target body according to emboss direction...
     options.overflow_data.laminar_walled = true;
-    toolRay.direction.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
+    drawDir.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
 
     PK_MARK_t   markTag = PK_ENTITY_null;
 
@@ -2046,7 +2158,7 @@ BentleyStatus BRepUtil::Modify::ThickenSheet(IBRepEntityR targetEntity, double f
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges, bvector<double>& radii, bool propagate)
+BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges, bvector<double> const& radii, bool propagate)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (edges.empty() || edges.size() != radii.size())
@@ -2069,7 +2181,7 @@ BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<IS
         {
         ISubEntityR edge = *edges.at(iEdge);
 
-        if (ISubEntity::SubEntityType::Edge != edge.GetSubEntityType ())
+        if (ISubEntity::SubEntityType::Edge != edge.GetSubEntityType())
             continue;
 
         double      radius = radii.at(iEdge);
@@ -2102,3 +2214,929 @@ BentleyStatus BRepUtil::Modify::BlendEdges(IBRepEntityR targetEntity, bvector<IS
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus computeChamferFaceData(DPoint3dR edgePoint, DVec3dR edgeTangent, DVec3dR faceNormal1, DVec3dR faceNormal2, double& edgeFacesAngle, PK_EDGE_t edgeTag)
+    {
+    bvector<PK_FACE_t> faces;
+
+    if (SUCCESS != PSolidTopo::GetEdgeFaces(faces, edgeTag) || 2 != faces.size())
+        return ERROR;
+
+    bool        reversed;
+    DRange1d    uRange;
+    PK_CURVE_t  curveTag;
+
+    if (SUCCESS != PSolidTopo::GetCurveOfEdge(curveTag, &uRange.low, &uRange.high, &reversed, edgeTag))
+        return ERROR;
+
+    double      uParam = (uRange.low + uRange.high) / 2.0;
+
+    if (SUCCESS != PSolidUtil::EvaluateEdge(edgePoint, edgeTangent, uParam, edgeTag))
+        return ERROR;
+
+    edgeTangent.Normalize();
+
+    if (reversed)
+        edgeTangent.Negate();
+
+    double   faceDist1, faceDist2;
+    DPoint2d faceParam1, faceParam2;
+    DPoint3d facePoint1, facePoint2;
+
+    if (!PSolidUtil::ClosestPointToFace(faces.at(0), Transform::FromIdentity(), facePoint1, faceParam1, faceDist1, edgePoint) || 
+        !PSolidUtil::ClosestPointToFace(faces.at(1), Transform::FromIdentity(), facePoint2, faceParam2, faceDist2, edgePoint))
+        return ERROR;
+
+    DVec3d uDir1, uDir2, vDir1, vDir2;
+
+    if (SUCCESS != PSolidUtil::EvaluateFace(facePoint1, faceNormal1, uDir1, vDir1, faceParam1, faces.at(0)) || 
+        SUCCESS != PSolidUtil::EvaluateFace(facePoint2, faceNormal2, uDir2, vDir2, faceParam2, faces.at(1)))
+        return ERROR;
+
+    DVec3d      axis;
+
+    axis.CrossProduct(faceNormal1, edgeTangent);
+    edgeFacesAngle = atan2(faceNormal2.DotProduct(axis), faceNormal2.DotProduct(faceNormal1));
+
+    if (edgeFacesAngle < 0.0)
+        edgeFacesAngle = Angle::Pi() + edgeFacesAngle;
+    else
+        edgeFacesAngle = Angle::Pi() - edgeFacesAngle;
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static void computeChamferRangesFromDistances(double& rightDist, double& leftDist, DPoint3dCR edgePoint, DVec3dCR edgeTangent, DVec3dCR faceNormal1, DVec3dCR faceNormal2)
+    {
+    DPoint3d    facePt1, facePt2, faceNormPt1, faceNormPt2;
+    DVec3d      faceDir1, faceDir2;
+
+    faceDir1.CrossProduct(faceNormal1, edgeTangent);
+    faceDir2.CrossProduct(faceNormal2, edgeTangent);
+
+    facePt1.SumOf(edgePoint, faceDir1, rightDist);
+    facePt2.SumOf(edgePoint, faceDir2, -leftDist);
+
+    faceNormPt1.SumOf(facePt1, faceNormal1, -1.0E-3);
+    faceNormPt2.SumOf(facePt2, faceNormal2, -1.0E-3);
+
+    double      fraction1, fraction2;
+    DPoint3d    intercept1, intercept2;
+    DRay3d      ray = DRay3d::FromOriginAndTarget(facePt1, faceNormPt1);
+    DSegment3d  segment = DSegment3d::From(facePt2, faceNormPt2);
+
+    DRay3d::ClosestApproachUnboundedRayBoundedSegment(fraction1, fraction2, intercept1, intercept2, ray, segment);
+
+    rightDist = facePt1.Distance(intercept1);
+    leftDist = facePt2.Distance(intercept1);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  03/14
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool computeChamferReversed(bvector<PK_EDGE_t>& edgeTags, bvector<bool>& reversed, size_t nEdges, PK_EDGE_t testEdgeTag)
+    {
+    bvector<PK_FACE_t> testFaces;
+
+    if (SUCCESS != PSolidTopo::GetEdgeFaces(testFaces, testEdgeTag) || 2 != testFaces.size())
+        return false;
+
+    for (size_t iEdge = 0; iEdge < nEdges; ++iEdge)
+        {
+        if (testEdgeTag == edgeTags[iEdge])
+            continue;
+
+        bvector<PK_FACE_t>  faces;
+
+        if (SUCCESS != PSolidTopo::GetEdgeFaces(faces, edgeTags[iEdge]) || 2 != faces.size())
+            continue;
+
+        if (faces.at(0) == testFaces.at(0))
+            return reversed.at(iEdge);
+        
+        if (faces.at(1) == testFaces.at(1))
+            return reversed.at(iEdge);
+
+        if (faces.at(0) == testFaces.at(1))
+            return !reversed.at(iEdge);
+
+        if (faces.at(1) == testFaces.at(0))
+            return !reversed.at(iEdge);
+        }
+
+    return false;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ChamferEdges (IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges, bvector<double> const& values1, bvector<double> const* values2, ChamferMode mode, bool propagate)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (edges.empty() || edges.size() != values1.size())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+
+    bvector<bool>       reversed;
+    bvector<PK_EDGE_t>  edgeTags;
+
+    reversed.insert(reversed.begin(), edges.size(), false); // Default reversed flags per edge...
+
+    for (size_t iEdge = 0; iEdge < edges.size(); ++iEdge)
+        {
+        if (ISubEntity::SubEntityType::Edge != edges[iEdge]->GetSubEntityType())
+            continue;
+
+        edgeTags.push_back(PSolidSubEntity::GetSubEntityTag(*edges[iEdge]));
+        }
+
+    for (size_t iEdge = 0; iEdge < edgeTags.size (); ++iEdge)
+        {
+        double      dist1 = 0.0, dist2 = 0.0, angle = 0.0, edgeFacesAngle = 0.0;
+        DVec3d      edgeTangent, faceNormal1, faceNormal2;
+        DPoint3d    edgePoint;
+        PK_EDGE_t   edgeTag = edgeTags.at(iEdge);
+
+        if (ChamferMode::Ranges != mode && SUCCESS != computeChamferFaceData(edgePoint, edgeTangent, faceNormal1, faceNormal2, edgeFacesAngle, edgeTag))
+            continue;
+
+        switch (mode)
+            {
+            case ChamferMode::Ranges:
+                {
+                dist1 = values1.at(iEdge);
+                dist2 = values2 ? values2->at(iEdge) : dist1;
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist1, 1);
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist2, 1);
+                break;
+                }
+
+            case ChamferMode::Length:
+                {
+                dist1 = values1.at(iEdge);
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist1, 1);
+                dist1 = dist2 = (dist1 / sqrt(2.0 * (1.0 - cos(edgeFacesAngle))));
+                break;
+                }
+
+            case ChamferMode::Distances:
+                {
+                dist1 = values1.at(iEdge);
+                dist2 = values2 ? values2->at(iEdge) : dist1;
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist1, 1);
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist2, 1);
+                break;
+                }
+
+            case ChamferMode::DistanceAngle:
+                {
+                dist1 = values1.at(iEdge);
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist1, 1);
+                angle = values2 ? values2->at(iEdge) : Angle::PiOver2();
+                dist2 = dist1 * sin(angle) / sin(acos(faceNormal1.DotProduct(faceNormal2) - angle));
+                break;
+                }
+
+            case ChamferMode::AngleDistance:
+                {
+                if (nullptr == values2)
+                    continue;
+
+                dist2 = values2->at(iEdge);
+                invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&dist2, 1);
+                angle = values1.at(iEdge);
+                dist1 = dist2 * sin(angle) / sin(acos(faceNormal1.DotProduct(faceNormal2) - angle));
+                break;
+                }
+            }
+
+        if (ChamferMode::Ranges != mode)
+            {
+            computeChamferRangesFromDistances(dist1, dist2, edgePoint, edgeTangent, faceNormal1, faceNormal2);
+
+            // Make right/left distances for face loop consistent...check up to current edge for another edge on the same face...
+            if (0 != iEdge && !DoubleOps::WithinTolerance(dist1, dist2, 1.0e-8) && computeChamferReversed(edgeTags, reversed, iEdge, edgeTag))
+                {
+                double  distT = dist2;
+
+                dist2 = dist1;
+                dist1 = distT;
+
+                reversed[iEdge] = true; // Save reversed state for subsequent edge compares...
+                }
+            }
+
+        PK_EDGE_set_blend_chamfer_o_t options;
+
+        PK_EDGE_set_blend_chamfer_o_m(options);
+        options.properties.propagate = propagate ? PK_blend_propagate_yes_c : PK_blend_propagate_no_c;
+
+        double  minLength = (dist1 < dist2) ? dist1 : dist2;
+
+        if (minLength < 100.0 * options.properties.tolerance)
+            options.properties.tolerance = minLength * 0.01;
+
+        int         nBlend = 0;
+        PK_EDGE_t*  blends = nullptr;
+
+        PK_EDGE_set_blend_chamfer(1, &edgeTag, dist1, dist2, NULL, &options, &nBlend, &blends);
+        PK_MEMORY_free(blends);
+        }
+
+    BentleyStatus   status = PSolidUtil::FixBlends(targetEntityTag);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+static void coverRubberFaces(PK_BODY_t bodyTag)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  faceTags = nullptr;
+
+    PK_BODY_ask_faces(bodyTag, &nFaces, &faceTags);
+
+    for (int iFace = 0; iFace < nFaces; ++iFace)
+        {
+        PK_SURF_t surfTag = PK_ENTITY_null;
+
+        if (SUCCESS != PK_FACE_ask_surf(faceTags[iFace], &surfTag) || PK_ENTITY_null != surfTag)
+            continue;
+        
+        PK_local_check_t localCheck;
+
+        PK_FACE_attach_surf_fitting(faceTags[iFace], PK_LOGICAL_true, &localCheck);
+        }
+
+    PK_MEMORY_free(faceTags);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::HollowFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, double defaultDistance, bvector<double> const& distances, StepFacesOption addStep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    double      shellOffset = defaultDistance;
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&shellOffset, 1);
+
+    int         nBodyFaces = 0;
+    PK_FACE_t*  bodyFaceTags = NULL;
+
+    PK_BODY_ask_faces(targetEntityTag, &nBodyFaces, &bodyFaceTags);
+
+    // NOTE: Wanted to try not having the shell feature add it's node id to the product faces. Regardless of whether shelling
+    //       inwards or outwards, the original faces are always the outer faces, so you won't be able to identity the shell by face
+    //       reliably anyway. I'm currently incrementing the offset faces using the highest entity id for a given face's node id. 
+    //       The offset faces are then unique, but still identify the original feature(s). These ids will be more stable than just 
+    //       assigning the faces sequentially...and the user can still easily modify the shell thickness through handles or properties.
+    //       A shell is something that is typically done once per solid anyway...
+    bmap<uint32_t, uint32_t> nodeIdToHighestEntityIdMap;
+
+    for (int iFace=0; iFace < nBodyFaces; iFace++)
+        {
+        FaceId faceId;
+
+        if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, bodyFaceTags[iFace], true))
+            continue;
+
+        bmap<uint32_t, uint32_t>::iterator found = nodeIdToHighestEntityIdMap.find(faceId.nodeId);
+
+        if (found == nodeIdToHighestEntityIdMap.end())
+            nodeIdToHighestEntityIdMap[faceId.nodeId] = faceId.entityId;
+        else if (faceId.entityId > found->second)
+            found->second = faceId.entityId;
+        }
+
+    bvector<double>     offsets;
+    bvector<PK_FACE_t>  faceTags;
+
+    faceTags.insert(faceTags.begin(), &bodyFaceTags[0], &bodyFaceTags[nBodyFaces]);
+    offsets.insert(offsets.begin(), nBodyFaces, shellOffset);
+
+    PK_MEMORY_free(bodyFaceTags);
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        bvector<PK_FACE_t>::iterator  location;
+
+        if (faceTags.end() == (location = std::find(faceTags.begin(), faceTags.end(), PSolidSubEntity::GetSubEntityTag(*faces[iFace]))))
+            continue; // Not found?!?
+
+        double  distance = distances[iFace];
+
+        invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&distance, 1);
+        offsets[location - faceTags.begin()] = distance;
+        }
+
+    PK_FACE_hollow_o_t options;
+
+    PK_FACE_hollow_o_m(options);
+
+    switch (addStep)
+        {
+        case StepFacesOption::AddNone:
+            options.offset_step = PK_offset_step_no_c;
+            break;
+
+        case StepFacesOption::AddSmooth:
+            options.offset_step = PK_offset_step_site_c;
+            break;
+
+        case StepFacesOption::AddNonCoincident:
+            options.offset_step = PK_offset_step_pierce_c;
+            break;
+
+        case StepFacesOption::AddAll:
+            options.offset_step = PK_offset_step_all_c;
+            break;
+        }
+
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_hollow_3((int) faceTags.size(), &faceTags.front(), &offsets.front(), 1.0e-6, &options, &tracking, &results) && tracking.n_track_records > 0) ? SUCCESS : ERROR; // TFS# 157939 - treat no changes as error.
+
+    if (SUCCESS == status && !nodeIdToHighestEntityIdMap.empty())
+        {
+        for (int i=0; i<tracking.n_track_records; i++)
+            {
+            if (PK_TOPOL_track_create_c != tracking.track_records[i].track)
+                continue; // Only want new IDs for offset faces...
+
+            for (int j = 0; j < tracking.track_records[i].n_product_topols; j++)
+                {
+                FaceId faceId;
+
+                if (SUCCESS != PSolidTopoId::IdFromEntity(faceId, tracking.track_records[i].product_topols[j], true))
+                    continue;
+
+                PSolidTopoId::DeleteEntityId(tracking.track_records[i].product_topols[j]);
+
+                PK_CLASS_t entityClass;
+
+                PK_ENTITY_ask_class(tracking.track_records[i].product_topols[j], &entityClass);
+
+                if (PK_CLASS_face != entityClass)
+                    continue;
+
+                bmap<uint32_t, uint32_t>::iterator found = nodeIdToHighestEntityIdMap.find(faceId.nodeId);
+
+                if (found == nodeIdToHighestEntityIdMap.end())
+                    continue;
+
+                PSolidTopoId::AttachEntityId(tracking.track_records[i].product_topols[j], faceId.nodeId, faceId.entityId + found->second);
+                }
+            }
+        }
+
+    PK_TOPOL_local_r_f(&results);
+    PK_TOPOL_track_r_f(&tracking);
+
+    if (SUCCESS == status && StepFacesOption::AddAll != addStep)
+        coverRubberFaces(targetEntityTag);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<double> const& distances, StepFacesOption addStep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty() || faces.size() != distances.size())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+
+    bvector<double>    offsets;
+    bvector<PK_FACE_t> faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        double  distance = distances[iFace];
+
+        invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&distance, 1);
+        offsets.push_back(distance);
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    PK_FACE_offset_o_t options;
+
+    PK_FACE_offset_o_m(options);
+
+    switch (addStep)
+        {
+        case StepFacesOption::AddNone:
+            options.offset_step = PK_offset_step_no_c;
+            break;
+
+        case StepFacesOption::AddSmooth:
+            options.offset_step = PK_offset_step_site_c;
+            break;
+
+        case StepFacesOption::AddNonCoincident:
+            options.offset_step = PK_offset_step_pierce_c;
+            break;
+
+        case StepFacesOption::AddAll:
+            options.offset_step = PK_offset_step_all_c;
+            break;
+        }
+
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_offset_2((int) faceTags.size(), &faceTags.front(), &offsets.front(), 1.0e-6, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
+
+    PK_TOPOL_local_r_f(&results);
+    PK_TOPOL_track_r_f(&tracking);
+
+    if (SUCCESS == status && StepFacesOption::AddAll != addStep)
+        coverRubberFaces(targetEntityTag);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bvector<Transform> const& translations, StepFacesOption addStep)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty() || faces.size() != translations.size())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    Transform   invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+
+    bvector<PK_TRANSF_t> transfs;
+    bvector<PK_FACE_t>   faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        PK_TRANSF_t transfTag = PK_ENTITY_null;
+        Transform   faceTransform = Transform::FromProduct(invTargetTransform, translations[iFace], targetEntity.GetEntityTransform());
+
+        PSolidUtil::CreateTransf(transfTag, faceTransform);
+        transfs.push_back(transfTag);
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    PK_FACE_transform_o_t options;
+
+    PK_FACE_transform_o_m(options);
+
+    switch (addStep)
+        {
+        case StepFacesOption::AddNone:
+            options.transform_step = PK_transform_step_no_c;
+            break;
+
+        case StepFacesOption::AddSmooth:
+            options.transform_step = PK_transform_step_smooth_c; // Change to PK_transform_step_smooth_site_c whenever it's implemented...
+            break;
+
+        case StepFacesOption::AddNonCoincident:
+            options.transform_step = PK_transform_step_not_coi_c;
+            break;
+
+        case StepFacesOption::AddAll:
+            options.transform_step = PK_transform_step_all_c;
+            break;
+        }
+    
+    PK_TOPOL_track_r_t tracking;
+    PK_TOPOL_local_r_t results;
+
+    memset(&tracking, 0, sizeof(tracking));
+    memset(&results, 0, sizeof(results));
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_transform_2((int) faceTags.size(), &faceTags.front(), &transfs.front(), 1.0e-6, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
+
+    PK_TOPOL_local_r_f(&results);
+    PK_TOPOL_track_r_f(&tracking);
+
+    PK_ENTITY_delete ((int) transfs.size(), &transfs.front());
+
+    if (SUCCESS == status && StepFacesOption::AddAll != addStep)
+        coverRubberFaces(targetEntityTag);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SweepFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, DVec3dCR path)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_FACE_t> faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    int              nLaterals;
+    PK_local_check_t checkResult;
+    PK_VECTOR_t      pathVec;
+    Transform        invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.MultiplyMatrixOnly((DVec3dR) pathVec, path);
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_sweep((int) faceTags.size(), &faceTags.front(), pathVec, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) ? SUCCESS : ERROR);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, DRay3dCR axis, double angle)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_FACE_t> faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    int              nLaterals;
+    PK_local_check_t checkResult;
+    PK_AXIS1_sf_t    axisSf;
+    Transform        invTargetTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.Multiply((DPoint3dP) &axisSf.location.coord[0], &axis.origin, 1);
+    invTargetTransform.MultiplyMatrixOnly(*((DVec3dP) &axisSf.axis.coord[0]), axis.direction);
+    ((DVec3dR) (axisSf.axis)).Normalize();
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_spin((int) faceTags.size(), &faceTags.front(), &axisSf, angle, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) ? SUCCESS : ERROR);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (faces.empty())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+
+    if (PK_ENTITY_null == targetEntityTag)
+        return ERROR;
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    bvector<PK_FACE_t> faceTags;
+
+    for (size_t iFace = 0; iFace < faces.size(); ++iFace)
+        {
+        if (ISubEntity::SubEntityType::Face != faces[iFace]->GetSubEntityType())
+            continue;
+
+        faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
+        }
+
+    PK_FACE_delete_o_t options;
+    PK_TOPOL_track_r_t tracking;
+
+    PK_FACE_delete_o_m(options);
+    memset(&tracking, 0, sizeof(tracking));
+
+    BentleyStatus   status = (SUCCESS == PK_FACE_delete_2((int) faceTags.size(), &faceTags.front(), &options, &tracking) ? SUCCESS : ERROR);
+
+    PK_TOPOL_track_r_f(&tracking);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTERVAL_t>& intervals, PK_BODY_t bodyTag)
+    {
+    bvector<PK_EDGE_t>  edges;
+
+    if (SUCCESS != PSolidTopo::GetBodyEdges(edges, bodyTag))
+        return ERROR;
+
+    for (PK_EDGE_t edgeTag : edges)
+        {
+        PK_CURVE_t      curveTag;
+
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
+            continue;
+
+        PK_INTERVAL_t   interval;
+
+        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            continue;
+
+        curves.push_back(curveTag);
+        intervals.push_back(interval);
+        }
+
+    return SUCCESS;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ImprintCurveVectorOnFace(ISubEntityPtr& face, CurveVectorCR curveVector, DVec3dCP direction, bool extend)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (!face.IsValid() || ISubEntity::SubEntityType::Face != face->GetSubEntityType())
+        return ERROR;
+
+    Transform   curveToBodyTrans;
+    PK_ENTITY_t toolTag = PK_ENTITY_null;
+
+    curveToBodyTrans.InverseOf(PSolidSubEntity::GetSubEntityTransform(*face));
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector(toolTag, nullptr, curveVector, curveToBodyTrans, false, nullptr))
+        return ERROR;
+
+    DVec3d  projVec = DVec3d::From(0.0, 0.0, 1.0);
+ 
+    if (direction)
+        {
+        curveToBodyTrans.MultiplyMatrixOnly(projVec, *direction);
+        projVec.Normalize();
+        }
+
+    bvector<PK_CURVE_t>     toolCurves;
+    bvector<PK_INTERVAL_t>  toolIntervals;
+
+    getBodyCurves(toolCurves, toolIntervals, toolTag);
+
+    BentleyStatus status = PSolidUtil::ImprintCurves(PSolidSubEntity::GetSubEntityTag(*face), toolCurves, toolIntervals, direction ? &projVec : nullptr, extend, true);
+
+    PK_ENTITY_delete(1, &toolTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ImprintCurveVectorOnBody(IBRepEntityR target, CurveVectorCR curveVector, DVec3dCP direction, bool extend)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Wire == target.GetEntityType())
+        return ERROR;
+
+    Transform   curveToBodyTrans;
+    PK_ENTITY_t toolTag = PK_ENTITY_null;
+
+    curveToBodyTrans.InverseOf(target.GetEntityTransform());
+
+    if (SUCCESS != PSolidGeom::BodyFromCurveVector(toolTag, nullptr, curveVector, curveToBodyTrans, false, nullptr))
+        return ERROR;
+
+    DVec3d  projVec = DVec3d::From(0.0, 0.0, 1.0);
+ 
+    if (direction)
+        {
+        curveToBodyTrans.MultiplyMatrixOnly(projVec, *direction);
+        projVec.Normalize();
+        }
+
+    bvector<PK_CURVE_t>     toolCurves;
+    bvector<PK_INTERVAL_t>  toolIntervals;
+
+    getBodyCurves(toolCurves, toolIntervals, toolTag);
+
+    BentleyStatus status = PSolidUtil::ImprintCurves(PSolidUtil::GetEntityTagForModify(target), toolCurves, toolIntervals, direction ? &projVec : nullptr, extend, true);
+
+    PK_ENTITY_delete(1, &toolTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ImprintBodyOnBody(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool extend)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (IBRepEntity::EntityType::Wire == targetEntity.GetEntityType() || IBRepEntity::EntityType::Wire == toolEntity.GetEntityType())
+        return ERROR;
+
+    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+    PK_ENTITY_t toolEntityTag = PSolidUtil::GetEntityTag(toolEntity);
+
+    if (PK_ENTITY_null == targetEntityTag || PK_ENTITY_null == toolEntityTag)
+        return ERROR;
+
+    Transform   invTargetTransform, toolTransform;
+ 
+    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    toolTransform.InitProduct(invTargetTransform, toolEntity.GetEntityTransform());
+
+    PK_ENTITY_copy(toolEntityTag, &toolEntityTag);
+    PSolidUtil::TransformBody(toolEntityTag, toolTransform);
+
+    PK_MARK_t   markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    PK_BODY_imprint_o_t options;
+    PK_imprint_r_t results;
+
+    PK_BODY_imprint_o_m(options);
+    options.imprint_tool = false;
+    options.imprint_complete_targ = ((extend && IBRepEntity::EntityType::Sheet == toolEntity.GetEntityType()) ? PK_imprint_complete_edge_c : PK_imprint_complete_no_c);
+    memset(&results, 0, sizeof(results));
+
+    BentleyStatus   status = (SUCCESS == PK_BODY_imprint_body(targetEntityTag, toolEntityTag, &options, &results) ? SUCCESS : ERROR);
+
+    PK_imprint_r_f(&results);
+
+    if (SUCCESS != status)
+        PK_MARK_goto(markTag);
+
+    PK_MARK_delete(markTag);
+
+    PK_ENTITY_delete(1, &toolEntityTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }

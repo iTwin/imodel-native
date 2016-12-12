@@ -14,8 +14,6 @@
 #include "RenderMaterial.h"
 #include "ECSqlStatementIterator.h"
 
-#define BIS_CLASS_MaterialElement "MaterialElement"
-
 // JSon  Material Asset Keywords.
 #define MATERIAL_ASSET_Rendering "RenderMaterial"
 
@@ -218,6 +216,7 @@ namespace dgn_ElementHandler
     struct Material : Definition
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_MaterialElement, DgnMaterial, Material, Definition, DGNPLATFORM_EXPORT);
+        DGNPLATFORM_EXPORT void _RegisterPropertyAccessors(ECSqlClassInfo&, ECN::ClassLayoutCR) override;
     };
 }
 

@@ -2468,7 +2468,7 @@ BentleyStatus   PSolidGeom::BodyFromMSBsplineSurface (PK_BODY_t& bodyTag, MSBspl
             int         numTools = (int) tagList.size () - 1;
             PK_BODY_t*  toolBodies = &tagList[1];
 
-            PSolidUtil::Boolean (NULL, NULL, PK_boolean_unite, false, bodyTag, toolBodies, numTools, PKI_BOOLEAN_OPTION_AllowDisjoint);
+            PSolidUtil::Boolean (NULL, PK_boolean_unite, false, bodyTag, toolBodies, numTools, PKI_BOOLEAN_OPTION_AllowDisjoint);
             }
         }
     else

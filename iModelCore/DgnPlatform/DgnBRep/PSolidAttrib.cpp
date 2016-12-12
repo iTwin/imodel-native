@@ -19,7 +19,7 @@ void PSolidAttrib::GetAttrib
 int*            pNumAttribOut,          // <= output number of attributes found
 PK_ATTRIB_t**   ppAttribArrayOut,       // <= output attributes array
 PK_ENTITY_t     entityTagIn,            // => input entity tag for which to get attrib
-char*           pAttribNameIn           // => input attrib type to get
+char const*     pAttribNameIn           // => input attrib type to get
 )
     {
     PK_ATTDEF_t attribDefTag = PK_ENTITY_null;

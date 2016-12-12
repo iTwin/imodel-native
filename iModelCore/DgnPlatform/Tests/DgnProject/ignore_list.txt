@@ -11,14 +11,6 @@ BackwardsCompatibilityTests.OpenDgndbInCurrent
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-
-#----------------------------------------------------------------------------------------
-# *** Broken in 06; need to be re-visited ***
-#----------------------------------------------------------------------------------------
-ElementDisplayProperties.SetDisplayPattern              # informed Jeff
-
-DgnElementTests.ResetStatistics                         # Improper assumptions about element counts
-
 UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
@@ -26,18 +18,11 @@ UnitIterator.GetName                                    # fails randomonly on 06
 
 ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
-# WIP fixing after 0601 branch created
-ViewAttachmentTest.Geom                                 # NonVisibleViewport
-VolumeElementTestFixture.QueryTest                      # FenceParams::AcceptElement
-
-#TFS 386647 : Does not element import aspects
+#TFS 386647 : Does not import element aspects
 ElementAspectTests.ImportElementsWithAspect
 
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
-DgnECNavigatorTest.*
-#TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
-DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #WIP: Umar - Test Refactoring to remove pre-published data dependency
 RevisionTestFixture.Codes
@@ -51,6 +36,14 @@ CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
 CsvFileTests.GetSections
 
+#TFS 629338
 # bim0200dev, x64 & x86, DEBUG, after merge
 ImportTest.ImportElementsWithDependencies
 ImportTest.ImportElementsWithAuthorities
+
+#TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
+DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
+
+#TFS 630732
+
+DgnECNavigatorTest.GetElemtmentInfo
