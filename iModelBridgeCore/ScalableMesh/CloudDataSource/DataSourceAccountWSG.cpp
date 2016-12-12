@@ -100,29 +100,34 @@ DataSourceStatus DataSourceAccountWSG::downloadBlobSync(DataSourceURL &url, Data
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
 
     CURL* curl = curl_handle->get();
-    this->getWSGToken(url).c_str();
-    //curl_handle->add_item_to_header(this->getWSGToken(url).c_str());
+    if (m_useDirectAzureCalls)
+        {
+        this->getWSGToken(url).c_str();
+        auto nameOfFileToDownload = url.substr(url.find(L"~2F"));
+        
+        // replace all ~2F --> /
+        size_t pos = nameOfFileToDownload.find(L"~2F");
+        do
+            {
+            nameOfFileToDownload.replace(pos, 3, L"/");
+            pos = nameOfFileToDownload.find(L"~2F");
+            } while (pos != std::wstring::npos);
+        
+        // Use Azure directly by using the information provided when getting a valid token
+        url = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_AzureDirectPrefix);
+        url += nameOfFileToDownload + L"?";
+        url += std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_AzureDirectSuffix);
+        }
+    else
+        {
+        curl_handle->add_item_to_header(this->getWSGToken(url).c_str());
+
+        // indicate that we want to download the data (instead of just information about the data)
+        url += L"/$file";
+        }
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
     curl_easy_setopt(curl, CURLOPT_CAINFO,     this->getAccountSSLCertificatePath().c_str());
-
-    // indicate that we want to download the data (instead of just information about the data)
-    //url += L"/$file";
-    
-    auto nameOfFileToDownload = url.substr(url.find(L"~2F"));
-
-    // replace all ~2F --> /
-    size_t pos = nameOfFileToDownload.find(L"~2F");
-    do
-        {
-        nameOfFileToDownload.replace(pos, 3, L"/");
-        pos = nameOfFileToDownload.find(L"~2F");
-        } while (pos != std::wstring::npos);
-
-    // Use Azure directly by using the information provided when getting a valid token
-    url = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_AzureDirectPrefix);
-    url += nameOfFileToDownload + L"?";
-    url += std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(m_AzureDirectSuffix);
 
     return Super::downloadBlobSync(url, dest, readSize, size);
 }
@@ -229,6 +234,11 @@ void DataSourceAccountWSG::setWSGTokenGetterCallback(const std::function<std::st
     m_getWSGToken = tokenGetter;
     }
 
+void DataSourceAccountWSG::setUseDirectAzureCalls()
+    {
+    m_useDirectAzureCalls = true;
+    }
+
 DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken(DataSourceURL &url)
     {
     auto token = this->m_getWSGToken();
@@ -300,16 +310,18 @@ bool DataSourceAccountWSG::needsUpdateToken(const WSGToken & token)
 void DataSourceAccountWSG::updateToken(const WSGToken & newToken, DataSourceURL url)
     {
     m_wsgToken = newToken;
+    if (!m_useDirectAzureCalls) return;
+
     url += L"/FileAccess.FileAccessKey?$filter=Permissions+eq+'Read'&api.singleurlperinstance=true";
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
-
+    
     CURL* curl = curl_handle->get();
-
+    
     curl_handle->add_item_to_header(("Authorization: Token " + m_wsgToken).c_str());
-
+    
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_handle->get_headers());
     curl_easy_setopt(curl, CURLOPT_CAINFO, this->getAccountSSLCertificatePath().c_str());
-
+    
     DataSourceBuffer::BufferData* dest = new DataSourceBuffer::BufferData[10000];
     DataSourceBuffer::BufferSize readSize = 0;
     DataSourceBuffer::BufferSize size = 10000;

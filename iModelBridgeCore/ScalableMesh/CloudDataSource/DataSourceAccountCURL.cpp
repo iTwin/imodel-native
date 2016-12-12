@@ -127,8 +127,8 @@ DataSourceStatus DataSourceAccountCURL::setAccount(const AccountName & account, 
 
 void DataSourceAccountCURL::setPrefixPath(const DataSourceURL &prefix)
     {
-    // Default is local or network files
-    isLocalOrNetworkAccount = true;
+    //// Default is local or network files
+    //isLocalOrNetworkAccount = true;
     DataSourceAccount::setPrefixPath(prefix);
     }
 
@@ -150,7 +150,6 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         }
 
     struct CURLHandle::CURLDataMemoryBuffer buffer;
-    struct CURLHandle::CURLDataResponseHeader response_header;
 
     buffer.data = dest;
     buffer.size = 0;
@@ -163,20 +162,28 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     curl_easy_setopt(curl, CURLOPT_URL, utf8URL.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CURLHandle::CURLWriteDataCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&buffer);
-    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
 
-    if (CURLE_OK != curl_easy_perform(curl))
+#ifndef NDEBUG
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
+    struct CURLHandle::CURLDataResponseHeader response_header;
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &response_header);
+#endif
+    auto res = curl_easy_perform(curl);
+    if (CURLE_OK != res)
         {
-        //fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         assert(!"cURL error, download failed");
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
 
+#ifndef NDEBUG
     if (response_header.data["HTTP"] != "1.1 200 OK")
         {
         assert(!"HTTP error, download failed");
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
         }
+    if (!response_header.data.empty()) response_header.data.clear();
+#endif
 
     curl_handle->free_header_list();
 
@@ -184,7 +191,6 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
     readSize = buffer.size;
     (void)size;
 
-    if (!response_header.data.empty()) response_header.data.clear();
     return DataSourceStatus();
     }
 
@@ -261,6 +267,8 @@ DataSourceStatus DataSourceAccountCURL::uploadBlobSync(DataSource &dataSource, D
 
 size_t DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback(void * contents, size_t size, size_t nmemb, void * userp)
     {
+    if (userp == nullptr) return 0;
+
     struct CURLDataResponseHeader *header = (struct CURLDataResponseHeader *)userp;
 
     std::istringstream resp((char*)contents);
@@ -375,7 +383,7 @@ DataSourceAccountCURL::CURLHandle * DataSourceAccountCURL::CURLHandleManager::cr
     CURL* curl = curl_easy_init();
 
     //curl_easy_setopt(curl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE); // Only for proxy servers
-    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
+    //curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, DataSourceAccountCURL::CURLHandle::CURLWriteHeaderCallback);
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
     //curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
     //curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);

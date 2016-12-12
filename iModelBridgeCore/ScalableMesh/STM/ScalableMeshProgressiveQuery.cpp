@@ -1625,6 +1625,7 @@ BentleyStatus ScalableMeshProgressiveQueryEngine::_GetOverviewNodes(bvector<BENT
 BentleyStatus ScalableMeshProgressiveQueryEngine::_GetRequiredNodes(bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& meshNodes,
                                                                     int                                                   queryId) const
     {
+    //if (m_requestedQueries.empty()) return SUCCESS;
     RequestedQuery* requestedQueryP = 0;
 
     for (auto& query : m_requestedQueries)

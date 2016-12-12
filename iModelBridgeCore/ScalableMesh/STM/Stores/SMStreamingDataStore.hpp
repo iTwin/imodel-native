@@ -79,7 +79,7 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
         if ((accountLocalFile = serviceLocalFile->createAccount(DataSourceAccount::AccountName(L"LocalCURLAccount"), DataSourceAccount::AccountIdentifier(), DataSourceAccount::AccountKey())) == nullptr)
             return DataSourceStatus(DataSourceStatus::Status_Error_Account_Not_Found);
 
-        accountLocalFile->setPrefixPath(DataSourceURL(directory.c_str()));
+        accountLocalFile->setPrefixPath(DataSourceURL((L"file:///" + directory).c_str()));
 
         this->SetDataSourceAccount(accountLocalFile);
         }

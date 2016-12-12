@@ -11,6 +11,10 @@
 #include "DataSourceBuffer.h"
 #include "DataSourceMode.h"
 
+#ifdef SM_STREAMING_PERF
+#include <mutex>
+extern std::mutex s_consoleMutex;
+#endif
 
 
 class DataSourceAccountAzure : public DataSourceAccountCached

@@ -72,11 +72,13 @@ public:
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
         virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater);
+        void                                setUseDirectAzureCalls              ();
 
 private :
        std::function<std::string (void)>    m_getWSGToken;
        WSGToken                             m_wsgToken;
        bool                                 m_isValid = true;
+       bool                                 m_useDirectAzureCalls = true;
        AzureDirectPrefix                    m_AzureDirectPrefix;
        AzureDirectSuffix                    m_AzureDirectSuffix;
 

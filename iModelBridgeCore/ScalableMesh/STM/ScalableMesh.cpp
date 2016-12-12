@@ -827,8 +827,8 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                     bool isVirtualGroups = false; // Streaming without node grouping by default
                     isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
 
-                    // NEEDS_WORK_SM - Check existence of the following directories
-                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
+                    // NEEDS_WORK_STREAMING - Check existence of the following directories
+                    // NEEDS_WORK_STREAMING - Path should not depend on the existence of an stm file
                     WString streamingSourcePath;
                     WString cloudIndicator(L"_cloud");
                     auto cloud_separator = s_stream_from_wsg ? L"~2F" : L"/";

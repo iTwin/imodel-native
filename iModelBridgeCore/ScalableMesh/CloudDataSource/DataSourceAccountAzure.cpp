@@ -6,6 +6,11 @@
 #include <cpprest/producerconsumerstream.h>
 #include "include\DataSourceAccountAzure.h"
 
+#ifdef SM_STREAMING_PERF
+#include <iostream>
+#include <chrono>
+std::mutex s_consoleMutex;
+#endif
 
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
@@ -183,8 +188,19 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
 
         concurrency::streams::ostream stream = pcb.create_ostream();
 
+#ifdef SM_STREAMING_PERF
+        std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+#endif
+
         blockBlob.download_to_stream(stream);
 
+#ifdef SM_STREAMING_PERF
+        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+        {
+        std::lock_guard<std::mutex> lk(s_consoleMutex);
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << std::endl;
+        }
+#endif
         p = stream.tell();
 
         readSize = p;
@@ -281,6 +297,12 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
     DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
+
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
+
     return SuperCURL::downloadBlobSync(url, source, readSize, size);
     }
 
