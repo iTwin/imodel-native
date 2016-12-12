@@ -402,7 +402,7 @@ struct TileGeometry : RefCountedBase
         void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform (transform); }
         TilePolyface    Clone() const { return TilePolyface(*m_displayParams, *m_polyface->Clone()); }
         };
-    struct TileStrokes
+    struct TileStrokes
         {
         TileDisplayParamsPtr        m_displayParams;
         bvector<bvector<DPoint3d>>  m_strokes;
