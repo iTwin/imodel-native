@@ -50,7 +50,7 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     AlignmentCategory::InsertDomainCategories(dgndb);
 
-    auto authority = NamespaceAuthority::CreateNamespaceAuthority(BRRA_AUTHORITY_Alignment, dgndb);
+    auto authority = DatabaseScopeAuthority::Create(BRRA_AUTHORITY_Alignment, dgndb);
     BeAssert(authority.IsValid());
     if (authority.IsValid())
         {
@@ -74,5 +74,5 @@ DgnAuthorityId RoadRailAlignmentDomain::QueryAlignmentAuthorityId(DgnDbCR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadRailAlignmentDomain::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return NamespaceAuthority::CreateCode(BRRA_AUTHORITY_Alignment, value, dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRA_AUTHORITY_Alignment, dgndb, value);
     }

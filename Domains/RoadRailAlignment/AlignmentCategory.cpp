@@ -23,7 +23,7 @@ void AlignmentCategory::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
 
-    SpatialCategory category(db, SpatialCategory::CreateCode(codeValue, BRRA_SCHEMA_NAME), DgnCategory::Rank::Domain);
+    SpatialCategory category(db, SpatialCategory::CreateCode(db, codeValue, BRRA_SCHEMA_NAME), DgnCategory::Rank::Domain);
     category.Insert(appearance);
 
     BeAssert(category.GetCategoryId().IsValid());
@@ -34,7 +34,7 @@ void AlignmentCategory::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId AlignmentCategory::QueryCategoryId(DgnDbR db, Utf8CP codeValue)
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(codeValue, BRRA_SCHEMA_NAME));
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, codeValue, BRRA_SCHEMA_NAME));
     BeAssert(categoryId.IsValid());
     return categoryId;
     }
