@@ -159,7 +159,7 @@ static void importBisCoreSchema(DgnDbCR db)
     ECSchemaPtr bisCoreSchema = ECSchema::LocateSchema(bisCoreSchemaKey, *ecSchemaContext);
     BeAssert(bisCoreSchema != NULL);
 
-    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas());
+    BentleyStatus status = db.Schemas().ImportECSchemas(ecSchemaContext->GetCache().GetSchemas(), db.GetDbSchemaModificationToken());
     BeAssert(status == SUCCESS);
     }
 

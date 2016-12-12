@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                         m
+/*--------------------------------------------------------------------------------------+                                                                                           
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -2260,12 +2260,10 @@ bool TileGeomPart::IsCurved() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance)
     {
-    TileGeometry::T_TilePolyfaces   polyfaces;
-    double  tolerance = facetOptions.GetChordTolerance();  
-
+    TileGeometry::T_TilePolyfaces polyfaces;
     for (auto& geometry : m_geometries) 
         {
-        TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
+        TileGeometry::T_TilePolyfaces thisPolyfaces = geometry->GetPolyfaces (facetOptions);
 
         if (!thisPolyfaces.empty())
             polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
@@ -2565,6 +2563,8 @@ TileGeneratorStatus TileGeometryProcessor::OutputGraphics(ViewContextR context)
 //=======================================================================================
 template<typename T> struct TileGeometryProcessorContext : NullContext
 {
+DEFINE_T_SUPER(NullContext);
+
 private:
     TileGeometryProcessor&          m_processor;
     TileGenerationCacheCR           m_cache;
@@ -2592,10 +2592,19 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    GraphicParams graphicParams;
-    _CookGeometryParams(geomParams, graphicParams);
+    static bool s_doInstances;
 
-    m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
+    if (s_doInstances)
+        {
+        GraphicParams graphicParams;
+        _CookGeometryParams(geomParams, graphicParams);
+
+        m_processor.AddGeomPart(graphic, partId, subToGraphic, geomParams, graphicParams, *this);
+        }
+    else
+        {
+        return T_Super::_AddSubGraphic(graphic, partId, subToGraphic, geomParams);
+        }
     return nullptr;
     }
 };
@@ -2687,7 +2696,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     TileGeometryList            uninstancedGeometry;
     PublishableTileGeometry     publishedTileGeometry;
     TileMeshList&               meshes = publishedTileGeometry.Meshes();
-    static size_t               s_minInstanceCount = 1;
+    static size_t               s_minInstanceCount = 10;
 
     // Extract instances first...
     for (auto& geom : m_geometries)

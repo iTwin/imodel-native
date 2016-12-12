@@ -649,7 +649,7 @@ template<typename T> void BriefcaseManager::InsertLocks(T const& locks, TableTyp
                 case LockableType::Db:
                     dbExclusivelyLocked = true;
                     exclusivelyLockedModels.clear();
-                    for (auto const& model : GetDgnDb().Models().MakeIterator())
+                    for (ModelIteratorEntryCR model : GetDgnDb().Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
                         exclusivelyLockedModels.insert(model.GetModelId());
 
                     break;
