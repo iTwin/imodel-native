@@ -2260,12 +2260,10 @@ bool TileGeomPart::IsCurved() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance)
     {
-    TileGeometry::T_TilePolyfaces   polyfaces;
-    double  tolerance = facetOptions.GetChordTolerance();  
-
+    TileGeometry::T_TilePolyfaces polyfaces;
     for (auto& geometry : m_geometries) 
         {
-        TileGeometry::T_TilePolyfaces   thisPolyfaces = geometry->GetPolyfaces (facetOptions);
+        TileGeometry::T_TilePolyfaces thisPolyfaces = geometry->GetPolyfaces (facetOptions);
 
         if (!thisPolyfaces.empty())
             polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
