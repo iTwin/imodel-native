@@ -2242,11 +2242,11 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
 
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, updatedSchema, filePath, true, true, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
+    AssertSchemaUpdate(asserted, updatedSchema, filePath, true, false, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is not supported");
     ASSERT_FALSE(asserted);
 
     asserted = false;
-    AssertSchemaUpdate(asserted, updatedSchema, filePath, false, true, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is supported");
+    AssertSchemaUpdate(asserted, updatedSchema, filePath, false, false, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is not supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7729,10 +7729,9 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "   </ECEntityClass>"
         "</ECSchema>";
 
-    //verify Adding new EndTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "Adding SharedColumnCount should be supported.");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "Adding SharedColumnCount is not supported.");
     ASSERT_FALSE(asserted);
     }
 
@@ -7794,10 +7793,9 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "   </ECEntityClass>"
         "</ECSchema>";
 
-    //verify Adding new EndTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
     bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "Deleting SharedColumnCount should be supported.");
+    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "Deleting SharedColumnCount is not supported.");
     ASSERT_FALSE(asserted);
     }
 
