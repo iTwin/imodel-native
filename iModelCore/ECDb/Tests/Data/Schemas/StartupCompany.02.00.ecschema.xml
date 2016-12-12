@@ -130,11 +130,6 @@
         <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="BuildingFloorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <ForeignKeyColumn>Building__src_11_Id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(0,1)" roleLabel="Floor" polymorphic="true">
             <Class class="Building"/>
         </Source>
@@ -439,11 +434,6 @@
         <ECProperty propertyName="ProjectRecordKey" typeName="int" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="CompanyProject" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <ForeignKeyColumn>Company__src_11_id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="Company"/>
         </Source>
@@ -717,11 +707,6 @@
         <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeeCompany" modifier="Sealed" strength="referencing" strengthDirection="backward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <ForeignKeyColumn>Company__trg_11_id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(1,N)" roleLabel="Employee working for the Company" polymorphic="true">
             <Class class="Employee"/>
         </Source>
@@ -800,11 +785,6 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="FloorCubicle" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
-                <ForeignKeyColumn>BuildingFloor__src_11_id</ForeignKeyColumn>
-            </ForeignKeyRelationshipMap>
-        </ECCustomAttributes>
         <Source cardinality="(0,1)" polymorphic="true">
             <Class class="BuildingFloor"/>
         </Source>

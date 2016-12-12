@@ -274,7 +274,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "FullName"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeType"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "EmployeeRecordKey"));
-    EXPECT_TRUE(db.ColumnExists(tblEmployee, "Company__trg_11_id"));
+    EXPECT_TRUE(db.ColumnExists(tblEmployee, "ForeignECInstanceId_stco_EmployeeCompany"));
     EXPECT_TRUE(db.ColumnExists(tblEmployee, "Certifications"));
 
     //========================[sc_Company]=======================================================
@@ -322,7 +322,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //struct/arrays mapped to table
     EXPECT_TRUE(db.ColumnExists(tblProject, "TeamMemberList"));  //int array
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblProject, "Company__src_11_id"));
+    EXPECT_TRUE(db.ColumnExists(tblProject, "ForeignECInstanceId_stco_CompanyProject"));
 
     //========================[sc_Building]======================================================
     Utf8CP tblBuilding = "sc_Building";
@@ -360,7 +360,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "FloorCode"));
     EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "RecordKey"));
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "Building__src_11_Id"));
+    EXPECT_TRUE(db.ColumnExists(tblBuildingFloor, "ForeignECInstanceId_stco_BuildingFloorRelationship"));
 
     //========================[sc_Cubicle]=================================================
     Utf8CP tblCubicle = "sc_Cubicle";
@@ -384,7 +384,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //array    
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OccupiedBy"));
     //relation
-    EXPECT_TRUE(db.ColumnExists(tblCubicle, "BuildingFloor__src_11_id"));
+    EXPECT_TRUE(db.ColumnExists(tblCubicle, "ForeignECInstanceId_stco_FloorCubicle"));
 
     //========================AnglesStruct======================================================
     EXPECT_FALSE(db.TableExists("sc_AnglesStruct")) << "structs are not mapped to any tables";
@@ -518,28 +518,20 @@ TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbSchemaTests, IntegrityCheck)
     {
-    // Save a test project
-    ECDbTestProject saveTestProject;
-    ECDbR db = saveTestProject.Create("IntegrityCheck.ecdb", L"IntegrityCheck.01.00.ecschema.xml", true);
+    ECDbCR ecdb = SetupECDb("IntegrityCheck.ecdb", BeFileName(L"IntegrityCheck.01.00.ecschema.xml"));
     Statement stmt;
     std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [SourceECInstanceId] INTEGER NOT NULL, FOREIGN KEY([SourceECInstanceId]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
-    stmt.Prepare(db, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
+    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [ForeignECInstanceId_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([ForeignECInstanceId_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
+    stmt.Prepare(ecdb, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
     int nRows = 0;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
         nRows = nRows + 1;
         Utf8String name = stmt.GetValueText(0);
-        Utf8String sql = stmt.GetValueText(1);
+        Utf8CP sql = stmt.GetValueText(1);
         auto itor = expected.find(name);
-        if (itor == expected.end())
-            {
-            ASSERT_FALSE(true) << "Failed to find expected value [name=" << name << "]";
-            }
-        if (itor->second != sql)
-            {
-            ASSERT_FALSE(true) << "SQL def for  [name=" << name << "] has changed \r\n Expected :" << itor->second.c_str() << "\r\n Actual : " << sql.c_str();
-            }
+        ASSERT_TRUE(itor != expected.end()) << "Failed to find expected value [name=" << name << "]";
+        ASSERT_STRCASEEQ(itor->second.c_str(), sql) << "SQL def for  [name=" << name << "] has changed";
         }
 
     ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";

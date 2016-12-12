@@ -544,44 +544,17 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         {
         ECRelationshipEnd foreignKeyEnd = relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
 
-        RelationshipEndColumns* foreignKeyColumnsMapping = nullptr;
         ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
         if (foreignKeyEnd == ECRelationshipEnd_Target)
             {
             foreignKeyConstraint = &relClass->GetTarget();
-            foreignKeyColumnsMapping = &m_targetColumnsMapping;
-            m_sourceColumnsMappingIsNull = true;
-            m_targetColumnsMappingIsNull = false;
             m_customMapType = RelationshipMappingInfo::CustomMapType::ForeignKeyOnTarget;
             }
         else
             {
             foreignKeyConstraint = &relClass->GetSource();
-            foreignKeyColumnsMapping = &m_sourceColumnsMapping;
-            m_sourceColumnsMappingIsNull = false;
-            m_targetColumnsMappingIsNull = true;
             m_customMapType = RelationshipMappingInfo::CustomMapType::ForeignKeyOnSource;
             }
-
-        Utf8String foreignKeyColName;
-        Utf8String foreignKeyClassIdColName;
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetForeignKeyColumn(foreignKeyColName))
-            return ERROR;
-
-        if (!foreignKeyColName.empty())
-            {
-            for (ECRelationshipConstraintClassCP constraintClass : foreignKeyConstraint->GetConstraintClasses())
-                {
-                if (!constraintClass->GetKeys().empty())
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The ForeignKeyRelationshipMap custom attribute must not have a value for ForeignKeyColumn as there are Key properties defined in the ECRelationshipConstraint on the foreign key end.",
-                                    m_ecClass.GetFullName());
-                    return ERROR;
-                    }
-                }
-            }
-
-        *foreignKeyColumnsMapping = RelationshipEndColumns(foreignKeyColName.c_str());
 
         Utf8String onDeleteActionStr;
         if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
@@ -599,36 +572,25 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
-        m_onDeleteAction = onDeleteAction;
-        m_onUpdateAction = ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str());
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()));
         return SUCCESS;
         }
 
     if (hasLinkTableRelMap)
         {
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(m_allowDuplicateRelationships))
-            return ERROR;
-
         Utf8String sourceIdColName;
         if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
-            return ERROR;
-
-        Utf8String sourceClassIdColName;
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECClassIdColumn(sourceClassIdColName))
             return ERROR;
 
         Utf8String targetIdColName;
         if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
             return ERROR;
 
-        Utf8String targetClassIdColName;
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECClassIdColumn(targetClassIdColName))
+        bool allowDuplicateRelationships = false;
+        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
             return ERROR;
 
-        m_sourceColumnsMappingIsNull = false;
-        m_sourceColumnsMapping = RelationshipEndColumns(sourceIdColName.c_str(), sourceClassIdColName.c_str());
-        m_targetColumnsMappingIsNull = false;
-        m_targetColumnsMapping = RelationshipEndColumns(targetIdColName.c_str(), targetClassIdColName.c_str());
+        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
         m_customMapType = RelationshipMappingInfo::CustomMapType::LinkTable;
         }
 
@@ -776,14 +738,17 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         return ERROR;
         }
 
+    if (m_linkTableMappingInfo == nullptr)
+        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
+
     if (baseClassMap != nullptr)
         {
         BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
-        BeAssert(!m_allowDuplicateRelationships && "m_allowDuplicateRelationships is expected to only be set in root class");
-        m_allowDuplicateRelationships = DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP());
-
+        BeAssert(!GetLinkTableMappingInfo()->AllowDuplicateRelationships() && "AllowDuplicateRelationships is expected to only be set in root class");
+        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP()));
         return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
         }
+
 
     //*** root rel class
     //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
@@ -852,6 +817,9 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
                         m_ecClass.GetFullName());
         return ERROR;
         }
+
+    if (m_fkMappingInfo == nullptr)
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>();
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     const StrengthType strength = relClass->GetStrength();
@@ -965,21 +933,6 @@ bool RelationshipMappingInfo::ContainsClassWithNotMappedStrategy(std::vector<ECN
         }
 
     return false;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                01/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-RelationshipEndColumns const& RelationshipMappingInfo::GetColumnsMapping(ECRelationshipEnd end) const
-    {
-    if (end == ECRelationshipEnd_Source)
-        {
-        BeAssert(m_customMapType != CustomMapType::ForeignKeyOnTarget && m_mapStrategyExtInfo.GetStrategy() != MapStrategy::ForeignKeyRelationshipInTargetTable);
-        return m_sourceColumnsMapping;
-        }
-
-    BeAssert(m_customMapType != CustomMapType::ForeignKeyOnSource && m_mapStrategyExtInfo.GetStrategy() != MapStrategy::ForeignKeyRelationshipInSourceTable);
-    return m_targetColumnsMapping;
     }
 
 
