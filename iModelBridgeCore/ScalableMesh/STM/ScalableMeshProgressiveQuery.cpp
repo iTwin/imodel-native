@@ -1138,39 +1138,29 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
-        DRange3d clipExtent(extentToCover);
-
-        if (clipExtent.IsEmpty())
+        ClipVectorPtr clipVector;
+             
+        if (!extentToCover.IsEmpty())
             {
-            clipExtent = meshNodePtr->GetNodeExtent();
+            CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
+            ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
+            clipPrimitive->SetIsMask(false);
+            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
             }
-        
-        ConvexClipPlaneSet clipPlaneSet;
-        DPlane3d planes[4] = { DPlane3d::From3Points(DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z),DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z))
-            };
-        for (size_t i = 0; i < 4; ++i)
-            {
-            clipPlaneSet.push_back(ClipPlane(planes[i].normal.ValidatedNormalize(), planes[i].origin));
-            }
-
-
-        CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
-        ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
-        clipPrimitive->SetIsMask(false);
-        ClipVectorPtr clipVector(ClipVector::CreateFromPrimitive(clipPrimitive));
-        
+               
         if (nodeIter == lowerResOverviewNodes.end())
             {                      
-            meshNodePtr->AddClipVector(clipVector);            
+            if (clipVector.IsValid())
+                meshNodePtr->AddClipVector(clipVector);            
+
             lowerResOverviewNodes.push_back(meshNodePtr);             
             }        
         else
             {          
             ScalableMeshCachedDisplayNode<DPoint3d>* displayNode(dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>((*nodeIter).get()));
-            displayNode->AddClipVector(clipVector);            
+
+            if (clipVector.IsValid())
+                displayNode->AddClipVector(clipVector);
             }
         }
     }
