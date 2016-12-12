@@ -181,7 +181,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     RoadRailCategory::InsertDomainCategories(dgndb);
 
-    auto authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadCrossSection, dgndb);
+    auto authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadCrossSection, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {
@@ -189,7 +189,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(authorityPtr->GetAuthorityId().IsValid());
         }
 
-    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb);
+    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {
@@ -197,7 +197,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(authorityPtr->GetAuthorityId().IsValid());
         }
 
-    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadClassDefinition, dgndb);
+    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadClassDefinition, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {
@@ -205,7 +205,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(authorityPtr->GetAuthorityId().IsValid());
         }
 
-    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, dgndb);
+    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {
@@ -213,7 +213,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         BeAssert(authorityPtr->GetAuthorityId().IsValid());
         }
 
-    authorityPtr = NamespaceAuthority::CreateNamespaceAuthority(BRRP_AUTHORITY_RoadDesignSpeedDefinition, dgndb);
+    authorityPtr = DatabaseScopeAuthority::Create(BRRP_AUTHORITY_RoadDesignSpeedDefinition, dgndb);
     BeAssert(authorityPtr.IsValid());
     if (authorityPtr.IsValid())
         {

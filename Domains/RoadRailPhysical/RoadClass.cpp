@@ -66,7 +66,7 @@ RoadClassDefinitionTable::RoadClassDefinitionTable(CreateParams const& params):
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadClassDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return NamespaceAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinitionTable, value, dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinitionTable, dgndb, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -113,7 +113,7 @@ RoadClassDefinition::RoadClassDefinition(CreateParams const& params):
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadClassDefinition::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR roadClass)
     {
-    return NamespaceAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinition, roadClass, dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadClassDefinition, dgndb, roadClass);
     }
 
 /*---------------------------------------------------------------------------------**//**

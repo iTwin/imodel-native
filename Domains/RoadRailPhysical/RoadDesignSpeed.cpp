@@ -76,7 +76,7 @@ RoadDesignSpeedDefinitionTable::RoadDesignSpeedDefinitionTable(CreateParams cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadDesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return NamespaceAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, value, dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinitionTable, dgndb, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -145,8 +145,8 @@ RoadDesignSpeedDefinition::RoadDesignSpeedDefinition(CreateParams const& params,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadDesignSpeedDefinition::CreateCode(Dgn::DgnDbR dgndb, double speed, UnitSystem unitSystem)
     {
-    return NamespaceAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinition, 
-        Utf8PrintfString("%.0f %s", speed, (unitSystem == UnitSystem::Metric) ? "Km/h" : "mph"), dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadDesignSpeedDefinition, dgndb,
+        Utf8PrintfString("%.0f %s", speed, (unitSystem == UnitSystem::Metric) ? "Km/h" : "mph"));
     }
 
 /*---------------------------------------------------------------------------------**//**

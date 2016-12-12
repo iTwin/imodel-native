@@ -24,7 +24,7 @@ void RoadRailCategory::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP c
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
 
-    SpatialCategory category(db, SpatialCategory::CreateCode(codeValue, BRRP_SCHEMA_NAME), DgnCategory::Rank::Domain);
+    SpatialCategory category(db, SpatialCategory::CreateCode(db, codeValue, BRRP_SCHEMA_NAME), DgnCategory::Rank::Domain);
     category.Insert(appearance);
 
     BeAssert(category.GetCategoryId().IsValid());
@@ -35,7 +35,7 @@ void RoadRailCategory::InsertCategory(DgnDbR db, ColorDef const& color, Utf8CP c
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCategoryId RoadRailCategory::QueryCategoryId(DgnDbR db, Utf8CP codeValue)
     {
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(codeValue, BRRP_SCHEMA_NAME));
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(db, SpatialCategory::CreateCode(db, codeValue, BRRP_SCHEMA_NAME));
     BeAssert(categoryId.IsValid());
     return categoryId;
     }

@@ -43,7 +43,7 @@ DgnAuthorityId RoadCrossSection::QueryAuthorityId(Dgn::DgnDbCR dgndb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode RoadCrossSection::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value)
     {
-    return NamespaceAuthority::CreateCode(BRRP_AUTHORITY_RoadCrossSection, value, dgndb);
+    return DatabaseScopeAuthority::CreateCode(BRRP_AUTHORITY_RoadCrossSection, dgndb, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
