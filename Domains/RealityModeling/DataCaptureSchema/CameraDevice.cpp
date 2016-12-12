@@ -349,7 +349,7 @@ DgnDbStatus CameraDeviceModel::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbStatus CameraDeviceModel::_OnDelete() const
     {
-    //If we delete a cameraDevice, we should also delete all related photos
+    //If we delete a cameraDevice, we should also delete all related shots
     for (CameraDeviceEntry const& cameraDevice : MakeCameraDeviceIterator(GetDgnDb(), GetId()))
         {
         CameraDeviceCPtr myCameraDevicePtr = CameraDevice::Get(GetDgnDb(), cameraDevice.GeCameraDeviceElementId());
@@ -744,12 +744,12 @@ void CameraDevice::_OnDeleted() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbStatus CameraDevice::_OnDelete() const
     {
-    //If we delete a cameraDevice, we should also delete all related photos
-    for (PhotoEntry const& photo : MakePhotoIterator(GetDgnDb(), GetId()))
+    //If we delete a cameraDevice, we should also delete all related shots
+    for (ShotEntry const& shot : MakeShotIterator(GetDgnDb(), GetId()))
         {
-        PhotoCPtr myPhotoPtr = Photo::Get(GetDgnDb(), photo.GePhotoElementId());
+        ShotCPtr myShotPtr = Shot::Get(GetDgnDb(), shot.GeShotElementId());
         //delete them all
-        myPhotoPtr->Delete();
+        myShotPtr->Delete();
         }
     return DgnDbStatus::Success;
     }
@@ -799,11 +799,11 @@ CameraDeviceElementId CameraDevice::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraDevice::PhotoIterator CameraDevice::MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId)
+CameraDevice::ShotIterator CameraDevice::MakeShotIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId)
     {
-    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCameraDevice) " WHERE TargetECInstanceId=?";
+    Utf8CP ecSql = "SELECT SourceECInstanceId  FROM " BDCP_SCHEMA(BDCP_REL_ShotIsTakenByCameraDevice) " WHERE TargetECInstanceId=?";
 
-    CameraDevice::PhotoIterator iterator;
+    CameraDevice::ShotIterator iterator;
     int idSelectColumnIndex = 0;
     ECSqlStatement* statement = iterator.Prepare(dgndb, ecSql, idSelectColumnIndex);
     if (statement != nullptr)

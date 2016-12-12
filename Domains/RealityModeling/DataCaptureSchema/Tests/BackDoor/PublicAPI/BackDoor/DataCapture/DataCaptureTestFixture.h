@@ -34,7 +34,7 @@ struct DataCaptureTestsFixture : ::testing::Test
         void TearDown() {}
 
         //Create Sample cameraDevice-photos project
-        void CreateSamplePhotoProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable);
+        void CreateSampleShotProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable);
 
     public:
         static DataCaptureProjectHost& GetHost() { return *m_host; }

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/DataCaptureSchema/Photo.h $
+|     $Source: PublicApi/DataCaptureSchema/Shot.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -92,31 +92,31 @@ public:
 
 
 //=======================================================================================
-//! Base class for Photo 
+//! Base class for Shot 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Photo : Dgn::SpatialLocationElement
+struct EXPORT_VTABLE_ATTRIBUTE Shot : Dgn::SpatialLocationElement
 {
-    friend struct PhotoHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Photo, Dgn::SpatialLocationElement);
+    friend struct ShotHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Shot, Dgn::SpatialLocationElement);
 
 private:
     mutable CameraDeviceElementId m_cameraDevice;//Query and cached from DgnDb or given at creation time
-    int                  m_photoId;
+    int                  m_shotId;
     PoseType             m_pose;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
 
-    explicit Photo(CreateParams const& params, CameraDeviceElementId cameraDevice=CameraDeviceElementId()) : T_Super(params), m_cameraDevice(cameraDevice) {}
+    explicit Shot(CreateParams const& params, CameraDeviceElementId cameraDevice=CameraDeviceElementId()) : T_Super(params), m_cameraDevice(cameraDevice) {}
 
-    static BentleyStatus InsertPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb, PhotoElementId photoElmId, CameraDeviceElementId cameraDeviceElmId);
-    static CameraDeviceElementId QueryPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb,  PhotoElementId photoElmId);
+    static BentleyStatus InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId, CameraDeviceElementId cameraDeviceElmId);
+    static CameraDeviceElementId QueryShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb,  ShotElementId shotElmId);
 
-    void InsertPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdatePhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void DeletePhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
+    void InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdateShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
+    void DeleteShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -127,13 +127,13 @@ protected:
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
-    //! Called to bind the parameters when inserting a new Photo into the DgnDb. Override to save subclass properties.
+    //! Called to bind the parameters when inserting a new Shot into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! And then you @em must call T_Super::_BindInsertParams, forwarding its status.
     virtual Dgn::DgnDbStatus _BindInsertParams(BeSQLite::EC::ECSqlStatement&) override;
 
-    //! Called to update a photo in the DgnDb with new values. Override to update subclass properties.
+    //! Called to update a shot in the DgnDb with new values. Override to update subclass properties.
     //! @note If the update fails, the original data will be copied back into this Activity.
     //! @note If you override this method, you @em must call T_Super::_BindUpdateParams, forwarding its status.
     virtual Dgn::DgnDbStatus _BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement) override;
@@ -159,22 +159,22 @@ protected:
 
 
 public:
-    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Photo)
-    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Photo)
+    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Shot)
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Shot)
 
-    //! Create a new Photo 
-    DATACAPTURE_EXPORT static PhotoPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice);
+    //! Create a new Shot 
+    DATACAPTURE_EXPORT static ShotPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice);
 
-    //! Query for an Photo (Id) by label
-    //! @return Id of the Photo or invalid Id if an Photo was not found
-    DATACAPTURE_EXPORT static PhotoElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+    //! Query for an Shot (Id) by label
+    //! @return Id of the Shot or invalid Id if an Shot was not found
+    DATACAPTURE_EXPORT static ShotElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
-    //! Get the id of this Photo element
-    DATACAPTURE_EXPORT PhotoElementId GetId() const;
+    //! Get the id of this Shot element
+    DATACAPTURE_EXPORT ShotElementId GetId() const;
 
-    DATACAPTURE_EXPORT int              GetPhotoId() const;
+    DATACAPTURE_EXPORT int              GetShotId() const;
     DATACAPTURE_EXPORT PoseType         GetPose() const;
-    DATACAPTURE_EXPORT void             SetPhotoId(int val);
+    DATACAPTURE_EXPORT void             SetShotId(int val);
     DATACAPTURE_EXPORT void             SetPose(PoseTypeCR val);
 
     DATACAPTURE_EXPORT CameraDeviceElementId  GetCameraDeviceId() const;
@@ -183,12 +183,12 @@ public:
 };
 
 //=================================================================================
-//! ElementHandler for Photo-s
+//! ElementHandler for Shot-s
 //! @ingroup DataCaptureGroup
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE PhotoHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct EXPORT_VTABLE_ATTRIBUTE ShotHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Photo, Photo, PhotoHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Shot, Shot, ShotHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };

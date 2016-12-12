@@ -230,19 +230,19 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDevice : Dgn::PhysicalElement
     DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_CameraDevice, Dgn::PhysicalElement)
 
 public:
-    //! Entry in Photo iterator
-    struct PhotoEntry : Dgn::ECSqlStatementEntry
+    //! Entry in Shot iterator
+    struct ShotEntry : Dgn::ECSqlStatementEntry
     {
-        friend struct Dgn::ECSqlStatementIterator < CameraDevice::PhotoEntry >;
+        friend struct Dgn::ECSqlStatementIterator < CameraDevice::ShotEntry >;
         friend struct CameraDevice;
     private:
-        PhotoEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
+        ShotEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
     public:
-        PhotoElementId GePhotoElementId() const { return m_statement->GetValueId<PhotoElementId>(0); }
+        ShotElementId GeShotElementId() const { return m_statement->GetValueId<ShotElementId>(0); }
     };
 
     //! Iterator over timelines
-    struct PhotoIterator : Dgn::ECSqlStatementIterator < CameraDevice::PhotoEntry >
+    struct ShotIterator : Dgn::ECSqlStatementIterator < CameraDevice::ShotEntry >
     {
     };
 
@@ -323,8 +323,8 @@ public:
     //! @return Id of the CameraDevice or invalid Id if an CameraDevice was not found
     DATACAPTURE_EXPORT static CameraDeviceElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
 
-    //! Make an iterator over all Photo-s relevant to a CameraDevice
-    DATACAPTURE_EXPORT static CameraDevice::PhotoIterator MakePhotoIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId);
+    //! Make an iterator over all Shot-s relevant to a CameraDevice
+    DATACAPTURE_EXPORT static CameraDevice::ShotIterator MakeShotIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId);
 
 
     //! Get the id of this CameraDevice

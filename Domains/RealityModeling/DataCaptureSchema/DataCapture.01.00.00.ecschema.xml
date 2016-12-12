@@ -69,7 +69,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
 
     <!-- END CameraDevice element classes -->
 
-    <!-- BEGIN Photo element classes -->
+    <!-- BEGIN Shot element classes -->
     <ECStructClass typeName="RotationMatrixType"  description="Rotation matrix">
         <ECProperty propertyName="M_00" typeName="double" />
         <ECProperty propertyName="M_01" typeName="double" />
@@ -87,25 +87,25 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECStructProperty   propertyName="Rotation" typeName="RotationMatrixType"   displayLabel="Rotation"/> 
     </ECStructClass>
 
-    <ECEntityClass typeName="Photo" description="Photo taken by a cameraDevice at a position and orientation.">
+    <ECEntityClass typeName="Shot" description="Shot taken by a cameraDevice at a position and orientation.">
         <BaseClass>dgn:SpatialLocationElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="PhotoIsTakenByCameraDevice" direction="Forward"/>
-        <ECProperty         propertyName="PhotoId"   typeName="int"      displayLabel="Id"/>
+        <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="ShotIsTakenByCameraDevice" direction="Forward"/>
+        <ECProperty         propertyName="ShotId"    typeName="int"      displayLabel="Id"/>
         <ECStructProperty   propertyName="Pose"      typeName="PoseType" displayLabel="Pose"/> 
     </ECEntityClass>
-    <!-- END Photo element classes -->
+    <!-- END Shot element classes -->
 
     <!-- BEGIN Photogroup element classes -->
     <!--NOT NOW <ECEntityClass typeName="Photogroup" description="List of all photo for a cameraDevice.">
     </ECEntityClass> -->
     <!-- END Photogroup element classes -->
 
-    <ECRelationshipClass typeName="PhotoIsTakenByCameraDevice" displayLabel="Photo is taken by CameraDevice" strength="referencing" strengthDirection="forward">
+    <ECRelationshipClass typeName="ShotIsTakenByCameraDevice" displayLabel="Shot is taken by CameraDevice" strength="referencing" strengthDirection="forward">
         <Source cardinality="(0,N)" polymorphic="False">
-            <Class class="Photo" />
+            <Class class="Shot" />
         </Source>
         <Target cardinality="(1,1)" polymorphic="False">
             <Class class="CameraDevice" >

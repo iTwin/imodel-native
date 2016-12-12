@@ -93,7 +93,7 @@ TEST_F(DataCaptureTests, ModifyCameraDevice)
     DgnDbPtr projectPtr = CreateProject(L"ModifyCameraDevice.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
     Utf8String cameraDeviceLabel = "CameraDeviceToModify";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
 
 
     DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
@@ -173,7 +173,7 @@ TEST_F(DataCaptureTests, DeleteCameraDevice)
     DgnDbPtr projectPtr = CreateProject(L"DeleteCameraDevice.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
     Utf8String cameraDeviceLabel = "CameraDeviceToDelete";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
 
     // Query CameraDevice element
     CameraDeviceElementId cameraDeviceId = CameraDevice::QueryForIdByLabel(*projectPtr, cameraDeviceLabel.c_str());
@@ -220,9 +220,9 @@ TEST_F(DataCaptureTests, DeleteCameraDevice)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, CreatePhoto)
+TEST_F(DataCaptureTests, CreateShot)
     {
-    DgnDbPtr projectPtr = CreateProject(L"CreatePhoto.dgndb");
+    DgnDbPtr projectPtr = CreateProject(L"CreateShot.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
 
     DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
@@ -261,23 +261,23 @@ TEST_F(DataCaptureTests, CreatePhoto)
 
 
     // Create Photo for the cameraDevice
-    auto PhotoPtr = Photo::Create(*spatialModelP,cameraDeviceId);
-    ASSERT_TRUE(PhotoPtr.IsValid());
+    auto ShotPtr = Shot::Create(*spatialModelP,cameraDeviceId);
+    ASSERT_TRUE(ShotPtr.IsValid());
 
     //Change Photo properties
-    PhotoPtr->SetLabel("BasicPhoto1");
+    ShotPtr->SetLabel("BasicPhoto1");
     RotationMatrixType rotation(RotationMatrixType::FromIdentity());
     DPoint3d center = {1.0,2.0,3.0};
     PoseType pose(center,rotation);
-    PhotoPtr->SetPose(pose);
-    PhotoPtr->SetPhotoId(42);
+    ShotPtr->SetPose(pose);
+    ShotPtr->SetShotId(42);
 
-    //Insert Photo element
-    auto PhotoInsertedPtr = PhotoPtr->Insert();
-    ASSERT_TRUE(PhotoInsertedPtr.IsValid());
-    PhotoElementId PhotoElementId = PhotoInsertedPtr->GetId();
-    ASSERT_TRUE(PhotoElementId.IsValid());
-    CameraDeviceElementId cameraDeviceIdRead = PhotoInsertedPtr->GetCameraDeviceId();
+    //Insert Shot element
+    auto ShotInsertedPtr = ShotPtr->Insert();
+    ASSERT_TRUE(ShotInsertedPtr.IsValid());
+    ShotElementId ShotElementId = ShotInsertedPtr->GetId();
+    ASSERT_TRUE(ShotElementId.IsValid());
+    CameraDeviceElementId cameraDeviceIdRead = ShotInsertedPtr->GetCameraDeviceId();
     ASSERT_TRUE(cameraDeviceIdRead.IsValid());
     ASSERT_EQ(cameraDeviceIdRead, cameraDeviceId);
 
@@ -286,36 +286,36 @@ TEST_F(DataCaptureTests, CreatePhoto)
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
 
     //Close project to flush memory
-    PhotoPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
-    PhotoInsertedPtr=nullptr;
+    ShotPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    ShotInsertedPtr=nullptr;
     cameraDevicePtr=nullptr;
     cameraDeviceModelPtr = nullptr;
     cameraDeviceInsertedPtr=nullptr;
     CloseProject();
 
     //Reopen project
-    DgnDbPtr projectReopenedPtr = OpenProject(L"CreatePhoto.dgndb");
+    DgnDbPtr projectReopenedPtr = OpenProject(L"CreateShot.dgndb");
     ASSERT_TRUE(projectReopenedPtr.IsValid());
 
-    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(PhotoElementId).IsValid());
-    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoElementId);
-    ASSERT_TRUE(myPhotoPtr.IsValid());
-    ASSERT_EQ(PhotoElementId, myPhotoPtr->GetElementId());
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(ShotElementId).IsValid());
+    ShotCPtr myShotPtr = Shot::Get(*projectReopenedPtr,ShotElementId);
+    ASSERT_TRUE(myShotPtr.IsValid());
+    ASSERT_EQ(ShotElementId, myShotPtr->GetElementId());
 
-    //read back Photo properties and check if equal
-    ASSERT_DOUBLE_EQ(myPhotoPtr->GetPhotoId(),42);
-    ASSERT_TRUE(pose.IsEqual(myPhotoPtr->GetPose()));
+    //read back Shot properties and check if equal
+    ASSERT_DOUBLE_EQ(myShotPtr->GetShotId(),42);
+    ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, ModifyPhoto)
+TEST_F(DataCaptureTests, ModifyShot)
     {
-    DgnDbPtr projectPtr = CreateProject(L"ModifyPhoto.dgndb");
+    DgnDbPtr projectPtr = CreateProject(L"ModifyShot.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
     Utf8String cameraDeviceLabel = "BasicCameraDevice";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
 
 
     DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
@@ -324,67 +324,67 @@ TEST_F(DataCaptureTests, ModifyPhoto)
     ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
 
 
-    // Query Photo element
+    // Query Shot element
     Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d", 5));
-    DgnElementId PhotoId  = Photo::QueryForIdByLabel(*projectPtr,photoLabel.c_str());
-    ASSERT_TRUE(PhotoId.IsValid());
-    PhotoPtr PhotoPtr = Photo::GetForEdit(*projectPtr, PhotoId);
-    ASSERT_TRUE(PhotoPtr.IsValid());
+    DgnElementId ShotId  = Shot::QueryForIdByLabel(*projectPtr,photoLabel.c_str());
+    ASSERT_TRUE(ShotId.IsValid());
+    ShotPtr shotPtr = Shot::GetForEdit(*projectPtr, ShotId);
+    ASSERT_TRUE(shotPtr.IsValid());
 
-    //Change Photo properties
+    //Change Shot properties
     RotationMatrixType rotation(RotationMatrixType::FromRowValues(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0));
     DPoint3d center = { 10.0,11.0,12.0 };
     PoseType pose(center, rotation);
-    PhotoPtr->SetPose(pose);
-    PhotoPtr->SetPhotoId(42);
-    CameraDeviceElementId cameraDeviceId = PhotoPtr->GetCameraDeviceId();
+    shotPtr->SetPose(pose);
+    shotPtr->SetShotId(42);
+    CameraDeviceElementId cameraDeviceId = shotPtr->GetCameraDeviceId();
     ASSERT_TRUE(cameraDeviceId.IsValid());
 
 
-    //Update Photo element
-    auto PhotoUpdatedPtr = PhotoPtr->Update();
-    ASSERT_TRUE(PhotoUpdatedPtr.IsValid());
+    //Update Shot element
+    auto ShotUpdatedPtr = shotPtr->Update();
+    ASSERT_TRUE(ShotUpdatedPtr.IsValid());
 
-    PhotoElementId PhotoUpdatedId = PhotoUpdatedPtr->GetId();
-    ASSERT_TRUE(PhotoUpdatedId.IsValid());
+    ShotElementId ShotUpdatedId = ShotUpdatedPtr->GetId();
+    ASSERT_TRUE(ShotUpdatedId.IsValid());
     //Updating don't change id...
-    ASSERT_TRUE(PhotoUpdatedId == PhotoId);
+    ASSERT_TRUE(ShotUpdatedId == ShotId);
 
     //Save changes
     DbResult result = projectPtr->SaveChanges("BasicPhoto");
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
 
     //Close project to flush memory
-    PhotoPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
-    PhotoUpdatedPtr= nullptr;
+    shotPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    ShotUpdatedPtr= nullptr;
     CloseProject();
 
     //Reopen project
-    DgnDbPtr projectReopenedPtr = OpenProject(L"ModifyPhoto.dgndb");
+    DgnDbPtr projectReopenedPtr = OpenProject(L"ModifyShot.dgndb");
     ASSERT_TRUE(projectReopenedPtr.IsValid());
 
-    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(PhotoId).IsValid());
-    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoId);
-    ASSERT_TRUE(myPhotoPtr.IsValid());
-    ASSERT_EQ(PhotoId, myPhotoPtr->GetElementId());
-    CameraDeviceElementId cameraDeviceIdRead = myPhotoPtr->GetCameraDeviceId();
+    ASSERT_TRUE(projectReopenedPtr->Elements().GetElement(ShotId).IsValid());
+    ShotCPtr myShotPtr = Shot::Get(*projectReopenedPtr,ShotId);
+    ASSERT_TRUE(myShotPtr.IsValid());
+    ASSERT_EQ(ShotId, myShotPtr->GetElementId());
+    CameraDeviceElementId cameraDeviceIdRead = myShotPtr->GetCameraDeviceId();
     ASSERT_TRUE(cameraDeviceIdRead.IsValid());
     ASSERT_EQ(cameraDeviceIdRead, cameraDeviceId);
 
 
-    //read back Photo properties and check if equal
-    ASSERT_DOUBLE_EQ(myPhotoPtr->GetPhotoId(), 42);
-    ASSERT_TRUE(pose.IsEqual(myPhotoPtr->GetPose()));
+    //read back Shot properties and check if equal
+    ASSERT_DOUBLE_EQ(myShotPtr->GetShotId(), 42);
+    ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, DeletePhoto)
+TEST_F(DataCaptureTests, DeleteShot)
     {
-    DgnDbPtr projectPtr = CreateProject(L"DeletePhoto.dgndb");
+    DgnDbPtr projectPtr = CreateProject(L"DeleteShot.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
     Utf8String cameraDeviceLabel = "BasicCameraDevice";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr, cameraDeviceLabel.c_str());
 
 
     DgnModelId spatialModelId = QueryFirstSpatialModelId(*projectPtr);
@@ -392,23 +392,23 @@ TEST_F(DataCaptureTests, DeletePhoto)
     ASSERT_TRUE(spatialModelPtr.IsValid());
     ASSERT_TRUE(spatialModelPtr->IsSpatialModel());
 
-    // Query Photo element
+    // Query Shot element
     Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d", 1));
-    DgnElementId PhotoId  = Photo::QueryForIdByLabel(*projectPtr,photoLabel.c_str());
-    ASSERT_TRUE(PhotoId.IsValid());
+    DgnElementId ShotId  = Shot::QueryForIdByLabel(*projectPtr,photoLabel.c_str());
+    ASSERT_TRUE(ShotId.IsValid());
 
-    //Delete edited Photo element - You CANNOT delete an edited Photo element because you get a copy of the original ...
+    //Delete edited Shot element - You CANNOT delete an edited Shot element because you get a copy of the original ...
     //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
-    PhotoCPtr PhotoEditedPtr = Photo::GetForEdit(*projectPtr, PhotoId);
-    ASSERT_TRUE(PhotoEditedPtr.IsValid());
-    DgnDbStatus status = PhotoEditedPtr->Delete();
+    ShotCPtr ShotEditedPtr = Shot::GetForEdit(*projectPtr, ShotId);
+    ASSERT_TRUE(ShotEditedPtr.IsValid());
+    DgnDbStatus status = ShotEditedPtr->Delete();
     ASSERT_FALSE(status==DgnDbStatus::Success);
 
-    //Delete Photo element - You CAN delete a const Photo element because this is effectively the original element...
+    //Delete Shot element - You CAN delete a const Shot element because this is effectively the original element...
     //Delete is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
-    PhotoCPtr PhotoPtr = Photo::Get(*projectPtr, PhotoId);
-    ASSERT_TRUE(PhotoPtr.IsValid());
-    status = PhotoPtr->Delete();
+    ShotCPtr shotPtr = Shot::Get(*projectPtr, ShotId);
+    ASSERT_TRUE(shotPtr.IsValid());
+    status = shotPtr->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
 
 
@@ -417,88 +417,88 @@ TEST_F(DataCaptureTests, DeletePhoto)
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
 
     //Close project to flush memory
-    PhotoPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
-    PhotoEditedPtr=nullptr;
+    shotPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    ShotEditedPtr=nullptr;
     CloseProject();
 
     //Reopen project
-    DgnDbPtr projectReopenedPtr = OpenProject(L"DeletePhoto.dgndb");
+    DgnDbPtr projectReopenedPtr = OpenProject(L"DeleteShot.dgndb");
     ASSERT_TRUE(projectReopenedPtr.IsValid());
 
-    //Check that PhotoId is not accessible anymore 
-    ASSERT_FALSE(projectReopenedPtr->Elements().GetElement(PhotoId).IsValid());
-    PhotoCPtr myPhotoPtr = Photo::Get(*projectReopenedPtr,PhotoId);
-    ASSERT_FALSE(myPhotoPtr.IsValid());
+    //Check that ShotId is not accessible anymore 
+    ASSERT_FALSE(projectReopenedPtr->Elements().GetElement(ShotId).IsValid());
+    ShotCPtr myShotPtr = Shot::Get(*projectReopenedPtr,ShotId);
+    ASSERT_FALSE(myShotPtr.IsValid());
 
-    // Check that query Photo element returns nothing
-    DgnElementId deletedPhotoId = Photo::QueryForIdByLabel(*projectReopenedPtr, photoLabel.c_str());
-    ASSERT_FALSE(deletedPhotoId.IsValid());
+    // Check that query Shot element returns nothing
+    DgnElementId deletedShotId = Shot::QueryForIdByLabel(*projectReopenedPtr, photoLabel.c_str());
+    ASSERT_FALSE(deletedShotId.IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, QueryPhotosFromCameraDevice)
+TEST_F(DataCaptureTests, QueryShotFromCameraDevice)
     {
-    DgnDbPtr projectPtr = CreateProject(L"QueryPhotosFromCameraDevice.dgndb");
+    DgnDbPtr projectPtr = CreateProject(L"QueryShotsFromCameraDevice.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());
     Utf8String cameraDeviceLabel = "SampleCameraDevice";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr,cameraDeviceLabel.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr,cameraDeviceLabel.c_str());
 
     // Query CameraDevice element
     CameraDeviceElementId cameraDeviceId = CameraDevice::QueryForIdByLabel(*projectPtr, cameraDeviceLabel.c_str());
     ASSERT_TRUE(cameraDeviceId.IsValid());
-    //Test iterator over all photos from this cameraDevice
+    //Test iterator over all Shots from this cameraDevice
     int photoCount(0);
-    for (CameraDevice::PhotoEntry const& photo : CameraDevice::MakePhotoIterator(*projectPtr, cameraDeviceId))
+    for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDeviceId))
         {
-        PhotoCPtr myPhotoPtr = Photo::Get(*projectPtr,photo.GePhotoElementId());
-        ASSERT_TRUE(myPhotoPtr->GetCameraDeviceId()==cameraDeviceId);
-        ASSERT_EQ(myPhotoPtr->GetPhotoId(), photoCount);
+        ShotCPtr myShotPtr = Shot::Get(*projectPtr,photo.GeShotElementId());
+        ASSERT_TRUE(myShotPtr->GetCameraDeviceId()==cameraDeviceId);
+        ASSERT_EQ(myShotPtr->GetShotId(), photoCount);
         photoCount++;
         }
     ASSERT_EQ(photoCount,10);
 
     Utf8String cameraDeviceLabel2 = "SampleCameraDevice2";
-    CreateSamplePhotoProjectWithCameraDevice(*projectPtr, cameraDeviceLabel2.c_str());
+    CreateSampleShotProjectWithCameraDevice(*projectPtr, cameraDeviceLabel2.c_str());
     // Query CameraDevice element
     CameraDeviceElementId cameraDevice2Id = CameraDevice::QueryForIdByLabel(*projectPtr, cameraDeviceLabel2.c_str());
     ASSERT_TRUE(cameraDevice2Id.IsValid());
-    //Test iterator over all photos from this second cameraDevice and make changes
+    //Test iterator over all Shots from this second cameraDevice and make changes
     int photoCount2(0);
-    for (CameraDevice::PhotoEntry const& photo : CameraDevice::MakePhotoIterator(*projectPtr, cameraDevice2Id))
+    for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDevice2Id))
         {
-        PhotoPtr myPhotoPtr = Photo::GetForEdit(*projectPtr,photo.GePhotoElementId());
-        ASSERT_TRUE(myPhotoPtr->GetCameraDeviceId()==cameraDevice2Id);
-        ASSERT_EQ(myPhotoPtr->GetPhotoId(), photoCount2);
-        myPhotoPtr->SetCameraDeviceId(cameraDeviceId);
-        myPhotoPtr->Update();
+        ShotPtr myShotPtr = Shot::GetForEdit(*projectPtr,photo.GeShotElementId());
+        ASSERT_TRUE(myShotPtr->GetCameraDeviceId()==cameraDevice2Id);
+        ASSERT_EQ(myShotPtr->GetShotId(), photoCount2);
+        myShotPtr->SetCameraDeviceId(cameraDeviceId);
+        myShotPtr->Update();
         photoCount2++;
         }
     ASSERT_EQ(photoCount2,10);
 
 
     // Query CameraDevice element
-    //Test iterator over all photos from this cameraDevice
+    //Test iterator over all Shots from this cameraDevice
     int photoCount3(0);
-    for (CameraDevice::PhotoEntry const& photo : CameraDevice::MakePhotoIterator(*projectPtr, cameraDeviceId))
+    for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDeviceId))
         {
-        PhotoCPtr myPhotoPtr = Photo::Get(*projectPtr, photo.GePhotoElementId());
-        ASSERT_TRUE(myPhotoPtr->GetCameraDeviceId() == cameraDeviceId);
+        ShotCPtr myShotPtr = Shot::Get(*projectPtr, photo.GeShotElementId());
+        ASSERT_TRUE(myShotPtr->GetCameraDeviceId() == cameraDeviceId);
         photoCount3++;
         }
-    //All photos was changed to this cameraDevice, we should have now 10+10=20 photos.
+    //All photos was changed to this cameraDevice, we should have now 10+10=20 Shots.
     ASSERT_EQ(photoCount3, 20);
 
 
-    //Test iterator over all photos from this cameraDevice
+    //Test iterator over all Shots from this cameraDevice
     int photoCount4(0);
-    for (CameraDevice::PhotoEntry const& photo : CameraDevice::MakePhotoIterator(*projectPtr, cameraDeviceId))
+    for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDeviceId))
         {
-        PhotoCPtr myPhotoPtr = Photo::Get(*projectPtr, photo.GePhotoElementId());
-        ASSERT_TRUE(myPhotoPtr->GetCameraDeviceId() == cameraDeviceId);
+        ShotCPtr myShotPtr = Shot::Get(*projectPtr, photo.GeShotElementId());
+        ASSERT_TRUE(myShotPtr->GetCameraDeviceId() == cameraDeviceId);
         //delete them all
-        myPhotoPtr->Delete();
+        myShotPtr->Delete();
         photoCount4++;
         }
     //All photos was deleted from this cameraDevice
@@ -506,12 +506,12 @@ TEST_F(DataCaptureTests, QueryPhotosFromCameraDevice)
 
     //Test iterator over all photos from this cameraDevice
     int photoCount5(0);
-    for (CameraDevice::PhotoEntry const& photo : CameraDevice::MakePhotoIterator(*projectPtr, cameraDeviceId))
+    for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDeviceId))
         {
-        PhotoCPtr myPhotoPtr = Photo::Get(*projectPtr, photo.GePhotoElementId());
-        ASSERT_TRUE(myPhotoPtr->GetCameraDeviceId() == cameraDeviceId);
+        ShotCPtr myShotPtr = Shot::Get(*projectPtr, photo.GeShotElementId());
+        ASSERT_TRUE(myShotPtr->GetCameraDeviceId() == cameraDeviceId);
         //delete them all
-        myPhotoPtr->Delete();
+        myShotPtr->Delete();
         photoCount5++;
         }
     //All photos was deleted from this cameraDevice
@@ -521,7 +521,7 @@ TEST_F(DataCaptureTests, QueryPhotosFromCameraDevice)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DataCaptureTests, ImportXMLFile)
+TEST_F(DataCaptureTests, ImportXMLFileFormat1)
     {
     DgnDbPtr projectPtr = CreateProject(L"ImportXMLFile.dgndb");
     ASSERT_TRUE(projectPtr.IsValid());

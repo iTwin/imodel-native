@@ -176,7 +176,7 @@ void DataCaptureTestsFixture::CloseProject()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
+void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
     {
     DgnModelId spatialModelId = QueryFirstSpatialModelId(dgndb);
     DgnModelId definitionModelId = QueryFirstDefinitionModelId(dgndb);
@@ -203,19 +203,19 @@ void DataCaptureTestsFixture::CreateSamplePhotoProjectWithCameraDevice(Dgn::DgnD
     for (int photoNumber = 0; photoNumber < 10; photoNumber++)
         {
         // Create Photo for the cameraDevice
-        auto PhotoPtr = Photo::Create(*spatialModelP, cameraDeviceId);
+        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId);
 
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
-        PhotoPtr->SetLabel(photoLabel.c_str());
+        ShotPtr->SetLabel(photoLabel.c_str());
         RotationMatrixType rotation(RotationMatrixType::FromIdentity());
         DPoint3d center = { 1.0,2.0,3.0 };
         PoseType pose(center, rotation);
-        PhotoPtr->SetPose(pose);
-        PhotoPtr->SetPhotoId(photoNumber);
+        ShotPtr->SetPose(pose);
+        ShotPtr->SetPhotoId(photoNumber);
 
         //Insert Photo element
-        PhotoPtr->Insert();
+        ShotPtr->Insert();
         }
 
     //Save changes

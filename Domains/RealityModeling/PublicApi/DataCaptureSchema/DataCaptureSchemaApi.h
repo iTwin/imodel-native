@@ -13,5 +13,5 @@
 #include "XmlReader.h"
 #include "XmlWriter.h"
 #include "CameraDevice.h"
-#include "Photo.h"
+#include "Shot.h"
 

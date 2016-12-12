@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: DataCaptureSchema/Photo.cpp $
+|     $Source: DataCaptureSchema/Shot.cpp $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,21 +9,21 @@
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
-HANDLER_DEFINE_MEMBERS(PhotoHandler)
+HANDLER_DEFINE_MEMBERS(ShotHandler)
 
-#define Photo_PROPNAME_PhotoId                  "PhotoId"
-#define Photo_PROPNAME_Pose                     "Pose"
-#define Photo_PROPNAME_Pose_Center              "Center"
-#define Photo_PROPNAME_Pose_Rotation            "Rotation"
-#define Photo_PROPNAME_Pose_Rotation_M_00       "M_00"
-#define Photo_PROPNAME_Pose_Rotation_M_01       "M_01"
-#define Photo_PROPNAME_Pose_Rotation_M_02       "M_02"
-#define Photo_PROPNAME_Pose_Rotation_M_10       "M_10"
-#define Photo_PROPNAME_Pose_Rotation_M_11       "M_11"
-#define Photo_PROPNAME_Pose_Rotation_M_12       "M_12"
-#define Photo_PROPNAME_Pose_Rotation_M_20       "M_20"
-#define Photo_PROPNAME_Pose_Rotation_M_21       "M_21"
-#define Photo_PROPNAME_Pose_Rotation_M_22       "M_22"
+#define Shot_PROPNAME_ShotId                  "ShotId"
+#define Shot_PROPNAME_Pose                     "Pose"
+#define Shot_PROPNAME_Pose_Center              "Center"
+#define Shot_PROPNAME_Pose_Rotation            "Rotation"
+#define Shot_PROPNAME_Pose_Rotation_M_00       "M_00"
+#define Shot_PROPNAME_Pose_Rotation_M_01       "M_01"
+#define Shot_PROPNAME_Pose_Rotation_M_02       "M_02"
+#define Shot_PROPNAME_Pose_Rotation_M_10       "M_10"
+#define Shot_PROPNAME_Pose_Rotation_M_11       "M_11"
+#define Shot_PROPNAME_Pose_Rotation_M_12       "M_12"
+#define Shot_PROPNAME_Pose_Rotation_M_20       "M_20"
+#define Shot_PROPNAME_Pose_Rotation_M_21       "M_21"
+#define Shot_PROPNAME_Pose_Rotation_M_22       "M_22"
 
 
 
@@ -32,15 +32,15 @@ HANDLER_DEFINE_MEMBERS(PhotoHandler)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(IECSqlStructBinder& binder, RotationMatrixTypeCR val)
     {
-    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_00).BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_01).BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_02).BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_10).BindDouble(val.GetComponentByRowAndColumn(1, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_11).BindDouble(val.GetComponentByRowAndColumn(1, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_12).BindDouble(val.GetComponentByRowAndColumn(1, 2)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_20).BindDouble(val.GetComponentByRowAndColumn(2, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_21).BindDouble(val.GetComponentByRowAndColumn(2, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_22).BindDouble(val.GetComponentByRowAndColumn(2, 2)))
+    if (ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_00).BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_01).BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_02).BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_10).BindDouble(val.GetComponentByRowAndColumn(1, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_11).BindDouble(val.GetComponentByRowAndColumn(1, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_12).BindDouble(val.GetComponentByRowAndColumn(1, 2)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_20).BindDouble(val.GetComponentByRowAndColumn(2, 0)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_21).BindDouble(val.GetComponentByRowAndColumn(2, 1)) ||
+        ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Rotation_M_22).BindDouble(val.GetComponentByRowAndColumn(2, 2)))
         {
         return ECSqlStatus::Error;
         }
@@ -60,23 +60,23 @@ RotationMatrixType RotationMatrixType::GetValue(IECSqlStructValue const& structV
         BeAssert(memberProperty != nullptr);
         Utf8CP memberName = memberProperty->GetName().c_str();
 
-        if      (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_00, memberName))
+        if      (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_00, memberName))
             rotation.SetComponentByRowAndColumn(0, 0,memberValue.GetDouble());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_01, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_01, memberName))
             rotation.SetComponentByRowAndColumn(0, 1,memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_02, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_02, memberName))
             rotation.SetComponentByRowAndColumn(0, 2,memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_10, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_10, memberName))
             rotation.SetComponentByRowAndColumn(1, 0, memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_11, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_11, memberName))
             rotation.SetComponentByRowAndColumn(1, 1, memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_12, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_12, memberName))
             rotation.SetComponentByRowAndColumn(1, 2, memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_20, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_20, memberName))
             rotation.SetComponentByRowAndColumn(2, 0, memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_21, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_21, memberName))
             rotation.SetComponentByRowAndColumn(2, 1, memberValue.GetInt());
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation_M_22, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation_M_22, memberName))
             rotation.SetComponentByRowAndColumn(2, 2, memberValue.GetInt());
         else
             BeAssert(false);
@@ -133,8 +133,8 @@ void                PoseType::SetRotation(RotationMatrixTypeCR val) { m_rotation
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECSqlStatus PoseType::BindParameter(IECSqlStructBinder& binder, PoseTypeCR val)
     {
-    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
-        ECSqlStatus::Success != RotationMatrixType::BindParameter(binder.GetMember(Photo_PROPNAME_Pose_Rotation).BindStruct(), val.GetRotation()))
+    if (ECSqlStatus::Success != binder.GetMember(Shot_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
+        ECSqlStatus::Success != RotationMatrixType::BindParameter(binder.GetMember(Shot_PROPNAME_Pose_Rotation).BindStruct(), val.GetRotation()))
         {
         return ECSqlStatus::Error;
         }
@@ -154,11 +154,11 @@ PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
         BeAssert(memberProperty != nullptr);
         Utf8CP memberName = memberProperty->GetName().c_str();
 
-        if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Center, memberName))
+        if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Center, memberName))
             {
             pose.SetCenter(memberValue.GetPoint3D());
             }
-        else if (0 == BeStringUtilities::Stricmp(Photo_PROPNAME_Pose_Rotation, memberName))
+        else if (0 == BeStringUtilities::Stricmp(Shot_PROPNAME_Pose_Rotation, memberName))
             {
             IECSqlStructValue const& rotationStructValue = memberValue.GetStruct();
             pose.SetRotation(RotationMatrixType::GetValue(rotationStructValue));
@@ -175,29 +175,29 @@ PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PhotoHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
+void ShotHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
-    params.Add(Photo_PROPNAME_PhotoId);
-    params.Add(Photo_PROPNAME_Pose);
+    params.Add(Shot_PROPNAME_ShotId);
+    params.Add(Shot_PROPNAME_Pose);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhotoPtr Photo::Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice)
+ShotPtr Shot::Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice)
     {
     if (!cameraDevice.IsValid())
         {
-        BeAssert(false && "Cannot create a photo with an invalid cameraDevice");
+        BeAssert(false && "Cannot create a shot with an invalid cameraDevice");
         return nullptr;
         }
 
     DgnClassId classId = QueryClassId(model.GetDgnDb());
-    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Photo, model.GetDgnDb());
+    DgnCategoryId categoryId = DgnCategory::QueryCategoryId(BDCP_CATEGORY_Shot, model.GetDgnDb());
 
-    PhotoPtr cp = new Photo(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraDevice);
+    ShotPtr cp = new Shot(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraDevice);
     return cp;
     }
 
@@ -205,19 +205,19 @@ PhotoPtr Photo::Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDev
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhotoElementId  Photo::GetId() const { return PhotoElementId(GetElementId().GetValueUnchecked()); }
-int             Photo::GetPhotoId() const { return m_photoId; }
-PoseType        Photo::GetPose() const { return m_pose; }
-void            Photo::SetPhotoId(int val) { m_photoId = val; }
-void            Photo::SetPose(PoseTypeCR val) { m_pose = val; }
-void            Photo::SetCameraDeviceId(CameraDeviceElementId val) { m_cameraDevice = val; }
+ShotElementId   Shot::GetId() const { return ShotElementId(GetElementId().GetValueUnchecked()); }
+int             Shot::GetShotId() const { return m_shotId; }
+PoseType        Shot::GetPose() const { return m_pose; }
+void            Shot::SetShotId(int val) { m_shotId = val; }
+void            Shot::SetPose(PoseTypeCR val) { m_pose = val; }
+void            Shot::SetCameraDeviceId(CameraDeviceElementId val) { m_cameraDevice = val; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraDeviceElementId  Photo::QueryPhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb, PhotoElementId photoElmId)
+CameraDeviceElementId  Shot::QueryShotIsTakenByCameraDeviceRelationship(DgnDbR dgndb, ShotElementId shotElmId)
     {
-    Utf8CP ecSql = "SELECT [TargetECInstanceId]  FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCameraDevice) " WHERE SourceECInstanceId=?";
+    Utf8CP ecSql = "SELECT [TargetECInstanceId]  FROM " BDCP_SCHEMA(BDCP_REL_ShotIsTakenByCameraDevice) " WHERE SourceECInstanceId=?";
 
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
@@ -226,7 +226,7 @@ CameraDeviceElementId  Photo::QueryPhotoIsTakenByCameraDeviceRelationship(DgnDbR
         return CameraDeviceElementId();
         }
 
-    statement->BindId(1, photoElmId);
+    statement->BindId(1, shotElmId);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
@@ -239,11 +239,11 @@ CameraDeviceElementId  Photo::QueryPhotoIsTakenByCameraDeviceRelationship(DgnDbR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CameraDeviceElementId  Photo::GetCameraDeviceId() const
+CameraDeviceElementId  Shot::GetCameraDeviceId() const
     {
     //Query and cache the result
     if (!m_cameraDevice.IsValid())
-        m_cameraDevice = QueryPhotoIsTakenByCameraDeviceRelationship(GetDgnDb(),GetId());
+        m_cameraDevice = QueryShotIsTakenByCameraDeviceRelationship(GetDgnDb(),GetId());
     return m_cameraDevice;
     }
 
@@ -253,10 +253,10 @@ CameraDeviceElementId  Photo::GetCameraDeviceId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus Shot::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
-    IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex(Photo_PROPNAME_Pose));
-    if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Photo_PROPNAME_PhotoId), GetPhotoId()) ||
+    IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex(Shot_PROPNAME_Pose));
+    if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Shot_PROPNAME_ShotId), GetShotId()) ||
         ECSqlStatus::Success != PoseType::BindParameter(structBinder ,GetPose()) )
         {
         return DgnDbStatus::BadArg;
@@ -267,7 +267,7 @@ DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Photo::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus Shot::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -278,7 +278,7 @@ DgnDbStatus Photo::_BindInsertParams(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Photo::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
+DgnDbStatus Shot::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
     {
     DgnDbStatus stat =  BindParameters(statement);
     if (DgnDbStatus::Success != stat)
@@ -289,15 +289,15 @@ DgnDbStatus Photo::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Photo::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
+DgnDbStatus Shot::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        //read Photo properties
-        SetPhotoId (stmt.GetValueInt(params.GetSelectIndex(Photo_PROPNAME_PhotoId)));
+        //read Shot properties
+        SetShotId (stmt.GetValueInt(params.GetSelectIndex(Shot_PROPNAME_ShotId)));
 
-        int poseIndex = params.GetSelectIndex(Photo_PROPNAME_Pose);
+        int poseIndex = params.GetSelectIndex(Shot_PROPNAME_Pose);
         IECSqlStructValue const& structValue = stmt.GetValueStruct(poseIndex);
         SetPose(PoseType::GetValue(structValue));
         }
@@ -308,11 +308,11 @@ DgnDbStatus Photo::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus Photo::_OnInsert()
+DgnDbStatus Shot::_OnInsert()
     {
     if (!m_cameraDevice.IsValid())
         {
-        BeAssert(false && "Cannot insert a photo with an invalid cameraDevice");
+        BeAssert(false && "Cannot insert a shot with an invalid cameraDevice");
         return DgnDbStatus::ValidationFailed;
         }
 
@@ -322,34 +322,34 @@ DgnDbStatus Photo::_OnInsert()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::InsertPhotoIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const
+void Shot::InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const
     {
-    InsertPhotoIsTakenByCameraDeviceRelationship(dgndb,GetId(),GetCameraDeviceId());
+    InsertShotIsTakenByCameraDeviceRelationship(dgndb,GetId(),GetCameraDeviceId());
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Photo::InsertPhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb, PhotoElementId photoElmId, CameraDeviceElementId cameraDeviceElmId)
+BentleyStatus Shot::InsertShotIsTakenByCameraDeviceRelationship(DgnDbR dgndb, ShotElementId shotElmId, CameraDeviceElementId cameraDeviceElmId)
     {
-    if (!photoElmId.IsValid() || !cameraDeviceElmId.IsValid())
+    if (!shotElmId.IsValid() || !cameraDeviceElmId.IsValid())
         {
-        BeAssert(false && "Attempt to add invalid photo is taken by relationship");
+        BeAssert(false && "Attempt to add invalid shot is taken by relationship");
         return ERROR;
         }
 
-    Utf8CP ecSql = "INSERT INTO " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCameraDevice) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
+    Utf8CP ecSql = "INSERT INTO " BDCP_SCHEMA(BDCP_REL_ShotIsTakenByCameraDevice) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(statement.IsValid());
 
-    statement->BindId(1, photoElmId);
+    statement->BindId(1, shotElmId);
     statement->BindId(2, cameraDeviceElmId);
 
     DbResult stepStatus = statement->Step();
     if (BE_SQLITE_DONE != stepStatus)
         {
-        BeAssert(false && "Error creating PhotoIsTakenByCameraDevice Relationship");
+        BeAssert(false && "Error creating ShotIsTakenByCameraDevice Relationship");
         return ERROR;
         }
     return SUCCESS;
@@ -359,33 +359,33 @@ BentleyStatus Photo::InsertPhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::_OnInserted(DgnElementP copiedFrom) const
+void Shot::_OnInserted(DgnElementP copiedFrom) const
     {
     T_Super::_OnInserted(copiedFrom);
 
     //Update relationship
-    InsertPhotoIsTakenByCameraDeviceRelationship(GetDgnDb());
+    InsertShotIsTakenByCameraDeviceRelationship(GetDgnDb());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::DeletePhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb) const
+void Shot::DeleteShotIsTakenByCameraDeviceRelationship(DgnDbR dgndb) const
     {
     if (!GetId().IsValid())
         {
-        BeAssert(false && "Attempt to delete an invalid PhotoIsTakenByCameraDevice relationship");
+        BeAssert(false && "Attempt to delete an invalid ShotIsTakenByCameraDevice relationship");
         return;
         }
 
     //Delete old one 
-    Utf8CP ecSql = "DELETE FROM " BDCP_SCHEMA(BDCP_REL_PhotoIsTakenByCameraDevice) " WHERE SourceECInstanceId=?";
+    Utf8CP ecSql = "DELETE FROM " BDCP_SCHEMA(BDCP_REL_ShotIsTakenByCameraDevice) " WHERE SourceECInstanceId=?";
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     BeAssert(statement.IsValid());
     statement->BindId(1, GetId());        //Source
     DbResult stepStatus = statement->Step();
     if (BE_SQLITE_DONE != stepStatus)
         {
-        BeAssert(false && "Error deleting PhotoIsTakenByCameraDevice Relationship");
+        BeAssert(false && "Error deleting ShotIsTakenByCameraDevice Relationship");
         }
     
     }
@@ -393,51 +393,51 @@ void Photo::DeletePhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::UpdatePhotoIsTakenByCameraDeviceRelationship(DgnDbR dgndb) const
+void Shot::UpdateShotIsTakenByCameraDeviceRelationship(DgnDbR dgndb) const
     {
     //Delete old one 
-    DeletePhotoIsTakenByCameraDeviceRelationship(dgndb);
+    DeleteShotIsTakenByCameraDeviceRelationship(dgndb);
     //and then insert new one
-    InsertPhotoIsTakenByCameraDeviceRelationship(dgndb);
+    InsertShotIsTakenByCameraDeviceRelationship(dgndb);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::_OnUpdated(DgnElementCR original) const
+void Shot::_OnUpdated(DgnElementCR original) const
     {
     T_Super::_OnUpdated(original);
 
-    auto other = dynamic_cast<PhotoCP>(&original);
+    auto other = dynamic_cast<ShotCP>(&original);
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
     
     //Update relationship
     if (GetCameraDeviceId() != other->GetCameraDeviceId())
-        UpdatePhotoIsTakenByCameraDeviceRelationship(GetDgnDb());
+        UpdateShotIsTakenByCameraDeviceRelationship(GetDgnDb());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::_OnDeleted() const
+void Shot::_OnDeleted() const
     {
     T_Super::_OnDeleted();
-    DeletePhotoIsTakenByCameraDeviceRelationship(GetDgnDb());
+    DeleteShotIsTakenByCameraDeviceRelationship(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Photo::_CopyFrom(DgnElementCR el)
+void Shot::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
-    auto other = dynamic_cast<PhotoCP>(&el);
+    auto other = dynamic_cast<ShotCP>(&el);
     BeAssert(nullptr != other);
     if (nullptr == other)
         return;
 
-    SetPhotoId(other->GetPhotoId());
+    SetShotId(other->GetShotId());
     SetPose(other->GetPose());
     SetCameraDeviceId(other->GetCameraDeviceId());
     }
@@ -445,25 +445,25 @@ void Photo::_CopyFrom(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-PhotoElementId Photo::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
+ShotElementId Shot::QueryForIdByLabel(DgnDbR dgndb, Utf8CP label)
     {
-    Utf8CP ecSql = "SELECT Photo.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Photo) " Photo " \
-        "WHERE Photo.Label=?";
+    Utf8CP ecSql = "SELECT Shot.[ECInstanceId] FROM " BDCP_SCHEMA(BDCP_CLASS_Shot) " Shot " \
+        "WHERE Shot.Label=?";
 
     CachedECSqlStatementPtr statement = dgndb.GetPreparedECSqlStatement(ecSql);
     if (!statement.IsValid())
         {
         BeAssert(statement.IsValid() && "Error preparing query. Check if DataCapture schema has been imported.");
-        return PhotoElementId();
+        return ShotElementId();
         }
 
     statement->BindText(1, label, IECSqlBinder::MakeCopy::No);
 
     DbResult stepStatus = statement->Step();
     if (stepStatus != BE_SQLITE_ROW)
-        return PhotoElementId();
+        return ShotElementId();
 
-    return statement->GetValueId<PhotoElementId>(0);
+    return statement->GetValueId<ShotElementId>(0);
     }
 
 

@@ -185,13 +185,13 @@ BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, PhotoR photo)
+BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR photo)
     {
     BeXmlStatus status(BEXML_Success);
 
     int id;
     if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id,"Id")))
-        photo.SetPhotoId(id);
+        photo.SetShotId(id);
 
     Utf8String imagePath;
     if (BEXML_Success == (status = sourceNodeRef.GetContent(imagePath,"ImagePath")))
@@ -251,11 +251,11 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
 
     for (BeXmlNodeP const& photoNode : photoList)
         {
-        PhotoPtr pPhoto(Photo::Create(m_spatialModel,pCameraDeviceInfo->GetId()));
-        BeXmlStatus status = ReadPhotoNode(*photoNode,*pPhoto);
+        ShotPtr pShot(Shot::Create(m_spatialModel,pCameraDeviceInfo->GetId()));
+        BeXmlStatus status = ReadPhotoNode(*photoNode,*pShot);
         if (BEXML_Success != status)
             return status;
-        pPhoto->Insert(&dbStatus);
+        pShot->Insert(&dbStatus);
         }
 
     return BEXML_Success;
