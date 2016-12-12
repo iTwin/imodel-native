@@ -596,35 +596,12 @@ ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetSourceECInstanceIdColumn(Utf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetSourceECClassIdColumn(Utf8StringR sourceECClassIdColumnName) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetTrimmedValue(sourceECClassIdColumnName, *m_ca, "SourceECClassIdColumn");
-    }
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetTargetECInstanceIdColumn(Utf8StringR targetECInstanceIdColumnName) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
 
     return CustomAttributeReader::TryGetTrimmedValue(targetECInstanceIdColumnName, *m_ca, "TargetECInstanceIdColumn");
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetTargetECClassIdColumn(Utf8StringR targetECClassIdColumnName) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetTrimmedValue(targetECClassIdColumnName, *m_ca, "TargetECClassIdColumn");
     }
 
 //---------------------------------------------------------------------------------------
@@ -647,18 +624,6 @@ ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetAllowDuplicateRelationships(
 ECDbForeignKeyRelationshipMap::ECDbForeignKeyRelationshipMap(ECRelationshipClassCR relClass, IECInstanceCP ca)
     : m_relClass(&relClass), m_ca(ca)
     {}
-
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                               Krischan.Eberle   06 / 2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const
-    {
-    if (m_ca == nullptr)
-        return ECObjectsStatus::Error;
-
-    return CustomAttributeReader::TryGetTrimmedValue(foreignKeyColumnName, *m_ca, "ForeignKeyColumn");
-    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015

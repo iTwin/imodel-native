@@ -337,23 +337,11 @@ public:
     //! @return ECOBJECTSTATUS_Success if SourceECInstanceId was set or unset in the LinkTableRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetSourceECInstanceIdColumn(Utf8StringR sourceECInstanceIdColumnName) const;
 
-    //! Tries to get the value of the SourceECClassId property from the LinkTableRelationshipMap.
-    //! @param[out] sourceECClassIdColumnName Name of column to which SourceECClassId is mapped to. 
-    //! It remains unchanged, if the SourceECClassId property wasn't set in the LinkTableRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if SourceECClassId was set or unset in the LinkTableRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetSourceECClassIdColumn(Utf8StringR sourceECClassIdColumnName) const;
-
     //! Tries to get the value of the TargetECInstanceId property from the LinkTableRelationshipMap.
     //! @param[out] targetECInstanceIdColumnName Name of column to which TargetECInstanceId is mapped to. 
     //! It remains unchanged, if the TargetECInstanceId property wasn't set in the LinkTableRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if TargetECInstanceId was set or unset in the LinkTableRelationshipMap, error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetTargetECInstanceIdColumn(Utf8StringR targetECInstanceIdColumnName) const;
-
-    //! Tries to get the value of the TargetECClassId property from the LinkTableRelationshipMap.
-    //! @param[out] targetECClassIdColumnName Name of column to which TargetECClassId is mapped to. 
-    //! It remains unchanged, if the TargetECClassId property wasn't set in the LinkTableRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if TargetECClassId was set or unset in the LinkTableRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetTargetECClassIdColumn(Utf8StringR targetECClassIdColumnName) const;
 
     //! Tries to get the value of the AllowDuplicateRelationships property from the LinkTableRelationshipMap.
     //! @param[out] allowDuplicateRelationships AllowDuplicateRelationships flag. It remains unchanged, if the AllowDuplicateRelationships property wasn't set in the LinkTableRelationshipMap.
@@ -390,12 +378,6 @@ public:
     //! wasn't set in the ForeignKeyRelationshipMap.
     //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
-
-    //! Tries to get the value of the ForeignKeyColumn property from the ForeignKeyRelationshipMap.
-    //! @param[out] foreignKeyColumnName Name of column to which ForeignKeyColumn is mapped to. 
-    //! It remains unchanged, if the ForeignKeyColumn property wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if ForeignKeyColumn was set or unset in the ForeignKeyRelationshipMap, error codes otherwise
-    ECOBJECTS_EXPORT ECObjectsStatus TryGetForeignKeyColumn(Utf8StringR foreignKeyColumnName) const;
     };
 	
 /** @endGroup */
