@@ -8,8 +8,6 @@
 #include "DataSourceBuffer.h"
 #include "DataSourceStatus.h"
 
-const unsigned int DEFAULT_NUM_TRANSFERS = 16;
-
 
 class DataSourceTransferScheduler
 {
