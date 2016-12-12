@@ -48,10 +48,17 @@ void ContextServicesWorkbench::SetGeoParam(GeoCoordinationParamsCR params)
 ContextServicesWorkbench::ContextServicesWorkbench(Utf8StringCR authorizationToken, GeoCoordinationParamsCR params)
     : m_authorizationToken(authorizationToken), m_params(params)
     {
-    m_errorObj = Json::objectValue;
+    Init();
     BeFileName caBundlePath = getBaseFolder();
     
     m_certificatePath = caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"ContextServices.pem");
+    }
+
+void ContextServicesWorkbench::Init()
+    {
+    m_errorObj = Json::objectValue; 
+    m_spatialEntityWithDetailsJson = "";
+    m_packageIdBuffer = "";
     }
 
 ///*---------------------------------------------------------------------------------**//**
@@ -106,7 +113,7 @@ CURLcode ContextServicesWorkbench::performCurl(Utf8StringCR url, Utf8StringCP wr
 BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails(Utf8String filter)
     {
     //First query to get the whole list of elements
-    CURLcode result = performCurl(createSpatialEntityWithDetailsViewUrl(filter), &m_spatialEntityWithDetailsJson);
+    CURLcode result = performCurl(CreateSpatialEntityWithDetailsViewUrl(filter), &m_spatialEntityWithDetailsJson);
     if (CURLE_OK != result)
         {
         if (result == CURLE_RECV_ERROR)
@@ -137,7 +144,7 @@ BentleyStatus ContextServicesWorkbench::DownloadSpatialEntityWithDetails(Utf8Str
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Spencer.Mason                    11/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContextServicesWorkbench::createSpatialEntityWithDetailsViewUrl(Utf8String filter)
+Utf8String ContextServicesWorkbench::CreateSpatialEntityWithDetailsViewUrl(Utf8String filter)
     {
     Utf8String tempRealityServerUrl = getBaseUrl();
     
@@ -160,10 +167,13 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
     {
     case ServerType::DEV:
         tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
+        break;
     case ServerType::PROD:
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";
+        break;
     default:
         tempRealityServerUrl = "https://qa-contextservices-eus.cloudapp.net/v2.4";
+        break;
     }
 
     Utf8String listUrl = tempRealityServerUrl.append("/Repositories/IndexECPlugin--Server");
@@ -199,10 +209,16 @@ void ContextServicesWorkbench::FilterSpatialEntity(ContextServicesWorkbench_Filt
     m_selectedIds = SpatioTemporalSelector::GetIDsByRes(*dataset, m_params.GetPolygonVector());
     }
 
+
+Utf8String ContextServicesWorkbench::GetPackageParameters()
+    {
+    return GetPackageParameters(m_selectedIds[m_selectedResolution]);
+    }
+
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> selectedIds) const
+Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> selectedIds)
     {
     // Create the package url.
     Utf8String listAsPostFields = "{'instance':{'instanceId':null,'className':'PackageRequest','schemaName':'RealityModeling','properties':{'RequestedEntities':[";
@@ -212,7 +228,7 @@ Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> se
         {
         listAsPostFields.append("{ 'Id':'");
         listAsPostFields.append(selectedIds[i]);
-        listAsPostFields.append("','SelectedFormat':'image/png','SelectedStyle':'default'},");
+        listAsPostFields.append("'},");
         }
 
     //if (containOsmClass())
@@ -226,24 +242,24 @@ Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> se
     return listAsPostFields;
     }
 
+Utf8String ContextServicesWorkbench::GetPackageIdUrl()
+    {
+    Utf8String tempRealityServerUrl = getBaseUrl();
+    return tempRealityServerUrl.append("/RealityModeling/PackageRequest");
+    }
+
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Raphael.Lemieux                   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ContextServicesWorkbench::DownloadPackageId()
     {
-    //Second query to do the package request, WSG is creating the file on his side and returning us a filename
-    Utf8String readBufferPackage;
-    Utf8String postFields = GetPackageParameters(m_selectedIds[m_selectedResolution]);
-    Utf8String tempRealityServerUrl = getBaseUrl();
-    Utf8String packageUrl = tempRealityServerUrl.append("/RealityModeling/PackageRequest");
-
-    CURLcode result = performCurl(packageUrl, &readBufferPackage, nullptr, postFields);
+    CURLcode result = performCurl(GetPackageIdUrl(), &m_packageIdBuffer, nullptr, GetPackageParameters());
 
     if (CURLE_OK != result)
         return BentleyStatus::ERROR;
 
     Json::Value packageInfos(Json::objectValue);
-    Json::Reader::Parse(readBufferPackage, packageInfos);
+    Json::Reader::Parse(m_packageIdBuffer, packageInfos);
 
     if (!packageInfos.isMember("changedInstance"))
         {
@@ -254,28 +270,9 @@ BentleyStatus ContextServicesWorkbench::DownloadPackageId()
     return  BentleyStatus::SUCCESS;
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Raphael.Lemieux                   01/2016
-//+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ContextServicesWorkbench::DownloadPackageFile()
+char* ContextServicesWorkbench::GetPackageFileUrl()
     {
-    //Third query to download the file from the server eg: GUID.xrdp
-    BeFileName realityDataTempPath = getBaseFolder();
-    if (realityDataTempPath.empty())
-        return BentleyStatus::ERROR;
-
-    m_packageFileName = BeFileName(realityDataTempPath);
-    m_packageFileName.AppendToPath(BeFileName(m_instanceId));
-
-    char outfile[1024] = "";
-    strcpy(outfile, m_packageFileName.GetNameUtf8().c_str());
-    FILE *fp;
-    fp = fopen(outfile, "wb");
-    if (!fp)
-        return BentleyStatus::ERROR;
-
-    //Do another query to the server to get the file this will be a download
-    char fileUrl[1024] = "";
+    char* fileUrl = new char[1024];
     Utf8String tempRealityServerUrl = getBaseUrl();
     tempRealityServerUrl.append("/RealityModeling/PreparedPackage/");
 
@@ -283,7 +280,35 @@ BentleyStatus ContextServicesWorkbench::DownloadPackageFile()
     strcat(fileUrl, m_instanceId.c_str());
     strcat(fileUrl, "/$file");
 
-    CURLcode result = performCurl(fileUrl, nullptr, fp);
+    return fileUrl;
+    }
+
+FILE* ContextServicesWorkbench::OpenPackageFile()
+    {
+    m_downloadedPackage = false;
+    //Third query to download the file from the server eg: GUID.xrdp
+    BeFileName realityDataTempPath = getBaseFolder();
+    if (realityDataTempPath.empty())
+        return nullptr;
+
+    m_packageFileName = BeFileName(realityDataTempPath);
+    m_packageFileName.AppendToPath(BeFileName(m_instanceId));
+
+    char outfile[1024] = "";
+    strcpy(outfile, m_packageFileName.GetNameUtf8().c_str());
+    return fopen(outfile, "wb");
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                    Raphael.Lemieux                   01/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ContextServicesWorkbench::DownloadPackageFile()
+    {
+    FILE* fp = OpenPackageFile();
+    if (!fp)
+        return BentleyStatus::ERROR;
+    
+    CURLcode result = performCurl(GetPackageFileUrl(), nullptr, fp);
     fclose(fp);
     if (CURLE_OK != result)
         return BentleyStatus::ERROR;
@@ -306,6 +331,17 @@ BeFileName ContextServicesWorkbench::getBaseFolder()
 
     return BeFileName(exeDir);
 }
+
+void ContextServicesWorkbench::SelectRandomResolution()
+    {
+    int randResolution = rand() % 3;
+    if(randResolution == 0)
+        m_selectedResolution = RealityPlatform::ResolutionCriteria::Low;
+    else if(randResolution == 1)
+        m_selectedResolution = RealityPlatform::ResolutionCriteria::Medium;
+    else if(randResolution == 2)
+        m_selectedResolution = RealityPlatform::ResolutionCriteria::High;
+    }
 
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                    Spencer.Mason                   11/2016
