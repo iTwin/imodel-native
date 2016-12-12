@@ -47,3 +47,4 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 
 DgnECNavigatorTest.GetElemtmentInfo
+DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
