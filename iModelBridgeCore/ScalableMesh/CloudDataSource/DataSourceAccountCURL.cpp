@@ -177,7 +177,7 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         }
 
 #ifndef NDEBUG
-    if (response_header.data["HTTP"] != "1.1 200 OK")
+    if (!response_header.data.empty() && response_header.data["HTTP"] != "1.1 200 OK")
         {
         assert(!"HTTP error, download failed");
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
