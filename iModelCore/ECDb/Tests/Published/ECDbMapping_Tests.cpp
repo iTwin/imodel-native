@@ -9390,9 +9390,11 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
     testSchema->CreateEntityClass(goo, "Goo");
 
     testSchema->CreateRelationshipClass(oneFooHasOneGoo, "OneFooHasOneGoo");
+    oneFooHasOneGoo->SetClassModifier(ECClassModifier::Sealed);
     testSchema->CreateRelationshipClass(oneFooHasManyGoo, "OneFooHasManyGoo");
+    oneFooHasManyGoo->SetClassModifier(ECClassModifier::Sealed);
     testSchema->CreateRelationshipClass(manyFooHasManyGoo, "ManyFooHasManyGoo");
-
+    manyFooHasManyGoo->SetClassModifier(ECClassModifier::Sealed);
     ASSERT_TRUE(foo != nullptr);
     ASSERT_TRUE(foo != nullptr);
     ASSERT_TRUE(oneFooHasOneGoo != nullptr);

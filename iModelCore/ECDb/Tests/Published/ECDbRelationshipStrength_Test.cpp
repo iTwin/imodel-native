@@ -455,6 +455,7 @@ void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Multiplicity SourceCl
     {
     ECRelationshipClassP testRelationshipClass = nullptr;
     EXPECT_EQ(ECObjectsStatus::Success, testSchema->CreateRelationshipClass(testRelationshipClass, relationshipClassName));
+    testRelationshipClass->SetClassModifier(ECClassModifier::Sealed);
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->SetStrength(strengthType));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->SetStrengthDirection(GetRelationDirection(direction)));
 

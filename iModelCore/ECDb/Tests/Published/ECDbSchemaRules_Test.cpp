@@ -10,7 +10,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct ECDbSchemaRules : SchemaImportTestFixture
+struct ECDbSchemaRules : ECDbMappingTestFixture
     {};
 
 //---------------------------------------------------------------------------------------
@@ -18,7 +18,7 @@ struct ECDbSchemaRules : SchemaImportTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaRules, Casing)
     {
-    std::vector <SchemaItem> testItems {
+    std::vector<SchemaItem> testItems {
         SchemaItem("<ECSchema schemaName=\"InvalidSchema\" nameSpacePrefix=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
         "  <ECEntityClass typeName=\"TestClass\" >"
                  "    <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
@@ -993,6 +993,57 @@ TEST_F(ECDbSchemaRules, RelationshipWithMultipleConstraintClasses)
         };
 
     AssertSchemaImport(testItems, "ecdbschemarules.ecdb");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaRules, LinkTableRelationshipMapStrategy)
+    {
+    ECDbCR ecdb = SetupECDb("rellinktablemapstrategy.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                  "<ECSchema schemaName='Test1' alias='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                  "  <ECEntityClass typeName='A' >"
+                                  "    <ECProperty propertyName='Name' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECEntityClass typeName='B' >"
+                                  "    <ECProperty propertyName='Code' typeName='string' />"
+                                  "  </ECEntityClass>"
+                                  "  <ECRelationshipClass typeName='Rel1' modifier='Abstract' strength='referencing'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A'>"
+                                  "      <Class class='A' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+                                  "      <Class class='B' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='Rel2' modifier='None' strength='referencing'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A'>"
+                                  "      <Class class='A' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+                                  "      <Class class='B' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "  <ECRelationshipClass typeName='Rel3' modifier='Sealed' strength='referencing'>"
+                                  "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='A'>"
+                                  "      <Class class='A' />"
+                                  "    </Source>"
+                                  "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='B'>"
+                                  "      <Class class='B' />"
+                                  "    </Target>"
+                                  "  </ECRelationshipClass>"
+                                  "</ECSchema>"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    MapStrategyInfo actualMapStrategy;
+    ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, ecdb, ecdb.Schemas().GetECClassId("Test1", "Rel1")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::TablePerHierarchy, actualMapStrategy.m_strategy) << "Rel class with modifier Abstract";
+
+    ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, ecdb, ecdb.Schemas().GetECClassId("Test1", "Rel2")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::TablePerHierarchy, actualMapStrategy.m_strategy) << "Rel class with modifier None";
+
+    ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, ecdb, ecdb.Schemas().GetECClassId("Test1", "Rel3")));
+    ASSERT_EQ(MapStrategyInfo::Strategy::OwnTable, actualMapStrategy.m_strategy) << "Rel class with modifier Sealed";
     }
 
 //---------------------------------------------------------------------------------------
