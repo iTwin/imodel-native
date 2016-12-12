@@ -176,7 +176,7 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
                  "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
                  "        <ECProperty propertyName='SubSubProp2' typeName='string' />"
                  "    </ECEntityClass>"
-                 "</ECSchema>", false, seedFileName); //Once overflow work was merged in, this is expected to succeed
+                 "</ECSchema>", true, seedFileName);
 
     assertImport("<?xml version='1.0' encoding='utf-8' ?>"
                  "<ECSchema schemaName='RootFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
