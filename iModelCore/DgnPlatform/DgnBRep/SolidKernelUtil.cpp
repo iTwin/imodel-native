@@ -656,6 +656,20 @@ bool BRepUtil::IsSmoothEdge(ISubEntityCR subEntity)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsLaminarEdge(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_ask_type_t edgeTypes;
+
+    return (SUCCESS == PK_EDGE_ask_type(PSolidSubEntity::GetSubEntityTag(subEntity), &edgeTypes) && PK_EDGE_type_laminar_c == edgeTypes.fins_type);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::Locate(IBRepEntityCR entity, DRay3dCR boresite, bvector<ISubEntityPtr>& intersectEntities, size_t maxFace, size_t maxEdge, size_t maxVertex, double maxEdgeDistance, double maxVertexDistance)
