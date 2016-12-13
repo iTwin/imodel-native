@@ -24,6 +24,145 @@
 
 USING_NAMESPACE_ELEMENT_TILETREE
 
+BEGIN_UNNAMED_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static FPoint3d toFPoint3d(DPoint3dCR dpoint)
+    {
+    FPoint3d fpoint;
+    fpoint.x = dpoint.x;
+    fpoint.y = dpoint.y;
+    fpoint.z = dpoint.z;
+    return fpoint;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static FPoint2d toFPoint2d(DPoint2dCR dpoint)
+    {
+    FPoint2d fpoint;
+    fpoint.x = dpoint.x;
+    fpoint.y = dpoint.y;
+    return fpoint;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static DRange3d bisectRange(DRange3dCR range, bool takeLow)
+    {
+    DVec3d diag = range.DiagonalVector();
+    DRange3d subRange = range;
+
+    double bisect;
+    double* replace;
+    if (diag.x > diag.y && diag.x > diag.z)
+        {
+        bisect = (range.low.x + range.high.x) / 2.0;
+        replace = takeLow ? &subRange.high.x : &subRange.low.x;
+        }
+    else if (diag.y > diag.z)
+        {
+        bisect = (range.low.y + range.high.y) / 2.0;
+        replace = takeLow ? &subRange.high.y : &subRange.low.y;
+        }
+    else
+        {
+        bisect = (range.low.z + range.high.z) / 2.0;
+        replace = takeLow ? &subRange.high.z : &subRange.low.z;
+        }
+
+    *replace = bisect;
+    return subRange;
+    }
+
+//=======================================================================================
+// ###TODO: TEMP! We don't want to have to copy all the indices into a new buffer...store
+// them that way in Mesh struct.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
+{
+    bvector<int32_t>   m_indices;
+
+    template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
+        {
+        count = static_cast<int32_t>(src.size());
+        Set(ptr, src);
+        }
+
+    template<typename T, typename U> void Set(T& ptr, U const& src)
+        {
+        ptr = 0 != src.size() ? src.data() : nullptr;
+        }
+
+    TileMeshArgs(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
+        {
+        auto const& displayParams = mesh.GetDisplayParams();
+        if (!displayParams.GetIgnoreLighting())
+            m_flags = 1;    // QV_QTMESH_GENNORMALS
+
+        for (auto const& triangle : mesh.Triangles())
+            {
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
+            }
+
+        Set(m_numIndices, m_vertIndex, m_indices);
+        Set(m_numPoints, m_points, mesh.Points());
+        Set(m_normals, mesh.Normals());
+        Set(m_textureUV, mesh.Params());
+
+        displayParams.ResolveTextureImage(db);
+        if (nullptr != displayParams.GetTextureImage())
+            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
+        }
+};
+
+constexpr double s_half2dDepthRange = 10.0;
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct RangeAccumulator : RangeIndex::Traverser
+{
+    DRange3dR       m_range;
+    bool            m_is2d;
+
+    RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
+
+    virtual bool _AbortOnWriteRequest() const override { return true; }
+    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return true; }
+    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+        {
+        m_range.Extend(entry.m_range.ToRange3d());
+        return Stop::No;
+        }
+
+    bool Accumulate(RangeIndex::Tree& tree)
+        {
+        if (Stop::Yes == tree.Traverse(*this))
+            return false;
+        else if (m_range.IsNull())
+            return false;
+
+        if (m_is2d)
+            {
+            BeAssert(m_range.low.z == m_range.high.z == 0.0);
+            m_range.low.z = -s_half2dDepthRange*2;  // times 2 so we don't stick geometry right on the boundary...
+            m_range.high.z = s_half2dDepthRange*2;
+            }
+
+        return true;
+        }
+};
+
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -228,29 +367,6 @@ bool    Mesh::RemoveEntityGeometry (bset<DgnElementId> const& deleteIds)
             }                                                                                                         
         }
     return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static FPoint3d toFPoint3d(DPoint3dCR dpoint)
-    {
-    FPoint3d fpoint;
-    fpoint.x = dpoint.x;
-    fpoint.y = dpoint.y;
-    fpoint.z = dpoint.z;
-    return fpoint;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static FPoint2d toFPoint2d(DPoint2dCR dpoint)
-    {
-    FPoint2d fpoint;
-    fpoint.x = dpoint.x;
-    fpoint.y = dpoint.y;
-    return fpoint;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1081,54 +1197,6 @@ BentleyStatus Loader::DoGetFromSource()
     return ERROR; // ###TODO
     }
 
-BEGIN_UNNAMED_NAMESPACE
-
-//=======================================================================================
-// ###TODO: TEMP! We don't want to have to copy all the indices into a new buffer...store
-// them that way in Mesh struct.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
-{
-    bvector<int32_t>   m_indices;
-
-    template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
-        {
-        count = static_cast<int32_t>(src.size());
-        Set(ptr, src);
-        }
-
-    template<typename T, typename U> void Set(T& ptr, U const& src)
-        {
-        ptr = 0 != src.size() ? src.data() : nullptr;
-        }
-
-    TileMeshArgs(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
-        {
-        auto const& displayParams = mesh.GetDisplayParams();
-        if (!displayParams.GetIgnoreLighting())
-            m_flags = 1;    // QV_QTMESH_GENNORMALS
-
-        for (auto const& triangle : mesh.Triangles())
-            {
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
-            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
-            }
-
-        Set(m_numIndices, m_vertIndex, m_indices);
-        Set(m_numPoints, m_points, mesh.Points());
-        Set(m_normals, mesh.Normals());
-        Set(m_textureUV, mesh.Params());
-
-        displayParams.ResolveTextureImage(db);
-        if (nullptr != displayParams.GetTextureImage())
-            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
-        }
-};
-
-END_UNNAMED_NAMESPACE
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1169,11 +1237,39 @@ BentleyStatus Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(DgnModelR model, TransformCR transform)
-    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName())
+Root::Root(GeometricModelR model, TransformCR transform)
+    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel())
     {
-    // ###TODO: Determine range...
-    m_range = DRange3d::NullRange();
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RootPtr Root::Create(GeometricModelR model)
+    {
+    if (DgnDbStatus::Success != model.FillRangeIndex())
+        return nullptr;
+
+    DRange3d range;
+    RangeAccumulator accum(range, model.Is2dModel());
+    if (!accum.Accumulate(*model.GetRangeIndex()))
+        return nullptr;
+
+    Transform transform = Transform::FromIdentity(); // ###TODO: Transform to origin
+    RootPtr root = new Root(model, transform);
+    return root->LoadRootTile(range, model) ? root : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
+    {
+    // ###TODO: Expected to load geometry here?
+    m_rootTile = Tile::Create(*this, TileTree::OctTree::TileId(0,0,0,0), nullptr, false);
+    m_rootTile->ExtendRange(range);
+    return true;
     }
 
 //=======================================================================================
@@ -1182,9 +1278,10 @@ Root::Root(DgnModelR model, TransformCR transform)
 Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf)
     : T_Super(octRoot, id, parent, isLeaf)
     {
-    // ###TODO: Determine range...
+    if (nullptr != parent)
+        m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
+
     // ###TODO: Determine leafness
-    m_range = ElementAlignedBox3d(DRange3d::NullRange());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1210,5 +1307,21 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     {
     ElementTileTree::GeometryCollection geom;
     return geom; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d Tile::ComputeChildRange(TileR child) const
+    {
+    // Each dimension of the relative ID is 0 or 1, indicating which bisection of the range to take
+    TileTree::OctTree::TileId relativeId = child.GetRelativeTileId();
+    BeAssert(2 > relativeId.m_i && 2 > relativeId.m_j && 2 > relativeId.m_k);
+
+    DRange3d range = bisectRange(GetRange(), 0 == relativeId.m_i);
+    range = bisectRange(range, 0 == relativeId.m_j);
+    range = bisectRange(range, 0 == relativeId.m_k);
+
+    return range;
     }
 

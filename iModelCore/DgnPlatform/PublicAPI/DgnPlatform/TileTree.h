@@ -510,6 +510,7 @@ struct TileId
     TileId() : TileId(0,0,0,0) { }
 
     TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+i, m_k*2+k); }
+    TileId GetRelativeId(TileId parentId) const;
 };
 
 //=======================================================================================
@@ -548,8 +549,10 @@ public:
     virtual Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     
     TileId GetTileId() const { return m_id; }
+    TileId GetRelativeTileId() const;
     bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
     Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
+    Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
     Render::GraphicP GetGraphic() const { return m_graphic.get(); }
     bool IsLeaf() const { return m_isLeaf; }
 

@@ -533,19 +533,21 @@ struct Root : TileTree::OctTree::Root
 private:
     DgnModelId      m_modelId;
     Utf8String      m_name;
-    DRange3d        m_range;
+    bool            m_is3d;
     // ###TODO: Cache (geom parts)
 
-    Root(DgnModelR model, TransformCR transform);
+    Root(GeometricModelR model, TransformCR transform);
 
     virtual Utf8CP _GetName() const override { return m_name.c_str(); }
+
+    bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:
+    static RootPtr Create(GeometricModelR model);
     virtual ~Root() { ClearAllTiles(); }
 
     DgnModelId GetModelId() const { return m_modelId; }
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
-
-    static RootPtr Create(DgnModelR model, TransformCR transform) { return new Root(model, transform); }
+    bool Is3d() const { return m_is3d; }
 };
 
 //=======================================================================================
@@ -565,13 +567,14 @@ private:
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
 public:
+    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf) { return new Tile(root, id, parent, isLeaf); }
+
     void ClearGeometry() { m_geometries.clear(); }
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
     GeometryCollection GenerateGeometry(GeometryOptionsCR options) const;
-
-    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf) { return new Tile(root, id, parent, isLeaf); }
+    DRange3d ComputeChildRange(TileR child) const;
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

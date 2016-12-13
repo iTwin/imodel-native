@@ -1049,3 +1049,24 @@ ProgressiveTask::Completion OctTree::ProgressiveTask::_DoProgressive(Progressive
     return Completion::Aborted;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+OctTree::TileId OctTree::TileId::GetRelativeId(OctTree::TileId parentId) const
+    {
+    return TileId(parentId.m_level, parentId.m_i/2-m_i, parentId.m_j/2-m_j, parentId.m_k/2-m_k);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+OctTree::TileId OctTree::Tile::GetRelativeTileId() const
+    {
+    auto tileId = GetTileId();
+    auto parent = GetOctParent();
+    if (nullptr != parent)
+        tileId = tileId.GetRelativeId(parent->GetTileId());
+
+    return tileId;
+    }
+
