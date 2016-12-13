@@ -1224,18 +1224,12 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
     if (singleNavProperty == nullptr)
         return SUCCESS;
 
-    bool isNullable, isUnique; //unused
-    DbColumn::Constraints::Collation collation;//unused
-    Utf8String columnName;
-    if (SUCCESS != PropertyMap::DetermineColumnInfo(columnName, isNullable, isUnique, collation, GetECDb(), *singleNavProperty, singleNavProperty->GetName().c_str()))
-        return ERROR;
-
     ClassMap const* classMap = GetDbMap().GetClassMap(singleNavProperty->GetClass());
     TablePerHierarchyInfo const& tphInfo = classMap->GetMapStrategy().GetTphInfo();
     if (tphInfo.IsValid() && tphInfo.UseSharedColumns())
         {
         //table uses shared columns, so FK col position cannot depend on NavigationProperty position
-        fkColInfo.Assign(columnName.c_str(), true, nullptr, nullptr);
+        fkColInfo.Assign(singleNavProperty->GetName().c_str(), true, nullptr, nullptr);
         return SUCCESS;
         }
 
@@ -1267,7 +1261,7 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
             }
         }
 
-    fkColInfo.Assign(columnName.c_str(), false, precedingPropMap, succeedingPropMap);
+    fkColInfo.Assign(singleNavProperty->GetName().c_str(), false, precedingPropMap, succeedingPropMap);
     return SUCCESS;
     }
 

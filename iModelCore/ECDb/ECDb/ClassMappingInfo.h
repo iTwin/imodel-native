@@ -130,15 +130,17 @@ public:
         private:
             ForeignKeyDbConstraint::ActionType m_onDeleteAction;
             ForeignKeyDbConstraint::ActionType m_onUpdateAction;
+            bool m_usePkAsFk;
 
         public:
-            FkMappingInfo() : m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified) {}
-            FkMappingInfo(ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
-                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+            explicit FkMappingInfo(bool usePkAsFk) : FkMappingInfo(ForeignKeyDbConstraint::ActionType::NotSpecified, ForeignKeyDbConstraint::ActionType::NotSpecified, usePkAsFk) {}
+            FkMappingInfo(ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
+                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction), m_usePkAsFk(usePkAsFk)
                 {}
 
             ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
             ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
+            bool UsePkAsFk() const { return m_usePkAsFk; }
         };
 
     struct LinkTableMappingInfo : NonCopyableClass
@@ -181,9 +183,14 @@ private:
 
     static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
+    bool RequiresLinkTable() const { return m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0; }
+
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass),
-        m_customMapType(CustomMapType::None), m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) {}
+        m_customMapType(CustomMapType::None), m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
+        {
+        DetermineCardinality();
+        }
 
     virtual ~RelationshipMappingInfo() {}
 

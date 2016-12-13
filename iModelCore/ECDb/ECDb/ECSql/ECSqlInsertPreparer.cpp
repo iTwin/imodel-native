@@ -621,9 +621,6 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
     BeAssert(preparedStatement != nullptr);
 
-    if (classMap.IsECInstanceIdAutogenerationDisabled())
-        preparedStatement->SetIsECInstanceIdAutogenerationDisabled();
-
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
     auto propNameListExp = exp.GetPropertyNameListExp();
     ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemProperty::ECInstanceId);

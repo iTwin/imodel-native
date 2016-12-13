@@ -22,7 +22,7 @@ struct ECDbSchemaTests : public ECDbTestFixture
 TEST_F(ECDbSchemaTests, OrderOfPropertyIsPreservedInTableColumns)
     {
     SetupECDb("propertyOrderTest.ecdb", SchemaItem("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                                                   "<ECSchema schemaName=\"OrderSchema\" nameSpacePrefix=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                                                   "<ECSchema schemaName=\"OrderSchema\" alias=\"os\" version=\"1.0\" xmlns = \"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
                                                    "  <ECStructClass typeName=\"OrderedStruct\">"
                                                    "   <ECProperty propertyName=\"a\" typeName=\"string\"/>"
                                                    "	 <ECProperty propertyName=\"g\" typeName=\"int\"/>"

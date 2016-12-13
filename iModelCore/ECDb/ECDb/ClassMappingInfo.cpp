@@ -523,19 +523,36 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
+
+    const bool usePkAsFk = ECDbMapCustomAttributeHelper::HasUsePrimaryKeyAsForeignKey(*relClass);
+
     ECDbLinkTableRelationshipMap linkTableRelationMap;
     const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
-
-    if (hasForeignKeyRelMap && hasLinkTableRelMap)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must not define Key properties on its constraints.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
 
     if (relClass->HasBaseClasses() && (hasForeignKeyRelMap || hasLinkTableRelMap))
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must neither have the ForeignKeyRelationshipMap nor the LinkTableRelationshipMap custom attribute. Only the root relationship class of a hierarchy can have these custom attributes.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if (hasForeignKeyRelMap && hasLinkTableRelMap)
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyRelationshipMap' and 'LinkTableRelationshipMap'.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if (hasLinkTableRelMap && usePkAsFk)
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UsePrimaryKeyAsForeignKey' and 'LinkTableRelationshipMap'.",
+                        m_ecClass.GetFullName());
+        return ERROR;
+        }
+
+    if ((hasForeignKeyRelMap || usePkAsFk) && RequiresLinkTable())
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyRelationshipMap' or 'UsePrimaryKeyAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
@@ -572,7 +589,8 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
-        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()));
+
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), usePkAsFk);
         return SUCCESS;
         }
 
@@ -592,6 +610,15 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 
         m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
         m_customMapType = RelationshipMappingInfo::CustomMapType::LinkTable;
+        return SUCCESS;
+        }
+
+    if (!relClass->HasBaseClasses())
+        {
+        if (RequiresLinkTable())
+            m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
+        else
+            m_fkMappingInfo = std::make_unique<FkMappingInfo>(usePkAsFk);
         }
 
     return SUCCESS;
@@ -602,8 +629,6 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 //+---------------+---------------+---------------+---------------+---------------+------
 ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
     {
-    DetermineCardinality();
-
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     std::vector<ECClass const*> sourceClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetSource());
     std::vector<ECClass const*> targetClasses = GetDbMap().GetFlattenListOfClassesFromRelationshipEnd(relClass->GetTarget());
@@ -694,9 +719,10 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
         return ClassMappingStatus::Success;
         }
 
-    if (m_customMapType == CustomMapType::LinkTable || m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0)
+    if (m_linkTableMappingInfo != nullptr)
         return EvaluateLinkTableStrategy(*caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
+    BeAssert(m_fkMappingInfo != nullptr);
     return EvaluateForeignKeyStrategy(*caCache, firstBaseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
 
@@ -706,6 +732,8 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
     {
+    BeAssert(baseClassMap != nullptr || m_linkTableMappingInfo != nullptr);
+
     if (m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget)
         {
         BeAssert(baseClassMap != nullptr && "Should not call this method if baseClassMap == nullptr");
@@ -738,13 +766,9 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         return ERROR;
         }
 
-    if (m_linkTableMappingInfo == nullptr)
-        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
-
     if (baseClassMap != nullptr)
         {
         BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
-        BeAssert(!GetLinkTableMappingInfo()->AllowDuplicateRelationships() && "AllowDuplicateRelationships is expected to only be set in root class");
         m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP()));
         return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
         }
@@ -801,6 +825,8 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
     {
+    BeAssert(baseClassMap!= nullptr || m_fkMappingInfo != nullptr);
+
     if (m_customMapType == CustomMapType::LinkTable)
         {
         BeAssert(baseClassMap != nullptr && "Should not call this method if baseClassMap == nullptr");
@@ -817,9 +843,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
                         m_ecClass.GetFullName());
         return ERROR;
         }
-
-    if (m_fkMappingInfo == nullptr)
-        m_fkMappingInfo = std::make_unique<FkMappingInfo>();
 
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     const StrengthType strength = relClass->GetStrength();

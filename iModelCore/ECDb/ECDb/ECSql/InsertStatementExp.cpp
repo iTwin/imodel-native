@@ -117,16 +117,6 @@ Exp::FinalizeParseStatus InsertStatementExp::Validate (ECSqlParseContext& ctx) c
         return FinalizeParseStatus::Error;
         }
 
-    if (propertyNameListExp->GetSpecialTokenExpIndexMap().IsUnset(ECSqlSystemProperty::ECInstanceId))
-        {
-        ClassNameExp const* classNameExp = GetClassNameExp();
-        if (classNameExp->GetInfo().GetMap().IsECInstanceIdAutogenerationDisabled())
-            {
-            ctx.Issues().Report(ECDbIssueSeverity::Error, "ECSQL INSERT must always specify the ECInstanceId as ECInstanceId auto-generation is disabled for the ECClass (via custom attribute): %s", ToECSql().c_str());
-            return FinalizeParseStatus::Error;
-            }
-        }
-
     for (size_t i = 0; i < expectedValueCount; i++)
         {
         ValueExp const* valueExp = valuesExp->GetValueExp(i);

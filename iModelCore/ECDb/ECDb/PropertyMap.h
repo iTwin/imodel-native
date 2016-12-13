@@ -206,7 +206,6 @@ protected:
 
     //!Gets the root property map of the parent-child node hierarchy
     PropertyMapCR GetRoot() const;
-    BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation& collation, ECDbCR ecdb) const { return DetermineColumnInfo(columnName, isNullable, isUnique, collation, ecdb, GetProperty(), GetPropertyAccessString().c_str()); }
 
 public:
     virtual ~PropertyMap() {}
@@ -258,8 +257,7 @@ public:
     //! Make sure our table has the necessary columns, if any
     BentleyStatus FindOrCreateColumnsInTable(ClassMap const& classMap) { return _FindOrCreateColumnsInTable(classMap); }
 
-    static BentleyStatus DetermineColumnInfo(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation&, ECDbCR, ECN::ECPropertyCR, Utf8CP propAccessString);
-
+    Utf8String PropertyAccessStringToColumnName() const { Utf8String colName(GetPropertyAccessString()); colName.ReplaceAll(".", "_"); return colName; }
     static Utf8CP TypeToString(Type);
     };
 
@@ -288,7 +286,7 @@ protected:
 
     virtual ~SingleColumnPropertyMap() {}
 
-    BentleyStatus DoFindOrCreateColumnsInTable(ClassMap const&, DbColumn::Type);
+    BentleyStatus DoFindOrCreateColumnsInTable(ClassMap const&, DbColumn::Type, Utf8CP colName = nullptr, bool IsNullable = true, bool isUnique = false, DbColumn::Constraints::Collation = DbColumn::Constraints::Collation::Default);
 
     DbColumn const& GetColumn() const { return *m_column; }
 };
@@ -310,6 +308,8 @@ public:
     ~PrimitivePropertyMap() {}
     static PropertyMapPtr Create(ECN::ECClassId ownerClassMapId, ECN::PrimitiveECPropertyCR ecProperty, Utf8CP propertyAccessString, PropertyMapCP parentPropertyMap) { return new PrimitivePropertyMap(ownerClassMapId, ecProperty, propertyAccessString, parentPropertyMap); }
     static PropertyMapPtr Clone(ECN::ECClassId ownerClassMapId, PrimitivePropertyMap const& proto, PropertyMap const* parentPropertyMap) { return new PrimitivePropertyMap(ownerClassMapId, proto, parentPropertyMap); }
+
+    static BentleyStatus ReadPropertyMapCA(Utf8StringR columnName, bool& isNullable, bool& isUnique, DbColumn::Constraints::Collation&, ECDbCR, ECN::PrimitiveECPropertyCR);
     };
 
 //=======================================================================================
@@ -339,7 +339,7 @@ private:
         propertyPathList.push_back(GetPropertyAccessString() + ".X");
         propertyPathList.push_back(GetPropertyAccessString() + ".Y");
         if (m_is3d)
-            propertyPathList.push_back(GetPropertyAccessString() + ".X");
+            propertyPathList.push_back(GetPropertyAccessString() + ".Z");
 
         return SUCCESS;
         }
