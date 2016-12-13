@@ -136,10 +136,10 @@ struct ClassMap : RefCountedBase
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
  
-        virtual MappingStatus _Map(ClassMappingContext&);
-        MappingStatus DoMapPart1(ClassMappingContext&);
-        MappingStatus DoMapPart2(ClassMappingContext&);
-        MappingStatus MapProperties(ClassMappingContext&);
+        virtual ClassMappingStatus _Map(ClassMappingContext&);
+        ClassMappingStatus DoMapPart1(ClassMappingContext&);
+        ClassMappingStatus DoMapPart2(ClassMappingContext&);
+        ClassMappingStatus MapProperties(ClassMappingContext&);
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&);
         BentleyStatus LoadPropertyMaps(ClassMapLoadContext&, DbClassMapLoadContext const&);
 
@@ -157,7 +157,7 @@ struct ClassMap : RefCountedBase
         //! Called when loading an existing class map from the ECDb file 
         BentleyStatus Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbLoadCtx) { return _Load(ctx, dbLoadCtx); }
         //! Called during schema import when creating the class map from the imported ECClass 
-        MappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
+        ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(DbMapSaveContext&);
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }
         PropertyMapContainer const& GetPropertyMaps() const { return m_propertyMaps; }
@@ -207,7 +207,7 @@ struct NotMappedClassMap : public ClassMap
 private:
     NotMappedClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) : ClassMap(ecdb, Type::NotMapped, ecClass, mapStrategy, setIsDirty) {}
 
-    virtual MappingStatus _Map(ClassMappingContext&) override;
+    virtual ClassMappingStatus _Map(ClassMappingContext&) override;
     virtual BentleyStatus _Load(ClassMapLoadContext& ctx, DbClassMapLoadContext const& mapInfo) override;
 
 public:

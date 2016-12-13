@@ -46,6 +46,196 @@ TEST_F(ECDbSchemaManagerTests, ImportDifferentInMemorySchemaVersions)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, ImportToken)
+    {
+    auto assertImport = [this] (Utf8CP ecschemaXml, bool expectedToSucceedInRestrictedMode, BeFileNameCR seedFilePath)
+        {
+        ECDb ecdb;
+        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_unrestricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+        bool asserted = false;
+        AssertSchemaImport(asserted, ecdb, SchemaItem(ecschemaXml, true));
+        ASSERT_FALSE(asserted) << "SchemaImport into unrestricted ECDb failed unexpectedly for: " << ecschemaXml;
+        ecdb.CloseDb();
+
+        NoDbSchemaModificationsECDb restrictedECDb;
+        ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
+
+        asserted = false;
+        //Until enforced finally, the token validation does not fail the schema import, but just logs a warning.
+        expectedToSucceedInRestrictedMode = true;
+        AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, expectedToSucceedInRestrictedMode));
+        ASSERT_FALSE(asserted) << "SchemaImport into restricted ECDb. Expected to succeed: " << expectedToSucceedInRestrictedMode << " for: " << ecschemaXml;
+        restrictedECDb.CloseDb();
+        };
+
+    SetupECDb("importtokentests.ecdb");
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    BeFileName seedFileName(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='TestSchema' displayLabel='Test Schema' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECEntityClass typeName='Foo' displayLabel='Spatial Element'>"
+                 "        <ECProperty propertyName='Pet' typeName='string'/>"
+                 "        <ECProperty propertyName='LastMod' typeName='DateTime'/>"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", false, seedFileName);
+
+
+    SetupECDb("importtokentests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+                                                  "<ECSchema schemaName='BaseSchema' alias='base' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                  "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbMap' />"
+                                                  "    <ECEntityClass typeName='BaseNoTph' modifier='Abstract'>"
+                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='Foo' modifier='Sealed'>"
+                                                  "        <ECProperty propertyName='SubNoTphProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='SubNoTphProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='TphBase' modifier='Abstract'>"
+                                                  "          <ECCustomAttributes>"
+                                                  "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                  "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                  "            </ClassMap>"
+                                                  "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+                                                  "          </ECCustomAttributes>"
+                                                  "        <ECProperty propertyName='BaseProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='BaseProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='SubSharedCols' modifier='None'>"
+                                                  "          <ECCustomAttributes>"
+                                                  "            <ShareColumns xmlns='ECDbMap.02.00' >"
+                                                  "               <SharedColumnCount>5</SharedColumnCount>"
+                                                  "               <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+                                                  "            </ShareColumns>"
+                                                  "          </ECCustomAttributes>"
+                                                  "        <BaseClass>TphBase</BaseClass>"
+                                                  "        <ECProperty propertyName='SubSharedColsProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='SubSharedColsProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "    <ECEntityClass typeName='SubNotSharedCols' modifier='None'>"
+                                                  "        <BaseClass>TphBase</BaseClass>"
+                                                  "        <ECProperty propertyName='SubNotSharedColsProp1' typeName='long' />"
+                                                  "        <ECProperty propertyName='SubNotSharedColsProp2' typeName='string' />"
+                                                  "    </ECEntityClass>"
+                                                  "   <ECRelationshipClass typeName='FKRel' strength='Referencing' modifier='None'>"
+                                                  "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>"
+                                                  "          <Class class ='Foo' />"
+                                                  "      </Source>"
+                                                  "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
+                                                  "          <Class class ='TphBase' />"
+                                                  "      </Target>"
+                                                  "   </ECRelationshipClass>"
+                                                  "   <ECRelationshipClass typeName='LinkTableRel' strength='Referencing' modifier='None'>"
+                                                  "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Lhs'>"
+                                                  "          <Class class ='Foo' />"
+                                                  "      </Source>"
+                                                  "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Rhs'>"
+                                                  "          <Class class ='TphBase' />"
+                                                  "      </Target>"
+                                                  "   </ECRelationshipClass>"
+                                                  "</ECSchema>", true));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+    seedFileName.AssignUtf8(GetECDb().GetDbFileName());
+    GetECDb().CloseDb();
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='SubClassNoTph' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                 "        <BaseClass>base:BaseNoTph</BaseClass>"
+                 "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", false, seedFileName);
+    
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='SubClassGetsJoinedTable' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "    <ECEntityClass typeName='Sub2' modifier='None'>"
+                 "        <BaseClass>base:TphBase</BaseClass>"
+                 "        <ECProperty propertyName='Sub2Prop1' typeName='long' />"
+                 "        <ECProperty propertyName='Sub2Prop2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", false, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='NotSharedCols' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "    <ECEntityClass typeName='SubSub' modifier='None'>"
+                 "        <BaseClass>base:SubNotSharedCols</BaseClass>"
+                 "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
+                 "        <ECProperty propertyName='SubSubProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", false, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='SharedCols' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "    <ECEntityClass typeName='SubSub' modifier='None'>"
+                 "        <BaseClass>base:SubSharedCols</BaseClass>"
+                 "        <ECProperty propertyName='SubSubProp1' typeName='long' />"
+                 "        <ECProperty propertyName='SubSubProp2' typeName='string' />"
+                 "    </ECEntityClass>"
+                 "</ECSchema>", true, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='RootFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "   <ECRelationshipClass typeName='NewFKRel' strength='Referencing' modifier='None'>"
+                 "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>"
+                 "          <Class class ='base:Foo' />"
+                 "      </Source>"
+                 "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
+                 "          <Class class ='base:TphBase' />"
+                 "      </Target>"
+                 "   </ECRelationshipClass>"
+                 "</ECSchema>", false, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='SubFkRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "   <ECRelationshipClass typeName='FKRelSub' strength='Referencing' modifier='None'>"
+                 "        <BaseClass>base:FkRel</BaseClass>"
+                 "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent'>"
+                 "          <Class class ='base:Foo' />"
+                 "      </Source>"
+                 "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
+                 "          <Class class ='base:TphBase' />"
+                 "      </Target>"
+                 "   </ECRelationshipClass>"
+                 "</ECSchema>", true, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='RootLinkTableRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "   <ECRelationshipClass typeName='NewLinkTableRel' strength='Referencing' modifier='None'>"
+                 "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent'>"
+                 "          <Class class ='base:Foo' />"
+                 "      </Source>"
+                 "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
+                 "          <Class class ='base:TphBase' />"
+                 "      </Target>"
+                 "   </ECRelationshipClass>"
+                 "</ECSchema>", false, seedFileName);
+
+    assertImport("<?xml version='1.0' encoding='utf-8' ?>"
+                 "<ECSchema schemaName='SubLinkTableRel' alias='sub' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                 "    <ECSchemaReference name='BaseSchema' version='01.00' alias='base' />"
+                 "   <ECRelationshipClass typeName='NewLinkTableRel' strength='Referencing' modifier='None'>"
+                 "        <BaseClass>base:LinkTableRel</BaseClass>"
+                 "      <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent'>"
+                 "          <Class class ='base:Foo' />"
+                 "      </Source>"
+                 "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Children'>"
+                 "          <Class class ='base:TphBase' />"
+                 "      </Target>"
+                 "   </ECRelationshipClass>"
+                 "</ECSchema>", true, seedFileName);
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportWithLocalizationSchemas)
@@ -1379,10 +1569,10 @@ TEST_F(ECDbSchemaManagerTests, DuplicateInMemorySchemaTest)
 
     ECDb& ecdb = SetupECDb("duplicateInMemorySchemaTest.ecdb");
     ASSERT_TRUE(ecdb.IsDbOpen());
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache()));
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas()));
 
     ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(usr, usrXml, *readContext));
-    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache())) << "Failed because locater was not added for schemas that already exist in ECDb";
+    ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportECSchemas(readContext->GetCache().GetSchemas())) << "Failed because locater was not added for schemas that already exist in ECDb";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

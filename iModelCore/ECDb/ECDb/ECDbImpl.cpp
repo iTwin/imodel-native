@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb), m_expectedECSqlWriteToken(nullptr),
+ECDb::Impl::Impl(ECDbR ecdb) : m_ecdb(ecdb),
                             m_ecInstanceIdSequence(ecdb, "ec_ecinstanceidsequence"),
                             m_ecSchemaIdSequence(ecdb, "ec_ecschemaidsequence"),
                             m_ecClassIdSequence(ecdb, "ec_ecclassidsequence"),

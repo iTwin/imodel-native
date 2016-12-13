@@ -34,10 +34,10 @@ ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyEx
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::_Map(ClassMappingContext& ctx)
+ClassMappingStatus ClassMap::_Map(ClassMappingContext& ctx)
     {
-    MappingStatus stat = DoMapPart1(ctx);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = DoMapPart1(ctx);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     return DoMapPart2(ctx);
@@ -46,7 +46,7 @@ MappingStatus ClassMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
+ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
     {
     DbTable::Type tableType = DbTable::Type::Primary;
     const bool isTph = ctx.GetClassMappingInfo().GetMapStrategy().IsTablePerHierarchy();
@@ -58,7 +58,7 @@ MappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         if (tphBaseClassMap == nullptr)
             {
             BeAssert(false);
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         }
     else if (ctx.GetClassMappingInfo().GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
@@ -89,20 +89,20 @@ MappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
                                                         isExclusiveRootClassOfTable ? ctx.GetClassMappingInfo().GetECClass().GetId() : ECClassId(),
                                                         primaryTable);
         if (table == nullptr)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
 
         AddTable(*table);
         }
 
     if (SUCCESS != MapSystemColumns())
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
 
     //shared columns evaluation
     //Shared columns are created if ApplyToSubclassesOnly is true and if the subclasses are mapped to this table.
     //Reason: For a given table under shared columns regime the DB layout of the table must not change in later schema imports.
     if (!isTph || tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::No ||
         (tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly && tphInfo.GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable))
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
 
     if (tphBaseClassMap != nullptr)
         {
@@ -111,7 +111,7 @@ MappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         //shared columns are already created in this table (s. above)
         if (baseTphInfo.GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::No &&
             baseTphInfo.GetJoinedTableInfo() != JoinedTableInfo::ParentOfJoinedTable)
-            return MappingStatus::Success;
+            return ClassMappingStatus::Success;
         }
 
     if (tphInfo.GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::ApplyToSubclassesOnly)
@@ -124,11 +124,11 @@ MappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
         if (SUCCESS != GetJoinedTable().CreateSharedColumns(tphInfo))
             {
             Issues().Report(ECDbIssueSeverity::Error, "Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         }
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 
@@ -173,39 +173,39 @@ bool ClassMap::DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const& mapp
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
+ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     {
-    MappingStatus stat = MapProperties(ctx);
-    if (stat != MappingStatus::Success)
+    ClassMappingStatus stat = MapProperties(ctx);
+    if (stat != ClassMappingStatus::Success)
         return stat;
 
     ECPropertyCP currentTimeStampProp = ctx.GetClassMappingInfo().GetClassHasCurrentTimeStampProperty();
     if (currentTimeStampProp != nullptr)
         {
         if (SUCCESS != CreateCurrentTimeStampTrigger(*currentTimeStampProp))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
     //Add cascade delete for joinedTable;
     bool isJoinedTable = ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().IsValid() && ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
     if (!isJoinedTable)
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
 
     ClassMap const* tphBaseClassMap = ctx.GetClassMappingInfo().GetTphBaseClassMap();
     if (tphBaseClassMap == nullptr)
         {
         BeAssert(false);
-        return MappingStatus::Error;
+        return ClassMappingStatus::Error;
         }
 
     DbTable const& baseClassMapJoinedTable = tphBaseClassMap->GetJoinedTable();
     if (&baseClassMapJoinedTable == &GetJoinedTable())
-        return MappingStatus::Success;
+        return ClassMappingStatus::Success;
 
     DbColumn const* primaryKeyColumn = baseClassMapJoinedTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* foreignKeyColumn = GetJoinedTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId);
-    PRECONDITION(primaryKeyColumn != nullptr, MappingStatus::Error);
-    PRECONDITION(foreignKeyColumn != nullptr, MappingStatus::Error);
+    PRECONDITION(primaryKeyColumn != nullptr, ClassMappingStatus::Error);
+    PRECONDITION(foreignKeyColumn != nullptr, ClassMappingStatus::Error);
     bool createFKConstraint = true;
     for (DbConstraint const* constraint : GetJoinedTable().GetConstraints())
         {
@@ -224,10 +224,10 @@ MappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     if (createFKConstraint)
         {
         if (GetJoinedTable().CreateForeignKeyConstraint(*foreignKeyColumn, *primaryKeyColumn, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NotSpecified) == nullptr)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
         }
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
@@ -282,7 +282,7 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
-MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
+ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
     PropertyMapInheritanceMode inheritanceMode = GetPropertyMapInheritanceMode();
@@ -294,7 +294,7 @@ MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             if (baseClassMap == nullptr)
                 {
                 BeAssert(false);
-                return MappingStatus::Error;
+                return ClassMappingStatus::Error;
                 }
 
             if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
@@ -331,7 +331,7 @@ MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         RefCountedPtr<DataPropertyMap> propertyMap = PropertyMapCopier::CreateCopy(*baseClassPropMap, *this);        
         if (propertyMap == nullptr || SUCCESS != GetPropertyMapsR().Insert(propertyMap))
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
 
         if (propertyMap->GetType() == PropertyMap::Type::Navigation)
             {
@@ -347,7 +347,7 @@ MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
         if (propMap == nullptr)
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
 
         if (property->GetIsNavigation())
             {
@@ -364,11 +364,11 @@ MappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         if (SUCCESS != GetJoinedTable().CreateSharedColumns(ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo()))
             {
             Issues().Report(ECDbIssueSeverity::Error, "Could not create shared columns for ECClass '%s'.", m_ecClass.GetFullName());
-            return MappingStatus::Error;
+            return ClassMappingStatus::Error;
             }
         }
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1020,16 +1020,16 @@ BentleyStatus ClassMapLoadContext::Postprocess(ECDbMap const& ecdbMap)
     m_navPropMaps.clear();
     return SUCCESS;
     }
-//************************** UnmappedClassMap ***************************************************
+//************************** NotMappedClassMap ***************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014
 //---------------------------------------------------------------------------------------
-MappingStatus NotMappedClassMap::_Map(ClassMappingContext&)
+ClassMappingStatus NotMappedClassMap::_Map(ClassMappingContext&)
     {
     DbTable const* nullTable = GetDbMap().GetDbSchema().GetNullTable();
     SetTable(*const_cast<DbTable*> (nullTable));
 
-    return MappingStatus::Success;
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------

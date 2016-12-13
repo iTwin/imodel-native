@@ -192,22 +192,7 @@
     @note If @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas" fails, callers
     should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
     does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
-    
-    @section ECDbECSchemaImportAndUpdateAndBriefcases ECSchema Import/Update and Briefcases
-    
-    On @b Briefcases, by definition, no operations can be performed that modify the database schema. The @ref BentleyApi::BeSQLite::Db::GetBriefcaseId "BriefcaseId"
-    in this case is neither @ref BentleyApi::BeSQLite::BeBriefcaseId::Master "BeBriefcaseId::Master" nor @ref BentleyApi::BeSQLite::BeBriefcaseId::Standalone "BeBriefcaseId::Standalone".
-    An ECSchema Import or Update can, however, result in a modified database schema. For example, if an ECClass was added, a table might have to be created, 
-    or if an ECProperty was added, a column might have to be added. This depends though on the mapping rules.
-    
-    Consequently, this is the behavior of @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas"
-    with respect to briefcases:
-
-    ImportECSchemas return value | Briefcase | Master or standalone Briefcase
-    ---------------------------- | --------- | ------------------------------
-    Would modify DB schema       | ERROR     | SUCCESS
-    Would not modify DB schema   | SUCCESS   | SUCCESS
-   
+      
     @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
     
     @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
@@ -444,7 +429,7 @@
     determines the mapping for the entire hierarchy.
     - This implies in particular that if the root class implies a <em>foreign key type mapping</em>, the subclasses must 
     not add ECProperties, because ECRelationshipClasses with ECProperties are only supported when mapped as link tables.
-    - Link tables implicity use the @b SharedTable strategy if they store an ECRelationshipClass hierarchy.
+    - Link tables implicity use the @b TablePerHierarchy strategy if they store an ECRelationshipClass hierarchy.
     - %ECDb does not enforce multiplicities narrowed by derived ECRelationshipClasses.
 
     @see @ref ECDbRelationshipRules

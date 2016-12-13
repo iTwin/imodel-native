@@ -19,7 +19,7 @@ struct ClassMap;
 struct ClassMappingInfo;
 struct SchemaImportContext;
 
-enum class MappingStatus
+enum class ClassMappingStatus
     {
     Success = 0,
     BaseClassesNotMapped = 1,    // We have temporarily stopped mapping a given branch of the class hierarchy because
@@ -39,7 +39,7 @@ private:
     ~ClassMappingInfoFactory ();
 
 public:
-    static std::unique_ptr<ClassMappingInfo> Create(MappingStatus&, ECDb const&, ECN::ECClassCR);
+    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, ECDb const&, ECN::ECClassCR);
     };
 
 struct IndexMappingInfo;
@@ -67,10 +67,10 @@ protected:
     ClassMap const* m_tphBaseClassMap;
 
 private:
-    MappingStatus EvaluateMapStrategy();
-    virtual MappingStatus _EvaluateMapStrategy();
+    ClassMappingStatus EvaluateMapStrategy();
+    virtual ClassMappingStatus _EvaluateMapStrategy();
 
-    MappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
+    ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
@@ -87,7 +87,7 @@ public:
     ClassMappingInfo(ECDb const&, ECN::ECClassCR);
     virtual ~ClassMappingInfo() {}
 
-    MappingStatus Initialize();
+    ClassMappingStatus Initialize();
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
@@ -99,23 +99,6 @@ public:
     ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     //! Virtual tables are not persisted   
     bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
-    };
-
-
-//======================================================================================
-// @bsiclass                                                     Krischan.Eberle     06/2015
-//+===============+===============+===============+===============+===============+======
-struct RelationshipEndColumns
-    {
-private:
-    Utf8String m_ecInstanceIdColumnName;
-    Utf8String m_ecClassIdColumnName;
-
-public:
-    RelationshipEndColumns() {}
-    RelationshipEndColumns(Utf8CP ecInstanceIdColumnName, Utf8CP ecClassIdColumnName = nullptr) : m_ecInstanceIdColumnName(ecInstanceIdColumnName), m_ecClassIdColumnName(ecClassIdColumnName) {}
-    Utf8CP GetECInstanceIdColumnName() const { return m_ecInstanceIdColumnName.c_str(); }
-    Utf8CP GetECClassIdColumnName() const { return m_ecClassIdColumnName.c_str(); }
     };
 
 //======================================================================================
@@ -142,21 +125,50 @@ public:
         LinkTable
         };
 
+    struct FkMappingInfo : NonCopyableClass
+        {
+        private:
+            ForeignKeyDbConstraint::ActionType m_onDeleteAction;
+            ForeignKeyDbConstraint::ActionType m_onUpdateAction;
+
+        public:
+            FkMappingInfo() : m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified) {}
+            FkMappingInfo(ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+                {}
+
+            ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
+            ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
+        };
+
+    struct LinkTableMappingInfo : NonCopyableClass
+        {
+    private:
+        Utf8String m_sourceIdColumnName;
+        Utf8String m_targetIdColumnName;
+        bool m_allowDuplicateRelationships;
+    
+    public:
+        LinkTableMappingInfo() : LinkTableMappingInfo(false) {}
+        LinkTableMappingInfo(bool allowDuplicateRelationships) : m_allowDuplicateRelationships(allowDuplicateRelationships) {}
+        LinkTableMappingInfo(Utf8StringCR sourceIdColname, Utf8StringCR targetIdColName, bool allowDuplicateRelationships)
+            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName), m_allowDuplicateRelationships(allowDuplicateRelationships)
+            {}
+
+        Utf8StringCR GetSourceIdColumnName() const { return m_sourceIdColumnName; }
+        Utf8StringCR GetTargetIdColumnName() const { return m_targetIdColumnName; }
+        bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
+        };
 private:
     Cardinality m_cardinality;
-    bool m_sourceColumnsMappingIsNull;
-    RelationshipEndColumns m_sourceColumnsMapping;
-    bool m_targetColumnsMappingIsNull;
-    RelationshipEndColumns m_targetColumnsMapping;
     CustomMapType m_customMapType;
-    bool m_allowDuplicateRelationships;
-    ForeignKeyDbConstraint::ActionType m_onDeleteAction;
-    ForeignKeyDbConstraint::ActionType m_onUpdateAction;
+    std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
+    std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
     virtual BentleyStatus _InitializeFromSchema() override;
-    virtual MappingStatus _EvaluateMapStrategy();
+    virtual ClassMappingStatus _EvaluateMapStrategy();
 
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
@@ -170,21 +182,15 @@ private:
     static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
 public:
-    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass), m_sourceColumnsMappingIsNull(true), m_targetColumnsMappingIsNull(true),
-        m_customMapType(CustomMapType::None), m_allowDuplicateRelationships(false), 
-        m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified)
-        {}
+    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass),
+        m_customMapType(CustomMapType::None), m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) {}
 
     virtual ~RelationshipMappingInfo() {}
 
     Cardinality GetCardinality() const { return m_cardinality; }
-
     CustomMapType GetCustomMapType() const { return m_customMapType; }
-    bool AllowDuplicateRelationships() const { BeAssert((m_customMapType == CustomMapType::LinkTable || m_customMapType == CustomMapType::None) && !MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_allowDuplicateRelationships; }
-    ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo));  return m_onDeleteAction; }
-    ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(m_customMapType != CustomMapType::LinkTable && MapStrategyExtendedInfo::IsForeignKeyMapping(m_mapStrategyExtInfo)); return m_onUpdateAction; }
-
-    RelationshipEndColumns const& GetColumnsMapping(ECN::ECRelationshipEnd end) const;
+    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
+    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
     std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}
     std::set<DbTable const*> const& GetTargetTables() const {return m_targetTables;}
     };

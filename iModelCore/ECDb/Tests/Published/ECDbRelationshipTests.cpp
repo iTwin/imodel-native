@@ -333,7 +333,7 @@ TEST(ECDbRelationships, ImportECRelationshipInstances)
     ASSERT_TRUE(relInstance.IsValid());
     ASSERT_EQ(SUCCESS, PersistRelationship(*relInstance, db));
     ValidatePersistingRelationship(db, "sc_Employee", InstanceToId(*relInstance->GetSource()),
-                                   "Company__trg_11_id", InstanceToId(*relInstance->GetTarget()).GetValue());
+                                   "ForeignECInstanceId_stco_EmployeeCompany", InstanceToId(*relInstance->GetTarget()).GetValue());
     ValidateReadingRelationship(db, "StartupCompany", "EmployeeCompany", *relInstance);
     ValidateReadingRelated(db, "StartupCompany", "EmployeeCompany", relInstance->GetSource(), relInstance->GetTarget());
 

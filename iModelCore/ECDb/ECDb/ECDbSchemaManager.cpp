@@ -150,12 +150,13 @@ void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP i
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas) const
+BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& schemas, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
     {
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin ECDbSchemaManager::ImportECSchemas");
 
     StopWatch timer(true);
-    const BentleyStatus stat = DoImportECSchemas(schemas);
+    //until decided whether a bool flag is enough or a token should be used we fake the token this way.
+    const BentleyStatus stat = DoImportECSchemas(schemas, mayModifyDbSchemaToken);
     timer.Stop();
     if (SUCCESS == stat)
         {
@@ -171,7 +172,7 @@ BentleyStatus ECDbSchemaManager::ImportECSchemas(bvector<ECSchemaCP> const& sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas) const
+BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& schemas, DbSchemaModificationToken const* mayModifyDbSchemaToken) const
     {
     if (m_ecdb.IsReadonly())
         {
@@ -201,11 +202,10 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
-    //See if cache need to be cleared. If compareContext.RequireECSchemaUpgrade() == true will clear the cache and reload imported schema.
     if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
         return ERROR;
 
-    if (MappingStatus::Error == GetDbMap().MapSchemas(context))
+    if (SUCCESS != GetDbMap().MapSchemas(context, mayModifyDbSchemaToken))
         return ERROR;
 
     return ViewGenerator::CreateUpdatableViews(GetECDb());

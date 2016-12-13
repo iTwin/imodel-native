@@ -69,7 +69,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
     ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECSqlPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType(), ctx.GetWriteToken()));
     if (!policy.IsSupported())
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage());
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage().c_str());
         Finalize();
         return ECSqlStatus::Error;
         }
