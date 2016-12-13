@@ -79,9 +79,30 @@ static DRange3d bisectRange(DRange3dCR range, bool takeLow)
     return subRange;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
+    {                    
+    bvector <bvector<bvector<DPoint3d>>> strokesArray;
+
+    curve.CollectLinearGeometry (strokesArray, &facetOptions);
+
+    for (auto& loop : strokesArray)
+        {
+        for (auto& loopStrokes : loop)
+            {
+            transform.Multiply(loopStrokes, loopStrokes);
+            strokes.push_back (std::move(loopStrokes));
+            }
+        }
+    }
+
 //=======================================================================================
-// ###TODO: TEMP! We don't want to have to copy all the indices into a new buffer...store
+// ###TODO? We don't want to have to copy all the indices into a new buffer...store
 // them that way in Mesh struct.
+// OTOH we do want to support single- or double-sided triangles...not clear if QVis currently
+// supports that.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
 struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
@@ -160,6 +181,230 @@ struct RangeAccumulator : RangeIndex::Traverser
         return true;
         }
 };
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct PrimitiveGeometry : Geometry
+{
+private:
+    IGeometryPtr        m_geometry;
+
+    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbR db)
+        : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
+
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
+    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override;
+    virtual bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
+public:
+    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbR db)
+        {
+        return new PrimitiveGeometry(geometry, tf, range, elemId, params, isCurved, db);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   08/16
+//=======================================================================================
+struct SolidKernelGeometry : Geometry
+{
+private:
+    IBRepEntityPtr      m_entity;
+    BeMutex             m_mutex;
+
+    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
+
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
+public:
+    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
+        {
+        return new SolidKernelGeometry(solid, tf, range, elemId, params, db);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct TextStringGeometry : Geometry
+{
+private:
+    TextStringPtr                   m_text;
+    mutable bvector<CurveVectorPtr> m_glyphCurves;
+
+    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
+        : Geometry(transform, range, elemId, params, true, db), m_text(&text) 
+        { 
+        InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
+        }
+
+    virtual bool _DoVertexCluster() const override { return false; }
+
+public:
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
+        {
+        return new TextStringGeometry(textString, transform, range, elemId, params, db);
+        }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
+    {
+    DRange2d            textRange = m_text->GetRange();
+    double              minDimension = std::min (textRange.high.x - textRange.low.x, textRange.high.y - textRange.low.y) * GetTransform().ColumnXMagnitude();
+    static const double s_minGlyphRatio = 1.0; 
+    
+    return minDimension < s_minGlyphRatio * facetOptions.GetChordTolerance();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override
+    {
+
+    PolyfaceList                polyfaces;
+    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
+
+    if (DoGlyphBoxes(facetOptions))
+        {
+        DVec3d              xAxis, yAxis;
+        DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
+        DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
+
+        m_text->ComputeGlyphAxes(xAxis, yAxis);
+        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
+
+        for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
+            {
+            if (nullptr != glyphs[iGlyph])
+                {
+                DRange2d                range = glyphs[iGlyph]->GetExactRange();
+                bvector<DPoint3d>       box(5);
+
+                box[0].x = box[3].x = box[4].x = range.low.x;
+                box[1].x = box[2].x = range.high.x;
+
+                box[0].y = box[1].y = box[4].y = range.low.y;
+                box[2].y = box[3].y = range.high.y;
+
+                Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
+
+                polyfaceBuilder->AddTriangulation (box);
+                }
+            }
+        }
+    else
+        {
+        for (auto& glyphCurve : m_glyphCurves)
+            polyfaceBuilder->AddRegion(*glyphCurve);
+        }
+
+    PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
+
+    if (polyface.IsValid() && polyface->HasFacets())
+        {
+        polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
+        polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
+        }
+
+    return polyfaces;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override
+    {
+    StrokesList strokes;
+
+    if (DoGlyphBoxes(facetOptions))
+        return strokes;
+
+    InitGlyphCurves();
+
+    bvector<bvector<DPoint3d>>  strokePoints;
+    Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
+
+    for (auto& glyphCurve : m_glyphCurves)
+        if (!glyphCurve->IsAnyRegionType())
+            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
+
+    if (!strokePoints.empty())
+        strokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints)));
+
+    return strokes;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual size_t _GetFacetCount(FacetCounter& counter) const override 
+    { 
+    InitGlyphCurves();
+    size_t              count = 0;
+
+    for (auto& glyphCurve : m_glyphCurves)
+        count += counter.GetFacetCount(*glyphCurve);
+
+    return count;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/    
+void  InitGlyphCurves() const
+    {
+    if (!m_glyphCurves.empty())
+        return;
+
+    DVec3d              xAxis, yAxis;
+    DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
+    DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
+
+    m_text->ComputeGlyphAxes(xAxis, yAxis);
+    Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
+
+    for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
+        {
+        if (nullptr != glyphs[iGlyph])
+            {
+            bool            isFilled = false;
+            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
+
+            if (glyphCurveVector.IsValid())
+                {
+                glyphCurveVector->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
+                m_glyphCurves.push_back(glyphCurveVector);
+                }
+            }
+        }                                                                                                           
+    }
+};  // TextStringGeometry
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     11/2016
+//=======================================================================================
+struct GeomPartInstanceGeometry : Geometry
+{
+private:
+    GeomPartPtr     m_part;
+
+    GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
+        : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
+public:
+    static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
+
+    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
+    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
+    virtual GeomPartCPtr _GetPart() const override { return m_part; }
+
+};  // GeomPartInstanceTileGeometry 
 
 END_UNNAMED_NAMESPACE
 
@@ -746,254 +991,11 @@ size_t Geometry::GetFacetCount(IFacetOptionsR options) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVectorCR curve, IFacetOptionsR facetOptions, TransformCR transform)
-    {                    
-    bvector <bvector<bvector<DPoint3d>>> strokesArray;
-
-    curve.CollectLinearGeometry (strokesArray, &facetOptions);
-
-    for (auto& loop : strokesArray)
-        {
-        for (auto& loopStrokes : loop)
-            {
-            transform.Multiply(loopStrokes, loopStrokes);
-            strokes.push_back (std::move(loopStrokes));
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
 void Strokes::Transform(TransformCR transform)
     {
     for (auto& stroke : m_strokes)
         transform.Multiply (stroke, stroke);
     }
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/16
-//=======================================================================================
-struct PrimitiveGeometry : Geometry
-{
-private:
-    IGeometryPtr        m_geometry;
-
-    PrimitiveGeometry(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbR db)
-        : Geometry(tf, range, elemId, params, isCurved, db), m_geometry(&geometry) { }
-
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override;
-    virtual bool _DoDecimate () const override { return m_geometry->GetAsPolyfaceHeader().IsValid(); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_geometry); }
-public:
-    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, bool isCurved, DgnDbR db)
-        {
-        return new PrimitiveGeometry(geometry, tf, range, elemId, params, isCurved, db);
-        }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   08/16
-//=======================================================================================
-struct SolidKernelGeometry : Geometry
-{
-private:
-    IBRepEntityPtr      m_entity;
-    BeMutex             m_mutex;
-
-    SolidKernelGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
-
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override;
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
-public:
-    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
-        {
-        return new SolidKernelGeometry(solid, tf, range, elemId, params, db);
-        }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-struct TextStringGeometry : Geometry
-{
-private:
-    TextStringPtr                   m_text;
-    mutable bvector<CurveVectorPtr> m_glyphCurves;
-
-    TextStringGeometry(TextStringR text, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
-        : Geometry(transform, range, elemId, params, true, db), m_text(&text) 
-        { 
-        InitGlyphCurves();     // Should be able to defer this when font threaded ness is resolved.
-        }
-
-    virtual bool _DoVertexCluster() const override { return false; }
-
-public:
-    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
-        {
-        return new TextStringGeometry(textString, transform, range, elemId, params, db);
-        }
-    
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool     DoGlyphBoxes (IFacetOptionsR facetOptions)
-    {
-    DRange2d            textRange = m_text->GetRange();
-    double              minDimension = std::min (textRange.high.x - textRange.low.x, textRange.high.y - textRange.low.y) * GetTransform().ColumnXMagnitude();
-    static const double s_minGlyphRatio = 1.0; 
-    
-    return minDimension < s_minGlyphRatio * facetOptions.GetChordTolerance();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override
-    {
-
-    PolyfaceList                polyfaces;
-    IPolyfaceConstructionPtr    polyfaceBuilder = IPolyfaceConstruction::Create(facetOptions);
-
-    if (DoGlyphBoxes(facetOptions))
-        {
-        DVec3d              xAxis, yAxis;
-        DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
-        DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
-
-        m_text->ComputeGlyphAxes(xAxis, yAxis);
-        Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
-
-        for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
-            {
-            if (nullptr != glyphs[iGlyph])
-                {
-                DRange2d                range = glyphs[iGlyph]->GetExactRange();
-                bvector<DPoint3d>       box(5);
-
-                box[0].x = box[3].x = box[4].x = range.low.x;
-                box[1].x = box[2].x = range.high.x;
-
-                box[0].y = box[1].y = box[4].y = range.low.y;
-                box[2].y = box[3].y = range.high.y;
-
-                Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform).Multiply (box, box);
-
-                polyfaceBuilder->AddTriangulation (box);
-                }
-            }
-        }
-    else
-        {
-        for (auto& glyphCurve : m_glyphCurves)
-            polyfaceBuilder->AddRegion(*glyphCurve);
-        }
-
-    PolyfaceHeaderPtr   polyface = polyfaceBuilder->GetClientMeshPtr();
-
-    if (polyface.IsValid() && polyface->HasFacets())
-        {
-        polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (Polyface(*GetDisplayParamsPtr(), *polyface));
-        }
-
-    return polyfaces;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override
-    {
-    StrokesList strokes;
-
-    if (DoGlyphBoxes(facetOptions))
-        return strokes;
-
-    InitGlyphCurves();
-
-    bvector<bvector<DPoint3d>>  strokePoints;
-    Transform                   transform = Transform::FromProduct (GetTransform(), m_text->ComputeTransform());
-
-    for (auto& glyphCurve : m_glyphCurves)
-        if (!glyphCurve->IsAnyRegionType())
-            collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
-
-    if (!strokePoints.empty())
-        strokes.push_back(Strokes(*GetDisplayParamsPtr(), std::move(strokePoints)));
-
-    return strokes;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual size_t _GetFacetCount(FacetCounter& counter) const override 
-    { 
-    InitGlyphCurves();
-    size_t              count = 0;
-
-    for (auto& glyphCurve : m_glyphCurves)
-        count += counter.GetFacetCount(*glyphCurve);
-
-    return count;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/    
-void  InitGlyphCurves() const
-    {
-    if (!m_glyphCurves.empty())
-        return;
-
-    DVec3d              xAxis, yAxis;
-    DgnGlyphCP const*   glyphs = m_text->GetGlyphs();
-    DPoint3dCP          glyphOrigins = m_text->GetGlyphOrigins();
-
-    m_text->ComputeGlyphAxes(xAxis, yAxis);
-    Transform       rotationTransform = Transform::From (RotMatrix::From2Vectors(xAxis, yAxis));
-
-    for (size_t iGlyph = 0; iGlyph <  m_text->GetNumGlyphs(); ++iGlyph)
-        {
-        if (nullptr != glyphs[iGlyph])
-            {
-            bool            isFilled = false;
-            CurveVectorPtr  glyphCurveVector = glyphs[iGlyph]->GetCurveVector(isFilled);
-
-            if (glyphCurveVector.IsValid())
-                {
-                glyphCurveVector->TransformInPlace (Transform::FromProduct (Transform::From(glyphOrigins[iGlyph]), rotationTransform));
-                m_glyphCurves.push_back(glyphCurveVector);
-                }
-            }
-        }                                                                                                           
-    }
-};  // TextStringGeometry
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     11/2016
-//=======================================================================================
-struct GeomPartInstanceGeometry : Geometry
-{
-private:
-    GeomPartPtr     m_part;
-
-    GeomPartInstanceGeometry(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)
-        : Geometry(tf, range, elemId, params, part.IsCurved(), db), m_part(&part) { }
-public:
-    static GeometryPtr Create(GeomPartR  part, TransformCR tf, DRange3dCR range, DgnElementId elemId, DisplayParamsR params, DgnDbR db)  { return new GeomPartInstanceGeometry(part, tf, range, elemId, params, db); }
-
-    virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
-    virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
-    virtual GeomPartCPtr _GetPart() const override { return m_part; }
-
-};  // GeomPartInstanceTileGeometry 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -1272,9 +1274,9 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     return true;
     }
 
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf)
     : T_Super(octRoot, id, parent, isLeaf)
     {
