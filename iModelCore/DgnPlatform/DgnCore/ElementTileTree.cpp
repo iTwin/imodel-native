@@ -13,10 +13,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
-#include <windows.h>
-#endif
-
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
@@ -25,6 +21,202 @@
 USING_NAMESPACE_ELEMENT_TILETREE
 
 BEGIN_UNNAMED_NAMESPACE
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+
+// The ThreadLocalParasolidHandlerStorageMark sets up the local storage that will be used 
+// by all threads.
+
+typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>     ThreadedParasolidErrorHandlerInnerMarkPtr;
+
+
+class   ParasolidException {};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      10/2015
+*  Called from the main thread to register Thread Local Storage used by
+*  all threads for Parasolid error handling.
++===============+===============+===============+===============+===============+======*/
+struct  ThreadedLocalParasolidHandlerStorageMark
+{
+    BeThreadLocalStorage*       m_previousLocalStorage;
+
+    ThreadedLocalParasolidHandlerStorageMark ();
+    ~ThreadedLocalParasolidHandlerStorageMark ();
+};
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley      10/2015
+*  Inner mark.   Included around code sections that should be rolled back in case
+*                Of serious error.
++===============+===============+===============+===============+===============+======*/
+struct  ThreadedParasolidErrorHandlerInnerMark : RefCountedBase
+{
+    static ThreadedParasolidErrorHandlerInnerMarkPtr Create () { return new ThreadedParasolidErrorHandlerInnerMark(); }                                                 
+
+protected:
+
+    ThreadedParasolidErrorHandlerInnerMark();
+    ~ThreadedParasolidErrorHandlerInnerMark();
+};
+      
+typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerOuterMark>     ThreadedParasolidErrorHandlerOuterMarkPtr;
+
+/*=================================================================================**//**
+* @bsiclass                                                     RayBentley      10/2015
+*  Outer mark.   Included once to set up Parasolid error handling for a single thread.
++===============+===============+===============+===============+===============+======*/
+struct  ThreadedParasolidErrorHandlerOuterMark  : RefCountedBase 
+{
+    PK_ERROR_frustrum_t     m_previousErrorFrustum;
+
+    static ThreadedParasolidErrorHandlerOuterMarkPtr Create () { return new ThreadedParasolidErrorHandlerOuterMark(); }
+
+protected:
+
+    ThreadedParasolidErrorHandlerOuterMark();
+    ~ThreadedParasolidErrorHandlerOuterMark();
+};
+    
+
+static      BeThreadLocalStorage*       s_threadLocalParasolidHandlerStorage;    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015                                                                   
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedLocalParasolidHandlerStorageMark::ThreadedLocalParasolidHandlerStorageMark ()
+    {
+    if (nullptr == (m_previousLocalStorage = s_threadLocalParasolidHandlerStorage))
+        s_threadLocalParasolidHandlerStorage = new BeThreadLocalStorage;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedLocalParasolidHandlerStorageMark::~ThreadedLocalParasolidHandlerStorageMark () 
+    { 
+    if (nullptr == m_previousLocalStorage) 
+        DELETE_AND_CLEAR (s_threadLocalParasolidHandlerStorage);
+
+    }
+
+typedef bvector<PK_MARK_t>  T_RollbackMarks;
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static T_RollbackMarks*  getRollbackMarks () 
+    { 
+    static T_RollbackMarks      s_unthreadedMarks;
+
+    return nullptr == s_threadLocalParasolidHandlerStorage ? &s_unthreadedMarks : reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer());   
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clearRollbackMarks () 
+    {    
+    T_RollbackMarks*    rollbackMarks;
+             
+    if (nullptr != s_threadLocalParasolidHandlerStorage &&
+        nullptr != (rollbackMarks = reinterpret_cast <T_RollbackMarks*> (s_threadLocalParasolidHandlerStorage->GetValueAsPointer())))
+        {
+        delete rollbackMarks;
+        s_threadLocalParasolidHandlerStorage->SetValueAsPointer(nullptr);
+        } 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static void clearExclusions()
+    {
+    PK_THREAD_exclusion_t       clearedExclusion;
+    PK_LOGICAL_t                clearedThisThread;
+
+    PK_THREAD_clear_exclusion (PK_THREAD_exclusion_serious_c, &clearedExclusion, &clearedThisThread);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+static PK_ERROR_code_t threadedParasolidErrorHandler (PK_ERROR_sf_t* errorSf)
+    {
+    if (errorSf->severity > PK_ERROR_mild)
+        {
+        switch (errorSf->code)
+            {
+            case 942:         // Edge crossing (constructing face from curve vector to perform intersections)
+            case 547:         // Nonmanifold  (constructing face from curve vector to perform intersections)
+            case 1083:        // Degenerate trim loop.
+                break;
+
+            default:
+                printf ("Error %d caught in parasolid error handler\n", errorSf->code);
+                BeAssert (false && "Severe error during threaded processing");
+                break;
+            }
+        PK_MARK_goto (getRollbackMarks()->back());
+        clearExclusions ();
+        
+        PK_THREAD_tidy();
+
+        throw ParasolidException();
+        }
+    
+    return 0; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedParasolidErrorHandlerOuterMark::ThreadedParasolidErrorHandlerOuterMark ()
+    {
+    BeAssert (nullptr == getRollbackMarks());      // The outer mark is not nestable.
+
+    PK_THREAD_ask_error_cbs (&m_previousErrorFrustum);
+
+    PK_ERROR_frustrum_t     errorFrustum;
+
+    errorFrustum.handler_fn = threadedParasolidErrorHandler;
+    PK_THREAD_register_error_cbs (errorFrustum);
+
+    s_threadLocalParasolidHandlerStorage->SetValueAsPointer (new T_RollbackMarks());
+    };
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedParasolidErrorHandlerOuterMark::~ThreadedParasolidErrorHandlerOuterMark ()
+    {
+    PK_THREAD_register_error_cbs (m_previousErrorFrustum);
+    clearRollbackMarks(); 
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedParasolidErrorHandlerInnerMark::ThreadedParasolidErrorHandlerInnerMark ()
+    {
+    PK_MARK_t       mark;
+
+    PK_MARK_create (&mark);
+    getRollbackMarks()->push_back (mark);
+    }
+      
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley      02/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+ThreadedParasolidErrorHandlerInnerMark::~ThreadedParasolidErrorHandlerInnerMark ()
+    {
+    PK_MARK_delete (getRollbackMarks()->back());
+    getRollbackMarks()->pop_back();
+    }
+
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
@@ -145,6 +337,10 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 };
 
 constexpr double s_half2dDepthRange = 10.0;
+constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
+constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
+constexpr double s_minToleranceRatio = 100.0;
+static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -405,6 +601,158 @@ public:
     virtual GeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileGeometrySource
+{
+    struct GeomBlob
+    {
+        void const* m_blob;
+        int         m_size;
+
+        GeomBlob(void const* blob, int size) : m_blob(blob), m_size(size) { }
+        template<typename T> GeomBlob(T& stmt, int columnIndex)
+            {
+            m_blob = stmt.GetValueBlob(columnIndex);
+            m_size = stmt.GetColumnBytes(columnIndex);
+            }
+    };
+protected:
+    DgnCategoryId           m_categoryId;
+    GeometryStream          m_geom;
+    DgnDbR                  m_db;
+    bool                    m_isGeometryValid;
+
+    TileGeometrySource(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob) : m_categoryId(categoryId), m_db(db)
+        {
+        m_isGeometryValid = DgnDbStatus::Success == db.Elements().LoadGeometryStream(m_geom, geomBlob.m_blob, geomBlob.m_size);
+        }
+public:
+    bool IsGeometryValid() const { return m_isGeometryValid; }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   09/16
+//=======================================================================================
+struct TileGeometrySource3d : TileGeometrySource, GeometrySource3d
+{
+private:
+    Placement3d     m_placement;
+
+    TileGeometrySource3d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    virtual DgnElementCP _ToElement() const override { return nullptr; }
+    virtual GeometrySource3dCP _GetAsGeometrySource3d() const override { return this; }
+    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    virtual Placement3dCR _GetPlacement() const override { return m_placement; }
+
+    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    virtual DgnDbStatus _SetPlacement(Placement3dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+public:
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement3dCR placement)
+        {
+        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource3d(categoryId, db, geomBlob, placement));
+        if (!static_cast<TileGeometrySource3d const&>(*pSrc).IsGeometryValid())
+            return nullptr;
+
+        return pSrc;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct TileGeometrySource2d : TileGeometrySource, GeometrySource2d
+{
+private:
+    Placement2d     m_placement;
+
+    TileGeometrySource2d(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+        : TileGeometrySource(categoryId, db, geomBlob), m_placement(placement) { }
+
+    virtual DgnDbR _GetSourceDgnDb() const override { return m_db; }
+    virtual DgnElementCP _ToElement() const override { return nullptr; }
+    virtual GeometrySource2dCP _GetAsGeometrySource2d() const override { return this; }
+    virtual DgnCategoryId _GetCategoryId() const override { return m_categoryId; }
+    virtual GeometryStreamCR _GetGeometryStream() const override { return m_geom; }
+    virtual Placement2dCR _GetPlacement() const override { return m_placement; }
+
+    virtual Render::GraphicSet& _Graphics() const override { BeAssert(false && "No reason to access this"); return s_unusedDummyGraphicSet; }
+    virtual DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+    virtual DgnDbStatus _SetPlacement(Placement2dCR) override { BeAssert(false && "No reason to access this"); return DgnDbStatus::BadRequest; }
+public:
+    static std::unique_ptr<GeometrySource> Create(DgnCategoryId categoryId, DgnDbR db, GeomBlob const& geomBlob, Placement2dCR placement)
+        {
+        std::unique_ptr<GeometrySource> pSrc(new TileGeometrySource2d(categoryId, db, geomBlob, placement));
+        if (!static_cast<TileGeometrySource2d const&>(*pSrc).IsGeometryValid())
+            return nullptr;
+
+        return pSrc;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct GeometrySelector3d
+{
+    static bool Is3d() { return true; }
+
+    static Utf8CP GetSql()
+        {
+        return "SELECT CategoryId,GeometryStream,Yaw,Pitch,Roll,Origin_X,Origin_Y,Origin_Z,BBoxLow_X,BBoxLow_Y,BBoxLow_Z,BBoxHigh_X,BBoxHigh_Y,BBoxHigh_Z FROM "
+                BIS_TABLE(BIS_CLASS_GeometricElement3d) " WHERE ElementId=?";
+        }
+
+    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
+        {
+        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
+
+        DPoint3d origin = DPoint3d::From(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7)),
+                 boxLo  = DPoint3d::From(stmt.GetValueDouble(8), stmt.GetValueDouble(9), stmt.GetValueDouble(10)),
+                 boxHi  = DPoint3d::From(stmt.GetValueDouble(11), stmt.GetValueDouble(12), stmt.GetValueDouble(13));
+
+        Placement3d placement(origin,
+                YawPitchRollAngles(Angle::FromDegrees(stmt.GetValueDouble(2)), Angle::FromDegrees(stmt.GetValueDouble(3)), Angle::FromDegrees(stmt.GetValueDouble(4))),
+                ElementAlignedBox3d(boxLo.x, boxLo.y, boxLo.z, boxHi.x, boxHi.y, boxHi.z));
+
+        return TileGeometrySource3d::Create(categoryId, db, geomBlob, placement);
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   11/16
+//=======================================================================================
+struct GeometrySelector2d
+{
+    static bool Is3d() { return false; }
+
+    static Utf8CP GetSql()
+        {
+        return "SELECT CategoryId,GeometryStream,Rotation,Origin_X,Origin_Y,BBoxLow_X,BBoxLow_Y,BBoxHigh_X,BBoxHigh_Y FROM "
+                BIS_TABLE(BIS_CLASS_GeometricElement2d) " WHERE ElementId=?";
+        }
+
+    static std::unique_ptr<GeometrySource> ExtractGeometrySource(BeSQLite::CachedStatement& stmt, DgnDbR db)
+        {
+        auto categoryId = stmt.GetValueId<DgnCategoryId>(0);
+        TileGeometrySource::GeomBlob geomBlob(stmt, 1);
+
+        auto rotation = AngleInDegrees::FromDegrees(stmt.GetValueDouble(2));
+        DPoint2d origin = DPoint2d::From(stmt.GetValueDouble(3), stmt.GetValueDouble(4));
+        ElementAlignedBox2d bbox(stmt.GetValueDouble(5), stmt.GetValueDouble(6), stmt.GetValueDouble(7), stmt.GetValueDouble(8));
+
+        Placement2d placement(origin, rotation, bbox);
+        return TileGeometrySource2d::Create(categoryId, db, geomBlob, placement);
+        }
+};
 
 END_UNNAMED_NAMESPACE
 
@@ -1229,7 +1577,7 @@ BentleyStatus Loader::_LoadTile()
     graphic->Close();
 
     if (geometry.IsEmpty())
-        tile.SetIsLeaf();
+        tile.SetIsLeaf();   // ###TODO: Is this true - or can all the geometry be too small for this tile's tolerance?
 
     tile.SetGraphic(*graphic);
     tile.SetIsReady();
@@ -1269,7 +1617,7 @@ RootPtr Root::Create(GeometricModelR model)
 bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     {
     // ###TODO: Expected to load geometry here?
-    m_rootTile = Tile::Create(*this, TileTree::OctTree::TileId(0,0,0,0), nullptr, false);
+    m_rootTile = Tile::Create(*this, TileTree::OctTree::TileId(0,0,0,0), nullptr);
     m_rootTile->ExtendRange(range);
     return true;
     }
@@ -1277,13 +1625,23 @@ bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf)
-    : T_Super(octRoot, id, parent, isLeaf)
+Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent)
+    : T_Super(octRoot, id, parent, false)
     {
     if (nullptr != parent)
         m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
 
-    // ###TODO: Determine leafness
+    double leafTolerance = GetElementRoot().GetLeafTolerance();
+    double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
+    if (tileTolerance < leafTolerance)
+        {
+        m_tolerance = leafTolerance;
+        SetIsLeaf();
+        }
+    else
+        {
+        m_tolerance = tileTolerance;
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1299,7 +1657,7 @@ TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
     {
-    return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, this, false);
+    return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, this);
     }
 
 /*---------------------------------------------------------------------------------**//**

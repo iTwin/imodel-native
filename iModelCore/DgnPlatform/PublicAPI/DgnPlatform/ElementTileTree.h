@@ -533,6 +533,7 @@ struct Root : TileTree::OctTree::Root
 private:
     DgnModelId      m_modelId;
     Utf8String      m_name;
+    double          m_leafTolerance = 0.01;
     bool            m_is3d;
     // ###TODO: Cache (geom parts)
 
@@ -548,6 +549,7 @@ public:
     DgnModelId GetModelId() const { return m_modelId; }
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
+    double GetLeafTolerance() const { return m_leafTolerance; }
 };
 
 //=======================================================================================
@@ -558,16 +560,19 @@ struct Tile : TileTree::OctTree::Tile
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 private:
     GeometryList    m_geometries;
+    double          m_tolerance;
 
-    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf);
+    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent);
 
     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
-    virtual double _GetMaximumSize() const override { return 1.0; /*###TODO*/ }
+    virtual double _GetMaximumSize() const override { return GetTolerance(); }
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
 public:
-    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf) { return new Tile(root, id, parent, isLeaf); }
+    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent) { return new Tile(root, id, parent); }
+
+    double GetTolerance() const { return m_tolerance; }
 
     void ClearGeometry() { m_geometries.clear(); }
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }

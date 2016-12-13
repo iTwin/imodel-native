@@ -12,10 +12,6 @@
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
 #endif
 
-#if defined(BENTLEYCONFIG_OS_WINDOWS)
-#include <windows.h>
-#endif
-
 USING_NAMESPACE_BENTLEY_RENDER
 
 BEGIN_UNNAMED_NAMESPACE
