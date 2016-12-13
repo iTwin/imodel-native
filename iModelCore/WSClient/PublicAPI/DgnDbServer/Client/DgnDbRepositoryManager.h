@@ -20,7 +20,7 @@ typedef std::shared_ptr<struct DgnDbRepositoryManager> DgnDbRepositoryManagerPtr
 //! 
 // @bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbRepositoryManager : public IRepositoryManager
+struct EXPORT_VTABLE_ATTRIBUTE DgnDbRepositoryManager : public IRepositoryManager
 {
 //__PUBLISH_SECTION_END__
 private:
