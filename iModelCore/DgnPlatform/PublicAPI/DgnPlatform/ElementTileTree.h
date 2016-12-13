@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-//__PUBLISH_SECTION_END__
+/*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/DgnModel.h>
@@ -39,6 +39,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Result);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
@@ -76,6 +77,22 @@ enum class NormalMode
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
+struct GeometryOptions
+{
+    enum class Surfaces { Yes, No };
+    enum class TwoSidedTriangles { Yes, No };
+
+    NormalMode          m_normalMode;
+    Surfaces            m_surfaces;
+    TwoSidedTriangles   m_twoSidedTriangles;
+
+    explicit GeometryOptions(NormalMode normals=NormalMode::CurvedSurfacesOnly, Surfaces surfaces=Surfaces::Yes, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
+        : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
 struct TextureImage : RefCountedBase
 {
 private:
@@ -96,38 +113,36 @@ public:
 struct DisplayParams : RefCountedBase
 {
 private:
-    DgnCategoryId           m_categoryId;
-    DgnSubCategoryId        m_subCategoryId;
-    uint32_t                m_fillColor;
-    uint32_t                m_rasterWidth;
-    DgnMaterialId           m_materialId;
+    GraphicParams           m_graphicParams;
+    GeometryParams          m_geometryParams;
     mutable TextureImagePtr m_textureImage;
     bool                    m_ignoreLighting;
 
-    DisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting);
-    DisplayParams(uint32_t fillColor, TextureImageP texture, bool ignoreLighting) : m_fillColor(fillColor), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0) { }
-    DisplayParams(uint32_t fillColor, GeometryParamsCR geometryParams) : m_fillColor(fillColor), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0) {}
-    DisplayParams(uint32_t fillColor, DgnMaterialId materialId) : m_fillColor(fillColor), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0) {}
+    DisplayParams(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_geometryParams(geometryParams), m_ignoreLighting(ignoreLighting) { }
 public:
-    static DisplayParamsPtr Create() { return Create(nullptr, nullptr); }
-    static DisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting = false) { return Create(&graphicParams, &geometryParams, ignoreLighting); }
-    static DisplayParamsPtr Create(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting = false) { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
-    static DisplayParamsPtr Create(uint32_t fillColor, TextureImageP textureImage, bool ignoreLighting) { return new DisplayParams(fillColor, textureImage, ignoreLighting); }
-    static DisplayParamsPtr Create(uint32_t fillColor, GeometryParamsCR geometryParams) { return new DisplayParams(fillColor, geometryParams); }
-    static DisplayParamsPtr Create(uint32_t fillColor, DgnMaterialId materialId) { return new DisplayParams(fillColor, materialId); }
+    static DisplayParamsPtr Create() { return Create(GraphicParams(), GeometryParams()); }
+    static DisplayParamsPtr Create(ColorDef fillColor, GeometryParamsCR geometryParams, bool ignoreLighting=false)
+        { GraphicParams gfParams; gfParams.SetFillColor(fillColor); return Create(gfParams, geometryParams, ignoreLighting); }
+    static DisplayParamsPtr Create(GraphicParamsCR graphicParams, GeometryParamsCR geometryParams, bool ignoreLighting=false)
+        { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
 
-    DGNPLATFORM_EXPORT bool operator<(DisplayParamsCR rhs) const;
-
-    DgnCategoryId GetCategoryId() const { return m_categoryId; }
-    DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    DgnMaterialId GetMaterialId() const { return m_materialId; }
-    uint32_t GetFillColor() const { return m_fillColor; }
-    uint32_t GetRasterWidth() const { return m_rasterWidth; }
+    GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
+    GeometryParamsCR GetGeometryParams() const { return m_geometryParams; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }
+
+    DgnCategoryId GetCategoryId() const { return GetGeometryParams().GetCategoryId(); }
+    DgnSubCategoryId GetSubCategoryId() const { return GetGeometryParams().GetSubCategoryId(); }
+    DgnMaterialId GetMaterialId() const { return GetGeometryParams().GetMaterialId(); }
+    ColorDef GetFillColorDef() const { return GetGraphicParams().GetFillColor(); }
+    uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
+    uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
+
     DgnTextureCPtr QueryTexture(DgnDbR db) const;
     TextureImagePtr& TextureImage() { return m_textureImage; }
     TextureImageCP GetTextureImage() const { return m_textureImage.get(); }
     DGNPLATFORM_EXPORT void ResolveTextureImage(DgnDbR db) const;
+
+    DGNPLATFORM_EXPORT bool operator<(DisplayParamsCR rhs) const;
 };
 
 //=======================================================================================
@@ -206,50 +221,43 @@ private:
     DisplayParamsPtr        m_displayParams;
     TriangleList            m_triangles;
     PolylineList            m_polylines;
-    bvector<DPoint3d>       m_points;
-    bvector<DVec3d>         m_normals;
-    bvector<DPoint2d>       m_uvParams;
+    bvector<FPoint3d>       m_points;
+    bvector<FPoint3d>       m_normals;
+    bvector<FPoint2d>       m_uvParams;
     bvector<DgnElementId>   m_entityIds;
     bool                    m_validIdsPresent = false;
 
-    explicit Mesh(DisplayParamsP params) : m_displayParams(params) { }
+    explicit Mesh(DisplayParamsR params) : m_displayParams(&params) { }
 
     template<typename T> T const* GetMember(bvector<T> const& from, uint32_t at) const { return at < from.size() ? &from[at] : nullptr; }
+
+    DPoint3d GetDPoint3d(bvector<FPoint3d> const& from, uint32_t index) const;
 public:
-public:
-    static MeshPtr Create(DisplayParamsP params) { return new Mesh(params); }
+    static MeshPtr Create(DisplayParamsR params) { return new Mesh(params); }
 
     DGNPLATFORM_EXPORT DRange3d GetTriangleRange(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT DVec3d GetTriangleNormal(TriangleCR triangle) const;
     DGNPLATFORM_EXPORT bool HasNonPlanarNormals() const;
     DGNPLATFORM_EXPORT bool RemoveEntityGeometry(bset<DgnElementId> const& ids);
 
-    DisplayParamsCP GetDisplayParams() const { return m_displayParams.get(); } //!< The mesh symbology
+    DisplayParamsCR GetDisplayParams() const { return *m_displayParams; } //!< The mesh symbology
     DisplayParamsPtr GetDisplayParamsPtr() const { return m_displayParams; } //!< The mesh symbology
     TriangleList const& Triangles() const { return m_triangles; } //!< Triangles defined as a set of 3 indices into the vertex attribute arrays.
     PolylineList const& Polylines() const { return m_polylines; } //!< Polylines defined as a set of indices into the vertex attribute arrays.
-    bvector<DPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
-    bvector<DVec3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
-    bvector<DPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
+    bvector<FPoint3d> const& Points() const { return m_points; } //!< Position vertex attribute array
+    bvector<FPoint3d> const& Normals() const { return m_normals; } //!< Normal vertex attribute array
+    bvector<FPoint2d> const& Params() const { return m_uvParams; } //!< UV params vertex attribute array
     bvector<DgnElementId> const& EntityIds() const { return m_entityIds; } //!< Vertex attribute array specifying the ID of the entity(element or model) from which the vertex was produced
-    bvector<DPoint3d>& PointsR() { return m_points; } //!< Position vertex attribute array
-    bvector<DVec3d>& NormalsR() { return m_normals; } //!< Normal vertex attribute array
-    bvector<DPoint2d>& ParamsR() { return m_uvParams; } //!< UV params vertex attribute array
-    bvector<DgnElementId>& EntityIdsR() { return m_entityIds; }
 
-    TriangleCP GetTriangle(uint32_t index) const { return GetMember(m_triangles, index); }
-    DPoint3dCP GetPoint(uint32_t index) const { return GetMember(m_points, index); }
-    DVec3dCP GetNormal(uint32_t index) const { return GetMember(m_normals, index); }
-    DPoint2dCP GetParam(uint32_t index) const { return GetMember(m_uvParams, index); }
+    bool ValidIdsPresent() const { return m_validIdsPresent; }
     DgnElementId GetEntityId(uint32_t index) const { auto pId = GetMember(m_entityIds, index); return nullptr != pId ? *pId : DgnElementId(); }
     DgnElementId GetTriangleEntityId(TriangleCR triangle) const { return GetEntityId(triangle.m_indices[0]); }
     DgnElementId GetPolylineEntityId(PolylineCR polyline) const { return polyline.GetIndices().empty() ? DgnElementId() : GetEntityId(polyline.GetIndices().front()); }
+
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
-    DRange3d GetRange() const { return DRange3d::From(m_points); }
 
-    DRange3d GetUVRange() const { return DRange3d::From(m_uvParams, 0.0); }
-
-    bool ValidIdsPresent() const { return m_validIdsPresent; }
+    DGNPLATFORM_EXPORT DRange3d GetRange() const;
+    DGNPLATFORM_EXPORT DRange3d GetUVRange() const;
 
     void AddTriangle(TriangleCR triangle) { m_triangles.push_back(triangle); }
     void AddPolyline(PolylineCR polyline) { m_polylines.push_back(polyline); }
@@ -269,7 +277,7 @@ struct MeshMergeKey
 
     MeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_hasFacets(false) { }
     MeshMergeKey(DisplayParamsCR params, bool hasNormals, bool hasFacets) : m_params(&params), m_hasNormals(hasNormals), m_hasFacets(hasFacets) { }
-    MeshMergeKey(MeshCR mesh) : MeshMergeKey(*mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
+    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), !mesh.Triangles().empty()) { }
 
     bool operator<(MeshMergeKey const& rhs) const
         {
@@ -346,13 +354,12 @@ private:
     TriangleSet         m_triangleSet;
     double              m_tolerance;
     double              m_areaTolerance;
-    size_t              m_triangleIndex;
     JsonRenderMaterial  m_material;
 
-    MeshBuilder(DisplayParamsP params, double tolerance, double areaTolerance) : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
-            m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0) {  }
+    MeshBuilder(DisplayParamsR params, double tolerance, double areaTolerance) : m_mesh(Mesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(1.0E-4)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
+            m_tolerance(tolerance), m_areaTolerance(areaTolerance) {  }
 public:
-    static MeshBuilderPtr Create(DisplayParamsP params, double tolerance, double areaTolerance) { return new MeshBuilder(params, tolerance, areaTolerance); }
+    static MeshBuilderPtr Create(DisplayParamsR params, double tolerance, double areaTolerance) { return new MeshBuilder(params, tolerance, areaTolerance); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, DgnElementId entityId, bool doVertexClustering, bool duplicateTwoSidedTriangles, bool includeParams);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, DgnElementId entityId, bool doVertexClustering);
@@ -410,7 +417,7 @@ private:
     bool                    m_isCurved;
     bool                    m_hasTexture;
 protected:
-    Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsP params, bool isCurved, DgnDbR db);
+    Geometry(TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsR params, bool isCurved, DgnDbR db);
 
     virtual PolyfaceList _GetPolyfaces(IFacetOptionsR facetOptions) = 0;
     virtual StrokesList _GetStrokes (IFacetOptionsR facetOptions) { return StrokesList(); }
@@ -421,7 +428,8 @@ protected:
 
     void SetFacetCount(size_t numFacets);
 public:
-    DisplayParamsPtr GetDisplayParams() const { return m_params; }
+    DisplayParamsCR GetDisplayParams() const { return *m_params; }
+    DisplayParamsPtr GetDisplayParamsPtr() const { return m_params; }
     TransformCR GetTransform() const { return m_transform; }
     DRange3dCR GetTileRange() const { return m_tileRange; }
     DgnElementId GetEntityId() const { return m_entityId; } //!< The ID of the element from which this geometry was produced
@@ -440,15 +448,14 @@ public:
     StrokesList GetStrokes (IFacetOptionsR facetOptions) { return _GetStrokes(facetOptions); }
     GeomPartCPtr GetPart() const { return _GetPart(); }
 
-
     //! Create a Geometry for an IGeometry
-    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsP params, bool isCurved, DgnDbR db);
+    static GeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsR params, bool isCurved, DgnDbR db);
     //! Create a Geometry for an IBRepEntity
-    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsP params, DgnDbR db);
+    static GeometryPtr Create(IBRepEntityR solid, TransformCR tf, DRange3dCR tileRange, DgnElementId entityId, DisplayParamsR params, DgnDbR db);
     //! Create a Geometry for text.
-    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsP params, DgnDbR db);
+    static GeometryPtr Create(TextStringR textString, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, DgnDbR db);
     //! Create a Geometry for a part instance.
-    static GeometryPtr Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsP params, DgnDbR db);
+    static GeometryPtr Create(GeomPartR part, TransformCR transform, DRange3dCR range, DgnElementId entityId, DisplayParamsR params, DgnDbR db);
 };
 
 //=======================================================================================
@@ -505,10 +512,14 @@ struct Loader : TileTree::TileLoader
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads) : T_Super("", tile, loads"") { }
+    Loader(TileR tile, TileTree::TileLoadStatePtr loads);
 
     virtual folly::Future<BentleyStatus> _GetFromSource() override;
     virtual BentleyStatus _LoadTile() override;
+    virtual folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
+    virtual folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
+
+    BentleyStatus DoGetFromSource();
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
 };
@@ -550,14 +561,17 @@ private:
 
     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
-    virtual folly::Future<BentleyStatus> _ReadFromDb() override { return ERROR; }
-    virtual folly::Future<BentleyStatus> _SaveToDb() override { return SUCCESS; }
+    virtual double _GetMaximumSize() const override { return 1.0; /*###TODO*/ }
+
+    MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
 public:
     void ClearGeometry() { m_geometries.clear(); }
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
-    static TilePtr Create(Root& root, TileId id, Tile const* parent, bool isLeaf) { return new Tile(root, id, parent, isLeaf); }
+    GeometryCollection GenerateGeometry(GeometryOptionsCR options) const;
+
+    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent, bool isLeaf) { return new Tile(root, id, parent, isLeaf); }
 };
 
 END_ELEMENT_TILETREE_NAMESPACE

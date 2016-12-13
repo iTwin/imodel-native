@@ -554,6 +554,7 @@ public:
     bool IsLeaf() const { return m_isLeaf; }
 
     void SetIsLeaf() { m_isLeaf = true; m_children.clear(); }
+    void SetGraphic(Render::GraphicR graphic) { m_graphic = &graphic; }
 
     bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
     void TryHigherRes(TileTree::DrawArgsR args) const;

@@ -235,6 +235,8 @@ $(CoreObjs)Render$(oext) :                          $(DgnCoreDir)Render.cpp $(Dg
 
 $(CoreObjs)MeshTile$(oext) :                        $(DgnCoreDir)MeshTile.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
 
+$(CoreObjs)ElementTileTree$(oext) :                 $(DgnCoreDir)ElementTileTree.cpp $(DgnPlatformAPISrc)ElementTileTree.h ${MultiCompileDepends}
+
 $(CoreObjs)FacetCount$(oext) :                      $(DgnCoreDir)FacetCount.cpp $(DgnPlatformAPISrc)MeshTile.h ${MultiCompileDepends}
 
 $(CoreObjs)RealityDataCache$(oext) :                $(DgnCoreDir)RealityDataCache.cpp $(RealityDataHandlerDepends) ${MultiCompileDepends}
