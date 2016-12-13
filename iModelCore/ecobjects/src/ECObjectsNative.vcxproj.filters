@@ -74,9 +74,6 @@
     <ClCompile Include="ECCustomAttribute.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="nonport\StopWatch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="nonport\FileUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
