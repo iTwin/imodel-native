@@ -270,7 +270,8 @@ TEST_F(DataCaptureTests, CreateShot)
     DPoint3d center = {1.0,2.0,3.0};
     PoseType pose(center,rotation);
     ShotPtr->SetPose(pose);
-    ShotPtr->SetShotId(42);
+    DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDeviceInsertedPtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
+    ShotPtr->SetCode(shotCode);
 
     //Insert Shot element
     auto ShotInsertedPtr = ShotPtr->Insert();
@@ -302,8 +303,8 @@ TEST_F(DataCaptureTests, CreateShot)
     ASSERT_TRUE(myShotPtr.IsValid());
     ASSERT_EQ(ShotElementId, myShotPtr->GetElementId());
 
-    //read back Shot properties and check if equal
-    ASSERT_DOUBLE_EQ(myShotPtr->GetShotId(),42);
+    DgnCode myShotCode = myShotPtr->GetCode();
+    ASSERT_TRUE(myShotCode == shotCode);
     ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
     }
 
@@ -336,9 +337,14 @@ TEST_F(DataCaptureTests, ModifyShot)
     DPoint3d center = { 10.0,11.0,12.0 };
     PoseType pose(center, rotation);
     shotPtr->SetPose(pose);
-    shotPtr->SetShotId(42);
+
     CameraDeviceElementId cameraDeviceId = shotPtr->GetCameraDeviceId();
     ASSERT_TRUE(cameraDeviceId.IsValid());
+    CameraDeviceCPtr cameraDevicePtr = CameraDevice::Get(*projectPtr, cameraDeviceId);
+
+    DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDevicePtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
+    shotPtr->SetCode(shotCode);
+
 
 
     //Update Shot element
@@ -373,7 +379,8 @@ TEST_F(DataCaptureTests, ModifyShot)
 
 
     //read back Shot properties and check if equal
-    ASSERT_DOUBLE_EQ(myShotPtr->GetShotId(), 42);
+    DgnCode myShotCode = myShotPtr->GetCode();
+    ASSERT_TRUE(myShotCode == shotCode);
     ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
     }
 /*---------------------------------------------------------------------------------**//**
@@ -448,13 +455,18 @@ TEST_F(DataCaptureTests, QueryShotFromCameraDevice)
     // Query CameraDevice element
     CameraDeviceElementId cameraDeviceId = CameraDevice::QueryForIdByLabel(*projectPtr, cameraDeviceLabel.c_str());
     ASSERT_TRUE(cameraDeviceId.IsValid());
+    CameraDeviceCPtr cameraDevicePtr = CameraDevice::Get(*projectPtr, cameraDeviceId);
+
     //Test iterator over all Shots from this cameraDevice
     int photoCount(0);
     for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDeviceId))
         {
         ShotCPtr myShotPtr = Shot::Get(*projectPtr,photo.GeShotElementId());
         ASSERT_TRUE(myShotPtr->GetCameraDeviceId()==cameraDeviceId);
-        ASSERT_EQ(myShotPtr->GetShotId(), photoCount);
+        DgnCode myShotCode = myShotPtr->GetCode();
+        DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDevicePtr->GetCode().GetValue(), Utf8PrintfString("%d", photoCount));
+
+        ASSERT_TRUE(myShotCode ==shotCode);
         photoCount++;
         }
     ASSERT_EQ(photoCount,10);
@@ -464,13 +476,17 @@ TEST_F(DataCaptureTests, QueryShotFromCameraDevice)
     // Query CameraDevice element
     CameraDeviceElementId cameraDevice2Id = CameraDevice::QueryForIdByLabel(*projectPtr, cameraDeviceLabel2.c_str());
     ASSERT_TRUE(cameraDevice2Id.IsValid());
+    CameraDeviceCPtr cameraDevicePtr2 = CameraDevice::Get(*projectPtr, cameraDevice2Id);
+
     //Test iterator over all Shots from this second cameraDevice and make changes
     int photoCount2(0);
     for (CameraDevice::ShotEntry const& photo : CameraDevice::MakeShotIterator(*projectPtr, cameraDevice2Id))
         {
         ShotPtr myShotPtr = Shot::GetForEdit(*projectPtr,photo.GeShotElementId());
         ASSERT_TRUE(myShotPtr->GetCameraDeviceId()==cameraDevice2Id);
-        ASSERT_EQ(myShotPtr->GetShotId(), photoCount2);
+        DgnCode myShotCode = myShotPtr->GetCode();
+        DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDevicePtr2->GetCode().GetValue(), Utf8PrintfString("%d", photoCount2));
+        ASSERT_TRUE(myShotCode == shotCode);
         myShotPtr->SetCameraDeviceId(cameraDeviceId);
         myShotPtr->Update();
         photoCount2++;

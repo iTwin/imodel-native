@@ -91,7 +91,7 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // Authority names
 //-----------------------------------------------------------------------------------------
-//#define BDCP_AUTHORITY_Alignment                                    "Alignment"
+#define BDCP_AUTHORITY_DataCapture                                   "DataCapture"
 
 //-----------------------------------------------------------------------------------------
 // Define standard static QueryClass/QueryClassId methods on Elements and Aspects

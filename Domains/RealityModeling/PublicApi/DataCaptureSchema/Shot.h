@@ -102,7 +102,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Shot : Dgn::SpatialLocationElement
 
 private:
     mutable CameraDeviceElementId m_cameraDevice;//Query and cached from DgnDb or given at creation time
-    int                  m_shotId;
     PoseType             m_pose;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
@@ -157,6 +156,8 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     virtual void _OnDeleted() const override;
 
+    virtual Dgn::DgnCode _GenerateDefaultCode() const override;
+
 
 public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Shot)
@@ -165,6 +166,8 @@ public:
     //! Create a new Shot 
     DATACAPTURE_EXPORT static ShotPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice);
 
+    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR CameraDeviceValue, Utf8StringCR value);
+
     //! Query for an Shot (Id) by label
     //! @return Id of the Shot or invalid Id if an Shot was not found
     DATACAPTURE_EXPORT static ShotElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
@@ -172,9 +175,7 @@ public:
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT ShotElementId GetId() const;
 
-    DATACAPTURE_EXPORT int              GetShotId() const;
     DATACAPTURE_EXPORT PoseType         GetPose() const;
-    DATACAPTURE_EXPORT void             SetShotId(int val);
     DATACAPTURE_EXPORT void             SetPose(PoseTypeCR val);
 
     DATACAPTURE_EXPORT CameraDeviceElementId  GetCameraDeviceId() const;

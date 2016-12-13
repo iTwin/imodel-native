@@ -186,6 +186,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         //! @note If you override this method, you @em must call T_Super::_OnDeleted.
         virtual Dgn::DgnDbStatus _OnDelete() const override;
 
+        virtual Dgn::DgnCode _GenerateDefaultCode() const override;
+
 
     public:
         DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(CameraDeviceModel)
@@ -200,6 +202,8 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
 
         //! Make an iterator over all cameraDevice-s relevant to a CameraDeviceModel
         DATACAPTURE_EXPORT static CameraDeviceModel::CameraDeviceIterator MakeCameraDeviceIterator(Dgn::DgnDbCR dgndb, CameraDeviceModelElementId cameraDeviceModelId);
+
+        DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
 
         //! Get the id of this CameraDevice
@@ -311,6 +315,8 @@ protected:
     //! @note If you override this method, you @em must call T_Super::_OnDeleted.
     virtual void _OnDeleted() const override;
 
+    virtual Dgn::DgnCode _GenerateDefaultCode() const override;
+
 
 public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(CameraDevice)
@@ -326,6 +332,7 @@ public:
     //! Make an iterator over all Shot-s relevant to a CameraDevice
     DATACAPTURE_EXPORT static CameraDevice::ShotIterator MakeShotIterator(Dgn::DgnDbCR dgndb, CameraDeviceElementId cameraDeviceId);
 
+    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
     //! Get the id of this CameraDevice
     DATACAPTURE_EXPORT CameraDeviceElementId GetId() const;

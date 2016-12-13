@@ -93,7 +93,6 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="ShotIsTakenByCameraDevice" direction="Forward"/>
-        <ECProperty         propertyName="ShotId"    typeName="int"      displayLabel="Id"/>
         <ECStructProperty   propertyName="Pose"      typeName="PoseType" displayLabel="Pose"/> 
     </ECEntityClass>
     <!-- END Shot element classes -->

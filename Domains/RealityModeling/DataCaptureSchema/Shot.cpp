@@ -11,7 +11,6 @@ BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(ShotHandler)
 
-#define Shot_PROPNAME_ShotId                  "ShotId"
 #define Shot_PROPNAME_Pose                     "Pose"
 #define Shot_PROPNAME_Pose_Center              "Center"
 #define Shot_PROPNAME_Pose_Rotation            "Rotation"
@@ -178,7 +177,6 @@ PoseType PoseType::GetValue(BeSQLite::EC::IECSqlStructValue const& structValue)
 void ShotHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
-    params.Add(Shot_PROPNAME_ShotId);
     params.Add(Shot_PROPNAME_Pose);
     }
 
@@ -201,14 +199,32 @@ ShotPtr Shot::Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevic
     return cp;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Shot::CreateCode(Dgn::DgnDbR db, Utf8StringCR CameraDeviceValue, Utf8StringCR value) 
+    {
+    Utf8PrintfString internalValue("%s/%s",CameraDeviceValue.c_str(),value.c_str());
+    return DataCaptureDomain::CreateCode(db,BDCP_CLASS_Shot,internalValue);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode Shot::_GenerateDefaultCode() const
+    {
+    CameraDeviceElementId deviceId = GetCameraDeviceId();
+    CameraDeviceCPtr pCameraDevice = CameraDevice::Get(GetDgnDb(), deviceId);
+    Utf8String defaultName = DataCaptureDomain::BuildDefaultName(MyECClassName(), GetElementId());
+
+    return CreateCode(GetDgnDb(), pCameraDevice->GetCode().GetValue(), defaultName);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ShotElementId   Shot::GetId() const { return ShotElementId(GetElementId().GetValueUnchecked()); }
-int             Shot::GetShotId() const { return m_shotId; }
 PoseType        Shot::GetPose() const { return m_pose; }
-void            Shot::SetShotId(int val) { m_shotId = val; }
 void            Shot::SetPose(PoseTypeCR val) { m_pose = val; }
 void            Shot::SetCameraDeviceId(CameraDeviceElementId val) { m_cameraDevice = val; }
 
@@ -256,8 +272,7 @@ CameraDeviceElementId  Shot::GetCameraDeviceId() const
 DgnDbStatus Shot::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
     IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex(Shot_PROPNAME_Pose));
-    if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Shot_PROPNAME_ShotId), GetShotId()) ||
-        ECSqlStatus::Success != PoseType::BindParameter(structBinder ,GetPose()) )
+    if (ECSqlStatus::Success != PoseType::BindParameter(structBinder ,GetPose()) )
         {
         return DgnDbStatus::BadArg;
         }
@@ -294,9 +309,6 @@ DgnDbStatus Shot::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const
     auto status = T_Super::_ReadSelectParams(stmt, params);
     if (DgnDbStatus::Success == status)
         {
-        //read Shot properties
-        SetShotId (stmt.GetValueInt(params.GetSelectIndex(Shot_PROPNAME_ShotId)));
-
         int poseIndex = params.GetSelectIndex(Shot_PROPNAME_Pose);
         IECSqlStructValue const& structValue = stmt.GetValueStruct(poseIndex);
         SetPose(PoseType::GetValue(structValue));
@@ -437,7 +449,6 @@ void Shot::_CopyFrom(DgnElementCR el)
     if (nullptr == other)
         return;
 
-    SetShotId(other->GetShotId());
     SetPose(other->GetPose());
     SetCameraDeviceId(other->GetCameraDeviceId());
     }

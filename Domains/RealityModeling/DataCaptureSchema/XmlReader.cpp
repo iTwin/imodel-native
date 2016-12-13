@@ -185,13 +185,19 @@ BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR photo)
+BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot)
     {
     BeXmlStatus status(BEXML_Success);
 
     int id;
-    if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id,"Id")))
-        photo.SetShotId(id);
+    if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id, "Id")))
+        {
+        CameraDeviceElementId cameraDeviceId = shot.GetCameraDeviceId();
+        BeAssert(cameraDeviceId.IsValid());
+        CameraDeviceCPtr cameraDevicePtr = CameraDevice::Get(shot.GetDgnDb(), cameraDeviceId);
+        DgnCode shotCode = Shot::CreateCode(shot.GetDgnDb(), cameraDevicePtr->GetCode().GetValue(), Utf8PrintfString("%d", id));
+        shot.SetCode(shotCode);
+        }
 
     Utf8String imagePath;
     if (BEXML_Success == (status = sourceNodeRef.GetContent(imagePath,"ImagePath")))
@@ -208,7 +214,7 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR photo)
         {
         //set pose in photo
         PoseType pose(poseCenter, rotation);
-        photo.SetPose(pose);
+        shot.SetPose(pose);
         }                                                                                                           
 
     return BEXML_Success;

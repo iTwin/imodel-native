@@ -269,6 +269,24 @@ CameraDeviceModelPtr CameraDeviceModel::Create(Dgn::DefinitionModelR model)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CameraDeviceModel::CreateCode(Dgn::DgnDbR db, Utf8StringCR value) 
+    {
+    return DataCaptureDomain::CreateCode(db,BDCP_CLASS_CameraDeviceModel,value);
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CameraDeviceModel::_GenerateDefaultCode() const
+    {
+    Utf8String defaultName = DataCaptureDomain::BuildDefaultName(MyECClassName(), GetElementId());
+    return CreateCode(GetDgnDb(), defaultName);
+    }
+
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 int                     CameraDeviceModel::GetImageWidth() const { return m_imageWidth; }
@@ -439,6 +457,25 @@ CameraDevicePtr CameraDevice::Create(Dgn::SpatialModelR model, CameraDeviceModel
     CameraDevicePtr cp = new CameraDevice(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId),cameraDeviceModel);
     return cp;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CameraDevice::CreateCode(Dgn::DgnDbR db, Utf8StringCR value) 
+    {
+    return DataCaptureDomain::CreateCode(db,BDCP_CLASS_CameraDevice,value.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CameraDevice::_GenerateDefaultCode() const
+    {
+    Utf8String defaultName = DataCaptureDomain::BuildDefaultName(MyECClassName(), GetElementId());
+
+    return CreateCode(GetDgnDb(), defaultName);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
