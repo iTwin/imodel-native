@@ -644,6 +644,8 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
         }
     }
     
+#ifdef WIP_MERGE_Vincas
+
 TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
     {
     // Setup ECDb
@@ -692,3 +694,4 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
     }
 
+#endif
