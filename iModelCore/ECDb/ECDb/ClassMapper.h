@@ -26,20 +26,20 @@ struct ClassMapper final
 
         PropertyMap* ProcessProperty(ECN::ECPropertyCR);
 
-        RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
-        RefCountedPtr<Point3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* compoundPropMap);
+        RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap, Utf8StringCR accessString, DbColumn::CreateParams const&);
+        RefCountedPtr<Point3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap, Utf8StringCR accessString, DbColumn::CreateParams const&);
         RefCountedPtr<PrimitiveArrayPropertyMap> MapPrimitiveArrayProperty(ECN::PrimitiveArrayECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         RefCountedPtr<StructPropertyMap> MapStructProperty(ECN::StructECPropertyCR, StructPropertyMap const* parentPropMap);
         RefCountedPtr<StructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR);
         Utf8String ComputeAccessString(ECN::ECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
-        DbColumn* DoFindOrCreateColumnsInTable(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type);
         static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
+        static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ECDbCR, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
+
     public:
-        static BentleyStatus DetermineColumnInfo(DbColumn::CreateParams&, ECDbCR ecdb, ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString);
         static PropertyMap* MapProperty(ClassMap& classMap, ECN::ECPropertyCR ecProperty);
         static PropertyMap* LoadPropertyMap(ClassMap& classMap, ECN::ECPropertyCR ecProperty, DbClassMapLoadContext const& loadContext);
         static BentleyStatus CreateECInstanceIdPropertyMap(ClassMap& classMap);

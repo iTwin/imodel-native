@@ -26,7 +26,7 @@ struct DbColumnFactory : NonCopyableClass
 
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
 
-        DbColumn* ApplyDefaultStrategy(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type, DbColumn::CreateParams const&) const;
+        DbColumn* ApplyDefaultStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
         DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
@@ -39,10 +39,10 @@ struct DbColumnFactory : NonCopyableClass
         DbTable& GetTable() const;
 
     public:
-        DbColumnFactory(ECDbCR ecdb, ClassMap const& classMap);
+        DbColumnFactory(ECDbCR, ClassMap const&);
         ~DbColumnFactory() {}
 
-        DbColumn* CreateColumn(ECN::ECPropertyCR, Utf8StringCR accessString, DbColumn::Type, DbColumn::CreateParams const&) const;
+        DbColumn* CreateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
         void Update(bool includeDerivedClasses) const;
 
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }

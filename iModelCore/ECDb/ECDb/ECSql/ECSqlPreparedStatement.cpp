@@ -379,12 +379,6 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
     else
         {
         //user hasn't provided an ecinstanceid (neither literally nor through binding)
-        if (m_isECInstanceIdAutogenerationDisabled)
-            {
-            GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Always must provide an ECInstanceId for the ECSQL %s as ECInstanceId auto-generation was disabled for the ECClass (via custom attribute).", GetECSql());
-            return BE_SQLITE_ERROR;
-            }
-
         if (GenerateECInstanceIdAndBindToInsertStatement(ecinstanceidOfInsert) != ECSqlStatus::Success)
             return BE_SQLITE_ERROR;
 

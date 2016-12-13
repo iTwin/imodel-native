@@ -153,6 +153,7 @@ public:
 
         public:
             CreateParams() {}
+            explicit CreateParams(Utf8StringCR colName) : m_columnName(colName), m_columnNameIsFromPropertyMapCA(false) {}
 
             void Assign(Utf8StringCR colName, bool colNameIsFromPropertyMapCA, bool addNotNullConstraint, bool addUniqueConstraint, DbColumn::Constraints::Collation);
             bool IsValid() const { return !m_columnName.empty(); }
@@ -161,6 +162,8 @@ public:
             bool AddNotNullConstraint() const { return m_addNotNullConstraint; }
             bool AddUniqueConstraint() const { return m_addUniqueConstraint; }
             Constraints::Collation GetCollation() const { return m_collation; }
+
+            static Utf8String ColumnNameFromAccessString(Utf8StringCR accessString) { Utf8String colName(accessString); colName.ReplaceAll(".", "_"); return colName; }
         };
 
 private:
