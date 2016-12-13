@@ -92,7 +92,7 @@ public:
     //! Indicates whether the specified ECClass has the JoinedTablePerDirectSubclass custom attribute or not.
     //! @param[in] ecClass ECClass to retrieve the custom attribute from.
     //! @return true if @p ecClass has the custom attribute. false, if @p ecClass doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool HasJoinedTablePerDirectSubclass(ECClassCR ecClass);
+    ECOBJECTS_EXPORT static bool HasJoinedTablePerDirectSubclass(ECEntityClassCR ecClass);
 
     //! Tries to retrieve the DbIndexList custom attribute from the specified ECClass.
     //! @param[out] dbIndexList Retrieved property map
@@ -104,7 +104,7 @@ public:
     //! @param[out] propertyMap Retrieved property map
     //! @param[in] ecProperty ECProperty to retrieve the custom attribute from.
     //! @return true if @p ecProperty has the custom attribute. false, if @p ecProperty doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty);
+    ECOBJECTS_EXPORT static bool TryGetPropertyMap(ECDbPropertyMap& propertyMap, PrimitiveECPropertyCR ecProperty);
 
     //! Tries to retrieve the LinkTableRelationshipMap custom attribute from the specified ECRelationshipClass.
     //! @param[out] linkTableRelationshipMap Retrieved link table relationship map
@@ -118,6 +118,10 @@ public:
     //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship);
 
+    //! Indicates whether the specified ECRelationshipClass has the UsePrimaryKeyAsForeignKey custom attribute or not.
+    //! @param[in] relClass ECRelationshipClass to retrieve the custom attribute from.
+    //! @return true if @p relClass has the custom attribute. false, if @p relClass doesn't have the custom attribute
+    ECOBJECTS_EXPORT static bool HasUsePrimaryKeyAsForeignKey(ECRelationshipClassCR relClass);
     };
 
 //=======================================================================================    
