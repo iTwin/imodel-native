@@ -1445,19 +1445,11 @@
             </DbIndexList>
         </ECCustomAttributes>
         <ECProperty propertyName="AuthorityId" typeName="long">
-            <!-- Foreign key relationship to Authority that controls the ExternalKey -->
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
+            <!-- WIP: Foreign key relationship to Authority that controls the ExternalKey -->
+            <!-- IsNullable = False -->
         </ECProperty>
         <ECProperty propertyName="ExternalKey" typeName="string">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
-            </ECCustomAttributes>
+            <!-- IsNullable = False -->
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding">
@@ -2011,33 +2003,28 @@
         <BaseClass>DefinitionElement</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
         <ECProperty propertyName="GeometryStream" typeName="binary">
+            <!-- IsNullable = False -->
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
                 <CustomHandledProperty/>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d">
+            <!-- IsNullable = False -->
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d">
+            <!-- IsNullable = False -->
             <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                </PropertyMap>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
         <BaseClass>ElementRefersToElements</BaseClass>
+        <!-- WIP: Remove? -->
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="Element"/>
