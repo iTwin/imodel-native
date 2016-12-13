@@ -74,7 +74,7 @@ BentleyStatus ScalableMeshModel::_ReloadClipMask(BentleyApi::Dgn::DgnElementId& 
 
     bvector<uint64_t> clipIds;
     clipIds.push_back(clipMaskElementId.GetValue());
-    m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
     m_forceRedraw = true;
     return SUCCESS;
     }
@@ -723,6 +723,29 @@ bool ShouldDrawInContext (ViewContextR context)
 static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  12/2016
+//----------------------------------------------------------------------------------------
+IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEngine()
+    {
+    if (m_progressiveQueryEngine == nullptr)
+        {
+        m_displayNodesCache = new ScalableMeshDisplayCacheManager(GetDgnDb());
+        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
+
+        bvector<uint64_t> allClips;
+        bset<uint64_t> clipsToShow;
+        bset<uint64_t> clipsShown;
+        GetClipSetIds(allClips);
+        for (auto elem : allClips)
+            clipsToShow.insert(elem);
+        SetActiveClipSets(clipsToShow, clipsShown);
+        }
+
+    return m_progressiveQueryEngine;
+    }
+
 void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     {       
     if (m_smPtr == 0 && !m_tryOpen)
@@ -738,6 +761,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         m_tryOpen = true;
         }
+
+    
 
     if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
         return;
@@ -764,7 +789,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
                 auto smPtr = m_smPtr->GetTerrainSM();
 
                 if (smPtr.IsValid())
-                    m_progressiveQueryEngine->InitScalableMesh(smPtr);
+                    GetProgressiveQueryEngine()->InitScalableMesh(smPtr);
                 }            
 
             for (auto& coverageVal : coverages)
@@ -811,10 +836,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }        
     BentleyStatus status;
 
-    status = m_progressiveQueryEngine->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
+    status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
     if (!clipFromCoverageSet.empty())
         {
-        status = m_progressiveQueryEngine->StopQuery(nextDrawingInfoPtr->m_terrainQuery);
+        status = GetProgressiveQueryEngine()->StopQuery(nextDrawingInfoPtr->m_terrainQuery);
         }
     assert(status == SUCCESS);
                                    
@@ -889,12 +914,12 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     m_DTMDataRef->GetVisibleClips(clips);
     */
 
-    status = m_progressiveQueryEngine->StartQuery(queryId, 
-                                                  viewDependentQueryParams, 
-                                                  m_currentDrawingInfoPtr->m_meshNodes, 
-                                                  true, //No wireframe mode, so always load the texture.
-                                                  clips,
-                                                  m_smPtr); 
+    status = GetProgressiveQueryEngine()->StartQuery(queryId,
+                                                      viewDependentQueryParams, 
+                                                      m_currentDrawingInfoPtr->m_meshNodes, 
+                                                      true, //No wireframe mode, so always load the texture.
+                                                      clips,
+                                                      m_smPtr); 
 
 
     assert(status == SUCCESS);
@@ -902,7 +927,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     if (s_waitQueryComplete || !m_isProgressiveDisplayOn)
         {
-        while (!m_progressiveQueryEngine->IsQueryComplete(queryId))
+        while (!GetProgressiveQueryEngine()->IsQueryComplete(queryId))
             {
             BeThreadUtilities::BeSleep (200);
             }
@@ -920,7 +945,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         /*NEEDS_WORK_SM : Get clips
         m_DTMDataRef->GetVisibleClips(clips);
         */               
-        status = m_progressiveQueryEngine->StartQuery(terrainQueryId,
+        status = GetProgressiveQueryEngine()->StartQuery(terrainQueryId,
                                                       viewDependentQueryParams,
                                                       m_currentDrawingInfoPtr->m_terrainMeshNodes,
                                                       true, //No wireframe mode, so always load the texture.
@@ -929,7 +954,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         if (!m_isProgressiveDisplayOn)
             {
-            while (!m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
+            while (!GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
                 {
                 BeThreadUtilities::BeSleep (200);
                 }
@@ -939,10 +964,10 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
     bool needProgressive;
     bool isTerrainComplete = false;
 
-    if (m_progressiveQueryEngine->IsQueryComplete(queryId))
+    if (GetProgressiveQueryEngine()->IsQueryComplete(queryId))
         {        
         m_currentDrawingInfoPtr->m_meshNodes.clear();
-        status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        status = GetProgressiveQueryEngine()->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
         assert(status == SUCCESS);
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
        
@@ -952,7 +977,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
         /*
         BentleyStatus status;
-        status = m_progressiveQueryEngine->StopQuery(queryId);
+        status = GetProgressiveQueryEngine()->StopQuery(queryId);
         assert(status == SUCCESS);
         */
                         
@@ -963,11 +988,11 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
-        status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
+        status = GetProgressiveQueryEngine()->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
 
         m_currentDrawingInfoPtr->m_meshNodes.clear();
 
-        status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+        status = GetProgressiveQueryEngine()->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
         assert(status == SUCCESS);
         
         //NEEDS_WORK_MST : Will be fixed when the lowest resolution is created and pin at creation time.
@@ -979,15 +1004,15 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
         {
-        if (m_progressiveQueryEngine->IsQueryComplete(terrainQueryId))
+        if (GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
             {
             m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
-            status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
+            status = GetProgressiveQueryEngine()->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
             m_currentDrawingInfoPtr->m_terrainOverviewNodes.clear();
             /*
             BentleyStatus status;
-            status = m_progressiveQueryEngine->StopQuery(terrainQueryId);
+            status = GetProgressiveQueryEngine()->StopQuery(terrainQueryId);
             assert(status == SUCCESS);
             */
 
@@ -995,11 +1020,11 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
             }
         else
             {
-            status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_terrainOverviewNodes, terrainQueryId);
+            status = GetProgressiveQueryEngine()->GetOverviewNodes(m_currentDrawingInfoPtr->m_terrainOverviewNodes, terrainQueryId);
 
             m_currentDrawingInfoPtr->m_terrainMeshNodes.clear();
 
-            status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
+            status = GetProgressiveQueryEngine()->GetRequiredNodes(m_currentDrawingInfoPtr->m_terrainMeshNodes, terrainQueryId);
             assert(status == SUCCESS);
             needProgressive = true;
             isTerrainComplete = false;
@@ -1022,7 +1047,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
 
     if (needProgressive)
         {
-        ScalableMeshProgressiveDisplay::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
+        IScalableMeshProgressiveQueryEnginePtr queryEnginePtr(GetProgressiveQueryEngine());
+        ScalableMeshProgressiveDisplay::Schedule(queryEnginePtr, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
         }
 
     }                 
@@ -1214,14 +1240,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
              appData->m_modelSearched = true;
              }
         }
-
-    if (m_progressiveQueryEngine == nullptr)
-        {
-        m_displayNodesCache = new ScalableMeshDisplayCacheManager(dgnProject);
-        m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
-
-        }
-
+    
     const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
 
     DPoint3d scale;
@@ -1265,14 +1284,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     BeFileName dbFileName(dgnProject.GetDbFileName());
     BeFileName basePath = dbFileName.GetDirectoryName();
     T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
-
-    bvector<uint64_t> allClips;
-    bset<uint64_t> clipsToShow;
-    bset<uint64_t> clipsShown;
-    GetClipSetIds(allClips);
-    for (auto elem : allClips)
-        clipsToShow.insert(elem);
-    SetActiveClipSets(clipsToShow, clipsShown);
+    
     //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
@@ -1366,7 +1378,7 @@ WString ScalableMeshModel::GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb)
 
 void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
     {
-    m_progressiveQueryEngine->ClearOverviews(targetSM.get());
+    GetProgressiveQueryEngine()->ClearOverviews(targetSM.get());
     if (targetSM.get() == m_smPtr.get())
         {
         if (nullptr != m_progressiveQueryEngine.get() && m_currentDrawingInfoPtr.IsValid()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
@@ -1384,7 +1396,7 @@ void ScalableMeshModel::ClearOverviews(IScalableMeshPtr& targetSM)
 
 void ScalableMeshModel::LoadOverviews(IScalableMeshPtr& targetSM)
     {
-    m_progressiveQueryEngine->InitScalableMesh(targetSM);
+    GetProgressiveQueryEngine()->InitScalableMesh(targetSM);
     }
 
 //----------------------------------------------------------------------------------------
@@ -1399,13 +1411,13 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     bvector<uint64_t> clipIds;
     for (auto& clip: previouslyActiveClips)
        clipIds.push_back(clip);
-    m_progressiveQueryEngine->SetActiveClips(activeClips, m_smPtr);
-    m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr);
+    GetProgressiveQueryEngine()->SetActiveClips(activeClips, m_smPtr);
+    GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
 
     if (m_smPtr->GetTerrainSM().IsValid())
         {
-        m_progressiveQueryEngine->SetActiveClips(activeClips, m_smPtr->GetTerrainSM());
-        m_progressiveQueryEngine->ClearCaching(clipIds, m_smPtr->GetTerrainSM());
+        GetProgressiveQueryEngine()->SetActiveClips(activeClips, m_smPtr->GetTerrainSM());
+        GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr->GetTerrainSM());
         }
     m_forceRedraw = true;
     }

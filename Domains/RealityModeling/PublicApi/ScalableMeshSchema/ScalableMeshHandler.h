@@ -92,7 +92,7 @@ struct ScalableMeshModel : IMeshSpatialModel
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
-        private:
+    private:
 
         IScalableMeshPtr                        m_smPtr;
         bool                                    m_tryOpen; 
@@ -107,6 +107,9 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         BeFileName                              m_path;
         bool                                    m_isProgressiveDisplayOn;        
+        
+        IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
+
                        
     protected:
 
