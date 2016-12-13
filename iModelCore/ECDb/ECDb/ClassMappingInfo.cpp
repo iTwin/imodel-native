@@ -530,7 +530,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     ECDbForeignKeyRelationshipMap foreignKeyRelMap;
     const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
 
-    const bool usePkAsFk = ECDbMapCustomAttributeHelper::HasUsePrimaryKeyAsForeignKey(*relClass);
+    const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(*relClass);
 
     ECDbLinkTableRelationshipMap linkTableRelationMap;
     const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
@@ -549,14 +549,14 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         return ERROR;
         }
 
-    if (hasLinkTableRelMap && usePkAsFk)
+    if (hasLinkTableRelMap && useECInstanceIdAsFk)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UsePrimaryKeyAsForeignKey' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if ((hasForeignKeyRelMap || usePkAsFk) && RequiresLinkTable())
+    if ((hasForeignKeyRelMap || useECInstanceIdAsFk) && RequiresLinkTable())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyRelationshipMap' or 'UsePrimaryKeyAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
@@ -596,7 +596,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             }
 
 
-        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), usePkAsFk);
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), useECInstanceIdAsFk);
         return SUCCESS;
         }
 
@@ -624,7 +624,7 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         if (RequiresLinkTable())
             m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
         else
-            m_fkMappingInfo = std::make_unique<FkMappingInfo>(usePkAsFk);
+            m_fkMappingInfo = std::make_unique<FkMappingInfo>(useECInstanceIdAsFk);
         }
 
     return SUCCESS;
