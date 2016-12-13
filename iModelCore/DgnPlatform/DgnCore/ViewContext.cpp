@@ -1244,8 +1244,8 @@ void DecorateContext::AddSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR
 enum
     {
     MAX_GridDotsInRow       = 500,
-    GRID_DOT_Transparency   = 110,
-    GRID_LINE_Transparency  = 190,
+    GRID_DOT_Transparency   = 100,
+    GRID_LINE_Transparency  = 200,
     GRID_PLANE_Transparency = 225,
     MAX_GridPoints          = 90,
     MAX_GridRefs            = 40,
@@ -1469,44 +1469,34 @@ static void drawGridDots(Render::GraphicBuilderR graphic, bool doIsoGrid, DPoint
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/05
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void drawGridPlane(Render::GraphicBuilderR graphic, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, Point2dCR repetitions)
-    {
-    DgnViewportCR vp = *graphic.GetViewport();
-    DVec3d viewZ;
-    vp.GetRotMatrix().GetRow(viewZ, 2);
-
-    // don't draw grid plane if perpendicular to view
-    if (viewZ.IsPerpendicularTo(xVec))
-        return;
-
-    // grid refs or points will give visual indication or grid plane...
-    DPoint3d shapePoints[5];
-
-    shapePoints[0] = shapePoints[4] = gridOrigin;
-    shapePoints[1].SumOf(gridOrigin,xVec, repetitions.x);
-    shapePoints[2].SumOf(gridOrigin,xVec, repetitions.x, yVec, repetitions.y);
-    shapePoints[3].SumOf(gridOrigin,yVec, repetitions.y);
-
-    graphic.AddShape(5, shapePoints, true);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      05/04
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawDots, DPoint3dCR gridOrigin, DVec3dCR xVec, DVec3dCR yVec, uint32_t gridsPerRef, Point2d const& repetitions)
     {
+    double        aa;
+    DVec3d        zVec, viewZ;
+    DPoint4d      eyePoint;
     DgnViewportCR vp = *graphic.GetViewport();
+
+    vp.GetWorldToViewMap()->M1.GetColumn(eyePoint, 2);
+    viewZ.Init(eyePoint.x, eyePoint.y, eyePoint.z);
+
+    if (DoubleOps::SafeDivide(aa, 1.0, eyePoint.w, 1.0))
+        {
+        DPoint3d  xyzEye;
+
+        xyzEye.Scale(viewZ, aa);
+        viewZ.DifferenceOf(xyzEye, gridOrigin);
+        }
+
+    viewZ.Normalize();
+    zVec.NormalizedCrossProduct(xVec, yVec);
+
     ColorDef color = vp.GetContrastToBackgroundColor();
     ColorDef lineColor = vp.MakeColorTransparency(color, GRID_LINE_Transparency);
     ColorDef dotColor = vp.MakeColorTransparency(color, GRID_DOT_Transparency);
     ColorDef planeColor = vp.MakeColorTransparency(color, GRID_PLANE_Transparency);
     GraphicParams::LinePixels linePat = GraphicParams::LinePixels::Solid;
-    DVec3d zVec, viewZ;
-
-    zVec.NormalizedCrossProduct(xVec, yVec);
-    vp.GetRotMatrix().GetRow(viewZ, 2);
 
     if (viewZ.DotProduct(zVec) < 0.0) // Provide visual indication that grid is being viewed from the back (grid z not towards eye)...
         {
@@ -1539,11 +1529,26 @@ static void drawGrid(Render::GraphicBuilderR graphic, bool doIsoGrid, bool drawD
         drawGridRefs(graphic, gridOrigin, yVec, xVec, repetitions.y, repetitions.x);
         }
 
-    if (RenderMode::Wireframe == vp.GetViewFlags().GetRenderMode())
+    // don't draw grid plane if perpendicular to view
+    if (viewZ.IsPerpendicularTo(xVec))
         return;
 
+    // grid refs or points will give visual indication or grid plane...
+    DPoint3d shapePoints[5];
+
+    shapePoints[0] = shapePoints[4] = gridOrigin;
+    shapePoints[1].SumOf(gridOrigin, xVec, repetitions.x);
+    shapePoints[2].SumOf(gridOrigin, xVec, repetitions.x, yVec, repetitions.y);
+    shapePoints[3].SumOf(gridOrigin, yVec, repetitions.y);
+
+    if (0 == gridsPerRef)
+        {
+        graphic.SetSymbology(lineColor, planeColor, 1, linePat);
+        graphic.AddLineString(5, shapePoints);
+        }
+
     graphic.SetBlankingFill(planeColor);
-    drawGridPlane(graphic, gridOrigin, xVec, yVec, repetitions);
+    graphic.AddShape(5, shapePoints, true);
     }
 
 /*---------------------------------------------------------------------------------**//**
