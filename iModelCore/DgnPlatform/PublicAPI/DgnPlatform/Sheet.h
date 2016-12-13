@@ -54,6 +54,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Element : Document
 protected:
     static Utf8CP str_Scale() {return "Scale";}
     static Utf8CP str_Height() {return "Height";}
+    static Utf8CP str_Number() {return "Number";}
     static Utf8CP str_Width() {return "Width";}
     static Utf8CP str_Template() {return "Template";}
     static Utf8CP str_Border() {return "Border";}
@@ -91,6 +92,12 @@ public:
     //! Set the drawing scale of the sheet.
     //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
     DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
+
+    //! Get the sheet number
+    Utf8String GetNumber() const {return GetPropertyValueString(str_Number());}
+
+    //! Set the sheet number
+    DgnDbStatus SetNumber(Utf8CP v) {return SetPropertyValue(str_Number(), v);}
 
     //! Get the height of the sheet
     double GetHeight() const {return GetPropertyValueDouble(str_Height());}
