@@ -33,8 +33,8 @@ DgnDbServerError::Id DgnDbServerError::ErrorIdFromString(Utf8StringCR errorIdStr
         map["BIMCS.FileIsNotUploaded"]                         = Id::FileIsNotUploaded;
         map["BIMCS.RevisionExistsButNoBackingFile"]            = Id::RevisionExistsButNoBackingFile;
         map["BIMCS.RepositoryIsNotInitialized"]                = Id::RepositoryIsNotInitialized;
-        map["BIMCS.RevisionPointsToBadDgnDb"]                  = Id::RevisionPointsToBadDgnDb;
-        map["BIMCS.OperationFailed"]                           = Id::DgnDbServerOperationFailed;
+        map["BIMCS.RevisionPointsToBadBIM"]                    = Id::RevisionPointsToBadBIM;
+        map["BIMCS.OperationFailed"]                           = Id::BIMCSOperationFailed;
         map["BIMCS.PullIsRequired"]                            = Id::PullIsRequired;
         map["BIMCS.MaximumNumberOfBriefcasesPerUser"]          = Id::MaximumNumberOfBriefcasesPerUser;
         map["BIMCS.MaximumNumberOfBriefcasesPerUserPerMinute"] = Id::MaximumNumberOfBriefcasesPerUserPerMinute;
