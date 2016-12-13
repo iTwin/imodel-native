@@ -233,7 +233,7 @@ bool ECDbMapCustomAttributeHelper::TryGetShareColumns(ShareColumns& shareColumns
 //@bsimethod                                               Krischan.Eberle   08 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECClassCR ecClass)
+bool ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(ECEntityClassCR ecClass)
     {
     return ecClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "JoinedTablePerDirectSubclass") != nullptr;
     }
@@ -256,7 +256,7 @@ bool ECDbMapCustomAttributeHelper::TryGetDbIndexList(DbIndexList& dbIndexList, E
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(ECDbPropertyMap& propertyMap, ECPropertyCR ecProperty)
+bool ECDbMapCustomAttributeHelper::TryGetPropertyMap(ECDbPropertyMap& propertyMap, PrimitiveECPropertyCR ecProperty)
     {
     IECInstanceCP ca = CustomAttributeReader::Read(ecProperty, ECDBMAP_SCHEMA_NAME, "PropertyMap");
     if (ca == nullptr)
@@ -292,6 +292,15 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(ECDbForeignKe
 
     foreignKeyTableRelationshipMap = ECDbForeignKeyRelationshipMap(ecRelationship, ca);
     return true;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   12 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+bool ECDbMapCustomAttributeHelper::HasUsePrimaryKeyAsForeignKey(ECRelationshipClassCR relClass)
+    {
+    return relClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "UsePrimaryKeyAsForeignKey") != nullptr;
     }
 
 //*****************************************************************
