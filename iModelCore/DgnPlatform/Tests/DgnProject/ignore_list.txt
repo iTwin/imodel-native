@@ -11,10 +11,6 @@ BackwardsCompatibilityTests.OpenDgndbInCurrent
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
 ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
@@ -47,3 +43,4 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 
 DgnECNavigatorTest.GetElemtmentInfo
+DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.

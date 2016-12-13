@@ -473,17 +473,17 @@ TEST_F(DgnModelTests, AbandonChanges)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin                      06/16
+* @bsimethod                                    Ridha.Malik                      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, UnitDefinitionLabel)
+TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     {
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
+    BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
 
-    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+    GeometricModel::DisplayInfo  displayInfo = model->GetDisplayInfoR();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
     EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
-
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";
     Utf8Char replace = ' ';
@@ -494,6 +494,29 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     EXPECT_EQ("Invalid Name", (Utf8String) name);
     check = DgnDbTable::IsValidName(name, InvalidChar);
     EXPECT_TRUE(check);
+
+    // Try Update model unit definition with wrong values
+    GeometricModel::DisplayInfo  displayInfo2 = model->GetDisplayInfoR();
+    UnitDefinition newMasterUnitw(UnitBase::Meter, UnitSystem::Metric, 100.0, 10.0, "newMasterUnit");
+    UnitDefinition newSubUnit(UnitBase::Meter, UnitSystem::Metric, 25.0, 25.0, "newSubUnit");
+    ASSERT_TRUE(BentleyStatus::ERROR == displayInfo2.SetUnits(newMasterUnitw, newSubUnit));
+    UnitDefinition newMasterUnitw2(UnitBase::Meter, UnitSystem::Metric, -100.0, 10.0, "newMasterUnit");
+    ASSERT_TRUE(BentleyStatus::ERROR == displayInfo2.SetUnits(newMasterUnitw2, newSubUnit));
+    // Update model unit definition with correct values
+    UnitDefinition newMasterUnit(UnitBase::Meter, UnitSystem::Metric, 10.0, 10.0, "newMasterUnit");
+    ASSERT_TRUE(BentleyStatus::SUCCESS == displayInfo2.SetUnits(newMasterUnit, newSubUnit));
+    model->GetDisplayInfoR() = displayInfo2;
+    ASSERT_TRUE(DgnDbStatus::Success == model->Update());
+    m_db->SaveChanges();
+    m_db->CloseDb();
+    OpenDb(m_db,outFileName, BeSQLite::Db::OpenMode::Readonly);
+    displayInfo = model->GetDisplayInfoR();
+    ASSERT_STREQ("newMasterUnit", displayInfo.GetMasterUnits().GetLabel().c_str());
+    ASSERT_STREQ("newSubUnit", displayInfo.GetSubUnits().GetLabel().c_str());
+    ASSERT_TRUE(25 == displayInfo.GetSubUnits().GetNumerator());
+    ASSERT_TRUE(25 == displayInfo.GetSubUnits().GetDenominator());
+    ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetNumerator());
+    ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetDenominator());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      11/16
