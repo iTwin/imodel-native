@@ -48,9 +48,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
     //uncomment this (and remove line above) once API for modifying Aspects has been implemented
     //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
 
-    m_dbSchemaModificationToken = nullptr;
-    //uncomment this (and remove line above) once BIS ECSchema is set up so that domains don't modify the DB schema anymore
-    //m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
+    m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
     }
 
 //--------------------------------------------------------------------------------------
