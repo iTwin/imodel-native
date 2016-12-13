@@ -1671,12 +1671,10 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseCl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCase)
+TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCaseECXml3)
     {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECEntityClass typeName='A' modifier='abstract'>"
         "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
         "   </ECEntityClass>"
@@ -1687,23 +1685,31 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWhenDerivedPropertyDifferByCase)
         "</ECSchema>";
 
     ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+    }
 
-    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedPropertyDifferByCaseECXml2)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='C' isDomainClass='true'>"
+        "   <ECClass typeName='A' isDomainClass='true'>"
         "       <ECProperty propertyName='Prop' typeName='string'></ECProperty>"
         "   </ECClass>"
-        "   <ECClass typeName='D' isDomainClass='true'>"
-        "       <BaseClass>C</BaseClass>"
+        "   <ECClass typeName='B' isDomainClass='true'>"
+        "       <BaseClass>A</BaseClass>"
         "       <ECProperty propertyName='PROP' typeName='string'></ECProperty>"
         "   </ECClass>"
         "</ECSchema>";
 
-    ECSchemaPtr schema2;
-    status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status);
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
     }
 
 //---------------------------------------------------------------------------------------
