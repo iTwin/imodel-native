@@ -191,7 +191,7 @@
     @note If @ref BentleyApi::BeSQLite::EC::ECDbSchemaManager::ImportECSchemas "ECDbSchemaManager::ImportECSchemas" fails, callers
     should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
     does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
-       
+      
     @section ECDbECSchemaUpdateSupportedFeatures ECSchema Update Supported Features
     
     @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
