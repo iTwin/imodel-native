@@ -1961,7 +1961,7 @@ SchemaReadStatus ECClass::_ReadBaseClassFromXml (BeXmlNodeP childNode, ECSchemaR
         return SchemaReadStatus::InvalidECSchemaXml;
         }
 
-    bool resolveConflicts = false;
+    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
     if (nullptr != conversionSchema)
         {
         ECClassCP conversionClass = conversionSchema->GetClassCP(GetName().c_str());
@@ -2012,7 +2012,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
         return status;
         }
 
-    bool resolveConflicts = false;
+    bool resolveConflicts = m_schema.GetOriginalECXmlVersionMajor() == 2 ? true : false;
     if (nullptr != conversionSchema)
         {
         resolveConflicts = conversionSchema->IsDefined("ResolvePropertyNameConflicts");
