@@ -45,28 +45,38 @@ struct ECSchemaUpdateTests : public SchemaImportTestFixture
         //---------------------------------------------------------------------------------------
         // @bsimethod                                   Muhammad.Hassan                     06/16
         //+---------------+---------------+---------------+---------------+---------------+------
-        void AssertSchemaUpdate(bool &asserted, Utf8CP SchemaXml, BeFileName seedFilePath, bool mayModifyDbSchema, bool expectedToSucceed, Utf8CP assertMessage)
+        void AssertSchemaUpdate(Utf8CP schemaXml, BeFileName seedFilePath, std::pair<bool, bool> const& expectedToSucceedList, Utf8CP assertMessage)
             {
-            Utf8String dbFileName;
-            dbFileName.Sprintf("schemaupdate_%s.ecdb", mayModifyDbSchema ? "maymodifydbschema" : "maynotmodifydbschema");
+            //test 1: unrestricted ECDb
+            ECDb ecdb;
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(ecdb, "schemaupdate_maymodifydbschema.ecdb", seedFilePath));
 
-            std::unique_ptr<ECDb> ecdb = nullptr;
-
-            if (mayModifyDbSchema)
-                ecdb = std::make_unique<ECDb>();
-            else
-                ecdb = std::make_unique<NoDbSchemaModificationsECDb>();
-
-            ASSERT_TRUE(ecdb != nullptr);
-            CloneECDb(*ecdb, dbFileName.c_str(), seedFilePath);
-            ASSERT_TRUE(ecdb->IsDbOpen());
-
-            AssertSchemaImport(asserted, *ecdb, SchemaItem(SchemaXml, expectedToSucceed, assertMessage));
+            bool expectedToSucceed = expectedToSucceedList.first;
+            bool asserted = false;
+            Utf8String assertMessageFull("[May modify DB schema] ");
+            assertMessageFull.append(assertMessage);
+            AssertSchemaImport(asserted, ecdb, SchemaItem(schemaXml, expectedToSucceed, assertMessageFull.c_str()));
 
             if (expectedToSucceed)
-                m_updatedDbs.push_back((Utf8String) ecdb->GetDbFileName());
+                m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
 
-            ecdb->CloseDb();
+            ecdb.CloseDb();
+
+            //test 2: restricted ECDb
+            NoDbSchemaModificationsECDb restrictedECDb;
+            ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "schemaupdate_maynotmodifydbschema.ecdb", seedFilePath));
+
+            //until the strict mode is enforced, only a warning is issued, but the behavior is the same as in
+            //the unrestricted mode, so use the expected value from the unrestricted mode for now
+            //expectedToSucceed = expectedToSucceedList.second;
+            asserted = false;
+            assertMessageFull.assign("[May not modify DB schema] ").append(assertMessage);
+            AssertSchemaImport(asserted, restrictedECDb, SchemaItem(schemaXml, expectedToSucceed, assertMessageFull.c_str()));
+
+            if (expectedToSucceed)
+                m_updatedDbs.push_back((Utf8String) restrictedECDb.GetDbFileName());
+
+            restrictedECDb.CloseDb();
             }
     };
 
@@ -655,13 +665,7 @@ TEST_F(ECSchemaUpdateTests, DeleteProperty_OwnTable)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteECProperty, filePath, true, false, "DB schema modification allowed: Deleting ECProperty is not supported as property is mapped to OwnTable");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteECProperty, filePath, false, false, "DB schema modification not allowed: Deleting ECProperty is not supported as property is mapped to OwnTable");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(deleteECProperty, filePath, {false, false}, "Deleting ECProperty is generally not supported as property is mapped to OwnTable");
     }
 
 //---------------------------------------------------------------------------------------
@@ -945,13 +949,7 @@ TEST_F(ECSchemaUpdateTests, AddDeleteVirtualColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, true, true, "May modify DB schema: Addition or Deletion of Virtual column is expected to be supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaItem, filePath, false, true, "May not modify DB schema: Addition or Deletion of Virtual column is expected to be supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaItem, filePath, {true, true}, "Addition or deletion of virtual column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1016,149 +1014,7 @@ TEST_F(ECSchemaUpdateTests, DeleteOverriddenProperties)
         "   </ECEntityClass>"
         "</ECSchema>";
 
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, true, false, "May modify DB schema: Deletion of Overridden properties is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteOverriddenProperty, filePath, false, false, "May not modify DB schema: Deletion of Overridden properties is not supported");
-    ASSERT_FALSE(asserted);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     06/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties_TPH_ClientBriefCase)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
-
-    //Delete some properties
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='D2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     06/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteProperties_JoinedTable_ClientBriefCase)
-    {
-    SchemaItem schemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='S2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-    SetupECDb("schemaupdate.ecdb", schemaItem);
-    ASSERT_TRUE(GetECDb().IsDbOpen());
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    GetECDb().ChangeBriefcaseId(BeBriefcaseId(123));
-
-    //Delete some properties
-    SchemaItem editedSchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Koo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <SharedColumnCount>5</SharedColumnCount>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
-        "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='L1' typeName='long' />"
-        "       <ECProperty propertyName='S1' typeName='string' />"
-        "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None' >"
-        "       <BaseClass>Koo</BaseClass>"
-        "       <ECProperty propertyName='L2' typeName='long' />"
-        "       <ECProperty propertyName='D2' typeName='string' />"
-        "   </ECEntityClass>"
-        "</ECSchema>");
-
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), editedSchemaItem);
-    ASSERT_FALSE(asserted);
-    GetECDb().Schemas().CreateECClassViewsInDb();
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
+    AssertSchemaUpdate(deleteOverriddenProperty, filePath, {false, false}, "Deletion overridden properties");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1215,13 +1071,7 @@ TEST_F(ECSchemaUpdateTests, UpdateCAProperties)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedCAProperties, filePath, true, true, "May modify DB schema: Modifying CA Properties is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedCAProperties, filePath, false, true, "May not modify DB schema: Modifying CA Properties is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedCAProperties, filePath, {true, true}, "Modifying CA classes and instances");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1309,13 +1159,7 @@ TEST_F(ECSchemaUpdateTests, AddNewEntityClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, true, true, "May modify DB schema: Adding New Entity Class is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addNewEntityClass, filePath, false, false, "May not modify DB schema: Adding New Entity Class is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(addNewEntityClass, filePath, {true, false}, "Adding New Entity Class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1417,7 +1261,9 @@ TEST_F(ECSchemaUpdateTests, AddNewSubClassForBaseWithTPH)
         "       <BaseClass>Parent</BaseClass>"
         "       <ECProperty propertyName='Sub1' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>", false, "Adding new column to SharedTable is expected to fail");
+        "</ECSchema>", 
+        //false, "Adding new column to SharedTable is expected to fail");
+        true, "Adding new column to SharedTable is expected to succeed until strict mode is enforced");
 
     asserted = false;
     AssertSchemaImport(asserted, restrictedECDb, schemaWithNewSubClassWithNewProperty);
@@ -1524,13 +1370,7 @@ TEST_F(ECSchemaUpdateTests, AddNewClassModifyAllExistingAttributes)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Adding New Entity Class is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Db Tables Modifications not allowed");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Adding New Entity Class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1639,13 +1479,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECDbMapCANotSupported)
         "   </ECEntityClass>"
         "</ECSchema>";
 
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, true, false, "May modify DB schema: Adding New ECDbMapCA is supposed to be not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addECDbMapCA, filePath, false, false, "May not modify DB schema: Adding New ECDbMapCA is supposed to be not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(addECDbMapCA, filePath, {false, false}, "Adding New ECDbMap CA instance");
     }
 
 //---------------------------------------------------------------------------------------
@@ -1681,13 +1515,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, addCAOnClass, filePath, true, true, "May modify DB schema: Adding New CA is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addCAOnClass, filePath, false, true, "May not modify DB schema: Adding New CA is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(addCAOnClass, filePath, {true, true}, "Adding new CA instance");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1767,13 +1595,7 @@ TEST_F(ECSchemaUpdateTests, AddNewECProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaXml, filePath, true, true, "May modify DB schema: add new property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaXml, filePath, false, false, "May not modify DB schema: add new property should not be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaXml, filePath, {true, false}, "Add new ECProperty");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -1956,13 +1778,7 @@ TEST_F(ECSchemaUpdateTests, Add_Delete_ECProperty_ShareColumns)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add Delete New Property to sharedColumns should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add Delete New Property to sharedColumns should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add Delete Property mapped to shared column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2014,13 +1830,7 @@ TEST_F(ECSchemaUpdateTests, AddNewPropertyModifyAllExistingAttributes)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new property should not be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new ECProperty");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2125,13 +1935,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCAOnProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: New CA on Property should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: New CA on Property should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new CA instance on ECProperty");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2241,12 +2045,8 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, updatedSchema, filePath, true, false, "May modify DB schema: Update ECDbMapCA add SharedColumnCount is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Adding SharedColumnCount");
 
-    asserted = false;
-    AssertSchemaUpdate(asserted, updatedSchema, filePath, false, false, "May not modify DB schema: Update ECDbMapCA add SharedColumnCount is not supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2315,13 +2115,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountForSubClasses_AddProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add new property to sharedColumns in TPH should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add new property to sharedColumns in TPH should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new property mapped tp shared column");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2405,13 +2199,7 @@ TEST_F(ECSchemaUpdateTests, SharedColumnCountWithJoinedTable_AddProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, true, true, "May modify DB schema: Add new property to sharedColumns in a JoinedTable should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, addPropertiesToSharedColumns, filePath, false, true, "May not modify DB schema: Add new property to sharedColumns in a JoinedTable should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(addPropertiesToSharedColumns, filePath, {true, true}, "Add new property mapped to shared columns in a JoinedTable");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -2725,7 +2513,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
     GetECDb().CloseDb();
 
     //Delete ECDbMap CA
-    Utf8CP DeleteECDbMapCA =
+    Utf8CP deleteECDbMapCA =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -2734,13 +2522,7 @@ TEST_F(ECSchemaUpdateTests, Delete_ECDbMapCANotSupported)
         "   </ECEntityClass>"
         "</ECSchema>";
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, true, false, "May modify DB schema: Deleting ECDbMap CustomAttribute Not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, DeleteECDbMapCA, filePath, false, false, "May not modify DB schema: Deleting ECDbMap CustomAttribute Not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(deleteECDbMapCA, filePath, {false, false}, "Deleting ECDbMap CustomAttribute");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4309,12 +4091,12 @@ TEST_F(ECSchemaUpdateTests, Delete_Add_ECEntityClass_JoinedTable_SharedColumnCou
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
+TEST_F(ECSchemaUpdateTests, DeleteSubclassOfRelationshipConstraintConstraint)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4329,10 +4111,10 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "   </ECEntityClass>"
         "   <ECEntityClass typeName='C' modifier='None' />"
         "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
-        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A'>"
         "           <Class class='A' />"
         "       </Source>"
-        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C'>"
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
@@ -4347,8 +4129,8 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
 
     Utf8CP schemaWithDeletedConstraintClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'ECDbMap' version='02.00' alias = 'ecdbmap' />"
         "   <ECEntityClass typeName='A' modifier='None' >"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
@@ -4359,22 +4141,16 @@ TEST_F(ECSchemaUpdateTests, DeleteEntityClassPartOfRelationshipConstraint)
         "   </ECEntityClass>"
         "   <ECEntityClass typeName='C' modifier='None' />"
         "    <ECRelationshipClass typeName='RelClass' modifier='Sealed' strength='embedding' strengthDirection='forward' >"
-        "       <Source cardinality='(0,1)' polymorphic='True'>"
+        "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A'>"
         "           <Class class='A' />"
         "       </Source>"
-        "       <Target cardinality='(0,N)' polymorphic='True'>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='C'>"
         "           <Class class='C' />"
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, true, true, "May modify DB schema: ConstraintClass can be deleted unless it's the last relationship constraint");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, false, true, "May not modify DB schema: ConstraintClass can be deleted unless it's the last relationship constraint");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "Deleting subclass of ECRel ConstraintClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4470,13 +4246,7 @@ TEST_F(ECSchemaUpdateTests, DeleteConcreteImplementationOfAbstractConstraintClas
         "       </Target>"
         "     </ECRelationshipClass>"
         "</ECSchema>";
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, true, true, "May modify DB schema: Only Direct relationship constraint classes can't be deleted");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithDeletedConstraintClass, filePath, false, true, "May not modify DB schema: Only Direct relationship constraint classes can't be deleted");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaWithDeletedConstraintClass, filePath, {true, true}, "delete subclass of abstract rel constraint class");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -4547,13 +4317,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath,true, false, "May modify DB schema: Deleting ECRelationship with ForeignKey Mapping is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, relationshipWithForeignKeyMapping, filePath, false, false, "May not modify DB schema: Deleting ECRelationship with ForeignKey Mapping is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(relationshipWithForeignKeyMapping, filePath, {false, false}, "Deleting ECRelationship with ForeignKey Mapping");
 
     Utf8CP linkTableECRelationship =
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -4574,13 +4338,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECRelationships)
         "     </ECRelationshipClass>"
         "</ECSchema>";
 
-    asserted = false;
-    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, true, true, "May modify DB schema: Deletion of LinkTable mapped relationship is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, linkTableECRelationship, filePath, false, true, "May not modify DB schema: Deletion of LinkTable mapped relationship is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(linkTableECRelationship, filePath, {true, true}, "Deletion of LinkTable mapped relationship");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4707,13 +4465,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, true, true, "May modify DB schema: Updating ECDbMapCA, modifying index Name is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexNameModified, filePath, false, true, "May not modify DB schema: Updating ECDbMapCA, modifying index Name is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaWithIndexNameModified, filePath, {true, true}, "Modifying DbIndex::Name");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -4764,13 +4516,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_DbIndexChanges)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, true, false, "May modify DB schema: Updating ECDbMapCA, deleting DbIndexes is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithIndexDeleted, filePath, false, false, "May not modify DB schema: Updating ECDbMapCA, deleting DbIndexes is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaWithIndexDeleted, filePath, {false, false}, "Deleting DbIndex");
     }
 
 //---------------------------------------------------------------------------------------
@@ -4814,13 +4560,7 @@ TEST_F(ECSchemaUpdateTests, Add_Class_NavigationProperty_RelationshipClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, true, true, "May modify DB schema: Adding Classes and Navigation property simultaneously is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, schemaWithNavProperty, filePath, false, false, "May not modify DB schema: Adding Classes and Navigation property simultaneously is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(schemaWithNavProperty, filePath, {true, false}, "Adding Classes and Navigation property simultaneously");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -5476,13 +5216,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, true, false, "May modify DB schema: Modifying ECProperty typeName is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECProperty typeName is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedECPropertyType, filePath, {false, false}, "Modifying ECProperty type name");
 
     Utf8CP modifiedECStructPropertyType =
         //SchemaItem with modified ECStructProperty type
@@ -5499,13 +5233,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, true, false, "May modify DB schema: Modifying ECStructProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECStructProperty is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedECStructPropertyType, filePath, {false, false}, "Modifying ECStructProperty");
 
     Utf8CP modifiedECStructArrayPropertyType =
         //SchemaItem with modified ECStructArrayProperty type
@@ -5522,13 +5250,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, true, false, "May modify DB schema: Modifying ECStructArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECStructArrayPropertyType, filePath, false, false, "May not modify DB schema: Modifying ECStructArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedECStructArrayPropertyType, filePath, {false, false}, "Modifying ECStructArrayProperty");
 
     Utf8CP modifiedPrimitiveArrayType =
         //SchemaItem with modified IsPrimitiveArray Type
@@ -5545,13 +5267,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, true, false, "May modify DB schema: Modifying ECArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveArrayType, filePath, false, false, "May not modify DB schema: Modifying ECArrayProperty is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedPrimitiveArrayType, filePath, {false, false}, "Modifying ECArrayProperty prim type");
 
     Utf8CP modifiedPrimitiveType =
         //SchemaItem with modified IsPrimitive type
@@ -5568,13 +5284,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, true, false, "May modify DB schema: Modifying IsPrimitiveType is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedPrimitiveType, filePath, false, false, "May not modify DB schema: Modifying IsPrimitiveType is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedPrimitiveType, filePath, {false, false}, "Modifying PrimitiveType is not supported");
 
     Utf8CP modifiedECPropertyArrayMixOccurs =
         //SchemaItem with Modified ECPropertyArray MinOccurs
@@ -5591,13 +5301,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, true, false, "May modify DB schema: Modifying ECPropertyArray minOccurs is not Supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECPropertyArrayMixOccurs, filePath, false, false, "May not modify DB schema: Modifying ECPropertyArray minOccurs is not Supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedECPropertyArrayMixOccurs, filePath, {false, false}, "Modifying ECPropertyArray minOccurs");
 
     Utf8CP modifiedECArrayPropertyMaxOccurs =
         //SchemaItem with Modified ECArrayProperty MaxOccurs
@@ -5614,13 +5318,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='URL' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, true, false, "May modify DB schema: Modifying ECArrayProperty maxOccuers is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedECArrayPropertyMaxOccurs, filePath, false, false, "May not modify DB schema: Modifying ECArrayProperty maxOccuers is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedECArrayPropertyMaxOccurs, filePath, {false, false}, "Modifying ECPropertyArray maxOccurs");
 
     Utf8CP modifiedExtendedType =
         //SchemaItem with Modifed Extended Type
@@ -5637,13 +5335,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECProperties)
         "       <ECProperty propertyName='ExtendedProperty' typeName='string' extendedTypeName='email' />"
         "   </ECEntityClass>"
         "</ECSchema>";
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, true, true, "May modify DB schema: Modifying extendedTypeName is expected to be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, modifiedExtendedType, filePath, false, true, "May not modify DB schema: Modifying extendedTypeName is expected to be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(modifiedExtendedType, filePath, {true, true}, "Modifying extendedTypeName");
     }
 
 //---------------------------------------------------------------------------------------
@@ -5958,13 +5650,7 @@ TEST_F(ECSchemaUpdateTests, ModifyCustomAttributePropertyValues)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, true, true, "May modify DB schema: Modifying CA Properties values is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, changeCAPropertyValues, filePath, false, true, "May not modify DB schema: Modifying CA Properties values is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(changeCAPropertyValues, filePath, {true, true}, "Modifying CA instance properties values is supported");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6003,13 +5689,7 @@ TEST_F(ECSchemaUpdateTests, DeleteECCustomAttributeClass)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, true, false, "May modify DB schema: Deleting a ECCustomAttributeClass is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteECCustomAttribute, filePath, false, false, "May not modify DB schema: Deleting a ECCustomAttributeClass is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(deleteECCustomAttribute, filePath, {false, false}, "Deleting a ECCustomAttributeClass");
     }
 
 //---------------------------------------------------------------------------------------
@@ -6267,13 +5947,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, deleteAllCA, filePath, true, true, "May modify DB schema: Deleting CA without Properties are expected to be supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, deleteAllCA, filePath, false, true, "May not modify DB schema: Deleting CA without Properties are expected to be supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(deleteAllCA, filePath, {true, true}, "Deleting CA instance without Properties");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6334,13 +6008,7 @@ TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: AddKoQAndUpdatePropertiesWithKoQ is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: AddKoQAndUpdatePropertiesWithKoQ is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "AddKoQAndUpdatePropertiesWithKoQ");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6404,13 +6072,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToNonStrictEnum)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing primitive to NonString Enum is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing primitive to NonString Enum is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "changing primitive to NonString Enum is supported");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6463,13 +6125,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToStrictEnum)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: changing primitive to Strict Enum is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: changing primitive to Strict Enum is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "changing primitive to Strict Enum is not supported");
     }
 
 //---------------------------------------------------------------------------------------
@@ -6512,13 +6168,7 @@ TEST_F(ECSchemaUpdateTests, UpdateKindOfQuantity)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Master Briefcase: Changing the KindOfQuantity of an ECProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing the KindOfQuantity of an ECProperty to another KindOfQuantity");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6571,13 +6221,7 @@ TEST_F(ECSchemaUpdateTests, DeleteKindOfQuantityFromECSchema)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: Deleting KindOfQuantity from an ECSchema is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Deleting KindOfQuantity from an ECSchema is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting KindOfQuantity from an ECSchema");
     }
 
 //---------------------------------------------------------------------------------------
@@ -6623,13 +6267,7 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing of KindOfQuantity of an ECArrayProperty to another KindOfQuantity");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6698,12 +6336,10 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Removing KindOfQuantity from an ECArrayProperty is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECArrayProperty");
 
     //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
     ArrayECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsArrayProperty();
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
@@ -6753,12 +6389,10 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECProperty)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Removing KindOfQuantity from an ECProperty is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Removing KindOfQuantity from an ECProperty");
 
     //Verifying the property no longer has KOQ
-    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
     PrimitiveECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveProperty();
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
@@ -6793,13 +6427,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_PrimitiveToPrimitive)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: changing primitive to another primitive is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: changing primitive to another primitive is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "changing primitive to another primitive");
     }
 
 //---------------------------------------------------------------------------------------
@@ -6839,13 +6467,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToPrimitive)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing Enum to primitive should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing Enum to primitive should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing Enum to primitive");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6917,13 +6539,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyType_EnumToEnum)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing Enum to Enum should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing Enum to Enum should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "changing Enum to Enum");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -6988,13 +6604,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_EnumToPrimitive)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: changing String Enum to String should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing String Enum to String should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Changing String Enum to String");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7048,13 +6658,7 @@ TEST_F(ECSchemaUpdateTests, ModifyPropertyTypeString_PrimitiveToUnStrictEnum)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema : changing String to Unstrict Enum is supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: changing String to Unstrict Enum is supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "changing String to Unstrict Enum");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7107,13 +6711,7 @@ TEST_F(ECSchemaUpdateTests, RemoveExistingEnum)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "May modify DB schema: Deleting Enum is not supported");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: Deleting Enum is not supported");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting Enum");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7177,13 +6775,7 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
 
     //verify Adding new EndTable relationship
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new endtable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new endtable relationship should not be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new endtable relationship");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7218,13 +6810,7 @@ TEST_F(ECSchemaUpdateTests, AddNewRelationship)
 
     //verify Adding new linkTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new LinkTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, false, "May not modify DB schema: add new LinkTable relationship should not be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, false}, "Add new LinkTable relationship");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7325,13 +6911,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedEndTableRelationship)
 
     //verify Adding new derived endtable relationship for different briefcaseIds.
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: Add new Derived EndTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: Add new Derived EndTable relationship should be successful");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new Derived EndTable relationship");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
@@ -7587,13 +7167,7 @@ TEST_F(ECSchemaUpdateTests, AddNewDerivedLinkTableRelationship)
 
     //verify Adding new derived LinkTable relationship for different briefcaseIds.
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, true, "May modify DB schema: add new Derived LinkTable relationship should be successful");
-    ASSERT_FALSE(asserted);
-
-    asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, false, true, "May not modify DB schema: add new Derived LinkTable relationship should be successful as it do not modify Db");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Add new Derived LinkTable relationship");
 
     //Verify updated schemas
     for (Utf8StringCR dbPath : m_updatedDbs)
@@ -7730,9 +7304,7 @@ TEST_F(ECSchemaUpdateTests, AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "Adding SharedColumnCount is not supported.");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Adding SharedColumnCount");
     }
 
 //---------------------------------------------------------------------------------------
@@ -7794,9 +7366,7 @@ TEST_F(ECSchemaUpdateTests, DeleteSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    bool asserted = false;
-    AssertSchemaUpdate(asserted, editedSchemaXml, filePath, true, false, "Deleting SharedColumnCount is not supported.");
-    ASSERT_FALSE(asserted);
+    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Deleting SharedColumnCount");
     }
 
 END_ECDBUNITTESTS_NAMESPACE

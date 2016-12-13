@@ -63,6 +63,8 @@ TEST_F(ECDbSchemaManagerTests, ImportToken)
         ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, (Utf8String(seedFilePath.GetFileNameWithoutExtension()) + "_restricted.ecdb").c_str(), seedFilePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)));
 
         asserted = false;
+        //Until enforced finally, the token validation does not fail the schema import, but just logs a warning.
+        expectedToSucceedInRestrictedMode = true;
         AssertSchemaImport(asserted, restrictedECDb, SchemaItem(ecschemaXml, expectedToSucceedInRestrictedMode));
         ASSERT_FALSE(asserted) << "SchemaImport into restricted ECDb. Expected to succeed: " << expectedToSucceedInRestrictedMode << " for: " << ecschemaXml;
         restrictedECDb.CloseDb();
