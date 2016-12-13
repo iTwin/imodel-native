@@ -1081,6 +1081,54 @@ BentleyStatus Loader::DoGetFromSource()
     return ERROR; // ###TODO
     }
 
+BEGIN_UNNAMED_NAMESPACE
+
+//=======================================================================================
+// ###TODO: TEMP! We don't want to have to copy all the indices into a new buffer...store
+// them that way in Mesh struct.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
+{
+    bvector<int32_t>   m_indices;
+
+    template<typename T, typename U> void Set(int32_t& count, T& ptr, U const& src)
+        {
+        count = static_cast<int32_t>(src.size());
+        Set(ptr, src);
+        }
+
+    template<typename T, typename U> void Set(T& ptr, U const& src)
+        {
+        ptr = 0 != src.size() ? src.data() : nullptr;
+        }
+
+    TileMeshArgs(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
+        {
+        auto const& displayParams = mesh.GetDisplayParams();
+        if (!displayParams.GetIgnoreLighting())
+            m_flags = 1;    // QV_QTMESH_GENNORMALS
+
+        for (auto const& triangle : mesh.Triangles())
+            {
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[1]));
+            m_indices.push_back(static_cast<int32_t>(triangle.m_indices[2]));
+            }
+
+        Set(m_numIndices, m_vertIndex, m_indices);
+        Set(m_numPoints, m_points, mesh.Points());
+        Set(m_normals, mesh.Normals());
+        Set(m_textureUV, mesh.Params());
+
+        displayParams.ResolveTextureImage(db);
+        if (nullptr != displayParams.GetTextureImage())
+            m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
+        }
+};
+
+END_UNNAMED_NAMESPACE
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1088,7 +1136,8 @@ BentleyStatus Loader::_LoadTile()
     {
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
-    auto graphic = root.GetRenderSystem()->_CreateGraphic(Graphic::CreateParams());
+    auto& system = *root.GetRenderSystem();
+    auto graphic = system._CreateGraphic(Graphic::CreateParams());
 
     GeometryOptions options;
     auto geometry = tile.GenerateGeometry(options);
@@ -1096,8 +1145,10 @@ BentleyStatus Loader::_LoadTile()
     // ###TODO: instanced geometry...
     for (auto const& mesh : geometry.Meshes())
         {
+        TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
+
         graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
-        // ###TODO: AddTriMesh()...
+        graphic->AddTriMesh(meshArgs);
         }
 
 #if defined(DEBUG_ELEMENT_TILE_RANGE)
