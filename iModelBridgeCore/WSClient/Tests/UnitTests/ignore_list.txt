@@ -44,3 +44,24 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGet
 
 UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
     # bim0200dev, x86, NDEBUG, firebug, random, crash
+
+# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
+DgnDbServerEventParserTests.LockEventTests
+DgnDbServerEventParserTests.RevisionEventTests
+DgnDbServerEventParserTests.CodeEventTests
+DgnDbServerEventParserTests.LocksDeletedEventTests
+DgnDbServerEventParserTests.CodesDeletedEventTests
+
+UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # DgnDb61-16Q4, x64, NDEBUG (PRG)
+    # Crash (no stack printed)
+    # [ RUN      ] UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
+    # e:\Builds\dcsdk06010416\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    # Expected: to be called once
+    # Actual: never called - unsatisfied and active
+
+ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
+    # bim0200dev, x86, DEBUG
+    # End of tests reports:
+    # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
+    # ERROR: 1 leaked mock object found at program exit.

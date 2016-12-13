@@ -10,6 +10,18 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
 
+#include "../../../../../DgnClientFx/PublicAPI/DgnClientFx/Device.h"
+void BackDoor::DgnClientFx_Device::Initialize()
+    {
+#if defined (__ANDROID__)
+    // WIP06 - DgnClientFx is not initialized, need to initialize APIs seperately
+    if (DgnClientFx::Device::GetDeviceId().empty())
+        {
+        DgnClientFx::Device::CacheAndroidDeviceId("TEST_DEVICE_ID");
+        }
+#endif
+    }
+
 bool operator <= (const DateTime& lhs, const DateTime& rhs)
     {
     DateTime::CompareResult result = DateTime::Compare(lhs, rhs);
