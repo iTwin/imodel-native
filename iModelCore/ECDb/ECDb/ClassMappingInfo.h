@@ -130,17 +130,17 @@ public:
         private:
             ForeignKeyDbConstraint::ActionType m_onDeleteAction;
             ForeignKeyDbConstraint::ActionType m_onUpdateAction;
-            bool m_usePkAsFk;
+            bool m_useECInstanceIdAsFk;
 
         public:
             explicit FkMappingInfo(bool usePkAsFk) : FkMappingInfo(ForeignKeyDbConstraint::ActionType::NotSpecified, ForeignKeyDbConstraint::ActionType::NotSpecified, usePkAsFk) {}
             FkMappingInfo(ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
-                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction), m_usePkAsFk(usePkAsFk)
+                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction), m_useECInstanceIdAsFk(usePkAsFk)
                 {}
 
             ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
             ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
-            bool UsePkAsFk() const { return m_usePkAsFk; }
+            bool UseECInstanceIdAsFk() const { return m_useECInstanceIdAsFk; }
         };
 
     struct LinkTableMappingInfo : NonCopyableClass
