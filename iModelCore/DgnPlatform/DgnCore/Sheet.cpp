@@ -432,6 +432,6 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
         graphicOrigin->AddPointString(1, &org);
         context.OutputGraphic(*graphicOrigin, nullptr);
-#endif
         }
+#endif
     }
