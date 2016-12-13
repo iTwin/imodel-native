@@ -2045,8 +2045,7 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {false, false}, "Adding SharedColumnCount");
-
+    AssertSchemaUpdate(updatedSchema, filePath, {false, false}, "Adding SharedColumnCount");
     }
 
 //---------------------------------------------------------------------------------------
