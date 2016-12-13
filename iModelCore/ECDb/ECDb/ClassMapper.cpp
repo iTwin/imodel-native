@@ -402,7 +402,7 @@ RefCountedPtr<StructArrayPropertyMap> ClassMapper::MapStructArrayProperty(ECN::S
     //TODO: Create column or map to existing column
     Utf8String accessString = ComputeAccessString(property, compoundPropMap);
     DbColumn const* column = nullptr;
-    if (m_loadContext)
+    if (m_loadContext != nullptr)
         {
         std::vector<DbColumn const*> const* columns;
         columns = m_loadContext->FindColumnByAccessString(accessString);
