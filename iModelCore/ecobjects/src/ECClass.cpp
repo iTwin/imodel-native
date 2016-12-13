@@ -3543,8 +3543,8 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateMultiplicityConstraint(uint32
         if (RelationshipMultiplicity::Compare(RelationshipMultiplicity(lowerLimit, upperLimit), baseClassConstraint->GetMultiplicity()) == -1)
             {
             Utf8String errorMessage;
-            errorMessage.Sprintf("Multiplicity Violation: The Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                                  lowerLimit, upperLimit, m_relClass->GetFullName(),
+            errorMessage.Sprintf("Multiplicity Violation: The multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                                  lowerLimit, upperLimit, (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                                   relationshipBaseClass->GetFullName(), baseClassConstraint->GetMultiplicity().GetLowerLimit(), baseClassConstraint->GetMultiplicity().GetUpperLimit());
 
             if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() >= 3)
@@ -4132,9 +4132,12 @@ ECObjectsStatus ECRelationshipConstraint::_SetMultiplicity(Utf8CP multiplicity, 
         return ECObjectsStatus::ParseError;
         }
 
-    ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
-    if (validationStatus != ECObjectsStatus::Success)
-        return validationStatus;
+    if (validate)
+        {
+        ECObjectsStatus validationStatus = _ValidateMultiplicityConstraint(lowerLimit, upperLimit);
+        if (validationStatus != ECObjectsStatus::Success)
+            return validationStatus;
+        }
 
     return SetMultiplicity(lowerLimit, upperLimit);
     }
