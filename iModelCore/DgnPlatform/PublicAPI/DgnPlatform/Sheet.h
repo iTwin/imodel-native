@@ -93,12 +93,6 @@ public:
     //! @return DgnDbStatus::ReadOnly if the drawing scale is invalid.
     DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
 
-    //! Get the sheet number
-    Utf8String GetNumber() const {return GetPropertyValueString(str_Number());}
-
-    //! Set the sheet number
-    DgnDbStatus SetNumber(Utf8CP v) {return SetPropertyValue(str_Number(), v);}
-
     //! Get the height of the sheet
     double GetHeight() const {return GetPropertyValueDouble(str_Height());}
 
