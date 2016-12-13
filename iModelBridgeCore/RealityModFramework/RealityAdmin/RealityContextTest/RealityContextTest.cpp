@@ -82,22 +82,29 @@ void restartUser(UserManager* manager)
 
 void Dispatch(UserManager* manager)
     {
+    bool hatching = true;
     while (s_keepRunning)
         {
         if (getInnactiveUserSize() == 0)
             {
+            hatching = false;
             Sleep(2000);
             continue;
             }
 
         restartUser(manager);
 
-        int sleep = rand() % 2000;
-        if (sleep > 999)
-            Sleep(sleep);
+        int sleep = rand();
+        if(!hatching)
+            {
+            sleep %= 2200;
+            if(s_keepRunning)
+                s_stats.PrintStats();
+            }
+        else 
+            sleep %= 600;
 
-        if(s_keepRunning)
-            s_stats.PrintStats();
+        Sleep(sleep);
         }
     }
 
@@ -129,9 +136,10 @@ Stats::Stats()
     opStats.Insert(OperationType::PACKFILE, new Stat());
     }
 
-void Stats::InsertStats(OperationType type, bool success, time_t time, Utf8String errorMsg)
+void Stats::InsertStats(OperationType type, bool success, time_t time, int activeUsers, Utf8String errorMsg)
     {
     std::lock_guard<std::mutex> lock(statMutex);
+    m_activeUsers = activeUsers;
     opStats[type]->Update(success, time);
     if(!success)
         errors.push_back(errorMsg);
@@ -153,6 +161,7 @@ void Stats::PrintStats()
     std::cout << spatialLine << std::endl;
     std::cout << idLine << std::endl;
     std::cout << fileLine << std::endl << std::endl;
+    std::cout << "active users: " << m_activeUsers << std::endl << std::endl;
 
     std::cout << "Press any key to quit testing" << std::endl;
     }
@@ -308,7 +317,7 @@ void User::SampleIds(Json::Value regionItems)
     m_selectedIds = retVector;
     }
 
-bool User::ValidateSpatial()
+bool User::ValidateSpatial(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
     bool retval = true;
@@ -335,12 +344,12 @@ bool User::ValidateSpatial()
             }
         }
     
-    s_stats.InsertStats(OperationType::SPATIAL, retval, currentTime - m_downloadStart, m_bench->GetSpatialEntityWithDetailsJson());
+    s_stats.InsertStats(OperationType::SPATIAL, retval, currentTime - m_downloadStart, activeUsers, m_bench->GetSpatialEntityWithDetailsJson());
 
     return retval;
     }
 
-bool User::ValidatePackageId()
+bool User::ValidatePackageId(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
     bool retval = true;
@@ -350,7 +359,7 @@ bool User::ValidatePackageId()
     if (!packageInfos.isMember("changedInstance"))
         {
         retval = false;
-        s_stats.InsertStats(OperationType::PACKID, retval, currentTime - m_downloadStart, "packageId: no member changedInstance");
+        s_stats.InsertStats(OperationType::PACKID, retval, currentTime - m_downloadStart, activeUsers, "packageId: no member changedInstance");
         return retval;
         }
 
@@ -359,12 +368,12 @@ bool User::ValidatePackageId()
     m_currentOperation = OperationType::PACKFILE;
     m_retryCounter = 0;
 
-    s_stats.InsertStats(OperationType::PACKID, retval, currentTime - m_downloadStart);
+    s_stats.InsertStats(OperationType::PACKID, retval, currentTime - m_downloadStart, activeUsers);
 
     return retval;
     }
 
-bool User::ValidatePacakgeFile()
+bool User::ValidatePacakgeFile(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
     bool retval = true;
@@ -393,26 +402,26 @@ bool User::ValidatePacakgeFile()
             //}
         }
 
-    s_stats.InsertStats(OperationType::PACKFILE, retval, currentTime - m_downloadStart, "PackageFile: package is empty");
+    s_stats.InsertStats(OperationType::PACKFILE, retval, currentTime - m_downloadStart, activeUsers, "PackageFile: package is empty");
 
     return retval;
     }
 
-bool User::ValidatePrevious()
+bool User::ValidatePrevious(int activeUsers)
     {
     bool retval = true;
     switch (m_currentOperation)
         {
         case OperationType::SPATIAL:
-            retval = ValidateSpatial();    
+            retval = ValidateSpatial(activeUsers);
             break;
 
         case OperationType::PACKID:
-            retval = ValidatePackageId();
+            retval = ValidatePackageId(activeUsers);
             break;
 
         case OperationType::PACKFILE:
-            retval = ValidatePacakgeFile();
+            retval = ValidatePacakgeFile(activeUsers);
             break;
 
         case OperationType::FILES:
@@ -444,6 +453,7 @@ void ShowUsage()
     std::cout << "  -h, --help              Show this help message and exit" << std::endl;
     std::cout << "  -s, --serverType        {dev, qa, prod}" << std::endl;
     std::cout << "  -u, --users             Number of users" << std::endl;
+    std::cout << "  -t, --trickle           optional, add this argument to avoid spawing all users at once" << std::endl;
     std::cout << "  if there are spaces in an argument, surround it with \"\" " << std::endl;
 
     std::cout << std::endl << "Press any key to exit." << std::endl;
@@ -460,42 +470,49 @@ int main(int argc, char* argv[])
     if (!installed)
         {
         cout << "Client not installed, or COM not registered" << endl;
-        ShowUsage();
+        getch();
+        return -1;
         }
     bool running = false;
     status = CCApi_IsRunning(api, &running);
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"IsRunning failed with error code %d\n", status);
-        ShowUsage();
+        getch();
+        return -1;
         }
     if (!running)
         {
         cout << "Client not running" << endl;
-        ShowUsage();
+        getch();
+        return -1;
         }
     bool loggedIn = false;
     status = CCApi_IsLoggedIn(api, &loggedIn);
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"IsLoggedIn failed with error code %d\n", status);
-        ShowUsage();
+        getch();
+        return -1;
         }
     if (!loggedIn)
         {
         cout << "Client not logged in" << endl;
-        ShowUsage();
+        getch();
+        return -1;
         }
     bool acceptedEula = false;
     status = CCApi_HasUserAcceptedEULA(api, &acceptedEula);
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_HasUserAcceptedEULA failed with error code %d\n", status);
-        ShowUsage();
+        getch();
+        return -1;
         }
     if (!acceptedEula)
         {
         cout << "Client has not accepted the EULA" << endl;
+        getch();
         return -1;
         }
     bool sessionActive = false;
@@ -503,15 +520,17 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_IsUserSessionActive failed with error code %d\n", status);
-        ShowUsage();
+        getch();
+        return -1;
         }
     if (!sessionActive)
         {
         cout << "Session not active" << endl;
-        ShowUsage();
+        getch();
+        return -1;
         }
 
-    LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";
+    LPCWSTR relyingParty = L"https://connect-wsg20.bentley.com";//;L"https:://qa-ims.bentley.com"
     UINT32 maxTokenLength = 16384;
     LPWSTR lpwstrToken = new WCHAR[maxTokenLength];
 
@@ -519,20 +538,22 @@ int main(int argc, char* argv[])
     if (status != APIERR_SUCCESS)
         {
         wprintf(L"CCApi_GetSerializedDelegateSecurityToken failed with error code %d\n", status);
-        ShowUsage();
+        getch();
+        return -1;
         }
 
     char* charToken = new char[maxTokenLength];
     wcstombs(charToken, lpwstrToken, maxTokenLength);
 
-    Utf8String token = "Authorization: Token ";
+    Utf8String token = "Authorization: Token ";//PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTE2Ij8+PHNhbWw6QXNzZXJ0aW9uIE1ham9yVmVyc2lvbj0iMSIgTWlub3JWZXJzaW9uPSIxIiBBc3NlcnRpb25JRD0iX2YzMTU1M2UxLTg5MWItNDM0OS05MTk5LWFmYWE0OGFkMGM1YyIgSXNzdWVyPSJodHRwczovL3FhLWltcy5iZW50bGV5LmNvbS8iIElzc3VlSW5zdGFudD0iMjAxNi0xMi0xM1QxNTowOTowMC4xMTFaIiB4bWxuczpzYW1sPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoxLjA6YXNzZXJ0aW9uIj48c2FtbDpDb25kaXRpb25zIE5vdEJlZm9yZT0iMjAxNi0xMi0xM1QxNTowOTowMC4wNjRaIiBOb3RPbk9yQWZ0ZXI9IjIwMTYtMTItMTNUMTk6MDk6MDAuMDY0WiI+PHNhbWw6QXVkaWVuY2VSZXN0cmljdGlvbkNvbmRpdGlvbj48c2FtbDpBdWRpZW5jZT5odHRwczovL2Nvbm5lY3Qtd3NnMjAuYmVudGxleS5jb208L3NhbWw6QXVkaWVuY2U+PC9zYW1sOkF1ZGllbmNlUmVzdHJpY3Rpb25Db25kaXRpb24+PC9zYW1sOkNvbmRpdGlvbnM+PHNhbWw6QXR0cmlidXRlU3RhdGVtZW50PjxzYW1sOlN1YmplY3Q+PHNhbWw6TmFtZUlkZW50aWZpZXI+OTI1NzY4MTctN2YwMS00N2U2LWIzNTktMjM4ZGQ0ZGJjMjgwPC9zYW1sOk5hbWVJZGVudGlmaWVyPjxzYW1sOlN1YmplY3RDb25maXJtYXRpb24+PHNhbWw6Q29uZmlybWF0aW9uTWV0aG9kPnVybjpvYXNpczpuYW1lczp0YzpTQU1MOjEuMDpjbTpob2xkZXItb2Yta2V5PC9zYW1sOkNvbmZpcm1hdGlvbk1ldGhvZD48S2V5SW5mbyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnIyI+PHRydXN0OkJpbmFyeVNlY3JldCB4bWxuczp0cnVzdD0iaHR0cDovL2RvY3Mub2FzaXMtb3Blbi5vcmcvd3Mtc3gvd3MtdHJ1c3QvMjAwNTEyIj5QQnNMVW5XLzNDSzc5UmpmRm4ydnRZbURSamhiT20yTis0WHVVQVl6N0Z3PTwvdHJ1c3Q6QmluYXJ5U2VjcmV0PjwvS2V5SW5mbz48L3NhbWw6U3ViamVjdENvbmZpcm1hdGlvbj48L3NhbWw6U3ViamVjdD48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0ibmFtZSIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+ZnJhbmNpcy5ib2lseUBiZW50bGV5LmNvbTwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJnaXZlbm5hbWUiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPkZyYW5jaXM8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0ic3VybmFtZSIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+Qm9pbHk8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0iZW1haWxhZGRyZXNzIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5mcmFuY2lzLmJvaWx5QGJlbnRsZXkuY29tPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9InJvbGUiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMubWljcm9zb2Z0LmNvbS93cy8yMDA4LzA2L2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+QkVOVExFWV9FTVBMT1lFRTwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJzYXBidXBhIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT4wMDA4MDEzOTkxPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9InNpdGUiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPjQwMjI3MDY8L3NhbWw6QXR0cmlidXRlVmFsdWU+PHNhbWw6QXR0cmlidXRlVmFsdWU+MTAwNDEzMTU1Mjwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJ1bHRpbWF0ZXNpdGUiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPjEwMDEzODkxMTc8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0ic2FwZW50aXRsZW1lbnQiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPklOVEVSTkFMPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPlNFTEVDVF8yMDA2PC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9ImVudGl0bGVtZW50IiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5CRU5UTEVZX0VNUExPWUVFPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPlNFTEVDVF8yMDA2PC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9ImNvdW50cnlpc28iIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPkNBPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9Imxhbmd1YWdlaXNvIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5FTjwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJpc21hcmtldGluZ3Byb3NwZWN0IiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5mYWxzZTwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJpc2JlbnRsZXllbXBsb3llZSIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy5iZW50bGV5LmNvbS93cy8yMDExLzAzL2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+dHJ1ZTwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJiZWNvbW11bml0aWVzdXNlcm5hbWUiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPjkyNTc2ODE3LTdGMDEtNDdFNi1CMzU5LTIzOERENERCQzI4MDwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJiZWNvbW11bml0aWVzZW1haWxhZGRyZXNzIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5mcmFuY2lzLmJvaWx5QGJlbnRsZXkuY29tPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9InVzZXJpZCIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy5iZW50bGV5LmNvbS93cy8yMDExLzAzL2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+OTI1NzY4MTctN2YwMS00N2U2LWIzNTktMjM4ZGQ0ZGJjMjgwPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9Im9yZ2FuaXphdGlvbiIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy5iZW50bGV5LmNvbS93cy8yMDExLzAzL2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+QmVudGxleSBTeXN0ZW1zIEluYzwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJoYXNfc2VsZWN0IiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT50cnVlPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9Im9yZ2FuaXphdGlvbmlkIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5lODJhNTg0Yi05ZmFlLTQwOWYtOTU4MS1mZDE1NGY3YjllZjk8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0ib3JnYW5pemF0aW9ubmFtZSIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy5iZW50bGV5LmNvbS93cy8yMDExLzAzL2lkZW50aXR5L2NsYWltcyI+PHNhbWw6QXR0cmlidXRlVmFsdWU+QmVudGxleSBTeXN0ZW1zIEluYzwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJ1bHRpbWF0ZWlkIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT43MmFkYWQzMC1jMDdjLTQ2NWQtYTFmZS0yZjJkZmFjOTUwYTQ8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0idWx0aW1hdGVuYW1lIiBBdHRyaWJ1dGVOYW1lc3BhY2U9Imh0dHA6Ly9zY2hlbWFzLmJlbnRsZXkuY29tL3dzLzIwMTEvMDMvaWRlbnRpdHkvY2xhaW1zIj48c2FtbDpBdHRyaWJ1dGVWYWx1ZT5CZW50bGV5IFN5c3RlbXMgSW5jPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9InVsdGltYXRlcmVmZXJlbmNlaWQiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPjcyYWRhZDMwLWMwN2MtNDY1ZC1hMWZlLTJmMmRmYWM5NTBhNDwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjxzYW1sOkF0dHJpYnV0ZSBBdHRyaWJ1dGVOYW1lPSJ1c2FnZWNvdW50cnlpc28iIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPkNBPC9zYW1sOkF0dHJpYnV0ZVZhbHVlPjwvc2FtbDpBdHRyaWJ1dGU+PHNhbWw6QXR0cmlidXRlIEF0dHJpYnV0ZU5hbWU9InVsdGltYXRlc2FwaWQiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMuYmVudGxleS5jb20vd3MvMjAxMS8wMy9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPjEwMDEzODkxMTc8L3NhbWw6QXR0cmlidXRlVmFsdWU+PC9zYW1sOkF0dHJpYnV0ZT48c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0iYWN0b3IiIEF0dHJpYnV0ZU5hbWVzcGFjZT0iaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwOS8wOS9pZGVudGl0eS9jbGFpbXMiPjxzYW1sOkF0dHJpYnV0ZVZhbHVlPiZsdDtBY3RvciZndDsmbHQ7c2FtbDpBdHRyaWJ1dGUgQXR0cmlidXRlTmFtZT0ibmFtZSIgQXR0cmlidXRlTmFtZXNwYWNlPSJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcyIgeG1sbnM6c2FtbD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6MS4wOmFzc2VydGlvbiImZ3Q7Jmx0O3NhbWw6QXR0cmlidXRlVmFsdWUmZ3Q7Q049aW1zLXRva2VuLXNpZ25pbmcuYmVudGxleS5jb20sIE9VPUlULCBPPUJlbnRsZXkgU3lzdGVtcyBJbmMsIEw9RXh0b24sIFM9UEEsIEM9VVMmbHQ7L3NhbWw6QXR0cmlidXRlVmFsdWUmZ3Q7Jmx0Oy9zYW1sOkF0dHJpYnV0ZSZndDsmbHQ7L0FjdG9yJmd0Ozwvc2FtbDpBdHRyaWJ1dGVWYWx1ZT48L3NhbWw6QXR0cmlidXRlPjwvc2FtbDpBdHRyaWJ1dGVTdGF0ZW1lbnQ+PGRzOlNpZ25hdHVyZSB4bWxuczpkcz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnIyI+PGRzOlNpZ25lZEluZm8+PGRzOkNhbm9uaWNhbGl6YXRpb25NZXRob2QgQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzEwL3htbC1leGMtYzE0biMiIC8+PGRzOlNpZ25hdHVyZU1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZHNpZy1tb3JlI3JzYS1zaGEyNTYiIC8+PGRzOlJlZmVyZW5jZSBVUkk9IiNfZjMxNTUzZTEtODkxYi00MzQ5LTkxOTktYWZhYTQ4YWQwYzVjIj48ZHM6VHJhbnNmb3Jtcz48ZHM6VHJhbnNmb3JtIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMC8wOS94bWxkc2lnI2VudmVsb3BlZC1zaWduYXR1cmUiIC8+PGRzOlRyYW5zZm9ybSBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1jMTRuIyIgLz48L2RzOlRyYW5zZm9ybXM+PGRzOkRpZ2VzdE1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMDQveG1sZW5jI3NoYTI1NiIgLz48ZHM6RGlnZXN0VmFsdWU+Q1ZGc3hGU0R1bEMyOHNacThVY1RTUW43UFY2dFY2aWFXVWU3WCtlOFoybz08L2RzOkRpZ2VzdFZhbHVlPjwvZHM6UmVmZXJlbmNlPjwvZHM6U2lnbmVkSW5mbz48ZHM6U2lnbmF0dXJlVmFsdWU+Z0ZUeUtmNTB5dDZ3Mnd0NE1Wci9xb3h4UW9pdDA0TUdieGt1aHNoTlpMcVVlQ28zUlhLR1ZaenluTTRlcjZXY1RncFVQWVlsR0h5SXAvY3B6cndLUWU4LzVoN0EvWVIzVkF6UzM0eFRUMEgvMzllcE04aWRtcG1XV1h5N3o1YzZBK3owOHNBcHFZZVJ2TXpMbFloRjd5c1gvZ2xxR0RwaWtRWXl0WlI4bStNPTwvZHM6U2lnbmF0dXJlVmFsdWU+PEtleUluZm8geG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1sZHNpZyMiPjxYNTA5RGF0YT48WDUwOUNlcnRpZmljYXRlPk1JSUY4akNDQk5xZ0F3SUJBZ0lLRzFvekhBQUFBQWY1TURBTkJna3Foa2lHOXcwQkFRVUZBRENCcHpFTE1Ba0dBMVVFQmhNQ1ZWTXhFekFSQmdvSmtpYUprL0lzWkFFWkZnTmpiMjB4RnpBVkJnb0praWFKay9Jc1pBRVpGZ2RpWlc1MGJHVjVNUXN3Q1FZRFZRUUlFd0pRUVRFT01Bd0dBMVVFQnhNRlJYaDBiMjR4SERBYUJnTlZCQW9URTBKbGJuUnNaWGtnVTNsemRHVnRjeUJKYm1NeEN6QUpCZ05WQkFzVEFrbFVNU0l3SUFZRFZRUURFeGxqWlhKMGFXWnBZMkYwWlhNeExtSmxiblJzWlhrdVkyOXRNQjRYRFRFMU1UQXhPVEU0TXpneU9Wb1hEVEUzTVRBeE9ERTRNemd5T1Zvd2ZURUxNQWtHQTFVRUJoTUNWVk14Q3pBSkJnTlZCQWdUQWxCQk1RNHdEQVlEVlFRSEV3VkZlSFJ2YmpFY01Cb0dBMVVFQ2hNVFFtVnVkR3hsZVNCVGVYTjBaVzF6SUVsdVl6RUxNQWtHQTFVRUN4TUNTVlF4SmpBa0JnTlZCQU1USFdsdGN5MTBiMnRsYmkxemFXZHVhVzVuTG1KbGJuUnNaWGt1WTI5dE1JR2ZNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0R05BRENCaVFLQmdRQzJybTA1Tm83b3d1UEdiY3JiK0o3NjNoNmFwdzVMVlZLNnl0a1F3bnJMY2UwQmdNV2oxOTZXb1d5eFBma2kxM2s0N0RWTW0zTVZVbldRQWhPajF1elBRSHhyaFVDOElFWE5DRHE4emV3SmVwTFVtTE9DdjlRTDJ2TTdtTzhnbDFrNEpIVGJWcmV3WU1zUGFNK0s1NXdnVUJoa1hmTGhkNFFoclJjb2d0MVRXd0lEQVFBQm80SUN5ekNDQXNjd0N3WURWUjBQQkFRREFnV2dNQk1HQTFVZEpRUU1NQW9HQ0NzR0FRVUZCd01CTUhnR0NTcUdTSWIzRFFFSkR3UnJNR2t3RGdZSUtvWklodmNOQXdJQ0FnQ0FNQTRHQ0NxR1NJYjNEUU1FQWdJQWdEQUxCZ2xnaGtnQlpRTUVBU293Q3dZSllJWklBV1VEQkFFdE1Bc0dDV0NHU0FGbEF3UUJBakFMQmdsZ2hrZ0JaUU1FQVFVd0J3WUZLdzREQWdjd0NnWUlLb1pJaHZjTkF3Y3dIUVlEVlIwT0JCWUVGRVRNdFIvbFlxakx3dDJmcmRnZ21zMER5Sk5jTUI4R0ExVWRJd1FZTUJhQUZISVI3dDRnSEtEbkk3WC9sWkpyMkw1MzRUelJNSUdpQmdOVkhSOEVnWm93Z1pjd2daU2dnWkdnZ1k2R1NXaDBkSEE2THk5alpYSjBhV1pwWTJGMFpYTXhMbUpsYm5Sc1pYa3VZMjl0TDBObGNuUkZibkp2Ykd3dlkyVnlkR2xtYVdOaGRHVnpNUzVpWlc1MGJHVjVMbU52YlM1amNteUdRV2gwZEhBNkx5OWpaWEowY21WdVpYZGhiREV1WW1WdWRHeGxlUzVqYjIwdlkzSnNMMk5sY25ScFptbGpZWFJsY3pFdVltVnVkR3hsZVM1amIyMHVZM0pzTUlJQkh3WUlLd1lCQlFVSEFRRUVnZ0VSTUlJQkRUQnZCZ2dyQmdFRkJRY3dBb1pqYUhSMGNEb3ZMMk5sY25ScFptbGpZWFJsY3pFdVltVnVkR3hsZVM1amIyMHZRMlZ5ZEVWdWNtOXNiQzlqWlhKMGFXWnBZMkYwWlhNeExtSmxiblJzWlhrdVkyOXRYMk5sY25ScFptbGpZWFJsY3pFdVltVnVkR3hsZVM1amIyMHVZM0owTUdjR0NDc0dBUVVGQnpBQ2hsdG9kSFJ3T2k4dlkyVnlkSEpsYm1WM1lXd3hMbUpsYm5Sc1pYa3VZMjl0TDJOeWJDOWpaWEowYVdacFkyRjBaWE14TG1KbGJuUnNaWGt1WTI5dFgyTmxjblJwWm1sallYUmxjekV1WW1WdWRHeGxlUzVqYjIwdVkzSjBNREVHQ0NzR0FRVUZCekFCaGlWb2RIUndPaTh2WTJWeWRHbG1hV05oZEdWek1TNWlaVzUwYkdWNUxtTnZiUzl2WTNOd01DRUdDU3NHQVFRQmdqY1VBZ1FVSGhJQVZ3QmxBR0lBVXdCbEFISUFkZ0JsQUhJd0RRWUpLb1pJaHZjTkFRRUZCUUFEZ2dFQkFMQUVzUk5MZms5cnpGeWVUNG5TWVVyY21oV0Z4dXRlc09hZnkxb3FXckxscjg2Ym9MVnZzdWN0YjdURW1SbFgwL09ySXdUZGRyellOSTNNdFBuRjJSSlg5clNtWE1ncEcvaitxcHA3UkF4c01pSGE1Uy8xZlBmR2RaUmRvT1BURHFmTTZXQVNjbXk1VlNCcVZHOGJzWW1ydk9QN0lhMnpSeEdPanJCNlBiTWhTbWVPbVA5MXgzV3FoZDlxTGxOL0VIR01BM0lSc3RhU1gzb3JkMGJqRmJOTDNBQVZsc25GSmpQSVluWTJCUFUvTmZjYTFXVVFqUDF3LzVwOEFldkV6Ty8rdldRd3JZOXE2KyszTjN6Mkw1eTE5eGlCdkJ5SFgzTlJBZ1NFMysrQTJyZE5zSmNXNlp5RWQ5RW1BejQveklrMWR0NlhpYmN4bXNYYm93RWNEKzg9PC9YNTA5Q2VydGlmaWNhdGU+PC9YNTA5RGF0YT48L0tleUluZm8+PC9kczpTaWduYXR1cmU+PC9zYW1sOkFzc2VydGlvbj4=";
     token.append(charToken);
 
     char* substringPosition;
     int userCount = 0;
+    bool trickle = false;
     RealityPlatform::ServerType serverType = RealityPlatform::ServerType::QA;
 
-    if(argc != 3)
+    if(argc < 3)
         {
         ShowUsage();
         return 0;
@@ -563,14 +584,29 @@ int main(int argc, char* argv[])
             else
                 serverType = RealityPlatform::ServerType::DEV;
             }
+        else if (strcmp(argv[i], "-t") == 0 || strcmp(argv[i], "--trickle") == 0)
+            {
+            trickle = true;
+            }
         }
     
     UserManager wo = UserManager();
     wo.m_certPath = GetPemLocation();
 
-    for(int i = 0; i < userCount; i++)
+    if(!trickle)
         {
-        wo.users.push_back(new User(&token, &wo.m_generator, &wo.m_distribution, serverType));
+        for(int i = 0; i < userCount; i++)
+            {
+            wo.users.push_back(new User(&token, &wo.m_generator, &wo.m_distribution, serverType));
+            }
+        }
+    else
+        {
+        wo.users.push_back(new User(&token, &wo.m_generator, &wo.m_distribution, serverType)); //start with one
+            for (int i = 1; i < userCount; i++)
+            {
+            s_innactiveUsers.push_back(new User(&token, &wo.m_generator, &wo.m_distribution, serverType)); //feed the rest to the Dispatcher
+            }
         }
 
     std::thread dispatch (Dispatch, &wo);
@@ -670,7 +706,7 @@ void UserManager::Perform(int userCount)
                     {
                     /*if(!user->ValidatePrevious())
                         failCounter++;*/
-                    user->ValidatePrevious();
+                    user->ValidatePrevious(still_running);
 
                     if(s_keepRunning)
                         {
@@ -689,7 +725,7 @@ void UserManager::Perform(int userCount)
                     //failCounter++;
                     char error[256];
                     sprintf(error, "curl error number: %d", (int)msg->data.result);
-                    s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, Utf8String(error));
+                    s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, Utf8String(error));
                     //std::cout << "curl not ok" << std::endl;
                     if(s_keepRunning)
                         {
@@ -713,7 +749,7 @@ void UserManager::Perform(int userCount)
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct User *user = (struct User *)pClient;
-                s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, "unhandled curl failure");
+                s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, "unhandled curl failure");
                 //std::cout << "curl not ok" << std::endl;
                 }
             }
@@ -763,6 +799,7 @@ void UserManager::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString
         curl_easy_setopt(pCurl, CURLOPT_URL, url);
 
         curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYPEER, 1);
+        //curl_easy_setopt(pCurl, CURLOPT_SSL_VERIFYHOST, 1);
         curl_easy_setopt(pCurl, CURLOPT_CAINFO, Utf8String(m_certPath));
         curl_easy_setopt(pCurl, CURLOPT_HTTPHEADER, headers);
         curl_easy_setopt(pCurl, CURLOPT_HEADEROPT, CURLHEADER_SEPARATE);
