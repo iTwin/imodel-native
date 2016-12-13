@@ -96,8 +96,7 @@ CompatibilityStatus BackwardsCompatibilityTests::VerifyElementsAndModels()
             return status;
         }
 
-    DgnModels::Iterator modelsIterator = m_db->Models().MakeIterator();
-    for (DgnModels::Iterator::Entry modelEntry : modelsIterator)
+    for (ModelIteratorEntryCR modelEntry : m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
         {
         DgnModelPtr model = m_db->Models().GetModel(modelEntry.GetModelId());
         //printf("modelName: %s \n", model->GetCode().GetValue().c_str());

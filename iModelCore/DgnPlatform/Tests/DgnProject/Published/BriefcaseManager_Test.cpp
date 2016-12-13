@@ -1557,10 +1557,10 @@ struct DoubleBriefcaseTest : LocksManagerTest
 
         // Model + element IDs may vary each time we convert the v8 file...need to look them up.
         DgnModelId model2d, model3d;
-        for (auto const& entry : m_dbA->Models().MakeIterator())
+        for (ModelIteratorEntryCR entry : m_dbA->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_GeometricModel)))
             {
             auto model = m_dbA->Models().GetModel(entry.GetModelId());
-            if (model.IsValid() && model->IsGeometricModel())
+            if (model.IsValid())
                 {
                 if (!model3d.IsValid() && LookupElementIds(m_elemIds, *model))
                     {

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Functional" nameSpacePrefix="func" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="Functional" alias="func" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
 
-    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
 
     <ECEntityClass typeName="FunctionalPartition" modifier="Sealed">
         <BaseClass>bis:InformationPartitionElement</BaseClass>
@@ -68,30 +68,30 @@
     </ECEntityClass>
     
     <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing">
-        <Source cardinality="(0,N)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="FunctionalElement is of FunctionalType" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="FunctionalType defines FunctionalElements" polymorphic="true">
             <Class class="FunctionalType"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source cardinality="(0,N)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="PhysicalElement fulfills FunctionalElements" polymorphic="true">
             <Class class="bis:PhysicalElement"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="FunctionalElement is fulfilled by PhysicalElements" polymorphic="true">
             <Class class="FunctionalElement"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source cardinality="(0,N)" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="DrawingGraphic represents FunctionalElements" polymorphic="true">
             <Class class="bis:DrawingGraphic"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="FunctionalElement is represented by DrawingGraphics" polymorphic="true">
             <Class class="FunctionalElement"/>
         </Target>
     </ECRelationshipClass>

@@ -83,58 +83,35 @@ void DgnModels::Empty()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/11
+* @bsimethod                                    Shaun.Sewall                    12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t DgnModels::Iterator::QueryCount() const
+ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sqlString = "SELECT count(*) FROM " BIS_TABLE(BIS_CLASS_Model);
-    bool hasWhere = false;
-    if (ModelIterate::Gui == m_itType)
+    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElementId,IsTemplate,Visibility FROM ");
+    sql.append(className);
+
+    if (whereClause)
         {
-        sqlString += " WHERE (0 <> Visibility)";
-        hasWhere = true;
+        sql.append(" ");
+        sql.append(whereClause);
         }
 
-    sqlString = MakeSqlString(sqlString.c_str(), hasWhere);
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
 
-    Statement sql(*m_db, sqlString.c_str());
-
-    return (BE_SQLITE_ROW != sql.Step()) ? 0 : sql.GetValueInt(0);
+    ModelIterator iterator;
+    iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
+    return iterator;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/10
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnModels::Iterator::const_iterator DgnModels::Iterator::begin() const
-    {
-    if (!m_stmt.IsValid())
-        {
-        Utf8String sqlString = "SELECT Id,Visibility,ECClassId,ModeledElementId,IsTemplate FROM " BIS_TABLE(BIS_CLASS_Model);
-        bool hasWhere = false;
-        if (ModelIterate::Gui == m_itType)
-            {
-            sqlString += " WHERE (0 <> Visibility)";
-            hasWhere = true;
-            }
-
-        sqlString = MakeSqlString(sqlString.c_str(), hasWhere);
-
-        m_db->GetCachedStatement(m_stmt, sqlString.c_str());
-        m_params.Bind(*m_stmt);
-        }
-    else
-        {
-        m_stmt->Reset();
-        }
-
-    return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
-    }
-
-DgnModelId   DgnModels::Iterator::Entry::GetModelId() const {Verify(); return m_sql->GetValueId<DgnModelId>(0);}
-bool         DgnModels::Iterator::Entry::GetInGuiList() const {Verify(); return (0 != m_sql->GetValueInt(1));}
-DgnClassId   DgnModels::Iterator::Entry::GetClassId() const {Verify(); return m_sql->GetValueId<DgnClassId>(2);}
-DgnElementId DgnModels::Iterator::Entry::GetModeledElementId() const {Verify(); return m_sql->GetValueId<DgnElementId>(3);}
-bool         DgnModels::Iterator::Entry::GetIsTemplate() const {Verify(); return (0 != m_sql->GetValueInt(4));}
+DgnModelId ModelIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(0);}
+DgnClassId ModelIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+DgnElementId ModelIteratorEntry::GetModeledElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
+bool ModelIteratorEntry::GetIsTemplate() const {return m_statement->GetValueBoolean(3);}
+bool ModelIteratorEntry::GetInGuiList() const {return 0 != m_statement->GetValueInt(4);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15

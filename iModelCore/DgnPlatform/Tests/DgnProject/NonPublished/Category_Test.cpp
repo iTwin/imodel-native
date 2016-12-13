@@ -283,7 +283,7 @@ TEST_F (CategoryTests, IterateCategories)
     bool foundCategory2=false;
     bool foundCategory3=false;
 
-    for (ElementIteratorEntry entry : SpatialCategory::MakeIterator(*m_db))
+    for (ElementIteratorEntryCR entry : SpatialCategory::MakeIterator(*m_db))
         {
         DgnCategoryId categoryId = entry.GetId<DgnCategoryId>();
         DgnCategoryCPtr category = SpatialCategory::Get(*m_db, categoryId);
@@ -401,7 +401,7 @@ TEST_F (CategoryTests, InsertSubCategory)
 
     int nCompared = 0;
     int nNotCompared = 0;
-    for (ElementIteratorEntry subCategoryEntry : iterator)
+    for (ElementIteratorEntryCR subCategoryEntry : iterator)
         {
         DgnSubCategoryId subCategoryId = subCategoryEntry.GetId<DgnSubCategoryId>();
         DgnSubCategoryCP pCompareTo = nullptr;

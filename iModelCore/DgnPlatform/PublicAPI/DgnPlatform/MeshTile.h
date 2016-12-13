@@ -265,7 +265,6 @@ public:
     DgnElementId GetPolylineEntityId(TilePolylineCR polyline) const { return polyline.GetIndices().empty() ? DgnElementId() : GetEntityId(polyline.GetIndices().front()); }
     bool IsEmpty() const { return m_triangles.empty() && m_polylines.empty(); }
     DRange3d GetRange() const { return DRange3d::From(m_points); }
-
     DRange3d GetUVRange() const { return DRange3d::From(m_uvParams, 0.0); }
 
     bool ValidIdsPresent() const { return m_validIdsPresent; }
@@ -402,7 +401,7 @@ struct TileGeometry : RefCountedBase
         void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform (transform); }
         TilePolyface    Clone() const { return TilePolyface(*m_displayParams, *m_polyface->Clone()); }
         };
-    struct TileStrokes
+    struct TileStrokes
         {
         TileDisplayParamsPtr        m_displayParams;
         bvector<bvector<DPoint3d>>  m_strokes;
@@ -584,12 +583,10 @@ struct TileGenerationCache : RefCountedBase
 private:
     typedef bmap<DgnElementId, TileGeometryList>                    GeometryListMap;
     typedef std::map<DgnElementId, std::unique_ptr<GeometrySource>> GeometrySourceMap;
-    typedef bmap<DgnGeometryPartId, TileGeomPartPtr>                GeomPartMap;
 
     DRange3d                    m_range;
     mutable GeometryListMap     m_geometry;
     mutable GeometrySourceMap   m_geometrySources;
-    mutable GeomPartMap         m_geomParts;
     mutable BeMutex             m_mutex;    // for geometry cache
     mutable BeSQLite::BeDbMutex m_dbMutex;  // for multi-threaded access to database
     Options                     m_options;
@@ -614,10 +611,7 @@ public:
     bool GetCachedGeometry(TileGeometryList& geometry, DgnElementId elementId) const;
     void AddCachedGeometry(DgnElementId elementId, TileGeometryList&& geometry) const;
 
-    bool GetGeomPart(TileGeomPartPtr& tileGeomPart, DgnGeometryPartId partId) const;
-    void AddGeomPart(DgnGeometryPartId partId, TileGeomPartR tileGeomPart) const;
-
-    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
+     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 };
 
 //=======================================================================================

@@ -753,7 +753,7 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
     view->GetDisplayStyle().SetViewFlags(flags);
 
     auto& catsel = view->GetCategorySelector();
-    for (ElementIteratorEntry categoryEntry : DrawingCategory::MakeIterator(db))
+    for (ElementIteratorEntryCR categoryEntry : DrawingCategory::MakeIterator(db))
         catsel.AddCategory(categoryEntry.GetId<DgnCategoryId>());
         
     return view;

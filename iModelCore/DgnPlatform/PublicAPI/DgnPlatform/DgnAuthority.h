@@ -177,7 +177,7 @@ public:
 //! A generic DgnAuthority which enforces uniquess within the scope of a DgnModel.
 // @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct ModelScopeAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE ModelScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
     friend struct dgn_AuthorityHandler::ModelScope;
@@ -205,7 +205,7 @@ public:
 //! A generic DgnAuthority which enforces uniquess within another DgnElement that is providing the scope.
 // @bsistruct                                                    Shaun.Sewall    11/16
 //=======================================================================================
-struct ElementScopeAuthority : DgnAuthority
+struct EXPORT_VTABLE_ATTRIBUTE ElementScopeAuthority : DgnAuthority
 {
     DEFINE_T_SUPER(DgnAuthority);
     friend struct dgn_AuthorityHandler::ElementScope;

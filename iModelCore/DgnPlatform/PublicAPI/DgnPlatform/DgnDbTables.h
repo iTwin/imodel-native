@@ -144,6 +144,7 @@ namespace dgn_ElementHandler {struct Physical;};
 namespace dgn_TxnTable {struct Element; struct Model;};
 
 struct DgnImportContext;
+struct ModelIterator;
 
 //=======================================================================================
 //! A DgnCode is an identifier associated with some object in a DgnDb and issued by a
@@ -273,12 +274,6 @@ public:
     DGNPLATFORM_EXPORT static void ReplaceInvalidCharacters(Utf8StringR name, Utf8CP invalidChars, Utf8Char replacement);
 };
 
-enum class ModelIterate
-{
-    All = 1<<0,   //!< return all iterable models
-    Gui = 1<<1,   //!< return only models marked as visible in Model list GUI
-};
-
 //=======================================================================================
 //! Each DgnModel has an entry in the DgnModels table
 //! @see DgnDb::Models
@@ -341,37 +336,6 @@ public:
         bool GetIsTemplate() const {return m_isTemplate;}
     }; // Model
 
-    struct Iterator : BeSQLite::DbTableIterator
-    {
-    private:
-        ModelIterate   m_itType;
-
-    public:
-        Iterator(DgnDbCR db, Utf8CP where, ModelIterate itType) : DbTableIterator((BeSQLite::DbCR) db), m_itType(itType) {if (where) m_params.SetWhere(where);}
-        struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-        {
-        private:
-            friend struct Iterator;
-            Entry(BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql,isValid) {}
-
-        public:
-            DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
-            DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
-            DGNPLATFORM_EXPORT bool GetInGuiList() const;
-            DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
-            DGNPLATFORM_EXPORT bool GetIsTemplate() const;
-
-            Entry const& operator*() const {return *this;}
-        };
-
-        typedef Entry const_iterator;
-        typedef Entry iterator;
-        void SetIterationType(ModelIterate itType) {m_stmt=0; m_itType = itType;}
-        DGNPLATFORM_EXPORT size_t QueryCount() const;
-        DGNPLATFORM_EXPORT const_iterator begin() const;
-        const_iterator end() const {return Entry(nullptr, false);}
-    };
-
 public:
     //! Create a new, non-persistent model from the supplied ECInstance.
     //! Ths supplied instance must contain the model's Code.
@@ -403,8 +367,11 @@ public:
     //! Query for a DgnModelId by the DgnCode of the element that it is modeling
     DGNPLATFORM_EXPORT DgnModelId QuerySubModelId(DgnCodeCR modeledElementCode) const;
 
-    //! Make an iterator over the models in this DgnDb.
-    Iterator MakeIterator(Utf8CP where=nullptr, ModelIterate itType=ModelIterate::All) const {return Iterator(m_dgndb, where, itType);}
+    //! Make an iterator over models of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalModel)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DGNPLATFORM_EXPORT ModelIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Get a string containing the list of characters that may NOT appear in model names.
     static Utf8CP GetIllegalCharacters() {return "\\/:*?<>|\"\t\n,=&";}
