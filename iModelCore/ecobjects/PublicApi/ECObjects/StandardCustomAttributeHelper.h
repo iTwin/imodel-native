@@ -118,10 +118,10 @@ public:
     //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship);
 
-    //! Indicates whether the specified ECRelationshipClass has the UsePrimaryKeyAsForeignKey custom attribute or not.
+    //! Indicates whether the specified ECRelationshipClass has the UseECInstanceIdAsForeignKey custom attribute or not.
     //! @param[in] relClass ECRelationshipClass to retrieve the custom attribute from.
     //! @return true if @p relClass has the custom attribute. false, if @p relClass doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool HasUsePrimaryKeyAsForeignKey(ECRelationshipClassCR relClass);
+    ECOBJECTS_EXPORT static bool HasUseECInstanceIdAsForeignKey(ECRelationshipClassCR relClass);
     };
 
 //=======================================================================================    
