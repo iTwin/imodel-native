@@ -531,11 +531,15 @@ struct Root : TileTree::OctTree::Root
 {
     DEFINE_T_SUPER(TileTree::OctTree::Root);
 private:
-    DgnModelId      m_modelId;
-    Utf8String      m_name;
-    double          m_leafTolerance = 0.01;
-    bool            m_is3d;
-    // ###TODO: Cache (geom parts)
+    typedef bmap<DgnGeometryPartId, GeomPartPtr> GeomPartMap;
+
+    DgnModelId                  m_modelId;
+    Utf8String                  m_name;
+    double                      m_leafTolerance = 0.01;
+    mutable BeMutex             m_mutex;
+    mutable BeSQLite::BeDbMutex m_dbMutex;
+    mutable GeomPartMap         m_geomParts;
+    bool                        m_is3d;
 
     Root(GeometricModelR model, TransformCR transform);
 
@@ -550,6 +554,11 @@ public:
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
     double GetLeafTolerance() const { return m_leafTolerance; }
+
+    BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
+
+    GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
+    void AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const;
 };
 
 //=======================================================================================

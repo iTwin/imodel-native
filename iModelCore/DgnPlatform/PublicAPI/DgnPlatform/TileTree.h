@@ -511,6 +511,8 @@ struct TileId
 
     TileId CreateChildId(uint32_t i, uint32_t j, uint32_t k) const { return TileId(m_level+1, m_i*2+i, m_j*2+i, m_k*2+k); }
     TileId GetRelativeId(TileId parentId) const;
+
+    static TileId RootId() { return TileId(0,0,0,0); }
 };
 
 //=======================================================================================
