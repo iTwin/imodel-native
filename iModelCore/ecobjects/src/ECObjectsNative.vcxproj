@@ -79,7 +79,6 @@
     <ClCompile Include="ExpressionHandler.cpp" />
     <ClCompile Include="ExpressionNode.cpp" />
     <ClCompile Include="nonport\FileUtilities.cpp" />
-    <ClCompile Include="nonport\StopWatch.cpp" />
     <ClCompile Include="PresentationMetadataHelper.cpp" />
     <ClCompile Include="presentation\auicommand.cpp" />
     <ClCompile Include="presentation\auievent.cpp" />

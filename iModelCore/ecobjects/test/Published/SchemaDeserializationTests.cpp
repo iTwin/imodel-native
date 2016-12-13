@@ -955,7 +955,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
+TEST_F(SchemaDeserializationTest, ExpectSuccessWithDuplicateClassesInECXml2)
     {
     Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
@@ -972,7 +972,7 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
     ECSchemaPtr schema;
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, widgets_schemaXML, *schemaContext);
 
-    EXPECT_EQ(SchemaReadStatus::DuplicateTypeName, status);
+    EXPECT_EQ(SchemaReadStatus::Success, status);
 
     ECSchemaPtr schema2;
     ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext();
@@ -985,6 +985,45 @@ TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInXml)
         "    <ECClass typeName='ecProject' description='New Project ECClass' isDomainClass='True'>"
         "       <ECProperty propertyName='Author' typeName='string' displayLabel='Project Name' />"
         "    </ECClass>"
+        "</ECSchema>";
+    status = ECSchema::ReadFromXmlString(schema2, widgets2_schemaXML, *schemaContext2);
+
+    EXPECT_EQ(SchemaReadStatus::Success, status);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, ExpectFailureWithDuplicateClassesInECXml3)
+    {
+    Utf8CP widgets_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='DifferentClass'>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ecProject' description='Project ECClass' displayLabel='Project'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ecProject'>"
+        "    </ECEntityClass>"
+        "</ECSchema>";
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr schema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, widgets_schemaXML, *schemaContext);
+
+    EXPECT_EQ(SchemaReadStatus::DuplicateTypeName, status);
+
+    ECSchemaPtr schema2;
+    ECSchemaReadContextPtr   schemaContext2 = ECSchemaReadContext::CreateContext();
+
+    Utf8CP widgets2_schemaXML = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='Widgets2' version='09.06' displayLabel='Widgets Display Label' description='Widgets Description' nameSpacePrefix='wid' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECEntityClass typeName='ecProject' description='Project ECClass' displayLabel='Project' isDomainClass='True'>"
+        "       <ECProperty propertyName='Name' typeName='string' displayLabel='Project Name' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='ecProject' description='New Project ECClass' isDomainClass='True'>"
+        "       <ECProperty propertyName='Author' typeName='string' displayLabel='Project Name' />"
+        "    </ECEntityClass>"
         "</ECSchema>";
     status = ECSchema::ReadFromXmlString(schema2, widgets2_schemaXML, *schemaContext2);
 

@@ -298,9 +298,9 @@ bool ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(ECDbForeignKe
 //@bsimethod                                               Krischan.Eberle   12 / 2016
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::HasUsePrimaryKeyAsForeignKey(ECRelationshipClassCR relClass)
+bool ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(ECRelationshipClassCR relClass)
     {
-    return relClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "UsePrimaryKeyAsForeignKey") != nullptr;
+    return relClass.GetCustomAttributeLocal(ECDBMAP_SCHEMA_NAME, "UseECInstanceIdAsForeignKey") != nullptr;
     }
 
 //*****************************************************************
