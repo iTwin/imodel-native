@@ -166,12 +166,13 @@ void Stats::PrintStats()
     std::cout << "Press any key to quit testing" << std::endl;
     }
 
-void Stats::WriteToFile(int userCount)
+void Stats::WriteToFile(int userCount, Utf8String path)
     {
     time_t generatedFileName = std::time(nullptr);
     char name[64];
     sprintf(name, "%d.log", (int)generatedFileName);
-    ofstream file (name);
+    path.append(name);
+    ofstream file (path.c_str());
     file << userCount << " users" << std::endl;
     file << asctime(localtime(&generatedFileName)) << std::endl;
     file << "Type      Success    Failure   minTime   maxTime   avgTime" << std::endl;
@@ -454,7 +455,10 @@ void ShowUsage()
     std::cout << "  -s, --serverType        {dev, qa, prod}" << std::endl;
     std::cout << "  -u, --users             Number of users" << std::endl;
     std::cout << "  -t, --trickle           optional, add this argument to avoid spawing all users at once" << std::endl;
+    std::cout << "  -p, --path              optional, specifiy a path to out the log file to" << std::endl;
+    std::cout << "                          any text added after the last backslash will be added to the file name" << std::endl;
     std::cout << "  if there are spaces in an argument, surround it with \"\" " << std::endl;
+    std::cout << "  as in \"-p:C:\\Program Files(...)\" " << std::endl;
 
     std::cout << std::endl << "Press any key to exit." << std::endl;
     getch();
@@ -462,6 +466,12 @@ void ShowUsage()
 
 int main(int argc, char* argv[])
     {
+    if(argc < 3)
+        {
+        ShowUsage();
+        return 0;
+        }
+
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
 
@@ -552,12 +562,7 @@ int main(int argc, char* argv[])
     int userCount = 0;
     bool trickle = false;
     RealityPlatform::ServerType serverType = RealityPlatform::ServerType::QA;
-
-    if(argc < 3)
-        {
-        ShowUsage();
-        return 0;
-        }
+    Utf8String path = "";
 
     for (int i = 0; i < argc; ++i)
         {
@@ -588,6 +593,12 @@ int main(int argc, char* argv[])
             {
             trickle = true;
             }
+        else if (strstr(argv[i], "-p:") || strstr(argv[i], "--path:"))
+            {
+            substringPosition = strstr(argv[i], ":");
+            substringPosition++;
+            path = Utf8String(substringPosition);
+            }
         }
     
     UserManager wo = UserManager();
@@ -616,7 +627,7 @@ int main(int argc, char* argv[])
     s_keepRunning = false;
     terminate.join();
     dispatch.join();
-    s_stats.WriteToFile(userCount);
+    s_stats.WriteToFile(userCount, path);
     }
 
 UserManager::UserManager()
@@ -756,6 +767,7 @@ void UserManager::Perform(int userCount)
 
         if (s_keepRunning && still_running == 0)
             {
+            s_stats.PrintStats();
             std::cout << "user pool empty, repopulating" << std::endl;
             Repopulate();
             }

@@ -56,7 +56,7 @@ struct Stats
     Stats();
     void InsertStats(OperationType type, bool success, time_t time,int activeUsers, Utf8String errorMsg = "");
     void PrintStats();
-    void WriteToFile(int userCount);
+    void WriteToFile(int userCount, Utf8String path);
     };
 
 struct RPS
