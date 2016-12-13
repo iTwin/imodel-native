@@ -55,6 +55,8 @@ DGNPLATFORM_REF_COUNTED_PTR(LsInternalComponent);
 DGNPLATFORM_REF_COUNTED_PTR(LsCache);
 DGNPLATFORM_REF_COUNTED_PTR(LsRasterImageComponent);
 
+static Utf8CP LINESTYLE_PROP_Descr = "Descr";
+static Utf8CP LINESTYLE_PROP_Data = "Data";
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Special style numbers that form a subset of values that may passed to LineStyleManager::GetNameFromNumber() or returned from LineStyleManager::GetNumberFromName()
@@ -1593,19 +1595,11 @@ struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
     
 private:
-    Utf8String m_description;
-    Utf8String m_data;
-
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_LineStyle, db, name); }
 
 protected:
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
-    DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
-    DGNPLATFORM_EXPORT virtual void _CopyFrom(DgnElementCR) override;
     virtual DgnDbStatus _OnDelete() const override { return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
-    virtual uint32_t _GetMemSize() const override { return (uint32_t)(m_description.size() + m_data.size() + 2); }
+    virtual uint32_t _GetMemSize() const override { return (uint32_t)(Utf8String(GetDescription()).size() + Utf8String(GetData()).size() + 2); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
 
@@ -1620,10 +1614,10 @@ public:
 
     Utf8String GetName() const { return GetCode().GetValue(); }
     void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
-    Utf8StringCR GetDescription() const { return m_description; }
-    void SetDescription(Utf8CP value) { m_description.AssignOrClear(value); }
-    Utf8StringCR GetData() const { return m_data; }
-    void SetData(Utf8CP value) { m_data.AssignOrClear(value); }
+    Utf8String GetDescription() const { return GetPropertyValueString(LINESTYLE_PROP_Descr); }
+    void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Descr, value); }
+    Utf8String GetData() const { return GetPropertyValueString(LINESTYLE_PROP_Data); }
+    void SetData(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Data, value); }
     
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCode(db, name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }

@@ -65,6 +65,57 @@ struct DgnElementMap : bmap<DgnElementId, DgnElementCPtr>
 */
 
 //=======================================================================================
+//! The "current entry" of an ModelIterator
+// @bsiclass                                                     Shaun.Sewall      12/16
+//=======================================================================================
+struct ModelIteratorEntry : ECSqlStatementEntry
+{
+    friend struct ECSqlStatementIterator<ModelIteratorEntry>;
+private:
+    ModelIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+public:
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const;
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const;
+    DGNPLATFORM_EXPORT DgnElementId GetModeledElementId() const;
+    DGNPLATFORM_EXPORT bool GetIsTemplate() const;
+    DGNPLATFORM_EXPORT bool GetInGuiList() const;
+};
+
+//=======================================================================================
+//! An iterator over a set of DgnModels, defined by a query.
+// @bsiclass                                                     Shaun.Sewall      12/16
+//=======================================================================================
+struct ModelIterator : ECSqlStatementIterator<ModelIteratorEntry>
+{
+    //! Iterates all entries to build an unordered IdSet of DgnModelIds
+    BeSQLite::IdSet<DgnModelId> BuildIdSet()
+        {
+        BeSQLite::IdSet<DgnModelId> idSet;
+        for (ModelIteratorEntry entry : *this)
+            idSet.insert(entry.GetModelId());
+
+        return idSet;
+        }
+
+    //! Iterates all entries to return an ordered bvector of DgnModelIds
+    bvector<DgnModelId> BuildIdList()
+        {
+        bvector<DgnModelId> idList;
+        for (ModelIteratorEntry entry : *this)
+            idList.push_back(entry.GetModelId());
+
+        return idList;
+        }
+
+    //! Iterates all entries to populate an ordered bvector of DgnModelIds
+    void BuildIdList(bvector<DgnModelId>& idList)
+        {
+        for (ModelIteratorEntry entry : *this)
+            idList.push_back(entry.GetModelId());
+        }
+};
+
+//=======================================================================================
 //! A DgnModel represents a model in memory and may hold references to elements that belong to it.
 //! @ingroup GROUP_DgnModel
 // @bsiclass                                                     KeithBentley    10/00

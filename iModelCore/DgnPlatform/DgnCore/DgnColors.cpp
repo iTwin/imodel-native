@@ -60,6 +60,29 @@ void DgnTrueColor::_CopyFrom(DgnElementCR src)
         m_colorDef = other->m_colorDef;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::TrueColor::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, PROP_Value,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            DgnTrueColor& el = (DgnTrueColor&) elIn;
+            value.SetInteger(static_cast<int32_t>(el.GetColorDef().GetValue()));
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsInteger())
+                return DgnDbStatus::BadArg;
+            DgnTrueColor& el = (DgnTrueColor&) elIn;
+            el.SetColorDef(static_cast<uint32_t>(value.GetInteger()));
+            return DgnDbStatus::Success;
+                });
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/

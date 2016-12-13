@@ -563,6 +563,51 @@ BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    PK_ENTITY_t     entityTag = PSolidUtil::GetEntityTag(entity);
+    PK_BODY_type_t  bodyType;
+
+    PK_BODY_ask_type(entityTag, &bodyType);
+
+    if (PK_BODY_type_sheet_c != bodyType)
+        return false;
+    
+    int nFaces = 0;
+
+    if (SUCCESS != PK_BODY_ask_faces(entityTag, &nFaces, nullptr) || 1 != nFaces)
+        return false;
+
+    PK_FACE_t faceTag = PK_ENTITY_null;
+
+    if (SUCCESS != PK_BODY_ask_first_face(entityTag, &faceTag) || PK_ENTITY_null == faceTag)
+        return false;
+
+    PK_SURF_t    surfaceTag;
+    PK_CLASS_t   surfaceClass;
+    int          nLoops = 0;
+    PK_LOOP_t*   loops = nullptr;
+    PK_LOGICAL_t orientation;
+
+    if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &orientation) ||
+        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
+        SUCCESS != PK_FACE_ask_loops(faceTag, &nLoops, &loops) || nLoops < 1)
+        return false;
+
+    PK_MEMORY_free(loops);
+    hasHoles = (nLoops > 1);
+
+    return true;
+#else
+    return false;
+#endif
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::HasOnlyPlanarFaces(IBRepEntityCR entity)
@@ -605,6 +650,20 @@ bool BRepUtil::IsSmoothEdge(ISubEntityCR subEntity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::IsSmoothEdge(PSolidSubEntity::GetSubEntityTag(subEntity));
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  04/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsLaminarEdge(ISubEntityCR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_ask_type_t edgeTypes;
+
+    return (SUCCESS == PK_EDGE_ask_type(PSolidSubEntity::GetSubEntityTag(subEntity), &edgeTypes) && PK_EDGE_type_laminar_c == edgeTypes.fins_type);
 #else
     return false;
 #endif
@@ -878,12 +937,35 @@ uint32_t BRepUtil::TopologyID::AssignNewTopologyIds(IBRepEntityR entity, uint32_
 BentleyStatus BRepUtil::TopologyID::AddNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId, bool overrideExisting)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == nodeId)
+        return ERROR;
+
     PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
 
     if (PK_ENTITY_null == bodyTag)
         return ERROR;
 
     return PSolidTopoId::AddNodeIdAttributes(bodyTag, nodeId, overrideExisting);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::ChangeNodeIdAttributes(IBRepEntityR entity, uint32_t nodeId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == nodeId)
+        return ERROR;
+
+    PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
+
+    if (PK_ENTITY_null == bodyTag)
+        return ERROR;
+
+    return PSolidTopoId::ChangeNodeIdAttributes(bodyTag, nodeId);
 #else
     return ERROR;
 #endif
@@ -912,6 +994,9 @@ BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttributes(IBRepEntityR entity)
 BentleyStatus BRepUtil::TopologyID::IncrementNodeIdAttributes(IBRepEntityR entity, int32_t increment)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (0 == increment)
+        return ERROR;
+
     PK_ENTITY_t bodyTag = PSolidUtil::GetEntityTagForModify(entity);
 
     if (PK_ENTITY_null == bodyTag)
@@ -1049,6 +1134,28 @@ BentleyStatus BRepUtil::Create::BodyFromCurveVector(IBRepEntityPtr& entityOut, C
     return PSolidGeom::BodyFromCurveVector(entityOut, curveVector, nullptr, nodeId);
 #else
     return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/12
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr BRepUtil::Create::BodyToCurveVector(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    switch (entity.GetEntityType())
+        {
+        case IBRepEntity::EntityType::Wire:
+            return PSolidGeom::WireBodyToCurveVector(entity);
+
+        case IBRepEntity::EntityType::Sheet:
+            return PSolidGeom::PlanarSheetBodyToCurveVector(entity);
+
+        default:
+            return nullptr;
+        }
+#else
+    return nullptr;
 #endif
     }
 
@@ -1572,6 +1679,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityR target, IBRepEntityCR pl
     //       4) Does not resolve node Id conflicts between the target and tool body, this is likely just a bug and not intended.
     //       I prefer keeping this method simple and instead providing helper methods for creating the tool body.
     //       See BRepUtil::Create::CutProfileBodyFromOpenCurveVector and BRepUtil::Create::SweptBodyFromOpenCurveVector.
+    //       The Connect result can be achieved using BRepUtil::Create::SweptBodyFromOpenCurveVector and a solid/surface boolean subtract.
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_ENTITY_t planarToolTag = PSolidUtil::GetEntityTag(planarTool);
 
@@ -1930,7 +2038,7 @@ BentleyStatus BRepUtil::Modify::SpinBody(IBRepEntityR targetEntity, DRay3dCR axi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection)
+BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR toolEntity, bool reverseDirection, DVec3dCP direction)
     {                           
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (IBRepEntity::EntityType::Sheet != toolEntity.GetEntityType()) 
@@ -1946,12 +2054,6 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     if (PK_ENTITY_null == toolTag)
         return ERROR;
 
-    DRange3d targetRange;
-
-    if (SUCCESS != PSolidUtil::GetEntityRange(targetRange, targetTag))
-        return ERROR;
- 
-    DRay3d      toolRay;
     Transform   invTargetTransform, toolTransform;
 
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
@@ -1959,20 +2061,26 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
 
     bvector<PK_FACE_t> toolFaces;
 
-    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag) ||
-        SUCCESS != PSolidUtil::GetPlanarFaceData(&toolRay.origin, &toolRay.direction, toolFaces.front()))
+    if (SUCCESS != PSolidTopo::GetBodyFaces(toolFaces, toolTag))
         return ERROR;
 
-    toolTransform.Multiply(toolRay.origin);
-    toolTransform.MultiplyMatrixOnly(toolRay.direction);
-    toolRay.direction.Normalize();
+    DVec3d      drawDir = DVec3d::UnitZ();
+
+    if (nullptr == direction)
+        {
+        PSolidUtil::GetPlanarFaceData(nullptr, &drawDir, toolFaces.front()); // Don't check status, allow non-planar surface...
+        toolTransform.MultiplyMatrixOnly(drawDir);
+        }
+    else
+        {
+        invTargetTransform.MultiplyMatrixOnly(drawDir, *direction);
+        }
+
+    drawDir.Normalize();
 
     if (reverseDirection)
-        toolRay.direction.Negate();
+        drawDir.Negate();
             
-    DRange1d  targetDepthRange = targetRange.GetCornerRange(toolRay);
-    double    toolDepth = toolRay.direction.DotProduct(toolRay.origin);
-
     PK_BODY_emboss_o_t  options;
     PK_TOPOL_track_r_t  tracking;
     PK_TOPOL_local_r_t  results;
@@ -1984,7 +2092,7 @@ BentleyStatus BRepUtil::Modify::Emboss(IBRepEntityR targetEntity, IBRepEntityCR 
     options.sidewall_data.sidewall = PK_emboss_sidewall_swept_c;
     options.convexity = PK_emboss_convexity_both_c; // Let pad or pocket be determined by whether cap is "above" or "below" target body according to emboss direction...
     options.overflow_data.laminar_walled = true;
-    toolRay.direction.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
+    drawDir.GetComponents(options.sidewall_data.draw_direction.coord[0], options.sidewall_data.draw_direction.coord[1], options.sidewall_data.draw_direction.coord[2]);
 
     PK_MARK_t   markTag = PK_ENTITY_null;
 

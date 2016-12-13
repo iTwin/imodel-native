@@ -170,6 +170,12 @@ struct TileThread : BeFolly::ThreadPool
     static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.try_get_fast();}
 };
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_SaveToDb() {return SUCCESS;}
+folly::Future<BentleyStatus> Attachment::Tile::Loader::_ReadFromDb() {return ERROR;}
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -187,9 +193,14 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     // Step 1 is done on the "TileThread". When it finishes, it creates a promise for Step 2 on the Render thread, in _CreateTile().
     auto stat = folly::via(&TileThread::Get(), [me]() 
         {
+        if (me->IsCanceledOrAbandoned())
+            return folly::makeFuture(ERROR);
+
         DgnDb::SetThreadId(DgnDb::ThreadId::SheetTile);
         Tile& tile = static_cast<Tile&>(*me->m_tile);
         Tree& root = tile.GetTree();
+        if (tile.IsAbandoned())
+            return folly::Future<BentleyStatus>(ERROR);
 
         auto vp = DgnViewport::GetTileViewport();
         return vp ? vp->_CreateTile(me->m_loads, me->m_image, *root.m_view, tile, root.m_pixels) : ERROR;

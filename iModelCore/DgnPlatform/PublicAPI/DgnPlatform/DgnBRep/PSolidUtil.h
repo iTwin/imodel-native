@@ -69,6 +69,7 @@ DGNPLATFORM_EXPORT static BentleyStatus ResolveDuplicateFaceIds(PK_BODY_t bodyTa
 DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttributes(PK_BODY_t bodyTag, uint32_t nodeId, bool overrideExisting);
 DGNPLATFORM_EXPORT static BentleyStatus AddNewNodeIdAttributes(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus IncrementNodeIdAttributes(PK_BODY_t bodyTag, int32_t increment);
+DGNPLATFORM_EXPORT static BentleyStatus ChangeNodeIdAttributes(PK_BODY_t bodyTag, uint32_t nodeId);
 DGNPLATFORM_EXPORT static BentleyStatus DeleteNodeIdAttributes(PK_BODY_t bodyTag);
 
 DGNPLATFORM_EXPORT static BentleyStatus AttachEntityId(PK_ENTITY_t entityTagIn, uint32_t nodeIdIn, uint32_t entityIdIn);
@@ -272,7 +273,7 @@ DGNPLATFORM_EXPORT static BentleyStatus ConvertSolidBodyToSheet(PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus SweepBodyVector(PK_BODY_t bodyTag, DVec3dCR direction, double distance);
 DGNPLATFORM_EXPORT static BentleyStatus SweepBodyAxis(PK_BODY_t bodyTag, DVec3dCR revolveAxis, DPoint3dCR center, double sweep);
 
-DGNPLATFORM_EXPORT static BentleyStatus Boolean(PK_BODY_t** ppResultBodies, int* pNumResultBodies, PK_boolean_function_t boolOpIn, bool generalTopology, PK_BODY_t blankBodyIn, PK_BODY_t* pToolBodies, int numToolBodiesIn, PKIBooleanOptionEnum booleanOptions);
+DGNPLATFORM_EXPORT static BentleyStatus Boolean(bvector<PK_BODY_t>* results, PK_boolean_function_t boolOpIn, bool generalTopology, PK_BODY_t& blankBodyIn, PK_BODY_t* pToolBodies, int numToolBodiesIn, PKIBooleanOptionEnum booleanOptions);
 DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<PK_BODY_t>& bodies, PK_BODY_t body);
 DGNPLATFORM_EXPORT static BentleyStatus TransformBody(PK_BODY_t body, TransformCR transform);
 DGNPLATFORM_EXPORT static BentleyStatus FixBlends(PK_BODY_t bodyTag);

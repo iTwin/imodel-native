@@ -76,17 +76,17 @@ protected:
     size_t                                  m_maxTilesetDepth;
     bmap<DgnModelId, DRange3d>              m_modelRanges;
     BeMutex                                 m_mutex;
-    bool                                    m_publishPolylines;
+    bool                                    m_publishSurfacesOnly;
     bool                                    m_publishIncremental;
 
-    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishPolylines = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
+    TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
     virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
     TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT void CleanDirectories(BeFileNameCR dataDir);
-    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
+    TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter);
 
     TILEPUBLISHER_EXPORT void WriteMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
@@ -110,7 +110,7 @@ public:
     TransformCR GetNonSpatialToEcef() const { return m_nonSpatialToEcef; }
     DgnDbR GetDgnDb() const { return m_db; }
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
-    bool WantPolylines() const { return m_publishPolylines; }
+    bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
@@ -161,7 +161,6 @@ struct TilePublisher
 private:
     BatchIdMap              m_batchIds;
     DPoint3d                m_centroid;
-    TileMeshList            m_meshes;
     TileNodeCR              m_tile;
     ByteStream              m_binaryData;
     PublisherContext&       m_context;
@@ -175,7 +174,8 @@ private:
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
-    void ProcessMeshes(Json::Value& value);
+    void AddGeometry(Json::Value& value, PublishableTileGeometryR geometry);
+    void AddDefaultScene (Json::Value& value);
     void AddExtensions(Json::Value& value);
     void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
     Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
@@ -183,14 +183,12 @@ private:
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
-
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootNode, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
-
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
-
-    void AddMesh(Json::Value& value, TileMeshR mesh, size_t index);
-    void AddPolylines(Json::Value& value, TileMeshR mesh, size_t index);
+    void AddMeshPrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
+    void AddPolylinePrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
 
     Utf8String AddMeshMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
     Utf8String AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
