@@ -541,7 +541,7 @@ protected:
 
     Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf) : T_Super(octRoot, parent), m_id(id), m_isLeaf(isLeaf) { }
 public:
-    virtual TilePtr _CreateChild(TileId) const = 0;
+    virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
     virtual bool _HasChildren() const override { return !m_isLeaf; }
     virtual ChildTiles const* _GetChildren(bool load) const override;
     virtual void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;

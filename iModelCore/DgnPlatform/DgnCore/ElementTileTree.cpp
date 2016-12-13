@@ -1011,4 +1011,55 @@ GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR r
     return GeomPartInstanceGeometry::Create(part, transform, range, entityId, params, db);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> Loader::_GetFromSource()
+    {
+    return ERROR; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Loader::_LoadTile()
+    {
+    return ERROR; // ###TODO
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Root::Root(DgnModelR model, TransformCR transform)
+    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName())
+    {
+    // ###TODO: Determine range...
+    m_range = DRange3d::NullRange();
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+Tile::Tile(Root& octRoot, TileId id, Tile const* parent, bool isLeaf)
+    : T_Super(root, id, parent, isLeaf)
+    {
+    // ###TODO: Determine range...
+    m_range = DRange3d::NullRange();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+    {
+    return new Loader(*this, loads);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TilePtr Tile::_CreateChild(TileId childId) const
+    {
+    return new Tile(GetElementRoot(), childId, this);
+    }
 
