@@ -542,7 +542,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
     //Note: The FK column is the column that refers to the referenced end. Therefore the ECRelationshipEnd of the referenced end has to be taken!
     DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
 
-    if (classMappingInfo.GetFkMappingInfo()->UsePkAsFk())
+    if (classMappingInfo.GetFkMappingInfo()->UseECInstanceIdAsFk())
         {
         for (DbTable const* foreignEndTable : foreignEndTables)
             {
