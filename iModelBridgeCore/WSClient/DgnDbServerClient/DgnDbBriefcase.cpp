@@ -311,7 +311,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
         case DgnDbServerError::Id::AnotherUserPushing:
         case DgnDbServerError::Id::PullIsRequired:
         case DgnDbServerError::Id::DatabaseTemporarilyLocked:
-        case DgnDbServerError::Id::DgnDbServerOperationFailed:
+        case DgnDbServerError::Id::BIMCSOperationFailed:
             break;
         default:
             {
