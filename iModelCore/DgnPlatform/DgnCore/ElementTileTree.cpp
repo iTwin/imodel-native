@@ -925,14 +925,43 @@ private:
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
 public:
-    GeometryProcessorContext(TileGeometryProcessor& processor, RootR root) : m_processor(processor), m_root(root),
-    m_statement(root.GetDgnDb().GetCachedStatement(T::GetSql()))
+    GeometryProcessorContext(TileGeometryProcessor& processor, RootR root) : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(T::GetSql()))
         {
         SetDgnDb(root.GetDgnDb());
         m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
         }
 
 };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void adjustGeometryTolerance(GeometryList& geometries, double tolerance)
+    {
+    // Remove any geometry too small for inclusion in at this tolerance
+    double minRangeDiagonal = s_minRangeBoxSize * tolerance;
+    auto eraseAt = std::remove_if(geometries.begin(), geometries.end(), [=](GeometryPtr const& geom) { return geom->GetTileRange().DiagonalDistance() < minRangeDiagonal; });
+    if (eraseAt != geometries.end())
+        geometries.erase(eraseAt, geometries.end());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static IFacetOptionsPtr createTileFacetOptions(double chordTolerance)
+    {
+    static double       s_defaultAngleTolerance = msGeomConst_piOver2;
+    IFacetOptionsPtr    opts = IFacetOptions::Create();
+
+    opts->SetChordTolerance(chordTolerance);
+    opts->SetAngleTolerance(s_defaultAngleTolerance);
+    opts->SetMaxPerFace(3);
+    opts->SetCurvedSurfaceMaxPerFace(3);
+    opts->SetParamsRequired(true);
+    opts->SetNormalsRequired(true);
+
+    return opts;
+    }
 
 END_UNNAMED_NAMESPACE
 
@@ -1517,6 +1546,38 @@ size_t Geometry::GetFacetCount(IFacetOptionsR options) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance, NormalMode normalMode) const
+    {
+    auto facetOptions = createTileFacetOptions(chordTolerance / m_transform.ColumnXMagnitude());
+    bool normalsRequired = false;
+
+    switch (normalMode)
+        {
+        case NormalMode::Always:    
+            normalsRequired = true; 
+            break;
+        case NormalMode::CurvedSurfacesOnly:    
+            normalsRequired = m_isCurved; 
+            break;
+        }
+
+    facetOptions->SetNormalsRequired(normalsRequired);
+    facetOptions->SetParamsRequired(HasTexture());
+
+    return facetOptions;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceList Geometry::GetPolyfaces(double chordTolerance, NormalMode normalMode)
+    {
+    return _GetPolyfaces(*CreateFacetOptions(chordTolerance, normalMode));
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Strokes::Transform(TransformCR transform)
@@ -1861,10 +1922,223 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR options) const
+MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const
+    {
+    static const double         s_vertexToleranceRatio    = .1;
+    static const double         s_vertexClusterThresholdPixels = 5.0;
+    static const double         s_facetAreaToleranceRatio = .1;
+    static const size_t         s_decimatePolyfacePointCount = 100;
+
+    DgnDbR  db = GetElementRoot().GetDgnDb();
+    auto    normalMode = options.m_normalMode;
+    bool    twoSidedTriangles = options.WantTwoSidedTriangles();
+    bool    doSurfacesOnly = options.WantSurfacesOnly();
+
+    double  tolerance = GetTolerance();
+    double  vertexTolerance = tolerance * s_vertexToleranceRatio;
+    double  facetAreaTolerance = tolerance * tolerance * s_facetAreaToleranceRatio;
+
+    // Convert to meshes
+    bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
+    size_t      geometryCount = 0;
+    DRange3d    myTileRange = GetTileRange();
+
+    for (auto& geom : geometries)
+        {
+        DRange3dCR  geomRange = geom->GetTileRange();
+        double      rangePixels = geomRange.DiagonalDistance() / tolerance;
+
+        if (rangePixels < s_minRangeBoxSize)
+            continue;   // ###TODO: -- Produce an artifact from optimized bounding box to approximate from range.
+
+        auto        polyfaces = geom->GetPolyfaces(tolerance, normalMode);
+        bool        isContained = !doRangeTest || geomRange.IsContained(myTileRange);
+        bool        maxGeometryCountExceeded = (++geometryCount > s_maxGeometryIdCount);
+
+        for (auto& tilePolyface : polyfaces)
+            {
+            DisplayParamsPtr        displayParams = tilePolyface.m_displayParams;
+            PolyfaceHeaderPtr       polyface = tilePolyface.m_polyface;
+            bool                    hasTexture = displayParams.IsValid() && displayParams->QueryTexture(db).IsValid();  // Can't rely on geom.HasTexture - this may come from a face attachment to a B-Rep.
+
+            if (0 == polyface->GetPointCount())
+                continue;
+
+            MeshMergeKey key(*displayParams, polyface.IsValid() && nullptr != polyface->GetNormalIndexCP(), polyface.IsValid());
+
+            MeshBuilderPtr meshBuilder;
+            auto found = builderMap.find(key);
+            if (builderMap.end() != found)
+                meshBuilder = found->second;
+            else
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+
+            if (polyface.IsValid())
+                {
+                // Decimate if the range of the geometry is small in the tile OR we are not in a leaf and we have geometry originating from polyface with many points (railings from Penn state building).
+                // A polyface with many points is likely a tesselation from an outside source.
+                bool        doDecimate          = !m_isLeaf && geom->DoDecimate() && polyface->GetPointCount() > s_decimatePolyfacePointCount;
+                bool        doVertexCluster     = !doDecimate && geom->DoVertexCluster() && rangePixels < s_vertexClusterThresholdPixels;
+
+                if (doDecimate)
+                    polyface->DecimateByEdgeCollapse (tolerance, 0.0);
+
+                for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+                    {
+                    if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
+                        {
+                        DgnElementId elemId;
+                        if (!maxGeometryCountExceeded)
+                            elemId = geom->GetEntityId();
+
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, elemId, doVertexCluster, twoSidedTriangles, hasTexture);
+                        }
+                    }
+                }
+            }
+        if (!doSurfacesOnly)
+            {
+            auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, NormalMode::Never));
+        
+            for (auto& tileStrokes : tileStrokesArray)
+                {
+                DisplayParamsPtr displayParams = tileStrokes.m_displayParams;
+                MeshMergeKey key(*displayParams, false, false);
+
+                MeshBuilderPtr meshBuilder;
+                auto found = builderMap.find(key);
+                if (builderMap.end() != found)
+                    meshBuilder = found->second;
+                else
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+
+                DgnElementId elemId;
+                if (geometryCount < s_maxGeometryIdCount)
+                    elemId = geom->GetEntityId();
+
+                for (auto& strokePoints : tileStrokes.m_strokes)
+                    meshBuilder->AddPolyline (strokePoints, elemId, rangePixels < s_vertexClusterThresholdPixels);
+                }
+            }
+        }
+
+    MeshList meshes;
+       
+    for (auto& builder : builderMap)
+        if (!builder.second->GetMesh()->IsEmpty())
+            meshes.push_back (builder.second->GetMesh());
+
+    return meshes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR options)
     {
     ElementTileTree::GeometryCollection geom;
-    return geom; // ###TODO
+
+    auto const& root = GetElementRoot();
+
+    // Always collect geometry at the target leaf tolerance.
+    // If we exceed our leaf threshold, we'll keep the geometry but adjust this tile's target tolerance
+    bool leafThresholdExceeded = false;
+    GeometryList geometries = CollectGeometry(leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile());
+
+    // ###TODO: If CollectGeometry aborted, mark abandoned
+
+    if (!m_isLeaf && !leafThresholdExceeded)
+        SetIsLeaf();
+
+    if (geometries.empty())
+        return geom;
+
+    if (m_isLeaf)
+        m_tolerance = root.GetLeafTolerance();
+    else
+        adjustGeometryTolerance(geometries, m_tolerance);
+
+    return CreateGeometryCollection(geometries, options);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options) const
+    {
+    static size_t s_minInstanceCount = 10;
+
+    ElementTileTree::GeometryCollection collection;
+    GeometryList                        uninstancedGeometry;
+    bmap<DgnGeometryPartId,MeshPartPtr> partMap;
+
+    // Extract instances first...
+    for (auto const& geom : geometries)
+        {
+        auto const& part = geom->GetPart();
+        if (part.IsValid() && part->GetInstanceCount() > s_minInstanceCount)
+            {
+            MeshPartPtr meshPart;
+            auto found = partMap.find(part->GetPartId());
+
+            if (partMap.end() == found)
+                {
+                MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false);
+                if (partMeshes.empty())
+                    {
+                    BeAssert(false && "Part did not generate meshes");
+                    continue;
+                    }
+
+                collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
+                partMap.Insert(part->GetPartId(), meshPart);
+                }
+            else
+                {
+                meshPart = found->second;
+                }
+
+            collection.Instances().push_back(MeshInstance(meshPart.get(), geom->GetTransform()));
+            }
+        else
+            {
+            uninstancedGeometry.push_back(geom);
+            }
+        }
+
+    auto& meshes = collection.Meshes();
+    MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true);
+    meshes.insert(meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
+
+    return collection;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryList Tile::CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+    {
+    auto& root = GetElementRoot();
+    auto is2d = root.Is2d();
+    IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
+
+    GeometryList geometries;
+    Transform transformFromDgn = /*###TODO*/ Transform::FromIdentity();
+    TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, &leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
+
+    if (is2d)
+        {
+        GeometryProcessorContext<GeometrySelector2d> context(processor, root);
+        processor.OutputGraphics(context);
+        }
+    else
+        {
+        GeometryProcessorContext<GeometrySelector3d> context(processor, root);
+        processor.OutputGraphics(context);
+        }
+
+    // ###TODO: Return result of OutputGraphics()...
+    return geometries;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2163,7 +2437,7 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(ViewContextR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> Render::GraphicPtr GeometryProcessorContext<T>::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
+template<typename T> Render::GraphicPtr GeometryProcessorContext<T>::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
     static bool s_doInstances;
 
@@ -2198,7 +2472,7 @@ template<typename T> StatusInt GeometryProcessorContext<T>::_VisitElement(DgnEle
     // NB: The Step() below as well as each column access requires acquiring the sqlite mutex.
     // Prevent micro-contention by locking the db here
     // Note we do not use a mutex holder because we want to release the mutex before processing the geometry.
-    m_root.GetDbMutex().Enter();
+    m_processor.GetRoot().GetDbMutex().Enter();
     StatusInt status = ERROR;
     auto& stmt = *m_statement;
     stmt.BindInt64(1, static_cast<int64_t>(elementId.GetValueUnchecked()));
@@ -2208,7 +2482,7 @@ template<typename T> StatusInt GeometryProcessorContext<T>::_VisitElement(DgnEle
         auto geomSrcPtr = T::ExtractGeometrySource(stmt, GetDgnDb());
 
         stmt.Reset();
-        m_root.GetDbMutex().Leave();
+        m_processor.GetRoot().GetDbMutex().Leave();
 
         if (nullptr != geomSrcPtr)
             status = VisitGeometry(*geomSrcPtr);
@@ -2216,7 +2490,7 @@ template<typename T> StatusInt GeometryProcessorContext<T>::_VisitElement(DgnEle
     else
         {
         stmt.Reset();
-        m_root.GetDbMutex().Leave();
+        m_processor.GetRoot().GetDbMutex().Leave();
         }
 
     return status;

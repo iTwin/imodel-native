@@ -88,6 +88,9 @@ struct GeometryOptions
 
     explicit GeometryOptions(NormalMode normals=NormalMode::CurvedSurfacesOnly, Surfaces surfaces=Surfaces::Yes, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
         : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
+
+    bool WantSurfacesOnly() const { return Surfaces::Yes == m_surfaces; }
+    bool WantTwoSidedTriangles() const { return TwoSidedTriangles::Yes == m_twoSidedTriangles; }
 };
 
 //=======================================================================================
@@ -536,6 +539,7 @@ private:
     DgnModelId                  m_modelId;
     Utf8String                  m_name;
     double                      m_leafTolerance = 0.01;
+    size_t                      m_maxPointsPerTile = 250000;
     mutable BeMutex             m_mutex;
     mutable BeSQLite::BeDbMutex m_dbMutex;
     mutable GeomPartMap         m_geomParts;
@@ -553,7 +557,9 @@ public:
     DgnModelId GetModelId() const { return m_modelId; }
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
+    bool Is2d() const { return !Is3d(); }
     double GetLeafTolerance() const { return m_leafTolerance; }
+    size_t GetMaxPointsPerTile() const { return m_maxPointsPerTile; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 
@@ -568,7 +574,6 @@ struct Tile : TileTree::OctTree::Tile
 {
     DEFINE_T_SUPER(TileTree::OctTree::Tile);
 private:
-    GeometryList    m_geometries;
     double          m_tolerance;
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent);
@@ -578,16 +583,19 @@ private:
     virtual double _GetMaximumSize() const override { return GetTolerance(); }
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
+    GeometryList CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
+    GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR) const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent) { return new Tile(root, id, parent); }
 
     double GetTolerance() const { return m_tolerance; }
+    DRange3d GetDgnRange() const { return /*###TODO*/ GetRange(); }
+    DRange3d GetTileRange() const { return GetRange(); }
 
-    void ClearGeometry() { m_geometries.clear(); }
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
-    GeometryCollection GenerateGeometry(GeometryOptionsCR options) const;
+    GeometryCollection GenerateGeometry(GeometryOptionsCR options);
     DRange3d ComputeChildRange(TileR child) const;
 };
 
