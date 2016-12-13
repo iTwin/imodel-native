@@ -842,7 +842,8 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         status = GetProgressiveQueryEngine()->StopQuery(nextDrawingInfoPtr->m_terrainQuery);
         }
     assert(status == SUCCESS);
-                                   
+
+    m_forceRedraw = false;                                   
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
 
     // Need to get the fence info.
@@ -1032,7 +1033,6 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         }
     else isTerrainComplete = true;
 
-    if (isTerrainComplete && !needProgressive && !((ScalableMeshDisplayCacheManager*)m_displayNodesCache.get())->IsDirty()) m_forceRedraw = false;
 
     ProgressiveDrawMeshNode(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo, (ScalableMeshDisplayCacheManager*)m_displayNodesCache.get());
     if (!clipFromCoverageSet.empty() && terrainSM.IsValid())
