@@ -54,6 +54,7 @@ struct EXPORT_VTABLE_ATTRIBUTE Element : Document
 protected:
     static Utf8CP str_Scale() {return "Scale";}
     static Utf8CP str_Height() {return "Height";}
+    static Utf8CP str_Number() {return "Number";}
     static Utf8CP str_Width() {return "Width";}
     static Utf8CP str_Template() {return "Template";}
     static Utf8CP str_Border() {return "Border";}
