@@ -101,6 +101,15 @@ int HeartbeatCallBack()
     return 0;
     }
 
+
+
+
+
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsiclass                                                                 12/2016
+//* This class contains examples of access to RealityData Service
+//+---------------+---------------+---------------+---------------+---------------+------*/
 class RealityPlatformClient
     {
     public:
@@ -131,8 +140,16 @@ class RealityPlatformClient
         // Create a request for spatial entity with details view
         SpatialEntityWithDetailsSpatialRequestPtr myRequest = SpatialEntityWithDetailsSpatialRequest(myProjectAreaInLatLong, GeoCoordinationService::Classification::Imagery | GeoCoordinationService::Classification::Terrain);
 
-        // Run the request
-        bvector<SpatialEntityPtr> listOfSpatialEntities = GeoCoordinationService::Request(myRequest);
+        // Run the request ... this request is paged but we are willing to fetch all pages (up to 500 total entries)
+        StatusInt status = SUCCESS;
+        bvector<SpatialEntityPtr> listOfSpatialEntities;
+
+        while (SUCCESS == status && listOfSpatialEntities.size() < 500)
+            listOfSpatialEntities.push_back(GeoCoordinationService::Request(myRequest, status));
+
+        // normally the status must be either SUCCESS or NO_MORE_PAGE
+        BeAssert (SUCCESS == status || NO_MORE_PAGE == status);
+        status = SUCCESS;
 
         // Check if any result was obtained
         if (listOfSpatialEntities.size() > 0)
