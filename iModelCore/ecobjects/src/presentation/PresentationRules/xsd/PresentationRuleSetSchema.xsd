@@ -436,6 +436,7 @@
                     <xs:attribute name="RelationshipClassNames" type="xs:string"/>
                     <xs:attribute name="RelatedClassNames" type="xs:string"/>
                     <xs:attribute name="SkipRelatedLevel" type="xs:int"/>
+                    <xs:attribute name="IsRecursive" type="xs:boolean" default="false"/>
                     <xs:attributeGroup ref="PriorityAttribute"/>
                     <xs:attribute default="Both" name="RequiredDirection">
                         <xs:simpleType>
