@@ -8638,6 +8638,237 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
+    {
+    SetupECDb("useecinstanceidasfk1.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Parent">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Child" >
+                                <ECProperty propertyName="ChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+                                 <ECCustomAttributes>
+                                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                                  <Class class="Child"/>
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKey(true, GetECDb(), "ts1_Child", "ECInstanceId");
+    GetECDb().CloseDb();
+
+    SetupECDb("useecinstanceidasfk2.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Parent">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Child" >
+                                <ECProperty propertyName="ChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>
+                                        <OnDeleteAction>Cascade</OnDeleteAction>
+                                    </ForeignKeyRelationshipMap>
+                                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                                  <Class class="Child"/>
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKeyDdl(GetECDb(), "ts2_Child", "FOREIGN KEY([ECInstanceId]) REFERENCES [ts2_Parent]([ECInstanceId]) ON DELETE CASCADE)");
+    GetECDb().CloseDb();
+
+    SetupECDb("useecinstanceidasfk3.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Parent">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Child" >
+                                <ECProperty propertyName="ChildName" typeName="string" />
+                                <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>
+                                        <OnDeleteAction>Cascade</OnDeleteAction>
+                                    </ForeignKeyRelationshipMap>
+                                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                                  <Class class="Child"/>
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKeyDdl(GetECDb(), "ts3_Child", "FOREIGN KEY([ECInstanceId]) REFERENCES [ts3_Parent]([ECInstanceId]) ON DELETE CASCADE)");
+    GetECDb().CloseDb();
+
+    //UseECInstanceIdAsForeignKey where FK is in joined table
+    SetupECDb("useecinstanceidasfk4.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts4" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Parent">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Child" >
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00" />
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="ChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="SubChild" >
+                                <BaseClass>Child</BaseClass>
+                                <ECProperty propertyName="SubChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="Sealed">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                                        <OnDeleteAction>SetNull</OnDeleteAction>
+                                    </ForeignKeyRelationshipMap>
+                                    <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
+                                  <Class class="SubChild" />
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKeyDdl(GetECDb(), "ts4_SubChild", "FOREIGN KEY([ChildECInstanceId]) REFERENCES [ts4_Parent]([ECInstanceId]) ON DELETE SET NULL)");
+    GetECDb().CloseDb();
+
+    SetupECDb("useecinstanceidasfk5.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts5" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Parent">
+                                <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Child" >
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00" />
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="ChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="SubChild" >
+                                <BaseClass>Child</BaseClass>
+                                <ECProperty propertyName="SubChildName" typeName="string" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="None">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                                        <OnDeleteAction>SetNull</OnDeleteAction>
+                                    </ForeignKeyRelationshipMap>
+                                    <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
+                                  <Class class="SubChild" />
+                                </Target>
+                              </ECRelationshipClass>
+                              <ECRelationshipClass typeName="ParentHasSubChildren_2" strength="referencing" modifier="Sealed">
+                                <BaseClass>ParentHasSubChildren</BaseClass>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                  <Class class="Parent" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
+                                  <Class class="SubChild" />
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKeyDdl(GetECDb(), "ts5_SubChild", "FOREIGN KEY([ChildECInstanceId]) REFERENCES [ts5_Parent]([ECInstanceId]) ON DELETE SET NULL)");
+    ASSERT_TRUE(GetECDb().ColumnExists("ts5_SubChild", "ChildECInstanceRelECClassId"));
+    GetECDb().CloseDb();
+
+    std::vector<SchemaItem> invalidSchemas;
+    invalidSchemas.push_back(SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent">
+               <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" >
+               <ECProperty propertyName="ChildName" typeName="string" />
+               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml", false, "UseECInstanceIdAsForeignKey on link table is not supported"));
+
+    invalidSchemas.push_back(SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent">
+               <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" >
+               <ECProperty propertyName="ChildName" typeName="string" />
+               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <LinkTableRelationshipMap xmlns='ECDbMap.02.00'/>
+                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml", false, "UseECInstanceIdAsForeignKey if LinkTableRelationshipMap CA is present is not supported"));
+
+    AssertSchemaImport(invalidSchemas, "UseECInstanceIdAsForeignKey_invalidcases.ecdb");
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)

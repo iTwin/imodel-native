@@ -551,14 +551,14 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
 
     if (hasLinkTableRelMap && useECInstanceIdAsFk)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UsePrimaryKeyAsForeignKey' and 'LinkTableRelationshipMap'.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UseECInstanceIdAsForeignKey' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
     if ((hasForeignKeyRelMap || useECInstanceIdAsFk) && RequiresLinkTable())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyRelationshipMap' or 'UsePrimaryKeyAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyRelationshipMap' or 'UseECInstanceIdAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
         return ERROR;
         }

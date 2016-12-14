@@ -190,8 +190,27 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
     else
         fkSearchString.Sprintf("FOREIGN KEY([%s]", foreignKeyColumnName);
 
-    ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " FK column name: " << foreignKeyColumnName;
+    ASSERT_EQ(expectedToHaveForeignKey, ddl.find(fkSearchString) != ddl.npos) << "Table: " << tableName << " Expected FK column name: " << foreignKeyColumnName << " Actual complete DDL: " << ddl.c_str();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyDdl)
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE"));
+
+    stmt.BindText(1, tableName, Statement::MakeCopy::No);
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table " << tableName;
+
+    Utf8String ddl(stmt.GetValueText(0));
+
+    //only one row expected
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    ASSERT_TRUE(ddl.find(foreignKeyDdl) != ddl.npos) << "Table: " << tableName << " Expected FK DDL: " << foreignKeyDdl << " Actual complete DDL: " << ddl.c_str();
+    }
+
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/15
