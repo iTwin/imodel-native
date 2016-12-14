@@ -1811,7 +1811,6 @@ BentleyStatus Loader::_LoadTile()
     GeometryOptions options;
     auto geometry = tile.GenerateGeometry(options);
 
-#if defined(ELEMENT_TILE_GENERATE_QVELEM)
     // ###TODO: instanced geometry, polylines...
     for (auto const& mesh : geometry.Meshes())
         {
@@ -1822,8 +1821,11 @@ BentleyStatus Loader::_LoadTile()
 
         graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
         graphic->AddTriMesh(meshArgs);
-        }
+
+#if !defined(ELEMENT_TILE_MULTIPLE_MESHES)
+        break;  // ###TODO: qv_addQuickTriMesh() requires QvElem contains no geometry to start...
 #endif
+        }
 
 #if defined(DEBUG_ELEMENT_TILE_RANGE)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
