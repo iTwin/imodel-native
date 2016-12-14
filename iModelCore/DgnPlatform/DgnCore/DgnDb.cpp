@@ -73,7 +73,6 @@ void DgnDb::Destroy()
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
-    Elements().ClearUpdaterCache();
     m_revisionManager.reset(nullptr);
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
@@ -549,6 +548,13 @@ DgnCloneContext::DgnCloneContext()
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAndGOadjustment();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::~DgnImportContext()
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**

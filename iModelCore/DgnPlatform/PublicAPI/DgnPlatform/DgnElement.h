@@ -113,10 +113,31 @@ public:
 };
 
 //=======================================================================================
+//! A cache of ECInstanceUpdaters
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ECInstanceUpdaterCache
+    {
+    private:
+        bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaters;
+    protected:
+        virtual void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) = 0;
+    public:
+        DGNPLATFORM_EXPORT ECInstanceUpdaterCache();
+        DGNPLATFORM_EXPORT ~ECInstanceUpdaterCache();
+        DGNPLATFORM_EXPORT void Clear();
+        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR, ECN::ECClassCR);
+    };
+
+//=======================================================================================
 //! Helps models, elements, aspects and other data structures copy themselves between DgnDbs
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnImportContext : DgnCloneContext
 {
+    struct InstancePropertyUpdaterCache : ECInstanceUpdaterCache
+        {
+        void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) override;
+        };
+
 private:
     bool            m_areCompatibleDbs;
     DPoint3d        m_xyzOffset;
@@ -124,7 +145,7 @@ private:
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
-    mutable bmap<ECN::ECClassCP, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache;
+    mutable InstancePropertyUpdaterCache m_updaterCache;
 
     void ComputeGcsAndGOadjustment();
 
@@ -144,6 +165,8 @@ protected:
 public:
     //! Construct a DgnImportContext object.
     DGNPLATFORM_EXPORT DgnImportContext(DgnDbR source, DgnDbR dest);
+    //! Destruct a DgnImportContext object.
+    DGNPLATFORM_EXPORT ~DgnImportContext();
 
     //! @name Source and Destination Dbs
     //! @{
@@ -2877,6 +2900,11 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     };
 
 private:
+    struct AutoHandledPropertyUpdaterCache : ECInstanceUpdaterCache
+        {
+        void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) override;
+        };
+
     struct ElementSelectStatement
     {
         BeSQLite::EC::CachedECSqlStatementPtr m_statement;
@@ -2896,7 +2924,7 @@ private:
     mutable BeSQLite::BeDbMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
-    mutable bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaterCache; // cached updaters for custom-handled properties
+    mutable AutoHandledPropertyUpdaterCache m_updaterCache;
 
     void OnReclaimed(DgnElementCR);
     void OnUnreferenced(DgnElementCR);

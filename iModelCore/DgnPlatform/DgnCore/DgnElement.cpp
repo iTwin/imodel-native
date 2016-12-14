@@ -1598,11 +1598,14 @@ public:
 //---------------+---------------+---------------+---------------+---------------+-------
 EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass) const
     {
-    auto it = m_updaterCache.find(&ecClass);
-    if (it != m_updaterCache.end())
-        return *it->second;
+    return *m_updaterCache.GetUpdater(GetDestinationDb(), ecClass);
+    }
 
-    bvector<ECN::ECPropertyCP> propertiesToBind;
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            02/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void DgnImportContext::InstancePropertyUpdaterCache::_GetPropertiesToBind(bvector<ECN::ECPropertyCP>& propertiesToBind, DgnDbR db, ECClassCR ecClass)
+    {
     for (ECN::ECPropertyCP ecProperty : ecClass.GetProperties(true))
         {
         // Don't bind any of the dgn derived properties
@@ -1610,12 +1613,8 @@ EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass
             continue;
         propertiesToBind.push_back(ecProperty);
         }
-
-    auto updater = new EC::ECInstanceUpdater(GetDestinationDb(), ecClass, GetDestinationDb().GetECSqlWriteToken(), propertiesToBind);
-    m_updaterCache[&ecClass] = updater;
-
-    return *updater;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            02/2016
