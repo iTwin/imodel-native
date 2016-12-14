@@ -122,7 +122,7 @@ struct LimitingTaskQueue
         //! Ensure that no more than set limit of tasks are running.
         //! @param[in] createAsyncTask - callback that should start and return new async task.
         //! @param[in] token - cancellation token to be used to invoke running of canceled task so it could finalize instead of waiting in queue.
-        AsyncTaskPtr<T> Push (const std::function<AsyncTaskPtr<T> ()>& createAsyncTask, ICancellationTokenPtr token)
+        AsyncTaskPtr<T> Push (const std::function<AsyncTaskPtr<T> ()>& createAsyncTask, ICancellationTokenPtr token = nullptr)
             {
             auto impl = m_impl;
             BeMutexHolder mutex (impl->implCS);

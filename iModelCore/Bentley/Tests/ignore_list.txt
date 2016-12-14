@@ -23,3 +23,6 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
 
 Utf8PrintfStringTests.Ctor_FormatAndArgumentPassed_FormattedString
     # Crashes, probably a bug
+
+#TFS 633328: randomly Crash on iosArm64
+DirectoryObserverTests.*

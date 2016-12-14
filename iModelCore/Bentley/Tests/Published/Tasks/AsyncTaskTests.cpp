@@ -172,6 +172,48 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksAdded_ThenExecutedAfterAllTasksCompl
     EXPECT_TRUE(thenExecuted);
     }
 
+TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInVectorAdded_ThenExecutedAfterAllTasksCompleted)
+    {
+    BeAtomic<int> tasksCompleted(0);
+
+    auto task1 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
+    auto task2 = std::make_shared<PackagedAsyncTask<void>>([&] { tasksCompleted++; });
+
+    bvector<std::shared_ptr<PackagedAsyncTask<void>>> tasks;
+    tasks.push_back(task1);
+    tasks.push_back(task2);
+
+    bool thenExecuted = false;
+    auto lastTask = AsyncTask::WhenAll(tasks)->Then([&]
+        {
+        EXPECT_TRUE(tasksCompleted == 2);
+        thenExecuted = true;
+        });
+
+    task1->Execute();
+    task2->Execute();
+
+    lastTask->Wait();
+
+    EXPECT_TRUE(thenExecuted);
+    }
+
+TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem)
+    {
+    bvector<std::shared_ptr<PackagedAsyncTask<int>>> tasks;
+    tasks.push_back(std::make_shared<PackagedAsyncTask<int>>([&] { return 1; }));
+    tasks.push_back(std::make_shared<PackagedAsyncTask<int>>([&] { return 2; }));
+
+    auto lastTask = AsyncTask::WhenAll(tasks);
+    for (auto task : tasks)
+        task->Execute();
+    lastTask->Wait();
+
+    int i=0;
+    for (auto task : tasks)
+        EXPECT_EQ(++i, task->GetResult());
+    }
+
 TEST_F (AsyncTaskTests, Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>> ([&]

@@ -19,6 +19,7 @@ std::weak_ptr<WorkerThreadPool> AsyncTasksManager::s_defaultThreadPool;
 
 BeMutex AsyncTasksManager::s_threadingStoppingListenersMutex;
 bvector<std::function<void()>> AsyncTasksManager::s_onThreadingStoppingListeners;
+bool AsyncTasksManager::s_waitForThreadsWhenStopped = true;
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                            Benediktas.Lipnickas     10/2013
@@ -109,7 +110,10 @@ void AsyncTasksManager::RegisterOnCompletedListener(const std::function<void()>&
 void AsyncTasksManager::StopThreadingAndWait()
     {
     StopThreading();
-    WaitForAllTreadRunnersToStop();
+    if (s_waitForThreadsWhenStopped)
+        {
+        WaitForAllTreadRunnersToStop();
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -144,5 +148,13 @@ void AsyncTasksManager::WaitForAllTreadRunnersToStop()
     {
     AreRunnersEmptyPredicate predicate(s_runners);
     s_emptyRunnersCV.WaitOnCondition(&predicate, s_emptyRunnersCV.Infinite);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+void AsyncTasksManager::SetWaitForThreadsWhenStopped(bool value)
+    {
+    s_waitForThreadsWhenStopped = value;
     }
 
