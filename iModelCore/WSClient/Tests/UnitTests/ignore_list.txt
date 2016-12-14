@@ -27,7 +27,7 @@ CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositor
     # Randomly crashes, no stack printed, test output:
     # [ RUN      ] CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'. Start tag expected, '<' not found
-    # 
+    #
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - line 1, position 1
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'
 
@@ -44,13 +44,6 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGet
 
 UrlProviderTests.GetSecurityConfigurator_InitializedWithQa_DoesNotSetValidateCertificate
     # bim0200dev, x86, NDEBUG, firebug, random, crash
-
-# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
-DgnDbServerEventParserTests.LockEventTests
-DgnDbServerEventParserTests.RevisionEventTests
-DgnDbServerEventParserTests.CodeEventTests
-DgnDbServerEventParserTests.LocksDeletedEventTests
-DgnDbServerEventParserTests.CodesDeletedEventTests
 
 UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
     # DgnDb61-16Q4, x64, NDEBUG (PRG)
