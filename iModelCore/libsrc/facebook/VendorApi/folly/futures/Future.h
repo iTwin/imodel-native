@@ -18,8 +18,27 @@
 
 #if defined (BENTLEY_CONFIG_NO_THREAD_SUPPORT)
     namespace folly {
-    template <class T> class Future {};
-    template <class T> class Promise {};
+        template <class T> class Future {
+          template <
+              class U,
+              typename = typename std::enable_if<std::is_convertible<U, T>::value &&
+                                                 sizeof(U) == sizeof(T)>::type>
+          Future(Future<U>&&) noexcept;
+
+          template <
+              class U,
+              typename = typename std::enable_if<std::is_convertible<U, T>::value &&
+                                                 sizeof(U) == sizeof(T)>::type>
+          Future& operator=(Future<U>&&) noexcept;
+
+          /// Construct a Future from a value (perfect forwarding)
+          Future(T2&& val);
+
+          Future();
+
+          ~Future();
+        };
+        template <class T> class Promise {};
     };
 #else
 
