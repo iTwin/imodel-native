@@ -1870,9 +1870,17 @@ RootPtr Root::Create(GeometricModelR model)
     if (!accum.Accumulate(*model.GetRangeIndex()))
         return nullptr;
 
-    Transform transform = Transform::FromIdentity(); // ###TODO: Transform to origin
+    // Translate world coordinates to center of range in order to reduce precision errors
+    DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+    Transform transform = Transform::From(centroid);
+
     RootPtr root = new Root(model, transform);
-    return root->LoadRootTile(range, model) ? root : nullptr;
+
+    Transform rangeTransform;
+    rangeTransform.InverseOf(transform);
+    DRange3d tileRange;
+    rangeTransform.Multiply(tileRange, range);
+    return root->LoadRootTile(tileRange, model) ? root : nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1917,7 +1925,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
 
-    static uint8_t s_maxLevel = 3;
+    static uint8_t s_maxLevel = 3;  // ###TODO: Get rid of this hard cap...
     bool isLeaf = id.m_level >= s_maxLevel || tileTolerance <= leafTolerance || IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
 
     if (isLeaf)
@@ -1970,7 +1978,7 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
     if (nullptr == index)
         return true;    // no model => no elements...
 
-    Traverser traverser(m_range, threshold, tolerance);
+    Traverser traverser(GetDgnRange(), threshold, tolerance);
     index->Traverse(traverser);
     return !traverser.ThresholdReached();
     }
@@ -2196,14 +2204,26 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DRange3d Tile::GetDgnRange() const
+    {
+    DRange3d range;
+    GetRoot().GetLocation().Multiply(range, GetTileRange());
+    return range;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 GeometryList Tile::CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
     {
     auto& root = GetElementRoot();
     auto is2d = root.Is2d();
     IFacetOptionsPtr facetOptions = createTileFacetOptions(tolerance);
 
+    Transform transformFromDgn;
+    transformFromDgn.InverseOf(root.GetLocation());
+
     GeometryList geometries;
-    Transform transformFromDgn = /*###TODO*/ Transform::FromIdentity();
     TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, &leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)

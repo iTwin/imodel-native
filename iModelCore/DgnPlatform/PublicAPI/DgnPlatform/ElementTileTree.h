@@ -594,7 +594,7 @@ public:
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
 
     double GetTolerance() const { return m_tolerance; }
-    DRange3d GetDgnRange() const { return /*###TODO*/ GetRange(); }
+    DRange3d GetDgnRange() const;
     DRange3d GetTileRange() const { return GetRange(); }
 
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
