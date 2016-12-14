@@ -4777,7 +4777,7 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placeme
   : GeometryBuilder(dgnDb, categoryId, true)
     {
     m_placement3d = placement;
-    m_placement2d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
+    m_placement3d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
     m_havePlacement = true;
     }
 
