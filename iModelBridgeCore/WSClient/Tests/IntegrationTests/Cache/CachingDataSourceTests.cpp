@@ -643,8 +643,6 @@ TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
         BeDebugLog(jsonStr.c_str());
         }
     }
-    
-#ifdef WIP_MERGE_Vincas
 
 TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_FindsChanges)
     {
@@ -661,9 +659,7 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
             </ECClass>
         </ECSchema>)xml");
 
-    auto sc = ECSchemaCache::Create();
-    sc->AddSchema(*schema);
-    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas(*sc));
+    ASSERT_EQ(SUCCESS, db.Schemas().ImportECSchemas({schema.get()}));
 
     ECClassCP rootClass = db.GetClassLocater().LocateClass("TestSchema", "TestClass");
     ASSERT_NE(nullptr, rootClass);
@@ -693,5 +689,3 @@ TEST_F(CachingDataSourceTests, ECDbPrepareStatement_ChangesMadeInBetweenReuses_F
     EXPECT_EQ(BE_SQLITE_ROW, statement.Step());
     EXPECT_EQ(ECInstanceId(1ull), statement.GetValueId <ECInstanceId>(0));
     }
-
-#endif

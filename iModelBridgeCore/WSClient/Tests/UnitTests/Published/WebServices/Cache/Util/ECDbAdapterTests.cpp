@@ -39,11 +39,11 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define EXPECT_CALL_OnBeforeDelete(listener, db, instanceKey) \
     EXPECT_CALL(listener, OnBeforeDelete(Ref(*ECDbAdapter(*db).GetECClass(instanceKey)), instanceKey.GetECInstanceId(), _)) \
     .WillOnce(Invoke([&](ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&) \
-            { \
+    { \
     /* Check if instance was not deleted yet */ \
     EXPECT_INSTANCE_EXISTS(db, instanceKey); \
     return SUCCESS; \
-            }));
+    }));
 #else
 void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::shared_ptr<ObservableECDb> db, ECInstanceKey instanceKey)
     {
