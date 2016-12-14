@@ -87,7 +87,7 @@ void DgnModels::Empty()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ModelIterator DgnModels::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElementId,IsTemplate,Visibility FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,ModeledElement.Id,IsTemplate,Visibility FROM ");
     sql.append(className);
 
     if (whereClause)
