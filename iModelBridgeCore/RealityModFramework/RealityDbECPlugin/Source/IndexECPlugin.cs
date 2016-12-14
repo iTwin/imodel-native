@@ -274,9 +274,17 @@ namespace IndexECPlugin.Source
                 {
                 if ( e is System.Data.Common.DbException )
                     {
-                    //For now, we intercept all of these sql exceptions to prevent any "revealing" messages about the sql command.
-                    //It would be nice to parse the exception to make it easier to pinpoint the problem for the user.
-                    Log.Logger.error(String.Format("Query {0} aborted. DbException message : {1}. Stack Trace : {2}", query.ID, e.Message, e.StackTrace));
+                    if ( e is SqlException )
+                        {
+                        var sqlEx = e as SqlException;
+                        Log.Logger.error(String.Format("Query {0} aborted. SqlException number : {3}. SqlException message : {1}. Stack Trace : {2}", query.ID, sqlEx.Message, sqlEx.StackTrace, sqlEx.Number));
+                        if(sqlEx.Number == 10928 || sqlEx.Number == 10929)
+                        throw new EnvironmentalException(String.Format("The server is currently busy. Please try again later"));
+                        }
+                    else
+                        {
+                        Log.Logger.error(String.Format("Query {0} aborted. DbException message : {1}. Stack Trace : {2}", query.ID, e.Message, e.StackTrace));
+                        }
                     Exception innerEx = e.InnerException;
                     while ( innerEx != null )
                         {

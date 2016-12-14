@@ -560,6 +560,29 @@ void RealityDataPackageNet::SetId(String^ id)
     }
 
 //-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    12/2016
+//-------------------------------------------------------------------------------------
+String^ RealityDataPackageNet::GetCreationDate()
+    {
+    marshal_context ctx;
+    return ctx.marshal_as<String^>((*m_pPackage)->GetCreationDate().ToString().c_str());
+    }
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                                   Jean-Francois.Cote         	    9/2016
+//-------------------------------------------------------------------------------------
+void RealityDataPackageNet::SetCreationDate(String^ date)
+    {
+    Utf8String dateUtf8;
+    BeStringUtilities::WCharToUtf8(dateUtf8, static_cast<wchar_t*>(Marshal::StringToHGlobalUni(date).ToPointer()));
+
+    BentleyApi::DateTime dateTime;
+    BentleyApi::DateTime::FromString(dateTime, dateUtf8.c_str());
+
+    (*m_pPackage)->SetCreationDate(dateTime);
+    }
+
+//-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    9/2016
 //-------------------------------------------------------------------------------------
 List<double>^ RealityDataPackageNet::GetBoundingPolygon()

@@ -166,7 +166,7 @@ Utf8String ContextServicesWorkbench::getBaseUrl()
     switch (m_params.GetServerType())
     {
     case ServerType::DEV:
-        tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";
+        tempRealityServerUrl = "https://dev-contextservices-eus.cloudapp.net/v2.4";//"https://naou10726:8443/ws/v2.4";
         break;
     case ServerType::PROD:
         tempRealityServerUrl = "https://connect-contextservices.bentley.com/v2.4";

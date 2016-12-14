@@ -291,7 +291,9 @@
         <ProductDirectory Name="LoggingManagedAssemblies"       Path=""/>
         <ProductDirectory Name="LoggingNativeAssemblies"        Path=""/>
         <ProductDirectory Name="managedtests"                   Path=""/>
-        <!--<ProductDirectory Name="WSClientAssemblies"             Path=""/>-->
+        
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
         
 
         <ProductDirectory Name="ApplicationInstallRoot"         Path="InstallRealityDbECPlugin"      RelativeTo="applicationroot"/>
@@ -396,8 +398,6 @@
         <ProductDirectory Name="ECObjectsManagedAssemblies"     Path="" />
         <ProductDirectory Name="ECServicesManagedAssemblies"    Path=""/>
         <ProductDirectory Name="ECSchemas"                      Path="ECSchemas" />
-        <!--<ProductDirectory Name="BentleyDesktopClient"           Path=""/>-->
-        <ProductDirectory Name="BentleyDesktopClient-Api"       Path=""/>
 
         <ProductDirectory Name="NUnit 2.6.4 binaries"           Path=""/>
         <ProductDirectory Name="NUnit 2.6.4 core references"    Path=""/>

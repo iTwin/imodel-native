@@ -51,11 +51,12 @@ struct Stats
     {
     bmap<OperationType, Stat*> opStats;
     bvector<Utf8String>        errors;
+    int                        m_activeUsers = 1;
 
     Stats();
-    void InsertStats(OperationType type, bool success, time_t time, Utf8String errorMsg = "");
+    void InsertStats(OperationType type, bool success, time_t time,int activeUsers, Utf8String errorMsg = "");
     void PrintStats();
-    void WriteToFile(int userCount);
+    void WriteToFile(int userCount, Utf8String path);
     };
 
 struct RPS
@@ -88,10 +89,10 @@ public:
     void SelectRegion();
     void SelectExtents();
     void DoNext(UserManager* owner);
-    bool ValidatePrevious();
-    bool ValidateSpatial();
-    bool ValidatePackageId();
-    bool ValidatePacakgeFile();
+    bool ValidatePrevious(int activeUsers);
+    bool ValidateSpatial(int activeUsers);
+    bool ValidatePackageId(int activeUsers);
+    bool ValidatePacakgeFile(int activeUsers);
     float Degree2Radians(float degree);
     float Radians2Degree(float radius);
     void SampleIds(Json::Value regionItems);

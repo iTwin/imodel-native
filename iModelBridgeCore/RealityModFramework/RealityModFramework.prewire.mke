@@ -19,7 +19,3 @@ always:
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPackage=$(RealityPackagePublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityPlatform=$(RealityPlatformPublicAPISrc)"
    @CreateSymLinks.py -d"$(BuildContextPublicApiDir)RealityAdmin=$(RealityAdminPublicAPISrc)"
-   @CreateSymLinks.py -d "$(BuildContext)PublicAPI/BentleyDesktopClient=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/PublicAPI"
-   @CreateSymLinks.py    "$(BuildContext)Delivery/CCApi.dll=$(BuildContext)SubParts/Files/CCApi.dll"
-   @CreateSymLinks.py    "$(BuildContext)SubParts/Libs/CCApi.lib=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/Library/CCApi.lib"
-   @CreateSymLinks.py    "$(BuildContext)SubParts/Files/CCApi.dll=$(SrcRoot)/LastKnownGood/Winx64/BentleyDesktopClient/Delivery/CCApi.dll"

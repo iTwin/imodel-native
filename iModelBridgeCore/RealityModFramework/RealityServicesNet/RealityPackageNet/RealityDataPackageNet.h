@@ -55,6 +55,10 @@ namespace RealityPackageNet
             System::String^ GetId();
             void SetId(System::String^ id);
 
+            //! Creation date. Might be empty.
+            System::String^ GetCreationDate();
+            void SetCreationDate(System::String^ date);
+
             //! Package bounding polygon in latitude/longitude.
             //! The bounding polygon for the RealityDataPackage represents the region of interest selected by the user in the RealityModelingNavigator. 
             //! This can be seen as the clipping shape for all the data that the package will contain.
