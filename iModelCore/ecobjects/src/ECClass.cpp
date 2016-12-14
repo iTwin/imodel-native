@@ -3462,7 +3462,7 @@ ECClassCR constraintClass
     if (abstractConstraint != nullptr && !constraintClass.Is(abstractConstraint))
         {
         Utf8String errorMessage;
-        errorMessage.Sprintf("Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not nor derived from the Abstract Constraint Class '%s'.",
+        errorMessage.Sprintf("Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not derived from the Abstract Constraint Class '%s'.",
                    constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
 
         if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
@@ -3496,7 +3496,7 @@ ECClassCR constraintClass
             if (!constraintClass.Is(baseConstraintClass))
                 {
                 Utf8String errorMessage;
-                errorMessage.Sprintf("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not, nor derived from, Class '%s' as specified in Class '%s'",
+                errorMessage.Sprintf("Class Constraint Violation: The class '%s' on %s-Constraint of '%s' is not derived from Class '%s' as specified in Class '%s'",
                                      constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                                      baseConstraintClass->GetFullName(), relationshipBaseClass->GetFullName());
 
