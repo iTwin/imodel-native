@@ -2151,8 +2151,8 @@ DTMStatusInt BcDTM::CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult&
     DTMStatusInt status=DTM_SUCCESS ;
 
     // Clear Existing Volume Polygons
-
-    volumePolygonsP->clear() ;
+    if (volumePolygonsP)
+        volumePolygonsP->clear();
 
     // Call Core Dtm Function
     if (_dtmTransformHelper.IsValid ())

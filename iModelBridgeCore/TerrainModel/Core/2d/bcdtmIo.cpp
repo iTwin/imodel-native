@@ -1771,6 +1771,14 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,Bentley::Terrai
     goto errexit ;
    }
 
+ // Reset the partition
+
+ dtmP->featurePartitionSize = DTM_PARTITION_SIZE_FEATURE;
+ dtmP->pointPartitionSize = DTM_PARTITION_SIZE_POINT;
+ dtmP->nodePartitionSize = DTM_PARTITION_SIZE_NODE;
+ dtmP->clistPartitionSize = DTM_PARTITION_SIZE_CLIST;
+ dtmP->flistPartitionSize = DTM_PARTITION_SIZE_FLIST;
+
  bcdtmObject_checkLastModifiedDate(dtmP);
 /*
 ** Write Stats On Arrays
