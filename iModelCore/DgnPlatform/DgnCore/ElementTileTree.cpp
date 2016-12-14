@@ -1797,6 +1797,8 @@ BentleyStatus Loader::DoGetFromSource()
 BentleyStatus Loader::_LoadTile()
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
     ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
     ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
 #endif
@@ -1809,6 +1811,7 @@ BentleyStatus Loader::_LoadTile()
     GeometryOptions options;
     auto geometry = tile.GenerateGeometry(options);
 
+#if defined(ELEMENT_TILE_GENERATE_QVELEM)
     // ###TODO: instanced geometry, polylines...
     for (auto const& mesh : geometry.Meshes())
         {
@@ -1820,6 +1823,7 @@ BentleyStatus Loader::_LoadTile()
         graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
         graphic->AddTriMesh(meshArgs);
         }
+#endif
 
 #if defined(DEBUG_ELEMENT_TILE_RANGE)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
@@ -1902,9 +1906,10 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend(*range);
 
+    static uint8_t s_maxLevel = 3; // ###TODO: Need a better (but still cheap) stopping criterion
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
-    if (tileTolerance < leafTolerance)
+    if (tileTolerance < leafTolerance || id.m_level >= s_maxLevel)
         {
         m_tolerance = leafTolerance;
         SetIsLeaf();
@@ -2541,6 +2546,11 @@ struct ElementTileTreeAppData : DgnModel::AppData
         return data->m_root;
         }
 };
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+// ###TODO: ugh.
+static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerStorageMark;
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
