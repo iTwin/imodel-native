@@ -133,11 +133,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECInstanceUpdaterCache
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE DgnImportContext : DgnCloneContext
 {
-    struct InstancePropertyUpdaterCache : ECInstanceUpdaterCache
-        {
-        void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) override;
-        };
-
 private:
     bool            m_areCompatibleDbs;
     DPoint3d        m_xyzOffset;
@@ -145,7 +140,6 @@ private:
     DgnDbR          m_sourceDb;
     DgnDbR          m_destDb;
     bmap<LsComponentId, uint32_t> m_importedComponents;
-    mutable InstancePropertyUpdaterCache m_updaterCache;
 
     void ComputeGcsAndGOadjustment();
 
