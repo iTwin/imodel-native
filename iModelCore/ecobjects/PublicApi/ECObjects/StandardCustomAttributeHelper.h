@@ -57,7 +57,7 @@ struct ShareColumns;
 struct DbIndexList;
 struct ECDbPropertyMap;
 struct ECDbLinkTableRelationshipMap;
-struct ECDbForeignKeyRelationshipMap;
+struct ECDbForeignKeyConstraint;
 
 //=======================================================================================    
 //! ECDbMapCustomAttributeHelper is a convenience API for the custom attributes defined
@@ -112,11 +112,11 @@ public:
     //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
     ECOBJECTS_EXPORT static bool TryGetLinkTableRelationshipMap(ECDbLinkTableRelationshipMap& linkTableRelationshipMap, ECRelationshipClassCR ecRelationship);
 
-    //! Tries to retrieve the ForeignKeyRelationshipMap custom attribute from the specified ECRelationshipClass.
-    //! @param[out] foreignKeyTableRelationshipMap Retrieved foreign key relationship map
+    //! Tries to retrieve the ForeignKeyConstraint custom attribute from the specified ECRelationshipClass.
+    //! @param[out] foreignKeyConstraint Retrieved foreign key constraint CA
     //! @param[in] ecRelationship ECRelationshipClass to retrieve the custom attribute from.
     //! @return true if @p ecRelationship has the custom attribute. false, if @p ecRelationship doesn't have the custom attribute
-    ECOBJECTS_EXPORT static bool TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship);
+    ECOBJECTS_EXPORT static bool TryGetForeignKeyConstraint(ECDbForeignKeyConstraint& foreignKeyConstraint, ECRelationshipClassCR ecRelationship);
 
     //! Indicates whether the specified ECRelationshipClass has the UseECInstanceIdAsForeignKey custom attribute or not.
     //! @param[in] relClass ECRelationshipClass to retrieve the custom attribute from.
@@ -354,11 +354,11 @@ public:
     };
 
 //=======================================================================================    
-//! ECDbForeignKeyRelationshipMap is a convenience wrapper around the ForeignKeyRelationshipMap 
+//! ECDbForeignKeyConstraint is a convenience wrapper around the ForeignKeyConstraint 
 //! custom attribute that simplifies reading the values of that custom attribute
 //! @bsiclass
 //=======================================================================================    
-struct ECDbForeignKeyRelationshipMap
+struct ECDbForeignKeyConstraint
     {
     friend struct ECDbMapCustomAttributeHelper;
 
@@ -366,21 +366,21 @@ private:
     ECRelationshipClassCP m_relClass;
     IECInstanceCP m_ca;
 
-    ECDbForeignKeyRelationshipMap(ECRelationshipClassCR, IECInstanceCP ca);
+    ECDbForeignKeyConstraint(ECRelationshipClassCR, IECInstanceCP ca);
 
 public:
-    ECDbForeignKeyRelationshipMap() : m_relClass(nullptr), m_ca(nullptr) {}
+    ECDbForeignKeyConstraint() : m_relClass(nullptr), m_ca(nullptr) {}
 
-    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyRelationshipMap.
+    //! Tries to get the value of the OnDeleteAction property from the ForeignKeyConstraint.
     //! @param[out] onDeleteAction OnDelete action.  @p onDeleteAction remains unchanged, if the OnDeleteAction property 
-    //! wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    //! wasn't set in the ForeignKeyConstraint.
+    //! @return ECOBJECTSTATUS_Success if OnDeleteAction was set or unset in the ForeignKeyConstraint, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnDeleteAction(Utf8StringR onDeleteAction) const;
 
-    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyRelationshipMap.
+    //! Tries to get the value of the OnUpdateAction property from the ForeignKeyConstraint.
     //! @param[out] onUpdateAction OnUpdate action. @p onDeleteAction remains unchanged, if the OnUpdateAction property 
-    //! wasn't set in the ForeignKeyRelationshipMap.
-    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyRelationshipMap, Error codes otherwise
+    //! wasn't set in the ForeignKeyConstraint.
+    //! @return ECOBJECTSTATUS_Success if OnUpdateAction was set or unset in the ForeignKeyConstraint, Error codes otherwise
     ECOBJECTS_EXPORT ECObjectsStatus TryGetOnUpdateAction(Utf8StringR onUpdateAction) const;
     };
 	

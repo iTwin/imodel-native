@@ -36,9 +36,9 @@
     </ECClass>
     <ECRelationshipClass typeName="GeometrySourceIsInCategory" description="Element is in Category" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(0,N)" roleLabel="is in category" polymorphic="true">
             <Class class="GeometrySource">
@@ -212,9 +212,9 @@
     -->
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
@@ -229,9 +229,9 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AuthorityIssuesModelCode" description="Model has a code which was issued by the given authority" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
@@ -246,9 +246,9 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="AuthorityIssuesGeometryPartCode" description="GeometryPart has a code which was issued by the given authority" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="issues code" polymorphic="false">
             <Class class="Authority"/>
@@ -361,9 +361,9 @@
     </ECClass>
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="embedding">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is on 1 model" polymorphic="true">
             <Class class="Model"/>
@@ -1012,9 +1012,9 @@
     </ECClass>
     <ECRelationshipClass typeName="BaseModelForView" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="embedding">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Restrict</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source cardinality="(1,1)" roleLabel="is base model for view" polymorphic="true">
             <Class class="Model"/>
