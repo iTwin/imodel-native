@@ -234,9 +234,14 @@ void DataSourceAccountWSG::setWSGTokenGetterCallback(const std::function<std::st
     m_getWSGToken = tokenGetter;
     }
 
-void DataSourceAccountWSG::setUseDirectAzureCalls()
+void DataSourceAccountWSG::setUseDirectAzureCalls(const bool& isDirect)
     {
-    m_useDirectAzureCalls = true;
+    m_useDirectAzureCalls = isDirect;
+    }
+
+void DataSourceAccountWSG::setOrganizationID(const WSGServer::organizationID & orgID)
+    {
+    wsgOrganizationID = orgID;
     }
 
 DataSourceAccountWSG::WSGToken DataSourceAccountWSG::getWSGToken(DataSourceURL &url)

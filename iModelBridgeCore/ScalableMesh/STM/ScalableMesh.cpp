@@ -856,20 +856,35 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                         assert(false);
 #endif
                         }
-                    else if(s_stream_from_wsg)
+                    else
                         {
-                        if (s_stream_using_cesium_3d_tiles_format)
+                        if (datasetName == L"marseille")
                             {
+                            s_stream_from_wsg = true; // Marseille uploaded to RDS only
+                            s_use_azure_sandbox = false;
+                            s_use_qa_azure = true;
+                            s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
+                            s_is_legacy_master_header = false; // groups are compressed in the master header
                             streamingSourcePath = L"MarseilleCesium";
+                            }
+                        else if (datasetName == L"salt_lake_city")
+                            {
+                            s_stream_from_wsg = false; // Salt Lake City uploaded to sandbox Azure only 
+                            s_use_azure_sandbox = true;
+                            s_use_qa_azure = false;
+                            s_stream_from_azure_using_curl = true;
+                            s_stream_using_cesium_3d_tiles_format = true; // data type is Cesium 3D Tiles
+                            s_is_legacy_master_header = false; // groups are compressed in the master header
+
+                            streamingSourcePath = L"05610e4c-79d4-43ef-a9e5-e02e6328d843/SaltLakeCityCesium";
                             }
                         else
                             {
-                            streamingSourcePath = L"scalablemesh" + (cloud_separator + datasetName);
+                            s_stream_from_wsg = false;
+                            s_stream_using_cesium_3d_tiles_format = true;
+                            s_is_legacy_master_header = true; // groups are NOT compressed in the master header
+                            streamingSourcePath = L"scalablemeshtest" + (cloud_separator + datasetName);
                             }
-                        }
-                    else
-                        {
-                        streamingSourcePath = L"scalablemeshtest" + (cloud_separator + datasetName);
                         }
 
 #ifndef VANCOUVER_API                                       

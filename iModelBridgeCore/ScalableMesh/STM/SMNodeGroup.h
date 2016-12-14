@@ -759,50 +759,76 @@ class SMNodeGroupMasterHeader : public std::map<uint32_t, SMGroupNodeIds>, publi
                     return;
                     }
                 }
+
+            // Put group information in a single binary blob
+            bvector<uint8_t> masterBlob(20 * 1000 * 1000);
+
+            // Old Master Header part
+            auto const oldMasterHeaderSize = m_oldMasterHeader.size();
+            size_t totalSize = 0;
+
+            memcpy(masterBlob.data(), &oldMasterHeaderSize, sizeof(oldMasterHeaderSize));
+            totalSize += sizeof(uint32_t);
+
+            memcpy(masterBlob.data() + totalSize, m_oldMasterHeader.data(), oldMasterHeaderSize);
+            totalSize += m_oldMasterHeader.size();
+
+            short mode = (short)pi_pGroupMode;
+            memcpy(masterBlob.data() + totalSize, &mode, sizeof(mode));
+            totalSize += sizeof(mode);
+
+            // Append group information
+            for (auto& group : *this)
+                {
+                auto const& groupInfo = group.second;
+                auto const gid = group.first;
+                auto const gNumNodes = groupInfo.size();
+
+                uint64_t group_size = sizeof(gid) + sizeof(groupInfo.m_sizeOfRawHeaders) + sizeof(gNumNodes) + gNumNodes * sizeof(uint64_t);
+                if (totalSize + group_size > masterBlob.size())
+                    {
+                    // increase the size of the blob
+                    size_t oldSize = masterBlob.size();
+                    size_t newSize = oldSize + 1000 * 1000;
+                    masterBlob.resize(newSize);
+                    }
+                memcpy(masterBlob.data() + totalSize, &gid, sizeof(gid));
+                totalSize += sizeof(gid);
+
+                // Group total size of headers
+                if (pi_pGroupMode == SMNodeGroup::VIRTUAL)
+                    {
+                    memcpy(masterBlob.data() + totalSize, &groupInfo.m_sizeOfRawHeaders, sizeof(groupInfo.m_sizeOfRawHeaders));
+                    totalSize += sizeof(groupInfo.m_sizeOfRawHeaders);
+                    }
+
+                // Group number of nodes
+                memcpy(masterBlob.data() + totalSize, &gNumNodes, sizeof(gNumNodes));
+                totalSize += sizeof(gNumNodes);
+
+                // Group node ids
+                memcpy(masterBlob.data() + totalSize, groupInfo.data(), gNumNodes * sizeof(uint64_t));
+                totalSize += gNumNodes * sizeof(uint64_t);
+                }
+            HCDPacket uncompressedPacket, compressedPacket;
+            uncompressedPacket.SetBuffer(masterBlob.data(), totalSize);
+            uncompressedPacket.SetDataSize(totalSize);
+            WriteCompressedPacket(uncompressedPacket, compressedPacket);
+
             std::wstring group_header_filename(buffer);
             BeFile file;
             if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
                 {
                 uint32_t NbChars = 0;
+                file.Write(&NbChars, &totalSize, (uint32_t)sizeof(totalSize));
+                assert(NbChars == (uint32_t)sizeof(totalSize));
 
-                // Save old Master Header part: size + data
-                const uint32_t sizeOldMasterHeaderFile = (uint32_t)m_oldMasterHeader.size();
-                file.Write(&NbChars, &sizeOldMasterHeaderFile, sizeof(sizeOldMasterHeaderFile));
-                assert(NbChars == sizeof(sizeOldMasterHeaderFile));
-
-                file.Write(&NbChars, m_oldMasterHeader.data(), sizeOldMasterHeaderFile);
-                assert(NbChars == (uint32_t)m_oldMasterHeader.size());
-
-                short mode = (short)pi_pGroupMode;
-                file.Write(&NbChars, &mode, sizeof(mode));
-
-                // Append group information
-                for (auto& group : *this)
-                    {
-                    // Group id
-                    auto const id = group.first;
-                    file.Write(&NbChars, &id, sizeof(id));
-                    assert(NbChars == sizeof(id));
-
-                    auto& groupInfo = group.second;
-
-                    // Group total size of headers
-                    if (pi_pGroupMode == SMNodeGroup::VIRTUAL)
-                        {
-                        auto const total_size = groupInfo.m_sizeOfRawHeaders;
-                        file.Write(&NbChars, &total_size, sizeof(total_size));
-                        assert(NbChars == sizeof(total_size));
-                        }
-
-                    // Group number of nodes
-                    auto const numNodes = groupInfo.size();
-                    file.Write(&NbChars, &numNodes, sizeof(numNodes));
-                    assert(NbChars == sizeof(numNodes));
-
-                    // Group node ids
-                    file.Write(&NbChars, groupInfo.data(), (uint32_t)numNodes * sizeof(uint64_t));
-                    assert(NbChars == (uint32_t)numNodes * sizeof(uint64_t));
-                    }
+                file.Write(&NbChars, compressedPacket.GetBufferAddress(), (uint32_t)compressedPacket.GetDataSize());
+                assert(NbChars == compressedPacket.GetDataSize());
+                }
+            else 
+                {
+                assert(!"Could not open or create file for writing the group master header");
                 }
             file.Close();
             }

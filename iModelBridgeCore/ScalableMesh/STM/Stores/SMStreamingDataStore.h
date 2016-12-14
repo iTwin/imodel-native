@@ -26,6 +26,9 @@ extern bool s_stream_from_grouped_store;
 extern bool s_stream_enable_caching;
 extern bool s_is_virtual_grouping;
 extern bool s_is_legacy_dataset;
+extern bool s_is_legacy_master_header;
+extern bool s_use_azure_sandbox;
+extern bool s_use_qa_azure;
 
 //extern std::mutex fileMutex;
 

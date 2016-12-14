@@ -296,7 +296,7 @@ DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & acco
 
 DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
     {
-    DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
 
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();
@@ -308,7 +308,7 @@ DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & bl
 
 DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
     {
-    DataSourceURL url(L"https://pcdsustest.blob.core.windows.net/" + blobPath);
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
     CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
     CURL* curl = curl_handle->get();
     curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);

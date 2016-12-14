@@ -15,6 +15,7 @@
 #include <condition_variable>
 #include <TilePublisher\TilePublisher.h>
 #include <CloudDataSource\DataSourceAccount.h>
+#include <CloudDataSource\DataSourceAccountWSG.h>
 #include <CloudDataSource\DataSourceBuffered.h>
 
 #include <ImagePP\all\h\HCDCodecZlib.h>
@@ -37,7 +38,7 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     if (m_pathToHeaders.empty())
         {
         // Set default path to headers relative to root directory
-        m_pathToHeaders = s_stream_using_cesium_3d_tiles_format ? L"data" : L"headers";
+        m_pathToHeaders = s_stream_using_cesium_3d_tiles_format ? L""/*L"data"*/ : L"headers";
 
         if (m_use_node_header_grouping && m_use_virtual_grouping)
             {
@@ -122,12 +123,24 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
 
         Utf8String sslCertificatePath = ScalableMesh::ScalableMeshLib::GetHost().GetSSLCertificateAdmin().GetSSLCertificatePath();
         assert(!sslCertificatePath.empty());
+        wstring orgID, server;
+        bool use_direct_azure_calls = true;
+        if (s_use_qa_azure)
+            {
+            orgID = L"e82a584b-9fae-409f-9581-fd154f7b9ef9";
+            server = L"qa-realitydataservices-eus.cloudapp.net";
+            use_direct_azure_calls = true;
+            }
+        else
+            {
+            orgID = L"5e41126f-6875-400f-9f75-4492c99ee544";
+            server = L"dev-realitydataservices-eus.cloudapp.net";
+            use_direct_azure_calls = true;
+            }
 
         DataSourceService                       *   serviceWSG;
         DataSourceAccount                       *   accountWSG;
-        //DataSourceAccount::AccountIdentifier        accountIdentifier(L"s3mxcloudservice.cloudapp.net"); // WSG server 
-        //DataSourceAccount::AccountIdentifier        accountIdentifier(L"dev-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"qa-realitydataservices-eus.cloudapp.net"); // CONNECT WSG server 
+        DataSourceAccount::AccountIdentifier        accountIdentifier(server);
         DataSourceAccount::AccountKey               accountKey(WString(tokenUtf8.c_str(), BentleyCharEncoding::Utf8).c_str()); // WSG token in this case
 
         serviceWSG = dataSourceManager.getService(DataSourceService::ServiceName(L"DataSourceServiceWSG"));
@@ -147,14 +160,29 @@ template <class EXTENT> DataSourceStatus SMStreamingStore<EXTENT>::InitializeDat
             return ScalableMesh::ScalableMeshLib::GetHost().GetWsgTokenAdmin().GetToken().c_str();
             });
 
+        auto* casted_account = static_cast<DataSourceAccountWSG*>(accountWSG);
+        casted_account->setOrganizationID(orgID);
+        casted_account->setUseDirectAzureCalls(use_direct_azure_calls);
+
         this->SetDataSourceAccount(accountWSG);
         }
     else
         {
+        wstring azureAccount, azureKey;
+        if (s_use_azure_sandbox)
+            {
+            azureAccount = L"s3mxstorageblob";
+            }
+        else
+            {
+            azureAccount = L"pcdsustest";
+            azureKey = L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==";
+            }
+
         // NEEDS_WORK_SM_STREAMING: Add method to specify Azure CDN endpoints such as BlobEndpoint = https://scalablemesh.azureedge.net
         // NEEDS_WORK_SM_STREAMING: How to specify identifier and key?
-        DataSourceAccount::AccountIdentifier        accountIdentifier(L"pcdsustest");
-        DataSourceAccount::AccountKey               accountKey(L"3EQ8Yb3SfocqbYpeIUxvwu/aEdiza+MFUDgQcIkrxkp435c7BxV8k2gd+F+iK/8V2iho80kFakRpZBRwFJh8wQ==");
+        DataSourceAccount::AccountIdentifier        accountIdentifier(azureAccount);
+        DataSourceAccount::AccountKey               accountKey(azureKey);
         DataSourceService                       *   serviceAzure;
         DataSourceAccount                       *   accountAzure;
         DataSourceAccount                       *   accountCaching;
@@ -275,7 +303,7 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
             }
         case SMNodeGroup::StrategyType::CESIUM:
             {
-            swprintf(buffer, L"MasterHeaderWith%sGroups.bin", L"Cesium");
+            swprintf(buffer, L"MasterHeaderWith%sGroups%s.bin", L"Cesium", (s_is_legacy_master_header ? L"" : L"-compressed"));
             break;
             }
         default:
@@ -317,7 +345,48 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
 
     if (isGrouped)
         {
-        headerSize = readSize;
+        if (s_is_legacy_master_header)
+            {
+            headerSize = readSize;
+            //HCDPacket uncompressedPacket, compressedPacket;
+            //uncompressedPacket.SetBuffer(dest.get(), readSize);
+            //uncompressedPacket.SetDataSize(readSize);
+            //WriteCompressedPacket(uncompressedPacket, compressedPacket);
+            //
+            //wchar_t buffer[10000];
+            //swprintf(buffer, L"E:\\WorkData\\ScalableMesh\\Streaming\\saltlakecity\\SLC_multi\\cloud_cesium\\MasterHeaderWithCesiumGroups-compressed.bin");
+            //std::wstring group_header_filename(buffer);
+            //BeFile file;
+            //if (OPEN_OR_CREATE_FILE(file, group_header_filename.c_str(), BeFileAccess::Write))
+            //    {
+            //    uint32_t NbChars = 0;
+            //    file.Write(&NbChars, &readSize, (uint32_t)sizeof(readSize));
+            //    assert(NbChars == (uint32_t)sizeof(readSize));
+            //
+            //    file.Write(&NbChars, compressedPacket.GetBufferAddress(), (uint32_t)compressedPacket.GetDataSize());
+            //    assert(NbChars == compressedPacket.GetDataSize());
+            //    }
+            //else
+            //    {
+            //    assert(!"Could not open or create file for writing the group master header");
+            //    }
+            //file.Close();
+            }
+        else
+            {
+            // initialize codec
+            bvector<uint8_t> masterHeader(decltype(readSize)(*reinterpret_cast<decltype(readSize)*>(dest.get())));
+            HFCPtr<HCDCodec> pCodec = new HCDCodecZlib(readSize - sizeof(readSize));
+            const size_t computedDataSize = pCodec->DecompressSubset(dest.get() + sizeof(readSize),
+                                                                     readSize - sizeof(readSize),
+                                                                     masterHeader.data(),
+                                                                     masterHeader.size());
+            assert(computedDataSize != 0 && computedDataSize == masterHeader.size());
+
+            dest.reset(new uint8_t[masterHeader.size()]);
+            memcpy(dest.get(), masterHeader.data(), masterHeader.size());
+            headerSize = masterHeader.size();
+            }
 
         size_t position = 0;
 
@@ -402,7 +471,8 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadMasterHeader(SMInde
                         }
                     else
                         {
-                        group->SetDataSourcePrefix(L"data\\n_");
+                        //group->SetDataSourcePrefix(L"data\\n_");
+                        group->SetDataSourcePrefix(L"n_");
                         }
                     group->SetDataSourceExtension(L".json");
                     break;
@@ -1395,7 +1465,7 @@ template <class DATATYPE, class EXTENT> SMStreamingNodeDataStore<DATATYPE, EXTEN
         case SMStoreDataType::Cesium3DTiles:
             if (!s_stream_from_wsg)
                 {
-                m_dataSourceURL = L"data";
+                //m_dataSourceURL = L"data";
                 }
             break;
         default:

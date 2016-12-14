@@ -49,8 +49,7 @@ protected:
     WSGServer::repository                   wsgRepository       = L"S3MXECPlugin--Server";
     WSGServer::schema                       wsgSchema           = L"S3MX";
     WSGServer::class_name                   wsgClassName        = L"Document";
-    //WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544"; // Dev Bentley org id
-    WSGServer::organizationID               wsgOrganizationID = L"e82a584b-9fae-409f-9581-fd154f7b9ef9"; // Connect Bentley org id
+    WSGServer::organizationID               wsgOrganizationID   = L"e82a584b-9fae-409f-9581-fd154f7b9ef9"; // Connect Bentley QA org id
 
 
 public:
@@ -72,7 +71,9 @@ public:
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
         virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater);
-        void                                setUseDirectAzureCalls              ();
+
+        CLOUD_EXPORT      void              setOrganizationID                   (const WSGServer::organizationID& orgID);
+        CLOUD_EXPORT      void              setUseDirectAzureCalls(const bool& isDirect);
 
 private :
        std::function<std::string (void)>    m_getWSGToken;
