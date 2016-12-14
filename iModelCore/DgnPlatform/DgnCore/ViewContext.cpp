@@ -144,7 +144,7 @@ void ViewContext::_SetupScanCriteria()
     {
     DgnViewportP vp = GetViewport();
     if (nullptr != vp)
-        m_scanCriteria.SetCategoryTest(vp->GetViewController().GetViewedCategories());
+        SetCategoryTest(vp->GetViewController().GetViewedCategories());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -242,7 +242,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         scanRange.m_high.z = 1;
         }
 
-    m_scanCriteria.SetRangeTest(scanRange);
+    SetRangeTest(scanRange);
 
     // if we're doing a skew scan, get the skew parameters
     if (Is3dView())
@@ -261,7 +261,7 @@ bool ViewContext::_ScanRangeFromPolyhedron()
         alongAxes += (fabs(skewVec.z) < 1e-8);
 
         if (alongAxes < 2)
-            m_scanCriteria.SetSkewRangeTest(scanRange, RangeIndex::FBox(skewRange), skewVec);
+            SetSkewRangeTest(scanRange, RangeIndex::FBox(skewRange), skewVec);
         }
 
     m_scanRangeValid = true;
@@ -488,9 +488,10 @@ StatusInt ViewContext::_VisitHit(HitDetailCR hit)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementCR element)
+ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementId id)
     {
-    GeometrySourceCP geomElement = element.ToGeometrySource();
+    auto el = GetDgnDb().Elements().GetElement(id);
+    GeometrySourceCP geomElement = el->ToGeometrySource();
     if (nullptr != geomElement)
         _VisitGeometry(*geomElement);
 
@@ -500,18 +501,10 @@ ScanCriteria::Stop ViewContext::_OnRangeElementFound(DgnElementCR element)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      01/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Reject ViewContext::_CheckNodeRange(RangeIndex::FBoxCR testRange, bool is3d)
+RangeIndex::Traverser::Accept ViewContext::_CheckRangeTreeNode(RangeIndex::FBoxCR testRange, bool is3d) const
     {
     Frustum box(testRange.ToRange3d());
-    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? ScanCriteria::Reject::No : ScanCriteria::Reject::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    KeithBentley    05/01
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewContext::SetScanReturn()
-    {
-    m_scanCriteria.SetCallback(*this);
+    return (m_frustumPlanes.Contains(box.m_pts, 8) != FrustumPlanes::Contained::Outside) ? RangeIndex::Traverser::Accept::Yes : RangeIndex::Traverser::Accept::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -582,8 +575,8 @@ StatusInt ViewContext::_ScanDgnModel(GeometricModelR model)
     if (!ValidateScanRange())
         return ERROR;
 
-    m_scanCriteria.SetDgnModel(model);
-    return m_scanCriteria.Scan();
+    SetDgnModel(model);
+    return Scan();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -650,8 +643,6 @@ bool ViewContext::VisitAllViewElements(BSIRectCP updateRect)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ViewContext::_VisitAllModelElements()
     {
-    SetScanReturn();
-
     // The ViewController must orchestrate the display of all of the elements in the view.
     BeAssert(nullptr != m_viewport);
     m_viewport->GetViewControllerR().DrawView(*this);
