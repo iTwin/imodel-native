@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                         m
+/*--------------------------------------------------------------------------------------+                                                                                           
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -436,29 +436,6 @@ GeometrySourceCP TileGenerationCache::GetCachedGeometrySource(DgnElementId elemI
     return m_geometrySources.end() != iter ? iter->second.get() : nullptr;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGenerationCache::GetGeomPart(TileGeomPartPtr& tileGeomPart, DgnGeometryPartId partId) const
-    {
-    BeMutexHolder lock(m_mutex);
-    auto found = m_geomParts.find(partId);
-
-    if (found == m_geomParts.end())
-        return false;
-
-    tileGeomPart = found->second;
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void TileGenerationCache::AddGeomPart(DgnGeometryPartId partId, TileGeomPartR tileGeomPart) const
-    {
-    BeMutexHolder lock(m_mutex);
-    m_geomParts.Insert (partId, &tileGeomPart);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -2071,6 +2048,8 @@ struct GeometrySelector2d
 struct TileGeometryProcessor : IGeometryProcessor
 {
 private:
+    typedef bmap<DgnGeometryPartId, TileGeomPartPtr>  GeomPartMap;
+
     IFacetOptionsR              m_facetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
     DgnElementId                m_curElemId;
@@ -2089,7 +2068,7 @@ private:
     size_t                      m_leafCount;
     bool                        m_is2d;
     bool                        m_surfacesOnly;
-
+    GeomPartMap                 m_geomParts;
 
     void PushGeometry(TileGeometryR geom);
     void AddElementGeometry(TileGeometryR geom);
@@ -2204,8 +2183,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
     Transform               partToWorld = Transform::FromProduct(graphic.GetLocalToWorldTransform(), subToGraphic);
     TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(&graphicParams, &geomParams);
     DRange3d                range;
+    auto const&             foundPart = m_geomParts.find (partId);
 
-    if (!m_cache.GetGeomPart(tileGeomPart, partId))
+    if (foundPart == m_geomParts.end())
         {
         DgnGeometryPartCPtr geomPart = m_dgndb.Elements().Get<DgnGeometryPart>(partId);
 
@@ -2224,8 +2204,12 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         m_curElemGeometries.clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
 
-        m_cache.AddGeomPart (partId, *(tileGeomPart = TileGeomPart::Create(partId, geomPart->GetBoundingBox(), m_curElemGeometries)));
+        m_geomParts.Insert (partId, tileGeomPart = TileGeomPart::Create(partId, geomPart->GetBoundingBox(), m_curElemGeometries));
         m_curElemGeometries = saveCurrGeometries;
+        }
+    else
+        {
+        tileGeomPart = foundPart->second;
         }
 
     tileGeomPart->IncrementInstanceCount();
@@ -2261,16 +2245,20 @@ bool TileGeomPart::IsCurved() const
 TileGeometry::T_TilePolyfaces TileGeomPart::GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance)
     {
     TileGeometry::T_TilePolyfaces polyfaces;
+    
     for (auto& geometry : m_geometries) 
         {
         TileGeometry::T_TilePolyfaces thisPolyfaces = geometry->GetPolyfaces (facetOptions);
 
-        if (!thisPolyfaces.empty())
-            polyfaces.insert (polyfaces.end(), thisPolyfaces.begin(), thisPolyfaces.end());
+        for (auto& thisPolyface : thisPolyfaces)
+            {
+            auto    polyface = thisPolyface.Clone();
+
+            polyface.Transform(instance.GetTransform());
+            polyfaces.push_back (polyface);
+            }
         }
 
-    for (auto& polyface : polyfaces)
-        polyface.Transform(instance.GetTransform());
 
     return polyfaces;
     }
@@ -2592,9 +2580,9 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    static bool s_doInstances;
+    static bool s_doInstances = true;
 
-    if (s_doInstances)
+    if (s_doInstances && graphic.GetLocalToWorldTransform().Determinant() > 0.0)
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
@@ -2713,10 +2701,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 TileMeshList    partMeshes = GenerateMeshes(db, normalMode, twoSidedTriangles, doSurfacesOnly, false, filter, part->GetGeometries());
 
                 if (partMeshes.empty())
-                    {
-                    BeAssert (false && "Part did not generate meshes");
                     continue;
-                    }
                     
                 publishedTileGeometry.Parts().push_back(meshPart = TileMeshPart::Create (std::move(partMeshes)));
                 partMap.Insert(part->GetPartId(), meshPart);

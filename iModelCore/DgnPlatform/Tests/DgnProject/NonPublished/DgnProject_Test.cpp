@@ -392,9 +392,8 @@ struct DgnProjectPackageTest : public DgnDbTestFixture
         +---------------+---------------+---------------+---------------+---------------+------*/
         void getProjectProperties(DgnDbPtr& project, ProjectProperties& properties)
             {
-            DgnModels& modelTable = project->Models();
             properties.modelCount = 0;
-            for (DgnModels::Iterator::Entry const& entry: modelTable.MakeIterator())
+            for (ModelIteratorEntryCR entry: project->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_Model)))
                 {
                 UNUSED_VARIABLE(entry);
                 properties.modelCount++;

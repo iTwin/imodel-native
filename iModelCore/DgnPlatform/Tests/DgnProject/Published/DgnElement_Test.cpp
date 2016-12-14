@@ -2137,12 +2137,16 @@ TEST_F(DgnElementTests, ElementIterator)
     ASSERT_EQ(numPhysicalObjects, iterator.BuildIdSet<DgnElementId>().size());
     ASSERT_EQ(numPhysicalObjects, iterator.BuildIdList<DgnElementId>().size());
 
+    bvector<DgnElementId> idList;
+    iterator.BuildIdList(idList);
+    ASSERT_EQ(numPhysicalObjects, idList.size());
+
     iterator = m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), "WHERE [UserLabel]='UserLabel1'");
     ASSERT_EQ(1, iterator.BuildIdSet<DgnElementId>().size());
     ASSERT_EQ(1, iterator.BuildIdList<DgnElementId>().size());
 
     int count=0;
-    for (ElementIteratorEntry entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
+    for (ElementIteratorEntryCR entry : m_db->Elements().MakeIterator(GENERIC_SCHEMA(GENERIC_CLASS_PhysicalObject), nullptr, "ORDER BY ECInstanceId"))
         {
         ASSERT_TRUE(entry.GetClassId().IsValid());
         ASSERT_EQ(entry.GetModelId(), model->GetModelId());

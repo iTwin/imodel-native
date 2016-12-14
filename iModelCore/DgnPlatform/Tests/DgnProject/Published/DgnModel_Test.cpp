@@ -225,12 +225,8 @@ TEST_F(DgnModelTests, RangeIndex)
 static int countSheetModels(DgnDbR db)
     {
     int count = 0;
-    auto sheetClassId = DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SheetModel));
-    for (auto const& sheet : db.Models().MakeIterator())
-        {
-        if (sheetClassId == sheet.GetClassId())
-            ++count;
-        }
+    for (ModelIteratorEntryCR sheet : db.Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SheetModel)))
+        ++count;
     return count;
     }
 
@@ -383,51 +379,74 @@ TEST_F(DgnModelTests, ImportDictionaryModel)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Maha Nasir                      07/15
+* @bsimethod                                                    Shaun.Sewall    11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, ModelsIterator)
+TEST_F(DgnModelTests, ModelIterator)
     {
     SetupSeedProject();
-    DgnDbR db = GetDgnDb();
+    PhysicalModelPtr physicalModel1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel1");
+    PhysicalModelPtr physicalModel2 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel2");
+    PhysicalModelPtr physicalModel3 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "PhysicalModel3");
+    DgnClassId physicalModelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel);
 
-    //Inserts models
-    PhysicalModelPtr m1 = DgnDbTestUtils::InsertPhysicalModel(db, "Model1");
-    db.SaveChanges("changeSet1");
+    SpatialLocationModelPtr spatialLocationModel1 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel1");
+    SpatialLocationModelPtr spatialLocationModel2 = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "SpatialLocationModel2");
 
-    PhysicalModelPtr m2 = DgnDbTestUtils::InsertPhysicalModel(db, "Model2");
-    PhysicalModelPtr m3 = DgnDbTestUtils::InsertPhysicalModel(db, "Model3");
-    db.SaveChanges("changeSet2");
+    DocumentListModelPtr documentListModel1 = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DocumentListModel1");
 
-    DgnModelId m1id = m1->GetModelId();
-    DgnModelId m2id = m2->GetModelId();
-    DgnModelId m3id = m3->GetModelId();
+    const int numPhysicalModels = 3 + 1; // 1 PhysicalModel created by SetupSeedProject
+    const int numSpatialLocationModels = 2;
+    const int numSpatialModels = numPhysicalModels + numSpatialLocationModels;
+    const int numDocumentListModels = 1;
 
-    DgnModels& models = db.Models();
-    DgnModels::Iterator iter = models.MakeIterator();
-    int i = 0;
-    for (auto const& entry : iter)
+    ModelIterator iterator = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel));
+    ASSERT_EQ(numPhysicalModels, iterator.BuildIdSet().size());
+    ASSERT_EQ(numPhysicalModels, iterator.BuildIdList().size());
+
+    bvector<DgnModelId> idList;
+    iterator.BuildIdList(idList);
+    ASSERT_EQ(numPhysicalModels, idList.size());
+
+    int count = 0;
+    for (ModelIteratorEntryCR entry : iterator)
         {
-        if (entry.GetModelId() == m1id)
-            {
-            EXPECT_EQ (m1->GetClassId().GetValue(), entry.GetClassId().GetValue());
-            EXPECT_EQ (true, entry.GetInGuiList());
-            i++;
-            }
-        else if (entry.GetModelId() == m2id)
-            {
-            EXPECT_EQ (m2->GetClassId().GetValue(), entry.GetClassId().GetValue());
-            EXPECT_EQ(true, entry.GetInGuiList());
-            i++;
-            }
-        else if (entry.GetModelId() == m3id)
-            {
-            EXPECT_EQ (m3->GetClassId().GetValue(), entry.GetClassId().GetValue());;
-            EXPECT_EQ(true, entry.GetInGuiList());
-            i++;
-            }
+        ASSERT_EQ(physicalModelClassId, entry.GetClassId());
+        ++count;
         }
 
-    EXPECT_EQ(3, i);
+    ASSERT_EQ(numPhysicalModels, count);
+    ASSERT_EQ(numSpatialLocationModels, m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialLocationModel)).BuildIdSet().size());
+    ASSERT_EQ(numSpatialModels, m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel)).BuildIdSet().size());
+    ASSERT_EQ(numDocumentListModels, m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_DocumentListModel)).BuildIdSet().size());
+    ASSERT_EQ(1, m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_DictionaryModel)).BuildIdSet().size());
+
+    Utf8PrintfString whereClause("WHERE ECInstanceId=%" PRIu64, physicalModel1->GetModelId().GetValue());
+    count = 0;
+    for (ModelIteratorEntryCR entry : m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), whereClause.c_str()))
+        {
+        ASSERT_EQ(physicalModel1->GetModelId(), entry.GetModelId());
+        ASSERT_EQ(physicalModel1->GetModeledElementId(), entry.GetModeledElementId());
+        ASSERT_EQ(physicalModelClassId, entry.GetClassId());
+        ASSERT_TRUE(entry.GetInGuiList());
+        ASSERT_FALSE(entry.GetIsTemplate());
+        ++count;
+        }
+
+    ASSERT_EQ(1, count);
+
+    idList = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList();
+    ASSERT_EQ(numPhysicalModels, idList.size());
+    ASSERT_EQ(physicalModel1->GetModelId(), idList[1]);
+    ASSERT_EQ(physicalModel2->GetModelId(), idList[2]);
+    ASSERT_EQ(physicalModel3->GetModelId(), idList[3]);
+
+    idList = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_PhysicalModel), nullptr, "ORDER BY ECInstanceId DESC").BuildIdList();
+    ASSERT_EQ(numPhysicalModels, idList.size());
+    ASSERT_EQ(physicalModel1->GetModelId(), idList[2]);
+    ASSERT_EQ(physicalModel2->GetModelId(), idList[1]);
+    ASSERT_EQ(physicalModel3->GetModelId(), idList[0]);
+
+    ASSERT_EQ(numSpatialModels, m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel), "WHERE [IsTemplate]=false", "ORDER BY ECInstanceId").BuildIdSet().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -454,17 +473,17 @@ TEST_F(DgnModelTests, AbandonChanges)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Majd.Uddin                      06/16
+* @bsimethod                                    Ridha.Malik                      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnModelTests, UnitDefinitionLabel)
+TEST_F(DgnModelTests, GetSetModelUnitDefinition)
     {
     SetupSeedProject();
     PhysicalModelPtr model = GetDefaultPhysicalModel();
+    BeFileName outFileName = (BeFileName)m_db->GetDbFileName();
 
-    GeometricModel::DisplayInfo const& displayInfo = model->GetDisplayInfo();
+    GeometricModel::DisplayInfo  displayInfo = model->GetDisplayInfoR();
     EXPECT_STREQ("m", displayInfo.GetMasterUnits().GetLabel().c_str());
     EXPECT_STREQ("mm", displayInfo.GetSubUnits().GetLabel().c_str());
-
     Utf8String name = "Invalid*Name";
     Utf8CP InvalidChar = "*";
     Utf8Char replace = ' ';
@@ -475,6 +494,29 @@ TEST_F(DgnModelTests, UnitDefinitionLabel)
     EXPECT_EQ("Invalid Name", (Utf8String) name);
     check = DgnDbTable::IsValidName(name, InvalidChar);
     EXPECT_TRUE(check);
+
+    // Try Update model unit definition with wrong values
+    GeometricModel::DisplayInfo  displayInfo2 = model->GetDisplayInfoR();
+    UnitDefinition newMasterUnitw(UnitBase::Meter, UnitSystem::Metric, 100.0, 10.0, "newMasterUnit");
+    UnitDefinition newSubUnit(UnitBase::Meter, UnitSystem::Metric, 25.0, 25.0, "newSubUnit");
+    ASSERT_TRUE(BentleyStatus::ERROR == displayInfo2.SetUnits(newMasterUnitw, newSubUnit));
+    UnitDefinition newMasterUnitw2(UnitBase::Meter, UnitSystem::Metric, -100.0, 10.0, "newMasterUnit");
+    ASSERT_TRUE(BentleyStatus::ERROR == displayInfo2.SetUnits(newMasterUnitw2, newSubUnit));
+    // Update model unit definition with correct values
+    UnitDefinition newMasterUnit(UnitBase::Meter, UnitSystem::Metric, 10.0, 10.0, "newMasterUnit");
+    ASSERT_TRUE(BentleyStatus::SUCCESS == displayInfo2.SetUnits(newMasterUnit, newSubUnit));
+    model->GetDisplayInfoR() = displayInfo2;
+    ASSERT_TRUE(DgnDbStatus::Success == model->Update());
+    m_db->SaveChanges();
+    m_db->CloseDb();
+    OpenDb(m_db,outFileName, BeSQLite::Db::OpenMode::Readonly);
+    displayInfo = model->GetDisplayInfoR();
+    ASSERT_STREQ("newMasterUnit", displayInfo.GetMasterUnits().GetLabel().c_str());
+    ASSERT_STREQ("newSubUnit", displayInfo.GetSubUnits().GetLabel().c_str());
+    ASSERT_TRUE(25 == displayInfo.GetSubUnits().GetNumerator());
+    ASSERT_TRUE(25 == displayInfo.GetSubUnits().GetDenominator());
+    ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetNumerator());
+    ASSERT_TRUE(10 == displayInfo.GetMasterUnits().GetDenominator());
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      11/16
