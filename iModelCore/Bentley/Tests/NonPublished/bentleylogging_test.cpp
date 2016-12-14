@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/NonPublished/bentleylogging_test.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)
@@ -12,7 +12,7 @@
 #include <Bentley/BeTest.h>
 #include <Logging/bentleylogging.h>
 
-#if defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
+//#if defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
 
 struct ProviderActivator
 {
@@ -31,6 +31,7 @@ ProviderActivator (BeFileName const& logfile)
 
 TEST(bentleylogging_test, LogUtf8)
 {
+    
     BeFileName logfile;
     BeTest::GetHost().GetOutputRoot (logfile);
     logfile.AppendToPath (L"bentleylogging_test.log");
@@ -40,8 +41,9 @@ TEST(bentleylogging_test, LogUtf8)
     NativeLogging::LoggingConfig::SetSeverity (L"bentleylogging_test", NativeLogging::LOG_TRACE);
     // We should see both messages in console
     NativeLogging::ILogger* logger = NativeLogging::LoggingManager::GetLogger (L"bentleylogging_test");
-    logger->trace (L"trace (wide)");
-    logger->trace ("trace (UTF-8)");
+    EXPECT_TRUE(NativeLogging::LoggingConfig::IsProviderActive());
+    logger->info(L"info (wide)");
+    logger->trace("trace (UTF-8)");
     // Now we should see messages truncated to "tr"
     NativeLogging::LoggingConfig::SetMaxMessageSize (3);
     logger->trace (L"trace (wide)");
@@ -51,9 +53,13 @@ TEST(bentleylogging_test, LogUtf8)
     NativeLogging::LoggingConfig::SetSeverity (L"bentleylogging_test", NativeLogging::LOG_ERROR);
     logger->trace (L"trace (wide)");
     logger->trace ("trace (UTF-8)");
+    
+    NativeLogging::LoggingConfig::DeactivateProvider();
+    EXPECT_FALSE(NativeLogging::LoggingConfig::IsProviderActive());
 
-
+    ;
     // *** TBD: read file logfile and check results
 }
 
-#endif // defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
+
+//#endif // defined (WIP_INTERFERES_WITH_LOGGING_BY_TESTS)
