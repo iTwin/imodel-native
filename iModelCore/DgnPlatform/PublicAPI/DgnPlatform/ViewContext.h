@@ -75,7 +75,7 @@ DEFINE_REF_COUNTED_PTR(IElemTopology)
 //! @ingroup GROUP_ViewContext
 // @bsiclass                                                     KeithBentley    04/01
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ViewContext : NonCopyableClass, CheckStop, ScanCriteria::Callback
+struct EXPORT_VTABLE_ATTRIBUTE ViewContext : ScanCriteria, NonCopyableClass, CheckStop
 {
     friend struct ViewController;
     friend struct SimplifyGraphic;
@@ -94,7 +94,6 @@ protected:
     DRange3d m_npcSubRange;
     DMap4d m_worldToNpc;
     DMap4d m_worldToView;
-    ScanCriteria m_scanCriteria;
     Render::FrustumPlanes m_frustumPlanes;
     DgnViewportP m_viewport = nullptr;
     ClipPrimitiveCPtr m_volume;
@@ -129,8 +128,8 @@ protected:
     DGNPLATFORM_EXPORT virtual StatusInt _ScanDgnModel(GeometricModelR model);
     DGNPLATFORM_EXPORT virtual bool _ScanRangeFromPolyhedron();
     DGNPLATFORM_EXPORT virtual void _SetDgnDb(DgnDbR);
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Reject _CheckNodeRange(RangeIndex::FBoxCR, bool is3d) override;
-    DGNPLATFORM_EXPORT virtual ScanCriteria::Stop _OnRangeElementFound(DgnElementCR) override;
+    DGNPLATFORM_EXPORT RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
+    DGNPLATFORM_EXPORT ScanCriteria::Stop _OnRangeElementFound(DgnElementId) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
     DGNPLATFORM_EXPORT ViewContext();
 
@@ -152,10 +151,8 @@ public:
     DGNPLATFORM_EXPORT bool IsPointVisible(DPoint3dCR worldPoint, WantBoresite boresite, double tolerance=1.0e-8);
     DGNPLATFORM_EXPORT Frustum GetFrustum();
     Render::FrustumPlanes const& GetFrustumPlanes() const {return m_frustumPlanes;}
-    ScanCriteriaCP GetScanCriteria() const {return &m_scanCriteria;}
     void InitScanRangeAndPolyhedron() {_InitScanRangeAndPolyhedron();}
     StatusInt VisitDgnModel(GeometricModelR model){return _VisitDgnModel(model);}
-    DGNPLATFORM_EXPORT void SetScanReturn();
     void OutputGraphic(Render::GraphicR graphic, GeometrySourceCP source) {_OutputGraphic(graphic, source);}
     void SetActiveVolume(ClipPrimitiveCR volume) {m_volume=&volume;}
     ClipPrimitiveCPtr GetActiveVolume() const {return m_volume;}
@@ -379,17 +376,8 @@ public:
 struct SceneContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);
-    friend struct SpatialViewController;
-
-private:
     bool _CheckStop() override;
-    double m_saesNpcSq;     // smallest attempted element size (NPC squared)
-
-public:
     SceneContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan);
-
-    void SetSAESNpcSq(double v) { m_saesNpcSq = v; }
-    double GetSAESNpcSq() const { return m_saesNpcSq; }
 };
 
 //=======================================================================================
