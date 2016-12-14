@@ -10,16 +10,15 @@
 
 #include <WebServices/Cache/Util/ECDbAdapter.h>
 
-// StrictMock is not portable
-#if defined (BENTLEY_WIN32)
-
 using namespace ::testing;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define INSERT_INSTANCE(db, ecClassCP, keyOut) \
-    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(db, *ecClassCP).Insert(keyOut, Json::Value()));
+    ASSERT_FALSE(ecClassCP == nullptr);\
+    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(db, *ecClassCP, nullptr).Insert(keyOut, Json::Value()));
 
 #define INSERT_RELATIONSHIP(db, ecRelClassCP, source, target, rel) \
+    ASSERT_FALSE(ecRelClassCP == nullptr); \
     ASSERT_TRUE((rel = ECDbAdapter(db).RelateInstances(ecRelClassCP, source, target)).IsValid());
 
 #define CREATE_MockECDbAdapterDeleteListener(listener) \
@@ -27,9 +26,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
     ON_CALL(listener, OnBeforeDelete(_, _, _)).WillByDefault(Return(SUCCESS));
 
 #define EXPECT_INSTANCE_EXISTS(db, key) \
-    auto foundInstance = ECDbAdapter(*db).FindInstance( \
-        db->Schemas().GetECClass(key.GetECClassId()), \
-        Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue())); \
+    auto foundInstance = ECDbAdapter(*db).FindInstance(\
+    db->Schemas().GetECClass(key.GetECClassId()), \
+    Utf8PrintfString("ECInstanceId = %llu", key.GetECInstanceId().GetValue()).c_str()); \
     EXPECT_TRUE(foundInstance.IsValid()); \
 
 #if 1
@@ -48,7 +47,7 @@ void EXPECT_CALL_OnBeforeDelete(MockECDbAdapterDeleteListener& listener, std::sh
         .WillOnce(Invoke([&] (ECClassCR ecClass, ECInstanceId id, bset<ECInstanceKey>&)
         {
         /* Check if instance was not deleted yet */
-        auto foundInstance = ECDbAdapter(*db).FindInstance(&ecClass, Utf8PrintfString("ECInstanceId = %llu", id.GetValue()));
+        auto foundInstance = ECDbAdapter(*db).FindInstance(&ecClass, Utf8PrintfString("ECInstanceId = %llu", id.GetValue()).c_str());
         EXPECT_TRUE(foundInstance.IsValid());
         return SUCCESS;
         }));
@@ -72,8 +71,6 @@ std::shared_ptr<ObservableECDb> ECDbAdapterTests::CreateTestDb(ECSchemaPtr schem
 
     return db;
     }
-
-#ifdef WIP_MERGE_Vincas
     
 TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfHoldingInstances_PerformanceIsAcceptable)
     {
@@ -225,6 +222,3 @@ TEST_F(ECDbAdapterTests, DeleteInstances_DeletingLotsOfInstances_PerformanceIsAc
         }
     BeDebugLog(Utf8PrintfString("DeleteInstances mean took %f ms", totalTime / count).c_str());
     }
-
-#endif
-#endif
