@@ -172,20 +172,16 @@ struct ECSqlInsertPreparedStatement : public ECSqlNonSelectPreparedStatement
     private:
         ECInstanceKeyInfo m_ecInstanceKeyInfo;
 
-        bool m_isECInstanceIdAutogenerationDisabled;
-
         ECSqlStatus GenerateECInstanceIdAndBindToInsertStatement(ECInstanceId& generatedECInstanceId);
 
-
     public:
-        explicit ECSqlInsertPreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb), m_isECInstanceIdAutogenerationDisabled(false) {}
+        explicit ECSqlInsertPreparedStatement(ECDbCR ecdb) : ECSqlNonSelectPreparedStatement(ECSqlType::Insert, ecdb) {}
         ~ECSqlInsertPreparedStatement() {}
 
         DbResult Step(ECInstanceKey& instanceKey);
 
         ECInstanceKeyInfo& GetECInstanceKeyInfo() { return m_ecInstanceKeyInfo; }
         void SetECInstanceKeyInfo(ECInstanceKeyInfo const& ecInstanceKeyInfo);
-        void SetIsECInstanceIdAutogenerationDisabled() { m_isECInstanceIdAutogenerationDisabled = true; }
     };
 
 

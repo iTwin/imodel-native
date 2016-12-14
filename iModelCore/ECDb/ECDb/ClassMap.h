@@ -121,12 +121,10 @@ struct ClassMap : RefCountedBase
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
         bool m_isDirty;
-        bool m_isECInstanceIdAutogenerationDisabled;
         ECN::ECClassCR m_ecClass;
         DbColumnFactory m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
 
-        BentleyStatus InitializeDisableECInstanceIdAutogeneration();
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
@@ -179,7 +177,6 @@ struct ClassMap : RefCountedBase
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         //!Only call this if the map strategy is TablePerHierarchy
         TablePerHierarchyHelper const* GetTphHelper() const { BeAssert(m_tphHelper != nullptr); return m_tphHelper.get(); }
-        bool IsECInstanceIdAutogenerationDisabled() const { return m_isECInstanceIdAutogenerationDisabled; }
         StorageDescription const& GetStorageDescription() const;
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }

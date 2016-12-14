@@ -24,13 +24,13 @@ DbColumnFactory::DbColumnFactory(ECDbCR ecdb, ClassMapCR classMap) : m_ecdb(ecdb
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8StringCR accessString, DbColumn::Type colType, DbColumn::CreateParams const& params) const
+DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
         outColumn = ApplySharedColumnStrategy(ecProp, colType, params);
     else
-        outColumn = ApplyDefaultStrategy(ecProp, accessString, colType, params);
+        outColumn = ApplyDefaultStrategy(ecProp, colType, params, accessString);
 
     if (outColumn == nullptr)
         return nullptr;
@@ -42,7 +42,7 @@ DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, Utf8StringCR a
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //-----------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, Utf8StringCR accessString, DbColumn::Type colType, DbColumn::CreateParams const& params) const
+DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     BeAssert(!params.GetColumnName().empty() && "Column name must not be null for default strategy");
 

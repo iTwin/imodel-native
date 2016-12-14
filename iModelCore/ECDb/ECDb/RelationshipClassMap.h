@@ -153,9 +153,10 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         void AddIndexToRelationshipEnd(ClassMappingContext&);
 
         virtual ClassMappingStatus _Map(ClassMappingContext&) override;
-        DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8CP colName, bool makeNotNull) const;
+        DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8StringCR colName, bool makeNotNull) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
+        BentleyStatus DetermineFkColumns(ColumnLists&, RelationshipMappingInfo const&);
         Utf8String DetermineFkColumnName(RelationshipMappingInfo const&, ForeignKeyColumnInfo const&) const;
         static Utf8String DetermineRelECClassIdColumnName(ECN::ECRelationshipClassCR, Utf8StringCR fkColumnName);
         BentleyStatus MapSubClass(RelationshipMappingInfo const&);
