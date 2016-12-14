@@ -382,7 +382,7 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_CreateScene(SceneContextR context)
     {
-#if !defined(ELEMENT_TILE_CREATE_SCENE)
+#if defined(ELEMENT_TILE_CREATE_SCENE)
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);
 #endif
@@ -398,16 +398,19 @@ void SpatialViewController::_CreateScene(SceneContextR context)
 
     if (!results->m_scores.empty())
         context.SetSAESNpcSq(results->m_scores.begin()->first);
+#endif
 
     if (m_activeVolume.IsValid())
         context.SetActiveVolume(*m_activeVolume);
 
+#if defined(ELEMENT_TILE_CREATE_SCENE)
     SceneMembersPtr oldMembers = m_scene; // save the previous scene so that the ref count of elements-in-common won't go to zero
     m_scene = new SceneMembers();   
 
     bvector<DgnElementId> missing;
     AddtoSceneQuick(context, *results, missing);
     DEBUG_PRINTF("Done create quick time=%lf", watch.GetCurrentSeconds());
+#endif
 
     // Next, allow external data models to draw or schedule external data. Note: Do this even if we're already aborted
     auto& models = GetDgnDb().Models();
@@ -419,6 +422,7 @@ void SpatialViewController::_CreateScene(SceneContextR context)
             geomModel->_AddSceneGraphics(context);
         }
 
+#if defined(ELEMENT_TILE_CREATE_SCENE)
     uint32_t missingCount = (uint32_t) missing.size();
     if (!missing.empty())
         {

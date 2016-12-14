@@ -539,7 +539,7 @@ private:
     DgnModelId                  m_modelId;
     Utf8String                  m_name;
     double                      m_leafTolerance = 0.01;
-    size_t                      m_maxPointsPerTile = 250000;
+    size_t                      m_maxPointsPerTile;
     mutable BeMutex             m_mutex;
     mutable BeSQLite::BeDbMutex m_dbMutex;
     mutable GeomPartMap         m_geomParts;
@@ -582,7 +582,7 @@ private:
 
     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
-    virtual double _GetMaximumSize() const override { return GetTolerance(); }
+    virtual double _GetMaximumSize() const override;
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
     GeometryList CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);

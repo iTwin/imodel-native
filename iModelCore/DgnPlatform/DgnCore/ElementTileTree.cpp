@@ -344,6 +344,7 @@ constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we con
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 100.0;
 constexpr uint32_t s_minElementsPerTile = 50;
+constexpr size_t s_maxPointsPerTile = 10000;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1704,7 +1705,11 @@ PolyfaceList SolidKernelGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
 
                 params[i].ToGeometryParams(faceParams, baseParams);
 
+#if defined(ELEMENT_TILE_FILL_COLOR_ONLY)
                 DisplayParamsPtr displayParams = DisplayParams::Create (GetDisplayParams().GetFillColorDef(), faceParams);
+#else
+                DisplayParamsPtr displayParams = GetDisplayParamsPtr();
+#endif
 
                 tilePolyfaces.push_back (Polyface(*displayParams, *polyface));
                 }
@@ -1846,7 +1851,8 @@ BentleyStatus Loader::_LoadTile()
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform)
-    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel())
+    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
+    m_maxPointsPerTile(s_maxPointsPerTile)
     {
     //
     }
@@ -1908,16 +1914,13 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     else
         m_range.Extend(*range);
 
-    static uint8_t s_maxLevel = 3; // ###TODO: Need a better (but still cheap) stopping criterion
-    bool isLeaf = id.m_level >= s_maxLevel;
-
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
 
-    if (!isLeaf)
-        isLeaf = IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
+    static uint8_t s_maxLevel = 3;
+    bool isLeaf = id.m_level >= s_maxLevel || tileTolerance <= leafTolerance || IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
 
-    if (tileTolerance < leafTolerance || isLeaf)
+    if (isLeaf)
         {
         m_tolerance = leafTolerance;
         SetIsLeaf();
@@ -1986,6 +1989,14 @@ TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads
 TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
     {
     return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, *this);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double Tile::_GetMaximumSize() const
+    {
+    return 256; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2118,6 +2129,8 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 
     if (!m_isLeaf && !leafThresholdExceeded)
         SetIsLeaf();
+    else
+        printf("Leaf count not exceeded\n");
 
     if (geometries.empty())
         return geom;
@@ -2592,7 +2605,8 @@ struct ElementTileTreeAppData : DgnModel::AppData
         if (nullptr == data)
             {
             const_cast<GeometricModelR>(model).AddAppData(GetKey(), data = new ElementTileTreeAppData(Root::Create(const_cast<GeometricModelR>(model)).get()));
-            data->m_root->SetRenderSystem(&system);
+            if (data->m_root.IsValid())
+                data->m_root->SetRenderSystem(&system);
             }
 
         return data->m_root;
@@ -2608,6 +2622,14 @@ static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerSt
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricModel::_AddTerrainGraphics(TerrainContextR context) const
+    {
+    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_AddSceneGraphics(SceneContextR context) const
     {
     // ###TODO: This is all temporary for testing...
     DgnDb::VerifyClientThread();

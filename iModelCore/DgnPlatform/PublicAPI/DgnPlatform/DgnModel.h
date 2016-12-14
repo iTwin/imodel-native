@@ -800,7 +800,7 @@ protected:
     //! <h2>Displaying external data using progressive display</h2>
     //! An implementation of _AddGraphicsToScene is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
-    virtual void _AddSceneGraphics(SceneContextR) const {}
+    DGNPLATFORM_EXPORT virtual void _AddSceneGraphics(SceneContextR) const;
 
     //! Add "terrain" graphics for this DgnModel. Terrain graphics are drawn with the scene graphics every time the camera moves. The difference between terrain and element graphics
     //! is that this method is called every frame whereas _AddGraphicsToSceen is only called when the query thread completes. Terrain graphics must 
