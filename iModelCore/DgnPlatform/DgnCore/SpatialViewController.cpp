@@ -382,6 +382,7 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_CreateScene(SceneContextR context)
     {
+#if !defined(ELEMENT_TILE_CREATE_SCENE)
 #if defined (DEBUG_LOGGING)
     StopWatch watch(true);
 #endif
@@ -466,6 +467,7 @@ void SpatialViewController::_CreateScene(SceneContextR context)
         }
 
     DEBUG_PRINTF("Done create scene=%ld entries, aborted=%ld, time=%lf", m_scene->size(), context.WasAborted(), watch.GetCurrentSeconds());
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**

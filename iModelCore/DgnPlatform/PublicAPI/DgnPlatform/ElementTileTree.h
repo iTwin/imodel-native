@@ -587,6 +587,8 @@ private:
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
     GeometryList CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
     GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR) const;
+
+    bool IsElementCountLessThan(uint32_t threshold, double tolerance) const;
 public:
     static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
     static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }

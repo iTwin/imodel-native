@@ -343,6 +343,7 @@ constexpr double s_half2dDepthRange = 10.0;
 constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
 constexpr double s_minToleranceRatio = 100.0;
+constexpr uint32_t s_minElementsPerTile = 50;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1817,14 +1818,13 @@ BentleyStatus Loader::_LoadTile()
         if (mesh->Triangles().empty())
             continue;
 
+        auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
         TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
+        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+        subGraphic->AddTriMesh(meshArgs);
 
-        graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
-        graphic->AddTriMesh(meshArgs);
-
-#if !defined(ELEMENT_TILE_MULTIPLE_MESHES)
-        break;  // ###TODO: qv_addQuickTriMesh() requires QvElem contains no geometry to start...
-#endif
+        subGraphic->Close();
+        graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
 #if defined(DEBUG_ELEMENT_TILE_RANGE)
@@ -1909,9 +1909,15 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
         m_range.Extend(*range);
 
     static uint8_t s_maxLevel = 3; // ###TODO: Need a better (but still cheap) stopping criterion
+    bool isLeaf = id.m_level >= s_maxLevel;
+
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
-    if (tileTolerance < leafTolerance || id.m_level >= s_maxLevel)
+
+    if (!isLeaf)
+        isLeaf = IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
+
+    if (tileTolerance < leafTolerance || isLeaf)
         {
         m_tolerance = leafTolerance;
         SetIsLeaf();
@@ -1920,6 +1926,50 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
         {
         m_tolerance = tileTolerance;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
+    {
+    struct Traverser : RangeIndex::Traverser
+        {
+        RangeIndex::FBox        m_range;
+        uint32_t                m_threshold;
+        uint32_t                m_count = 0;
+        double                  m_minRangeDiagonal;
+
+        Traverser(DRange3dCR range, uint32_t threshold, double tolerance) : m_range(range), m_threshold(threshold), m_minRangeDiagonal(s_minRangeBoxSize * tolerance) { }
+
+        bool ThresholdReached() const { return m_count >= m_threshold; }
+
+        virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+            {
+            return !ThresholdReached() && box.IntersectsWith(m_range);
+            }
+
+        virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+            {
+            if (!entry.m_range.IntersectsWith(m_range))
+                return Stop::No;
+
+            auto entryRange = entry.m_range.ToRange3d();
+            if (entryRange.DiagonalDistance() >= m_minRangeDiagonal)
+                ++m_count;
+
+            return ThresholdReached() ? Stop::Yes : Stop::No;
+            }
+        };
+
+    auto model = GetElementRoot().GetModel();
+    auto index = model.IsValid() && DgnDbStatus::Success == model->FillRangeIndex() ? model->GetRangeIndex() : nullptr;
+    if (nullptr == index)
+        return true;    // no model => no elements...
+
+    Traverser traverser(m_range, threshold, tolerance);
+    index->Traverse(traverser);
+    return !traverser.ThresholdReached();
     }
 
 /*---------------------------------------------------------------------------------**//**
