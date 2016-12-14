@@ -247,7 +247,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds)
+// BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version... 
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -560,7 +561,8 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG24ProjectWiseSpatialQuery_Succeeds_
     BeDebugLog(result.GetValue().GetJson().toStyledString().c_str());
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
+// BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version, need IssuePluginV1.2--default
+TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds_KnownIssue)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
