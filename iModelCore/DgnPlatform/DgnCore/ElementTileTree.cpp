@@ -2129,8 +2129,6 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 
     if (!m_isLeaf && !leafThresholdExceeded)
         SetIsLeaf();
-    else
-        printf("Leaf count not exceeded\n");
 
     if (geometries.empty())
         return geom;
