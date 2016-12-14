@@ -1054,7 +1054,8 @@ ProgressiveTask::Completion OctTree::ProgressiveTask::_DoProgressive(Progressive
 +---------------+---------------+---------------+---------------+---------------+------*/
 OctTree::TileId OctTree::TileId::GetRelativeId(OctTree::TileId parentId) const
     {
-    return TileId(parentId.m_level, parentId.m_i/2-m_i, parentId.m_j/2-m_j, parentId.m_k/2-m_k);
+    BeAssert(parentId.m_level+1 == m_level);
+    return TileId(parentId.m_level, m_i % 2, m_j % 2, m_k % 2);
     }
 
 /*---------------------------------------------------------------------------------**//**

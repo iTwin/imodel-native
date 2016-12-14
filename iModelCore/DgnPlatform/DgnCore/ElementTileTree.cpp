@@ -292,8 +292,8 @@ static void collectCurveStrokes (bvector<bvector<DPoint3d>>& strokes, CurveVecto
 
 //=======================================================================================
 // ###TODO? We don't want to have to copy all the indices into a new buffer...store
-// them that way in Mesh struct.
-// OTOH we do want to support single- or double-sided triangles...not clear if QVis currently
+// them that way in Mesh struct?
+// OTOH we do want to support single- or double-sided triangles...not clear if QVis API currently
 // supports that.
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
@@ -314,6 +314,9 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 
     TileMeshArgs(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
         {
+        if (mesh.Triangles().empty())
+            return;
+
         auto const& displayParams = mesh.GetDisplayParams();
         if (!displayParams.GetIgnoreLighting())
             m_flags = 1;    // QV_QTMESH_GENNORMALS
@@ -1785,7 +1788,7 @@ BentleyStatus Loader::DoGetFromSource()
     if (IsCanceledOrAbandoned())
         return ERROR;
 
-    return ERROR; // ###TODO
+    return SUCCESS; // ###TODO?
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1793,6 +1796,11 @@ BentleyStatus Loader::DoGetFromSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::_LoadTile()
     {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedParasolidErrorHandlerOuterMarkPtr  outerMark = ThreadedParasolidErrorHandlerOuterMark::Create();
+    ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
+#endif
+
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
     auto& system = *root.GetRenderSystem();
@@ -1801,9 +1809,12 @@ BentleyStatus Loader::_LoadTile()
     GeometryOptions options;
     auto geometry = tile.GenerateGeometry(options);
 
-    // ###TODO: instanced geometry...
+    // ###TODO: instanced geometry, polylines...
     for (auto const& mesh : geometry.Meshes())
         {
+        if (mesh->Triangles().empty())
+            continue;
+
         TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
 
         graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
@@ -1857,8 +1868,7 @@ RootPtr Root::Create(GeometricModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Root::LoadRootTile(DRange3dCR range, GeometricModelR model)
     {
-    m_rootTile = Tile::Create(*this, TileTree::OctTree::TileId::RootId(), nullptr);
-    m_rootTile->ExtendRange(range);
+    m_rootTile = Tile::Create(*this, range);
     return true;
     }
 
@@ -1884,11 +1894,13 @@ void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent)
+Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range)
     : T_Super(octRoot, id, parent, false)
     {
     if (nullptr != parent)
         m_range = ElementAlignedBox3d(parent->ComputeChildRange(*this));
+    else
+        m_range.Extend(*range);
 
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
@@ -1916,7 +1928,7 @@ TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
     {
-    return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, this);
+    return Tile::Create(const_cast<RootR>(GetElementRoot()), childId, *this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2505,4 +2517,49 @@ template<typename T> Render::GraphicPtr GeometryProcessorContext<T>::_StrokeGeom
     return WasAborted() ? nullptr : graphic;
     }
 
+//=======================================================================================
+// ###TODO: This is all temporary for testing...
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct ElementTileTreeAppData : DgnModel::AppData
+{
+    static Key const& GetKey() { static Key s_key; return s_key; }
+
+    RootPtr m_root;
+
+    explicit ElementTileTreeAppData(RootP root) : m_root(root) { }
+
+    static RootPtr GetOrCreateRoot(GeometricModelCR model, Render::System& system)
+        {
+        auto data = dynamic_cast<ElementTileTreeAppData*>(model.FindAppData(GetKey()));
+        if (nullptr == data)
+            {
+            const_cast<GeometricModelR>(model).AddAppData(GetKey(), data = new ElementTileTreeAppData(Root::Create(const_cast<GeometricModelR>(model)).get()));
+            data->m_root->SetRenderSystem(&system);
+            }
+
+        return data->m_root;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricModel::_AddTerrainGraphics(TerrainContextR context) const
+    {
+    // ###TODO: This is all temporary for testing...
+    DgnDb::VerifyClientThread();
+
+    T_HOST.GetFontAdmin().EnsureInitialized();
+    GetDgnDb().Fonts().Update();
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+#endif
+
+    auto root = ElementTileTreeAppData::GetOrCreateRoot(*this, context.GetTargetR().GetSystem());
+    if (root.IsValid())
+        root->DrawInView(context);
+    }
 

@@ -62,7 +62,7 @@ typedef bvector<Triangle>           TriangleList;
 typedef bvector<Polyline>           PolylineList;
 typedef bvector<Polyface>           PolyfaceList;
 typedef bvector<Strokes>            StrokesList;
-typedef bmap<double, PolyfaceList> PolyfaceMap;
+typedef bmap<double, PolyfaceList>  PolyfaceMap;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
@@ -565,6 +565,8 @@ public:
 
     GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
     void AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const;
+
+    void SetRenderSystem(Render::SystemP system) { m_renderSystem = system; }
 };
 
 //=======================================================================================
@@ -576,7 +578,7 @@ struct Tile : TileTree::OctTree::Tile
 private:
     double          m_tolerance;
 
-    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent);
+    Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
     virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
@@ -586,7 +588,8 @@ private:
     GeometryList CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
     GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR) const;
 public:
-    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const* parent) { return new Tile(root, id, parent); }
+    static TilePtr Create(Root& root, TileTree::OctTree::TileId id, Tile const& parent) { return new Tile(root, id, &parent, nullptr); }
+    static TilePtr Create(Root& root, DRange3dCR range) { return new Tile(root, TileTree::OctTree::TileId::RootId(), nullptr, &range); }
 
     double GetTolerance() const { return m_tolerance; }
     DRange3d GetDgnRange() const { return /*###TODO*/ GetRange(); }

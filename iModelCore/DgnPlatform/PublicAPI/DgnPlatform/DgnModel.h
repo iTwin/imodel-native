@@ -807,7 +807,7 @@ protected:
     //! be re-added every time this method is called or they will disappear.
     //! An implementation of _AddTerrain is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
-    virtual void _AddTerrainGraphics(TerrainContextR) const {}
+    DGNPLATFORM_EXPORT virtual void _AddTerrainGraphics(TerrainContextR) const;
 
     virtual void _OnFitView(FitContextR) {}
 
