@@ -18,6 +18,7 @@ void DgnViewport::DestroyViewport()
 
     if (m_viewController.IsValid())
         {
+        m_viewController->RequestAbort(true);
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
         m_viewController = nullptr;
@@ -1228,24 +1229,6 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
-    }
-
-
-static RefCountedPtr<TileViewport> s_tileVp;
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-TileViewport* DgnViewport::GetTileViewport()
-    {
-    return s_tileVp.get();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::SetTileViewport(TileViewport* creator)
-    {
-    s_tileVp = creator;
     }
 
 /*---------------------------------------------------------------------------------**//**

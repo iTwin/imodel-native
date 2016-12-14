@@ -159,17 +159,6 @@ Dgn::ViewControllerPtr SheetViewDefinition::_SupplyController() const
     return new Sheet::ViewController(*this);
     }
 
-//=======================================================================================
-// Since we can only create one tile at a time, we serialize all requests through a single thread.
-// This avoids all of the requests blocking in the IoPool.
-// @bsiclass                                                    Keith.Bentley   06/16
-//=======================================================================================
-struct TileThread : BeFolly::ThreadPool
-{
-    TileThread() : ThreadPool(1, "SheetTile") {}
-    static TileThread& Get() {static folly::Singleton<TileThread> s_pool; return *s_pool.try_get_fast();}
-};
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
@@ -181,38 +170,16 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_ReadFromDb() {return ERR
 +---------------+---------------+---------------+---------------+---------------+------*/
 folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
     {
-    RefCountedPtr<Attachment::Tile::Loader> me = this;
+    if (IsCanceledOrAbandoned())
+        return ERROR;
 
-    // This method is called asynchronously on many IoPool threads. Its job is to create a sheet tile.
-    // Creating at sheet tile happens in 3 steps:
-    //   1) create the scene/terrain
-    //   2) render the scene with QV to get a raster image
-    //   3) convert the raster image into a texture and "fulfill" the Tile load.
-    // Steps 1 & 2 are synchronous (may only work on one tile at a time), but they can overlap each other and both can overlap step 3.
-
-    // Step 1 is done on the "TileThread". When it finishes, it creates a promise for Step 2 on the Render thread, in _CreateTile().
-    auto stat = folly::via(&TileThread::Get(), [me]() 
-        {
-        if (me->IsCanceledOrAbandoned())
-            return folly::makeFuture(ERROR);
-
-        DgnDb::SetThreadId(DgnDb::ThreadId::SheetTile);
-        Tile& tile = static_cast<Tile&>(*me->m_tile);
-        Tree& root = tile.GetTree();
-        if (tile.IsAbandoned())
-            return folly::Future<BentleyStatus>(ERROR);
-
-        auto vp = DgnViewport::GetTileViewport();
-        return vp ? vp->_CreateTile(me->m_loads, me->m_image, *root.m_view, tile, root.m_pixels) : ERROR;
-        });
-    
-    // When Step 2 completes, continue Step 3 on a thread from the CpuPool
-    return stat.via(&BeFolly::ThreadPool::GetCpuPool());
+    Tile& tile = static_cast<Tile&>(*m_tile);
+    Tree& root = tile.GetTree();
+    return root.m_viewport->_CreateTile(m_loads, m_image, tile, root.m_pixels);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* This sheet tile just became available from some source (cache, or created). Create a
-* Render::Graphic to draw it. Only when finished, set the "ready" flag.
+* This sheet tile just became available. Create a Render::Graphic to draw it. When finished, set the "ready" flag.
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Attachment::Tile::Loader::_LoadTile()
@@ -230,7 +197,6 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
-#define DEBUG_TILES 1
 #if defined (DEBUG_TILES)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
     graphic->AddRangeBox(tile.m_range);
@@ -277,12 +243,44 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
     m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/16
+//=======================================================================================
+struct SceneReadyTask : ProgressiveTask
+{
+    Attachment::Tree& m_tree;
+    SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
+    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
+        {
+        if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
+            return ProgressiveTask::Completion::Aborted;
+
+        m_tree.m_sceneReady = true;
+        m_tree.DrawInView(context);
+        return ProgressiveTask::Completion::Finished;
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Attachment::Tree::Draw(RenderContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
+
+    if (!m_sceneQueued)
+        {
+        m_viewport->m_rect.Init(0, 0, m_pixels.x, m_pixels.y);
+        m_viewport->_QueueScene();
+        m_sceneQueued = true;
+        }
+
+    if (!m_sceneReady)
+        {
+        context.GetViewport()->ScheduleProgressiveTask(*new SceneReadyTask(*this));
+        return;
+        }
+    
     DrawInView(context);
     }
 
@@ -298,22 +296,28 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
         return;
         }
 
-    auto viewId = attach->GetAttachedViewId();
-    m_view = ViewDefinition::LoadViewController(viewId, db);
-    if (!m_view.IsValid())
+    m_viewport = T_HOST._CreateTileViewport();
+    if (!m_viewport.IsValid())
         return;
 
-    double aspect = m_view->GetViewDefinition().GetAspectRatio();
+    auto viewId = attach->GetAttachedViewId();
+    auto view = ViewDefinition::LoadViewController(viewId, db);
+    if (!view.IsValid())
+        return;
+
+    double aspect = view->GetViewDefinition().GetAspectRatio();
 
     if (aspect<1.0)
         m_pixels.Init(tileSize*aspect, tileSize);
     else
         m_pixels.Init(tileSize, tileSize/aspect);
 
-    auto& def=m_view->GetViewDefinition();
-    def.AdjustAspectRatio((double) m_pixels.x / (double)m_pixels.y, false);
+    BeAssert(m_pixels.x>0);
+    BeAssert(m_pixels.y>0);
 
-    auto* spatial=def.ToSpatialViewP();
+    auto& def=view->GetViewDefinition();
+
+    SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
         {
         auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
@@ -337,6 +341,7 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
     m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
     m_loResBiasDistance = m_hiResBiasDistance * 2.0;
+    m_viewport->ChangeViewController(*view);
     }
 
 /*---------------------------------------------------------------------------------**//**

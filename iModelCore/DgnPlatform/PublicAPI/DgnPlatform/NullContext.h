@@ -77,14 +77,14 @@ struct FitContext : NullContext
     FitViewParams m_params;
     Transform m_trans;       // usually view transform 
     DRange3d m_fitRange;     // union of all view-aligned element ranges
-    DRange3d m_lastRange;    // last view-aligned range tested
+    mutable DRange3d m_lastRange;    // last view-aligned range tested
 
     void AcceptRangeElement(DgnElementId id);
     StatusInt _InitContextForView() override;
     StatusInt _VisitGeometry(GeometrySourceCR source) override;
     bool _ScanRangeFromPolyhedron() override;
-    ScanCriteria::Reject _CheckNodeRange(RangeIndex::FBoxCR range, bool is3d) override;
-    bool IsRangeContained(RangeIndex::FBoxCR range);
+    RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
+    bool IsRangeContained(RangeIndex::FBoxCR range) const;
     DGNPLATFORM_EXPORT void ExtendFitRange(ElementAlignedBox3dCR box, TransformCR placement);
 
     FitContext(FitViewParams const& params) : m_params(params) {m_fitRange.Init();}

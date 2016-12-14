@@ -173,8 +173,6 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
-    DGNPLATFORM_EXPORT static TileViewport* GetTileViewport();
-    DGNPLATFORM_EXPORT static void SetTileViewport(TileViewport*);
 
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
@@ -556,12 +554,12 @@ public:
 //=======================================================================================
 struct TileViewport : DgnViewport
 {
-    BeMutex m_mutex;
     BSIRect m_rect;
-
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::Image&, ViewControllerR, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    Render::GraphicListPtr m_terrain;
+    virtual void _QueueScene() = 0;
+    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::Image&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
-    TileViewport() : DgnViewport(nullptr) {}
+    TileViewport();
 };
 
 //=======================================================================================

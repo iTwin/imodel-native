@@ -439,7 +439,7 @@ size_t Tree::InternalNode::GetElementCount()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop Tree::InternalNode::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
-    if (traverser._CheckRangeTreeNode(GetRange(), is3d))
+    if (Traverser::Accept::Yes == traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (auto curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {
@@ -587,7 +587,7 @@ void Tree::LeafNode::SplitLeafNode(TreeR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop Tree::LeafNode::Traverse(Traverser& traverser, TreeCR tree, bool is3d)
     {
-    if (traverser._CheckRangeTreeNode(GetRange(), is3d))
+    if (Traverser::Accept::Yes == traverser._CheckRangeTreeNode(GetRange(), is3d))
         {
         for (Entry* curr = &m_firstChild[0]; curr < m_endChild; ++curr)
             {

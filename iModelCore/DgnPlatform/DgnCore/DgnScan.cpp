@@ -142,59 +142,42 @@ static ScanCriteria::Reject checkSkewRange(FBoxCP skewRange, DPoint3dCP skewVect
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    BJB                             11/89
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Reject ScanCriteria::CheckRange(FBoxCR elemRange, bool is3d) const
+ScanCriteria::Reject ScanCriteria::CheckRange(FBoxCR elemRange) const
     {
     if (m_testSkewScan)
         {
-        if (checkSubRange(m_range, elemRange, is3d) == ScanCriteria::Reject::Yes)
+        if (checkSubRange(m_range, elemRange, m_is3d) == ScanCriteria::Reject::Yes)
             return ScanCriteria::Reject::Yes;
 
-        if (checkSubRange(m_skewRange, elemRange, is3d) == ScanCriteria::Reject::No)
+        if (checkSubRange(m_skewRange, elemRange, m_is3d) == ScanCriteria::Reject::No)
             return ScanCriteria::Reject::No;
 
-        return checkSkewRange(&m_skewRange, &m_skewVector, elemRange, is3d);
+        return checkSkewRange(&m_skewRange, &m_skewVector, elemRange, m_is3d);
         }
 
-    return checkSubRange(m_range, elemRange, is3d);
+    return checkSubRange(m_range, elemRange, m_is3d);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/07
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::CheckElementRange(DgnElementCR element) const
+ScanCriteria::Reject ScanCriteria::CheckElementRange(RangeIndex::EntryCR element) const
     {
-    GeometrySourceCP geom = element.ToGeometrySource();
-    return geom ? _CheckRangeTreeNode(geom->CalculateRange3d(), geom->Is3d()) : false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      01/07
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ScanCriteria::_CheckRangeTreeNode(FBoxCR nodeRange, bool is3d) const
-    {
-    return ScanCriteria::Reject::No == ((nullptr == m_callback) ? CheckRange(nodeRange, is3d) : m_callback->_CheckNodeRange(nodeRange, is3d));
+    return Accept::Yes == _CheckRangeTreeNode(element.m_range, m_is3d) ? Reject::No : Reject::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScanCriteria::Reject ScanCriteria::CheckElement(DgnElementCR element, bool doRangeTest) const
+ScanCriteria::Reject ScanCriteria::CheckElement(RangeIndex::EntryCR element, bool doRangeTest) const
     {
     if (m_testCategory)
         {
-        auto geomEl = element.ToGeometrySource();
-        if (nullptr == geomEl || !m_categories->Contains(geomEl->GetCategoryId()))
+        if (!m_categories->Contains(element.m_category))
             return  ScanCriteria::Reject::Yes;
         }
 
-    /* check the range */
-    if (doRangeTest)
-        {
-        if (!CheckElementRange(element))
-            return  ScanCriteria::Reject::Yes;
-        }
-
-    return ScanCriteria::Reject::No;
+    return doRangeTest ? CheckElementRange(element) : ScanCriteria::Reject::No;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -202,14 +185,13 @@ ScanCriteria::Reject ScanCriteria::CheckElement(DgnElementCR element, bool doRan
 +---------------+---------------+---------------+---------------+---------------+------*/
 Traverser::Stop ScanCriteria::_VisitRangeTreeEntry(RangeIndex::EntryCR entry)
     {
-    if (ScanCriteria::Reject::No != CheckRange(entry.m_range, m_model->Is3d()))
+    if (ScanCriteria::Reject::No != CheckRange(entry.m_range))
         return Stop::No;
 
-    auto el = m_model->GetDgnDb().Elements().GetElement(entry.m_id);
-    if (ScanCriteria::Reject::Yes == CheckElement(*el, false))
+    if (ScanCriteria::Reject::Yes == CheckElement(entry, false))
         return Stop::No;
 
-    return m_callback->_OnRangeElementFound(*el);
+    return _OnRangeElementFound(entry.m_id);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -218,7 +200,6 @@ Traverser::Stop ScanCriteria::_VisitRangeTreeEntry(RangeIndex::EntryCR entry)
 StatusInt ScanCriteria::Scan()
     {
     BeAssert(m_model != nullptr);
-    BeAssert(m_callback != nullptr);
 
     m_model->FillRangeIndex();
 
