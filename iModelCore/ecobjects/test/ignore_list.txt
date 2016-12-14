@@ -71,7 +71,6 @@ StandardValueToEnumConversionTest.CAConversionTest
 #Base64 conversion appears to have been busted for a long time
 InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
 
-SchemaDeserializationTest.ExpectFailureWhenDerivedPropertyDifferByCase
-    # I believe Carole's changes on Q4 to handle mixed casing make this test invalid. Ignoring until Caleb or Carole decide.
+
 #Navigation properties are being reworked and only support long at the moment
 NavigationECPropertyTests.InstanceWithNavProp_String
