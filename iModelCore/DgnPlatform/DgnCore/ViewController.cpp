@@ -164,6 +164,16 @@ DgnDbStatus ViewController::SaveTo(Utf8CP newName, DgnViewId& newId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::InvalidateScene()
+    {
+    RequestAbort(false); 
+    BeMutexHolder lock(m_mutex);
+    m_readyScene = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * return the extents of the target model, if there is one.
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1700,6 +1710,35 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
     return CloseMe::No;
     }
 
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   12/16
+//=======================================================================================
+struct View2dSceneContext : ViewContext
+{
+    ViewController::QueryResults& m_results;
+    View2dSceneContext(DgnViewportR vp, DrawPurpose purpose, ViewController::QueryResults& results) : m_results(results) {Attach(&vp, purpose);}
+    Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {BeAssert(false); return nullptr;}
+    Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, TransformCP trans, ClipVectorCP clips) override {BeAssert(false); return nullptr;}
+    ScanCriteria::Stop _OnRangeElementFound(DgnElementId id) override {m_results.m_scores.Insert(0.0, id); return ScanCriteria::Stop::No;}
+};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+    {
+    QueryResults results;
+    auto model = GetViewedModel();
+
+    if (nullptr != model)
+        {
+        View2dSceneContext context(vp, DrawPurpose::CreateScene, results);
+        context.VisitDgnModel(*model);
+        }
+
+    return results;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1724,4 +1763,3 @@ void ViewController::AddAppData(AppData::Key const& key, AppData* obj) const
     entry.first->second = obj;
     obj->_Load(*m_definition);
     }
-

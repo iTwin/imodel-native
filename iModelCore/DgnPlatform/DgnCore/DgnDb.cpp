@@ -41,16 +41,14 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_units(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
-                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_queryQueue(*this)
+                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
     m_ecsqlWriteToken = nullptr;
     //uncomment this (and remove line above) once API for modifying Aspects has been implemented
     //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
 
-    m_dbSchemaModificationToken = nullptr;
-    //uncomment this (and remove line above) once BIS ECSchema is set up so that domains don't modify the DB schema anymore
-    //m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
+    m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
     }
 
 //--------------------------------------------------------------------------------------
@@ -71,7 +69,7 @@ DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const { r
 void DgnDb::Destroy()
     {
     m_sessionManager.ClearCurrent();
-    m_queryQueue.Terminate();
+    m_sceneQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;

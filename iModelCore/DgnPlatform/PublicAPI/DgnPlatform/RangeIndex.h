@@ -81,7 +81,9 @@ struct Traverser
 {
     virtual ~Traverser() {}
     virtual bool _AbortOnWriteRequest() const {return true;}
-    virtual bool _CheckRangeTreeNode(FBoxCR, bool is3d) const = 0;   // true == process node
+
+    enum class Accept : bool {Yes=1, No=0,};
+    virtual Accept _CheckRangeTreeNode(FBoxCR, bool is3d) const = 0;   // true == process node
 
     enum class Stop {No= 0, Yes= 1,};
     virtual Stop _VisitRangeTreeEntry(EntryCR) = 0;

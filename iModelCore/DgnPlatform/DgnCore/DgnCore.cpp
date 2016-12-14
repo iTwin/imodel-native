@@ -30,7 +30,7 @@ WCharCP DgnDb::GetThreadIdName()
         {
         case ThreadId::Client:      return L"ClientThread";
         case ThreadId::Render:      return L"RenderThread";
-        case ThreadId::Query:       return L"QueryThread";
+        case ThreadId::Scene:       return L"SceneThread";
         case ThreadId::IoPool:      return L"IoPool";
         case ThreadId::CpuPool:     return L"CpuPool";
         case ThreadId::SheetTile:   return L"SheetTile";

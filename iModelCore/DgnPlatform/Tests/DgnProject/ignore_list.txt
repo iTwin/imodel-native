@@ -11,10 +11,6 @@ BackwardsCompatibilityTests.OpenDgndbInCurrent
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-UnitManagerTest.GetStandardUnitByName                   # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitManagerTest.GetStandardLabel                        # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitManagerTest.GetStandardName                         # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
-UnitIterator.GetName                                    # fails randomonly on 06Dev; will have to find someone to investigate... maybe Josh
 
 ConfigurationManagerTest.*                             # UmarH -- Tests are ported from Vancouver for MacroConfiguration ,seems macros are not expanding on get variable method.
 
@@ -47,3 +43,13 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 
 DgnECNavigatorTest.GetElemtmentInfo
+DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
+
+EcutilsTests.ConvertECValueToJson
+    # bim0200, x64, NDEBUG (PRG)
+    # [ RUN      ] EcutilsTests.ConvertECValueToJson
+    # e:\Builds\dcsdk02000115\Source\DgnPlatform\Tests\DgnProject\Published\Ecutils_Tests.cpp(107): error:       Expected: BentleyStatus::BSISUCCESS
+    #       Which is: 0
+    # To be equal to: ECUtils::ConvertECValueToJson(obj, EcValue2)
+    #       Which is: 32768
+    # [  FAILED  ] EcutilsTests.ConvertECValueToJson (2 ms)

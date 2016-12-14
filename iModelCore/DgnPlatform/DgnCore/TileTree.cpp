@@ -847,7 +847,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         // yes, request them and schedule a progressive task to draw them as they arrive.
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
         }
     }
 
