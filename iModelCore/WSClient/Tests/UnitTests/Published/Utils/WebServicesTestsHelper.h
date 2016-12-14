@@ -151,7 +151,7 @@ BeFileName GetTestsOutputDir();
 
 BeFileName StubFilePath(Utf8StringCR customFileName = "");
 BeFileName StubFile(Utf8StringCR content = "TestContent", Utf8StringCR customFileName = "");
-BeFileName StubFileWithSize(uint32_t bytesCount, Utf8StringCR customFileName = "");
+BeFileName StubFileWithSize(uint64_t bytesCount, Utf8StringCR customFileName = "");
 Utf8String SimpleReadFile(BeFileNameCR filePath);
 void SimpleWriteToFile(Utf8StringCR content, BeFileNameCR filePath);
 
