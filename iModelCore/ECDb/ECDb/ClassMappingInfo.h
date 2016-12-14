@@ -102,8 +102,6 @@ public:
     };
 
 //======================================================================================
-//!This class grabs information from ForeignKeyRelationshipMap or LinkTableRelationshipMap ECCustomAttribute and evaluates
-//! it along with other standard metadata on the ECRelationshipClass
 // @bsiclass                                                     Krischan.Eberle     06/2015
 //+===============+===============+===============+===============+===============+======
 struct RelationshipMappingInfo : public ClassMappingInfo

@@ -406,7 +406,6 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
 Utf8CP const NestedStructArrayTestSchemaHelper::s_testSchemaXml =
 "<?xml version='1.0' encoding='utf-8'?>"
 "<ECSchema schemaName='NestedStructArrayTest' nameSpacePrefix='nsat' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-"<ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca'/>"
 "   <ECEntityClass typeName='ClassA' >"
 "       <ECProperty propertyName='I' typeName='int' readOnly='false' />"
 "       <ECProperty propertyName='T' typeName='string' readOnly='false' />"

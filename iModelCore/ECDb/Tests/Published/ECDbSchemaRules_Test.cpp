@@ -1511,7 +1511,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                                             "     <ECCustomAttributes>"
-                                            "         <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
+                                            "         <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
                                             "     </ECCustomAttributes>"
                                             "    <Source multiplicity='(0..*)' polymorphic='True' roleLabel='Parent Has Children'>"
                                             "        <Class class='Parent' />"
@@ -1520,7 +1520,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "         <Class class='Child' />"
                                             "     </Target>"
                                             "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from cardinality N:N)"));
+                                            "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from cardinality N:N)"));
 
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1532,7 +1532,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "  </ECEntityClass>"
                                             "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                                             "     <ECCustomAttributes>"
-                                            "         <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
+                                            "         <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
                                             "     </ECCustomAttributes>"
                                             "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Parent Has Children'>"
                                             "        <Class class='Parent' />"
@@ -1542,7 +1542,7 @@ TEST_F(ECDbSchemaRules, RelationshipMappingLimitations_UnsupportedCases)
                                             "     </Target>"
                                             "    <ECProperty propertyName='RelProp' typeName='long' />"
                                             "  </ECRelationshipClass>"
-                                            "</ECSchema>", false, "ForeignKeyRelationshipMap CA cannot applied to link table (as implied from additional property on relationship class)"));
+                                            "</ECSchema>", false, "ForeignKeyConstraint CA cannot applied to link table (as implied from additional property on relationship class)"));
 
     unsupportedSchemas.push_back(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                             "  <ECEntityClass typeName='Parent' >"

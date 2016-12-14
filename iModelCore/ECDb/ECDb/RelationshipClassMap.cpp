@@ -498,7 +498,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                     continue;
                     }
 
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'. Consider adding a ForeignKeyRelationshipMap CustomAttribute to the relationship class and specify the foreign key column.",
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. It is mapped to the existing table '%s' not owned by ECDb, but doesn't have a foreign key column called '%s'.",
                                 relClass.GetFullName(), foreignEndTable->GetName().c_str(), fkColName.c_str());
                 return ERROR;
                 }
@@ -651,7 +651,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relClass.GetStrength() == StrengthType::Embedding))
                 {
                 if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyRelationshipMap custom attribute specifies the OnDelete action 'Cascade'. "
+                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. "
                                     "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
                                     relClass.GetFullName());
                 else

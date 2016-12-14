@@ -22,10 +22,10 @@ struct ECSqlStatementCacheTests : ECDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"TestSchema.01.00.ecschema.xml"));
+    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    Utf8CP ecSqlInsert = "INSERT INTO TS.Settings (FormateName, FormateVersion) VALUES (?, ?)";
-    Utf8CP ecSqlSelect = "SELECT FormateName, FormateVersion FROM TS.Settings";
+    Utf8CP ecSqlInsert = "INSERT INTO ecsql.PSA(S,I) VALUES (?, ?)";
+    Utf8CP ecSqlSelect = "SELECT S,I FROM ecsql.PSA";
 
     ECSqlStatementCache cache(3);
     ASSERT_TRUE(cache.IsEmpty());
@@ -83,11 +83,11 @@ TEST_F(ECSqlStatementCacheTests, BindValuesToSameCachedStatementsMultipleTime)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECSqlStatementCacheTests, VerifyCacheSizeMustNotExceedLimit)
     {
-    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"TestSchema.01.00.ecschema.xml"));
+    ECDbCR ecdb = SetupECDb("ECSqlStatementCacheTest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
 
-    Utf8CP ecSql1 = "INSERT INTO TS.Settings VALUES (?, ?)";
-    Utf8CP ecSql2 = "SELECT * FROM TS.Settings";
-    Utf8CP ecSql3 = "SELECT * FROM TS.FileInfo";
+    Utf8CP ecSql1 = "INSERT INTO ecsql.PSA(I,D) VALUES (?, ?)";
+    Utf8CP ecSql2 = "SELECT * FROM ecsql.PSA";
+    Utf8CP ecSql3 = "SELECT * FROM ecsql.P";
 
     ECSqlStatementCache cache(2);
     CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecSql1);//insert first ECSql to cache

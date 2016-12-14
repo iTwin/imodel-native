@@ -454,7 +454,6 @@ TEST_F(ECDbMappingTestFixture, TablePerHierarchyCATests)
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TeststructClassInPolymorphicSharedTable' nameSpacePrefix='tph' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                                   "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                    "    <ECEntityClass typeName='BaseClass' modifier='None'>"
                                    "        <ECCustomAttributes>"
@@ -1351,8 +1350,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "        <ECCustomAttributes>"
-                                   "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                                   "            </ForeignKeyRelationshipMap>"
+                                   "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                                   "            </ForeignKeyConstraint>"
                                    "        </ECCustomAttributes>"
                                    "       <Source cardinality='(0,N)' polymorphic='True'>"
                                    "           <Class class='A' />"
@@ -1361,7 +1360,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "           <Class class='B' />"
                                    "       </Target>"
                                    "     </ECRelationshipClass>"
-                                   "</ECSchema>", false, "ForeignKeyRelationshipMap on N:N relationship is not supported"));
+                                   "</ECSchema>", false, "ForeignKeyConstraint on N:N relationship is not supported"));
 
     testItems.push_back(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                    "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1374,9 +1373,9 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
                                    "        <ECCustomAttributes>"
-                                   "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                   "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
-                                   "            </ForeignKeyRelationshipMap>"
+                                   "            </ForeignKeyConstraint>"
                                    "        </ECCustomAttributes>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
@@ -1398,9 +1397,9 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
                                    "        <ECCustomAttributes>"
-                                   "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                   "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
-                                   "            </ForeignKeyRelationshipMap>"
+                                   "            </ForeignKeyConstraint>"
                                    "        </ECCustomAttributes>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
@@ -1422,9 +1421,9 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapCATests)
                                    "    </ECEntityClass>"
                                    "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='holding'>"
                                    "        <ECCustomAttributes>"
-                                   "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                   "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                    "               <OnDeleteAction>Cascade</OnDeleteAction>"
-                                   "            </ForeignKeyRelationshipMap>"
+                                   "            </ForeignKeyConstraint>"
                                    "        </ECCustomAttributes>"
                                    "       <Source cardinality='(0,1)' polymorphic='True'>"
                                    "           <Class class='A' />"
@@ -2902,7 +2901,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
-                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "        </ECCustomAttributes>"
                 "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
                 "      <Class class = 'Foo' />"
@@ -2945,7 +2944,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
                 "</ECEntityClass>"
                 "<ECRelationshipClass typeName='ParentHasChild' modifier='Sealed' strength='referencing'>"
                 "        <ECCustomAttributes>"
-                "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+                "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                 "        </ECCustomAttributes>"
                 "    <Source cardinality='(0,1)' polymorphic='false'>"
                 "      <Class class = 'Parent' />"
@@ -3433,7 +3432,6 @@ TEST_F(ECDbMappingTestFixture, TPH_ShareColumnsCA)
     {
     SchemaItem testItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='BaseClass' modifier='None'>"
                         "        <ECCustomAttributes>"
@@ -3988,9 +3986,9 @@ TEST_F(ECDbMappingTestFixture, CascadeDeletion)
                         "    </ECEntityClass>"
                         "    <ECRelationshipClass typeName='AHasB' modifier='Sealed' strength='embedding'>"
                         "        <ECCustomAttributes>"
-                        "            <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                        "            <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                         "               <OnDeleteAction>Cascade</OnDeleteAction>"
-                        "            </ForeignKeyRelationshipMap>"
+                        "            </ForeignKeyConstraint>"
                         "        </ECCustomAttributes>"
                         "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source'>"
                         "           <Class class='ClassA' />"
@@ -5856,7 +5854,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
                 {
                 //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
                 SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                                    "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                                     "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                                     "  <ECEntityClass typeName='A' modifier='None'>"
                                     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -6068,8 +6065,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "    </ECEntityClass>"
                         "  <ECRelationshipClass typeName='Rel1N' strength='embedding' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyRelationshipMap>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(1,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
@@ -6080,8 +6077,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='RelN1' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyRelationshipMap>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
@@ -6092,8 +6089,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='Rel0N' strength='embedding' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyRelationshipMap>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'A' />"
@@ -6104,8 +6101,8 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
                         "  </ECRelationshipClass>"
                         "  <ECRelationshipClass typeName='RelN0' strength='embedding' strengthDirection='Backward' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyRelationshipMap>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,N)' polymorphic='True'>"
                         "      <Class class = 'B' />"
@@ -6843,9 +6840,9 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel2' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
-                                     "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                      "          <OnDeleteAction>Cascade</OnDeleteAction>"
-                                     "        </ForeignKeyRelationshipMap>"
+                                     "        </ForeignKeyConstraint>"
                                      "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
@@ -6856,9 +6853,9 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "  </ECRelationshipClass>"
                                      "  <ECRelationshipClass typeName='Rel3' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
-                                     "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                      "          <OnDeleteAction>Restrict</OnDeleteAction>"
-                                     "        </ForeignKeyRelationshipMap>"
+                                     "        </ForeignKeyConstraint>"
                                      "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
@@ -6929,9 +6926,9 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "    </ECEntityClass>"
                                      "  <ECRelationshipClass typeName='Rel' strength='embedding' modifier='Sealed'>"
                                      "      <ECCustomAttributes>"
-                                     "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
+                                     "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
                                      "          <OnDeleteAction>Cascade</OnDeleteAction>"
-                                     "        </ForeignKeyRelationshipMap>"
+                                     "        </ForeignKeyConstraint>"
                                      "     </ECCustomAttributes>"
                                      "    <Source cardinality='(0,1)' polymorphic='True'>"
                                      "      <Class class = 'A' />"
@@ -6949,10 +6946,9 @@ TEST_F(ECDbMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
+TEST_F(ECDbMappingTestFixture, ForeignKeyConstraintWhereLinkTableIsRequired)
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                         "  <ECEntityClass typeName='Parent' >"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -6967,7 +6963,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
                         "  </ECEntityClass>"
                         "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
@@ -6977,23 +6973,22 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyMapWhereLinkTableIsRequired)
                         "    </Target>"
                         "    <ECProperty propertyName='ForcingToLinkTable' typeName='string' />"
                         "  </ECRelationshipClass>"
-                        "</ECSchema>", false, "Cannot apply ForeignKeyRelationshipMap when a link table is required.");
+                        "</ECSchema>", false, "Cannot apply ForeignKeyConstraint when a link table is required.");
 
-    AssertSchemaImport(testItem, "ForeignKeyMapWhereLinkTableIsRequired.ecdb");
+    AssertSchemaImport(testItem, "ForeignKeyConstraintWhereLinkTableIsRequired.ecdb");
     }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
+TEST_F(ECDbMappingTestFixture, ForeignKeyConstraint_Misc)
     {
-    Utf8CP ecdbName = "ForeignKeyRelationshipMap.ecdb";
+    Utf8CP ecdbName = "ForeignKeyConstraint.ecdb";
     Utf8CP childTableName = "ts_Child";
 
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                         "  <ECEntityClass typeName='Parent' >"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -7034,7 +7029,6 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
 
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                         "  <ECEntityClass typeName='Parent' >"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -7045,8 +7039,8 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
                         "  </ECEntityClass>"
                         "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>"
-                        "        </ForeignKeyRelationshipMap>"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'>"
+                        "        </ForeignKeyConstraint>"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
@@ -7076,7 +7070,6 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
 
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                         "  <ECEntityClass typeName='Parent' >"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -7087,7 +7080,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
                         "  </ECEntityClass>"
                         "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
@@ -7117,7 +7110,6 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
 
     {
     SchemaItem testItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-                        "  <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.11' prefix = 'bsca' />"
                         "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
                         "  <ECEntityClass typeName='Parent' >"
                         "    <ECProperty propertyName='Name' typeName='string' />"
@@ -7137,7 +7129,7 @@ TEST_F(ECDbMappingTestFixture, ForeignKeyRelationshipMap_Misc)
                         "  </ECEntityClass>"
                         "  <ECRelationshipClass typeName='ParentHasChildren' strength='referencing' modifier='Sealed'>"
                         "    <ECCustomAttributes>"
-                        "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00' />"
+                        "        <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
                         "    </ECCustomAttributes>"
                         "    <Source cardinality='(0,1)' polymorphic='True'>"
                         "      <Class class = 'Parent' />"
@@ -9250,7 +9242,7 @@ void ReferentialIntegrityTestFixture::ExecuteRelationshipInsertionIntegrityTest(
 
     if (allowForeignKeyConstraint)
         {
-        auto fkMapClass = ecdbmapSchema->GetClassCP("ForeignKeyRelationshipMap");
+        auto fkMapClass = ecdbmapSchema->GetClassCP("ForeignKeyConstraint");
         ASSERT_TRUE(fkMapClass != nullptr);
         auto caInst = fkMapClass->GetDefaultStandaloneEnabler()->CreateInstance();
         ASSERT_TRUE(caInst != nullptr);

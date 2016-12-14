@@ -149,7 +149,6 @@ struct ECDbExpressionSymbolContextTests : ECDbSymbolProviderTests
         return
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-            "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.00\" prefix=\"bcs\" />"
             "    <ECEntityClass typeName=\"ClassA\" displayLabel=\"Class A\">"
             "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
             "    </ECEntityClass>"
@@ -435,7 +434,6 @@ TEST_F(ECDbExpressionSymbolContextTests, GetRelatedInstance_FollowsRelationshipW
     Utf8CP differentSchemaXml = ""
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<ECSchema schemaName=\"DifferentSchema\" nameSpacePrefix=\"test2\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.00\" prefix=\"bcs\" />"
         "    <ECSchemaReference name=\"TestSchema\" version=\"01.00\" prefix=\"test\" />"
         "    <ECEntityClass typeName=\"DifferentClassB\" displayLabel=\"Different Class B\">"
         "        <ECProperty propertyName=\"label\" typeName=\"string\" />"
