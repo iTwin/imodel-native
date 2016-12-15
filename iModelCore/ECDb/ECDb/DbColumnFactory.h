@@ -16,44 +16,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct DbColumnFactory : NonCopyableClass
+struct DbColumnFactory  final: NonCopyableClass
     {
-    private:
-        ECDbCR m_ecdb;
-        ClassMap const& m_classMap;
-        bool m_usesSharedColumnStrategy;
-        mutable bset<DbColumnId> m_idsOfColumnsInUseByClassMap;
-
-        BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
-
-        DbColumn* ApplyDefaultStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
-        DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
-
-        ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
-        bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
-        bool IsColumnInUseByClassMap(DbColumn const&) const;
-        void CacheUsedColumn(DbColumn const&) const;
-
-        BentleyStatus GetDerivedColumnList(std::vector<DbColumn const*>&) const;
-
-        DbTable& GetTable() const;
-
-    public:
-        DbColumnFactory(ECDbCR, ClassMap const&);
-        ~DbColumnFactory() {}
-
-        DbColumn* CreateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR accessString) const;
-        void Update(bool includeDerivedClasses) const;
-
-        bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
-    };
-
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-struct DbColumnFactoryEx  final: NonCopyableClass
-    {
-    typedef std::unique_ptr<DbColumnFactoryEx> Ptr;
+    typedef std::unique_ptr<DbColumnFactory> Ptr;
     typedef std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> UsedColumnMap;
     private:
         ClassMap const& m_classMap;
@@ -80,7 +45,7 @@ struct DbColumnFactoryEx  final: NonCopyableClass
         bool IsCompitable(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& param) const;
 
         ECDbCR GetECDb() const;
-        DbColumnFactoryEx(ClassMap const& classMap) :m_classMap(classMap) {}
+        DbColumnFactory(ClassMap const& classMap) :m_classMap(classMap) {}
     public:
         ClassMap const& GetClassMap() const { return m_classMap; }
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }

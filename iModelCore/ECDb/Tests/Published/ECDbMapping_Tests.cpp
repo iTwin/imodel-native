@@ -11192,7 +11192,7 @@ TEST_F(ECDbMappingTestFixture, DiamondProblem_Case2)
     ASSERT_EQ(22, stmt.GetValueInt64(1));
     ASSERT_EQ(32, stmt.GetValueInt64(2));
     ASSERT_EQ(52, stmt.GetValueInt64(3));
-    ASSERT_EQ(72, stmt.GetValueInt64(3));
+    ASSERT_EQ(72, stmt.GetValueInt64(4));
 
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT P1, P2, P4 FROM ts.D3_A WHERE ECInstanceId = 3"));
