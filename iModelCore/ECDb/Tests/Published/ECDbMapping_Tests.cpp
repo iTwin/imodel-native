@@ -6217,7 +6217,7 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
                         "        <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
                         "        <ECProperty propertyName='Code' typeName='int' />"
                         "    </ECEntityClass>"
-                        "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding'>"
+                        "  <ECRelationshipClass typeName='ModelHasElements' strength='embedding' modifier='Sealed'>"
                         "    <Source multiplicity='(1..1)' polymorphic='true' roleLabel='Model'>"
                         "      <Class class='DgnModel' />"
                         "    </Source>"
