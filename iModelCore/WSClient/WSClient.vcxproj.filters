@@ -1151,6 +1151,24 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerBreakHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerCodeEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerDeletedEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerEventParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerLockEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\Events\DgnDbServerRevisionEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1178,6 +1196,8 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Bentley_SP_V3Conversion.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.02.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
