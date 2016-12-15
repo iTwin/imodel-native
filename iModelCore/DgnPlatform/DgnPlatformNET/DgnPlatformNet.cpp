@@ -134,9 +134,9 @@ static System::DateTimeKind     DateTimeKindToManaged (BENTLEY_NAMESPACE_NAME::D
 
 static System::DateTime         DateTimeToManaged (BENTLEY_NAMESPACE_NAME::DateTime const& nativeDateTime)
     {
-    int64_t commonEraTicks;
-    if (SUCCESS == nativeDateTime.ToCommonEraTicks (commonEraTicks))
-        return System::DateTime (commonEraTicks, DateTimeKindToManaged (nativeDateTime.GetInfo().GetKind()));
+    uint64_t julianDay;
+    if (SUCCESS == nativeDateTime.ToJulianDay (julianDay))
+        return System::DateTime (BENTLEY_NAMESPACE_NAME::DateTime::JulianDayToCommonEraTicks(julianDay), DateTimeKindToManaged (nativeDateTime.GetInfo().GetKind()));
     else
         return System::DateTime::Now;
     }
@@ -1927,11 +1927,16 @@ public:
     property bool IsSystem  { bool get () { return m_native->IsSystemCategory(); } }
 
     /** Look up the ID of the Category with the specified name. @param name The name to look up. @param db The DgnDb that contains the Category. @return The ID of the Category if found */
-    static DgnCategoryId^ QueryCategoryId (System::String^ name, DgnNET::DgnDb^ dgnDb)
+    static DgnCategoryId^ QueryCategoryId (DgnNET::AuthorityIssuedCode^ code, DgnNET::DgnDb^ dgnDb)
         {
-        pin_ptr<wchar_t const> namePinned = PtrToStringChars (name);
-        Utf8String utf8Name (namePinned);
-        BDGN::DgnCategoryId nativeCategoryId = BDGN::SpatialCategory::QueryCategoryId (*Convert::DgnDbToNative (dgnDb), utf8Name);
+        if ( (nullptr == code) || (nullptr == dgnDb) )
+            return nullptr;
+
+        BDGN::DgnCodeCP dgnCode = code->GetNative();
+        if (nullptr == dgnCode)
+            return nullptr;
+
+        BDGN::DgnCategoryId nativeCategoryId = BDGN::SpatialCategory::QueryCategoryId (*Convert::DgnDbToNative (dgnDb), *dgnCode);
         return gcnew DgnCategoryId (nativeCategoryId.GetValue());
         }
 
@@ -4659,9 +4664,10 @@ internal:
     ECValue (System::DateTime dateTime)
         {
         int64_t commonEraTicks = dateTime.Ticks;
-        DateTime        nativeDateTime;
-        DateTime::Info  dateTimeInfo (DateTime::Kind::Utc, DateTime::Component::DateAndTime);
-        DateTime::FromCommonEraTicks (nativeDateTime, commonEraTicks, dateTimeInfo);
+        uint64_t julianDay = BENTLEY_NAMESPACE_NAME::DateTime::CommonEraTicksToJulianDay (commonEraTicks);
+        BENTLEY_NAMESPACE_NAME::DateTime::Info  dateTimeInfo  = BENTLEY_NAMESPACE_NAME::DateTime::Info::CreateForDateTime (BENTLEY_NAMESPACE_NAME::DateTime::Kind::Utc);
+        BENTLEY_NAMESPACE_NAME::DateTime        nativeDateTime;
+        BENTLEY_NAMESPACE_NAME::DateTime::FromJulianDay (nativeDateTime, julianDay, dateTimeInfo);
         m_native = new ECN::ECValue (nativeDateTime);
         }
 

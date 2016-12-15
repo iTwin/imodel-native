@@ -67,7 +67,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     
-    <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing">
+    <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" roleLabel="FunctionalElement is of FunctionalType" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>
@@ -76,7 +76,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing">
+    <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing" modifier="None">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="PhysicalElement fulfills FunctionalElements" polymorphic="true">
             <Class class="bis:PhysicalElement"/>
@@ -86,7 +86,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing">
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing" modifier="None">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" roleLabel="DrawingGraphic represents FunctionalElements" polymorphic="true">
             <Class class="bis:DrawingGraphic"/>
