@@ -145,7 +145,7 @@
         </ECCustomAttributes>
         <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TestElementDrivesElement" strength="referencing">
+    <ECRelationshipClass typeName="TestElementDrivesElement" strength="referencing" modifier="None">
         <BaseClass>bis:ElementDrivesElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00"/>

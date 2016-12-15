@@ -10,6 +10,7 @@
 
 #include "DgnPlatform.h"
 #include <Bentley/BeTimeUtilities.h>
+#include <folly/futures/Future.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -235,58 +236,63 @@ public:
 // @bsiclass                                                    Keith.Bentley   01/12
 //=======================================================================================
 struct DynamicUpdatePlan : UpdatePlan
-    {
+{
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate); SetCreateSceneTimeoutPct(75);} // You can use up 75% of frame time for the query
-    };
+};
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   02/16
 //=======================================================================================
-struct DgnQueryQueue
+struct SceneQueue
 {
     //! Executes a query on a separate thread to load elements for a QueryModel
     struct Task : RefCounted<NonCopyableClass>
     {
-        SpatialViewControllerCR m_view;
-        UpdatePlan::Query m_plan;
+        DgnViewportR m_vp;
+        ViewController& m_view;
+        UpdatePlan m_plan;
+        bool m_abortFlag = false;
+        folly::Promise<BentleyStatus> m_promise;
 
     public:
-        Task(SpatialViewControllerCR view, UpdatePlan::Query const& plan) : m_view(view), m_plan(plan) {}
+        Task(DgnViewportR vp, ViewController& view, UpdatePlan const& plan) : m_vp(vp), m_view(view), m_plan(plan) {}
         virtual void _Go() = 0;
-        uint32_t GetDelayAfter() {return m_plan.GetDelayAfter();}
-        bool IsForView(SpatialViewControllerCR view) const {return &m_view == &view;}
-        void RequestAbort();
+        uint32_t GetDelayAfter() {return m_plan.m_query.GetDelayAfter();}
+        bool IsForView(ViewController const& view) const {return &m_view == &view;}
+        folly::Promise<BentleyStatus>& GetPromise() {return m_promise;}
+        void RequestAbort() {m_abortFlag = true;}
+        bool IsAborted() {return m_abortFlag;}
     };
 
     typedef RefCountedPtr<Task> TaskPtr;
 
 private:
-    enum class State { Active, TerminateRequested, Terminated };
+    enum class State {Active, TerminateRequested, Terminated};
 
-    DgnDbR              m_db;
+    DgnDbR m_db;
     BeConditionVariable m_cv;
     std::deque<TaskPtr> m_pending;
-    TaskPtr             m_active;
-    State               m_state;
+    TaskPtr m_active;
+    State m_state;
     bool WaitForWork();
-    bool HasActiveOrPending(SpatialViewControllerCR);
+    bool HasActiveOrPending(ViewControllerCR);
     void Process();
     THREAD_MAIN_DECL Main(void* arg);
 
 public:
-    DgnQueryQueue(DgnDbR db);
+    SceneQueue(DgnDbR db);
 
     void Terminate();
 
-    //! Enqueue a request to execute the query for a QueryModel
+    //! Enqueue a request to execute the query
     DGNPLATFORM_EXPORT void Add(Task& task);
 
     //! Cancel any pending requests to process the specified QueryView.
     //! @param[in] view The view whose processing is to be canceled
-    DGNPLATFORM_EXPORT void RemovePending(SpatialViewControllerCR view);
+    DGNPLATFORM_EXPORT void RemovePending(ViewControllerCR view);
 
     //! Suspends the calling thread until the specified model is in the idle state
-    DGNPLATFORM_EXPORT void WaitFor(SpatialViewControllerCR);
+    DGNPLATFORM_EXPORT void WaitFor(ViewControllerCR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
 };
