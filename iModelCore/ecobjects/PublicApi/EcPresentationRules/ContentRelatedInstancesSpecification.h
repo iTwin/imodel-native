@@ -23,6 +23,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
     {
     private:
         int                        m_skipRelatedLevel;
+        bool                       m_isRecursive;
         Utf8String                 m_instanceFilter;
         RequiredRelationDirection  m_requiredDirection;
         Utf8String                 m_relationshipClassNames;
@@ -53,6 +54,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
                                              (
                                               int                        priority,
                                               int                        skipRelatedLevel,
+                                              bool                       isRecursive,
                                               Utf8String                 instanceFilter,
                                               RequiredRelationDirection  requiredDirection,
                                               Utf8String                 relationshipClassNames,
@@ -64,6 +66,14 @@ struct EXPORT_VTABLE_ATTRIBUTE ContentRelatedInstancesSpecification : public Con
 
         //! Sets the SkipRelatedLevel of the specification.
         ECOBJECTS_EXPORT void                         SetSkipRelatedLevel (int value);
+
+        //! Should the relationship be followed recursively
+        //! @note The followed relationship should be recursive (e.g. A to A)
+        bool IsRecursive() const {return m_isRecursive;}
+
+        //! Set whether the relationship be followed recursively
+        //! @note The followed relationship should be recursive (e.g. A to A)
+        void SetIsRecursive(bool value) {m_isRecursive = value;}
 
         //! InstanceFiler is spacially formated string that represents WhereCriteria in 
         //! ECQuery that is used to filter query results.

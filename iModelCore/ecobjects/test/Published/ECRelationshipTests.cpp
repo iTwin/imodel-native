@@ -747,7 +747,7 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*interfaceClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*interfaceClassB)) << "The abstract constraint cannot be set to B because C is not derived from B.";
     entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
     EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*interfaceClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
