@@ -1019,14 +1019,48 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForInvalidClasses)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('AnglesStruct', 'ClassMap', 'AClassThatDoesNotGetMappedToDb')"));
+    bvector<ECClassId> classIds;
     while (BE_SQLITE_ROW == stmt.Step())
         {
         ECClassId id = stmt.GetValueId<ECClassId>(0);
         ASSERT_TRUE(id.IsValid());
-        bvector<ECClassId> classIds;
         classIds.push_back(id);
-        ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
         }
+
+    ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Muhammad.Hassan                   12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidClasses)
+    {
+    ECDbR ecdb = SetupECDb("createecclassviewsforvalidinvalidclasses.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ec.ECClassDef WHERE Name IN ('AAA', 'AnglesStruct', 'AClassThatDoesNotGetMappedToDb', 'Foo_has_Bars')"));
+    bvector<ECClassId> classIds;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        ECClassId id = stmt.GetValueId<ECClassId>(0);
+        ASSERT_TRUE(id.IsValid());
+        classIds.push_back(id);
+        }
+
+    ASSERT_EQ(ERROR, ecdb.Schemas().CreateECClassViewsInDb(classIds));
+    ecdb.SaveChanges();
+
+    // Class view will be created for the provided list of ECClassIds untill it get the first invalid one
+    // so ClassView only for class "AAA" will exist.
+    std::map<Utf8String, std::set<Utf8String>> schemasWithECClassViews = GetECViewNamesByPrefix(ecdb);
+    ASSERT_EQ(1, schemasWithECClassViews.size()) << "Unexpected number of schemas with ECClassViews";
+
+    auto it = schemasWithECClassViews.find("stco");
+    ASSERT_TRUE(it != schemasWithECClassViews.end());
+    std::set<Utf8String> const& stcoViews = it->second;
+    ASSERT_EQ(1, stcoViews.size());
+    ASSERT_TRUE(stcoViews.find(Utf8String("[stco.AAA]")) != stcoViews.end());
     }
 
 //---------------------------------------------------------------------------------------
