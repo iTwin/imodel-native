@@ -231,7 +231,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                         }
                     //var parentCrit = selectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren" ||
-                    //                                                                                       crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntitysetToSpatialEntityBase")
+                    //                                                                                       crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase")
                     //                 && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
                     if(parentCrit != null)
                         {
@@ -301,16 +301,16 @@ namespace IndexECPlugin.Source.QueryProviders
                 IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
                 bool useParentId = false;
 
-                //We do not use SpatialEntitysetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
-                if ( (relationshipClass.Name == "SpatialEntitysetToAlternateDataset") || 
+                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
+                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || 
                     (relationshipClass.Name == "DetailsViewToChildren") ||
-                    (relationshipClass.Name == "SpatialEntitysetToSpatialEntityBase") )
+                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase") )
                     {
                     continue;
                     }
 
                 List<string> relInstIDs = new List<string>();
-                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntitysetToSpatialEntityBase") )
+                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
                 //    {
                     foreach ( IECInstance instance in cachedInstances )
                         {
@@ -389,7 +389,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 case "Server":
                     return ecClass;
                 case "SpatialEntity":
-                case "SpatialEntityset":
+                case "SpatialEntityDataset":
                     return ecClass.BaseClasses.First(c => c.Name == "SpatialEntityBase");
                 case "OtherSource":
                     return ecClass.BaseClasses.First(c => c.Name == "SpatialDataSource");
@@ -420,14 +420,14 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 Tuple<string, JObject> oldJsonCache = jsonCache;
 
-                //We do not use SpatialEntitysetToAlternateDataset for USGS data.
-                if ( (relationshipClass.Name == "SpatialEntitysetToAlternateDataset") /*|| 
+                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data.
+                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") /*|| 
                     (relationshipClass.Name == "DetailsViewToChildren") || 
-                    (relationshipClass.Name == "SpatialEntitysetToSpatialEntityBase" )*/)
+                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" )*/)
                     {
                     continue;
                     }
-                if ( (relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntitysetToSpatialEntityBase" || relationshipClass.Name == "SpatialEntitysetToView") && 
+                if ( (relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" || relationshipClass.Name == "SpatialEntityDatasetToView") && 
                    (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward))
                     {
                     if ( childWithParentRequest == null )
@@ -442,7 +442,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
 
                 string relInstID = instance.InstanceId;
-                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntitysetToSpatialEntityBase") )
+                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
                 //    {
                 //    relInstID = instance.InstanceId;
                 //    }
@@ -543,8 +543,8 @@ namespace IndexECPlugin.Source.QueryProviders
                     //    {
                     //    throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS request by ID.");
                     //    }
-                case "SpatialEntityset":
-                    instance = QuerySingleSpatialEntityset(sourceID, ecClass);
+                case "SpatialEntityDataset":
+                    instance = QuerySingleSpatialEntityDataset(sourceID, ecClass);
                     break;
                 case "Thumbnail":
                     instance = QuerySingleThumbnail(sourceID, ecClass);
@@ -673,7 +673,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
             }
 
-        private IECInstance QuerySingleSpatialEntityset (string sourceID, IECClass ecClass)
+        private IECInstance QuerySingleSpatialEntityDataset (string sourceID, IECClass ecClass)
             {
             IECInstance instance = QuerySingleSpatialEntityBase(sourceID, ecClass);
 
@@ -1212,7 +1212,7 @@ namespace IndexECPlugin.Source.QueryProviders
             //instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
 
             //This happens when we request the parent of the SpatialEntityBase
-            //if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntitysetToSpatialEntityBase" &&
+            //if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" &&
             //                                                                  relCrit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward) )
             //    {
             instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", json.TryToGetString("parentId"));
@@ -1312,7 +1312,7 @@ namespace IndexECPlugin.Source.QueryProviders
             List<IECInstance> instanceList;
 
             //This part is an optimization only for queries of SpatialEntitiesWithDetailsView and their parents
-            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => ((crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren") || (crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntitysetToView"))
+            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => ((crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren") || (crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToView"))
                                                                                        && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
             if ( relCrit != null )
                 {

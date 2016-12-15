@@ -153,6 +153,7 @@ namespace IndexECPlugin.Source.Helpers
             package.SetMajorVersion(major);
             package.SetMinorVersion(minor);
             package.SetOrigin("");
+            package.SetCreationDate(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
 
             foreach(ImageryDataNet img in imgGroup)
                 {
@@ -278,7 +279,12 @@ namespace IndexECPlugin.Source.Helpers
             //foreach ( IECInstance spatialEntity in queriedSpatialEntities )
             foreach ( RequestedEntity requestedEntity in basicRequestedEntities )
                 {
-                IECInstance spatialEntity = queriedSpatialEntities.First(s => s.GetPropertyValue("Id").StringValue == requestedEntity.ID);
+                IECInstance spatialEntity = queriedSpatialEntities.FirstOrDefault(s => s.GetPropertyValue("Id").StringValue == requestedEntity.ID);
+
+                if (spatialEntity == null)
+                    {
+                    throw new UserFriendlyException("At least one of the requested entities has an invalid identifier (Id).");
+                    }
                 //IECRelationshipInstance firstWMSSourceRel = spatialEntity.GetRelationshipInstances().FirstOrDefault(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource");
                 if ( spatialEntity.GetRelationshipInstances().Any(relInst => relInst.ClassDefinition.Name == "SpatialEntityToSpatialDataSource" && relInst.Target.ClassDefinition.Name == "WMSSource") )
                     {

@@ -394,7 +394,7 @@ namespace IndexECPlugin.Tests
         [Test]
         public void PolymorphicClassQueryTest ()
             {
-            IECClass spatialEntityDataset = m_schema.GetClass("SpatialEntityset");
+            IECClass spatialEntityDataset = m_schema.GetClass("SpatialEntityDataset");
             ECQuery query = new ECQuery(spatialEntityDataset);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
@@ -440,7 +440,7 @@ namespace IndexECPlugin.Tests
 
             Regex reg = new Regex(@".*SELECT.*" + idOrName + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
-            //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntitysets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;     
+            //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;     
             Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
             }
         }

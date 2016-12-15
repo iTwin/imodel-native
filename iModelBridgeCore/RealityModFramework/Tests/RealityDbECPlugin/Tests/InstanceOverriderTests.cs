@@ -709,7 +709,7 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void SpatialEntitysetTest ()
+        public void SpatialEntityDatasetTest ()
             {
 
             InstanceOverrider instanceOverrider = new InstanceOverrider(m_querierMock);
