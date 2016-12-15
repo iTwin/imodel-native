@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="SchoolSchema_Supplemental_Units" nameSpacePrefix="SSSS" version="01.01" displayLabel="School Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECCustomAttributes>
-        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
+        <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.13">
             <PrimarySchemaName>SchoolSchema</PrimarySchemaName>
             <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
             <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
@@ -11,17 +11,17 @@
             <Purpose>Units</Purpose>
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>SchoolSchema_Supplemental_Units.01.01</SchemaFullNameAtEditingStart>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
     <ECEntityClass typeName="Course" modifier="None">
         <ECCustomAttributes>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <NodeBackColor>Aqua</NodeBackColor>
                 <NodeForeColor>Info</NodeForeColor>
             </TreeColorCustomAttributes>
-            <CustomStructSerializer xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <CustomStructSerializer xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <SerializerName>course</SerializerName>
             </CustomStructSerializer>
         </ECCustomAttributes>
@@ -30,7 +30,7 @@
     <ECEntityClass typeName="School" modifier="None">
         <ECCustomAttributes>
             <Localizable xmlns="EditorCustomAttributes.01.02"/>
-            <AllowDuplicateLocalizedValues xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <AllowDuplicateLocalizedValues xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <Label>True</Label>
                 <Description>True</Description>
             </AllowDuplicateLocalizedValues>

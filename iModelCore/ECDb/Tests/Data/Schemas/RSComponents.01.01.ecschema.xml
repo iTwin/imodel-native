@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="RSComponents" nameSpacePrefix="rsc" version="01.01" description="RS Compoents Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>RSComponents.01.01</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
+<ECSchema schemaName="RSComponents" alias="rsc" version="01.01" description="RS Compoents Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECEntityClass typeName="PCB" displayLabel="Printed Circut Board" modifier="None">
         <ECProperty propertyName="NAME" typeName="string" description="Name of PCB" displayLabel="Name" readOnly="false"/>
         <ECProperty propertyName="MODEL" typeName="string" description="Model of PCB" displayLabel="Model" readOnly="false"/>
@@ -31,24 +25,17 @@
                 <PropertyName>NAME</PropertyName>
             </BusinessKeySpecification>
         </ECCustomAttributes>
-        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Acces Memory on board PCB" displayLabel="RAM Size" readOnly="false">
-            <ECCustomAttributes>
-                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Hidden>False</Hidden>
-                    <HideRelated>False</HideRelated>
-                </DisplayOptions>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Acces Memory on board PCB" displayLabel="RAM Size" readOnly="false"/>
         <ECProperty propertyName="PROCESSOR" typeName="string" description="Processor description" displayLabel="Processor" readOnly="false"/>
         <ECProperty propertyName="ANALOG_IO_PINS" typeName="string" displayLabel="Analog IO Pins" readOnly="false"/>
         <ECProperty propertyName="DIGITAL_IO_PIN" typeName="int" displayLabel="Digital IO Pins" readOnly="false"/>
         <ECProperty propertyName="USE_VER" typeName="string" description="usb version supported." displayLabel="USB version" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Addin" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
             <Class class="RASPBERRYPI"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true"  roleLabel="held by">
             <Class class="Addin"/>
         </Target>
     </ECRelationshipClass>

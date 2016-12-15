@@ -494,7 +494,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::NotSpecified && relClass.GetStrength() == StrengthType::Embedding))
                 {
                 if (userRequestedDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade)
-                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyRelationshipMap custom attribute specifies the OnDelete action 'Cascade'. "
+                    Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its ForeignKeyConstraint custom attribute specifies the OnDelete action 'Cascade'. "
                                     "This is only allowed if the foreign key end of the ECRelationship is not mapped to a joined table.",
                                     relClass.GetFullName());
                 else

@@ -849,12 +849,11 @@ TEST_F(ECDbSchemaManagerTests, ImportingSchemaInDifferentECDB)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
     {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
+    ECDbCR ecdb = SetupECDb("supplementalSchematest.ecdb");
+    ASSERT_TRUE(ecdb.IsDbOpen());
 
-    ECSchemaReadContextPtr context = nullptr;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
     ECSchemaPtr schemaptr;
     ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"SchoolSchema.01.00.ecschema.xml", nullptr);
@@ -866,13 +865,8 @@ TEST_F(ECDbSchemaManagerTests, ImportMultipleSupplementalSchemas)
     ECDbTestUtility::ReadECSchemaFromDisk(supple1, context, L"SchoolSchema_Supplemental_Units.01.01.ecschema.xml", nullptr);
     ASSERT_TRUE(supple1 != NULL);
 
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-    schemacache->AddSchema(*schemaptr);
-    schemacache->AddSchema(*supple);
-    schemacache->AddSchema(*supple1);
-
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP SchoolSupplSchema = testecdb.Schemas().GetECSchema("SchoolSchema", true);
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportECSchemas(context->GetCache().GetSchemas())) << "couldn't import the schema";
+    ECSchemaCP SchoolSupplSchema = ecdb.Schemas().GetECSchema("SchoolSchema", true);
     ASSERT_TRUE(SchoolSupplSchema != NULL);
 
     ECClassCP ecclassCourse = SchoolSupplSchema->GetClassCP("Course");
@@ -971,17 +965,17 @@ TEST_F(ECDbSchemaManagerTests, ImportHighPrioritySupplementalSchama)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbSchemaManagerTests, TestGetClassResolver)
     {
-    ECDbTestProject testProject;
-    ECDbR ecdbr = testProject.Create("ecschemamanagertest.ecdb", L"TestSchema.01.00.ecschema.xml", true);
-    ECClassCP ecClass = ecdbr.Schemas().GetECClass("TestSchema", "DerivedTestClass");
+    ECDbCR ecdb = SetupECDb("ecschemamanagertest.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
     EXPECT_TRUE(ecClass != nullptr);
-    ecClass = ecdbr.Schemas().GetECClass("TS", "DerivedTestClass", ResolveSchema::BySchemaAlias);
-    EXPECT_TRUE(ecClass != nullptr);
-
-    ecClass = ecdbr.Schemas().GetECClass("TestSchema", "DerivedTestClass", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetECClass("ecsql", "PSA", ResolveSchema::BySchemaAlias);
     EXPECT_TRUE(ecClass != nullptr);
 
-    ecClass = ecdbr.Schemas().GetECClass("TS", "DerivedTestClass", ResolveSchema::AutoDetect);
+    ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA", ResolveSchema::AutoDetect);
+    EXPECT_TRUE(ecClass != nullptr);
+
+    ecClass = ecdb.Schemas().GetECClass("ecsql", "PSA", ResolveSchema::AutoDetect);
     EXPECT_TRUE(ecClass != nullptr);
     }
 

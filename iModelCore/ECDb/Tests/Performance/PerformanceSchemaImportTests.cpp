@@ -65,11 +65,13 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
     testSchema->SetDescription("Dynamic Test Schema");
     testSchema->SetDisplayLabel("Test Schema");
 
-    auto readContext = ECSchemaReadContext::CreateContext();
-    auto bscaKey = SchemaKey("Bentley_Standard_CustomAttributes", 1, 11);
-    auto bscaSchema = readContext->LocateSchema(bscaKey, SchemaMatchType::LatestWriteCompatible);
-    EXPECT_TRUE(bscaSchema.IsValid());
-    EXPECT_EQ(testSchema->AddReferencedSchema(*bscaSchema), ECObjectsStatus::Success);
+    ECCustomAttributeClassP testSchemaCustomAttribute = nullptr;
+    testSchema->CreateCustomAttributeClass(testSchemaCustomAttribute, "SchemaLevelCustomAttribute");
+
+    if (customAttributeOnSchema)
+        {
+        testSchema->SetCustomAttribute(*testSchemaCustomAttribute->GetDefaultStandaloneEnabler()->CreateInstance());
+        }
 
     //creating a nested Array CustomAttribute Class
     ECStructClassP struct1 = nullptr;
@@ -138,16 +140,6 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
     structVal3.SetStruct(struct2Instance3.get());
     tc_CustomAttribute->SetValue("NestedArray", structVal3, 2);
 
-    if (customAttributeOnSchema)
-        {
-        auto ca = bscaSchema->GetClassCP("PrimarySchemaMetaData");
-        EXPECT_TRUE(ca != nullptr);
-        auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-        EXPECT_TRUE(customAttribute != nullptr);
-        EXPECT_TRUE(customAttribute->SetValue("ContainsUnits", ECValue(false)) == ECObjectsStatus::Success);
-        EXPECT_TRUE(testSchema->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-        }
-
     for (size_t j = 0; j < noOfClasses; j++)
         {
         Utf8String class1;
@@ -158,49 +150,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
             {
             for (size_t i = 1; i <= NumberOfCustomAttributes; i++)
                 {
-                switch (i)
-                    {
-                        case 1:
-                        {
-                        EXPECT_TRUE(testClass->SetCustomAttribute(*tc_CustomAttribute) == ECObjectsStatus::Success);
-                        break;
-                        }
-                        case 2:
-                        {
-                        auto ca = bscaSchema->GetClassCP("AllowDuplicateLocalizedValues");
-                        EXPECT_TRUE(ca != nullptr);
-                        auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                        EXPECT_TRUE(customAttribute != nullptr);
-                        EXPECT_TRUE(customAttribute->SetValue("Label", ECValue(true)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(customAttribute->SetValue("Description", ECValue(false)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(testClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                        break;
-                        }
-                        case 3:
-                        {
-                        auto ca = bscaSchema->GetClassCP("DisplayOptions");
-                        EXPECT_TRUE(ca != nullptr);
-                        auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                        EXPECT_TRUE(customAttribute != nullptr);
-                        EXPECT_TRUE(customAttribute->SetValue("Hidden", ECValue(true)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(customAttribute->SetValue("HideRelated", ECValue(false)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(testClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                        break;
-                        }
-                        case 4:
-                        {
-                        auto ca = bscaSchema->GetClassCP("SearchOptions");
-                        EXPECT_TRUE(ca != nullptr);
-                        auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                        EXPECT_TRUE(customAttribute->SetValue("ShowWhenDerivedClassIsShown", ECValue(true)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(customAttribute->SetValue("SearchPolymorphically", ECValue(true)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(customAttribute->SetValue("Hidden", ECValue(false)) == ECObjectsStatus::Success);
-                        EXPECT_TRUE(testClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                        break;
-                        }
-                        default:
-                            break;
-                    }
+                EXPECT_TRUE(testClass->SetCustomAttribute(*tc_CustomAttribute) == ECObjectsStatus::Success);
                 }
             }
 
@@ -216,45 +166,7 @@ ECSchemaPtr PerformanceSchemaImportTests::CreateTestSchema(size_t noOfClasses, s
                 {
                 for (size_t i = 1; i <= NumberOfCustomAttributes; i++)
                     {
-                    switch (i)
-                        {
-                            case 1:
-                            {
-                            EXPECT_TRUE(primitiveProperty->SetCustomAttribute(*tc_CustomAttribute) == ECObjectsStatus::Success);
-                            break;
-                            }
-                            case 2:
-                            {
-                            auto ca = bscaSchema->GetClassCP("DisplayOptions");
-                            EXPECT_TRUE(ca != nullptr);
-                            auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                            EXPECT_TRUE(customAttribute != nullptr);
-                            EXPECT_TRUE(customAttribute->SetValue("Hidden", ECValue(true)) == ECObjectsStatus::Success);
-                            EXPECT_TRUE(customAttribute->SetValue("HideRelated", ECValue(false)) == ECObjectsStatus::Success);
-                            EXPECT_TRUE(testClass->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                            break;
-                            }
-                            case 3:
-                            {
-                            auto ca = bscaSchema->GetClassCP("DateTimeInfo");
-                            EXPECT_TRUE(ca != nullptr);
-                            auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                            EXPECT_TRUE(customAttribute->SetValue("DateTimeKind", ECValue("Utc")) == ECObjectsStatus::Success);
-                            EXPECT_TRUE(customAttribute->SetValue("DateTimeComponent", ECValue("DateTime")) == ECObjectsStatus::Success);
-                            EXPECT_TRUE(primitiveProperty->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                            break;
-                            }
-                            case 4:
-                            {
-                            auto ca = bscaSchema->GetClassCP("StrictComparisonOnly");
-                            EXPECT_TRUE(ca != nullptr);
-                            auto customAttribute = ca->GetDefaultStandaloneEnabler()->CreateInstance();
-                            EXPECT_TRUE(primitiveProperty->SetCustomAttribute(*customAttribute) == ECObjectsStatus::Success);
-                            break;
-                            }
-                            default:
-                                break;
-                        }
+                    EXPECT_TRUE(primitiveProperty->SetCustomAttribute(*tc_CustomAttribute) == ECObjectsStatus::Success);
                     }
                 }
             }

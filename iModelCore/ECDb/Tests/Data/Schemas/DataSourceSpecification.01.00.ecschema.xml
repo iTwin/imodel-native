@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DataSourceSpecification" nameSpacePrefix="DSS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+<ECSchema schemaName="DataSourceSpecification" alias="DSS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECCustomAttributeClass typeName="RelationshipPurpose" modifier="None" appliesTo="Any">
         <ECProperty propertyName="IsForNavigation" typeName="boolean" readOnly="false"/>
     </ECCustomAttributeClass>

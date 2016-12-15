@@ -48,15 +48,8 @@ struct PerformanceJoinedTableTests: ECDbTestFixture
                 {
                 SchemaItem testSchema(
                     "<?xml version='1.0' encoding='utf-8'?>"
-                    "<ECSchema schemaName='JoinedTableTest' nameSpacePrefix='dgn' version='1.0'"
-                    "   xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-                    "   xmlns:ecschema='http://www.bentley.com/schemas/Bentley.ECXML.3.0'"
-                    "   xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'"
-                    "   xsi:schemaLocation='ecschema ECSchema.xsd' >"
-                    "    <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />"
-                    "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
-                    "    <ECSchemaReference name='Bentley_Standard_Classes' version='01.00' prefix='bsm' />"
-                    "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+                    "<ECSchema schemaName='JoinedTableTest' alias='dgn' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                    "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                     "    <ECEntityClass typeName='Foo' >"
                     "        <ECCustomAttributes>"
                     "            <ClassMap xmlns='ECDbMap.02.00'>"

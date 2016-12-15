@@ -1,14 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="RSComponents" nameSpacePrefix="rsc" version="02.00" description="RS Compoents Library 1.0" displayLabel="RS Components Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>RSComponents.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
+<ECSchema schemaName="RSComponents" alias="rsc" version="02.00" description="RS Compoents Library 1.0" displayLabel="RS Components Library" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECEntityClass typeName="PCB" description="RS Components PCB Board in production" displayLabel="Printed Circut Board" modifier="None">
         <ECProperty propertyName="NAME" typeName="string" description="Name of PCB" displayLabel="Name" readOnly="false"/>
         <ECProperty propertyName="MODEL" typeName="string" description="Model of PCB" displayLabel="Model" readOnly="false"/>
@@ -31,37 +24,19 @@
             <BusinessKeySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <PropertyName>Name</PropertyName>
             </BusinessKeySpecification>
-            <Category xmlns="EditorCustomAttributes.01.02">
-                <DisplayLabel>RespBerryPI</DisplayLabel>
-                <Expand>True</Expand>
-            </Category>
         </ECCustomAttributes>
-        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Access Memory on board PCB" displayLabel="RAM Size" readOnly="false">
-            <ECCustomAttributes>
-                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <Hidden>False</Hidden>
-                    <HideRelated>False</HideRelated>
-                </DisplayOptions>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="RAM_SIZE" typeName="string" description="Random Access Memory on board PCB" displayLabel="RAM Size" readOnly="false"/>
         <ECProperty propertyName="PROCESSOR" typeName="string" description="Processor description" displayLabel="Processor" readOnly="false"/>
         <ECProperty propertyName="ANALOG_IO_PINS" typeName="string" displayLabel="Analog IO Pins" readOnly="false"/>
         <ECProperty propertyName="DIGITAL_IO_PIN" typeName="int" displayLabel="Digital IO Pins" readOnly="false"/>
-        <ECProperty propertyName="USB_VER" typeName="string" description="USB version supported." displayLabel="USB version" readOnly="false">
-            <ECCustomAttributes>
-                <BooleanDisplay xmlns="EditorCustomAttributes.01.02">
-                    <TrueString>True</TrueString>
-                    <FalseString>False</FalseString>
-                </BooleanDisplay>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="USB_VER" typeName="string" description="USB version supported." displayLabel="USB version" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="RASBERRYPI_HAS_ADDIN" displayLabel="RasberryPI Has Add-in" modifier="Sealed" strength="holding" strengthDirection="backward">
         <ECProperty propertyName="COMPITABLE" typeName="boolean" displayLabel="Compitable" readOnly="false"/>
-        <Source cardinality="(0,1)" roleLabel="ROLE_LABEL" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="ROLE_LABEL" polymorphic="true">
             <Class class="RASPBERRYPI"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="ROLE_LABEL (REV)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="ROLE_LABEL (REV)" polymorphic="true">
             <Class class="Addin"/>
         </Target>
     </ECRelationshipClass>
