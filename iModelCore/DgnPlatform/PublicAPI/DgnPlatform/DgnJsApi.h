@@ -599,6 +599,8 @@ struct JsHitDetail : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(Element, JsGeometrySource3dP)
 };
 
+typedef JsHitDetail*  JsHitDetailP;
+
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15
 //=======================================================================================

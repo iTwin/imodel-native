@@ -183,7 +183,7 @@ private:
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
-    Json::Value CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootNode);
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootNode, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
     Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);

@@ -297,7 +297,7 @@ protected:
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
     TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
-        :m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
+        : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
     BentleyStatus LoadTile();
     BentleyStatus DoReadFromDb();

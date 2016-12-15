@@ -1577,80 +1577,6 @@ DgnElementCPtr ElementImporter::ImportElement(DgnDbStatus* statusOut, DgnModelR 
     return destElement;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                   Carole.MacDonald            01/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-struct InstanceUpdater : DgnElement::AppData
-{
-private:
-    DgnImportContext& m_importer;
-    DgnElementId m_sourceElementId;
-    DropMe _OnInserted(DgnElementCR el) override {if (m_sourceElementId.IsValid()) Update(el); return DropMe::Yes;}
-    void Update(DgnElementCR el);
-
-public:
-    explicit InstanceUpdater(DgnImportContext& importer, DgnElementId sourceId) : m_importer(importer), m_sourceElementId(sourceId) {}
-    static Key& GetKey() {static Key s_key; return s_key;}
-};
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-EC::ECInstanceUpdater const& DgnImportContext::GetUpdater(ECN::ECClassCR ecClass) const
-    {
-    auto it = m_updaterCache.find(&ecClass);
-    if (it != m_updaterCache.end())
-        return *it->second;
-
-    bvector<ECN::ECPropertyCP> propertiesToBind;
-    for (ECN::ECPropertyCP ecProperty : ecClass.GetProperties(true))
-        {
-        // Don't bind any of the dgn derived properties
-        if (ecProperty->GetClass().GetSchema().GetName().Equals(BIS_ECSCHEMA_NAME))
-            continue;
-        propertiesToBind.push_back(ecProperty);
-        }
-
-    auto updater = new EC::ECInstanceUpdater(GetDestinationDb(), ecClass, GetDestinationDb().GetECSqlWriteToken(), propertiesToBind);
-    m_updaterCache[&ecClass] = updater;
-
-    return *updater;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            02/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-void InstanceUpdater::Update(DgnElementCR el)
-    {
-    ECN::ECClassCP targetClass = el.GetElementClass();
-    ECInstanceUpdater const& updater = m_importer.GetUpdater(*targetClass);
-    if (!updater.IsValid())
-        return;
-
-    Utf8PrintfString ecSql("SELECT * FROM [%s].[%s] WHERE ECInstanceId = ?", Utf8String(targetClass->GetSchema().GetName()).c_str(), Utf8String(targetClass->GetName()).c_str());
-    CachedECSqlStatementPtr ecStatement = m_importer.GetSourceDb().GetPreparedECSqlStatement(ecSql.c_str());
-
-    if (!ecStatement.IsValid())
-        {
-        // log error?
-        return;
-        }
-
-    ecStatement->BindId(1, m_sourceElementId);
-    ECInstanceECSqlSelectAdapter adapter(*ecStatement);
-    while (BE_SQLITE_ROW == ecStatement->Step())
-        {
-        IECInstancePtr instance = adapter.GetInstance();
-        BeAssert(instance.IsValid());
-        Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-        el.GetElementId().ToString(idStrBuffer);
-        ECN::StandaloneECInstancePtr targetInstance = targetClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        targetInstance->SetInstanceId(idStrBuffer);
-        targetInstance->CopyValues(*instance.get());
-        updater.Update(*targetInstance.get());
-        }
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1681,8 +1607,6 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (!cc.IsValid())
         return DgnElementCPtr();
 
-    InstanceUpdater* instanceUpdater = new InstanceUpdater(importer, GetElementId());
-    cc->AddAppData(InstanceUpdater::GetKey(), instanceUpdater);
     DgnElementCPtr ccp = cc->Insert(stat);
     if (!ccp.IsValid())
         return ccp;

@@ -1714,10 +1714,10 @@ public:
     static uint32_t const FRAME_RATE_MAX = 30;
 
     //! Computes an adjusted frame rate goal based on factors like draw/abort ratio, smallest attempted element size, etc
-    //! @param[in]      target    The target who's frame rate goal is to be adjusted
-    //! @param[in]      saesNpcSq The smallest attempted element size (NPC squared)
+    //! @param[in] target The target who's frame rate goal is to be adjusted
+    //! @param[in] lowestScore The smallest attempted element size (NPC squared)
     //! @return The adjusted frame rate goal
-    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double saesNpcSq);
+    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double lowestScore);
 
     void Reset() {m_drawCount = m_abortCount = 0;}    //!< Reset abort/draw counts
     void IncrementDrawCount() {++m_drawCount;}        //!< Increment the number of frames drawn
@@ -1733,25 +1733,19 @@ public:
 //=======================================================================================
 struct Target : RefCounted<NonCopyableClass>
 {
-    struct SceneParameters
-        {
-        double m_saesNpcSq;     // smallest attempted element size (NPC squared)
-        SceneParameters(double n = 0) : m_saesNpcSq(n) {}
-        };
-
 protected:
     bool m_abort;
     bool m_tileTarget = false;
     int  m_id; // for debugging
-    System&            m_system;
-    DevicePtr          m_device;
-    ClipPrimitiveCPtr  m_activeVolume;
-    GraphicListPtr     m_currentScene;
-    GraphicListPtr     m_terrain;
-    GraphicListPtr     m_dynamics;
-    Decorations        m_decorations;
-    double             m_frameRateGoal; // frames per second
-    uint32_t           m_minimumFrameRate;
+    System& m_system;
+    DevicePtr m_device;
+    ClipPrimitiveCPtr m_activeVolume;
+    GraphicListPtr m_currentScene;
+    GraphicListPtr m_terrain;
+    GraphicListPtr m_dynamics;
+    Decorations m_decorations;
+    double m_frameRateGoal; // frames per second
+    uint32_t m_minimumFrameRate;
     BeAtomic<uint32_t> m_graphicsPerSecondScene;
     BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
@@ -1775,7 +1769,7 @@ public:
         static void Show();
     };
     virtual void _OnDestroy() {}
-    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, SceneParameters const& parms = SceneParameters()) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
+    virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}

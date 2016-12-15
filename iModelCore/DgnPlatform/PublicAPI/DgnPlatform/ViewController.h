@@ -77,6 +77,9 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
+    friend struct SceneQueue::Task;
+    friend struct CreateSceneTask;
+
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
@@ -85,6 +88,44 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         virtual void _Save(ViewDefinitionR view) const {}
         virtual void _Load(ViewDefinitionR view) {}
     };
+
+    //=======================================================================================
+    //! The Ids of elements that are somehow treated specially for a SpatialViewController
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct SpecialElements
+    {
+        DgnElementIdSet m_always;
+        DgnElementIdSet m_never;
+        bool IsEmpty() const {return m_always.empty() && m_never.empty();}
+    };
+
+    //! Holds the results of a query.
+    struct QueryResults
+    {
+        typedef bmultimap<double, DgnElementId> OcclusionScores;
+        bool m_incomplete = false;
+        OcclusionScores m_scores;
+        uint32_t GetCount() const {return (uint32_t) m_scores.size();}
+    };
+
+    //=======================================================================================
+    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
+    // update or heal of a view to determine which elements are already visible.
+    // @bsiclass                                                    Keith.Bentley   02/16
+    //=======================================================================================
+    struct Scene : RefCountedBase, NonCopyableClass
+    {
+        bset<DgnElementId> m_members;
+        Render::GraphicListPtr m_graphics;
+        ProgressiveTaskPtr m_progressive;
+        double m_lowestScore = 0.0;
+        uint32_t m_progressiveTotal = 0;
+        bool m_complete = false;
+        bool Contains(DgnElementId id) const {return m_members.find(id) != m_members.end();}
+        ~Scene() {}
+    };
+    typedef RefCountedPtr<Scene> ScenePtr;
 
 protected:
     friend struct ViewContext;
@@ -95,16 +136,20 @@ protected:
     friend struct ToolAdmin;
     friend struct ViewDefinition;
 
+    mutable BeMutex m_mutex;
     DgnDbR m_dgndb;
     DgnViewportP m_vp = nullptr;
     ViewDefinitionPtr m_definition;
     RotMatrix m_defaultDeviceOrientation;
     bool m_defaultDeviceOrientationValid = false;
-    bool m_sceneReady = false;
+    bool m_noQuery = false;
+    SpecialElements m_special;
+    ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
+    ScenePtr m_currentScene;
+    ScenePtr m_readyScene;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
-protected:
     //! Construct a ViewController object.
     DGNPLATFORM_EXPORT ViewController(ViewDefinitionCR definition);
 
@@ -116,6 +161,8 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
+    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
+    virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -157,8 +204,8 @@ protected:
     //! Draw the contents of the view.
     virtual void _DrawView(ViewContextR) = 0;
 
-    virtual bool _IsSceneReady() const {return m_sceneReady;}
-    virtual void _InvalidateScene() {m_sceneReady=false;}
+    DGNPLATFORM_EXPORT void InvalidateScene();
+    bool IsSceneReady() const;
     virtual void _DoHeal(HealContext&) {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
@@ -181,9 +228,6 @@ protected:
     //! @param[in] delimiter The default delimiter to use when building the info string.
     //! @return true if the info string was set or false to use the default implementation.
     virtual bool _GetInfoString(HitDetailCR hit, Utf8StringR descr, Utf8CP delimiter) const {return false;}
-
-    //! Used to notify derived classes when an update begins.
-    virtual void _OnUpdate(DgnViewportR vp, UpdatePlan const&) {m_sceneReady=true;}
 
     //! Used to notify derived classes of an attempt to locate the viewport around the specified
     //! WGS84 location. Override to change how these points are interpreted.
@@ -209,12 +253,14 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    virtual void _CreateTerrain(TerrainContextR context) {}
-    virtual void _CreateScene(SceneContextR context) {_DrawView(context); m_sceneReady=false;}
+    ScenePtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task);
+    void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
+    ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-    void OnUpdate(DgnViewportR vp, UpdatePlan const& plan) {_OnUpdate(vp, plan);}
+    virtual void _CreateTerrain(TerrainContextR context) {}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -400,6 +446,40 @@ public:
     StatusInt DropAppData(AppData::Key const& key) const {return 0==m_appData.erase(&key) ? ERROR : SUCCESS;}
 
     ViewDefinitionR GetViewDefinition() const {return *m_definition;}
+
+    //! @name Active Volume
+    //! @{
+    void AssignActiveVolume(ClipPrimitiveR volume) {m_activeVolume = &volume;}
+    void ClearActiveVolume() {m_activeVolume = nullptr;}
+    ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
+    //! @}
+
+    // Get the set of special elements for this ViewController.
+    SpecialElements const& GetSpecialElements() const {return m_special;}
+
+    //! Get the list of elements that are always drawn
+    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
+
+    //! Establish a set of elements that are always drawn in the view.
+    //! @param[in] exclusive If true, only these elements are drawn
+    DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
+
+    //! Empty the set of elements that are always drawn
+    DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
+
+    //! Establish a set of elements that are never drawn in the view.
+    DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
+
+    //! Get the list of elements that are never drawn.
+    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
+    //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
+    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
+
+    //! Empty the set of elements that are never drawn
+    DGNPLATFORM_EXPORT void ClearNeverDrawn();
+
+    //! Requests that any active or pending scene queries for this view be canceled, optionally not returning until the request is satisfied
+    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
 };
 
 //=======================================================================================
@@ -433,18 +513,6 @@ struct EXPORT_VTABLE_ATTRIBUTE SpatialViewController : ViewController3d, BeSQLit
     friend struct  SpatialRedlineViewController;
 public:
     
-    friend struct DgnQueryQueue::Task;
-
-    //=======================================================================================
-    //! The Ids of elements that are somehow treated specially for a SpatialViewController
-    // @bsiclass                                                    Keith.Bentley   02/16
-    //=======================================================================================
-    struct SpecialElements
-    {
-        DgnElementIdSet m_always;
-        DgnElementIdSet m_never;
-        bool IsEmpty() const {return m_always.empty() && m_never.empty();}
-    };
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   05/16
@@ -491,22 +559,12 @@ public:
         SpatialQuery(SpecialElements const* special, ClipPrimitiveCP activeVolume) : ElementsQuery(special, activeVolume) {}
     };
 
-    //! Holds the results of a query.
-    struct QueryResults : RefCounted<NonCopyableClass>
-    {
-        typedef bmultimap<double, DgnElementId> OcclusionScores;
-        bool m_incomplete = false;
-        OcclusionScores m_scores;
-        uint32_t GetCount() const {return (uint32_t) m_scores.size();}
-    };
-    typedef RefCountedPtr<QueryResults> QueryResultsPtr;
-
     //=======================================================================================
     //! This object is created on the Client thread and queued to the Query thread. It populates its
     //! QueryResults with the set of n-best elements that satisfy both range and view criteria.
     // @bsiclass                                                    Keith.Bentley   02/16
     //=======================================================================================
-    struct RangeQuery : SpatialQuery, DgnQueryQueue::Task
+    struct RangeQuery : SpatialQuery
     {
         DEFINE_T_SUPER(SpatialQuery)
         bool m_depthFirst = false;
@@ -519,9 +577,10 @@ public:
         double m_lodFilterNPCArea = 0.0;
         double m_minScore = 0.0;
         double m_lastScore = 0.0;
-        QueryResultsPtr m_results;
+        SpatialViewControllerCR m_view;
+        UpdatePlan::Query const& m_plan;
+        QueryResults* m_results;
 
-        virtual void _Go() override;
         virtual int _TestRTree(BeSQLite::RTreeMatchFunction::QueryInfo const&) override;
         void AddAlwaysDrawn(SpatialViewControllerCR);
         void SetDepthFirst() {m_depthFirst=true;}
@@ -531,29 +590,16 @@ public:
         bool ComputeOcclusionScore(double& score, FrustumCR);
 
     public:
-        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan);
-        QueryResultsPtr DoQuery();
-        QueryResultsPtr GetResults() {return m_results;}
+        RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
+        void DoQuery(SceneQueue::Task&);
     };
-
-    //=======================================================================================
-    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
-    // update or heal of a view to determine which elements are already visible.
-    // @bsiclass                                                    Keith.Bentley   02/16
-    //=======================================================================================
-    struct SceneMembers : RefCounted<DgnElementMap>, NonCopyableClass
-    {
-        bool m_complete = false;
-        uint32_t m_progressiveTotal = 0;
-    };
-    typedef RefCountedPtr<SceneMembers> SceneMembersPtr;
 
     //=======================================================================================
     // @bsiclass                                                    Keith.Bentley   03/16
     //=======================================================================================
     struct NonSceneQuery : RangeQuery
     {
-    NonSceneQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR);
+        NonSceneQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR);
     };
 
     //=======================================================================================
@@ -572,38 +618,24 @@ public:
         NonSceneQuery m_rangeQuery;
         SpatialViewControllerR m_view;
         DgnElementId GetNextId();
-        explicit ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
+        DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
         virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
     };
 
 protected:
-    bool m_noQuery = false;
     bool m_loading = false;
-    mutable bool m_abortQuery = false;
-    ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     Render::MaterialPtr m_skybox;
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
     Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
-    SceneMembersPtr m_scene;
-    SpecialElements m_special;
     bset<Utf8String> m_copyrightMsgs;  // from reality models. Only keep unique ones
-    mutable QueryResultsPtr m_results;
 
     void QueryModelExtents(FitContextR);
-    void QueueQuery(DgnViewportR, UpdatePlan::Query const&);
-    void AddtoSceneQuick(SceneContextR context, QueryResults& results, bvector<DgnElementId>&);
-    bool AbortRequested() const {return m_abortQuery;} //!< @private
-    void SetAbortQuery(bool val) const {m_abortQuery=val;} //!< @private
 
     DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT void _InvalidateScene() override;
-    DGNPLATFORM_EXPORT bool _IsSceneReady() const override;
-    DGNPLATFORM_EXPORT void _OnUpdate(DgnViewportR vp, UpdatePlan const& plan) override;
-    DGNPLATFORM_EXPORT void _CreateScene(SceneContextR) override;
     DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
@@ -613,9 +645,11 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -659,40 +693,6 @@ public:
     //! Elements whose aabb projects onto the view an area less than this box are skippped during background-element display.
     double GetNonSceneLODSize() const {return m_nonSceneLODSize;}
     void SetNonSceneLODSize(double val) {m_nonSceneLODSize=val;} //!< see GetNonSceneLODSize
-
-    // Get the set of special elements for this SpatialViewController.
-    SpecialElements const& GetSpecialElements() const {return m_special;}
-
-    //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
-
-    //! Establish a set of elements that are always drawn in the view.
-    //! @param[in] exclusive If true, only these elements are drawn
-    DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
-
-    //! Empty the set of elements that are always drawn
-    DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
-
-    //! Establish a set of elements that are never drawn in the view.
-    DGNPLATFORM_EXPORT void SetNeverDrawn(DgnElementIdSet const&);
-
-    //! Get the list of elements that are never drawn.
-    //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
-    //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
-
-    //! Empty the set of elements that are never drawn
-    DGNPLATFORM_EXPORT void ClearNeverDrawn();
-
-    //! Requests that any active or pending queries for this view be canceled, optionally not returning until the request is satisfied
-    DGNPLATFORM_EXPORT void RequestAbort(bool waitUntilFinished);
-
-    //! @name Active Volume
-    //! @{
-    void AssignActiveVolume(ClipPrimitiveR volume) {m_activeVolume = &volume;}
-    void ClearActiveVolume() {m_activeVolume = nullptr;}
-    ClipPrimitivePtr GetActiveVolume() const {return m_activeVolume;}
-    //! @}
 };
 
 //=======================================================================================
@@ -914,6 +914,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
+    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
