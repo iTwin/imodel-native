@@ -336,8 +336,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::OnPremiseFileUpload(BeFileNa
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::AzureFileUpload(BeFileNameCR filePath, Utf8StringCR url, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::AzureFileUpload";
-    IAzureBlobStorageClientPtr azureClient = AzureBlobStorageClient::Create();
-    return azureClient->SendUpdateFileRequest(url, filePath, callback, cancellationToken)
+    return m_azureClient->SendUpdateFileRequest(url, filePath, callback, cancellationToken)
         ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
         {
         if (!result.IsSuccess())
