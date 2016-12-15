@@ -2702,7 +2702,10 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
 
                 if (partMeshes.empty())
                     continue;
-                    
+                
+                for (auto& partMesh : partMeshes)
+                    partMesh->SetValidIdsPresent(false);    // Ids are included on the instances only.
+
                 publishedTileGeometry.Parts().push_back(meshPart = TileMeshPart::Create (std::move(partMeshes)));
                 partMap.Insert(part->GetPartId(), meshPart);
                 }
@@ -2710,7 +2713,8 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 {
                 meshPart = found->second;
                 }
-            publishedTileGeometry.Instances().push_back(TileMeshInstance(meshPart, geom->GetTransform()));
+
+            meshPart->AddInstance (TileMeshInstance(geom->GetEntityId(), geom->GetTransform()));
             }
         else
             {

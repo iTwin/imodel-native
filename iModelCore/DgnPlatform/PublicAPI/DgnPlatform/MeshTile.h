@@ -148,13 +148,13 @@ public:
 struct TileMeshInstance
 {
 private:
-    TileMeshPartCPtr    m_part;
+    DgnElementId        m_instanceId;
     Transform           m_transform;
 
 public:
-    TileMeshPartCP GetPart() const { return m_part.get(); }
+    DgnElementId GetId() const { return m_instanceId; }
     TransformCR GetTransform() const { return m_transform; }
-    TileMeshInstance (TileMeshPartCPtr part, TransformCR transform) : m_part(part), m_transform(transform) { }
+    TileMeshInstance (DgnElementId instanceId , TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
 
 };  // TileMeshInstance
 
@@ -165,7 +165,8 @@ public:
 struct TileMeshPart : RefCountedBase
 {
 private:
-    TileMeshList    m_meshes;
+    TileMeshList            m_meshes;
+    TileMeshInstanceList    m_instances;
 
     TileMeshPart (TileMeshList&& meshes) : m_meshes(meshes) { }
 
@@ -173,6 +174,8 @@ private:
 
 public:
     TileMeshList const& Meshes() const { return m_meshes; }
+    TileMeshInstanceList const& Instances() const { return m_instances; }
+    void AddInstance (TileMeshInstanceCR instance) { m_instances.push_back(instance); }
 
     static TileMeshPartPtr Create (TileMeshList&& meshes) { return new TileMeshPart(std::move(meshes)); }
 
@@ -622,14 +625,12 @@ struct PublishableTileGeometry
 {
 private:
     TileMeshList            m_meshes;
-    TileMeshInstanceList    m_instances;
     TileMeshPartList        m_parts;
 
 public:
     TileMeshList& Meshes()              { return m_meshes; }
-    TileMeshInstanceList& Instances()   { return m_instances; }
     TileMeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const                { return m_meshes.empty() && m_instances.empty(); }
+    bool IsEmpty() const                { return m_meshes.empty() && m_parts.empty(); }
 
 };  // PublishedTileGeometry
 
@@ -869,8 +870,7 @@ struct IGenerateMeshTiles
 struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
-    DGNPLATFORM_EXPORT static BentleyStatus
-ReadJsonFromFile (Json::Value& value, WCharCP fileName);
+    DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
 
 };  // TileUtil
