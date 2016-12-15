@@ -30,7 +30,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding">
+    <ECRelationshipClass typeName="AlignmentOwnsHorizontal" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is horizontal for 1 alignment">
             <Class class="Alignment"/>
@@ -47,7 +47,7 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
@@ -55,7 +55,7 @@
             <Class class="AlignmentVertical"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentOwnsVerticals" strength="embedding">
+    <ECRelationshipClass typeName="AlignmentOwnsVerticals" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
             <Class class="Alignment"/>
