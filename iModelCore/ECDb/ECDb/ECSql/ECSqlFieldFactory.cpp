@@ -168,12 +168,12 @@ ECSqlStatus ECSqlFieldFactory::CreateNavigationPropertyField(std::unique_ptr<ECS
     std::unique_ptr<NavigationPropertyECSqlField> newField(new NavigationPropertyECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo));
 
     std::unique_ptr<ECSqlField> idField = nullptr;
-    ECSqlStatus stat = CreateChildField(idField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationId));
+    ECSqlStatus stat = CreateChildField(idField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::Id));
     if (!stat.IsSuccess())
         return stat;
     
     std::unique_ptr<ECSqlField> relClassIdField = nullptr;
-    stat = CreateChildField(relClassIdField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationRelECClassId));
+    stat = CreateChildField(relClassIdField, ctx, sqlColumnIndex, newField->GetColumnInfo(), *ECDbSystemSchemaHelper::GetSystemProperty(ctx.GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::RelECClassId));
     if (!stat.IsSuccess())
         return stat;
 

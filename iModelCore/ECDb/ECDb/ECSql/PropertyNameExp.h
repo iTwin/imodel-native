@@ -41,13 +41,11 @@ struct PropertyNameExp : ValueExp
         DEFINE_EXPR_TYPE(PropertyName)
     private:
         PropertyPath m_propertyPath;
-        bool m_isSystemProperty;
-        ECSqlSystemPropertyKind m_systemProperty;
         std::unique_ptr<PropertyRef> m_propertyRef;
 
         Utf8String m_classAlias;
         RangeClassRefExp const* m_classRefExp;
-
+        ECSqlSystemPropertyInfo m_sysPropInfo;
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
@@ -68,14 +66,12 @@ struct PropertyNameExp : ValueExp
         PropertyPath const& GetPropertyPath() const { return m_propertyPath; }
         PropertyMap const& GetPropertyMap() const;
 
-        bool IsSystemProperty() const { return m_isSystemProperty; }
-        bool TryGetSystemProperty(ECSqlSystemPropertyKind&) const;
-
         Utf8CP GetClassAlias() const { return m_classAlias.c_str(); }
         RangeClassRefExp const* GetClassRefExp() const { return m_classRefExp; }
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
+        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { return m_sysPropInfo; }
         bool IsLhsAssignmentOperandExpression() const
             {
             if (FindParent(Exp::Type::Insert))

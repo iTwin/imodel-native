@@ -30,7 +30,7 @@ private:
     bvector<ColumnHandler> m_columnHandlers;
 
     ECSqlStatementCR m_ecSqlStatement;
-    bool m_initialized;
+    bool m_isValid;
     int m_ecClassIdColumnIndex;
     int m_sourceECClassIdColumnIndex;
     int m_targetECClassIdColumnIndex;
@@ -57,9 +57,13 @@ public:
     //__PUBLISH_SECTION_START__
 
     //! Creates a new instance of the adapter
-    //! @param[in] ecSqlStatement Prepared statement
+    //! @param[in] ecsqlStatement Prepared statement
     //! @see ECSqlStatement
-    ECDB_EXPORT ECInstanceECSqlSelectAdapter(ECSqlStatementCR ecSqlStatement);
+    ECDB_EXPORT explicit ECInstanceECSqlSelectAdapter(ECSqlStatementCR ecsqlStatement);
+
+    //! Indicates whether this ECInstanceECSqlSelectAdapter is valid and can be used to retrieve ECInstance.
+    //! For example, it is not valid, if the adapter was created with an unprepared ECSQL statement.
+    bool IsValid() const { return m_isValid; }
 
     //! Creates an IECInstancePtr from the current row of the ecSqlStatement.  
     //! This method can only be used if the ECSQL select clause is made up of properties of a single ECClass.

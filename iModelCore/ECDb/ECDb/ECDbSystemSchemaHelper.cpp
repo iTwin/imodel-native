@@ -11,11 +11,17 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+#define ECDBSYSTEM_SCHEMANAME "ECDb_System"
+
+#define CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME "ClassECSqlSystemProperties"
+#define REL_ECSQLSYSTEMPROPERTIES_CLASSNAME "RelationshipECSqlSystemProperties"
+#define POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME "PointECSqlSystemProperties"
+#define NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME "NavigationECSqlSystemProperties"
+
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2013
 //+---------------+---------------+---------------+---------------+---------------+-
 //static member variable initialization
-Utf8CP const ECDbSystemSchemaHelper::ECDBSYSTEM_SCHEMANAME = "ECDb_System";
 Utf8CP const ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME = "ECInstanceId";
 Utf8CP const ECDbSystemSchemaHelper::ECCLASSID_PROPNAME = "ECClassId";
 Utf8CP const ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME = "SourceECInstanceId";
@@ -28,188 +34,345 @@ Utf8CP const ECDbSystemSchemaHelper::POINTPROP_X_PROPNAME = "X";
 Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Y_PROPNAME = "Y";
 Utf8CP const ECDbSystemSchemaHelper::POINTPROP_Z_PROPNAME = "Z";
 
-Utf8CP const ECDbSystemSchemaHelper::ECSQLSYSTEMPROPERTIES_CLASSNAME = "ECSqlSystemProperties";
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                06/2013
+// @bsimethod                                 Krischan.Eberle                12/2016
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECClassCP ECDbSystemSchemaHelper::GetECSqlSystemPropertiesClass(ECDbSchemaManagerCR schemaManager)
+bool ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo& info, ECDbSchemaManager const& schemaManager, ECN::ECPropertyCR ecProperty)
     {
-    ECClassCP systemPropsClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    BeAssert(systemPropsClass != nullptr);
-    return systemPropsClass;
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME) == ecProperty.GetClass().GetId())
+        {
+        if (PropertyNameEquals(ecProperty, ECSqlSystemPropertyInfo::Class::ECInstanceId))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId);
+            return true;
+            }
+
+        if (PropertyNameEquals(ecProperty, ECSqlSystemPropertyInfo::Class::ECClassId))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECClassId);
+            return true;
+            }
+        }
+
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME) == ecProperty.GetClass().GetId())
+        {
+        if (ecProperty.GetName().EqualsIAscii(NAVPROP_ID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::Id);
+            return true;
+            }
+
+        if (ecProperty.GetName().EqualsIAscii(NAVPROP_RELECCLASSID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::RelECClassId);
+            return true;
+            }
+        }
+
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME) == ecProperty.GetClass().GetId())
+        {
+        if (ecProperty.GetName().EqualsIAscii(SOURCEECINSTANCEID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId);
+            return true;
+            }
+
+        if (ecProperty.GetName().EqualsIAscii(SOURCEECCLASSID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::SourceECClassId);
+            return true;
+            }
+
+        if (ecProperty.GetName().EqualsIAscii(TARGETECINSTANCEID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId);
+            return true;
+            }
+
+        if (ecProperty.GetName().EqualsIAscii(TARGETECCLASSID_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
+            return true;
+            }
+
+        }
+
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME) == ecProperty.GetClass().GetId())
+        {
+        if (ecProperty.GetName().EqualsIAscii(POINTPROP_X_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::X);
+            return true;
+            }
+
+        if (ecProperty.GetName().EqualsIAscii(POINTPROP_Y_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::Y);
+            return true;
+            }
+        
+        if (ecProperty.GetName().EqualsIAscii(POINTPROP_Z_PROPNAME))
+            {
+            info = ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Point::Z);
+            return true;
+            }
+        }
+
+    info = ECSqlSystemPropertyInfo();
+    return false;
+    }
+
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::Equals(ECDbSchemaManagerCR schemaManager, ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Class sysProp)
+    {
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME) == prop.GetClass().GetId())
+        return PropertyNameEquals(prop, sysProp);
+
+    return false;
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
+// @bsimethod                                 Krischan.Eberle                12/2016
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyKind kind)
+bool ECDbSystemSchemaHelper::Equals(ECDbSchemaManagerCR schemaManager, ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Relationship sysProp)
     {
-    ECClassCP systemPropsClass = GetECSqlSystemPropertiesClass(schemaManager);
-    if (systemPropsClass == nullptr)
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME) == prop.GetClass().GetId())
+        return PropertyNameEquals(prop, sysProp);
+
+    return false;
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::Equals(ECDbSchemaManagerCR schemaManager, ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Navigation sysProp)
+    {
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME) == prop.GetClass().GetId())
+        return PropertyNameEquals(prop, sysProp);
+
+    return false;
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::Equals(ECDbSchemaManagerCR schemaManager, ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Point sysProp)
+    {
+    if (schemaManager.GetECClassId(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME) == prop.GetClass().GetId())
+        return PropertyNameEquals(prop, sysProp);
+
+    return false;
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::PropertyNameEquals(ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Class sysProp)
+    {
+    switch (sysProp)
         {
-        //log and assert already done in callee
+            case ECSqlSystemPropertyInfo::Class::ECInstanceId:
+                return prop.GetName().EqualsIAscii(ECINSTANCEID_PROPNAME);
+            case ECSqlSystemPropertyInfo::Class::ECClassId:
+                return prop.GetName().EqualsIAscii(ECCLASSID_PROPNAME);
+
+            default:
+                BeAssert(false);
+                return false;
+        }
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::PropertyNameEquals(ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Relationship sysProp)
+    {
+    switch (sysProp)
+        {
+            case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
+                return prop.GetName().EqualsIAscii(SOURCEECINSTANCEID_PROPNAME);
+            case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
+                return prop.GetName().EqualsIAscii(SOURCEECCLASSID_PROPNAME);
+            case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
+                return prop.GetName().EqualsIAscii(TARGETECINSTANCEID_PROPNAME);
+            case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
+                return prop.GetName().EqualsIAscii(TARGETECCLASSID_PROPNAME);
+
+            default:
+                BeAssert(false);
+                return false;
+        }
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::PropertyNameEquals(ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Navigation sysProp)
+    {
+    switch (sysProp)
+        {
+            case ECSqlSystemPropertyInfo::Navigation::Id:
+                return prop.GetName().EqualsIAscii(NAVPROP_ID_PROPNAME);
+            case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
+                return prop.GetName().EqualsIAscii(NAVPROP_RELECCLASSID_PROPNAME);
+
+            default:
+                BeAssert(false);
+                return false;
+        }
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECDbSystemSchemaHelper::PropertyNameEquals(ECN::ECPropertyCR prop, ECSqlSystemPropertyInfo::Point sysProp)
+    {
+    switch (sysProp)
+        {
+            case ECSqlSystemPropertyInfo::Point::X:
+                return prop.GetName().EqualsIAscii(POINTPROP_X_PROPNAME);
+            case ECSqlSystemPropertyInfo::Point::Y:
+                return prop.GetName().EqualsIAscii(POINTPROP_Y_PROPNAME);
+            case ECSqlSystemPropertyInfo::Point::Z:
+                return prop.GetName().EqualsIAscii(POINTPROP_Z_PROPNAME);
+
+            default:
+                BeAssert(false);
+                return false;
+        }
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyInfo::Class classSysProp)
+    {
+    ECClassCP systemClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    if (systemClass == nullptr)
+        {
+        BeAssert(false);
         return nullptr;
         }
 
-    Utf8CP requiredPropName = GetPropertyName(kind);
-    return GetECProperty(*systemPropsClass, requiredPropName);
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-//static 
-bool ECDbSystemSchemaHelper::IsSystemProperty(ECPropertyCR ecProperty, ECSqlSystemPropertyKind kind)
-    {
-    Utf8CP requiredPropName = GetPropertyName(kind);
-    return ecProperty.GetName().Equals(requiredPropName) && ecProperty.GetClass().GetName().Equals(ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                09/2013
-//+---------------+---------------+---------------+---------------+---------------+-
-//static 
-ECPropertyCP ECDbSystemSchemaHelper::GetECProperty(ECClassCR ecClass, Utf8CP propertyName)
-    {
-    auto prop = ecClass.GetPropertyP(propertyName);
-    if (prop == nullptr)
+    switch (classSysProp)
         {
-        LOG.fatalv("ECProperty '%s' not found in ECClass '%s' from system ECSchema '%s'.", propertyName, Utf8String(ecClass.GetName().c_str()).c_str(), ECDBSYSTEM_SCHEMANAME);
-        BeAssert(false && "Fatal error. ECProperty not found in ECSqlSystemProperties ECClass from system ECSchema.");
+            case ECSqlSystemPropertyInfo::Class::ECInstanceId:
+                return systemClass->GetPropertyP(ECINSTANCEID_PROPNAME);
+
+            case ECSqlSystemPropertyInfo::Class::ECClassId:
+                return systemClass->GetPropertyP(ECCLASSID_PROPNAME);
+
+            default:
+                BeAssert(false && "ECSqlSystemPropertyInfo::Class was changed. Need to adjust this code");
+                return nullptr;
+        }
+    }
+        
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyInfo::Relationship sysProp)
+    {
+    ECClassCP systemClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    if (systemClass == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
         }
 
-    return prop;
+    switch (sysProp)
+        {
+            case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
+                return systemClass->GetPropertyP(SOURCEECINSTANCEID_PROPNAME);
+
+            case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
+                return systemClass->GetPropertyP(SOURCEECCLASSID_PROPNAME);
+
+            case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
+                return systemClass->GetPropertyP(TARGETECINSTANCEID_PROPNAME);
+
+            case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
+                return systemClass->GetPropertyP(TARGETECCLASSID_PROPNAME);
+
+            default:
+                BeAssert(false && "ECSqlSystemPropertyInfo::Relation was changed. Need to adjust this code");
+                return nullptr;
+        }
     }
 
+
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
+// @bsimethod                                 Krischan.Eberle                12/2016
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-Utf8CP ECDbSystemSchemaHelper::GetPropertyName(ECSqlSystemPropertyKind kind)
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyInfo::Navigation sysProp)
     {
-    switch (kind)
+    ECClassCP systemClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    if (systemClass == nullptr)
         {
-            case ECSqlSystemPropertyKind::ECInstanceId:
-                return ECINSTANCEID_PROPNAME;
-            case ECSqlSystemPropertyKind::ECClassId:
-                return ECCLASSID_PROPNAME;
-            case ECSqlSystemPropertyKind::SourceECInstanceId:
-                return SOURCEECINSTANCEID_PROPNAME;
-            case ECSqlSystemPropertyKind::SourceECClassId:
-                return SOURCEECCLASSID_PROPNAME;
-            case ECSqlSystemPropertyKind::TargetECInstanceId:
-                return TARGETECINSTANCEID_PROPNAME;
-            case ECSqlSystemPropertyKind::TargetECClassId:
-                return TARGETECCLASSID_PROPNAME;
-            case ECSqlSystemPropertyKind::NavigationId:
-                return NAVPROP_ID_PROPNAME;
-            case ECSqlSystemPropertyKind::NavigationRelECClassId:
-                return NAVPROP_RELECCLASSID_PROPNAME;
-            case ECSqlSystemPropertyKind::X:
-                return POINTPROP_X_PROPNAME;
-            case ECSqlSystemPropertyKind::Y:
-                return POINTPROP_Y_PROPNAME;
-            case ECSqlSystemPropertyKind::Z:
-                return POINTPROP_Z_PROPNAME;
+        BeAssert(false);
+        return nullptr;
+        }
+
+    switch (sysProp)
+        {
+            case ECSqlSystemPropertyInfo::Navigation::Id:
+                return systemClass->GetPropertyP(NAVPROP_ID_PROPNAME);
+
+            case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
+                return systemClass->GetPropertyP(NAVPROP_RELECCLASSID_PROPNAME);
+
             default:
-                BeAssert(false && "ECSqlSystemProperty enum has new value. Update ECDbSystemSchemaHelper::GetPropertyName accordingly.");
+                BeAssert(false && "ECSqlSystemPropertyInfo::Navigation was changed. Need to adjust this code");
                 return nullptr;
         }
     }
 
 //----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2013
+// @bsimethod                                 Krischan.Eberle                12/2016
 //+---------------+---------------+---------------+---------------+---------------+-
 //static 
-bool ECDbSystemSchemaHelper::TryGetSystemPropertyKind(ECSqlSystemPropertyKind& kind, ECN::ECPropertyCR ecProperty)
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECDbSchemaManagerCR schemaManager, ECSqlSystemPropertyInfo::Point sysProp)
     {
-    ECSqlSystemPropertyKind candidateKind = ECSqlSystemPropertyKind::ECInstanceId;
-    if (IsSystemProperty(ecProperty, candidateKind))
+    ECClassCP systemClass = schemaManager.GetECClass(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+    if (systemClass == nullptr)
         {
-        kind = candidateKind;
-        return true;
+        BeAssert(false);
+        return nullptr;
         }
 
-    candidateKind = ECSqlSystemPropertyKind::ECClassId;
-    if (IsSystemProperty(ecProperty, candidateKind))
+    switch (sysProp)
         {
-        kind = candidateKind;
-        return true;
-        }
+            case ECSqlSystemPropertyInfo::Point::X:
+                return systemClass->GetPropertyP(POINTPROP_X_PROPNAME);
 
-    candidateKind = ECSqlSystemPropertyKind::SourceECInstanceId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
+            case ECSqlSystemPropertyInfo::Point::Y:
+                return systemClass->GetPropertyP(POINTPROP_Y_PROPNAME);
 
-    candidateKind = ECSqlSystemPropertyKind::SourceECClassId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
+            case ECSqlSystemPropertyInfo::Point::Z:
+                return systemClass->GetPropertyP(POINTPROP_Z_PROPNAME);
 
-    candidateKind = ECSqlSystemPropertyKind::TargetECInstanceId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
+            default:
+                BeAssert(false && "ECSqlSystemPropertyInfo::Point was changed. Need to adjust this code");
+                return nullptr;
         }
-
-    candidateKind = ECSqlSystemPropertyKind::TargetECClassId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-
-    candidateKind = ECSqlSystemPropertyKind::NavigationId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-
-    candidateKind = ECSqlSystemPropertyKind::NavigationRelECClassId;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-    candidateKind = ECSqlSystemPropertyKind::X;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-    candidateKind = ECSqlSystemPropertyKind::Y;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-    candidateKind = ECSqlSystemPropertyKind::Z;
-    if (IsSystemProperty(ecProperty, candidateKind))
-        {
-        kind = candidateKind;
-        return true;
-        }
-    return false;
     }
 
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                07/2014
-//+---------------+---------------+---------------+---------------+---------------+-
-//static 
-Utf8CP ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind systemProperty)
-    {
-    return GetPropertyName(systemProperty);
-    }
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -248,4 +411,39 @@ ECN::ECClassCP ECDbSystemSchemaHelper::GetClassForPrimitiveArrayPersistence(ECDb
         }
     }
     
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+int ECSqlSystemPropertyInfo::Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs)
+    {
+    if (lhs.m_type != rhs.m_type)
+        return Enum::ToInt(lhs.m_type) - Enum::ToInt(rhs.m_type);
+
+    switch (lhs.m_type)
+        {
+            case Type::Class:
+                return Enum::ToInt(lhs.m_classKind) - Enum::ToInt(rhs.m_classKind);
+            case Type::Relationship:
+                return Enum::ToInt(lhs.m_relKind) - Enum::ToInt(rhs.m_relKind);
+            case Type::Navigation:
+                return Enum::ToInt(lhs.m_navKind) - Enum::ToInt(rhs.m_navKind);
+            case Type::Point:
+                return Enum::ToInt(lhs.m_pointKind) - Enum::ToInt(rhs.m_pointKind);
+            default:
+                BeAssert(false && "Type enum was changed. Code needs to be adjusted.");
+                return -1;
+        }
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+-
+//static 
+bool ECSqlSystemPropertyInfo::LessThan::operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const
+    {
+    return ECSqlSystemPropertyInfo::Compare(lhs, rhs) < 0;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

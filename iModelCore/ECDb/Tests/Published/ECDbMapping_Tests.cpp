@@ -8672,9 +8672,9 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
                                  <ECCustomAttributes>
-                                    <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>
+                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
                                         <OnDeleteAction>Cascade</OnDeleteAction>
-                                    </ForeignKeyRelationshipMap>
+                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
@@ -8702,9 +8702,9 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasChildren" strength="embedding" modifier="Sealed">
                                  <ECCustomAttributes>
-                                    <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'>
+                                    <ForeignKeyConstraint xmlns='ECDbMap.02.00'>
                                         <OnDeleteAction>Cascade</OnDeleteAction>
-                                    </ForeignKeyRelationshipMap>
+                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
@@ -8742,9 +8742,9 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="Sealed">
                                  <ECCustomAttributes>
-                                    <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                                         <OnDeleteAction>SetNull</OnDeleteAction>
-                                    </ForeignKeyRelationshipMap>
+                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
@@ -8781,9 +8781,9 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECEntityClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren" strength="referencing" modifier="None">
                                  <ECCustomAttributes>
-                                    <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                                         <OnDeleteAction>SetNull</OnDeleteAction>
-                                    </ForeignKeyRelationshipMap>
+                                    </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
                                 <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
@@ -10768,9 +10768,9 @@ struct ReferentialIntegrityTestFixture : ECDbMappingTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Muhammad Hassan                         04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ReferentialIntegrityTestFixture, ForeignKeyRelationshipMap_EnforceReferentialIntegrity)
+TEST_F(ReferentialIntegrityTestFixture, ForeignKeyConstraint_EnforceReferentialIntegrity)
     {
-    ECDbR ecdb = SetupECDb("ForeignKeyRelationshipMap_EnforceReferentialIntegrity.ecdb");
+    ECDbR ecdb = SetupECDb("ForeignKeyConstraint_EnforceReferentialIntegrity.ecdb");
     ExecuteRelationshipInsertionIntegrityTest(ecdb, false, true, true);
     //when AllowDuplicate is turned of, OneFooHasManyGoo will also be mapped as endtable therefore ReferentialIntegrityCheck will be performed for it, so there will be two rows in the ForeignKey table
     ASSERT_FALSE(ecdb.TableExists("ts_OneFooHasOneGoo"));

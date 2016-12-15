@@ -312,35 +312,6 @@ bool Exp::Collection::Replace (ExpCR replacee, std::vector<std::unique_ptr<Exp>>
     return found;
     }
 
-//****************************** Exp::ECSqlSpecialTokenIndexMap *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-void Exp::SystemPropertyExpIndexMap::AddIndex (ECSqlSystemPropertyKind systemPropertyExp, size_t index)
-    {
-    m_indexMap[systemPropertyExp] = index;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int Exp::SystemPropertyExpIndexMap::GetIndex (ECSqlSystemPropertyKind systemPropertyExp) const
-    {
-    auto it = m_indexMap.find (systemPropertyExp);
-    if (it == m_indexMap.end ())
-        return UNSET_CHILDINDEX;
-    else
-        return (int) it->second;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    12/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool Exp::SystemPropertyExpIndexMap::IsUnset (ECSqlSystemPropertyKind systemPropertyExp) const
-    {
-    return GetIndex (systemPropertyExp) == UNSET_CHILDINDEX;
-    }
-
 
 //****************************** PropertyPath *****************************************
 //-----------------------------------------------------------------------------------------

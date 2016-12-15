@@ -12,31 +12,87 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
-// @bsiclass                                                Krischan.Eberle      12/2013
+// @bsiclass                                                Krischan.Eberle      12/2016
 //+===============+===============+===============+===============+===============+======
-enum class ECSqlSystemPropertyKind
+struct ECSqlSystemPropertyInfo
     {
-    ECInstanceId = 1,
-    ECClassId = 2,
-    SourceECInstanceId = 4,
-    SourceECClassId = 8,
-    TargetECInstanceId = 16,
-    TargetECClassId = 32,
-    NavigationId = 64,
-    NavigationRelECClassId = 128,
-    X = 256,
-    Y = 512,
-    Z = 1024,
-    IsId = ECInstanceId | ECClassId | SourceECInstanceId | SourceECClassId | TargetECInstanceId | TargetECClassId | NavigationId | NavigationRelECClassId,
+public:
+    enum class Type
+        {
+        None,
+        Class,
+        Relationship,
+        Point,
+        Navigation
+        };
+
+    enum class Class
+        {
+        ECInstanceId,
+        ECClassId
+        };
+
+    enum class Relationship
+        {
+        SourceECInstanceId,
+        SourceECClassId,
+        TargetECInstanceId,
+        TargetECClassId
+        };
+
+    enum class Point
+        {
+        X, Y, Z
+        };
+
+    enum class Navigation
+        {
+        Id, RelECClassId
+        };
+
+    struct LessThan
+        {
+        bool operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const;
+        };
+private:
+    Type m_type;
+    union
+        {
+        Class m_classKind;
+        Relationship m_relKind;
+        Point m_pointKind;
+        Navigation m_navKind;
+        };
+
+    static int Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs);
+
+public:
+    ECSqlSystemPropertyInfo() : m_type(Type::None) {}
+    explicit ECSqlSystemPropertyInfo(Class kind) : m_type(Type::Class), m_classKind(kind) {}
+    explicit ECSqlSystemPropertyInfo(Relationship kind) : m_type(Type::Relationship), m_relKind(kind) {}
+    explicit ECSqlSystemPropertyInfo(Point kind) : m_type(Type::Point), m_pointKind(kind) {}
+    explicit ECSqlSystemPropertyInfo(Navigation kind) : m_type(Type::Navigation), m_navKind(kind) {}
+
+    bool operator==(ECSqlSystemPropertyInfo const& rhs) const { return Compare(*this, rhs) == 0; }
+    bool operator!=(ECSqlSystemPropertyInfo const& rhs) const { return !(*this == rhs); }
+    
+    bool IsSystemProperty() const { return m_type != Type::None; }
+    Type GetType() const { return m_type; }
+
+    Class GetClass() const { BeAssert(m_type == Type::Class); return m_classKind; }
+    Relationship GetRelationship() const { BeAssert(m_type == Type::Relationship); return m_relKind; }
+    Point GetPoint() const { BeAssert(m_type == Type::Point); return m_pointKind; }
+    Navigation GetNavigation() const { BeAssert(m_type == Type::Navigation); return m_navKind; }
+    //Indicates whether the system property is of an id type
+    bool IsId() const { BeAssert(IsSystemProperty()); return m_type != Type::Point; }
     };
 
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbSystemSchemaHelper : NonCopyableClass
+struct ECDbSystemSchemaHelper
     {
     public:
-        static Utf8CP const ECDBSYSTEM_SCHEMANAME;
         static Utf8CP const ECINSTANCEID_PROPNAME;
         static Utf8CP const ECCLASSID_PROPNAME;
         static Utf8CP const SOURCEECINSTANCEID_PROPNAME;
@@ -50,33 +106,29 @@ struct ECDbSystemSchemaHelper : NonCopyableClass
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
     private:
-        static Utf8CP const ECSQLSYSTEMPROPERTIES_CLASSNAME;
-
         //static class
         ECDbSystemSchemaHelper();
         ~ECDbSystemSchemaHelper();
 
-        static ECN::ECPropertyCP GetECProperty(ECN::ECClassCR, Utf8CP propertyName);
-        static Utf8CP GetPropertyName(ECSqlSystemPropertyKind);
+        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class);
+        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship);
+        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point);
+        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation);
 
     public:
-        //! Gets the ECSqlSystemPropertiesClass ECClass.
-        //! @return ECSqlSystemPropertiesClass class or nullptr in case of errors
-        static ECN::ECClassCP GetECSqlSystemPropertiesClass(ECDbSchemaManagerCR);
-
-        //! Gets the system property of the specified kind from the ECDb_System ECSchema.
         //! @return System property or nullptr in case of errors
-        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyKind);
+        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Class);
+        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Relationship);
+        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Point);
+        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Navigation);
 
-        //! Checks whether the specified property is a system property of the given kind.
-        //! @return true, if @p ecProperty is a system property of the given kind. false otherwise
-        static bool IsSystemProperty(ECN::ECPropertyCR, ECSqlSystemPropertyKind);
+        static bool TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECDbSchemaManagerCR, ECN::ECPropertyCR);
 
-        //! If @p ecProperty is a system property, returns the kind of system property.
-        //! @return true, if the given property is a system property. false, otherwise
-        static bool TryGetSystemPropertyKind(ECSqlSystemPropertyKind&, ECN::ECPropertyCR);
+        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class);
+        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship);
+        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point);
+        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation);
 
-        static Utf8CP ToString(ECSqlSystemPropertyKind);
 
         static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
     };

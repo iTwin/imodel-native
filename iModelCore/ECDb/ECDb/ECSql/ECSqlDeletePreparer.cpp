@@ -131,10 +131,8 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
             std::set<DbTable const*> tablesReferencedByWhereClause = whereExp->GetReferencedTables();
             const bool primaryTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&primaryTable) != tablesReferencedByWhereClause.end());
             const bool joinedTableIsReferencedByWhereClause = (tablesReferencedByWhereClause.find(&joinedTable) != tablesReferencedByWhereClause.end());
-            ECSqlSystemPropertyKind systemPropExp = ECSqlSystemPropertyKind::ECInstanceId;
 
-            if (propertyExpsInWhereClause.size() == 1 &&
-                static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->TryGetSystemProperty(systemPropExp) && systemPropExp == ECSqlSystemPropertyKind::ECInstanceId)
+            if (propertyExpsInWhereClause.size() == 1 && static_cast<PropertyNameExp const*>(propertyExpsInWhereClause[0])->GetSystemPropertyInfo() == ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId))
                 {
                 //WhereClause only consists of ECInstanceId exp
                 ctx.GetCurrentScopeR().SetExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause);

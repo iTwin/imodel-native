@@ -58,7 +58,7 @@ struct ECSqlTypeInfo
         ECSqlTypeInfo& operator=(ECSqlTypeInfo&& rhs);
 
         //! Compares the two ECSqlTypeInfo for exact equality, i.e. GetKind, GetPrimitiveType and GetStructType must match.
-        bool Equals(ECSqlTypeInfo const& rhs) const;
+        bool Equals(ECSqlTypeInfo const& rhs) const { return m_kind == rhs.m_kind && m_primitiveType == rhs.m_primitiveType && m_structType == rhs.m_structType; }
         //! Compares the two ECSqlTypeInfo for compatibility in ECSQL.
         bool CanCompare(ECSqlTypeInfo const& rhs, Utf8String* errorMessage = nullptr) const;
 

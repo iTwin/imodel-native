@@ -23,14 +23,12 @@ Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& 
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    const size_t childrenCount = GetChildrenCount ();
+    const size_t childrenCount = GetChildrenCount();
     for (size_t i = 0; i < childrenCount; i++)
         {
-        auto assignmentExp = GetAssignmentExp (i);
-        auto const& prop = assignmentExp->GetPropertyNameExp ()->GetPropertyMap ().GetProperty ();
-        auto systemPropKind = ECSqlSystemPropertyKind::ECInstanceId;
-        if (ECDbSystemSchemaHelper::TryGetSystemPropertyKind (systemPropKind, prop))
-            m_specialTokenExpIndexMap.AddIndex (systemPropKind, i);
+        AssignmentExp const* assignmentExp = GetAssignmentExp(i);
+        ECN::ECPropertyCR prop = assignmentExp->GetPropertyNameExp()->GetPropertyMap().GetProperty();
+        m_specialTokenExpIndexMap.AddIfSystemProperty(ctx.GetECDb().Schemas(), prop, i);
         }
 
     return FinalizeParseStatus::Completed;
@@ -39,40 +37,38 @@ Exp::FinalizeParseStatus AssignmentListExp::_FinalizeParsing(ECSqlParseContext& 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-void AssignmentListExp::AddAssignmentExp (std::unique_ptr<AssignmentExp> assignmentExp)
+void AssignmentListExp::AddAssignmentExp(std::unique_ptr<AssignmentExp> assignmentExp)
     {
-    AddChild (move (assignmentExp));
+    AddChild(move(assignmentExp));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-AssignmentExp const* AssignmentListExp::GetAssignmentExp (size_t index) const
+AssignmentExp const* AssignmentListExp::GetAssignmentExp(size_t index) const
     {
-    return GetChild<AssignmentExp> (index);
+    return GetChild<AssignmentExp>(index);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String AssignmentListExp::_ToECSql () const
+Utf8String AssignmentListExp::_ToECSql() const
     {
     Utf8String ecsql;
 
     bool isFirstItem = true;
-    for (auto childExp : GetChildren ())
+    for (auto childExp : GetChildren())
         {
         if (!isFirstItem)
-            ecsql.append (", ");
+            ecsql.append(", ");
 
-        ecsql.append (childExp->ToECSql ());
+        ecsql.append(childExp->ToECSql());
         isFirstItem = false;
         }
 
     return ecsql;
     }
-
-
 
 
 //****************** PropertyNameListExp *************************
@@ -84,13 +80,11 @@ Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         return FinalizeParseStatus::NotCompleted;
 
-    const size_t childrenCount = GetChildrenCount ();
+    const size_t childrenCount = GetChildrenCount();
     for (size_t i = 0; i < childrenCount; i++)
         {
-        auto propNameExp = GetPropertyNameExp (i);
-        ECSqlSystemPropertyKind systemPropKind;
-        if (propNameExp->TryGetSystemProperty (systemPropKind))
-            m_specialTokenExpIndexMap.AddIndex (systemPropKind, i);
+        PropertyNameExp const* propNameExp = GetPropertyNameExp(i);
+        m_specialTokenExpIndexMap.AddIfSystemProperty(*propNameExp, i);
         }
 
     return FinalizeParseStatus::Completed;
@@ -99,33 +93,33 @@ Exp::FinalizeParseStatus PropertyNameListExp::_FinalizeParsing(ECSqlParseContext
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void PropertyNameListExp::AddPropertyNameExp (std::unique_ptr<PropertyNameExp>& propertyNameExp)
+void PropertyNameListExp::AddPropertyNameExp(std::unique_ptr<PropertyNameExp>& propertyNameExp)
     {
-    AddChild (move (propertyNameExp));
+    AddChild(move(propertyNameExp));
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PropertyNameExp const* PropertyNameListExp::GetPropertyNameExp (size_t index) const
+PropertyNameExp const* PropertyNameListExp::GetPropertyNameExp(size_t index) const
     {
-    return GetChild<PropertyNameExp> (index);
+    return GetChild<PropertyNameExp>(index);
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8String PropertyNameListExp::_ToECSql () const
+Utf8String PropertyNameListExp::_ToECSql() const
     {
-    Utf8String tmp ("(");
+    Utf8String tmp("(");
 
     bool isFirstItem = true;
-    for(auto childExp : GetChildren ())
+    for (auto childExp : GetChildren())
         {
         if (!isFirstItem)
             tmp.append(", ");
 
-        tmp.append(childExp->ToECSql ());
+        tmp.append(childExp->ToECSql());
         isFirstItem = false;
         }
     tmp.append(")");
@@ -137,9 +131,9 @@ Utf8String PropertyNameListExp::_ToECSql () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void ValueExpListExp::AddValueExp (unique_ptr<ValueExp>& valueExp)
+void ValueExpListExp::AddValueExp(unique_ptr<ValueExp>& valueExp)
     {
-    AddChild (move (valueExp));
+    AddChild(move(valueExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -149,7 +143,7 @@ Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == FinalizeParseMode::BeforeFinalizingChildren)
         //Indicate that the exp per se doesn't have a single type info, because it can vary across it children
-        SetTypeInfo (ECSqlTypeInfo (ECSqlTypeInfo::Kind::Varies));
+        SetTypeInfo(ECSqlTypeInfo(ECSqlTypeInfo::Kind::Varies));
 
     return FinalizeParseStatus::Completed;
     }
@@ -181,15 +175,35 @@ ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
 void ValueExpListExp::_DoToECSql(Utf8StringR ecsql) const
     {
     bool isFirstItem = true;
-    for(auto childExp : GetChildren ())
+    for (auto childExp : GetChildren())
         {
         if (!isFirstItem)
             ecsql.append(", ");
 
-        ecsql.append(childExp->ToECSql ());
+        ecsql.append(childExp->ToECSql());
         isFirstItem = false;
         }
     }
 
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       12/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+void SystemPropertyExpIndexMap::AddIfSystemProperty(PropertyNameExp const& exp, size_t index)
+    {
+    if (exp.GetSystemPropertyInfo().IsSystemProperty())
+        m_sysPropIndexMap[exp.GetSystemPropertyInfo()] = index;
+    }
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       12/2016
+//+---------------+---------------+---------------+---------------+---------------+--------
+void SystemPropertyExpIndexMap::AddIfSystemProperty(ECDbSchemaManager const& schemaManager, ECN::ECPropertyCR prop, size_t index)
+    {
+    ECSqlSystemPropertyInfo sysPropInfo;
+    if (ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(sysPropInfo, schemaManager, prop))
+        m_sysPropIndexMap[sysPropInfo] = index;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
+
