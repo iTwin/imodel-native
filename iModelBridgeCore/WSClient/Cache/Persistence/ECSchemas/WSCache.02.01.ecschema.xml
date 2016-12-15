@@ -192,7 +192,7 @@
         <ECProperty propertyName="IsPartial" typeName="bool" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="RootToNode" strength="holding">
+    <ECRelationshipClass typeName="RootToNode" strength="holding" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Root" >
             <Class class="Root"/>
         </Source>
@@ -203,7 +203,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="RootToNodeWeak" strength="referencing">
+    <ECRelationshipClass typeName="RootToNodeWeak" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Root">
             <Class class="Root"/>
         </Source>
@@ -214,7 +214,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToParent" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="ResponseToParent" strength="referencing" strengthDirection="backward" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
@@ -223,7 +223,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToHolder" strength="holding" strengthDirection="backward">
+    <ECRelationshipClass typeName="ResponseToHolder" strength="holding" strengthDirection="backward" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
@@ -232,7 +232,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToResponsePage" strength="holding">
+    <ECRelationshipClass typeName="ResponseToResponsePage" strength="holding" modifier="None">
         <Source multiplicity="(1..1)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo"/>
         </Source>
@@ -241,7 +241,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponseToAdditionalInstance" strength="referencing" >
+    <ECRelationshipClass typeName="ResponseToAdditionalInstance" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response">
             <Class class="CachedResponseInfo" />
         </Source>
@@ -250,7 +250,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponsePageToResult" strength="holding">
+    <ECRelationshipClass typeName="ResponsePageToResult" strength="holding" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response Page">
             <Class class="CachedResponsePageInfo"/>
         </Source>
@@ -260,7 +260,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ResponsePageToResultWeak" strength="referencing">
+    <ECRelationshipClass typeName="ResponsePageToResultWeak" strength="referencing" modifier="None">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="Response Page">
             <Class class="CachedResponsePageInfo"/>
         </Source>
@@ -270,7 +270,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="embedding">
+    <ECRelationshipClass typeName="ChangeInfoToInstanceBackup" strength="embedding" modifier="None">
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="ChangeInfo">
             <Class class="ChangeInfo"/>
         </Source>
@@ -279,7 +279,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" strength="holding">
+    <ECRelationshipClass typeName="ObjectInfoToCachedFileInfo" strength="holding" modifier="None">
         <Source multiplicity="(1..1)" polymorphic="false" roleLabel="ObjectInfo">
             <Class class="CachedObjectInfo"/>
         </Source>
@@ -288,7 +288,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CachedFileInfoToFileInfo" strength="holding">
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfo" strength="holding" modifier="None">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo">
             <Class class="CachedFileInfo"/>
         </Source>
@@ -297,7 +297,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" strength="holding">
+    <ECRelationshipClass typeName="CachedFileInfoToFileInfoOwnership" strength="holding" modifier="None">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="CachedFileInfo">
             <Class class="CachedFileInfo"/>
         </Source>
@@ -310,7 +310,7 @@
         <ECProperty propertyName="Content" typeName="string"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding">
+    <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding" modifier="None">
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="Node">
             <Class class="Node"/>
         </Source>
