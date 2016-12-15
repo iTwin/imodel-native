@@ -186,8 +186,14 @@ public:
     //! Determine whether the SkyBox is displayed in this DisplayStyle3d.
     bool IsSkyBoxEnabled() const {return m_environment.m_skybox.m_enabled;}
 
+    //! Turn the SkyBox on or off.
+    void SetSkyBoxEnabled(bool val) {m_environment.m_skybox.m_enabled = val;}
+
     //! Determine whether the Ground Plane is displayed in this DisplayStyle3d.
     bool IsGroundPlaneEnabled() const {return m_environment.m_groundPlane.m_enabled;}
+
+    //! Turn the GroundPlane on or off.
+    void SetGroundPlaneEnabled(bool val) {m_environment.m_groundPlane.m_enabled = val;}
 
     //! Get the current values for the Environment Display for this DisplayStyle3d
     EnvironmentDisplay const& GetEnvironmentDisplay() const {return m_environment;}

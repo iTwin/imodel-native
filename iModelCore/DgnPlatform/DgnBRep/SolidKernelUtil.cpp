@@ -565,6 +565,36 @@ BentleyStatus BRepUtil::EvaluateVertex(ISubEntityCR subEntity, DPoint3dR point)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool BRepUtil::IsDisjointBody(IBRepEntityCR entity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    int          nRegions = 0;
+    PK_REGION_t* regions = nullptr;
+
+    if (SUCCESS != PK_BODY_ask_regions(PSolidUtil::GetEntityTag(entity), &nRegions, &regions) || 0 == nRegions)
+        return false;
+
+    uint32_t nSolid = 0;
+
+    for (int iRegion=0; iRegion < nRegions; iRegion++)
+        {
+        PK_LOGICAL_t isSolid = PK_LOGICAL_false;
+
+        if (SUCCESS == PK_REGION_is_solid(regions[iRegion], &isSolid) && PK_LOGICAL_true == isSolid)
+            nSolid++;
+        }
+
+    PK_MEMORY_free(regions);
+
+    return (nSolid > 1);
+#else
+    return false;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -605,7 +635,6 @@ bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
     return false;
 #endif
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/2016
@@ -2946,7 +2975,7 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces)
+BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& faces, bool isBlendFaces)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     if (faces.empty())
@@ -2971,22 +3000,44 @@ BentleyStatus BRepUtil::Modify::DeleteFaces(IBRepEntityR targetEntity, bvector<I
         faceTags.push_back(PSolidSubEntity::GetSubEntityTag(*faces[iFace]));
         }
 
-    PK_FACE_delete_o_t options;
     PK_TOPOL_track_r_t tracking;
+    PK_FACE_delete_o_t options;
 
-    PK_FACE_delete_o_m(options);
     memset(&tracking, 0, sizeof(tracking));
+    PK_FACE_delete_o_m(options);
+    options.allow_disjoint = true;
+    options.repair_fa_fa = PK_repair_fa_fa_yes_c;
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_delete_2((int) faceTags.size(), &faceTags.front(), &options, &tracking) ? SUCCESS : ERROR);
+    PK_ERROR_code_t failureCode = PK_FACE_delete_2((int) faceTags.size(), &faceTags.front(), &options, &tracking);
 
     PK_TOPOL_track_r_f(&tracking);
 
-    if (SUCCESS != status)
+    if (PK_ERROR_cant_heal_wound == failureCode && isBlendFaces) // Retry delete as blend...
+        {
+        PK_MARK_goto(markTag);
+
+        PK_TOPOL_track_r_t* blendTracking = nullptr;
+        PK_TOPOL_local_r_t* blendResults = nullptr;
+        PK_FACE_delete_blends_o_t blendOptions;
+
+        PK_FACE_delete_blends_o_m(blendOptions);
+        blendOptions.simplify = PK_FACE_simplify_adj_blends_c;
+
+        failureCode = PK_FACE_delete_blends((int) faceTags.size(), &faceTags.front(), 1.0e-5, &blendOptions, blendTracking, blendResults);
+
+        PK_TOPOL_track_r_f(blendTracking);
+        PK_TOPOL_local_r_f(blendResults);
+
+        PK_MEMORY_free(blendTracking);
+        PK_MEMORY_free(blendResults);
+        }
+
+    if (PK_ERROR_no_errors != failureCode)
         PK_MARK_goto(markTag);
 
     PK_MARK_delete(markTag);
 
-    return status;
+    return (SUCCESS == failureCode ? SUCCESS : ERROR);
 #else
     return ERROR;
 #endif

@@ -41,7 +41,7 @@ void DgnDbTable::ReplaceInvalidCharacters(Utf8StringR str, Utf8CP invalidChars, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_domains(*this), m_lineStyles(new DgnLineStyles(*this)),
                  m_units(*this), m_models(*this), m_elements(*this), m_sessionManager(*this),
-                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_queryQueue(*this)
+                 m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
     m_ecsqlWriteToken = nullptr;
@@ -69,11 +69,10 @@ DbSchemaModificationToken const* DgnDb::GetDbSchemaModificationToken() const { r
 void DgnDb::Destroy()
     {
     m_sessionManager.ClearCurrent();
-    m_queryQueue.Terminate();
+    m_sceneQueue.Terminate();
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
-    Elements().ClearUpdaterCache();
     m_revisionManager.reset(nullptr);
     m_ecsqlCache.Empty();
     if (m_briefcaseManager.IsValid())
@@ -549,6 +548,13 @@ DgnCloneContext::DgnCloneContext()
 DgnImportContext::DgnImportContext(DgnDbR source, DgnDbR dest) : DgnCloneContext(), m_sourceDb(source), m_destDb(dest)
     {
     ComputeGcsAndGOadjustment();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnImportContext::~DgnImportContext()
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
