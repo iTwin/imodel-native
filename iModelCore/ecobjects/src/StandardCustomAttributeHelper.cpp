@@ -284,13 +284,13 @@ bool ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(ECDbLinkTableR
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-bool ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(ECDbForeignKeyRelationshipMap& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship)
+bool ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ECDbForeignKeyConstraint& foreignKeyTableRelationshipMap, ECRelationshipClassCR ecRelationship)
     {
-    IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMA_NAME, "ForeignKeyRelationshipMap");
+    IECInstanceCP ca = CustomAttributeReader::Read(ecRelationship, ECDBMAP_SCHEMA_NAME, "ForeignKeyConstraint");
     if (ca == nullptr)
         return false;
 
-    foreignKeyTableRelationshipMap = ECDbForeignKeyRelationshipMap(ecRelationship, ca);
+    foreignKeyTableRelationshipMap = ECDbForeignKeyConstraint(ecRelationship, ca);
     return true;
     }
 
@@ -625,19 +625,19 @@ ECObjectsStatus ECDbLinkTableRelationshipMap::TryGetAllowDuplicateRelationships(
     }
 
 //*****************************************************************
-//ECDbForeignKeyRelationshipMap
+//ECDbForeignKeyConstraint
 //*****************************************************************
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECDbForeignKeyRelationshipMap::ECDbForeignKeyRelationshipMap(ECRelationshipClassCR relClass, IECInstanceCP ca)
+ECDbForeignKeyConstraint::ECDbForeignKeyConstraint(ECRelationshipClassCR relClass, IECInstanceCP ca)
     : m_relClass(&relClass), m_ca(ca)
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnDeleteAction(Utf8StringR onDeleteAction) const
+ECObjectsStatus ECDbForeignKeyConstraint::TryGetOnDeleteAction(Utf8StringR onDeleteAction) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
@@ -648,7 +648,7 @@ ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnDeleteAction(Utf8StringR 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                               Krischan.Eberle   06 / 2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus ECDbForeignKeyRelationshipMap::TryGetOnUpdateAction(Utf8StringR onUpdateAction) const
+ECObjectsStatus ECDbForeignKeyConstraint::TryGetOnUpdateAction(Utf8StringR onUpdateAction) const
     {
     if (m_ca == nullptr)
         return ECObjectsStatus::Error;
