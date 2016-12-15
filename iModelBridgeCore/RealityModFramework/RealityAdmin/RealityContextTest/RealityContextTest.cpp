@@ -42,6 +42,11 @@ static RPS s_rps = RPS();
 static bool s_keepRunning = true;
 static Stats s_stats = Stats();
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* request per second class
+//* for each operation type, keep a cout of how many requests were sent at any given second
+//+---------------+---------------+---------------+---------------+---------------+------*/
 RPS::RPS():requestLog(bmap<OperationType, bmap<time_t, int>>())
     {
     requestLog.Insert(OperationType::SPATIAL, bmap<time_t, int>());
@@ -49,29 +54,41 @@ RPS::RPS():requestLog(bmap<OperationType, bmap<time_t, int>>())
     requestLog.Insert(OperationType::PACKFILE, bmap<time_t, int>());
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void RPS::AddRequest(OperationType type, time_t time)
     {
     std::lock_guard<std::mutex> lock(rpsMutex);
     requestLog[type][time] += 1;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 double RPS::GetRPS(OperationType type, time_t time)
     {
-    //std::lock_guard<std::mutex> lock(rpsMutex); //lock mutex before calling
     bmap<time_t, int> times = requestLog[type];
 
     int amount = 0;
+    //get the average number of requests per second, over ten seconds
     for(time_t i = (time - 12); i < (time - 2); i++)
         amount += times[i];
     return amount/10.0;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 size_t getInnactiveUserSize()
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
     return s_innactiveUsers.size();
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void restartUser(UserManager* manager)
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
@@ -80,6 +97,9 @@ void restartUser(UserManager* manager)
     user->DoNext(manager);
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Dispatch(UserManager* manager)
     {
     bool hatching = true;
@@ -108,6 +128,9 @@ void Dispatch(UserManager* manager)
         }
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Terminate()
     {
     getch();
@@ -115,6 +138,9 @@ void Terminate()
     std::cout << "exit requested, wrapping up pending requests and exiting..." << std::endl;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Stat::Update(bool isSuccess, time_t time)
     {
     int total = success + failure;
@@ -128,6 +154,10 @@ void Stat::Update(bool isSuccess, time_t time)
     avgTime = ((avgTime*total) + time) / (total+1);
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* for each operation type, tracks success and failures, as well as response time
+//+---------------+---------------+---------------+---------------+---------------+------*/
 Stats::Stats()
     {   
     opStats = bmap<OperationType, Stat*>();
@@ -136,6 +166,9 @@ Stats::Stats()
     opStats.Insert(OperationType::PACKFILE, new Stat());
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Stats::InsertStats(OperationType type, bool success, time_t time, int activeUsers, Utf8String errorMsg)
     {
     std::lock_guard<std::mutex> lock(statMutex);
@@ -145,6 +178,9 @@ void Stats::InsertStats(OperationType type, bool success, time_t time, int activ
         errors.push_back(errorMsg);
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Stats::PrintStats()
     {
     std::lock_guard<std::mutex> statlock(statMutex);
@@ -166,10 +202,13 @@ void Stats::PrintStats()
     std::cout << "Press any key to quit testing" << std::endl;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void Stats::WriteToFile(int userCount, Utf8String path)
     {
     time_t generatedFileName = std::time(nullptr);
-    char name[64];
+    char name[64]; //the name given to the logfile is the system time upon exiting
     sprintf(name, "%d.log", (int)generatedFileName);
     path.append(name);
     ofstream file (path.c_str());
@@ -192,6 +231,9 @@ void Stats::WriteToFile(int userCount, Utf8String path)
     file.close();
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 static const bvector<Region> worldRegions = 
     { 
     Region(22.0,   -77.0,      600.0,      "Free Republic of Cuba"),
@@ -207,21 +249,34 @@ static const bvector<Region> worldRegions =
     Region(23.0,    78.0,      800.0,      "India")
     };
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void User::SelectRegion()
     {
     m_region = worldRegions[rand() % worldRegions.size()];
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 float User::Degree2Radians(float degree)
     {
     return (degree / 180.0f) * M_PI;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 float User::Radians2Degree(float radius)
     {
     return (radius / M_PI) * 180.0f;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* randomly selects extents within the selected region
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void User::SelectExtents()
     {
     float radiusInDegrees = m_region.m_radius * 1000.0f / 111300.0f;
@@ -266,6 +321,9 @@ void User::SelectExtents()
         m_bench->SetGeoParam(RealityPlatform::GeoCoordinationParams(filterPolygon, m_serverType));
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 User::User(Utf8StringP token, std::default_random_engine* generator, std::uniform_real_distribution<double>* distribution, RealityPlatform::ServerType serverType):
     m_token(token), m_currentOperation(OperationType::SPATIAL), m_packageFile(nullptr), m_retryCounter(0),
     m_generator(generator), m_distribution(distribution), m_serverType(serverType)
@@ -274,6 +332,11 @@ User::User(Utf8StringP token, std::default_random_engine* generator, std::unifor
     m_bench = RealityPlatform::ContextServicesWorkbench::Create("", RealityPlatform::GeoCoordinationParams());
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* prepares next request, based on most recent action
+//* can be called blindly from outside
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void User::DoNext(UserManager* owner)
     {
     switch(m_currentOperation)
@@ -284,26 +347,27 @@ void User::DoNext(UserManager* owner)
             owner->SetupCurl(this, m_bench->CreateSpatialEntityWithDetailsViewUrl(), m_bench->GetSpatialEntityWithDetailsJsonPointer());
             break;
         case OperationType::PACKID:
-            m_bench->SelectRandomResolution();
             m_packageParameters = m_bench->GetPackageParameters(m_selectedIds);
             owner->SetupCurl(this, m_bench->GetPackageIdUrl(), m_bench->GetPackageIdPointer(), nullptr, m_packageParameters);
             break;
         case OperationType::PACKFILE:
             m_packageFile = m_bench->OpenPackageFile();
-            if(!m_packageFile)
+            if(!m_packageFile) //cannot open file on disc, local error not server error (not logged as an error)
                 {
                 std::cout << "open file failure, aborting user" << std::endl;
                 std::lock_guard<std::mutex> lock(innactiveUserMutex);
-                s_innactiveUsers.push_back(this);
+                s_innactiveUsers.push_back(this); //try again later
                 break;
                 }
             owner->SetupCurl(this, m_bench->GetPackageFileUrl(), nullptr, m_packageFile);
             break;
-        /*case OperationType::FILES:
-            break;*/
         }
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* randomly select ids from spatial query
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void User::SampleIds(Json::Value regionItems)
     {
     bvector<Utf8String> retVector = bvector<Utf8String>();
@@ -318,6 +382,10 @@ void User::SampleIds(Json::Value regionItems)
     m_selectedIds = retVector;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* ensures that the json received has the proper format 
+//+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidateSpatial(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
@@ -326,12 +394,10 @@ bool User::ValidateSpatial(int activeUsers)
     if (!Json::Reader::Parse(m_bench->GetSpatialEntityWithDetailsJson(), regionItems) || (!regionItems.isMember("errorMessage") && !regionItems.isMember("instances")))
         {
         retval = false;
-        //std::cout << "no json" << std::endl;
         }
     else if (regionItems.isMember("errorMessage"))
         {
         retval = false;
-        //std::cout << "bad json" << std::endl;
         }
 
     if(retval)
@@ -350,6 +416,10 @@ bool User::ValidateSpatial(int activeUsers)
     return retval;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* ensures json response contains package id
+//+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidatePackageId(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
@@ -374,6 +444,10 @@ bool User::ValidatePackageId(int activeUsers)
     return retval;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* ensures that the file is on the filesystem
+//+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidatePacakgeFile(int activeUsers)
     {
     time_t currentTime = std::time(nullptr);
@@ -393,14 +467,9 @@ bool User::ValidatePacakgeFile(int activeUsers)
         {
         m_bench->SetPackageDownloaded(true);
 
-        /*if((rand() % 100) < -1) //innactive for now
-            m_currentOperation = OperationType::FILES;
-        else
-            {*/
         m_currentOperation = OperationType::SPATIAL;
-        BeFileName::BeDeleteFile(m_bench->GetPackageFileName().c_str());
+        BeFileName::BeDeleteFile(m_bench->GetPackageFileName().c_str()); //clean up and remove the package file
         m_retryCounter = 0;
-            //}
         }
 
     s_stats.InsertStats(OperationType::PACKFILE, retval, currentTime - m_downloadStart, activeUsers, "PackageFile: package is empty");
@@ -408,6 +477,10 @@ bool User::ValidatePacakgeFile(int activeUsers)
     return retval;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* automatically call the proper validation function for the last executed operation
+//+---------------+---------------+---------------+---------------+---------------+------*/
 bool User::ValidatePrevious(int activeUsers)
     {
     bool retval = true;
@@ -433,6 +506,9 @@ bool User::ValidatePrevious(int activeUsers)
     return retval;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName GetPemLocation()
     {
     WChar exePath[MAX_PATH];
@@ -447,6 +523,9 @@ BeFileName GetPemLocation()
     return caBundlePath;
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void ShowUsage()
     {
     std::cout << "Usage: RealityContextTest.exe -s:[serverType] -u:[users]" << std::endl << std::endl;
@@ -464,6 +543,41 @@ void ShowUsage()
     getch();
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+UserManager::UserManager()
+    {
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    m_pCurlHandle = curl_multi_init();
+    m_certPath = WString();
+    m_distribution = std::uniform_real_distribution<double>(0.0, 1.0);
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+UserManager::~UserManager()
+    {
+    if (m_pCurlHandle != NULL)
+        curl_multi_cleanup(m_pCurlHandle);
+    curl_global_cleanup();
+    for(int i = 0; i < users.size(); i++)
+        delete users[i];
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
+User::~User()
+    {
+    delete m_bench;
+    }
+
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 int main(int argc, char* argv[])
     {
     if(argc < 3)
@@ -471,7 +585,8 @@ int main(int argc, char* argv[])
         ShowUsage();
         return 0;
         }
-
+     
+    //use CCApi to get a token from the CONNECTION Client
     CCAPIHANDLE api = CCApi_InitializeApi(COM_THREADING_Multi);
     CallStatus status = APIERR_SUCCESS;
 
@@ -564,6 +679,7 @@ int main(int argc, char* argv[])
     RealityPlatform::ServerType serverType = RealityPlatform::ServerType::QA;
     Utf8String path = "";
 
+    //parse command line arguments
     for (int i = 0; i < argc; ++i)
         {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
@@ -630,32 +746,9 @@ int main(int argc, char* argv[])
     s_stats.WriteToFile(userCount, path);
     }
 
-UserManager::UserManager()
-    {
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-
-    m_pCurlHandle = curl_multi_init();
-    m_certPath = WString();
-    m_distribution = std::uniform_real_distribution<double>(0.0, 1.0);
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Donald.Morissette  9/2015
-//----------------------------------------------------------------------------------------
-UserManager::~UserManager()
-    {
-    if (m_pCurlHandle != NULL)
-        curl_multi_cleanup(m_pCurlHandle);
-    curl_global_cleanup();
-    for(int i = 0; i < users.size(); i++)
-        delete users[i];
-    }
-
-User::~User()
-    {
-    delete m_bench;
-    }
-
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void UserManager::Perform(int userCount)
     {
     // we can optionally limit the total amount of connections this multi handle uses 
@@ -663,7 +756,6 @@ void UserManager::Perform(int userCount)
 
     for (int i = 0; i < min(userCount, (int)users.size()); ++i)
         {
-        //SetupCurl(users[i]);
         users[i]->DoNext(this);
         }
     
@@ -672,7 +764,6 @@ void UserManager::Perform(int userCount)
 
     std::cout << "launching requests, it may take a few seconds to receive responses and display results" << std::endl;
 
-    //int failCounter = 0;
     do
         {
         CURLMcode mc; /* curl_multi_wait() return code */
@@ -715,14 +806,14 @@ void UserManager::Perform(int userCount)
 
                 if (msg->data.result == CURLE_OK)
                     {
-                    /*if(!user->ValidatePrevious())
-                        failCounter++;*/
+                    //response received, ensure that it is valid
                     user->ValidatePrevious(still_running);
 
-                    if(s_keepRunning)
+                    if(s_keepRunning) //has program exit been queued?
                         {
-                        int keepGoing = rand() % 100;
-                        if((user->m_currentOperation == OperationType::PACKFILE) || keepGoing < 20)
+                        int keepGoing = rand() % 100; 
+                        //20% chance user will immediately perform package request, after spatial request
+                        if((user->m_currentOperation == OperationType::PACKFILE) || keepGoing < 20) 
                             user->DoNext(this);
                         else
                             {
@@ -733,11 +824,10 @@ void UserManager::Perform(int userCount)
                     }
                 else if (msg->data.result != CURLE_OK)
                     {
-                    //failCounter++;
                     char error[256];
                     sprintf(error, "curl error number: %d", (int)msg->data.result);
+                    //in case of curl failure, add error number to error list
                     s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, Utf8String(error));
-                    //std::cout << "curl not ok" << std::endl;
                     if(s_keepRunning)
                         {
                         if(user->m_retryCounter < 10)
@@ -756,16 +846,14 @@ void UserManager::Perform(int userCount)
                 }
             else
                 {
-                //failCounter++;
                 char *pClient;
                 curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &pClient);
                 struct User *user = (struct User *)pClient;
                 s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, "unhandled curl failure");
-                //std::cout << "curl not ok" << std::endl;
                 }
             }
 
-        if (s_keepRunning && still_running == 0)
+        if (s_keepRunning && still_running == 0)//no pending requests but exit has not been queued
             {
             s_stats.PrintStats();
             std::cout << "user pool empty, repopulating" << std::endl;
@@ -773,9 +861,12 @@ void UserManager::Perform(int userCount)
             }
 
         } while (still_running);
-        
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//* when the dispatcher isn't working quickly enough, restarts all innactive users
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void UserManager::Repopulate()
     {
     std::lock_guard<std::mutex> lock(innactiveUserMutex);
@@ -789,6 +880,9 @@ void UserManager::Repopulate()
         }
     }
 
+///*---------------------------------------------------------------------------------**//**
+//* @bsifunction                                    Spencer Mason                  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------*/
 void UserManager::SetupCurl(User* user, Utf8StringCR url, Utf8StringCP retString, FILE* fp, Utf8StringCR postFields)
     {
     CURL *pCurl = NULL;

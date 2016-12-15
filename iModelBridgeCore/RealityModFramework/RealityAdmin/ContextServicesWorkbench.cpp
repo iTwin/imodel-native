@@ -232,9 +232,9 @@ Utf8String ContextServicesWorkbench::GetPackageParameters(bvector<Utf8String> se
         }
 
     //if (containOsmClass())
-        listAsPostFields.append("],'CoordinateSystem':null,'OSM': true,'Polygon':'[");
-    /*else
-        listAsPostFields.append("],'CoordinateSystem':null,'OSM': false,'Polygon':'[");*/
+        /*listAsPostFields.append("],'CoordinateSystem':null,'OSM': true,'Polygon':'[");
+    else*/
+        listAsPostFields.append("],'CoordinateSystem':null,'OSM': false,'Polygon':'[");
 
     listAsPostFields.append(m_params.GetPolygonAsString(false));
     listAsPostFields.append("]'}}, 'requestOptions':{'CustomOptions':{'Version':'2', 'Requestor':'ContextServicesWorkbench', 'RequestorVersion':'1.0' }}}");
