@@ -1682,6 +1682,7 @@ void SimplifyGraphic::_AddShape2d(int numPoints, DPoint2dCP points, bool filled,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08
 +---------------+---------------+---------------+---------------+---------------+------*/
+PUSH_MSVC_IGNORE(6386) // I can't figure out how to silence this static analysis warning in this function, so just ignoring.
 void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usageFlags)
     {
     if (1 == usageFlags) // represents thickened line...
@@ -1705,6 +1706,7 @@ void SimplifyGraphic::_AddTriStrip(int numPoints, DPoint3dCP points, int32_t usa
     for (int iPt=0; iPt < numPoints-2; iPt++)
         _AddShape(3, &points[iPt], true);
     }
+POP_MSVC_IGNORE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/08

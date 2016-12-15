@@ -1172,11 +1172,16 @@ bool DgnQueryView::RangeQuery::ComputeOcclusionScore(double& score, FrustumCR bo
         projectionIndex = m_orthogonalProjectionIndex;
         }
 
+    BeAssert(projectionIndex <= 42);
+    if (projectionIndex > 42)
+        {
+        BeAssert(false);
+        return false;
+        }
+
     uint32_t nVertices= s_indexList[projectionIndex][6];
     DPoint3d    npcVertices[6];
-
-    BeAssert(projectionIndex <= 42);
-    if (projectionIndex > 42 || 0 == nVertices)
+    if (0 == nVertices)
         {
         BeAssert(false);
         return false;
