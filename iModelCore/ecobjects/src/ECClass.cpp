@@ -1704,11 +1704,20 @@ SchemaReadStatus ECClass::_ReadXmlAttributes (BeXmlNodeR classNode)
     Utf8String     modifierString;
     BeXmlStatus modifierStatus = classNode.GetAttributeStringValue(modifierString, MODIFIER_ATTRIBUTE);
     if (BEXML_Success == modifierStatus)
+        {
         if (ECObjectsStatus::Success != ECXml::ParseModifierString(m_modifier, modifierString))
             {
             LOG.errorv("Class %s has an invalid modifier attribute value %s", this->GetName().c_str(), modifierString.c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
+        }
+    // Modifier is only required on ECRelationshipClasses in ecxml versions is greater than 3.1
+    else if (IsRelationshipClass() &&
+                ((m_schema.GetOriginalECXmlVersionMajor() == 3 && m_schema.GetOriginalECXmlVersionMinor() >= 1) || m_schema.GetOriginalECXmlVersionMajor() > 3))
+        {
+        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass %s must contain a %s attribute", this->GetFullName(), MODIFIER_ATTRIBUTE);
+        return SchemaReadStatus::InvalidECSchemaXml;
+        }
 
     return SchemaReadStatus::Success;
     }
@@ -2124,7 +2133,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         bool isConcrete = this->GetClassModifier() != ECClassModifier::Abstract;
         xmlWriter.WriteAttribute(IS_DOMAINCLASS_ATTRIBUTE, isConcrete && !(IsStructClass() || IsCustomAttributeClass()));
         }
-    else if (m_modifier != ECClassModifier::None)
+    else if (m_modifier != ECClassModifier::None || IsRelationshipClass())
         {
         xmlWriter.WriteAttribute(MODIFIER_ATTRIBUTE, ECXml::ModifierToString(m_modifier));
         }

@@ -1642,7 +1642,7 @@ TEST_F(SchemaDeserializationTest, ExpectSuccessWhenDerivedClassComesBeforeBaseCl
         "   </ECEntityClass>"
         "   <ECEntityClass typeName='A' modifier='abstract'></ECEntityClass>"
         "   <ECEntityClass typeName='B' modifier='abstract'></ECEntityClass>"
-        "   <ECRelationshipClass typeName='ARelC' modifer='sealed'>"
+        "   <ECRelationshipClass typeName='ARelC' modifier='sealed'>"
         "       <BaseClass>ARelB</BaseClass>"
         "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource' >"
         "           <Class class='A' />"
@@ -2481,6 +2481,53 @@ TEST_F(SchemaDeserializationTest, TestMultiplicityValidation)
     EXPECT_EQ(0, RelationshipMultiplicity::Compare(relClass->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroMany()));
     EXPECT_EQ(0, RelationshipMultiplicity::Compare(derivedRelClass->GetSource().GetMultiplicity(), RelationshipMultiplicity::OneOne()));
     EXPECT_EQ(0, RelationshipMultiplicity::Compare(derivedRelClass->GetTarget().GetMultiplicity(), RelationshipMultiplicity::ZeroMany()));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestFailureWhenRelationshipClassModifierNotFound)
+    {
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A'/>"
+        "   <ECEntityClass typeName='B'/>"
+        "   <ECRelationshipClass typeName='ARelB' >"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class is missing the modifier attribute.";
+    }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A'/>"
+        "   <ECEntityClass typeName='B'/>"
+        "   <ECRelationshipClass typeName='ARelB' modifier=''>"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class modifier attribute is empty.";
+    }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
