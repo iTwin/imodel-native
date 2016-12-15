@@ -226,7 +226,6 @@ RefCountedPtr<DataPropertyMap> ClassMapper::MapPrimitiveProperty(ECN::PrimitiveE
     else
         {
         const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(property.GetType());
-
         column = m_classMap.GetColumnFactory().CreateColumn(property, colType, createParams, accessString);
         if (column == nullptr)
             return nullptr;
