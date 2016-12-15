@@ -194,7 +194,7 @@
    },
    "Row" : [
       {
-         "$ECClassId" : "194",
+         "$ECClassId" : "197",
          "$ECClassKey" : "StartupCompany.Foo",
          "$ECClassLabel" : "Foo",
          "$ECInstanceId" : "1",

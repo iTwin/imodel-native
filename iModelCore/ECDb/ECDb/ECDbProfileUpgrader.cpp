@@ -158,7 +158,7 @@ Utf8CP ECDbProfileECSchemaUpgrader::GetECDbSystemECSchemaXml()
         "        <BaseClass>PrimitiveArray</BaseClass> "
         "        <ECArrayProperty propertyName='Array' typeName='string'/> "
         "    </ECEntityClass> "
-        "    <ECEntityClass typeName='ClassECSqlSystemProperties' modifier='Abstract' Defines the ECSQL system properties of an ECClass in an ECSQL statement.>"
+        "    <ECEntityClass typeName='ClassECSqlSystemProperties' modifier='Abstract' description='Defines the ECSQL system properties of an ECClass in an ECSQL statement.'>"
         "       <ECCustomAttributes>"
         "            <ClassMap xmlns='ECDbMap.02.00.00'>"
         "                <MapStrategy>NotMapped</MapStrategy>"
