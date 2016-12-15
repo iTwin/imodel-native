@@ -4410,7 +4410,7 @@ bool GeometryBuilder::Append(TextAnnotationCR text, CoordSystem coord)
 GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, Placement3dCR placement) : m_dgnDb(dgnDb), m_is3d(true), m_writer(dgnDb)
     {
     m_placement3d = placement;
-    m_placement2d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
+    m_placement3d.GetElementBoxR().Init(); // throw away pre-existing bounding box...
     m_havePlacement = true;
     m_appearanceChanged = false;
     m_appendAsSubGraphics = false;
