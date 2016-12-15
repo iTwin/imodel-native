@@ -48,7 +48,7 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeRefersToAlignment" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="SegmentRangeRefersToAlignment" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <BaseClass>rralign:SpatialElementRefersToAlignment</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="SegmentRangeElement"/>
@@ -82,7 +82,7 @@
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding">
+    <ECRelationshipClass typeName="SegmentRangeAssemblesSegments" strength="embedding" modifier="Sealed">
         <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 range">
             <Class class="SegmentRangeElement"/>
@@ -110,7 +110,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 intersection">
             <Class class="IntersectionSegmentElement"/>
         </Source>
@@ -129,7 +129,7 @@
         <ECNavigationProperty propertyName="RoadCrossSection" relationshipName="RoadSegmentRefersToCrossSection" direction="Forward"/>
         <ECProperty propertyName="CrossSectionDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="RoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
             <Class class="RoadSegment"/>
         </Source>
@@ -151,7 +151,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ElevatedRoadCrossSection" relationshipName="ElevatedRoadSegmentRefersToCrossSection" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElevatedRoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="ElevatedRoadSegmentRefersToCrossSection" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
             <Class class="ElevatedRoadSegment"/>
         </Source>
@@ -175,7 +175,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadIntersectionLegDefinition" relationshipName="RoadIntersectionLegRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadIntersectionLegRefersToDefinition" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="RoadIntersectionLegRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
             <Class class="RoadIntersectionSegment"/>
         </Source>
@@ -280,7 +280,7 @@
         <ECProperty propertyName="LightsJson" typeName="string" />
         <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Abstract">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
             <Class class="FurnitureElement"/>
         </Source>
@@ -294,7 +294,7 @@
     <ECEntityClass typeName="GuardRailFurnitureDefinitionElement" modifier="Sealed">
         <BaseClass>FurnitureDefinitionElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing">
+    <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
             <Class class="FurnitureDefinitionElement"/>
         </Source>
@@ -308,7 +308,7 @@
     <ECEntityClass typeName="GenericFurnitureAssembly" modifier="Sealed" description="Generic top-level element, assemblying other furniture elements." >
         <BaseClass>FurnitureAssemblyElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding">
+    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding" modifier="Abstract">
         <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 furniture assembly">
             <Class class="FurnitureAssemblyElement"/>
@@ -340,7 +340,7 @@
     <ECEntityClass typeName="GenericRepetitiveTemplateGeometryDefinition" modifier="Sealed">
         <BaseClass>RepetitiveTemplateGeometryDefinitionElement</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PartEncapsulatedAsStartGeometry" strength="referencing">
+    <ECRelationshipClass typeName="PartEncapsulatedAsStartGeometry" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Source>
@@ -348,7 +348,7 @@
             <Class class="TemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing">
+    <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Source>
@@ -356,7 +356,7 @@
             <Class class="TemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing">
+    <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Source>
@@ -364,7 +364,7 @@
             <Class class="TemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing">
+    <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Source>
@@ -372,7 +372,7 @@
             <Class class="TemplateGeometryDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding">
+    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementEncapsulatesElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is encapsulated by a definition">
             <Class class="TemplateGeometryDefinitionElement"/>
@@ -460,7 +460,7 @@
         <ECProperty propertyName="SagK_SSD" typeName="double" />
         <ECProperty propertyName="IgnoreLength" typeName="double" />        
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N design-speeds">
             <Class class="RoadDesignSpeed"/>
         </Source>
@@ -528,7 +528,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadClassDefinition" relationshipName="RoadClassRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadClassRefersToDefinition" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="RoadClassRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N road-classes">
             <Class class="RoadClass"/>
         </Source>
@@ -669,7 +669,7 @@
         <ECProperty propertyName="BiasValue" typeName="double"/>
         <ECProperty propertyName="Type" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="CrossSectionParameterDependsOnPoints" strength="referencing" strengthDirection="backward">
+    <ECRelationshipClass typeName="CrossSectionParameterDependsOnPoints" strength="referencing" strengthDirection="backward" modifier="Sealed">
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
             <Class class="CrossSectionParameter"/>
         </Source>
@@ -677,7 +677,7 @@
             <Class class="CrossSectionPoint"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CrossSectionParameterTargetsPointPairs" strength="referencing">
+    <ECRelationshipClass typeName="CrossSectionParameterTargetsPointPairs" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
         <ECProperty propertyName="PairNumber" typeName="int"/>
         <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N parameters">
@@ -687,7 +687,7 @@
             <Class class="CrossSectionPoint"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="CrossSectionConstraint" strength="referencing">
+    <ECRelationshipClass typeName="CrossSectionConstraint" strength="referencing" modifier="Sealed">
         <BaseClass>bis:ElementDrivesElement</BaseClass>
         <ECCustomAttributes>
             <!--ClassHasHandler xmlns="dgn.02.00"/>
