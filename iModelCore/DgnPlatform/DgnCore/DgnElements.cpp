@@ -895,13 +895,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_stmts.Empty();
     m_classInfos.clear();
-    for (bpair<const DgnClassId, ECInstanceUpdater*>& kvPair : m_updaterCache)
-        {
-        if (kvPair.second != nullptr)
-            delete kvPair.second;
-        }
-
-    m_updaterCache.clear();
+    ClearUpdaterCache();
     }
 
 /*---------------------------------------------------------------------------------**//**

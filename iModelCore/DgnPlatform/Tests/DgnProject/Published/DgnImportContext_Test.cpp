@@ -555,6 +555,33 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      05/15
 //---------------------------------------------------------------------------------------
+TEST_F(ImportTest, OpenStatementsProblem)
+{
+    // This just opens the DgnDb
+    SetupSeedProject(L"ImportElementsWithDependencies.bim", Db::OpenMode::ReadWrite, true);
+
+    // Create and insert a model
+    PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
+    
+    // Create and insert an element
+    DgnCategoryId gcatid = DgnDbTestUtils::GetFirstSpatialCategoryId(*m_db);
+    //auto e1 = insertElement(*m_db, model1->GetModelId(), true, DgnCategory::GetDefaultSubCategoryId(gcatid), nullptr);
+    //auto e1 = GenericPhysicalObject::Create(*model1, gcatid);
+    auto e1 = TestElement::Create(*m_db, model1->GetModelId(), gcatid, "e1");       // only TestElement causes the problem!
+    ASSERT_TRUE(e1->Insert().IsValid());
+
+    //  Create and insert a second model
+    auto partition2 = PhysicalPartition::CreateAndInsert(*m_db->Elements().GetRootSubject(), "Partition2");
+    ASSERT_TRUE(partition2.IsValid());
+
+    //  Copy the contents of the first model to the second
+    PhysicalModelPtr model2 = dynamic_cast<PhysicalModel*>(DgnModel::CopyModel(*model1, partition2->GetElementId()).get());
+    ASSERT_TRUE(model2.IsValid());
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson      05/15
+//---------------------------------------------------------------------------------------
 TEST_F(ImportTest, ImportElementsWithDependencies)
 {
     SetupSeedProject(L"ImportElementsWithDependencies.bim", Db::OpenMode::ReadWrite, true);

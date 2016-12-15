@@ -135,9 +135,9 @@
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="Authority issues codes for elements" polymorphic="true">
             <Class class="Authority"/>
@@ -296,9 +296,9 @@
 
     <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="Model contains elements" polymorphic="true">
             <Class class="Model"/>
@@ -315,9 +315,9 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="Model models Element" polymorphic="true">
             <Class class="Model"/>
@@ -1275,9 +1275,9 @@
 
     <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="ViewDefinition owns ViewAttachment" polymorphic="true">
             <Class class="ViewDefinition"/>
@@ -1296,10 +1296,10 @@
         <!-- WIP: Should be abstract? -->
         <!-- WIP: Rename to ElementCompositesElements? -->
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <!-- The Element API will handle cascading the delete -->
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="Element owns child Elements" polymorphic="true">
             <Class class="Element"/>
@@ -1561,9 +1561,9 @@
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="GeometricElement2d is in DrawingCategory" polymorphic="true">
             <Class class="GeometricElement2d" />
@@ -1574,9 +1574,9 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="GeometricElement3d is in SpatialCategory" polymorphic="true">
             <Class class="GeometricElement3d" />
@@ -1770,9 +1770,9 @@
 
     <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="GeometricModel2d is base model for 2D views" polymorphic="true">
             <Class class="GeometricModel2d"/>
