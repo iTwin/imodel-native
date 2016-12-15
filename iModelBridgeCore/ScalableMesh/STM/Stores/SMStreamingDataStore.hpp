@@ -2071,7 +2071,7 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
             auto indice_array = (int16_t*)(buffer + indice_buffer_pointer.offset);
             for (uint32_t i = 0; i < indice_buffer_pointer.count; i++)
                 {
-                m_tileData.m_indicesData[i] = (int32_t)indice_array[i];
+                m_tileData.m_indicesData[i] = (int32_t)indice_array[i] + 1; // QV wants indices to start at 1 for the moment
                 }
             }
         else

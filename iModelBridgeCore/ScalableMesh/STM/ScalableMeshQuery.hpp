@@ -2200,7 +2200,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                     //NEEDS_WORK_SM : Could generate them starting at 0.
                     // Indices from Cesium datasets start at 0.
-                    int offset = meshNode->IsFromCesium() ? 0 : 1;
+                    int offset = false/*meshNode->IsFromCesium()*/ ? 0 : 1;
                     for (size_t ind = 0; ind < toLoadNbFaceIndexes; ind++)
                         {
                         toLoadFaceIndexes[ind] = indicesP[ind] - offset;
@@ -2238,7 +2238,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
 
                 if (texLoaded&& toLoadUvCount > 0 && textureIDs[part / 2].first)
                     {
-                    int offset = meshNode->IsFromCesium() ? 0 : 1;
+                    int offset = false/*meshNode->IsFromCesium()*/ ? 0 : 1;
 
                     for (size_t faceInd = 0; faceInd < toLoadNbFaceIndexes; faceInd++)
                         {
