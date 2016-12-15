@@ -58,6 +58,8 @@ struct LightweightCache final: NonCopyableClass
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
         //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
+        bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
+
         //For a end table relationship class map, the storage description provides horizontal partitions
         //For the end table's constraint classes - not for the relationship itself.
         StorageDescription const& GetStorageDescription(ClassMap const&)  const;

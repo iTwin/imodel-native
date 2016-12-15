@@ -372,4 +372,169 @@ BentleyStatus DerivedClassUsedSharedColumnQuery::_Query(bset<DbColumn const*>& c
     return SUCCESS;
     }
 
+//*************************DbColumnFactoryEx********************************
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
+std::set<ECN::ECClassCP>DbColumnFactoryEx::GetRootClasses(ECN::ECClassCR ecClass)
+    {
+    std::set<ECN::ECClassCP> rootClasses;
+    std::function<void(ECClassCP)> traverse = [&] (ECClassCP contextClass)
+        {
+        if (!contextClass->HasBaseClasses())
+            rootClasses.insert(contextClass);
+        else
+            for (ECClassCP baseClass : contextClass->GetBaseClasses())
+                traverse(baseClass);
+        };
+
+    traverse(&ecClass);
+    return rootClasses;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
+std::set<ClassMap const*> DbColumnFactoryEx::GetDeepestClassMapsInTph(ClassMap const& classMap)
+    {
+    if (!classMap.GetMapStrategy().GetTphInfo().IsValid())
+        return std::set<ClassMap const*>();
+
+    DbTable const& contextTable = classMap.GetJoinedTable();
+    ECDbMap const& dbMap = classMap.GetDbMap();
+
+    std::set<ECClassCP> doneList;
+    std::set<ClassMap const*> deepestMappedClassSet;
+    std::set<RelationshipClassEndTableMap const*> relationshipMapSet;
+    std::function<void(ECClassCP)> findDeepestMappedClass = [&] (ECClassCP contextClass)
+        {
+        if (doneList.find(contextClass) != doneList.end())
+            return;
+
+        doneList.insert(contextClass);
+        ClassMap const* contextClassMap = dbMap.GetClassMap(*contextClass);
+        if (contextClassMap == nullptr)
+            return;
+
+        if (&classMap != contextClassMap)
+            {
+            if (contextClassMap->GetJoinedTable().GetId() == contextTable.GetId())
+                deepestMappedClassSet.insert(contextClassMap);
+            }
+
+        const size_t n = deepestMappedClassSet.size();
+        for (ECClassCP derivedClass : dbMap.GetECDb().Schemas().GetDerivedECClasses(contextClassMap->GetClass()))
+            findDeepestMappedClass(derivedClass);
+
+        //Figure out Relationship
+        for (auto const& key : dbMap.GetLightweightCache().GetRelationshipClasssForConstraintClass(contextClassMap->GetClass().GetId()))
+            {
+            ECClassId relationshipClassId = key.first;
+            ECRelationshipClassCP relationshipClass = static_cast<ECRelationshipClassCP>(dbMap.GetECDb().Schemas().GetECClass(relationshipClassId));
+            if (relationshipClass == nullptr)
+                continue;
+
+            if (doneList.find(relationshipClass) != doneList.end())
+                continue;
+
+            doneList.insert(relationshipClass);
+            ClassMap const* contextRelationshipMap = dbMap.GetClassMap(*relationshipClass);
+            if (contextRelationshipMap == nullptr)
+                continue;
+
+            if (contextRelationshipMap->GetType() != ClassMap::Type::RelationshipEndTable)
+                continue;
+
+            RelationshipClassEndTableMap const* contextRelationshipEndTableMap = static_cast<RelationshipClassEndTableMap const*>(contextRelationshipMap);
+            if (contextRelationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->IsMappedToTable(contextTable))
+                {
+                relationshipMapSet.insert(contextRelationshipEndTableMap);
+                }
+            }
+        //
+        //We are only interested in deepest mapped leave nodes and not all classes
+        //We will remove the current class if we find that it has valid leaf nodes
+        auto contextItemItor = deepestMappedClassSet.find(contextClassMap);
+        if (contextItemItor != deepestMappedClassSet.end() && deepestMappedClassSet.size() > n)
+            {
+            deepestMappedClassSet.erase(contextItemItor);
+            }
+        };
+
+    for (ECN::ECClassCP rootClass : GetRootClasses(classMap.GetClass()))
+        findDeepestMappedClass(rootClass);
+
+    deepestMappedClassSet.insert(relationshipMapSet.begin(), relationshipMapSet.end());
+    return deepestMappedClassSet;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
+Utf8String DbColumnFactoryEx::QualifiedAccessString(PropertyMap const& propertyMap)
+    {
+    return propertyMap.GetClassMap().GetClass().GetFullName() + Utf8String(".") + propertyMap.GetAccessString();
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
+std::map<Utf8String, DbColumn const*, CompareIUtf8Ascii> DbColumnFactoryEx::BuildUsedColumnMap(ClassMap const& contextClassMap)
+    {
+    const std::set<ClassMap const*> deepestClassMapsInTph = GetDeepestClassMapsInTph(contextClassMap);
+    std::map<Utf8String, DbColumn const*, CompareIUtf8Ascii> columnsMap;
+    for (ClassMap const* classMap : deepestClassMapsInTph)
+        {
+        if (classMap->GetType() == ClassMap::Type::RelationshipEndTable)
+            {
+            RelationshipClassEndTableMap const* relationshipEndTableMap = static_cast<RelationshipClassEndTableMap const*>(classMap);
+            auto ecInstanceId = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
+            auto ecClassId = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
+            if (ecInstanceId == nullptr)
+                {
+                BeAssert(false);
+                }
+
+            if (ecClassId == nullptr)
+                {
+                BeAssert(false);
+                }
+
+            columnsMap[QualifiedAccessString(*ecInstanceId)] = &ecInstanceId->GetColumn();
+            columnsMap[QualifiedAccessString(*ecClassId)] = &ecClassId->GetColumn();
+            }
+        else
+            {
+            SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
+            classMap->GetPropertyMaps().AcceptVisitor(visitor);
+            for (PropertyMap const* propertyMap : visitor.Results())
+                {
+                auto itor = columnsMap.find(propertyMap->GetAccessString().c_str());
+                if (itor != columnsMap.end())
+                    continue;
+
+                SingleColumnDataPropertyMap const* dataPropertyMap = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
+                columnsMap[dataPropertyMap->GetAccessString()] = &dataPropertyMap->GetColumn();
+                }
+            }
+        }
+
+    return columnsMap;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
+DbColumnFactoryEx::Ptr DbColumnFactoryEx::Create(ClassMap const& classMap)
+    {
+    Ptr instance = Ptr(new DbColumnFactoryEx(classMap));
+    instance->m_usedColumnMap = BuildUsedColumnMap(classMap);
+
+    return instance;
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -48,6 +48,27 @@ struct DbColumnFactory : NonCopyableClass
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
     };
 
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+struct DbColumnFactoryEx  final: NonCopyableClass
+    {
+    typedef std::unique_ptr<DbColumnFactoryEx> Ptr;
+    private:
+        ClassMap const& m_classMap;
+        std::map<Utf8String, DbColumn const*, CompareIUtf8Ascii> m_usedColumnMap;
+        
+    private:
+        static std::set<ECN::ECClassCP> GetRootClasses(ECN::ECClassCR ecClass);
+        //!The funtion return deepest mapped classes from memory or disk and does not include class for which its called.
+        static std::set<ClassMap const*> GetDeepestClassMapsInTph(ClassMap const& classMap);
+        static Utf8String QualifiedAccessString(PropertyMap const& propertyMap);
+        static std::map<Utf8String, DbColumn const*, CompareIUtf8Ascii> BuildUsedColumnMap(ClassMap const& contextClassMap);
+        DbColumnFactoryEx(ClassMap const& classMap) :m_classMap(classMap){}
+    public:
+        ClassMap const& GetClassMap() const { return m_classMap; }
+        static Ptr Create(ClassMap const& classMap);
+    };
 
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015

@@ -994,7 +994,13 @@ ConstraintECInstanceIdPropertyMap const* RelationshipClassEndTableMap::GetForeig
     {
     return GetConstraintMap(GetForeignEnd()).GetECInstanceIdPropMap();
     }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                               Krischan.Eberle       11/2013
+//+---------------+---------------+---------------+---------------+---------------+------
+ConstraintECClassIdPropertyMap const* RelationshipClassEndTableMap::GetForeignEndECClassIdPropMap() const
+    {
+    return GetConstraintMap(GetForeignEnd()).GetECClassIdPropMap();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
