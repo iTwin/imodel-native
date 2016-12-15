@@ -138,7 +138,7 @@ void ECSqlPrepareContext::ExpScopeStack::Push(ExpCR exp, OptionsExp const* optio
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlPrepareContext::SelectClauseInfo::AddProperty(PropertyMap const& propertyMap)
     {
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All, /*traverseCompoundProperties = */ true);
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
     propertyMap.AcceptVisitor(typeVisitor);
     for (PropertyMap const* propMap : typeVisitor.Results())
         {

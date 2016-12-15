@@ -119,8 +119,8 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
             SystemPerTablePrimitive = 8192,
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
-            Data = Primitive | Point3d | Point2d | PrimitiveArray | Struct | StructArray | Navigation | NavigationRelECClassId | NavigationId | SystemPerTablePrimitive,
-            Entity = ECInstanceId | ECClassId | Data,
+            SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTablePrimitive,
+            Data = SingleColumnData | Point3d | Point2d | Struct | Navigation,
             All = System | Data
             };
     private:
@@ -162,7 +162,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         //! Test if current property is of type system. 
         bool IsSystem() const { return Enum::Contains(Type::System, GetType()); }
         //! Test if current property is of type business. 
-        bool IsData () const { return Enum::Contains(Type::Data, GetType()); }
+        bool IsData() const { return Enum::Contains(Type::Data, GetType()); }
         
         //! Test if current property map mapped to a specific table or not.
         bool IsMappedToTable(DbTable const& table) const { return _IsMappedToTable(table); } //WIP Move to ECSQL
@@ -170,6 +170,8 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         Path GetPath() const { return Path::From(*this); }
     };
+
+ENUM_IS_FLAGS(PropertyMap::Type);
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

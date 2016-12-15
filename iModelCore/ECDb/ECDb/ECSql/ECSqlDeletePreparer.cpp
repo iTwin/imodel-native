@@ -70,7 +70,7 @@ ECSqlStatus ECSqlDeletePreparer::PrepareForEndTableRelationship(ECSqlPrepareCont
     ToSqlPropertyMapVisitor sqlVisitor(*contextTable, ToSqlPropertyMapVisitor::ECSqlScope::NonSelectNoAssignmentExp, nullptr);
 
     NativeSqlBuilder::List propertyNamesToUnsetSqlSnippets;
-    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::All);
+    SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data | PropertyMap::Type::ConstraintECInstanceId | PropertyMap::Type::ConstraintECClassId);
     classMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
     for (PropertyMap const* propMap : typeVisitor.Results())
         {
