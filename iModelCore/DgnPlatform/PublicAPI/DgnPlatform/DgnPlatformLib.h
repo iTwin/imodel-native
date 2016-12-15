@@ -576,6 +576,8 @@ public:
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() = 0;
 
+        virtual RefCountedPtr<TileViewport> _CreateTileViewport() {return nullptr;}
+
         Host()
             {
             m_knownLocationsAdmin = nullptr;

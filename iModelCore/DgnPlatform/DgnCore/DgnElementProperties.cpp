@@ -681,29 +681,71 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceUpdaterCache::ECInstanceUpdaterCache()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceUpdaterCache::~ECInstanceUpdaterCache()
+    {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceUpdaterCache::Clear()
+    {
+    for (auto& entry : m_updaters)
+        {
+        if (nullptr != entry.second)
+            delete entry.second;
+        }
+    m_updaters.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, ECN::ECClassCR eclass)
+    {
+    DgnClassId eclassId(eclass.GetId().GetValue());
+  
+    auto iupdater = m_updaters.find(eclassId);
+    if (iupdater != m_updaters.end())
+        return iupdater->second;
+
+    bvector<ECN::ECPropertyCP> propertiesToBind;
+    _GetPropertiesToBind(propertiesToBind, db, eclass);
+
+    if (propertiesToBind.empty())
+        return m_updaters[eclassId] = nullptr;
+
+    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECSqlWriteToken(), propertiesToBind);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::GetUpdater()
     {
     BeAssert(IsValid());
-
-    DgnClassId eclassid(m_eclass->GetId().GetValue());
-
-    auto& updaterCache = m_element.GetDgnDb().Elements().m_updaterCache;
-    auto iupdater = updaterCache.find(eclassid);
-    if (iupdater != updaterCache.end())
-        return iupdater->second;
-
-    bvector<ECN::ECPropertyCP> autoHandledProperties;
-    for (auto prop : AutoHandledPropertiesCollection(*m_eclass, m_element.GetDgnDb(), ECSqlClassParams::StatementType::InsertUpdate, false))
+    return m_element.GetDgnDb().Elements().m_updaterCache.GetUpdater(m_element.GetDgnDb(), *m_eclass);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::AutoHandledPropertyUpdaterCache::_GetPropertiesToBind(bvector<ECN::ECPropertyCP>& autoHandledProperties, DgnDbR db, ECClassCR eclass)
+    {
+    for (auto prop : AutoHandledPropertiesCollection(eclass, db, ECSqlClassParams::StatementType::InsertUpdate, false))
         {
         autoHandledProperties.push_back(prop);
         }
-
-    if (autoHandledProperties.empty())
-        return updaterCache[eclassid] = nullptr;
-
-    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, m_element.GetDgnDb().GetECSqlWriteToken(), autoHandledProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,12 +753,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::ClearUpdaterCache()
     {
-    for (auto& upd : m_updaterCache)
-        {
-        if (upd.second)
-            delete upd.second;
-        }
-    m_updaterCache.clear();
+    m_updaterCache.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**

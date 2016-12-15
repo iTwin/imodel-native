@@ -1118,6 +1118,8 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         Dispose(): void;
     }
 
+    type HitDetailP = cxx_pointer<HitDetail>;
+
     /* ------------------------------------------ Briefcase Management ------------------------------------------*/
 
     enum LockableType { }
