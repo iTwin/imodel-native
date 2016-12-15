@@ -119,10 +119,12 @@ void BuildSkirt(PolyfaceHeaderPtr& skirt, bvector<DPoint3d> polylineToSkirt, Ter
     IFacetOptionsPtr facetOptions = IFacetOptions::Create();
     bvector<TerrainModel::DTMDrapedLinePtr> drapedSegments;
     TerrainModel::IDTMDraping * draping = dtmPtr->GetDTMDraping();
-    for (size_t ptInd = 0; ptInd < polylineToSkirt.size() - 1; ptInd++)
+    bvector<DPoint3d> skirtLine = polylineToSkirt;
+    for (auto& pt : skirtLine) pt.z = 0.0;
+    for (size_t ptInd = 0; ptInd < skirtLine.size() - 1; ptInd++)
         {
         TerrainModel::DTMDrapedLinePtr drapedLinePP;
-        DTMStatusInt status = draping->DrapeLinear(drapedLinePP, &polylineToSkirt[ptInd], 2);        
+        DTMStatusInt status = draping->DrapeLinear(drapedLinePP, &skirtLine[ptInd], 2);
         assert(status == DTM_SUCCESS);
         if (drapedLinePP.IsValid())
             drapedSegments.push_back(drapedLinePP);

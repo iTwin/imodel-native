@@ -987,6 +987,8 @@ template <class POINT> int ScalableMesh<POINT>::Close
         ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Fast]->GetDTMDraping())->ClearNodes();
     if (m_scalableMeshDTM[DTMAnalysisType::Precise] != nullptr)
         ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Precise]->GetDTMDraping())->ClearNodes();
+
+    SMMemoryPool::CleanVideoMemoryPool();
     m_scmIndexPtr = 0;
 
     if(m_smSQLitePtr != nullptr)

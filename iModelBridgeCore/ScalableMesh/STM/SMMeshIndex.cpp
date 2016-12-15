@@ -370,3 +370,4 @@ void SmCachedDisplayTextureData::RemoveConsumer(const SMMeshIndexNode<DPoint3d, 
         }
     if (toRemove != m_consumers.end()) m_consumers.erase(toRemove);
     }
+

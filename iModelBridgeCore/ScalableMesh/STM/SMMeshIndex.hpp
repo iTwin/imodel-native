@@ -32,6 +32,7 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #define SM_OUTPUT_MESHES_GRAPH 0
+#define SM_TRACE_BUILD_SKIRTS 0
 
 template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     {
@@ -386,11 +387,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
             GetMemoryPool()->RemoveItem(m_texturePoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             m_texturePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
-        else if (m_nodeHeader.m_isTextured)
-            {
-            auto tex = GetSingleDisplayTexture();
-            if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
-            }
+
 
 
 
@@ -927,6 +924,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::AddEdit
 //=======================================================================================
 template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Unload() 
     {
+    if (IsLoaded() && m_nodeHeader.m_isTextured) // we must do this before Unload since the texID is stored in the header.
+    {
+        auto tex = GetSingleDisplayTexture();
+        if (tex.IsValid()) const_cast<SmCachedDisplayTextureData*>(tex->GetData())->RemoveConsumer(this);
+    }
+
     SMPointIndexNode<POINT, EXTENT>::Unload();
     }
 
@@ -3872,6 +3875,18 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
             );
         RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(GetPointsPtr());
 
+
+#if SM_TRACE_BUILD_SKIRTS
+        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> pointsIndicePtr(GetPtsIndicePtr());
+
+            {
+            WString fileName(L"E:\\output\\scmesh\\2016-11-30\\before_skirt_");
+            fileName.append(std::to_wstring(GetBlockID().m_integerID).c_str());
+            fileName.append(L".m");
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(fileName, pointsPtr->size(), pointsIndicePtr->size(), &(*pointsPtr)[0], &(*pointsIndicePtr)[0])
+            }
+#endif
+
         auto dtm = m_nodeHeader.m_arePoints3d ? Tile3dTM::Create(nodeP) : nodeP->GetBcDTM();
         if (dtm.get() == nullptr) return;
             SkirtBuilder builder(dtm);
@@ -3887,6 +3902,26 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 GetClipRegistry()->GetSkirt(diffSet.clientID, skirts);
                 bvector<PolyfaceHeaderPtr> polyfaces;
                 builder.BuildSkirtMesh(polyfaces, skirts);
+#if SM_TRACE_BUILD_SKIRTS
+                for (auto& poly: polyfaces)
+                    {
+                    if (poly == nullptr) continue;
+                    WString fileName(L"E:\\output\\scmesh\\2016-11-30\\skirt_");
+                    fileName.append(std::to_wstring(GetBlockID().m_integerID).c_str());
+                    fileName.append(L"_");
+                    fileName.append(std::to_wstring(&poly-&polyfaces[0]).c_str());
+                    fileName.append(L".m");
+                    bvector<int32_t> idx;
+                    for (size_t i = 0; i < poly->GetPointIndexCount(); i+=4)
+                        {
+                        idx.push_back(poly->GetPointIndexCP()[i] + 1);
+                        idx.push_back(poly->GetPointIndexCP()[i+1] + 1);
+                        idx.push_back(poly->GetPointIndexCP()[i+2] + 1);
+                        }
+
+                    LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(fileName, poly->GetPointCount(), idx.size(), poly->GetPointCP(), &idx[0])
+                    }
+#endif
                 DifferenceSet current = DifferenceSet::FromPolyfaceSet(polyfaces, mapOfPoints, pointsPtr->size() + 1);
                 current.clientID = diffSet.clientID;
                 current.toggledForID = false;
@@ -4086,12 +4121,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
             }
        // if (d.addedFaces.size() == 0 && d.removedFaces.size() == 0 && d.addedVertices.size() == 0 && d.removedVertices.size() == 0) emptyClip = true;
 
-        if (isVisible && !emptyClip)
+        //On large datasets doing everything in the main thread is costly, but so would be adding a mutex in AddClip, so not sure what to do with this for now.
+       /* if (isVisible && !emptyClip) 
             {
             PropagateClipUpwards(clipId, ClipAction::ACTION_ADD);
             PropagateClipToNeighbors(clipId, ClipAction::ACTION_ADD);
             }
-        PropagateClip(clipId, ClipAction::ACTION_ADD);
+        PropagateClip(clipId, ClipAction::ACTION_ADD);*/
         return !emptyClip;
         }
 
@@ -4407,11 +4443,13 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
     if (m_mesher3d != NULL)
         delete m_mesher3d;
     Store();
+
+    m_createdNodeMap.clear();
+
     if (m_pRootNode != NULL)
         m_pRootNode->Unload();
 
     m_pRootNode = NULL;
-    m_createdNodeMap.clear();
     }
 
 

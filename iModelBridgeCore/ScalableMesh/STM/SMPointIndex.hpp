@@ -721,10 +721,13 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Unload
                 }
             else
                 {
-                for (size_t indexNode = 0 ; indexNode < m_nodeHeader.m_numberOfSubNodesOnSplit; indexNode++)
+                for (size_t indexNode = 0 ; indexNode <UNCONSTTHIS->m_apSubNodes.size(); indexNode++)
                     {
-                    UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0); 
-                    UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
+                    if (UNCONSTTHIS->m_apSubNodes[indexNode] != NULL) {
+                        if(UNCONSTTHIS->m_apSubNodes[indexNode]->IsLoaded())
+                            UNCONSTTHIS->m_apSubNodes[indexNode]->SetParentNodePtr(0);
+                        UNCONSTTHIS->m_apSubNodes[indexNode] = NULL;
+                    }
                     }
                 }
             }

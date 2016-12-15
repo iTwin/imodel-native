@@ -20,6 +20,8 @@
 #include "Stores\ISMDataStore.h"
 #include "Stores\SMStoreUtils.h"
 
+#include "Tracer.h"
+
 using namespace std;
 
 USING_NAMESPACE_IMAGEPP
@@ -56,6 +58,7 @@ SMStoreDataType GetStoreDataType(SMStoreDataType poolDataType);
 
 class SMMemoryPoolItemBase;
 typedef RefCountedPtr<SMMemoryPoolItemBase> SMMemoryPoolItemBasePtr;
+
 
 template <typename DataType> class SMMemoryPoolVectorItem;
 template <typename DataType> class SMMemoryPoolGenericVectorItem;
@@ -113,6 +116,9 @@ class SMMemoryPoolItemBase : public RefCountedBase
         virtual void NotifySizeChangePoolItem(int64_t sizeDelta, int64_t nbItemDelta);
         
     public :
+
+        virtual uint32_t AddRef() const;
+        virtual uint32_t Release() const;
 
         SMMemoryPoolItemBase();
             
@@ -181,6 +187,8 @@ class SMMemoryPoolItemBase : public RefCountedBase
         virtual bool IsDirty () const { return m_dirty; } 
             
         SMMemoryPoolItemId GetPoolItemId() const;
+
+        uint64_t GetNodeId() { return m_nodeId;  }
             
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
@@ -1255,7 +1263,10 @@ class SMMemoryPool : public RefCountedBase
             
             if (GetItem(memItemPtr, id) && memItemPtr->IsCorrect(nodeId, dataType, smId))
                 {
-                poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();                
+                poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();       
+
+                TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
+
                 }
 
             return poolMemBlobItemPtr.IsValid();
@@ -1323,6 +1334,8 @@ class SMMemoryPool : public RefCountedBase
 
             return s_videoMemoryPool;
         }
+
+        static void CleanVideoMemoryPool();
     };
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
