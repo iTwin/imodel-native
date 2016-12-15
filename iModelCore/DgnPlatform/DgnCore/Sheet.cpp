@@ -99,6 +99,69 @@ ElementPtr Sheet::Element::Create(DocumentListModelCR model, double scale, DgnEl
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewAttachment::ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement)
+    : T_Super(CreateParams(db, model, QueryClassId(db), cat, placement))
+    {
+    SetAttachedViewId(viewId);
+    SetCode(GenerateDefaultCode());
+    SetScale(ComputeScale(db, viewId, placement.GetElementBox()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewAttachment::ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, DPoint2dCR origin, double scale)
+    : T_Super(CreateParams(db, model, QueryClassId(db), cat, ComputePlacement(db, viewId, origin, scale)))
+    {
+    SetAttachedViewId(viewId);
+    SetCode(GenerateDefaultCode());
+    SetScale(scale);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Placement2d ViewAttachment::ComputePlacement(DgnDbR db, DgnViewId viewId, DPoint2dCR origin, double scale)
+    {
+    auto viewDef = db.Elements().Get<ViewDefinition>(viewId);
+    if (!viewDef.IsValid())
+        {
+        BeAssert(false);
+        return Placement2d{};
+        }
+    auto viewExtents = viewDef->GetExtents();
+
+    Placement2d placement;
+    placement.GetOriginR() = origin;
+
+    ElementAlignedBox2d box;
+    box.low.Zero();
+    box.high.x = viewExtents.x / scale;
+    box.high.y = viewExtents.y / scale;
+    placement.SetElementBox(box);
+    
+    return placement;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR placement)
+    {
+    auto viewDef = db.Elements().Get<ViewDefinition>(viewId);
+    if (!viewDef.IsValid())
+        {
+        BeAssert(false);
+        return 1.0;
+        }
+    auto viewExtents = viewDef->GetExtents();
+
+    return viewExtents.x / placement.GetWidth();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Sheet::ViewAttachment::CheckValid() const
