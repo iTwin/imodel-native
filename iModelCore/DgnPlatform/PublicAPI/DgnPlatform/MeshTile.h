@@ -494,14 +494,15 @@ public:
     static TileGeomPartPtr Create(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(partId, range, geometry); }
     TileGeometry::T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance);
     TileGeometry::T_TileStrokes GetStrokes(IFacetOptionsR facetOptions, TileGeometryCR instance);
-    size_t GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const;
+    size_t GetFacetCount(FacetCounter& counter) const;
     bool IsCurved() const;
     void IncrementInstanceCount() { m_instanceCount++; }
     size_t GetInstanceCount() const { return m_instanceCount; }
     TileGeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
     DgnGeometryPartId GetPartId() const { return m_partId; }
-
+    bool IsWorthInstancing(double tolerance) const;
+    
 
 };  // TileGeomPart
 

@@ -192,6 +192,7 @@ private:
 
     void WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR geometry);
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
+    void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData tileData);
 
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
