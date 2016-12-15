@@ -357,7 +357,7 @@ struct RangeAccumulator : RangeIndex::Traverser
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
     virtual bool _AbortOnWriteRequest() const override { return true; }
-    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return true; }
+    virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return Accept::Yes; }
     virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         m_range.Extend(entry.m_range.ToRange3d());
@@ -880,9 +880,9 @@ struct GeometryCollector : RangeIndex::Traverser
     GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR context)
         : m_range(range), m_processor(proc), m_context(context) { }
 
-    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+    virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
         {
-        return box.IntersectsWith(m_range);
+        return box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
         }
 
     virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
@@ -1966,9 +1966,9 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
 
         bool ThresholdReached() const { return m_count >= m_threshold; }
 
-        virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+        virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
             {
-            return !ThresholdReached() && box.IntersectsWith(m_range);
+            return !ThresholdReached() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
             }
 
         virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override

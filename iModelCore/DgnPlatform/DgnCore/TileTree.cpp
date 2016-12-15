@@ -923,7 +923,7 @@ void OctTree::Root::DrawInView(RenderContextR context)
         {
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleTerrainProgressiveTask(*new ProgressiveTask(*this, std::move(args.m_missing), loads));
+        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, std::move(args.m_missing), loads));
         }
     }
 
