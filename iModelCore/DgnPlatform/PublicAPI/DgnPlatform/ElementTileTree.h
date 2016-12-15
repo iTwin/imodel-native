@@ -538,12 +538,13 @@ private:
 
     DgnModelId                  m_modelId;
     Utf8String                  m_name;
-    double                      m_leafTolerance = 0.01;
+    double                      m_leafTolerance;
     size_t                      m_maxPointsPerTile;
     mutable BeMutex             m_mutex;
     mutable BeSQLite::BeDbMutex m_dbMutex;
     mutable GeomPartMap         m_geomParts;
     bool                        m_is3d;
+    bool                        m_debugRanges;
 
     Root(GeometricModelR model, TransformCR transform);
 
@@ -558,6 +559,7 @@ public:
     GeometricModelPtr GetModel() const { return GetDgnDb().Models().Get<GeometricModel>(GetModelId()); }
     bool Is3d() const { return m_is3d; }
     bool Is2d() const { return !Is3d(); }
+    bool WantDebugRanges() const { return m_debugRanges; }
     double GetLeafTolerance() const { return m_leafTolerance; }
     size_t GetMaxPointsPerTile() const { return m_maxPointsPerTile; }
 
@@ -585,7 +587,7 @@ private:
     virtual double _GetMaximumSize() const override;
 
     MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
-    GeometryList CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
+    GeometryList CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
     GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR) const;
 
     bool IsElementCountLessThan(uint32_t threshold, double tolerance) const;

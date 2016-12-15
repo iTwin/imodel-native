@@ -16,8 +16,6 @@
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
-#define DEBUG_ELEMENT_TILE_RANGE
-
 USING_NAMESPACE_ELEMENT_TILETREE
 
 BEGIN_UNNAMED_NAMESPACE
@@ -342,9 +340,10 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 constexpr double s_half2dDepthRange = 10.0;
 constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
-constexpr double s_minToleranceRatio = 100.0;
+constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
+constexpr size_t s_minLeafTolerance = 0.001;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -938,6 +937,7 @@ public:
 
 };
 
+#if defined(ELEMENT_TILE_STOPPING_CRITERION)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -949,6 +949,7 @@ static void adjustGeometryTolerance(GeometryList& geometries, double tolerance)
     if (eraseAt != geometries.end())
         geometries.erase(eraseAt, geometries.end());
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2016
@@ -1832,15 +1833,21 @@ BentleyStatus Loader::_LoadTile()
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
-#if defined(DEBUG_ELEMENT_TILE_RANGE)
-    graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
-    graphic->AddRangeBox(tile.GetRange());
-#endif
+    if (root.WantDebugRanges())
+        {
+        graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
+        graphic->AddRangeBox(tile.GetRange());
+        }
 
     graphic->Close();
 
+#if defined(ELEMENT_TILE_TRUNCATE_EMPTY_NODES)
+    // ###TODO: This produces a race condition on the vector of child tiles...
+    // I don't want to waste time checking for empty tiles when creating the tile tree nodes...
+    // For now assuming empty tiles are cheap and therefore subdividing them is not a problem
     if (geometry.IsEmpty())
         tile.SetIsLeaf();   // ###TODO: Is this true - or can all the geometry be too small for this tile's tolerance?
+#endif
 
     tile.SetGraphic(*graphic);
     tile.SetIsReady();
@@ -1851,8 +1858,8 @@ BentleyStatus Loader::_LoadTile()
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform)
-    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()), m_is3d(model.Is3dModel()),
-    m_maxPointsPerTile(s_maxPointsPerTile)
+    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()),
+    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()), m_debugRanges(false)
     {
     //
     }
@@ -1925,8 +1932,12 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
 
-    static uint8_t s_maxLevel = 3;  // ###TODO: Get rid of this hard cap...
+#if defined(ELEMENT_TILE_STOPPING_CRITERION)
+    static uint8_t s_maxLevel = 6;  // ###TODO: Get rid of this hard cap...
     bool isLeaf = id.m_level >= s_maxLevel || tileTolerance <= leafTolerance || IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
+#else
+    bool isLeaf = tileTolerance <= leafTolerance;
+#endif
 
     if (isLeaf)
         {
@@ -2004,7 +2015,7 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return 256; // ###TODO: come up with a decent value, and account for device ppi
+    return 512; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2130,8 +2141,9 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 
     // Always collect geometry at the target leaf tolerance.
     // If we exceed our leaf threshold, we'll keep the geometry but adjust this tile's target tolerance
+#if defined(ELEMENT_TILE_STOPPING_CRITERION)
     bool leafThresholdExceeded = false;
-    GeometryList geometries = CollectGeometry(leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile());
+    GeometryList geometries = CollectGeometry(&leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile());
 
     // ###TODO: If CollectGeometry aborted, mark abandoned
 
@@ -2145,6 +2157,9 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
         m_tolerance = root.GetLeafTolerance();
     else
         adjustGeometryTolerance(geometries, m_tolerance);
+#else
+    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile());
+#endif
 
     return CreateGeometryCollection(geometries, options);
     }
@@ -2214,7 +2229,7 @@ DRange3d Tile::GetDgnRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryList Tile::CollectGeometry(bool& leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
     {
     auto& root = GetElementRoot();
     auto is2d = root.Is2d();
@@ -2224,7 +2239,7 @@ GeometryList Tile::CollectGeometry(bool& leafThresholdExceeded, double tolerance
     transformFromDgn.InverseOf(root.GetLocation());
 
     GeometryList geometries;
-    TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, &leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
+    TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
