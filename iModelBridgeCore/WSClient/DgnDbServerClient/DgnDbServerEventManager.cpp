@@ -104,7 +104,10 @@ unsigned __stdcall EventManagerThread(void* arg)
             for (auto callback : eventManager->GetCallbacks())
                 {
                 if (callback.second.empty() || EventListContainsEvent(callback.second, eventType))
-                    (*callback.first)(eventResult.GetValue());
+                    {
+                    auto callbackForEvent = *callback.first;
+                    callbackForEvent(eventResult.GetValue());
+                    }
                 }
             }
         }
@@ -177,7 +180,7 @@ bvector<DgnDbServerEvent::DgnDbServerEventType>* DgnDbServerEventManager::GetAll
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbServerEventManager::Subscribe(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback)
+DgnDbServerStatusTaskPtr DgnDbServerEventManager::Subscribe(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback)
     {
     // Check callback is already subscribed
     for (auto it = m_eventCallbacks.begin(); it != m_eventCallbacks.end(); it++)
@@ -198,7 +201,7 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Subscribe(bvector<DgnDbServerE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCallback callback)
+DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCallbackPtr callback)
     {
     if (callback)
         {
