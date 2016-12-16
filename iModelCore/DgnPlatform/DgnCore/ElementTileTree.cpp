@@ -1857,8 +1857,8 @@ BentleyStatus Loader::_LoadTile()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Root::Root(GeometricModelR model, TransformCR transform)
-    : T_Super(model.GetDgnDb(), transform, "", nullptr), m_modelId(model.GetModelId()), m_name(model.GetName()),
+Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
+    : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
     m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()), m_debugRanges(false)
     {
     //
@@ -1867,8 +1867,10 @@ Root::Root(GeometricModelR model, TransformCR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-RootPtr Root::Create(GeometricModelR model)
+RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     {
+    DgnDb::VerifyClientThread();
+
     if (DgnDbStatus::Success != model.FillRangeIndex())
         return nullptr;
 
@@ -1888,9 +1890,13 @@ RootPtr Root::Create(GeometricModelR model)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
-    RootPtr root = new Root(model, transform);
+    // Prepare for multi-threaded access to this stuff when generating geometry...
+    T_HOST.GetFontAdmin().EnsureInitialized();
+    model.GetDgnDb().Fonts().Update();
 
+    RootPtr root = new Root(model, transform, system);
     Transform rangeTransform;
+
     rangeTransform.InverseOf(transform);
     DRange3d tileRange;
     rangeTransform.Multiply(tileRange, range);
@@ -2627,63 +2633,8 @@ template<typename T> Render::GraphicPtr GeometryProcessorContext<T>::_StrokeGeom
     return WasAborted() ? nullptr : graphic;
     }
 
-//=======================================================================================
-// ###TODO: This is all temporary for testing...
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct ElementTileTreeAppData : DgnModel::AppData
-{
-    static Key const& GetKey() { static Key s_key; return s_key; }
-
-    RootPtr m_root;
-
-    explicit ElementTileTreeAppData(RootP root) : m_root(root) { }
-
-    static RootPtr GetOrCreateRoot(GeometricModelCR model, Render::System& system)
-        {
-        auto data = dynamic_cast<ElementTileTreeAppData*>(model.FindAppData(GetKey()));
-        if (nullptr == data)
-            {
-            const_cast<GeometricModelR>(model).AddAppData(GetKey(), data = new ElementTileTreeAppData(Root::Create(const_cast<GeometricModelR>(model)).get()));
-            if (data->m_root.IsValid())
-                data->m_root->SetRenderSystem(&system);
-            }
-
-        return data->m_root;
-        }
-};
-
 #if defined (BENTLEYCONFIG_PARASOLID) 
 // ###TODO: ugh.
 static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerStorageMark;
 #endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_AddTerrainGraphics(TerrainContextR context) const
-    {
-    //
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void GeometricModel::_AddSceneGraphics(SceneContextR context) const
-    {
-    // ###TODO: This is all temporary for testing...
-    DgnDb::VerifyClientThread();
-
-    T_HOST.GetFontAdmin().EnsureInitialized();
-    GetDgnDb().Fonts().Update();
-
-#if defined (BENTLEYCONFIG_PARASOLID) 
-    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
-    PSolidKernelManager::StartSession();
-#endif
-
-    auto root = ElementTileTreeAppData::GetOrCreateRoot(*this, context.GetTargetR().GetSystem());
-    if (root.IsValid())
-        root->DrawInView(context);
-    }
 

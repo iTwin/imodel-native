@@ -8,6 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 namespace StyleJson
 {
@@ -1715,7 +1716,15 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
     {
-    return ERROR; // ###TODO_ELEMENT_TILE
+    if (m_root.IsValid())
+        return SUCCESS;
+
+    auto model = GetViewedModel();
+    if (nullptr == model)
+        return ERROR;
+
+    m_root = ElementTileTree::Root::Create(*model, context.GetTargetR().GetSystem());
+    return m_root.IsValid() ? SUCCESS : ERROR;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-/*__BENTLEY_INTERNAL_ONLY__*/
 
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/DgnModel.h>
@@ -546,13 +545,13 @@ private:
     bool                        m_is3d;
     bool                        m_debugRanges;
 
-    Root(GeometricModelR model, TransformCR transform);
+    Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
 
     virtual Utf8CP _GetName() const override { return m_name.c_str(); }
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:
-    static RootPtr Create(GeometricModelR model);
+    static RootPtr Create(GeometricModelR model, Render::SystemR system);
     virtual ~Root() { ClearAllTiles(); }
 
     DgnModelId GetModelId() const { return m_modelId; }
@@ -567,8 +566,6 @@ public:
 
     GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
     void AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const;
-
-    void SetRenderSystem(Render::SystemP system) { m_renderSystem = system; }
 };
 
 //=======================================================================================

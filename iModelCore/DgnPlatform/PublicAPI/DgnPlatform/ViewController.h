@@ -16,6 +16,7 @@
 #include "DgnView.h"
 #include <Bentley/BeThread.h>
 #include <BeSQLite/RTreeMatch.h>
+#include "TileTree.h"
 
 DGNPLATFORM_TYPEDEFS(FitViewParams)
 DGNPLATFORM_TYPEDEFS(HypermodelingViewController)
@@ -126,6 +127,7 @@ protected:
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
+    bmap<DgnModelId, TileTree::RootPtr> m_roots;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -861,6 +863,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
+    TileTree::RootPtr   m_root;
+
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;

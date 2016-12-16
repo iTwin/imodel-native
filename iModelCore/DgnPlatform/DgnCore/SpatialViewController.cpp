@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <Bentley/BeSystemInfo.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 #ifdef DEBUG_HEAL
 #   define HEAL_PRINTF DEBUG_PRINTF
@@ -140,7 +141,24 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     {
-    return ERROR; // ###TODO_ELEMENT_TILE
+    DgnDb::VerifyClientThread();
+
+    for (auto modelId : GetViewedModels())
+        {
+        auto iter = m_roots.find(modelId);
+        if (m_roots.end() == iter)
+            {
+            auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
+            ElementTileTree::RootPtr modelRoot = model.IsValid() ? ElementTileTree::Root::Create(*model, context.GetTargetR().GetSystem()) : nullptr;
+            iter = m_roots.Insert(modelId, modelRoot).first;
+            }
+
+        auto root = iter->second;
+        if (root.IsValid())
+            root->DrawInView(context);
+        }
+
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
