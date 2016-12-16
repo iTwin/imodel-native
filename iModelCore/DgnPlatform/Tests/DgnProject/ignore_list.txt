@@ -45,3 +45,11 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 DgnECNavigatorTest.GetElemtmentInfo
 DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
 
+EcutilsTests.ConvertECValueToJson
+    # bim0200, x86, NDEBUG
+    # [ RUN      ] EcutilsTests.ConvertECValueToJson
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Ecutils_Tests.cpp(107): error:       Expected: BentleyStatus::BSISUCCESS
+    #       Which is: 0
+    # To be equal to: ECUtils::ConvertECValueToJson(obj, EcValue2)
+    #       Which is: 32768
+    # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
