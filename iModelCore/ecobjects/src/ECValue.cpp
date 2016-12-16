@@ -1357,7 +1357,25 @@ BentleyStatus ECValue::SetIGeometry(const Byte * data, size_t size, bool holdADu
     Clear();
 
     m_primitiveType = PRIMITIVETYPE_IGeometry;
+
+    // Data was incorrectly persisted as binary Xml in V8 dgn, so first we need to check if this is a flatbuffer or not.  If not, try to deserialize the xml into an IGeometry and the serialize
+    // that using flatbuff
+
+    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(data))
+        {
+        bvector<IGeometryPtr> geom;
+        BeExtendedDataGeometryMap extendedData;
+        Byte* buffer = const_cast<Byte*>(data);
+        if (!BeXmlCGStreamReader::TryParse(buffer, (int) size, geom, extendedData))
+            return ERROR;
+        if (geom.size() != 1)
+            return ERROR;
+        bvector<Byte> vBuffer;
+        BentleyGeometryFlatBuffer::GeometryToBytes(*geom[0], vBuffer);
+        return SetBinaryInternal(vBuffer.data(), vBuffer.size(), true);
+        }
     return SetBinaryInternal(data, size, holdADuplicate);
+
     }
 
 /*---------------------------------------------------------------------------------**//**
