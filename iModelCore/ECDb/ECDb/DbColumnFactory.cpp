@@ -458,7 +458,7 @@ bool DbColumnFactory::TryFindReusableSharedDataColumn(DbColumn const*& reusableC
             }
         }
 
-    return true;
+    return false;
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
@@ -468,6 +468,7 @@ void DbColumnFactory::CacheUsedColumn(DbColumn const& column, Utf8StringCR acces
     m_usedColumnMap[accessString].insert(&column);
     m_usedColumnSet.insert(&column);
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
@@ -481,8 +482,27 @@ DbColumnFactory::Ptr DbColumnFactory::Create(ClassMap const& classMap)
     for (auto const& pair : instance->m_usedColumnMap)
         for (DbColumn const* column : pair.second)
             instance->m_usedColumnSet.insert(column);
+    
 
     return instance;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+void DbColumnFactory::Debug() const
+    {
+    NativeSqlBuilder sql;
+    sql.Append("ClassMap : ").AppendLine(GetClassMap().GetClass().GetFullName());
+
+    for (auto const& pair : m_usedColumnMap)
+        {
+        for (DbColumn const* column : pair.second)
+            sql.Append(pair.first.c_str()).Append(" -> ").Append(column->GetTable().GetName().c_str()).AppendDot().Append(column->GetName().c_str()).AppendLine("");
+        }
+    sql.AppendLine("------------------------------------------------");
+
+    printf(sql.ToString());
     }
 
 //------------------------------------------------------------------------------------------

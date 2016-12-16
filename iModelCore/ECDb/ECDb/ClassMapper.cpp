@@ -269,7 +269,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
         const DbColumn::Type colType = DbColumn::Type::Real;
         DbColumn::CreateParams coordColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_X", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString);
+        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString + ".X");
         if (x == nullptr)
             {
             BeAssert(false);
@@ -279,7 +279,7 @@ RefCountedPtr<Point2dPropertyMap> ClassMapper::MapPoint2dProperty(ECN::Primitive
 
         DbColumn::CreateParams yColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_Y", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString);
+        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString + ".Y");
         if (x == nullptr)
             {
             BeAssert(false);
@@ -333,7 +333,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
         const DbColumn::Type colType = DbColumn::Type::Real;
         DbColumn::CreateParams coordColParams;
         coordColParams.Assign(colCreateParams.GetColumnName() + "_X", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString);
+        x = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString + ".X");
         if (x == nullptr)
             {
             BeAssert(false);
@@ -341,7 +341,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         coordColParams.Assign(colCreateParams.GetColumnName() + "_Y", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString);
+        y = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString + ".Y");
         if (y == nullptr)
             {
             BeAssert(false);
@@ -349,7 +349,7 @@ RefCountedPtr<Point3dPropertyMap> ClassMapper::MapPoint3dProperty(ECN::Primitive
             }
 
         coordColParams.Assign(colCreateParams.GetColumnName() + "_Z", colCreateParams.IsColumnNameFromPropertyMapCA(), colCreateParams.AddNotNullConstraint(), colCreateParams.AddUniqueConstraint(), colCreateParams.GetCollation());
-        z = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString);
+        z = m_classMap.GetColumnFactory().AllocateDataColumn(property, colType, coordColParams, accessString + ".Z");
         if (z == nullptr)
             {
             BeAssert(false);

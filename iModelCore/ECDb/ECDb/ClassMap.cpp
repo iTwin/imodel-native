@@ -371,6 +371,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
         }
 
+    //GetColumnFactory().Debug();
     return ClassMappingStatus::Success;
     }
 

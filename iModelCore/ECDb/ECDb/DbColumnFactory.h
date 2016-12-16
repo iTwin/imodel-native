@@ -50,7 +50,7 @@ struct DbColumnFactory  final: NonCopyableClass
         ClassMap const& GetClassMap() const { return m_classMap; }
         bool UsesSharedColumnStrategy() const { return m_usesSharedColumnStrategy; }
         DbTable& GetTable() const;
-
+        void Debug() const;
         //This function either create a column or grab a existing column
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const;
         static Ptr Create(ClassMap const& classMap);

@@ -134,8 +134,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
-        BeAssert(!stmt->IsColumnNull(2));
-        RelationshipEnd end = stmt->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        BeAssert(!stmt->IsColumnNull(1));
+        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())
