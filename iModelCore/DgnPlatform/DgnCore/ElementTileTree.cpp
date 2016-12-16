@@ -943,7 +943,7 @@ public:
 
 };
 
-#if defined(ELEMENT_TILE_STOPPING_CRITERION)
+#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1884,6 +1884,7 @@ BentleyStatus Loader::_LoadTile()
         }
 #endif
 
+#define ELEMENT_TILE_TRUNCATE_EMPTY_NODES
 #if defined(ELEMENT_TILE_TRUNCATE_EMPTY_NODES)
     // ###TODO: This produces a race condition on the vector of child tiles...
     // I don't want to waste time checking for empty tiles when creating the tile tree nodes...
@@ -1917,6 +1918,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         return nullptr;
 
     DRange3d range;
+#define ELEMENT_TILE_USE_PROJECT_EXTENTS
 #if defined(ELEMENT_TILE_USE_PROJECT_EXTENTS)
     if (model.Is3dModel())
         {
@@ -2209,9 +2211,9 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
 
     auto const& root = GetElementRoot();
 
+#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS)
     // Always collect geometry at the target leaf tolerance.
     // If we exceed our leaf threshold, we'll keep the geometry but adjust this tile's target tolerance
-#if defined(ELEMENT_TILE_STOPPING_CRITERION)
     bool leafThresholdExceeded = false;
     GeometryList geometries = CollectGeometry(&leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
 
