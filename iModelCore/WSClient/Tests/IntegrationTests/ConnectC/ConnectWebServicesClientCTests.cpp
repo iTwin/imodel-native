@@ -181,7 +181,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetr
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject (api, instanceId, &project);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4 (api, instanceId, &project);
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
@@ -210,7 +210,7 @@ TEST_F (ConnectWebServicesClientCTests, ReadProject_InvalidDataBufHandle_ErrorCo
     ASSERT_TRUE (api != nullptr);
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
-    CallStatus status = ConnectWebServicesClientC_ReadProject (api, instanceId, nullptr);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4 (api, instanceId, nullptr);
     ASSERT_TRUE (status == INVALID_PARAMETER);
 
     status = ConnectWebServicesClientC_FreeApi (api);
@@ -237,7 +237,7 @@ TEST_F(ConnectWebServicesClientCTests, DataBufferGetCount_Only1ProjectIsReturned
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
     uint64_t bufferCount = ConnectWebServicesClientC_DataBufferGetCount(project);
     ASSERT_TRUE(bufferCount == 1);
@@ -269,22 +269,22 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_Only1ProjectIsReturned
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
     uint64_t bufferCount = ConnectWebServicesClientC_DataBufferGetCount(project);
     ASSERT_TRUE(bufferCount == 1);
 
     wchar_t stringBuf[4096];
-    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_BUFF_NAME, 0, 4096, stringBuf);
+    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_V4_BUFF_NAME, 0, 4096, stringBuf);
     ASSERT_TRUE(status == SUCCESS);
     ASSERT_STREQ(stringBuf, L"cwsccDEV_pm1_testproject");
 
-    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_BUFF_NUMBER, 0, 4096, stringBuf);
+    status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, project, PROJECT_V4_BUFF_NUMBER, 0, 4096, stringBuf);
     ASSERT_TRUE(status == SUCCESS);
     ASSERT_STREQ(stringBuf, L"cwsccDEV_pm1_testproject");
 
     double longitude;
-    status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(api, project, PROJECT_BUFF_LONGITUDE, 0, &longitude);
+    status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(api, project, PROJECT_V4_BUFF_LONGITUDE, 0, &longitude);
     ASSERT_TRUE(status == PROPERTY_HAS_NOT_BEEN_SET);
 
     status = ConnectWebServicesClientC_DataBufferFree(api, project);
@@ -314,23 +314,23 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_NULLBuffer_Appropriate
 
     wchar_t stringBuf[4096];
     CWSCCDATABUFHANDLE buf = NULL;
-    CallStatus status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, buf, PROJECT_BUFF_NAME, 0, 4096, stringBuf);
+    CallStatus status = ConnectWebServicesClientC_DataBufferGetStringProperty(api, buf, PROJECT_V4_BUFF_NAME, 0, 4096, stringBuf);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     size_t outSize;
-    status = ConnectWebServicesClientC_DataBufferGetStringLength(api, buf, PROJECT_BUFF_NAME, 0, &outSize);
+    status = ConnectWebServicesClientC_DataBufferGetStringLength(api, buf, PROJECT_V4_BUFF_NAME, 0, &outSize);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     int integer;
-    status = ConnectWebServicesClientC_DataBufferGetIntProperty(api, buf, PROJECT_BUFF_STATUS, 0, &integer);
+    status = ConnectWebServicesClientC_DataBufferGetIntProperty(api, buf, PROJECT_V4_BUFF_STATUS, 0, &integer);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     double pDouble;
-    status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(api, buf, PROJECT_BUFF_LONGITUDE, 0, &pDouble);
+    status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(api, buf, PROJECT_V4_BUFF_LONGITUDE, 0, &pDouble);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     int64_t pLong;
-    status = ConnectWebServicesClientC_DataBufferGetLongProperty(api, buf, PROJECTMRUDETAIL_BUFF_LASTACCESSEDBYUSER, 0, &pLong);
+    status = ConnectWebServicesClientC_DataBufferGetLongProperty(api, buf, PROJECTMRUDETAIL_V4_BUFF_LASTACCESSEDBYUSER, 0, &pLong);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     status = ConnectWebServicesClientC_DataBufferFree(api, buf);
@@ -360,13 +360,13 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeB
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
     uint64_t bufferCount = ConnectWebServicesClientC_DataBufferGetCount(project);
     ASSERT_TRUE(bufferCount == 1);
 
     int64_t pLong;
-    status = ConnectWebServicesClientC_DataBufferGetLongProperty(api, project, PROJECTMRUDETAIL_BUFF_LASTACCESSEDBYUSER, 0, &pLong);
+    status = ConnectWebServicesClientC_DataBufferGetLongProperty(api, project, PROJECTMRUDETAIL_V4_BUFF_LASTACCESSEDBYUSER, 0, &pLong);
     ASSERT_TRUE(status == INVALID_PARAMETER);
 
     status = ConnectWebServicesClientC_DataBufferFree(api, project);
@@ -396,7 +396,7 @@ TEST_F(ConnectWebServicesClientCTests, GetPropertyMethods_BufferWithProjectTypeA
 
     WCharP instanceId = L"a8835f81-3f33-4457-bdea-79795aeb09fe";
     CWSCCDATABUFHANDLE project;
-    CallStatus status = ConnectWebServicesClientC_ReadProject(api, instanceId, &project);
+    CallStatus status = ConnectWebServicesClientC_ReadProject_V4(api, instanceId, &project);
     ASSERT_TRUE(status == SUCCESS);
     uint64_t bufferCount = ConnectWebServicesClientC_DataBufferGetCount(project);
     ASSERT_TRUE(bufferCount == 1);
@@ -465,6 +465,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
+    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
     WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
     WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
@@ -475,11 +476,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
+                                            UltimateRefId.c_str(),
                                             Name.c_str(),
                                             Number.c_str (),
-                                            OrgId.c_str (),
-                                            &Active,
                                             Industry.c_str (),
                                             AssetType.c_str (),
                                             nullptr,
@@ -490,6 +490,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
                                             nullptr,
                                             nullptr,
                                             0,
+                                            nullptr,
                                             nullptr);
 
     ASSERT_TRUE (status == SUCCESS);
@@ -500,7 +501,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
     WString wInstanceId;
     wInstanceId.AssignUtf8 (instanceId);
     CWSCCDATABUFHANDLE project;
-    status = ConnectWebServicesClientC_ReadProject (api, wInstanceId.c_str(), &project);
+    status = ConnectWebServicesClientC_ReadProject_V4 (api, wInstanceId.c_str(), &project);
     EXPECT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
@@ -508,7 +509,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
 
     BeGuid newGuid(true);
     WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
-    status = ConnectWebServicesClientC_UpdateProject (api,
+    status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
                                                       NewName.c_str(),
                                                       Number.c_str(),
@@ -527,7 +528,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFunctions_CRUDsSuccessful_Suc
                                                       nullptr);
     EXPECT_TRUE(status == SUCCESS);
 
-    status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_FreeApi (api);
@@ -553,7 +554,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     ASSERT_TRUE (api != nullptr);
 
 /************************************************************************************//**
-* \brief Create a new project_v2
+* \brief Create a new Project_V4
 * \param[in] apiHandle API object
 * \param[in] Name
 * \param[in] Number
@@ -573,6 +574,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
     BeGuid guid(true);
+    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
     WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
     WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
@@ -581,10 +583,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     WString Location = L"Huntsville";
     WString DataLocationGUID = L"99999999-9999-9999-9999-999999999999";
     WString CountryCode = L"ZZ";
-    CallStatus status = ConnectWebServicesClientC_CreateProject_V2(api, 
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
+                                            UltimateRefId.c_str(),
                                             Name.c_str(),
                                             Number.c_str (),
-                                            OrgId.c_str (),
                                             Industry.c_str (),
                                             AssetType.c_str (),
                                             nullptr,
@@ -606,11 +608,11 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
     WString wInstanceId;
     wInstanceId.AssignUtf8 (instanceId);
     CWSCCDATABUFHANDLE project;
-    status = ConnectWebServicesClientC_ReadProject_V2 (api, wInstanceId.c_str(), &project);
+    status = ConnectWebServicesClientC_ReadProject_V4 (api, wInstanceId.c_str(), &project);
     EXPECT_TRUE (status == SUCCESS);
 
     CWSCCDATABUFHANDLE projects;
-    status = ConnectWebServicesClientC_ReadProject_V2List(api, &projects);
+    status = ConnectWebServicesClientC_ReadProject_V4List(api, &projects);
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, project);
@@ -618,7 +620,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
 
     BeGuid newGuid(true);
     WPrintfString NewName(L"CWSCCTest%s", newGuid.ToString().c_str());
-    status = ConnectWebServicesClientC_UpdateProject_V2 (api,
+    status = ConnectWebServicesClientC_UpdateProject_V4 (api,
                                                       wInstanceId.c_str (),
                                                       NewName.c_str(),
                                                       Number.c_str(),
@@ -637,7 +639,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectV2Functions_CRUDsSuccessful_S
                                                       CountryCode.c_str());
     EXPECT_TRUE(status == SUCCESS);
 
-    status = ConnectWebServicesClientC_DeleteProject_V2 (api, wInstanceId.c_str ());
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_FreeApi (api);
@@ -684,7 +686,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDOrganizationFunctions_CRUDsSuccessfu
 
     WString wInstanceId = L"1001389117";
     CWSCCDATABUFHANDLE organization;
-    CallStatus status = ConnectWebServicesClientC_ReadOrganization (api, wInstanceId.c_str (), &organization);
+    CallStatus status = ConnectWebServicesClientC_ReadOrganization_V2 (api, wInstanceId.c_str (), &organization);
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, organization);
@@ -733,6 +735,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
+    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
     WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
     WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
@@ -743,11 +746,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api, 
+                                            UltimateRefId.c_str(),
                                             Name.c_str(),
                                             Number.c_str (),
-                                            OrgId.c_str (),
-                                            &Active,
                                             Industry.c_str (),
                                             AssetType.c_str (),
                                             nullptr,
@@ -758,6 +760,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
                                             nullptr,
                                             nullptr,
                                             0,
+                                            nullptr,
                                             nullptr);
 
     ASSERT_TRUE (status == SUCCESS);
@@ -782,7 +785,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectFavoriteV4Functions_CRUDsSucc
     status = ConnectWebServicesClientC_DeleteProjectFavorite_V4(api, wInstanceId.c_str());
     EXPECT_TRUE(status == SUCCESS);
 
-    status = ConnectWebServicesClientC_DeleteProject (api, wInstanceId.c_str ());
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_FreeApi (api);
@@ -828,6 +831,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
+    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
     WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
     WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
@@ -838,11 +842,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
+                                            UltimateRefId.c_str(),    
                                             Name.c_str(),
                                             Number.c_str (),
-                                            OrgId.c_str (),
-                                            &Active,
                                             Industry.c_str (),
                                             AssetType.c_str (),
                                             nullptr,
@@ -853,6 +856,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
                                             nullptr,
                                             nullptr,
                                             0,
+                                            nullptr,
                                             nullptr);
     ASSERT_TRUE (status == SUCCESS);
 
@@ -890,13 +894,13 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUFunctions_CRUDsSuccessful_
     EXPECT_TRUE(status == SUCCESS);
 
     CWSCCDATABUFHANDLE projectMRUDetail;
-    status = ConnectWebServicesClientC_ReadProjectMRUDetail (api, wProjectInstanceId.c_str (), &projectMRUDetail);
+    status = ConnectWebServicesClientC_ReadProjectMRUDetail_V4 (api, wProjectInstanceId.c_str (), &projectMRUDetail);
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectMRUDetail);
     EXPECT_TRUE(status == SUCCESS);
 
-    status = ConnectWebServicesClientC_DeleteProject (api, wProjectInstanceId.c_str ());
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wProjectInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_FreeApi (api);
@@ -942,6 +946,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     * \return Success or error code. See \ref clientErrorCodes
     ****************************************************************************************/
     BeGuid guid(true);
+    WPrintfString UltimateRefId(L"%s", guid.ToString().c_str());
     WPrintfString Name(L"CWSCCTest%s", guid.ToString().c_str());
     WPrintfString Number(L"CWSCCTest%s", guid.ToString().c_str());
     WString OrgId = L"1001389117";
@@ -952,11 +957,10 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     double lat = 48.1231232;
     double lon = -25.12315411;
     bool LocationIsUsingLatLong = false;
-    CallStatus status = ConnectWebServicesClientC_CreateProject(api, 
+    CallStatus status = ConnectWebServicesClientC_CreateProject_V4(api,
+                                            UltimateRefId.c_str(),
                                             Name.c_str(),
                                             Number.c_str (),
-                                            OrgId.c_str (),
-                                            &Active,
                                             Industry.c_str (),
                                             AssetType.c_str (),
                                             nullptr,
@@ -967,6 +971,7 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
                                             nullptr,
                                             nullptr,
                                             0,
+                                            nullptr,
                                             nullptr);
     ASSERT_TRUE (status == SUCCESS);
 
@@ -991,13 +996,13 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     ASSERT_TRUE(status == SUCCESS);
 
     CWSCCDATABUFHANDLE projectMRUDetail;
-    status = ConnectWebServicesClientC_ReadProjectMRUDetail_V2 (api, wProjectInstanceId.c_str (), &projectMRUDetail);
+    status = ConnectWebServicesClientC_ReadProjectMRUDetail_V4 (api, wProjectInstanceId.c_str (), &projectMRUDetail);
     EXPECT_TRUE(status == SUCCESS);
 
     status = ConnectWebServicesClientC_DataBufferFree (api, projectMRUDetail);
     EXPECT_TRUE(status == SUCCESS);
 
-    status = ConnectWebServicesClientC_DeleteProject (api, wProjectInstanceId.c_str ());
+    status = ConnectWebServicesClientC_DeleteProject_V4 (api, wProjectInstanceId.c_str ());
     ASSERT_TRUE (status == SUCCESS);
 
     status = ConnectWebServicesClientC_FreeApi (api);
