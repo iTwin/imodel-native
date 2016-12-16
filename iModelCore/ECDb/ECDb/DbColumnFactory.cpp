@@ -134,20 +134,11 @@ DbColumnFactory::UsedColumnMap DbColumnFactory::BuildUsedColumnMap(ClassMap cons
         if (classMap->GetType() == ClassMap::Type::RelationshipEndTable)
             {
             RelationshipClassEndTableMap const* relationshipEndTableMap = static_cast<RelationshipClassEndTableMap const*>(classMap);
-            auto ecInstanceId = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
-            auto ecClassId = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
-            if (ecInstanceId == nullptr)
-                {
-                BeAssert(false);
-                }
-
-            if (ecClassId == nullptr)
-                {
-                BeAssert(false);
-                }
-
-            columnsMap[QualifiedAccessString(*ecInstanceId)].insert(&ecInstanceId->GetColumn());
-            columnsMap[QualifiedAccessString(*ecClassId)].insert(&ecClassId->GetColumn());
+            SystemPropertyMap::PerTablePrimitivePropertyMap const* ecInstanceIdPropMap = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
+            SystemPropertyMap::PerTablePrimitivePropertyMap const* ecClassIdPropMap = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
+            BeAssert(ecInstanceIdPropMap != nullptr && ecClassIdPropMap != nullptr);
+            columnsMap[QualifiedAccessString(*ecInstanceIdPropMap)].insert(&ecInstanceIdPropMap->GetColumn());
+            columnsMap[QualifiedAccessString(*ecClassIdPropMap)].insert(&ecClassIdPropMap->GetColumn());
             }
         else
             {

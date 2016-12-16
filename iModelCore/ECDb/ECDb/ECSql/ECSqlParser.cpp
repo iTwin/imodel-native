@@ -159,7 +159,7 @@ BentleyStatus ECSqlParser::ParseSingleSelectStatement(unique_ptr<SingleSelectSta
         return ERROR;
 
     unique_ptr<OptionsExp> optionsExp = nullptr;
-    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, table_exp->getChild(9)))
+    if (SUCCESS != ParseOptECSqlOptionsClause(optionsExp, table_exp->getChild(7)))
         return ERROR;
 
     if (selectClauseExp == nullptr || fromExp == nullptr)
