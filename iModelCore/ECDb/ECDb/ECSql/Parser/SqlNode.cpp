@@ -515,11 +515,7 @@ namespace connectivity
                     if (pSubTree->count())
                         {
                         const OSQLParseNode* pCol = pSubTree->m_aChildren[pSubTree->count() - 1];
-                        if ((SQL_ISRULE(pCol, column_val)
-                            && pCol->getChild(0)->getTokenValue().EqualsI(aFieldName)
-                            )
-                            || pCol->getTokenValue().EqualsI(aFieldName)
-                            )
+                        if (pCol->getTokenValue().EqualsI(aFieldName))
                             bFilter = sal_True;
                         }
 
@@ -719,8 +715,7 @@ namespace connectivity
             if (!m_aChildren[0]->isLeaf())
                 {
                 const OSQLParseNode* pCol = m_aChildren[0]->getChild(m_aChildren[0]->count() - 1);
-                if ((SQL_ISRULE(pCol, column_val) && pCol->getChild(0)->getTokenValue().EqualsI(aFieldName)) ||
-                    pCol->getTokenValue().EqualsI(aFieldName))
+                if (pCol->getTokenValue().EqualsI(aFieldName))
                     bAddName = sal_False;
                 }
             }
@@ -1339,12 +1334,8 @@ namespace connectivity
                         {OSQLParseNode::as, "as"},
                         {OSQLParseNode::assignment, "assignment"},
                         {OSQLParseNode::assignment_commalist, "assignment_commalist"},
-                        {OSQLParseNode::base_table_element_commalist, "base_table_element_commalist"},
-                        {OSQLParseNode::base_table_def, "base_table_def"},
                         {OSQLParseNode::between_predicate, "between_predicate"},
                         {OSQLParseNode::between_predicate_part_2, "between_predicate_part_2"},
-                        {OSQLParseNode::binary_large_object_string_type, "binary_large_object_string_type"},
-                        {OSQLParseNode::binary_string_type, "binary_string_type"},
                         {OSQLParseNode::bit_value_fct, "bit_value_fct"},
                         {OSQLParseNode::boolean_factor, "boolean_factor"},
                         {OSQLParseNode::boolean_primary, "boolean_primary"},
@@ -1359,19 +1350,15 @@ namespace connectivity
                         {OSQLParseNode::char_value_exp, "char_value_exp"},
                         {OSQLParseNode::char_value_fct, "char_value_fct"},
                         {OSQLParseNode::character_like_predicate_part_2, "character_like_predicate_part_2"},
-                        {OSQLParseNode::character_string_type, "character_string_type"},
                         {OSQLParseNode::column, "column"},
                         {OSQLParseNode::column_commalist, "column_commalist"},
-                        {OSQLParseNode::column_def, "column_def"},
                         {OSQLParseNode::column_ref, "column_ref"},
                         {OSQLParseNode::column_ref_commalist, "column_ref_commalist"},
-                        {OSQLParseNode::column_val, "column_val"},
                         {OSQLParseNode::comparison, "comparison"},
                         {OSQLParseNode::comparison_predicate, "comparison_predicate"},
                         {OSQLParseNode::comparison_predicate_part_2, "comparison_predicate_part_2"},
                         {OSQLParseNode::concatenation, "concatenation"},
                         {OSQLParseNode::cross_union, "cross_union"},
-                        {OSQLParseNode::data_type, "data_type"},
                         {OSQLParseNode::datetime_factor, "datetime_factor"},
                         {OSQLParseNode::datetime_primary, "datetime_primary"},
                         {OSQLParseNode::datetime_term, "datetime_term"},
@@ -1409,7 +1396,6 @@ namespace connectivity
                         {OSQLParseNode::non_join_query_term, "non_join_query_term"},
                         {OSQLParseNode::op_relationship_direction, "op_relationship_direction"},
                         {OSQLParseNode::opt_asc_desc, "opt_asc_desc"},
-                        {OSQLParseNode::opt_column_array_idx, "opt_column_array_idx"},
                         {OSQLParseNode::opt_column_commalist, "opt_column_commalist"},
                         {OSQLParseNode::opt_column_ref_commalist, "opt_column_ref_commalist"},
                         {OSQLParseNode::opt_ecsqloptions_clause, "opt_ecsqloptions_clause"},
@@ -1425,9 +1411,7 @@ namespace connectivity
                         {OSQLParseNode::outer_join_type, "outer_join_type"},
                         {OSQLParseNode::parameter, "parameter"},
                         {OSQLParseNode::parameter_ref, "parameter_ref"},
-                        {OSQLParseNode::parenthesized_boolean_value_expression, "parenthesized_boolean_value_expression"},
                         {OSQLParseNode::position_exp, "position_exp"},
-                        {OSQLParseNode::predefined_type, "predefined_type"},
                         {OSQLParseNode::predicate_check, "predicate_check"},
                         {OSQLParseNode::property_path, "property_path"},
                         {OSQLParseNode::property_path_entry, "property_path_entry"},
@@ -2501,7 +2485,6 @@ namespace connectivity
         Utf8String sFunctionName = _sFunctionName;
 
         if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_BIT_LENGTH, pContext)))                nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CHAR, pContext)))                 nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CHAR_LENGTH, pContext)))          nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_INSERT, pContext)))               nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_LEFT, pContext)))                 nType = DataType::VARCHAR;
@@ -2512,23 +2495,12 @@ namespace connectivity
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURRENT_DATE, pContext)))         nType = DataType::DATE;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURRENT_TIMESTAMP, pContext)))    nType = DataType::TIMESTAMP;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_CURDATE, pContext)))              nType = DataType::DATE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DATEDIFF, pContext)))             nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DATEVALUE, pContext)))            nType = DataType::DATE;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DAYNAME, pContext)))              nType = DataType::VARCHAR;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DAYOFMONTH, pContext)))           nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DAYOFWEEK, pContext)))            nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_DAYOFYEAR, pContext)))            nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_EXTRACT, pContext)))              nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_HOUR, pContext)))                 nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MINUTE, pContext)))               nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MONTH, pContext)))                nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_MONTHNAME, pContext)))            nType = DataType::VARCHAR;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_NOW, pContext)))                  nType = DataType::TIMESTAMP;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_QUARTER, pContext)))              nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_SECOND, pContext)))               nType = DataType::INTEGER;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_TIMESTAMPADD, pContext)))         nType = DataType::TIMESTAMP;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_TIMESTAMPDIFF, pContext)))        nType = DataType::TIMESTAMP;
-        else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_TIMEVALUE, pContext)))            nType = DataType::TIMESTAMP;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_WEEK, pContext)))                 nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_YEAR, pContext)))                 nType = DataType::INTEGER;
         else if (sFunctionName.EqualsI(TokenIDToStr(SQL_TOKEN_COUNT, pContext)))                nType = DataType::INTEGER;
@@ -2546,8 +2518,7 @@ namespace connectivity
         {
         sal_Int32 nType = DataType::VARCHAR;
 
-        if (_nTokenId == SQL_TOKEN_CHAR)                 nType = DataType::INTEGER;
-        else if (_nTokenId == SQL_TOKEN_INSERT)
+        if (_nTokenId == SQL_TOKEN_INSERT)
             {
             if (_nPos == 2 || _nPos == 3)
                 nType = DataType::INTEGER;
@@ -2562,32 +2533,12 @@ namespace connectivity
             if (_nPos != 1)
                 nType = DataType::INTEGER;
             }
-        else if (_nTokenId == SQL_TOKEN_DATEDIFF)
-            {
-            if (_nPos != 1)
-                nType = DataType::TIMESTAMP;
-            }
-        else if (_nTokenId == SQL_TOKEN_DATEVALUE)
-            nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_DAYNAME)
-            nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_DAYOFMONTH)
-            nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_DAYOFWEEK)
-            nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_DAYOFYEAR)
-            nType = DataType::DATE;
         else if (_nTokenId == SQL_TOKEN_EXTRACT)              nType = DataType::VARCHAR;
         else if (_nTokenId == SQL_TOKEN_HOUR)                 nType = DataType::TIME;
         else if (_nTokenId == SQL_TOKEN_MINUTE)               nType = DataType::TIME;
         else if (_nTokenId == SQL_TOKEN_MONTH)                nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_MONTHNAME)            nType = DataType::DATE;
         else if (_nTokenId == SQL_TOKEN_NOW)                  nType = DataType::TIMESTAMP;
-        else if (_nTokenId == SQL_TOKEN_QUARTER)              nType = DataType::DATE;
         else if (_nTokenId == SQL_TOKEN_SECOND)               nType = DataType::TIME;
-        else if (_nTokenId == SQL_TOKEN_TIMESTAMPADD)         nType = DataType::TIMESTAMP;
-        else if (_nTokenId == SQL_TOKEN_TIMESTAMPDIFF)        nType = DataType::TIMESTAMP;
-        else if (_nTokenId == SQL_TOKEN_TIMEVALUE)            nType = DataType::TIMESTAMP;
         else if (_nTokenId == SQL_TOKEN_WEEK)                 nType = DataType::DATE;
         else if (_nTokenId == SQL_TOKEN_YEAR)                 nType = DataType::DATE;
 
