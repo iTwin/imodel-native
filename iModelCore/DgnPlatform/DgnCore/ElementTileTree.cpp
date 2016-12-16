@@ -1827,6 +1827,7 @@ BentleyStatus Loader::_LoadTile()
     if (loadContext.WasAborted())
         return ERROR;
 
+#define ELEMENT_TILE_SUBGRAPHICS
 #if defined(ELEMENT_TILE_SUBGRAPHICS)
     Render::GraphicBuilderPtr graphic;
     // ###TODO: instanced geometry, polylines...
