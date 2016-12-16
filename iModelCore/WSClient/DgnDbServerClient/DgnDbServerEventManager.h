@@ -39,7 +39,7 @@ struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventMa
         DgnDbRepositoryConnectionPtr       m_repositoryConnectionPtr;
         DgnDbServerEventMap                m_eventCallbacks;
         DgnDbServerEventManagerContextPtr  m_eventManagerContext;
-        DgnDbServerEventCallback           m_pullMergeAndPushCallback;
+        DgnDbServerEventCallbackPtr        m_pullMergeAndPushCallback;
 
         bool Start();
         bvector<DgnDbServerEvent::DgnDbServerEventType>* GetAllSubscribedEvents();
@@ -47,8 +47,8 @@ struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventMa
     public:
         DgnDbServerEventManager(RepositoryInfoCR repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
         DgnDbServerStatusTaskPtr Stop();
-        DgnDbServerStatusTaskPtr Subscribe(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback);
-        DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallback callback);
+        DgnDbServerStatusTaskPtr Subscribe(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback);
+        DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallbackPtr callback);
         DgnDbServerEventMap GetCallbacks() const;
         virtual ~DgnDbServerEventManager();
     };
