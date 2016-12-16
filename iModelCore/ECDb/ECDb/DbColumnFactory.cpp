@@ -63,11 +63,8 @@ std::set<ClassMap const*> DbColumnFactory::GetDeepestClassMapsInTph(ClassMap con
         if (contextClassMap == nullptr)
             return;
 
-        if (&classMap != contextClassMap)
-            {
-            if (contextClassMap->GetJoinedTable().GetId() == contextTable.GetId())
-                deepestMappedClassSet.insert(contextClassMap);
-            }
+        if (contextClassMap->GetJoinedTable().GetId() == contextTable.GetId())
+            deepestMappedClassSet.insert(contextClassMap);
 
         const size_t n = deepestMappedClassSet.size();
         for (ECClassCP derivedClass : dbMap.GetECDb().Schemas().GetDerivedECClasses(contextClassMap->GetClass()))
