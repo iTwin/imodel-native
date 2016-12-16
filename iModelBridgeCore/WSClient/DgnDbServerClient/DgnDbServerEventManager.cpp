@@ -97,7 +97,7 @@ unsigned __stdcall EventManagerThread(void* arg)
             continue;
             }
 
-        auto eventResult = repositoryConnectionPtr->GetEvent(true, 3)->GetResult();
+        auto eventResult = repositoryConnectionPtr->GetEvent(true)->GetResult();
         if (eventResult.IsSuccess())
             {
             auto eventType = eventResult.GetValue()->GetEventType();
