@@ -181,6 +181,7 @@ public:
                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
    
     //! Abandon a briefcase. It will abandon a briefcase and release all locks and codes associated to it. Make sure you delete briefcase BIM file after calling this.
+    //! @param[in] repositoryInfo Information of repository to connect to. This value should be returned by the server. See DgnDbClient::GetRepositories and DgnDbClient::CreateNewRepository.
     //! @param[in] briefcaseId id that should be abandoned.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns error if abandoning briefcase fails.

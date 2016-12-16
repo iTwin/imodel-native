@@ -51,7 +51,7 @@ status_codes = {
 # -------- Schemafile Parsing ------------ #
 ############################################
 api = Api('CWSCC', 'ConnectWebServicesClientC')
-workbook = load_workbook('autoGenClasses.xlsx', use_iterators=True)
+workbook = load_workbook(filename='autoGenClasses.xlsx', read_only=True)
 worksheet = workbook.get_sheet_by_name('autoGenClasses')
 unique_ecschemas = {}
 for row in worksheet.iter_rows(range_string=worksheet.calculate_dimension(), row_offset=2):

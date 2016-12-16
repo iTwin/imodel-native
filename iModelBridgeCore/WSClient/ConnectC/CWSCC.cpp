@@ -182,7 +182,7 @@ CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    05/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_CreateProjectFavorite
+CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V4
 (
 CWSCCHANDLE apiHandle,
 WCharCP ProjectGuid
@@ -194,18 +194,17 @@ WCharCP ProjectGuid
 
     if (ProjectGuid == nullptr)
         {
-        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite.");
-        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite instance.");
+        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite_V4.");
+        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite_V4 instance.");
         return INVALID_PARAMETER;
         }
     instance["instanceId"] = Utf8String(ProjectGuid);
     instance["schemaName"] = "GlobalSchema";
-    instance["className"] = "ProjectFavorite";
+    instance["className"] = "ProjectFavorite_V4";
 
     Json::Value objectCreationJson;
     objectCreationJson["instance"] = instance;
-    ObjectId objectId("GlobalSchema", "ProjectFavorite", "");
-
+    ObjectId objectId("GlobalSchema", "ProjectFavorite_V4", "");
 
     Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
     if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
@@ -224,55 +223,7 @@ WCharCP ProjectGuid
 
     api->SetCreatedObjectResponse(result.GetValue());
     api->SetStatusMessage("Successful operation");
-    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite completed successfully.");
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                                    05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V2
-(
-CWSCCHANDLE apiHandle,
-WCharCP ProjectGuid
-)
-    {
-    VERIFY_API
-
-    Json::Value instance;
-
-    if (ProjectGuid == nullptr)
-        {
-        api->SetStatusMessage ("ProjectGuid is invalid in ConnectWebServicesClientC_CreateProjectFavorite_V2.");
-        api->SetStatusDescription ("You must specify a ProjectGuid to create a ProjectFavorite_V2 instance.");
-        return INVALID_PARAMETER;
-        }
-    instance["instanceId"] = Utf8String(ProjectGuid);
-    instance["schemaName"] = "GlobalSchema";
-    instance["className"] = "ProjectFavorite_V2";
-
-    Json::Value objectCreationJson;
-    objectCreationJson["instance"] = instance;
-    ObjectId objectId("GlobalSchema", "ProjectFavorite_V2", "");
-
-    Utf8String connectwsgglobalUrl = UrlProvider::Urls::ConnectWsgGlobal.Get();
-    if (api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL") == api->m_repositoryClients.end())
-        {
-        api->CreateWSRepositoryClient
-            (
-            connectwsgglobalUrl,
-            "BentleyCONNECT.Global--CONNECT.GLOBAL"
-            );
-        }
-
-    auto client = api->m_repositoryClients.find(connectwsgglobalUrl + "BentleyCONNECT.Global--CONNECT.GLOBAL")->second;
-    auto result = client->SendCreateObjectRequest(objectId, objectCreationJson)->GetResult();
-    if (!result.IsSuccess())
-        return wsresultToConnectWebServicesClientCStatus(api, result.GetError().GetId(), result.GetError().GetDisplayMessage(), result.GetError().GetDisplayDescription());
-
-    api->SetCreatedObjectResponse(result.GetValue());
-    api->SetStatusMessage("Successful operation");
-    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite_V2 completed successfully.");
+    api->SetStatusDescription("ConnectWebServicesClientC_CreateProjectFavorite_V4 completed successfully.");
     return SUCCESS;
     }
 
