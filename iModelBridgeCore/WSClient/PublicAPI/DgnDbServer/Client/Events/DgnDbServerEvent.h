@@ -55,6 +55,7 @@ namespace DgnDbServerEvent
         {
         LockEvent,
         RevisionEvent,
+        RevisionCreateEvent,
         CodeEvent,
         AllLocksDeletedEvent,
         AllCodesDeletedEvent,
@@ -72,6 +73,7 @@ namespace DgnDbServerEvent
                 {
                     case DgnDbServerEventType::LockEvent:             return "LockEvent";
                     case DgnDbServerEventType::RevisionEvent:         return "RevisionEvent";
+                    case DgnDbServerEventType::RevisionCreateEvent:   return "RevisionCreateEvent";
                     case DgnDbServerEventType::CodeEvent:             return "CodeEvent";
                     case DgnDbServerEventType::AllLocksDeletedEvent:  return "AllLocksDeletedEvent";
                     case DgnDbServerEventType::AllCodesDeletedEvent:  return "AllCodesDeletedEvent";
@@ -86,6 +88,8 @@ namespace DgnDbServerEvent
                 return DgnDbServerEventType::LockEvent;
             else if (0 == (BeStringUtilities::Stricmp("RevisionEvent", eventName)))
                 return DgnDbServerEventType::RevisionEvent;
+            else if (0 == (BeStringUtilities::Stricmp("RevisionCreateEvent", eventName)))
+                return DgnDbServerEventType::RevisionCreateEvent;
             else if (0 == (BeStringUtilities::Stricmp("CodeEvent", eventName)))
                 return DgnDbServerEventType::CodeEvent;
             else if (0 == (BeStringUtilities::Stricmp("AllLocksDeletedEvent", eventName)))

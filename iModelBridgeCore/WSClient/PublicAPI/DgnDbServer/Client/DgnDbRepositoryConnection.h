@@ -34,6 +34,13 @@ struct DgnDbCodeLockSetResultInfo;
 struct DgnDbCodeTemplate;
 struct DgnDbCodeTemplateSetResultInfo;
 typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
+
+typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallbackRef;
+typedef DgnDbServerEventCallbackRef* DgnDbServerEventCallback;
+typedef bvector<bpair<DgnDbServerEventCallback, bvector<DgnDbServerEvent::DgnDbServerEventType>>> DgnDbServerEventMap;
+typedef std::shared_ptr<struct DgnDbServerEventManagerContext> DgnDbServerEventManagerContextPtr;
+typedef std::shared_ptr<struct DgnDbServerEventManager> DgnDbServerEventManagerPtr;
+
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
 DEFINE_TASK_TYPEDEFS(bvector<FileInfoPtr>, DgnDbServerFiles);
@@ -145,12 +152,16 @@ struct DgnDbRepositoryConnection
 //__PUBLISH_SECTION_END__
 private:
     RepositoryInfo             m_repositoryInfo;
+    ClientInfoPtr              m_clientInfo;
+    CredentialsCR              m_credentials;
+
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
-    // TODO: Make non static
-    static EventServiceClient*         m_eventServiceClient;
-    DgnDbServerEventSubscriptionPtr m_eventSubscription;
-	AzureServiceBusSASDTOPtr m_eventSAS;
+
+    EventServiceClient*                m_eventServiceClient = nullptr;
+    DgnDbServerEventSubscriptionPtr    m_eventSubscription;
+    AzureServiceBusSASDTOPtr           m_eventSAS;
+    DgnDbServerEventManagerPtr         m_eventManagerPtr;
 
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
@@ -263,6 +274,8 @@ private:
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
 public:
+    virtual ~DgnDbRepositoryConnection();
+
     //! Create an instance of the connection to a repository on the server.
     //! @param[in] repository Repository information used to connect to a specific repository on the server.
     //! @param[in] credentials Credentials used to authenticate on the repository.
@@ -484,7 +497,20 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Cancel Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents();
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents();
+
+    //! Checks if RepositoryConnection is subscribed to EventService
+    DGNDBSERVERCLIENT_EXPORT bool IsSubscribedToEvents() const;
+
+    //! Subscribe callback for the events
+    //! @param[in] eventTypes
+    //! @param[in] callback
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback);
+
+    //! Unsubscribe callback for events
+    //! @param[in] callback
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr UnsubscribeEventsCallback(DgnDbServerEventCallback callback);
+
 
 };
 END_BENTLEY_DGNDBSERVER_NAMESPACE

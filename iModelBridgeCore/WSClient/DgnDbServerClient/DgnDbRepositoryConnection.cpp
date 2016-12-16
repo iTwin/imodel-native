@@ -12,6 +12,7 @@
 #include <DgnDbServer/Client/DgnDbServerRevision.h>
 #include <DgnDbServer/Client/Logging.h>
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
+#include "DgnDbServerEventManager.h"
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -126,13 +127,23 @@ RepositoryInfoCR           repository,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
 IHttpHandlerPtr            customHandler
-) : m_repositoryInfo(repository)
+) : m_repositoryInfo(repository), m_clientInfo(clientInfo), m_credentials(credentials)
     {
+
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
     options.EnableRequestCompression(true, 1024);
     m_wsRepositoryClient->SetCompressionOptions(options);
     m_wsRepositoryClient->SetCredentials(credentials);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//---------------------------------------------------------------------------------------
+DgnDbRepositoryConnection::~DgnDbRepositoryConnection()
+    {
+    if (m_eventManagerPtr)
+        m_eventManagerPtr->Stop();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2049,11 +2060,6 @@ ICancellationTokenPtr cancellationToken
 /* Private methods start */
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                    Arvind.Venkateswaran            05/2016
-//---------------------------------------------------------------------------------------
-EventServiceClient* DgnDbRepositoryConnection::m_eventServiceClient = nullptr;
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
 Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
@@ -2376,8 +2382,8 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceResponse
 (
-	int numOfRetries, 
-	bool longpolling
+int numOfRetries, 
+bool longpolling
 )
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::GetEventServiceResponse";
@@ -2422,6 +2428,13 @@ DgnDbServerEventReponseTaskPtr DgnDbRepositoryConnection::GetEventServiceRespons
 /* Private methods end */
 
 /* Public methods start */
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
+//---------------------------------------------------------------------------------------
+bool DgnDbRepositoryConnection::IsSubscribedToEvents() const
+    {
+    return m_eventServiceClient != nullptr && m_eventSubscription != nullptr && m_eventSAS != nullptr;
+    }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Arvind.Venkateswaran            07/2016
@@ -2497,6 +2510,32 @@ DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
     m_eventSubscription = nullptr;
     m_eventSAS = nullptr;
     return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());    
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback)
+    {
+    if (!m_eventManagerPtr)
+        {
+        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(m_repositoryInfo, m_credentials, m_clientInfo);
+        }
+    return m_eventManagerPtr->Subscribe(eventTypes, callback);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(DgnDbServerEventCallback callback)
+    {
+    if (!m_eventManagerPtr)
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
+
+    if (!callback)
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventCallbackNotSpecified));
+
+    return m_eventManagerPtr->Unsubscribe(callback);
     }
 
 /* Public methods end */

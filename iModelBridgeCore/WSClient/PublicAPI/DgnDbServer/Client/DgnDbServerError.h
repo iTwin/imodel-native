@@ -81,12 +81,15 @@ struct DgnDbServerError : public Tasks::AsyncError
             MergeError,
             RevisionManagerError,
 
-			//Event Errors
-			NoEventsFound,
+            //Event Errors
+            NoEventsFound,
             NoSubscriptionFound,
             NoSASFound,
             NotSubscribedToEventService,
             EventServiceSubscribingError,
+            EventCallbackNotFound,
+            EventCallbackAlreadySubscribed,
+            EventCallbackNotSpecified,
 			
             AzureError,
             DgnDbError
