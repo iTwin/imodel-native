@@ -372,8 +372,10 @@
         <SubPart PartName="UnitTests-Published"/>
 
         <!-- Ensure that builds, run manually if needed -->
+      <!-- 
         <SubPart PartName="WSClientIntegrationTests"/>
-    </Part>
+      -->
+      </Part>
 
     <!-- Define a gtest program to run the tests. 
         The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
