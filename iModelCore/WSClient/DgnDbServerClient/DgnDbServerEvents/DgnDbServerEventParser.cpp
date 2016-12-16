@@ -11,6 +11,7 @@
 #include <DgnDbServer/Client/Events/DgnDbServerCodeEvent.h>
 #include <DgnDbServer/Client/Events/DgnDbServerDeletedEvent.h>
 #include "../DgnDbServerUtils.h"
+#include <DgnDbServer/Client/Events/DgnDbServerRevisionCreateEvent.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 
@@ -54,6 +55,15 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, DgnD
 			    isSuccess = true;
 		    break;
 	        }
+        case BentleyB0200::DgnDbServer::DgnDbServerEvent::RevisionCreateEvent:
+            {
+            if (
+                data.isMember(DgnDbServerEvent::EventTopic) &&
+                data.isMember(DgnDbServerEvent::FromEventSubscriptionId)
+                )
+                isSuccess = true;
+            break;
+            }
 	    case BentleyB0200::DgnDbServer::DgnDbServerEvent::CodeEvent:
 	        {
 		    if (
@@ -146,6 +156,21 @@ DgnDbServerEventPtr ParseIntoRevisionEvent(Utf8String jsonString)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                 Algirdas.Mikoliunas	              12/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerEventPtr ParseIntoRevisionCreateEvent(Utf8String jsonString)
+    {
+    std::shared_ptr<Json::Value> data = CheckForEventProperties(jsonString, DgnDbServerEvent::RevisionCreateEvent);
+    if (data == nullptr)
+        return nullptr;
+    return DgnDbServerRevisionCreateEvent::Create
+        (
+        (*data)[DgnDbServerEvent::EventTopic].asString(),
+        (*data)[DgnDbServerEvent::FromEventSubscriptionId].asString()
+        );
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerEventPtr ParseIntoCodeEvent(Utf8String jsonString)
@@ -220,6 +245,7 @@ Utf8String responseString
 	    {
 	    case DgnDbServerEvent::DgnDbServerEventType::LockEvent:             return ParseIntoLockEvent(actualJsonPart);
 	    case DgnDbServerEvent::DgnDbServerEventType::RevisionEvent:         return ParseIntoRevisionEvent(actualJsonPart);
+            case DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent:   return ParseIntoRevisionCreateEvent(actualJsonPart);
 	    case DgnDbServerEvent::DgnDbServerEventType::CodeEvent:             return ParseIntoCodeEvent(actualJsonPart);
 	    case DgnDbServerEvent::DgnDbServerEventType::AllLocksDeletedEvent:
 	    case DgnDbServerEvent::DgnDbServerEventType::AllCodesDeletedEvent:  return ParseIntoDeletedEvent(actualJsonPart, eventType);
@@ -260,6 +286,23 @@ std::shared_ptr<struct DgnDbServerRevisionEvent> DgnDbServerEventParser::GetRevi
 	    {
 		return nullptr;
 	    }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Algirdas.Mikoliunas	              12/2016
+//---------------------------------------------------------------------------------------
+std::shared_ptr<struct DgnDbServerRevisionCreateEvent> DgnDbServerEventParser::GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr)
+    {
+    try
+        {
+        if (eventPtr == nullptr)
+            return nullptr;
+        return std::make_shared<DgnDbServerRevisionCreateEvent>(dynamic_cast<DgnDbServerRevisionCreateEvent&>(*eventPtr));
+        }
+    catch (const std::bad_cast&)
+        {
+        return nullptr;
+        }
     }
 
 //---------------------------------------------------------------------------------------

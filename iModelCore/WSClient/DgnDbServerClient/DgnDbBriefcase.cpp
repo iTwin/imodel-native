@@ -9,10 +9,10 @@
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
 #include <DgnPlatform/RevisionManager.h>
 #include <DgnDbServer/Client/Logging.h>
-#include "DgnDbServerUtils.h"
-#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 #include <thread>
 #include <random>
+#include "DgnDbServerEventManager.h"
+#include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -277,7 +277,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullAndMerge(Http::Request::Prog
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, 
-                                                                 Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount) const
+                                                                 Http::Request::ProgressCallbackCR uploadCallback, ICancellationTokenPtr cancellationToken, int attemptsCount)
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPush";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -285,10 +285,69 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP descript
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//---------------------------------------------------------------------------------------
+void DgnDbBriefcase::WaitForRevisionEvent() const
+    {
+    const Utf8String methodName = "DgnDbBriefcase::WaitForStart";
+    int iterationsLeft = 2000;
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to wait.");
+
+    while (iterationsLeft > 0)
+        {
+        if (DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == m_lastPullMergeAndPushEvent)
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Got merge finished event.");
+            break;
+            }
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        iterationsLeft--;
+        }
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Finishing wait.");
+    }
+    
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//---------------------------------------------------------------------------------------
+void DgnDbBriefcase::SubscribeForRevisionEvents()
+    {
+    const Utf8String methodName = "DgnDbBriefcase::SubscribeForPullMergeAndPushEvents";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
+    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
+    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent);
+    DgnDbServerEventCallbackRef callback = [=](DgnDbServerEventPtr event)
+        {
+        auto eventType = event->GetEventType();
+        if (DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent == eventType ||
+            DgnDbServerEvent::DgnDbServerEventType::RevisionEvent == eventType)
+            {
+            m_lastPullMergeAndPushEvent = eventType;
+            }
+        };
+    m_pullMergeAndPushCallback = &callback;
+    SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             12/2016
+//---------------------------------------------------------------------------------------
+void DgnDbBriefcase::UnsubscribeRevisionEvents()
+    {
+    const Utf8String methodName = "DgnDbBriefcase::UnsubscribeRevisionEvents";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (m_pullMergeAndPushCallback)
+        UnsubscribeEventsCallback(m_pullMergeAndPushCallback);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Andrius.Zonys                  01/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback, Http::Request::ProgressCallbackCR uploadCallback,
-                                                                     ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay) const
+                                                                     ICancellationTokenPtr cancellationToken, int attemptsCount, int attempt, int delay)
     {
     const Utf8String methodName = "DgnDbBriefcase::PullMergeAndPushRepeated";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Attempt %d/%d.", attempt, attemptsCount);
@@ -296,12 +355,14 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
 
     if (result.IsSuccess())
         {
+        UnsubscribeRevisionEvents();
         return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Success(result.GetValue()));
         }
 
     if (attempt >= attemptsCount)
         {
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Too many unsuccessful attempts.");
+        UnsubscribeRevisionEvents();
         return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(result.GetError()));
         }
 
@@ -316,24 +377,19 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
         default:
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            UnsubscribeRevisionEvents();
             return CreateCompletedAsyncTask<DgnDbServerRevisionMergeResult>(DgnDbServerRevisionMergeResult::Error(result.GetError()));
             }
         }
 
-    int currentDelay = delay * attempt;
-    if (currentDelay > s_maxDelayTime)
-        currentDelay = s_maxDelayTime;
-
-    if (1 == attempt)
+    if (attempt == 1)
         {
-        std::default_random_engine         randomEngine;
-        std::uniform_int_distribution<int> distribution(50, 500);
-        currentDelay = distribution(randomEngine);
+        SubscribeForRevisionEvents();
         }
 
-    // Sleep.
-    std::this_thread::sleep_for (std::chrono::milliseconds(currentDelay));
-    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, delay);
+    WaitForRevisionEvent();
+    m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
+    return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, 0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -386,7 +442,20 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
             finalResult->SetError(result.GetError());
             return;
             }
+        
+        // This sleep waits for events from other clients who just started a push
+        srand(time(0) / GetBriefcaseId().GetValue());
+        int sleepTime = rand() % 200;
+        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, sleepTime, "Sleeping.");
+        BeThreadUtilities::BeSleep(sleepTime);
 
+        if (DgnDbServerEvent::DgnDbServerEventType::UnknownEventType != m_lastPullMergeAndPushEvent)
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Other user pushed. Waiting again.");
+            finalResult->SetError(DgnDbServerError::Id::PullIsRequired);
+            return;
+            }
+        
         Push(description, relinquishCodesLocks, uploadCallback, cancellationToken)->Then([=] (DgnDbServerStatusResultCR pushResult)
             {
             if (!pushResult.IsSuccess())
@@ -450,25 +519,26 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
 /* EventService Methods Start */
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                 Caleb.Shafer	                    06/2016
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
+DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback) const
     {
-    const Utf8String methodName = "DgnDbBriefcase::SubscribeToEvents";
+    const Utf8String methodName = "DgnDbBriefcase::SubscribeEventsCallback";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         return nullptr;
     if (!m_repositoryConnection)
         return nullptr;
-    return m_repositoryConnection->SubscribeToEvents(eventTypes, nullptr);
+
+    return m_repositoryConnection->SubscribeEventsCallback(eventTypes, callback);
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
+//@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents()
+DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEventCallback callback) const
     {
-    const Utf8String methodName = "DgnDbBriefcase::UnsubscribeToEvents";
+    const Utf8String methodName = "DgnDbBriefcase::UnsubscribeEventsCallback";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     if (!m_db.IsValid() || !m_db->IsDbOpen())
         {
@@ -480,45 +550,8 @@ DgnDbServerStatusTaskPtr  DgnDbBriefcase::UnsubscribeToEvents()
         DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
         }
-    return m_repositoryConnection->UnsubscribeToEvents();
-    }
 
-//---------------------------------------------------------------------------------------
-//@bsimethod                                 Arvind.Venkateswaran	              06/2016
-//---------------------------------------------------------------------------------------
-DgnDbServerEventTaskPtr  DgnDbBriefcase::GetEvent(bool longPolling, ICancellationTokenPtr cancellationToken)
-    {
-    const Utf8String methodName = "DgnDbBriefcase::GetEvent";
-    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    if (!m_db.IsValid() || !m_db->IsDbOpen())
-        {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::FileNotFound));
-        }
-    if (!m_repositoryConnection)
-        {
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid repository connection.");
-        return CreateCompletedAsyncTask<DgnDbServerEventResult>(DgnDbServerEventResult::Error(DgnDbServerError::Id::InvalidRepositoryConnection));
-        }
-
-    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    return m_repositoryConnection->GetEvent(longPolling, cancellationToken)->Then<DgnDbServerEventResult>([=](DgnDbServerEventResult result)
-        {
-        if (!result.IsSuccess())
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
-            return DgnDbServerEventResult::Error(result.GetError());
-            }
-        DgnDbServerEventPtr currentEvent = result.GetValue();
-        if (currentEvent == nullptr)
-            {
-            DgnDbServerLogHelper::Log(SEVERITY::LOG_WARNING, methodName, "No events found.");
-            return DgnDbServerEventResult::Error(DgnDbServerError::Id::NoEventsFound);
-            }
-        double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
-        return DgnDbServerEventResult::Success(currentEvent);
-        });
+    return m_repositoryConnection->UnsubscribeEventsCallback(callback);
     }
 
 /* EventService Methods End */

@@ -30,8 +30,10 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerCodeEvent.h     \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerLockEvent.h     \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionEvent.h \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerRevisionCreateEvent.h \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
                                 $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                          \
+                                $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.h                   \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h
@@ -68,11 +70,15 @@ $(o)DgnDbRepositoryAdmin$(oext)            : $(DgnDbServerClientMkiSourceDir)Dgn
 
 $(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)DgnDbServerEventManager$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)DgnDbServerEventParser$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerEventParser.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerLockEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerLockEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerRevisionEvent$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerRevisionEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerRevisionCreateEvent$(oext)  : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerRevisionCreateEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerCodeEvent$(oext)            : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerCodeEvent.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
