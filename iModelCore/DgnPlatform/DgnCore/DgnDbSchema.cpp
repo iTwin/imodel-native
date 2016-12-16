@@ -535,7 +535,12 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     Utf8String versionString;
     stat = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
     if (BE_SQLITE_ROW != stat)
+        {
+        if (BE_SQLITE_ROW == QueryProperty(versionString, BimFormatVersion::FutureDbSchemaVersionProperty()))
+            return BE_SQLITE_ERROR_ProfileTooNew; // report Bim02 as too new rather than invalid
+
         return BE_SQLITE_ERROR_InvalidProfileVersion;
+        }
 
     m_schemaVersion.FromJson(versionString.c_str());
     DgnVersion expectedVersion = getCurrentSchemaVerion();
@@ -545,4 +550,60 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     stat = CheckProfileVersion(profileIsAutoUpgradable, expectedVersion, m_schemaVersion, minimumAutoUpgradableVersion, params.IsReadonly(), "DgnDb");
 
     return profileIsAutoUpgradable ?((DgnDb::OpenParams&)params).UpgradeSchema(*this) : stat;
+    }
+
+// NOTE: delete this method from Bim0200Dev after merge!
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2016
+//---------------------------------------------------------------------------------------
+BimFormatVersion BimFormatVersion::FromDgnDbSchemaVersion(Utf8CP dgnDbSchemaVersionString)
+    {
+    SchemaVersion dgnDbSchemaVersion(dgnDbSchemaVersionString);
+
+    if (5 == dgnDbSchemaVersion.GetMajor())
+        return BimFormatVersion::Version_1_5(); // Graphite05
+
+    if ((6 == dgnDbSchemaVersion.GetMajor()) && (1 == dgnDbSchemaVersion.GetMinor()))
+        return BimFormatVersion::Version_1_6(); // DgnDb0601
+
+    return BimFormatVersion(); // Unknown/Invalid
+    }
+
+// NOTE: delete this method from Bim0200Dev after merge!
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2016
+//---------------------------------------------------------------------------------------
+BimFormatVersion BimFormatVersion::Extract(BeFileNameCR fileName)
+    {
+    BeSQLite::Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(fileName, Db::OpenParams (Db::OpenMode::Readonly)))
+        return BimFormatVersion(); // not a BeSQLite database
+
+    Utf8String packageSchemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(packageSchemaVersion, PackageProperty::SchemaVersion()))
+        {
+        // is a package, query BimFormatVersion from embedded DgnDb (use current PropertySpec)
+        Utf8String dgnDbSchemaVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(dgnDbSchemaVersion, DgnEmbeddedProjectProperty::SchemaVersion(), 1 /* first embedded file */))
+            return BimFormatVersion::FromDgnDbSchemaVersion(dgnDbSchemaVersion.c_str());
+
+        // is a package, query BimFormatVersion from embedded DgnDb (use future PropertySpec)
+        Utf8String futureSchemaVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(futureSchemaVersion, FutureEmbeddedDbSchemaVersionProperty(), 1 /* first embedded file */))
+            return BimFormatVersion(futureSchemaVersion.c_str());
+
+        return BimFormatVersion(); // valid package, but invalid or non-existent payload
+        }
+
+    // not a package, query BimFormatVersion directly (use current PropertySpec)
+    Utf8String dgnDbSchemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(dgnDbSchemaVersion, DgnProjectProperty::SchemaVersion()))
+        return BimFormatVersion::FromDgnDbSchemaVersion(dgnDbSchemaVersion.c_str());
+
+    // not a package, query BimFormatVersion directly (use future PropertySpec)
+    Utf8String futureSchemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(futureSchemaVersion, FutureDbSchemaVersionProperty()))
+        return BimFormatVersion(futureSchemaVersion.c_str());
+
+    return BimFormatVersion(); // unknown BeSQLite database type
     }

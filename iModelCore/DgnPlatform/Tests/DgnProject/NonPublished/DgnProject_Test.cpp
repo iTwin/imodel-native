@@ -458,6 +458,76 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     PropertiesInTable propertiesInTableV;
     getPackageProperties(db, propertiesInTableV, fileId.GetValue());
     compareProperties(propertiesInTable, propertiesInTableV);
+
+    ASSERT_TRUE(BimFormatVersion::GetCurrent().IsCurrent());
+    ASSERT_FALSE(BimFormatVersion::GetCurrent().IsPast());
+    ASSERT_FALSE(BimFormatVersion::GetCurrent().IsFuture());
+
+    // work with file/package produced from this test
+        {
+        BimFormatVersion fileVersion = BimFormatVersion::Extract(testFile);
+        ASSERT_TRUE(fileVersion.IsValid());
+        ASSERT_TRUE(fileVersion.IsCurrent());
+        ASSERT_STREQ("1.6", fileVersion.ToMajorMinorString().c_str());
+
+        BimFormatVersion packageVersion = BimFormatVersion::Extract(packageFile);
+        ASSERT_TRUE(packageVersion.IsValid());
+        ASSERT_TRUE(packageVersion.IsCurrent());
+        ASSERT_STREQ("1.6", packageVersion.ToMajorMinorString().c_str());
+        }
+
+#if 0 // save for testing purposes
+    // work with Bim02 file/package before beProp change
+        {
+        BeFileName file(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.bim");
+        BimFormatVersion fileVersion = BimFormatVersion::Extract(file);
+        ASSERT_FALSE(fileVersion.IsValid());
+
+        DbResult openStatus;
+        DgnDbPtr oldBimDb = DgnDb::OpenDgnDb(&openStatus, file, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_FALSE(oldBimDb.IsValid());
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, openStatus);
+
+        BimFormatVersion packageVersion = BimFormatVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.imodel"));
+        ASSERT_FALSE(packageVersion.IsValid());
+        }
+
+    // work with Bim02 file/package after beProp change
+        {
+        BeFileName file(L"d:\\data\\dgndb\\imodel-generations\\Bim02_after_beProp_change.bim");
+        BimFormatVersion fileVersion = BimFormatVersion::Extract(file);
+        ASSERT_TRUE(fileVersion.IsValid());
+        ASSERT_TRUE(fileVersion.IsFuture());
+
+        DbResult openStatus;
+        DgnDbPtr oldBimDb = DgnDb::OpenDgnDb(&openStatus, file, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_FALSE(oldBimDb.IsValid());
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooNew, openStatus);
+
+        BimFormatVersion packageVersion = BimFormatVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Bim02_after_beProp_change.imodel"));
+        ASSERT_TRUE(packageVersion.IsValid());
+        ASSERT_TRUE(packageVersion.IsFuture());
+        }
+
+    // work with Graphite05 file/package
+        {
+        BeFileName file(L"d:\\data\\dgndb\\imodel-generations\\04_Plant_Graphite55q2.idgndb");
+        BimFormatVersion fileVersion = BimFormatVersion::Extract(file);
+        ASSERT_TRUE(fileVersion.IsValid());
+        ASSERT_TRUE(fileVersion.IsPast());
+        ASSERT_TRUE(fileVersion.IsVersion_1_5());
+
+        DbResult openStatus;
+        DgnDbPtr db0601 = DgnDb::OpenDgnDb(&openStatus, file, DgnDb::OpenParams(Db::OpenMode::Readonly));
+        ASSERT_FALSE(db0601.IsValid());
+        ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, openStatus);
+
+        BimFormatVersion packageVersion = BimFormatVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Hydrotreater Expansion_Graphite05.imodel"));
+        ASSERT_TRUE(packageVersion.IsValid());
+        ASSERT_TRUE(packageVersion.IsPast());
+        ASSERT_TRUE(packageVersion.IsVersion_1_5());
+        }
+#endif        
     }
 
 /*---------------------------------------------------------------------------------**//**

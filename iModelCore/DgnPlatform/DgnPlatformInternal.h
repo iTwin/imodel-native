@@ -25,6 +25,7 @@
 #include "DgnCore/DgnCoreLog.h"
 #include <Bentley/BeStringUtilities.h>
 #include <Bentley/BeThreadLocalStorage.h>
+#include <BeSQLite/IModelDb.h>
 #include <DgnPlatform/AutoRestore.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/ClipVector.h>

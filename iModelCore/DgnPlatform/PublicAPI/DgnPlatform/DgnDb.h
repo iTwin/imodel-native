@@ -231,5 +231,43 @@ public:
 /** @} */
 };
 
-END_BENTLEY_DGN_NAMESPACE
+//=======================================================================================
+//! Class designed for extracting the .bim format version from a BeFileName
+//! @see BimFormatVersion::Extract
+// @bsiclass
+//=======================================================================================
+struct BimFormatVersion : DgnVersion
+{
+    DEFINE_T_SUPER(DgnVersion)
+    friend struct DgnDb;
 
+private:
+    BimFormatVersion() : T_Super(0, 0, 0, 0) {}
+    BimFormatVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
+    BimFormatVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : T_Super(major, minor, sub1, sub2) {}
+    explicit BimFormatVersion(Utf8CP json) : T_Super(json) {}
+
+    //! Map from legacy version range into current version range
+    static BimFormatVersion FromDgnDbSchemaVersion(Utf8CP versionJson);
+    //! Former PropertySpec values of DgnProjectProperty::SchemaVersion.  Used for inspecting legacy .dgndb, .idgndb files.
+    static BeSQLite::PropertySpec FutureDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Db");}
+    //! Former PropertySpec values of DgnEmbeddedProjectProperty::SchemaVersion.  Used for inspecting legacy .imodel files.
+    static BeSQLite::PropertySpec FutureEmbeddedDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnDb");}
+
+public:
+    bool IsValid() const {return !IsEmpty();}
+    bool IsCurrent() const {return *this == GetCurrent();}
+    bool IsPast() const {return *this < GetCurrent();}
+    bool IsFuture() const {return *this > GetCurrent();}
+    bool IsVersion_1_5() const {return *this == BimFormatVersion::Version_1_5();}
+    bool IsVersion_1_6() const {return *this == BimFormatVersion::Version_1_6();}
+
+    //! Extract the BimFormatVersion from the specfied file
+    DGNPLATFORM_EXPORT static BimFormatVersion Extract(BeFileNameCR fileName);
+    static BimFormatVersion GetCurrent() {return Version_1_6();}
+    static BimFormatVersion Version_1_0() {return BimFormatVersion(1, 0);} // DgnV8
+    static BimFormatVersion Version_1_5() {return BimFormatVersion(1, 5);} // Graphite05
+    static BimFormatVersion Version_1_6() {return BimFormatVersion(1, 6);} // DgnDb0601
+};
+
+END_BENTLEY_DGN_NAMESPACE
