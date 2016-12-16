@@ -945,8 +945,8 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         return;
         }
 
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
+    if (HasGraphics())
+        args.m_graphics.Add(m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -964,8 +964,9 @@ bool OctTree::Tile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
         // (same issue in QuadTree)
         // (shouldn't Root::Draw() handle this?)
         bvector<GraphicPtr>& loRes = args.m_loResSubstitutes.m_entries;
-        if (loRes.end() == std::find_if(loRes.begin(), loRes.end(), [&](Render::GraphicPtr const& arg) { return arg.get() == parent->GetGraphic(); }))
-            args.m_loResSubstitutes.Add(*parent->GetGraphic());
+        GraphicP firstParentGraphic = parent->GetGraphics().front().get();
+        if (loRes.end() == std::find_if(loRes.begin(), loRes.end(), [&](Render::GraphicPtr const& arg) { return arg.get() == firstParentGraphic; }))
+            args.m_loResSubstitutes.Add(parent->GetGraphics());
 
         return true;
         }
@@ -982,7 +983,7 @@ void OctTree::Tile::TryHigherRes(TileTree::DrawArgsR args) const
         {
         auto octChild = static_cast<Tile const*>(child.get());
         if (octChild->HasGraphics())
-            args.m_hiResSubstitutes.Add(*octChild->GetGraphic());
+            args.m_hiResSubstitutes.Add(octChild->GetGraphics());
         }
     }
 

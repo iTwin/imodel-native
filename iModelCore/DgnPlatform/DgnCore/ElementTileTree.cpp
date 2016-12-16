@@ -1819,7 +1819,6 @@ BentleyStatus Loader::_LoadTile()
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
     auto& system = *root.GetRenderSystem();
-    Render::GraphicBuilderPtr graphic;
 
     GeometryOptions options;
     LoadContext loadContext(this);
@@ -1828,6 +1827,8 @@ BentleyStatus Loader::_LoadTile()
     if (loadContext.WasAborted())
         return ERROR;
 
+#if defined(ELEMENT_TILE_SUBGRAPHICS)
+    Render::GraphicBuilderPtr graphic;
     // ###TODO: instanced geometry, polylines...
     for (auto const& mesh : geometry.Meshes())
         {
@@ -1855,8 +1856,33 @@ BentleyStatus Loader::_LoadTile()
             }
 
         graphic->Close();
-        tile.SetGraphic(*graphic);
+        tile.AddGraphic(*graphic);
         }
+#else
+    bool empty = true;
+    for (auto const& mesh : geometry.Meshes())
+        {
+        if (mesh->Triangles().empty())
+            continue;
+
+        auto graphic = system._CreateGraphic(Graphic::CreateParams());
+        TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
+        graphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+        graphic->AddTriMesh(meshArgs);
+        graphic->Close();
+
+        tile.AddGraphic(*graphic);
+        empty = false;
+        }
+
+    if (!empty && root.WantDebugRanges())
+        {
+        auto graphic = system._CreateGraphic(Graphic::CreateParams());
+        graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
+        graphic->AddRangeBox(tile.GetRange());
+        tile.AddGraphic(*graphic);
+        }
+#endif
 
 #if defined(ELEMENT_TILE_TRUNCATE_EMPTY_NODES)
     // ###TODO: This produces a race condition on the vector of child tiles...
@@ -1891,11 +1917,13 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
         return nullptr;
 
     DRange3d range;
+#if defined(ELEMENT_TILE_USE_PROJECT_EXTENTS)
     if (model.Is3dModel())
         {
         range = model.GetDgnDb().Units().GetProjectExtents();
         }
     else
+#endif
         {
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))

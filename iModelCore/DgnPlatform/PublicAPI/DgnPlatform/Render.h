@@ -1655,6 +1655,7 @@ struct GraphicBranch
     bvector<GraphicPtr> m_entries;
 
     void Add(Graphic& graphic) {graphic.EnsureClosed(); m_entries.push_back(&graphic);}
+    void Add(bvector<GraphicPtr> const& entries) { for (auto& entry : entries) Add(*entry); }
     void SetViewFlags(ViewFlags flags) {m_hasFlags=true; m_viewFlags=flags;}
 };
 

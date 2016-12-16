@@ -143,6 +143,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     {
     DgnDb::VerifyClientThread();
 
+    StopWatch timer(true);
     for (auto modelId : GetViewedModels())
         {
         auto iter = m_roots.find(modelId);
@@ -157,6 +158,8 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
         if (root.IsValid())
             root->DrawInView(context);
         }
+
+    DEBUG_PRINTF("CreateScene: %f\n", timer.GetCurrentSeconds());
 
     return SUCCESS;
     }
