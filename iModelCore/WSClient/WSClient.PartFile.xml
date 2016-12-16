@@ -520,7 +520,7 @@
         
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
+        <!--<SubPart PartName="ConnectWebServicesClientC" />-->
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
