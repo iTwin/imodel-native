@@ -227,7 +227,27 @@ public:
     //! don't have to be set in @p relInstanceProperties
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr);
+
+    //! Inserts a new ECRelationship between two elements.
+    //! @param[out] relKey key of the new ECRelationship
+    //! @param[in] relClass ECRelationshipClass to create an instance of
+    //! @param[in] sourceId The "source" element.
+    //! @param[in] targetId The "target" element.
+    //! @param[in] relInstanceProperties If @p relClass has ECProperties, pass its values via this parameter. Note: In this
+    //! case @ref ECN::IECRelationshipInstance::GetSource "IECRelationshipInstance::GetSource" and @ref ECN::IECRelationshipInstance::GetTarget "IECRelationshipInstance::GetTarget"
+    //! don't have to be set in @p relInstanceProperties
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    BeSQLite::DbResult InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, DgnElementId sourceId, DgnElementId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties = nullptr)
+        {
+        return InsertECRelationship(relKey, relClass, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        }
     
+    //! Update one or more properties of an existing ECRelationship instance. Note that you cannot change the source or target. @note this function only makes sense if the relationship instance is stored in a link table.
+    //! @param key Identifies the relationship instance.
+    //! @param props Contains the properties to be written. Note that this functions updates props by setting its InstanceId.
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult UpdateECRelationshipProperties(BeSQLite::EC::ECInstanceKeyCR key, ECN::IECInstanceR props);
+
     //! Deletes ECRelationships which match the specified @p sourceId and @p targetId.
     //! @remarks @p sourceId and @p targetId are used to build the ECSQL where clause. So they are used to filter
     //! what to delete. If one of them is invalid, it will not be included in the filter. If both are invalid, it is an error.
@@ -236,6 +256,16 @@ public:
     //! @param[in] targetId TargetECInstanceId filter. If invalid, no TargetECInstanceId filter will be applied.
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
+
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
+        {
+        return DeleteECRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
+        }
+
+    //! Deletes a specific ECRelationship
+    //! @param key Identifies the ECRelationship instance
+    //! @return BE_SQLITE_OK in case of success. Error codes otherwise
+    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationship(BeSQLite::EC::ECInstanceKeyCR key);
 
     //! Gets a cached and prepared ECSqlStatement.
     DGNPLATFORM_EXPORT BeSQLite::EC::CachedECSqlStatementPtr GetPreparedECSqlStatement(Utf8CP ecsql) const;

@@ -399,10 +399,10 @@ void DgnElement::_Dump(Utf8StringR str, ComparePropertyFilter const& filter) con
         if (filter._ExcludeProperty(propertyValue))
             continue;
 
+        str.append(comma);
         str.append(propertyValue.GetValueAccessor().GetDebugAccessString().c_str());
         str.append("=");
         str.append(propertyValue.GetValue().ToString().c_str());
-        str.append(comma);
         comma = ", ";
         }
     str.append("}\n");

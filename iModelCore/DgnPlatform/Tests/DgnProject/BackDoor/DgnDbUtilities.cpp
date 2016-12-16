@@ -17,41 +17,6 @@ USING_NAMESPACE_BENTLEY_DGN
 BEGIN_DGNDB_UNIT_TESTS_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Shaun.Sewall                    09/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus DgnDbUtilities::InsertRelationship (ECInstanceKey& rkey, ECSqlStatement& statement, ECDbR db, Utf8CP relationshipName, ECInstanceKeyCR sourceKey, ECInstanceKeyCR targetKey)
-    {
-    if (!relationshipName || !*relationshipName)
-        return ECSqlStatus::Error;
-
-    if (!sourceKey.IsValid() || !targetKey.IsValid())
-        return ECSqlStatus::Error;
-
-    if (!statement.IsPrepared())
-        {
-        Utf8PrintfString sql ("INSERT INTO %s (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES (?,?,?,?)", relationshipName);
-
-        ECSqlStatus status = statement.Prepare (db, sql.c_str());
-        if (!status.IsSuccess())
-            return status;
-        }
-    else
-        {
-        statement.Reset();
-        statement.ClearBindings();
-        }
-
-    statement.BindId(1, sourceKey.GetECClassId());
-    statement.BindId(2, sourceKey.GetECInstanceId());
-    statement.BindId(3, targetKey.GetECClassId());
-    statement.BindId(4, targetKey.GetECInstanceId());
-
-    if (BE_SQLITE_DONE != statement.Step(rkey))
-        return ECSqlStatus::Error;
-
-    return ECSqlStatus::Success;
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    12/2014
 //---------------------------------------------------------------------------------------
 ECInstanceKey DgnDbUtilities::QueryRelationshipSourceFromTarget (ECDbR db, Utf8CP relationshipName, ECInstanceKeyCR targetKey)
