@@ -239,6 +239,9 @@ public:
     //! Get the full name of a Tile in this TileTree. By default it concatenates the tile name to the rootDir
     virtual Utf8String _ConstructTileName(TileCR tile) const {return m_rootDir + tile._GetTileName();}
 
+    //! Get the name of this tile tree, chiefly for debugging
+    virtual Utf8CP _GetName() const = 0;
+
     //! Ctor for Root.
     //! @param db The DgnDb from which this Root was created. This is needed to get the Units().GetDgnGCS()
     //! @param location The transform from tile coordinates to BIM world coordinates.
@@ -266,6 +269,12 @@ public:
     //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
     void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
+
+    //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
+    //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.
+    //! @note During the traversal, previously loaded but now unused tiles are purged if they are expired.
+    //! @note This method must be called from the client thread
+    void DrawInView(RenderContextR context);
 };
 
 //=======================================================================================
@@ -401,6 +410,23 @@ struct DrawArgs
 };
 
 //=======================================================================================
+// The ProgressiveTask for drawing tiles as they arrive asynchronously.
+// @bsiclass                                                    Keith.Bentley   05/16
+//=======================================================================================
+struct ProgressiveTask : Dgn::ProgressiveTask
+{
+    Root& m_root;
+    DrawArgs::MissingNodes m_missing;
+    TimePoint m_nextShow;
+    TileLoadStatePtr m_loads;
+    Utf8String m_name;
+
+    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
+    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
+    ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
+};
+    
+//=======================================================================================
 //! A QuadTree is a 2d TileTree that subdivides each tile into 4 child equal-sized tiles, each with one corner at the center of its parent.
 //! A tile in a QuadTree can be addressed by a TileId comprised of a level (depth) and a row/column numbers. 
 //! The root tile is {0,0,0} and it is not necessarily square.
@@ -432,10 +458,8 @@ struct Root : TileTree::Root
     ColorDef m_tileColor;      //! for setting transparency
     uint8_t m_maxZoom;         //! the maximum zoom level for this map
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
-    virtual Utf8CP _GetName() const = 0;
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
-    void DrawInView(RenderContextR context);
 };
     
 //=======================================================================================
@@ -467,23 +491,6 @@ struct Tile : TileTree::Tile
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
 };
 
-//=======================================================================================
-// The ProgressiveTask for drawing QuadTree tiles as they arrive asynchronously.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct ProgressiveTask : Dgn::ProgressiveTask
-{
-    Root& m_root;
-    DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
-    TileLoadStatePtr m_loads;
-    Utf8String m_name;
-
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
-    ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
-};
-    
 } // end QuadTree
 
 //=======================================================================================
@@ -524,10 +531,6 @@ struct Root : TileTree::Root
     DEFINE_T_SUPER(TileTree::Root);
 
     Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system);
-
-    virtual Utf8CP _GetName() const = 0;
-
-    void DrawInView(RenderContextR context);
 };
 
 //=======================================================================================
@@ -563,24 +566,6 @@ public:
 
     bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
     void TryHigherRes(TileTree::DrawArgsR args) const;
-};
-
-//=======================================================================================
-//! The ProgressiveTask for drawing OctTree tiles as they arrive asynchronously.
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct ProgressiveTask : Dgn::ProgressiveTask
-{
-    Root&                   m_root;
-    DrawArgs::MissingNodes  m_missing;
-    TimePoint               m_nextShow;
-    TileLoadStatePtr        m_loads;
-    Utf8String              m_name;
-
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes&& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) { }
-    virtual ~ProgressiveTask() { if (nullptr != m_loads) m_loads->SetCanceled(); }
-
-    virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
 };
 
 } // end OctTree

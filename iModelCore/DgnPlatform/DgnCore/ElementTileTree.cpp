@@ -1873,9 +1873,16 @@ RootPtr Root::Create(GeometricModelR model)
         return nullptr;
 
     DRange3d range;
-    RangeAccumulator accum(range, model.Is2dModel());
-    if (!accum.Accumulate(*model.GetRangeIndex()))
-        return nullptr;
+    if (model.Is3dModel())
+        {
+        range = model.GetDgnDb().Units().GetProjectExtents();
+        }
+    else
+        {
+        RangeAccumulator accum(range, model.Is2dModel());
+        if (!accum.Accumulate(*model.GetRangeIndex()))
+            return nullptr;
+        }
 
     // Translate world coordinates to center of range in order to reduce precision errors
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);

@@ -246,7 +246,7 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   12/16
 //=======================================================================================
-struct SceneReadyTask : ProgressiveTask
+struct SceneReadyTask : Dgn::ProgressiveTask
 {
     Attachment::Tree& m_tree;
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}

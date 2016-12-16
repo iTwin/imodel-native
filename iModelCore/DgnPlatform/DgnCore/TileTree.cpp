@@ -630,6 +630,76 @@ void Tile::Draw(DrawArgsR args, int depth) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DrawInView(RenderContextR context)
+    {
+    if (!GetRootTile().IsValid())
+        {
+        BeAssert(false);
+        return;
+        }
+
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
+    Draw(args);
+    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+
+    args.DrawGraphics(context);
+
+    // Do we still have missing tiles?
+    if (!args.m_missing.empty())
+        {
+        // yes, request them and schedule a progressive task to draw them as they arrive.
+        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
+        args.RequestMissingTiles(*this, loads);
+        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
+* @bsimethod                                    Keith.Bentley                   08/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::ProgressiveTask::Completion TileTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+    {
+    auto now = std::chrono::steady_clock::now();
+    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
+
+    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
+
+    for (auto const& node: m_missing)
+        {
+        auto stat = node.second->GetLoadStatus();
+        if (stat == Tile::LoadStatus::Ready)
+            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
+        else if (stat != Tile::LoadStatus::NotFound)
+            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
+        }
+
+    args.RequestMissingTiles(m_root, m_loads);
+    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
+
+    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
+
+    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
+    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
+        {
+        m_loads = nullptr; // for debugging
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
+        return Completion::Finished;
+        }
+
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + std::chrono::seconds(1); // once per second
+        wantShow = WantShow::Yes;
+        }
+
+    return Completion::Aborted;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementAlignedBox3d Tile::ComputeRange() const
@@ -824,107 +894,12 @@ QuadTree::Root::Root(DgnDbR db, TransformCR trans, Utf8CP rootUrl, Dgn::Render::
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Root::DrawInView(RenderContextR context)
-    {
-    if (!GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
-    Draw(args);
-    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    // Do we still have missing tiles?
-    if (!args.m_missing.empty())
-        {
-        // yes, request them and schedule a progressive task to draw them as they arrive.
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion QuadTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
-
-    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
-
-    for (auto const& node: m_missing)
-        {
-        auto stat = node.second->GetLoadStatus();
-        if (stat == Tile::LoadStatus::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadStatus::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 OctTree::Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP system)
     : T_Super(db, location, rootUrl, system)
     {
     // 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OctTree::Root::DrawInView(RenderContextR context)
-    {
-    if (!GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now - GetExpirationTime());
-    Draw(args);
-
-    args.DrawGraphics(context);
-
-    if (!args.m_missing.empty())
-        {
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, std::move(args.m_missing), loads));
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1003,50 +978,6 @@ void OctTree::Tile::TryHigherRes(TileTree::DrawArgsR args) const
         if (octChild->HasGraphics())
             args.m_hiResSubstitutes.Add(*octChild->GetGraphic());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion OctTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now - m_root.GetExpirationTime());
-
-    for (auto const& node : m_missing)
-        {
-        switch (node.second->GetLoadStatus())
-            {
-            case Tile::LoadStatus::Ready:
-                node.second->Draw(args, node.first);
-                break;
-            case Tile::LoadStatus::NotFound:
-                break;
-            default:
-                args.m_missing.Insert(node.first, node.second);
-                break;
-            }
-        }
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);
-
-    m_missing.swap(args.m_missing);
-
-    if (m_missing.empty())
-        {
-        m_loads = nullptr;
-        context.GetViewport()->SetNeedsHeal();
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1);
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
