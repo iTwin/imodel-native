@@ -85,24 +85,12 @@ IHTTPHANDLERPTR customHandler
 CWSCC_EXPORT CallStatus ConnectWebServicesClientC_FreeApi(CWSCCHANDLE apiHandle);
 
 /************************************************************************************//**
-* \brief Create a new projectfavorite
-* \param[in] apiHandle API object
-* \param[in] ProjectGuid
-* \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
-****************************************************************************************/
-CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite
-(
-CWSCCHANDLE apiHandle,
-WCharCP ProjectGuid
-);
-
-/************************************************************************************//**
 * \brief Create a new projectfavorite_v2
 * \param[in] apiHandle API object
 * \param[in] ProjectGuid
 * \return Success or error code. See \ref ConnectWebServicesClientCStatusCodes
 ****************************************************************************************/
-CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V2
+CWSCC_EXPORT CallStatus ConnectWebServicesClientC_CreateProjectFavorite_V4
 (
 CWSCCHANDLE apiHandle,
 WCharCP ProjectGuid
