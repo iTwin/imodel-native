@@ -2233,6 +2233,25 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
         adjustGeometryTolerance(geometries, m_tolerance);
 #else
     GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
+
+#if defined(ELEMENT_TILE_CHECK_CURVED)
+    bool anyCurved = false;
+    for (auto const& geometry : geometries)
+        {
+        if (geometry->IsCurved())
+            {
+            anyCurved = true;
+            break;
+            }
+        }
+
+    if (!anyCurved)
+        {
+        m_tolerance = root.GetLeafTolerance();
+        SetIsLeaf();
+        }
+#endif
+
 #endif
 
     return CreateGeometryCollection(geometries, options, context);
