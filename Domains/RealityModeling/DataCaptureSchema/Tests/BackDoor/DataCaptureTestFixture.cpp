@@ -208,7 +208,7 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
         ShotPtr->SetLabel(photoLabel.c_str());
-        RotationMatrixType rotation(RotationMatrixType::FromIdentity());
+        RotMatrix rotation(RotMatrix::FromIdentity());
         DPoint3d center = { 1.0,2.0,3.0 };
         Pose pose(center, rotation);
         ShotPtr->SetPose(pose);

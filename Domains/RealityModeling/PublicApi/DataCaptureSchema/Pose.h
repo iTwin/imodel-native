@@ -13,44 +13,6 @@
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 
-//=======================================================================================
-//! Base class for RotationMatrixType 
-//! @ingroup DataCaptureGroup
-//=======================================================================================
-struct RotationMatrixType : public RotMatrix
-    {
-public:
-    //! Constructor
-    RotationMatrixType(RotMatrixCR in)
-        {
-        Copy(in);
-        }
-
-    //! Empty constructor 
-    RotationMatrixType() {}
-
-    //! Copy constructor
-    RotationMatrixType(RotationMatrixTypeCR rhs) { *this = rhs; }
-
-    //! Assignment operator
-    RotationMatrixType& operator= (RotationMatrixTypeCR rhs)
-        {
-        Copy(rhs);
-        return *this;
-        }
-
-    RotationMatrixType& operator= (RotMatrixCR rhs)
-        {
-        Copy(rhs);
-        return *this;
-        }
-
-    //! Bind the otationMatrixType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
-
-    //! Get the otationMatrixType value at the specified column from a ECSQL statement
-    static RotationMatrixType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
-    };
 
 //=======================================================================================
 //! Base class for Pose 
@@ -62,9 +24,6 @@ struct EXPORT_VTABLE_ATTRIBUTE Pose  : Dgn::SpatialLocationElement
     DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Pose, Dgn::SpatialLocationElement);
 
 private:
-    DPoint3d            m_center;
-    RotationMatrixType  m_rotation;
-
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
@@ -124,10 +83,10 @@ public:
     //! Validates 
     DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
 
-    DATACAPTURE_EXPORT DPoint3d            GetCenter() const;
-    DATACAPTURE_EXPORT RotationMatrixType  GetRotation() const;
+    DATACAPTURE_EXPORT DPoint3dCR               GetCenter() const;
+    DATACAPTURE_EXPORT RotMatrix                GetRotMatrix() const;
     DATACAPTURE_EXPORT void SetCenter(DPoint3dCR val);
-    DATACAPTURE_EXPORT void SetRotation(RotationMatrixTypeCR val);
+    DATACAPTURE_EXPORT bool SetRotMatrix(RotMatrixCR val);
 
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;

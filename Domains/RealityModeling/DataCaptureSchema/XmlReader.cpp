@@ -149,7 +149,7 @@ BeXmlStatus XmlReader::ReadCameraDeviceInfo (BeXmlNodeR sourceNodeRef, CameraDev
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, RotationMatrixTypeR rotation)
+BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, RotMatrixR rotation)
     {
     BeXmlStatus status(BEXML_Success);
 
@@ -206,7 +206,7 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot, Pose
         }
 
     DPoint3d  poseCenter;
-    RotationMatrixType rotation;
+    RotMatrix rotation;
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")) &&
@@ -214,7 +214,7 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot, Pose
         {
         //set pose in photo
         pose.SetCenter(poseCenter);
-        pose.SetRotation(rotation);
+        pose.SetRotMatrix(rotation);
         }                                                                                                           
 
     return BEXML_Success;
