@@ -29,6 +29,8 @@ struct DgnDbServerEventParser
 
         DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerRevisionEvent> GetRevisionEvent(DgnDbServerEventPtr eventPtr);
 
+        DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerRevisionCreateEvent> GetRevisionCreateEvent(DgnDbServerEventPtr eventPtr);
+
         DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerCodeEvent> GetCodeEvent(DgnDbServerEventPtr eventPtr);
 
         DGNDBSERVERCLIENT_EXPORT static std::shared_ptr<struct DgnDbServerDeletedEvent> GetDeletedEvent(DgnDbServerEventPtr eventPtr);

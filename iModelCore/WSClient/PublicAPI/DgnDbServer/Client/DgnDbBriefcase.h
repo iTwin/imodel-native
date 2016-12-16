@@ -32,14 +32,20 @@ private:
 
     DgnDbRepositoryConnectionPtr  m_repositoryConnection;
     Dgn::DgnDbPtr                 m_db;
+     
+    DgnDbServerEventCallback               m_pullMergeAndPushCallback;
+    DgnDbServerEvent::DgnDbServerEventType m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
 
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
     DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
     DgnDbServerRevisionsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                          ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0) const;
+                                                          ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0);
     void CheckCreatingRevision() const;
+    void WaitForRevisionEvent() const;
+    void SubscribeForRevisionEvents();
+    void UnsubscribeRevisionEvents();
 
 public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
@@ -92,7 +98,7 @@ public:
     //! @return Blocking task that returns success or an error and list of pulled and merged revisions.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionMergeTaskPtr PullMergeAndPush(Utf8CP description = nullptr, bool relinquishCodesLocks = false, Http::Request::ProgressCallbackCR downloadCallback = nullptr,
                                                                               Http::Request::ProgressCallbackCR uploadCallback = nullptr,
-                                                                              ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1) const;
+                                                                              ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1);
 
     //! Returns true if briefcase is up to date and there are no revisions pending. This will end up sending request to the server.
     //! @param[in] cancellationToken
@@ -100,16 +106,13 @@ public:
     DGNDBSERVERCLIENT_EXPORT DgnDbServerBoolTaskPtr IsBriefcaseUpToDate(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Return true if able to subscribe to given event types
-    //! @param[in] eventTypes
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr);
+    //! @param[in] eventTypes Event types callback function must be called for
+    //! @param[in] callback   Callback method that is called after one of eventTypes event occurs
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeEventsCallback (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback) const;
 
-    //! 
-    //! @param[in] longPolling
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr   GetEvent(bool longPolling = true, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Cancels the get event request 
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents();
+    //! Stops catching events and calling callback
+    //! @param[in] callback   Callback that should be stopped calling
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeEventsCallback (DgnDbServerEventCallback callback) const;
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.
