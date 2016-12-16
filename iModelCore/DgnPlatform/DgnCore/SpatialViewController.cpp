@@ -136,25 +136,11 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan) 
+BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     {
-    BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
-    BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
-
-    Frustum frust = vp.GetFrustum(DgnCoordSystem::World, true);
-    if (plan.m_query.m_frustumScale != 1.0) // sometimes we want to expand the frustum to hold elements outside the current view frustum
-        frust.ScaleAboutCenter(plan.m_query.m_frustumScale);
-
-    QueryResults results;
-    RangeQuery query(*this, frust, vp, plan.m_query, &results);
-    query.SetSizeFilter(vp, GetSceneLODSize());
-
-    if (!m_noQuery)
-        query.DoQuery();
-
-    return results;
+    return ERROR; // ###TODO_ELEMENT_TILE
     }
 
 /*---------------------------------------------------------------------------------**//**

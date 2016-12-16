@@ -77,8 +77,6 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
-    friend struct CreateSceneTask;
-
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
     {
         //! A unique identifier for this type of AppData. Use a static instance of this class to identify your AppData.
@@ -160,7 +158,7 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) = 0;
+    virtual BentleyStatus _CreateScene(RenderContextR context) = 0;
     virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
@@ -648,7 +646,7 @@ protected:
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -914,7 +912,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
 
 protected:
     ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
+    DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
