@@ -918,7 +918,7 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE GenericUniqueAspect : UniqueAspect
         {
         DEFINE_T_SUPER(UniqueAspect)
-        friend struct T_Super;
+        friend struct UniqueAspect;
      protected:
         ECN::IECInstancePtr m_instance;
         Utf8String m_ecclassName;
