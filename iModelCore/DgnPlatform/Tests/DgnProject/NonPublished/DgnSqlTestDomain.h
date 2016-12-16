@@ -65,11 +65,14 @@ public:
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_OBSTACLE_CLASS));}
 
     //! Set the value of the "SomeProperty" property
-    void SetSomeProperty(DgnDbR db, Utf8CP value);
+    void SetSomeProperty(Utf8CP value);
 
-    //! An Obstacle can have an associated "TestUniqueAspect". This method sets the value of the TestUniqueAspect, inserting the item if necessary.
-    void SetTestUniqueAspect(DgnDbR db, Utf8CP itemPropertyValue);
-};
+    //! An Obstacle can have an associated "TestUniqueAspect". This method sets the value of the TestUniqueAspectProperty of that aspect, inserting the aspect if necessary.
+    void SetTestUniqueAspect(Utf8CP itemPropertyValue);
+
+    //! Get the value of the TestUniqueAspectProperty property of the Obstacle's TestUniqueAspect.
+    Utf8String GetTestUniqueAspect() const;
+    };
 
 typedef RefCountedPtr<RobotElement>     RobotElementPtr;
 typedef RefCountedPtr<ObstacleElement>  ObstacleElementPtr;

@@ -210,21 +210,7 @@ BentleyStatus LinkElement::RemoveFromSource(DgnDbR dgndb, DgnElementId linkId, D
         return ERROR;
         }
 
-    Utf8CP ecSql = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?";
-    CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql);
-    BeAssert(stmt.IsValid());
-
-    stmt->BindId(1, sourceElementId);
-    stmt->BindId(2, linkId);
-
-    DbResult stepStatus = stmt->Step();
-    if (BE_SQLITE_DONE != stepStatus)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    return SUCCESS;
+    return (BE_SQLITE_OK == dgndb.DeleteECRelationships(BIS_SCHEMA(BIS_REL_ElementHasLinks), sourceElementId, linkId))? BSISUCCESS: BSIERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -526,6 +512,61 @@ DgnElementIdSet EmbeddedFileLink::Query(DgnDbCR dgndb, Utf8CP name /* = nullptr 
         stmt->BindText(bindIndex++, (0 == *description) ? nullptr : description, IECSqlBinder::MakeCopy::No);
 
     return CollectElementIds(*stmt);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus LinkElement::DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sourceElementId, Utf8CP schemaName, Utf8CP className, DgnElementIdSet const& removeLinkIds)
+    {
+    BeAssert(sourceElementId.IsValid());
+
+    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
+
+    Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
+    Utf8PrintfString ecSql(ecSqlFmt, schemaName, className);
+
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECSqlWriteToken());
+    BeAssert(stmt.IsValid());
+
+    stmt->BindInt64(1, (int64_t) &removeLinkIds);
+
+    BeSQLite::DbResult stepStatus = stmt->Step();
+    if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf8CP className, DgnElementIdSet const& unusedIds)
+    {
+    // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
+
+    if (unusedIds.empty())
+        return SUCCESS;
+
+    Utf8CP ecSqlFmt = "DELETE FROM ONLY %s.%s WHERE InVirtualSet(?, ECInstanceId)";
+    Utf8PrintfString ecSql(ecSqlFmt, schemaName, className);
+
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECSqlWriteToken());
+    BeAssert(stmt.IsValid());
+
+    stmt->BindInt64(1, (int64_t) &unusedIds);
+
+    BeSQLite::DbResult stepStatus = stmt->Step();
+    if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
     }
 
 END_BENTLEY_DGN_NAMESPACE

@@ -442,7 +442,7 @@ private:
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
 
 public:
     static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
@@ -483,7 +483,7 @@ private:
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
 
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}

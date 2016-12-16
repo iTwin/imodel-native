@@ -55,6 +55,8 @@ scaling and global origin needed to go from coordinate system units to design co
 struct DgnGCS : GeoCoordinates::BaseGCS
 {
 private:
+    friend struct DgnUnits;
+
     double   m_uorsPerBaseUnit;
     DPoint3d m_globalOrigin;
     double   m_paperScaleFromType66;
@@ -71,6 +73,8 @@ private:
 
     void InitCacheParameters(DgnDbR cache, double paperScale);
     void SetDatumOrEllipsoidInUserLibrary();
+
+    void SetGlobalOrigin(DPoint3dCR go) {m_globalOrigin = go;}
 
 public:
     DGNPLATFORM_EXPORT bool GetDatumOrEllipsoidInUserLibrary();
