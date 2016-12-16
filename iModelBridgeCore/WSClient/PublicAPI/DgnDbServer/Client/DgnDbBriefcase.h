@@ -33,7 +33,7 @@ private:
     DgnDbRepositoryConnectionPtr  m_repositoryConnection;
     Dgn::DgnDbPtr                 m_db;
      
-    DgnDbServerEventCallback               m_pullMergeAndPushCallback;
+    DgnDbServerEventCallbackPtr            m_pullMergeAndPushCallback;
     DgnDbServerEvent::DgnDbServerEventType m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
 
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
@@ -108,11 +108,11 @@ public:
     //! Return true if able to subscribe to given event types
     //! @param[in] eventTypes Event types callback function must be called for
     //! @param[in] callback   Callback method that is called after one of eventTypes event occurs
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeEventsCallback (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  SubscribeEventsCallback (bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback) const;
 
     //! Stops catching events and calling callback
     //! @param[in] callback   Callback that should be stopped calling
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeEventsCallback (DgnDbServerEventCallback callback) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeEventsCallback (DgnDbServerEventCallbackPtr callback) const;
 
     DGNDBSERVERCLIENT_EXPORT Dgn::DgnDbR GetDgnDb() const; //!< Briefcase file.
     DGNDBSERVERCLIENT_EXPORT DgnDbRepositoryConnectionCR GetRepositoryConnection() const; //!< Connection to a repository on server.

@@ -134,7 +134,7 @@ WCharP guid
         {
         case BUFF_TYPE_IMSUSER:
             {
-            return Organization_GetGuidProperty(api, buf, bufferProperty, index, strLength, guid);
+            return Organization_V2_GetGuidProperty(api, buf, bufferProperty, index, strLength, guid);
             }
         default:
             api->SetStatusMessage("Invalid parameter passed to function");
