@@ -867,7 +867,6 @@ void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
     {
-#if defined(ELEMENT_TILE_TRY_OTHER_RES)
     if (!IsReady())
         {
         if (!IsNotFound())
@@ -878,7 +877,6 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
 
         return;
         }
-#endif
 
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
@@ -962,7 +960,13 @@ bool OctTree::Tile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
 
     if (parent->HasGraphics())
         {
-        args.m_loResSubstitutes.Add(*parent->GetGraphic());
+        // ###TODO_ELEMENT_TILE: A better way to avoid adding the parent more than once
+        // (same issue in QuadTree)
+        // (shouldn't Root::Draw() handle this?)
+        bvector<GraphicPtr>& loRes = args.m_loResSubstitutes.m_entries;
+        if (loRes.end() == std::find_if(loRes.begin(), loRes.end(), [&](Render::GraphicPtr const& arg) { return arg.get() == parent->GetGraphic(); }))
+            args.m_loResSubstitutes.Add(*parent->GetGraphic());
+
         return true;
         }
 
