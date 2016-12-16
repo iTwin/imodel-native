@@ -487,6 +487,12 @@ BentleyStatus DateTimeStringConverter::FromIso8601(DateTimeR dateTime, Utf8CP is
             {
             BeAssert(secondFraction >= 0.0 && secondFraction < 1.0);
             msecond = (uint16_t) (secondFraction * 1000 + 0.5);
+            // Due to rounding up of some microsecond value (0.99956 for example ... yes it happened) we may end up with 1000 as value
+            // Which should be set to 0 and increase the seconds by one which may result in 60 seconds that would 
+            // require augmenting the minutes and so on ... till we may end up changing the year.
+            // This would be a pain for a mere half of a millisecond so we will simple downgrade 1000 to 999 in this improbable case
+            if (1000 == msecond) 
+                msecond = 999;
             }
         }
     else
