@@ -1695,6 +1695,8 @@ TEST_F(ECSchemaUpdateTests, AddECPropertyToBaseClass)
     ECInstanceKey row2;
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(row2));
     stmt.Finalize();
+    GetECDb().Schemas().CreateECClassViewsInDb();
+    GetECDb().SaveChanges();
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT BaseProp1, Prop1, Prop2 FROM ts.Sub WHERE ECInstanceId=?"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, row1.GetECInstanceId()));

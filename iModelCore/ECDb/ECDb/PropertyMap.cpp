@@ -12,6 +12,17 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //************************************PropertyMap*************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ECN::ECPropertyCR PropertyMap::GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty)
+    {
+    ECPropertyCP cursor = &ecProperty;
+    while (cursor->GetBaseProperty())
+        cursor = cursor->GetBaseProperty();
+
+    return *cursor;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16

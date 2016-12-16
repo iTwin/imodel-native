@@ -23,3 +23,4 @@ ECSchemaUpdateTests.UpdateECDbMapCA_DbIndexChanges
 
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECProperty
 ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
+

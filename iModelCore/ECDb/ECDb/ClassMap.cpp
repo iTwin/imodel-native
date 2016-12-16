@@ -20,10 +20,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
     : m_ecdb(ecdb), m_type(type), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_columnFactory(ecdb, *this), m_tphHelper(nullptr), m_propertyMaps(*this)
+    m_isDirty(setIsDirty), m_tphHelper(nullptr), m_propertyMaps(*this)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
+    }
+
+DbColumnFactory const& ClassMap::GetColumnFactory() const
+    {
+    if (m_columnFactory == nullptr)
+        m_columnFactory = DbColumnFactory::Create(*this);
+
+    return *m_columnFactory;
     }
 
 //---------------------------------------------------------------------------------------
@@ -336,7 +344,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
         }
 
-    GetColumnFactory().Update(false);
+    //GetColumnFactory().Update(false);
 
     for (ECPropertyCP property : propertiesToMap)
         {
@@ -363,6 +371,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
         }
 
+    //GetColumnFactory().Debug();
     return ClassMappingStatus::Success;
     }
 
@@ -645,7 +654,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
     if (!failedToLoadProperties.empty())
         {
-        GetColumnFactory().Update(true);
+        //GetColumnFactory().Update(true);
         for (ECPropertyCP property : failedToLoadProperties)
             {
             PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);

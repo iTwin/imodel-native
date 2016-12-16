@@ -177,6 +177,16 @@ ECPropertyId ECDbSchemaReader::GetECPropertyId(ECPropertyCR prop) const
 //---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
     {
+    auto itor = m_ecClassCache.find(ecClassId);
+    if (itor != m_ecClassCache.end())
+        {
+        if (itor->second->m_ensureDerivedClassesExist)
+            return SUCCESS;
+
+        //Just mark is loaded as code that ensure has very rare chance of ever failing
+        itor->second->m_ensureDerivedClassesExist = true;
+        }
+
     ECDbSchemaReader::Context ctx;
     if (SUCCESS != EnsureDerivedClassesExist(ctx, ecClassId))
         return ERROR;

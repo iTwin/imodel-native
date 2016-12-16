@@ -38,8 +38,8 @@ struct DbECClassEntry
     public:
         ECN::ECClassId m_ecClassId;
         ECN::ECClassP m_cachedECClass;
-
-        explicit DbECClassEntry(ECN::ECClassCR ecClass) : m_ecClassId(ecClass.GetId())
+        bool m_ensureDerivedClassesExist;
+        explicit DbECClassEntry(ECN::ECClassCR ecClass) : m_ecClassId(ecClass.GetId()), m_ensureDerivedClassesExist(false)
             {
             m_cachedECClass = const_cast<ECN::ECClassP> (&ecClass);
             }

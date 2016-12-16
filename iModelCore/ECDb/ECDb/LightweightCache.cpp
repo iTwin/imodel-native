@@ -98,6 +98,14 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      07/2015
 //---------------------------------------------------------------------------------------
+bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::GetRelationshipClasssForConstraintClass(ECN::ECClassId constraintClassId) const
+    {
+    return LoadRelationshipConstraintClasses(constraintClassId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan      07/2015
+//---------------------------------------------------------------------------------------
 bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache::LoadRelationshipConstraintClasses(ECN::ECClassId constraintClassId) const
     {
     auto itor = m_relationshipClassIdsPerConstraintClassIds.find(constraintClassId);
@@ -126,8 +134,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
-        BeAssert(!stmt->IsColumnNull(2));
-        RelationshipEnd end = stmt->GetValueInt(2) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        BeAssert(!stmt->IsColumnNull(1));
+        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())

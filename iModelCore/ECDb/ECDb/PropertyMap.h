@@ -150,6 +150,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         Type GetType() const { return m_type; }
 
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
+        
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
         ECN::ECPropertyId GetRootPropertyId() const;
         //! return full access string from root property to current property.
@@ -169,6 +170,8 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         //! Test if current property map part of class map tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         Path GetPath() const { return Path::From(*this); }
+        //! It traverse base property hiearchy 
+        static ECN::ECPropertyCR GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty);
     };
 
 ENUM_IS_FLAGS(PropertyMap::Type);

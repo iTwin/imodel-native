@@ -179,7 +179,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         ConstraintECInstanceIdPropertyMap const* GetForeignEndECInstanceIdPropMap() const;
         ConstraintECInstanceIdPropertyMap const* GetReferencedEndECInstanceIdPropMap() const;
         ConstraintECClassIdPropertyMap const* GetReferencedEndECClassIdPropMap() const;
-
+        ConstraintECClassIdPropertyMap const* GetForeignEndECClassIdPropMap() const;
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
