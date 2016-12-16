@@ -457,7 +457,7 @@ struct RangeAccumulator : RangeIndex::Traverser
     RangeAccumulator(DRange3dR range, bool is2d) : m_range(range), m_is2d(is2d) { m_range = DRange3d::NullRange(); }
 
     virtual bool _AbortOnWriteRequest() const override { return true; }
-    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return true; }
+    virtual RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override { return RangeIndex::Traverser::Accept::Yes; }
     virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         m_range.Extend(entry.m_range.ToRange3d());
@@ -1352,7 +1352,7 @@ public:
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter, *this); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter); }
     virtual TileGeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
@@ -2230,6 +2230,24 @@ TileGeomPart::TileGeomPart(DgnGeometryPartId partId, DRange3dCR range, TileGeome
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool TileGeomPart::IsWorthInstancing (double chordTolerance) const
+    {
+    static size_t               s_minInstanceCount = 2;
+    static size_t               s_minFacetCompression = 5000;
+
+    if (GetInstanceCount() < s_minInstanceCount)
+        return false;
+
+    auto            facetOptions = createTileFacetOptions(chordTolerance);
+    FacetCounter    counter(*facetOptions);
+    size_t          facetCount = GetFacetCount(counter);
+
+    return (m_instanceCount - 1) * facetCount > s_minFacetCompression;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeomPart::IsCurved() const
     {
     for (auto& geometry : m_geometries)
@@ -2287,7 +2305,7 @@ TileGeometry::T_TileStrokes TileGeomPart::GetStrokes (IFacetOptionsR facetOption
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-size_t TileGeomPart::GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const
+size_t TileGeomPart::GetFacetCount(FacetCounter& counter) const
     {
     if (0 == m_facetCount)
         for (auto& geometry : m_geometries) 
@@ -2488,12 +2506,12 @@ struct GeometryCollector : RangeIndex::Traverser
     GeometryCollector(DRange3dCR range, TileGeometryProcessor& proc, ViewContextR context)
         : m_range(range), m_processor(proc), m_context(context) { }
 
-    virtual bool _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
+    RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
         {
-        return box.IntersectsWith(m_range);
+        return box.IntersectsWith(m_range) ? RangeIndex::Traverser::Accept::Yes : RangeIndex::Traverser::Accept::No;
         }
 
-    virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
+    Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
         if (entry.m_range.IntersectsWith(m_range))
             {
@@ -2684,14 +2702,13 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     TileGeometryList            uninstancedGeometry;
     PublishableTileGeometry     publishedTileGeometry;
     TileMeshList&               meshes = publishedTileGeometry.Meshes();
-    static size_t               s_minInstanceCount = 10;
 
     // Extract instances first...
     for (auto& geom : m_geometries)
         {
         auto const&   part = geom->GetPart();
 
-        if (part.IsValid() && part->GetInstanceCount() > s_minInstanceCount)
+        if (part.IsValid() && part->IsWorthInstancing(GetTolerance()))
             {
             auto const&         found = partMap.find(part->GetPartId());
             TileMeshPartPtr     meshPart;
@@ -2702,7 +2719,10 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
 
                 if (partMeshes.empty())
                     continue;
-                    
+                
+                for (auto& partMesh : partMeshes)
+                    partMesh->SetValidIdsPresent(false);    // Ids are included on the instances only.
+
                 publishedTileGeometry.Parts().push_back(meshPart = TileMeshPart::Create (std::move(partMeshes)));
                 partMap.Insert(part->GetPartId(), meshPart);
                 }
@@ -2710,7 +2730,8 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 {
                 meshPart = found->second;
                 }
-            publishedTileGeometry.Instances().push_back(TileMeshInstance(meshPart, geom->GetTransform()));
+
+            meshPart->AddInstance (TileMeshInstance(geom->GetEntityId(), geom->GetTransform()));
             }
         else
             {

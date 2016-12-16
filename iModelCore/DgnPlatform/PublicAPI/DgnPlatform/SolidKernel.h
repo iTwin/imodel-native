@@ -364,6 +364,9 @@ DGNPLATFORM_EXPORT static bool IsSmoothEdge(ISubEntityCR);
 //! Return whether the supplied entity is a laminar edge of a sheet body, i.e. boundary of a single face.
 DGNPLATFORM_EXPORT static bool IsLaminarEdge(ISubEntityCR);
 
+//! Return whether the supplied entity is a disjoint body.
+DGNPLATFORM_EXPORT static bool IsDisjointBody(IBRepEntityCR);
+
 //! Return whether the supplied entity is a sheet body with a single planar face.
 DGNPLATFORM_EXPORT static bool IsSingleFacePlanarSheetBody(IBRepEntityCR, bool& hasHoles);
 
@@ -573,6 +576,9 @@ struct Modify
         AngleDistance           = 4, //!< Angle (radians) and left distance.
         };
 
+    //! Create a rollback mark that represents the current modeller state and that will return the modeller to this state when the mark is destroyed.
+    DGNPLATFORM_EXPORT static RefCountedPtr<IRefCounted> CreateRollbackMark();
+
     //! Perform the specified boolean operation between the target body and tool body.
     //! @param[in,out] target The target body to modify (may be consumed in boolean).
     //! @param[in,out] tool The tool body (consumed in boolean).
@@ -608,7 +614,7 @@ struct Modify
     DGNPLATFORM_EXPORT static BentleyStatus SewBodies(bvector<IBRepEntityPtr>& sewn, bvector<IBRepEntityPtr>& unsewn, bvector<IBRepEntityPtr>& tools, double gapWidthBound, size_t nIterations = 1);
 
     //! Separate a disjoint body into multiple bodies. If the input body does not have disjoint regions, it will be unchanged and the output vector will be empty.
-    //! In the case of a disjoint body, the original entity will reference the first region, and any additional regions will be returned in the output vector.
+    //! In the case of a disjoint body, the original entity will reference the first solid region, and any additional regions will be returned in the output vector.
     //! @return SUCCESS if operation was completed.
     DGNPLATFORM_EXPORT static BentleyStatus DisjoinBody(bvector<IBRepEntityPtr>& additionalEntities, IBRepEntityR entity);
 
@@ -712,8 +718,9 @@ struct Modify
     //! Modify the target solid or sheet body by removing selected faces and healing.
     //! @param[in,out] target The target body to modify.
     //! @param[in] faces The array of faces to be delted.
+    //! @param[in] isBlendFaces Whether the faces were created using a blend operation.
     //! @return SUCCESS if faces could be deleted.
-    DGNPLATFORM_EXPORT static BentleyStatus DeleteFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces);
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bool isBlendFaces = false);
 
     //! Modify a face of a body by imprinting new edges from the specified curve vector.
     //! @param[in,out] face The target face sub-entity to imprint.

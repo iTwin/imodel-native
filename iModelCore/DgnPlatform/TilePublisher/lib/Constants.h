@@ -10,12 +10,16 @@
 
 USING_NAMESPACE_BENTLEY
 
-static const char s_gltfMagic[]             = "glTF";
-static const char s_b3dmMagic[]             = "b3dm";
+static const char s_gltfMagic[]              = "glTF";
+static const char s_b3dmMagic[]              = "b3dm";
+static const char s_compositeTileMagic[]     = "cmpt";
+static const char s_instanced3dMagic[]       = "i3dm";
 
-static const uint32_t s_b3dmVersion         = 1;
-static const uint32_t s_gltfVersion         = 1;
-static const uint32_t s_gltfSceneFormat     = 0;
+static const uint32_t s_b3dmVersion          = 1;
+static const uint32_t s_gltfVersion          = 1;
+static const uint32_t s_gltfSceneFormat      = 0;
+static const uint32_t s_compositeTileVersion = 1; 
+static const uint32_t s_instanced3dVersion   = 1;
 
 
 #define GLTF_LINES 1
@@ -52,11 +56,14 @@ static const uint32_t s_gltfSceneFormat     = 0;
 #define JSON_Content "content"
 #define JSON_Transform "transform"
 
+static std::string  s_shaderPrecision        = "precision highp float;\n"; 
+
+static std::string  s_batchIdShaderAttribute = "attribute float a_batchId;\n";
+
 //Shaders for display of mesh data
 static std::string s_litVertexCommon = 
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_n;\n"
-"attribute float a_batchId;\n"
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
 "uniform mat3 u_nmx;\n"
@@ -69,22 +76,18 @@ static std::string s_litVertexCommon =
 "gl_Position = u_proj * pos;\n";
 
 static std::string s_texturedVertexShader =
-"precision highp float;\n" 
 "attribute vec2 a_texc;\n"
 "varying vec2 v_texc;\n"
 + s_litVertexCommon +
 "v_texc = a_texc;\n"
 "}\n";
 
-static std::string s_untexturedVertexShader =
-"precision highp float;\n" 
-+ s_litVertexCommon +
+static std::string s_untexturedVertexShader =  
+s_litVertexCommon +
 "}\n";
 
 static std::string s_unlitTextureVertexShader =     // Used for reality meshes.
-"precision highp float;\n" 
 "attribute vec3 a_pos;\n"
-"attribute float a_batchId;\n"
 "attribute vec2 a_texc;\n"
 "varying vec2 v_texc;\n"
 "uniform mat4 u_mv;\n"
@@ -123,7 +126,6 @@ static std::string s_computeLighting =
 "}\n";
 
 static std::string s_untexturedFragShader = 
-"precision highp float;\n"
 "uniform vec4 u_color;\n"
 "varying vec3 v_n;\n"
 "varying vec3 v_pos;\n"
@@ -134,7 +136,6 @@ static std::string s_untexturedFragShader =
 "gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, u_color);}\n";
 
 static std::string s_texturedFragShader =
-"precision highp float;\n"
 "varying vec2 v_texc;\n"  
 "uniform sampler2D u_tex;\n" 
 "varying vec3 v_n;\n"
@@ -148,7 +149,6 @@ static std::string s_texturedFragShader =
 "gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, textureColor); }\n";
 
 static std::string s_unlitTextureFragmentShader =
-"precision highp float;\n"
 "varying vec2 v_texc;\n"  
 "uniform sampler2D u_tex;\n" 
 "void main(void) {gl_FragColor = texture2D(u_tex, v_texc);}\n";
@@ -156,26 +156,20 @@ static std::string s_unlitTextureFragmentShader =
 
 // Unlit shaders....
 static std::string s_unlitVertexShader =
-"precision highp float;\n" 
 "attribute vec3 a_pos;\n"
-"attribute float a_batchId;\n"
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
 "void main(void) {\n"
 "gl_Position = u_proj * u_mv * vec4(a_pos, 1.0);}\n";
 
 static std::string s_unlitFragmentShader =
-"precision highp float;\n"
 "uniform vec4 u_color;\n"
 "void main(void) {gl_FragColor = vec4(u_color);}\n";
 
 // Polyline shaders.
 static std::string s_polylineVertexShader =
-                                                                                                                                                 
-"precision highp float;\n" 
 "attribute vec3 a_pos;\n"
 "attribute vec3 a_direction;\n"
-"attribute float a_batchId;\n"
 "attribute vec3 a_vertexDelta;\n"
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
@@ -246,7 +240,7 @@ static double const s_qvExponentMultiplier  = 48.0,
 
 
 static const WCharCP s_metadataExtension    = L"json";
-static const WCharCP s_binaryDataExtension  = L"b3dm";
+static const WCharCP s_binaryDataExtension  = L"cmpt";
 
 
 

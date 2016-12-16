@@ -75,7 +75,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     {
     private:
         bool m_decorations = false;
-        bool m_query = false;
         bool m_scene = false;
         bool m_renderPlan = false;
         bool m_controller = false;
@@ -84,21 +83,18 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 
     public:
         void InvalidateDecorations() {m_decorations=false;}
-        void InvalidateQuery() {m_query=false;}
-        void InvalidateScene() {m_scene=false; InvalidateQuery(); InvalidateDecorations();}
+        void InvalidateScene() {m_scene=false; InvalidateDecorations();}
         void InvalidateRenderPlan() {m_renderPlan=false; InvalidateScene();}
         void InvalidateController() {m_controller=false; InvalidateRenderPlan();}
         void InvalidateRotatePoint() {m_rotatePoint=false;}
         void InvalidateFirstDrawComplete() {m_firstDrawComplete=false;}
         void SetValidDecorations() {m_decorations=true;}
-        void SetValidQuery() {m_query=true;}
         void SetFirstDrawComplete() {m_firstDrawComplete=true;}
         void SetValidScene() {m_scene=true;}
         void SetValidController() {m_controller=true;}
         void SetValidRenderPlan() {m_renderPlan=true;}
         void SetValidRotatePoint() {m_rotatePoint=true;}
         bool IsValidDecorations() const {return m_decorations;}
-        bool IsValidQuery() const {return m_query;}
         bool IsValidScene() const {return m_scene;}
         bool IsValidRenderPlan() const {return m_renderPlan;}
         bool IsValidController() const {return m_controller;}
@@ -137,8 +133,7 @@ protected:
     double m_frustFraction;
     Utf8String m_viewTitle;
     ViewControllerPtr m_viewController;
-    ProgressiveTasks m_elementProgressiveTasks;
-    ProgressiveTasks m_terrainProgressiveTasks;
+    ProgressiveTasks m_progressiveTasks;
     DPoint3d m_viewCmdTargetCenter;
     ViewDefinitionPtr m_currentBaseline;
     ViewUndoStack m_forwardStack;
@@ -164,9 +159,9 @@ protected:
     void ShowChanges(ViewManagerCR, Render::Task::Priority);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void CreateTerrain(UpdatePlan const& plan);
-    StatusInt CreateScene(UpdatePlan const& plan);
+    void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
-    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context, bvector<ProgressiveTaskPtr>& tasks);
+    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context);
 
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
@@ -178,8 +173,6 @@ public:
     void SetDynamicsTransparency(Byte val) {m_dynamicsTransparency = val;}
 
     DGNPLATFORM_EXPORT void SetRenderTarget(Render::TargetP target);
-    DGNPLATFORM_EXPORT static TileViewport* GetTileViewport();
-    DGNPLATFORM_EXPORT static void SetTileViewport(TileViewport*);
 
     double GetFrustumFraction() const {return m_frustFraction;}
     bool IsVisible() {return _IsVisible();}
@@ -187,13 +180,11 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
     ProgressiveTask::Completion DoProgressiveTasks(Render::Task::Priority priority);
-    void ClearAllProgressiveTasks() {m_elementProgressiveTasks.clear(); m_terrainProgressiveTasks.clear();}
-    void ClearElementProgressiveTasks() { m_elementProgressiveTasks.clear();}
+    DGNPLATFORM_EXPORT void ClearProgressiveTasks();
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
-    DGNPLATFORM_EXPORT void ScheduleElementProgressiveTask(ProgressiveTask& pd);
-    DGNPLATFORM_EXPORT void ScheduleTerrainProgressiveTask(ProgressiveTask& pd);
+    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);
@@ -214,7 +205,6 @@ public:
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
     DGNVIEW_EXPORT void ForceHeal();
-    void ValidateQuery(UpdatePlan const&);
     StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
     bool GetNeedsHeal() {return m_sync.IsValidScene();}
@@ -564,12 +554,12 @@ public:
 //=======================================================================================
 struct TileViewport : DgnViewport
 {
-    BeMutex m_mutex;
     BSIRect m_rect;
-
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::Image&, ViewControllerR, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    Render::GraphicListPtr m_terrain;
+    virtual void _QueueScene() = 0;
+    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::Image&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
-    TileViewport() : DgnViewport(nullptr) {}
+    TileViewport();
 };
 
 //=======================================================================================
@@ -578,7 +568,7 @@ struct TileViewport : DgnViewport
 struct NonVisibleViewport : DgnViewport
 {
 protected:
-    virtual void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
+    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
 
 public:
     NonVisibleViewport(Render::Target* target, ViewControllerR viewController) : DgnViewport(target) {m_viewController = &viewController; SetupFromViewController();}
