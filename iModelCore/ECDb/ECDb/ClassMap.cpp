@@ -395,7 +395,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             if (propertyMap == nullptr)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
-                   "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                   "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                    "The specified ECProperty '%s' does not exist or is not mapped.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -405,7 +405,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             if (!prop.GetIsPrimitive())
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
-                              "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                              "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                               "The specified ECProperty '%s' is not of a primitive type.",
                               i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
@@ -425,7 +425,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 if (column->IsOverflowSlave())
                     {
                     Issues().Report(ECDbIssueSeverity::Error,
-                                    "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                     "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
                                     i, GetClass().GetFullName(), propertyAccessString.c_str());
                     return ERROR;
@@ -434,7 +434,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
                     {
                     Issues().Report(ECDbIssueSeverity::Error,
-                                  "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid: "
+                                  "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                   "The specified ECProperty '%s' is mapped to a virtual column.",
                                   i, GetClass().GetFullName(), propertyAccessString.c_str());
                     return ERROR;
@@ -446,7 +446,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                     if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
                         {
                         Issues().Report(ECDbIssueSeverity::Error,
-                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
                                       "is applied to this class hierarchy.",
                                       i, GetClass().GetFullName());
@@ -454,7 +454,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                     else
                         {
                         Issues().Report(ECDbIssueSeverity::Error,
-                                      "DbIndex #%d defined in ClassMap custom attribute on ECClass '%s' is invalid. "
+                                      "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
                                       "The properties that make up the index are mapped to different tables.",
                                       i, GetClass().GetFullName());
 
