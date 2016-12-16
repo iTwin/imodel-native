@@ -180,6 +180,12 @@ public:
                                                                                      BriefcaseFileNameCallback const& fileNameCallback = DefaultFileNameCallback, 
                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
    
+    //! Abandon a briefcase. It will abandon a briefcase and release all locks and codes associated to it. Make sure you delete briefcase BIM file after calling this.
+    //! @param[in] briefcaseId id that should be abandoned.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that returns error if abandoning briefcase fails.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr AbandonBriefcase(RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
     //! Create a DgnDbBriefcase instance from a previously downloaded DgnDb file.
     //! @param[in] db Previously downloaded briefcase file. See DgnDbClient::AcquireBriefcase.
     //! @param[in] doSync If set to true, it will download all of the incomming revisions and merge locally.
