@@ -11,7 +11,7 @@
 #include "BeSQLite.h"
 
 #define PROPERTY_APPNAME_Package "pkge_Main"
-#define PROPERTY_APPNAME_Imodel  "imodel"
+#define PROPERTY_APPNAME_IModel  "imodel"
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
 enum IModelSchemaValues
@@ -32,16 +32,16 @@ enum IModelSchemaValues
 //! and .ibim files that it creates.
 // @bsiclass                                                    Shaun.Sewall    05/13
 //=======================================================================================
-struct ImodelProperty
+struct IModelProperty
 {
     struct Spec : PropertySpec
         {
-        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_Imodel, Mode::Normal) {}
+        Spec(Utf8CP name) : PropertySpec(name, PROPERTY_APPNAME_IModel, Mode::Normal) {}
         };
 
     static Spec PublisherProgram()  {return Spec("PublisherProgram");}
     static Spec PublisherVersion()  {return Spec("PublisherVersion");}
-    static Spec ImodelType()        {return Spec("imodelType");}
+    static Spec IModelType()        {return Spec("imodelType");}
 };
 
 //=======================================================================================
