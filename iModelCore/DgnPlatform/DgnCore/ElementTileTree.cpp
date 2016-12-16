@@ -1819,6 +1819,7 @@ BentleyStatus Loader::_LoadTile()
     auto geometry = tile.GenerateGeometry(options);
 
     // ###TODO: instanced geometry, polylines...
+    bool empty = true;
     for (auto const& mesh : geometry.Meshes())
         {
         if (mesh->Triangles().empty())
@@ -1831,9 +1832,11 @@ BentleyStatus Loader::_LoadTile()
 
         subGraphic->Close();
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+
+        empty = false;
         }
 
-    if (root.WantDebugRanges())
+    if (!empty && root.WantDebugRanges())
         {
         graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
         graphic->AddRangeBox(tile.GetRange());
@@ -1859,7 +1862,7 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
-    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()), m_debugRanges(false)
+    m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()), m_debugRanges(true)
     {
     //
     }

@@ -867,6 +867,7 @@ void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
     {
+#if defined(ELEMENT_TILE_TRY_OTHER_RES)
     if (!IsReady())
         {
         if (!IsNotFound())
@@ -877,6 +878,7 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
 
         return;
         }
+#endif
 
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
