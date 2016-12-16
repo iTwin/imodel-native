@@ -35,9 +35,9 @@ struct DgnDbCodeTemplate;
 struct DgnDbCodeTemplateSetResultInfo;
 typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 
-typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallbackRef;
-typedef DgnDbServerEventCallbackRef* DgnDbServerEventCallback;
-typedef bvector<bpair<DgnDbServerEventCallback, bvector<DgnDbServerEvent::DgnDbServerEventType>>> DgnDbServerEventMap;
+typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallback;
+typedef std::shared_ptr<DgnDbServerEventCallback> DgnDbServerEventCallbackPtr;
+typedef bvector<bpair<DgnDbServerEventCallbackPtr, bvector<DgnDbServerEvent::DgnDbServerEventType>>> DgnDbServerEventMap;
 typedef std::shared_ptr<struct DgnDbServerEventManagerContext> DgnDbServerEventManagerContextPtr;
 typedef std::shared_ptr<struct DgnDbServerEventManager> DgnDbServerEventManagerPtr;
 
@@ -505,11 +505,11 @@ public:
     //! Subscribe callback for the events
     //! @param[in] eventTypes
     //! @param[in] callback
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback);
 
     //! Unsubscribe callback for events
     //! @param[in] callback
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr UnsubscribeEventsCallback(DgnDbServerEventCallback callback);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr UnsubscribeEventsCallback(DgnDbServerEventCallbackPtr callback);
 
 
 };
