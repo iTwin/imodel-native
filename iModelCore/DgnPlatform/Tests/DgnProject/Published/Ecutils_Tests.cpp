@@ -102,7 +102,7 @@ TEST_F(EcutilsTests, ConvertECValueToJson)
     EcValue.Clear();
     ASSERT_EQ(BentleyStatus::ERROR, ECUtils::ConvertECValueToJson(obj, EcValue));
 
-    ECN::ECValue EcValue2(NULL);
+    ECN::ECValue EcValue2;
     EcValue2.SetIsNull(TRUE);
     ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue2));
     ASSERT_EQ(obj.isNull(), true);
