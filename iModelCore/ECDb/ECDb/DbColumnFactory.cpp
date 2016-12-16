@@ -151,7 +151,7 @@ DbColumnFactory::UsedColumnMap DbColumnFactory::BuildUsedColumnMap(ClassMap cons
             }
         else
             {
-            SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
+            SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
             classMap->GetPropertyMaps().AcceptVisitor(visitor);
             for (PropertyMap const* propertyMap : visitor.Results())
                 {
