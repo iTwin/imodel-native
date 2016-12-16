@@ -20,6 +20,7 @@ BEGIN_ELEMENT_TILETREE_NAMESPACE
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Loader);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(LoadContext);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DisplayParams);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TextureImage);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(MeshInstance);
@@ -529,6 +530,19 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
+struct LoadContext
+{
+private:
+    LoaderCP    m_loader;
+public:
+    explicit LoadContext(LoaderCP loader) : m_loader(loader) { }
+
+    bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
 struct Root : TileTree::OctTree::Root
 {
     DEFINE_T_SUPER(TileTree::OctTree::Root);
@@ -583,9 +597,9 @@ private:
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     virtual double _GetMaximumSize() const override;
 
-    MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const;
-    GeometryList CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold);
-    GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR) const;
+    MeshList GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest, LoadContextCR context) const;
+    GeometryList CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, LoadContextCR context);
+    GeometryCollection CreateGeometryCollection(GeometryList const&, GeometryOptionsCR, LoadContextCR context) const;
 
     bool IsElementCountLessThan(uint32_t threshold, double tolerance) const;
 public:
@@ -599,7 +613,7 @@ public:
     RootCR GetElementRoot() const { return static_cast<RootCR>(GetRoot()); }
     RootR GetElementRoot() { return static_cast<RootR>(GetRootR()); }
 
-    GeometryCollection GenerateGeometry(GeometryOptionsCR options);
+    GeometryCollection GenerateGeometry(GeometryOptionsCR options, LoadContextCR context);
     DRange3d ComputeChildRange(TileR child) const;
 };
 

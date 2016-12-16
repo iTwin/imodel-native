@@ -882,11 +882,14 @@ struct GeometryCollector : RangeIndex::Traverser
 
     virtual Accept _CheckRangeTreeNode(RangeIndex::FBoxCR box, bool is3d) const override
         {
-        return box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
+        return !m_context.CheckStop() && box.IntersectsWith(m_range) ? Accept::Yes : Accept::No;
         }
 
     virtual Stop _VisitRangeTreeEntry(RangeIndex::EntryCR entry) override
         {
+        if (m_context.CheckStop())
+            return Stop::Yes;
+
         if (entry.m_range.IntersectsWith(m_range))
             {
             auto entryRange = entry.m_range.ToRange3d();
@@ -917,6 +920,7 @@ DEFINE_T_SUPER(NullContext);
 private:
     TileGeometryProcessor&          m_processor;
     BeSQLite::CachedStatementPtr    m_statement;
+    LoadContextCR                   m_loadContext;
 
     bool IsValueNull(int index) { return m_statement->IsColumnNull(index); }
 
@@ -928,8 +932,10 @@ private:
     virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad) override;
     virtual Render::GraphicPtr _StrokeGeometry(GeometrySourceCR, double) override;
     virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
+    virtual bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
 public:
-    GeometryProcessorContext(TileGeometryProcessor& processor, RootR root) : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(T::GetSql()))
+    GeometryProcessorContext(TileGeometryProcessor& processor, RootR root, LoadContextCR loadContext)
+        : m_processor(processor), m_statement(root.GetDgnDb().GetCachedStatement(T::GetSql())), m_loadContext(loadContext)
         {
         SetDgnDb(root.GetDgnDb());
         m_is3dView = T::Is3d(); // force Brien to call _AddArc2d() if we're in a 2d model...
@@ -1816,7 +1822,11 @@ BentleyStatus Loader::_LoadTile()
     Render::GraphicBuilderPtr graphic;
 
     GeometryOptions options;
-    auto geometry = tile.GenerateGeometry(options);
+    LoadContext loadContext(this);
+    auto geometry = tile.GenerateGeometry(options, loadContext);
+
+    if (loadContext.WasAborted())
+        return ERROR;
 
     // ###TODO: instanced geometry, polylines...
     for (auto const& mesh : geometry.Meshes())
@@ -2046,7 +2056,7 @@ double Tile::_GetMaximumSize() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest) const
+MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest, LoadContextCR loadContext) const
     {
     static const double         s_vertexToleranceRatio    = .1;
     static const double         s_vertexClusterThresholdPixels = 5.0;
@@ -2067,8 +2077,13 @@ MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geo
     size_t      geometryCount = 0;
     DRange3d    myTileRange = GetTileRange();
 
+    MeshList meshes;
+
     for (auto& geom : geometries)
         {
+        if (loadContext.WasAborted())
+            return meshes;
+
         DRange3dCR  geomRange = geom->GetTileRange();
         double      rangePixels = geomRange.DiagonalDistance() / tolerance;
 
@@ -2120,12 +2135,16 @@ MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geo
                     }
                 }
             }
+
         if (!doSurfacesOnly)
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, NormalMode::Never));
         
             for (auto& tileStrokes : tileStrokesArray)
                 {
+                if (loadContext.WasAborted())
+                    return meshes;
+
                 DisplayParamsPtr displayParams = tileStrokes.m_displayParams;
                 MeshMergeKey key(*displayParams, false, false);
 
@@ -2146,8 +2165,6 @@ MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geo
             }
         }
 
-    MeshList meshes;
-       
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
             meshes.push_back (builder.second->GetMesh());
@@ -2158,7 +2175,7 @@ MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geo
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR options)
+ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR options, LoadContextCR context)
     {
     ElementTileTree::GeometryCollection geom;
 
@@ -2168,9 +2185,10 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     // If we exceed our leaf threshold, we'll keep the geometry but adjust this tile's target tolerance
 #if defined(ELEMENT_TILE_STOPPING_CRITERION)
     bool leafThresholdExceeded = false;
-    GeometryList geometries = CollectGeometry(&leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile());
+    GeometryList geometries = CollectGeometry(&leafThresholdExceeded, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
 
-    // ###TODO: If CollectGeometry aborted, mark abandoned
+    if (context.WasAborted())
+        return geom;
 
     if (!m_isLeaf && !leafThresholdExceeded)
         SetIsLeaf();
@@ -2183,26 +2201,30 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     else
         adjustGeometryTolerance(geometries, m_tolerance);
 #else
-    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile());
+    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
 #endif
 
-    return CreateGeometryCollection(geometries, options);
+    return CreateGeometryCollection(geometries, options, context);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options) const
+ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
     {
     static size_t s_minInstanceCount = 10;
 
     ElementTileTree::GeometryCollection collection;
+    
     GeometryList                        uninstancedGeometry;
     bmap<DgnGeometryPartId,MeshPartPtr> partMap;
 
     // Extract instances first...
     for (auto const& geom : geometries)
         {
+        if (context.WasAborted())
+            return collection;
+
         auto const& part = geom->GetPart();
         if (part.IsValid() && part->GetInstanceCount() > s_minInstanceCount)
             {
@@ -2211,7 +2233,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
 
             if (partMap.end() == found)
                 {
-                MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false);
+                MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false, context);
                 if (partMeshes.empty())
                     {
                     BeAssert(false && "Part did not generate meshes");
@@ -2235,7 +2257,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
         }
 
     auto& meshes = collection.Meshes();
-    MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true);
+    MeshList uninstancedMeshes = GenerateMeshes(options, uninstancedGeometry, true, context);
     meshes.insert(meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
 
     return collection;
@@ -2254,7 +2276,7 @@ DRange3d Tile::GetDgnRange() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold)
+GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, LoadContextCR loadContext)
     {
     auto& root = GetElementRoot();
     auto is2d = root.Is2d();
@@ -2264,20 +2286,23 @@ GeometryList Tile::CollectGeometry(bool* leafThresholdExceeded, double tolerance
     transformFromDgn.InverseOf(root.GetLocation());
 
     GeometryList geometries;
+
+    if (loadContext.WasAborted())
+        return geometries;
+
     TileGeometryProcessor processor(geometries, root, GetDgnRange(), *facetOptions, transformFromDgn, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold, is2d);
 
     if (is2d)
         {
-        GeometryProcessorContext<GeometrySelector2d> context(processor, root);
+        GeometryProcessorContext<GeometrySelector2d> context(processor, root, loadContext);
         processor.OutputGraphics(context);
         }
     else
         {
-        GeometryProcessorContext<GeometrySelector3d> context(processor, root);
+        GeometryProcessorContext<GeometrySelector3d> context(processor, root, loadContext);
         processor.OutputGraphics(context);
         }
 
-    // ###TODO: Return result of OutputGraphics()...
     return geometries;
     }
 
