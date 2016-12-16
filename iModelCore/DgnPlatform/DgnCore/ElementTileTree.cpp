@@ -1813,17 +1813,19 @@ BentleyStatus Loader::_LoadTile()
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
     auto& system = *root.GetRenderSystem();
-    auto graphic = system._CreateGraphic(Graphic::CreateParams());
+    Render::GraphicBuilderPtr graphic;
 
     GeometryOptions options;
     auto geometry = tile.GenerateGeometry(options);
 
     // ###TODO: instanced geometry, polylines...
-    bool empty = true;
     for (auto const& mesh : geometry.Meshes())
         {
         if (mesh->Triangles().empty())
             continue;
+
+        if (graphic.IsNull())
+            graphic = system._CreateGraphic(Graphic::CreateParams());
 
         auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
         TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
@@ -1832,17 +1834,19 @@ BentleyStatus Loader::_LoadTile()
 
         subGraphic->Close();
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-
-        empty = false;
         }
 
-    if (!empty && root.WantDebugRanges())
+    if (graphic.IsValid())
         {
-        graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
-        graphic->AddRangeBox(tile.GetRange());
-        }
+        if (root.WantDebugRanges())
+            {
+            graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
+            graphic->AddRangeBox(tile.GetRange());
+            }
 
-    graphic->Close();
+        graphic->Close();
+        tile.SetGraphic(*graphic);
+        }
 
 #if defined(ELEMENT_TILE_TRUNCATE_EMPTY_NODES)
     // ###TODO: This produces a race condition on the vector of child tiles...
@@ -1852,7 +1856,6 @@ BentleyStatus Loader::_LoadTile()
         tile.SetIsLeaf();   // ###TODO: Is this true - or can all the geometry be too small for this tile's tolerance?
 #endif
 
-    tile.SetGraphic(*graphic);
     tile.SetIsReady();
     return SUCCESS;
     }
