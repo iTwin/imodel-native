@@ -1890,6 +1890,12 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system)
     DPoint3d centroid = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
     Transform transform = Transform::From(centroid);
 
+    // ###TODO parasolid...
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    ThreadedLocalParasolidHandlerStorageMark  parasolidParasolidHandlerStorageMark;
+    PSolidKernelManager::StartSession();
+#endif
+
     // Prepare for multi-threaded access to this stuff when generating geometry...
     T_HOST.GetFontAdmin().EnsureInitialized();
     model.GetDgnDb().Fonts().Update();

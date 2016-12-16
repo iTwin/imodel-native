@@ -232,7 +232,6 @@ void ViewController::RequestAbort(bool wait)
     // ###TODO_ELEMENT_TILE: This is generally called when the criteria defining the scene have changed. e.g., we turned off a category or changed the sets of always/never drawn elemets.
     // In tile-based rendering we will want to invalidate tiles - though we'd probably also like to change how these criteria are defined and applied.
     DgnDb::VerifyClientThread();
-    BeAssert(false && "RequestAbort unimplemented");
     }
 
 /*---------------------------------------------------------------------------------**//**
