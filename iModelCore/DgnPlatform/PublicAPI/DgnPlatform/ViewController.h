@@ -106,24 +106,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
         uint32_t GetCount() const {return (uint32_t) m_scores.size();}
     };
 
-    //=======================================================================================
-    // The set of DgnElements that are contained in a scene. This is used when performing a progressive
-    // update or heal of a view to determine which elements are already visible.
-    // @bsiclass                                                    Keith.Bentley   02/16
-    //=======================================================================================
-    struct Scene : RefCountedBase, NonCopyableClass
-    {
-        bset<DgnElementId> m_members;
-        Render::GraphicListPtr m_graphics;
-        ProgressiveTaskPtr m_progressive;
-        double m_lowestScore = 0.0;
-        uint32_t m_progressiveTotal = 0;
-        bool m_complete = false;
-        bool Contains(DgnElementId id) const {return m_members.find(id) != m_members.end();}
-        ~Scene() {}
-    };
-    typedef RefCountedPtr<Scene> ScenePtr;
-
 protected:
     friend struct ViewContext;
     friend struct DgnViewport;
@@ -142,8 +124,8 @@ protected:
     bool m_noQuery = false;
     SpecialElements m_special;
     ClipPrimitivePtr m_activeVolume;     //!< the active volume. If present, elements inside this volume may be treated specially
-    ScenePtr m_currentScene;
-    ScenePtr m_readyScene;
+    Render::GraphicListPtr m_currentScene;
+    Render::GraphicListPtr m_readyScene;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
@@ -159,7 +141,6 @@ protected:
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
     virtual BentleyStatus _CreateScene(RenderContextR context) = 0;
-    virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
 
@@ -203,7 +184,6 @@ protected:
 
     DGNPLATFORM_EXPORT void InvalidateScene();
     bool IsSceneReady() const;
-    virtual void _DoHeal(HealContext&) {}
 
     virtual void _OverrideGraphicParams(Render::OvrGraphicParamsR, GeometrySourceCP) {}
 
@@ -250,10 +230,10 @@ protected:
     void ChangeState(ViewDefinitionCR newState) {m_definition=newState.MakeCopy<ViewDefinition>(); LoadState();}
 
 public:
-    ScenePtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
+    Render::GraphicListPtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
     BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
-    ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
+    Render::GraphicListPtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
@@ -591,34 +571,6 @@ public:
         void DoQuery();
     };
 
-    //=======================================================================================
-    // @bsiclass                                                    Keith.Bentley   03/16
-    //=======================================================================================
-    struct NonSceneQuery : RangeQuery
-    {
-        NonSceneQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR);
-    };
-
-    //=======================================================================================
-    // A ProgressiveTask for a SpatialViewController that draws all of the elements that satisfy the query and range
-    // criteria, but were too small to be in the scene.
-    // @bsiclass                                                    Keith.Bentley   04/14
-    //=======================================================================================
-    struct ProgressiveTask : Dgn::ProgressiveTask
-    {
-        enum {SHOW_PROGRESS_INTERVAL = 1000}; // once per second.
-        bool m_setTimeout = false;
-        uint32_t m_thisBatch = 0;
-        uint32_t m_batchSize = 0;
-        uint64_t m_nextShow  = 0;
-        DgnElementId m_abortedElement;
-        NonSceneQuery m_rangeQuery;
-        SpatialViewControllerR m_view;
-        DgnElementId GetNextId();
-        DGNPLATFORM_EXPORT ProgressiveTask(SpatialViewControllerR, DgnViewportCR);
-        virtual Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    };
-
 protected:
     bool m_loading = false;
     Render::MaterialPtr m_skybox;
@@ -631,7 +583,6 @@ protected:
 
     void QueryModelExtents(FitContextR);
 
-    DGNPLATFORM_EXPORT void _DoHeal(HealContext&) override;
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
     DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
@@ -642,7 +593,6 @@ protected:
     DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR) override;
     DGNPLATFORM_EXPORT virtual void _ChangeModelDisplay(DgnModelId modelId, bool onOff);
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override;
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return new ProgressiveTask(*this, vp);}
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
@@ -911,7 +861,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
     DEFINE_T_SUPER(ViewController);
 
 protected:
-    ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(RenderContextR context) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;

@@ -1135,10 +1135,6 @@ void DgnViewport::ClearProgressiveTasks()
     m_progressiveTasks.clear();
     if (!m_viewController.IsValid())
         return;
-
-    auto scene = m_viewController->GetScene();
-    if (scene.IsValid())
-        scene->m_progressive = nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**
