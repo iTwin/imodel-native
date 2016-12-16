@@ -318,7 +318,8 @@ void DgnDbBriefcase::SubscribeForRevisionEvents()
     bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
     eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
     eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent);
-    DgnDbServerEventCallbackRef callback = [=](DgnDbServerEventPtr event)
+
+    m_pullMergeAndPushCallback = std::make_shared<DgnDbServerEventCallback>([=](DgnDbServerEventPtr event)
         {
         auto eventType = event->GetEventType();
         if (DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent == eventType ||
@@ -326,8 +327,7 @@ void DgnDbBriefcase::SubscribeForRevisionEvents()
             {
             m_lastPullMergeAndPushEvent = eventType;
             }
-        };
-    m_pullMergeAndPushCallback = &callback;
+        });
     SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
     }
 
@@ -521,7 +521,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback) const
+DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback) const
     {
     const Utf8String methodName = "DgnDbBriefcase::SubscribeEventsCallback";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -536,7 +536,7 @@ DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(bvector<DgnDbSe
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEventCallback callback) const
+DgnDbServerStatusTaskPtr DgnDbBriefcase::UnsubscribeEventsCallback(DgnDbServerEventCallbackPtr callback) const
     {
     const Utf8String methodName = "DgnDbBriefcase::UnsubscribeEventsCallback";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");

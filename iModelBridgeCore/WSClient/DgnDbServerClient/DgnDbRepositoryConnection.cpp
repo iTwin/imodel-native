@@ -2515,7 +2515,7 @@ DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallback callback)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback)
     {
     if (!m_eventManagerPtr)
         {
@@ -2527,7 +2527,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(bvec
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(DgnDbServerEventCallback callback)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(DgnDbServerEventCallbackPtr callback)
     {
     if (!m_eventManagerPtr)
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
