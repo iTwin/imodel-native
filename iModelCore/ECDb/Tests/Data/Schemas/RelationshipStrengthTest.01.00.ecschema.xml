@@ -1,56 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="RelationshipStrengthTest" nameSpacePrefix="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="Bentley_Standard_Classes" version="01.01" prefix="bsc"/>
+<ECSchema schemaName="RelationshipStrengthTest" alias="rst" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="Person" modifier="None">
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ChildrenHasSingleParent" modifier="Sealed" strength="embedding" strengthDirection="backward">
-        <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,1)" roleLabel="Single parent" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="Single parent" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ChildrenHaveManyParents" modifier="Sealed" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
+        <Target multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ManyParentsHaveChildren" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(1,N)" roleLabel="Parents" polymorphic="true">
+        <Source multiplicity="(1..*)" roleLabel="Parents" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,1)" roleLabel="Spouse" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ParentHasSpouse_backward" modifier="Sealed" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,1)" roleLabel="Spouse" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="Spouse" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SingleParentHasChildren" modifier="Sealed" strength="embedding" strengthDirection="forward">
-        <Source cardinality="(0,1)" roleLabel="Parent" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="Parent" polymorphic="true">
             <Class class="Person"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="Children" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="Children" polymorphic="true">
             <Class class="Person"/>
         </Target>
     </ECRelationshipClass>

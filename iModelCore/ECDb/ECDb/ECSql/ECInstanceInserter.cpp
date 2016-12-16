@@ -146,12 +146,12 @@ void ECInstanceInserter::Impl::Initialize(ECSqlWriteToken const* writeToken)
     if (m_ecClass.IsRelationshipClass())
         {
         //SourceECClassId and TargetECClassId are not needed during insert
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::SourceECInstanceId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::SourceECInstanceId, parameterIndex);
 
         parameterIndex++;
-        ecsql.append(",").append(ECDbSystemSchemaHelper::ToString(ECSqlSystemPropertyKind::TargetECInstanceId));
+        ecsql.append(",").append(ECDbSystemSchemaHelper::TARGETECINSTANCEID_PROPNAME);
         valuesClause.append(",?");
         m_ecValueBindingInfos.AddBindingInfo(ECValueBindingInfo::SystemPropertyKind::TargetECInstanceId, parameterIndex);
         }

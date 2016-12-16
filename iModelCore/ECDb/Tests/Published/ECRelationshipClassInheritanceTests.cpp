@@ -564,7 +564,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
     "    <ECCustomAttributes>"
-    "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
     "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
@@ -574,7 +574,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclasses must not have ForeignKeyRelationshipMap even if it doesn't violate the base class mapping"));
+    "</ECSchema>", false, "Subclasses must not have ForeignKeyConstraint even if it doesn't violate the base class mapping"));
 
     testSchemas.push_back(
     SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -646,7 +646,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='referencing' modifier='Sealed'>"
     "    <ECCustomAttributes>"
-    "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+    "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
     "    </ECCustomAttributes>"
     "   <BaseClass>ModelHasElements</BaseClass>"
     "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
@@ -656,7 +656,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "      <Class class='PhysicalElement' />"
     "    </Target>"
     "  </ECRelationshipClass>"
-    "</ECSchema>", false, "Subclass must not have ForeignKeyRelationshipMap if base class maps to link table"));
+    "</ECSchema>", false, "Subclass must not have ForeignKeyConstraint if base class maps to link table"));
 
     testSchemas.push_back(
         SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -687,7 +687,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "  </ECRelationshipClass>"
                    "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
                    "    <ECCustomAttributes>"
-                   "        <ForeignKeyRelationshipMap xmlns='ECDbMap.02.00'/>"
+                   "        <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
                    "    </ECCustomAttributes>"
                    "   <BaseClass>ModelHasElements</BaseClass>"
                    "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
@@ -697,7 +697,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "      <Class class='PhysicalElement' />"
                    "    </Target>"
                    "  </ECRelationshipClass>"
-                   "</ECSchema>", false, "Subclass must not have ForeignKeyRelationshipMap even if it doesn't violate the mapping type"));
+                   "</ECSchema>", false, "Subclass must not have ForeignKeyConstraint even if it doesn't violate the mapping type"));
 
     testSchemas.push_back(
     SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"

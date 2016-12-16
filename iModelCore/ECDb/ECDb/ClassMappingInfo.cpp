@@ -527,43 +527,43 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     BeAssert(relClass != nullptr);
     BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
 
-    ECDbForeignKeyRelationshipMap foreignKeyRelMap;
-    const bool hasForeignKeyRelMap = ECDbMapCustomAttributeHelper::TryGetForeignKeyRelationshipMap(foreignKeyRelMap, *relClass);
+    ECDbForeignKeyConstraint foreignKeyConstraintCA;
+    const bool hasForeignKeyConstraintCA = ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(foreignKeyConstraintCA, *relClass);
 
     const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(*relClass);
 
     ECDbLinkTableRelationshipMap linkTableRelationMap;
     const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
 
-    if (relClass->HasBaseClasses() && (hasForeignKeyRelMap || hasLinkTableRelMap))
+    if (relClass->HasBaseClasses() && (hasForeignKeyConstraintCA || hasLinkTableRelMap))
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must neither have the ForeignKeyRelationshipMap nor the LinkTableRelationshipMap custom attribute. Only the root relationship class of a hierarchy can have these custom attributes.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must neither have the ForeignKeyConstraint nor the LinkTableRelationshipMap custom attribute. Only the root relationship class of a hierarchy can have these custom attributes.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if (hasForeignKeyRelMap && hasLinkTableRelMap)
+    if (hasForeignKeyConstraintCA && hasLinkTableRelMap)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyRelationshipMap' and 'LinkTableRelationshipMap'.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyConstraint' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
     if (hasLinkTableRelMap && useECInstanceIdAsFk)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UsePrimaryKeyAsForeignKey' and 'LinkTableRelationshipMap'.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UseECInstanceIdAsForeignKey' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if ((hasForeignKeyRelMap || useECInstanceIdAsFk) && RequiresLinkTable())
+    if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && RequiresLinkTable())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyRelationshipMap' or 'UsePrimaryKeyAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyConstraint' or 'UseECInstanceIdAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if (hasForeignKeyRelMap)
+    if (hasForeignKeyConstraintCA)
         {
         ECRelationshipEnd foreignKeyEnd = relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
 
@@ -580,17 +580,17 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             }
 
         Utf8String onDeleteActionStr;
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnDeleteAction(onDeleteActionStr))
+        if (ECObjectsStatus::Success != foreignKeyConstraintCA.TryGetOnDeleteAction(onDeleteActionStr))
             return ERROR;
 
         Utf8String onUpdateActionStr;
-        if (ECObjectsStatus::Success != foreignKeyRelMap.TryGetOnUpdateAction(onUpdateActionStr))
+        if (ECObjectsStatus::Success != foreignKeyConstraintCA.TryGetOnUpdateAction(onUpdateActionStr))
             return ERROR;
 
         const ForeignKeyDbConstraint::ActionType onDeleteAction = ForeignKeyDbConstraint::ToActionType(onDeleteActionStr.c_str());
         if (onDeleteAction == ForeignKeyDbConstraint::ActionType::Cascade && relClass->GetStrength() != StrengthType::Embedding)
             {
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The ForeignKeyRelationshipMap custom attribute can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.",
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The ForeignKeyConstraint custom attribute can only define 'Cascade' as OnDeleteAction if the relationship strength is 'Embedding'.",
                             m_ecClass.GetFullName());
             return ERROR;
             }
@@ -744,7 +744,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         {
         BeAssert(baseClassMap != nullptr && "Should not call this method if baseClassMap == nullptr");
         if (baseClassMap != nullptr)
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the ForeignKeyRelationshipMap custom attribute but its base class %s is mapped to a link table. The mapping type must not change in an ECRelationshipClass hierarchy.",
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the ForeignKeyConstraint custom attribute but its base class %s is mapped to a link table. The mapping type must not change in an ECRelationshipClass hierarchy.",
                             m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
 
         return ERROR;
@@ -760,7 +760,7 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 
     if (m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget)
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship. Therefore it must not have a ForeignKeyRelationshipMap custom attribute. See API docs for details on the mapping rules.",
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship. Therefore it must not have a ForeignKeyConstraint custom attribute. See API docs for details on the mapping rules.",
                         m_ecClass.GetFullName());
         return ERROR;
         }

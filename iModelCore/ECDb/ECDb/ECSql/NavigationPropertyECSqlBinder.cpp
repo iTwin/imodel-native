@@ -35,7 +35,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
-    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyKind::NavigationId);
+    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::Id));
     if (m_idBinder == nullptr)
         return ERROR;
 
@@ -44,7 +44,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap->GetRelECClassIdPropertyMap();
-    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyKind::NavigationRelECClassId);
+    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::RelECClassId));
     if (m_relECClassIdBinder == nullptr)
         return ERROR;
 
@@ -133,13 +133,13 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(Utf8CP navPropMemberProp
 //---------------------------------------------------------------------------------------
 IECSqlBinder& NavigationPropertyECSqlBinder::_GetMember(ECN::ECPropertyId navPropMemberPropertyId)
     {
-    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationId)->GetId())
+    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::Id)->GetId())
         {
         BeAssert(m_idBinder != nullptr);
         return *m_idBinder;
         }
 
-    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyKind::NavigationRelECClassId)->GetId())
+    if (navPropMemberPropertyId == ECDbSystemSchemaHelper::GetSystemProperty(GetECDb().Schemas(), ECSqlSystemPropertyInfo::Navigation::RelECClassId)->GetId())
         {
         BeAssert(m_relECClassIdBinder != nullptr);
         return *m_relECClassIdBinder;

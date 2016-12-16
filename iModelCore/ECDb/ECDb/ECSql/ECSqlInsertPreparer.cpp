@@ -79,8 +79,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoRelationship(ECSqlPrepareConte
     {
     BeAssert(classMap.IsRelationshipClassMap());
 
-    auto const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
-    if (specialTokenMap.IsUnset(ECSqlSystemPropertyKind::SourceECInstanceId) || specialTokenMap.IsUnset(ECSqlSystemPropertyKind::TargetECInstanceId))
+    SystemPropertyExpIndexMap const& specialTokenMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
+    if (!specialTokenMap.Contains(ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId) && !specialTokenMap.Contains(ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "In an ECSQL INSERT statement against an ECRelationship class SourceECInstanceId and TargetECInstanceId must always be specified.");
         return ECSqlStatus::InvalidECSql;
@@ -116,14 +116,14 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 
     std::vector<size_t> expIndexSkipList;
     //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings
-    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyKind::ECInstanceId);
+    int ecinstanceIdExpIndex = specialTokenExpIndexMap.GetIndex(ECSqlSystemPropertyInfo::Class::ECInstanceId);
     if (ecinstanceIdExpIndex >= 0)
         expIndexSkipList.push_back((size_t) ecinstanceIdExpIndex);
 
     //This end's ecinstanceid is ecinstanceid of relationship instance (by nature of end table mapping)
-    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECInstanceId : ECSqlSystemPropertyKind::TargetECInstanceId);
-    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId);
-    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId);
+    int foreignEndECInstanceIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId : ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId);
+    int foreignEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
+    int referencedEndECClassIdIndex = specialTokenExpIndexMap.GetIndex(foreignEnd == ECRelationshipEnd_Target ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
     ECSqlInsertPreparedStatement* preparedStatement = ctx.GetECSqlStatementR().GetPreparedStatementP<ECSqlInsertPreparedStatement>();
 
     if (foreignEndECInstanceIdIndex >= 0)
@@ -224,7 +224,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
 
         size_t component = 0;
-        SearchPropertyMapVisitor visitor(PropertyMap::Type::Data, true);
+        SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
         for (PropertyMap const* childPropertyMap : visitor.Results())
             {
@@ -509,12 +509,12 @@ ECSqlInsertPreparer::ECInstanceIdMode ECSqlInsertPreparer::ValidateUserProvidedE
     BeAssert(preparedStatement != nullptr);
 
     //Validate whether ECInstanceId is specified and value is set to NULL -> auto-generate ECInstanceId
-    auto propNameListExp = exp.GetPropertyNameListExp();
-    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyKind::ECInstanceId);
+    PropertyNameListExp const* propNameListExp = exp.GetPropertyNameListExp();
+    ecinstanceIdExpIndex = propNameListExp->GetSpecialTokenExpIndexMap().GetIndex(ECSqlSystemPropertyInfo::Class::ECInstanceId);
     if (ecinstanceIdExpIndex < 0)
         return ECInstanceIdMode::NotUserProvided; //-> auto-generate
 
-    auto valueExp = exp.GetValuesExp()->GetChildren().Get<Exp> (ecinstanceIdExpIndex);
+    auto valueExp = exp.GetValuesExp()->GetChildren().Get<Exp>(ecinstanceIdExpIndex);
     BeAssert(valueExp != nullptr);
     if (ECSqlExpPreparer::IsNullExp(*valueExp))
         return ECInstanceIdMode::UserProvidedNull; //-> auto-generate

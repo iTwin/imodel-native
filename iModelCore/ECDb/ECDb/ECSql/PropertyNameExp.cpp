@@ -15,13 +15,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_isSystemProperty(false), m_classRefExp(nullptr)
+PropertyNameExp::PropertyNameExp(PropertyPath&& propPath) : ValueExp(), m_propertyPath(std::move(propPath)), m_classRefExp(nullptr)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_isSystemProperty(false), m_classRefExp(nullptr)
+PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_classRefExp(nullptr)
     {
     m_propertyPath.Push(propertyName);
     }
@@ -30,7 +30,7 @@ PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName) : ValueExp(), m_isSy
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPropertyExp const& derivedPropExp)
-    : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
+    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
     Utf8String propName = derivedPropExp.GetName();
     //WIP: Affan, why do we have to remove the square brackets?
@@ -44,7 +44,7 @@ PropertyNameExp::PropertyNameExp(RangeClassRefExp const& classRefExp, DerivedPro
 // @bsimethod                                    Affan.Khan                       05/2013
 //+---------------+---------------+---------------+---------------+---------------+------
 PropertyNameExp::PropertyNameExp(Utf8StringCR propertyName, RangeClassRefExp const& classRefExp, ClassMap const& classMap)
-    : ValueExp(), m_isSystemProperty(false), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
+    : ValueExp(), m_classAlias(classRefExp.GetAlias()), m_classRefExp(&classRefExp)
     {
     m_propertyPath.Push(propertyName);
     if (m_propertyPath.Resolve(classMap) != SUCCESS)
@@ -89,11 +89,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
-    ECSqlSystemPropertyKind systemPropKind;
-    m_isSystemProperty = ECDbSystemSchemaHelper::TryGetSystemPropertyKind(systemPropKind, GetPropertyMap().GetProperty());
-    if (m_isSystemProperty)
-        m_systemProperty = systemPropKind;
-
+    ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(m_sysPropInfo, ctx.GetECDb().Schemas(), GetPropertyMap().GetProperty());
     return FinalizeParseStatus::Completed;
     }
 
@@ -305,19 +301,6 @@ PropertyMap const& PropertyNameExp::GetPropertyMap() const
 
     BeAssert(false && "Case not handled");
     return *((PropertyMap const*) (nullptr));
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    07/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool PropertyNameExp::TryGetSystemProperty(ECSqlSystemPropertyKind& systemProperty) const
-    {
-    if (!IsSystemProperty())
-        return false;
-
-    systemProperty = m_systemProperty;
-    return true;
     }
 
 //-----------------------------------------------------------------------------------------

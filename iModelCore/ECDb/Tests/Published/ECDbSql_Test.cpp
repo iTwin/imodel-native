@@ -34,7 +34,6 @@ TEST(ECDbSql, PartialIndex)
     ASSERT_EQ(BE_SQLITE_OK, ECDbTestUtility::CreateECDb(db, nullptr, L"ecdbmapindextest.ecdb"));
 
     Utf8CP testSchemaXml = "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "   <ECEntityClass typeName = 'IndexClass' >"
         "       <ECCustomAttributes>"
@@ -108,7 +107,6 @@ TEST(ECDbSql, UniqueIndex)
 
     Utf8CP testSchemaXml =
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "<ECEntityClass typeName='IndexClass2' >"
         "   <ECCustomAttributes>"
@@ -167,7 +165,6 @@ TEST(ECDbSql, IndexErrors)
     bvector<bpair<Utf8String,BentleyStatus>> testSchemaXmls;
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "<ECEntityClass typeName='IndexClass3' >"
         "   <ECCustomAttributes>"
@@ -192,7 +189,6 @@ TEST(ECDbSql, IndexErrors)
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "<ECEntityClass typeName='IndexClass3' >"
         "   <ECCustomAttributes>"
@@ -217,7 +213,6 @@ TEST(ECDbSql, IndexErrors)
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "<ECEntityClass typeName = 'IndexClass3' >"
         "   <ECCustomAttributes>"
@@ -243,7 +238,6 @@ TEST(ECDbSql, IndexErrors)
 
     testSchemaXmls.push_back(bpair<Utf8String, BentleyStatus>(
         "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
-        "   <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.12' prefix ='bsca' />"
         "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
         "<ECEntityClass typeName = 'IndexClass3' >"
         "   <ECCustomAttributes>"

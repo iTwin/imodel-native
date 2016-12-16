@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,28 @@
 #include "PropertyNameExp.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//=======================================================================================
+//! @bsiclass                                                Krischan.Eberle      12/2013
+//+===============+===============+===============+===============+===============+======
+struct SystemPropertyExpIndexMap : NonCopyableClass
+    {
+    private:
+        bmap<ECSqlSystemPropertyInfo, size_t, ECSqlSystemPropertyInfo::LessThan> m_sysPropIndexMap;
+
+    public:
+        SystemPropertyExpIndexMap() {}
+
+        template<typename TSysProp>
+        bool Contains(TSysProp info) const { return m_sysPropIndexMap.find(ECSqlSystemPropertyInfo(info)) != m_sysPropIndexMap.end(); }
+        
+        //!@return non-negative index if found. -1 else.
+        template<typename TSysProp>
+        int GetIndex(TSysProp info) const { auto it = m_sysPropIndexMap.find(ECSqlSystemPropertyInfo(info)); return it == m_sysPropIndexMap.end() ? -1 : (int) it->second; }
+
+        void AddIfSystemProperty(PropertyNameExp const&, size_t index);
+        void AddIfSystemProperty(ECDbSchemaManager const&, ECN::ECPropertyCR, size_t index);
+    };
 
 //************************ AssignmentListExp ******************************
 struct AssignmentExp;

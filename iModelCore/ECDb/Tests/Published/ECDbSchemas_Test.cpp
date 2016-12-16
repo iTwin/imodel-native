@@ -209,7 +209,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //baseClass
     Utf8CP tblAsset = "sc_Asset";
     EXPECT_TRUE(db.TableExists(tblAsset));
-    EXPECT_EQ(34, GetColumnCount(db, tblAsset));
+    EXPECT_EQ(35, GetColumnCount(db, tblAsset));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECInstanceId"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECClassId"));
 
@@ -365,7 +365,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //========================[sc_Cubicle]=================================================
     Utf8CP tblCubicle = "sc_Cubicle";
     EXPECT_TRUE(db.TableExists(tblCubicle));
-    EXPECT_EQ(13, GetColumnCount(db, tblCubicle));
+    EXPECT_EQ(12, GetColumnCount(db, tblCubicle));
 
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "ECInstanceId"));
     //It must not have ECClassId to differentiate each row to see which class it belong to.
@@ -380,7 +380,6 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "BuildingCode"));
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OfficeCode"));
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "Area"));
-    EXPECT_TRUE(db.ColumnExists(tblCubicle, "RecordKey"));
     //array    
     EXPECT_TRUE(db.ColumnExists(tblCubicle, "OccupiedBy"));
     //relation
@@ -508,7 +507,7 @@ TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
     ASSERT_EQ(SUCCESS, schemaStatus);
     schemaContext->GetCache().Clear();
 
-    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"TestSchema.01.00.ecschema.xml");
+    ECDbTestUtility::ReadECSchemaFromDisk(ecSchema, schemaContext, L"ECSqlTest.01.00.ecschema.xml");
     schemaStatus = db.Schemas().ImportECSchemas(schemaContext->GetCache().GetSchemas());
     ASSERT_EQ(SUCCESS, schemaStatus);
     }

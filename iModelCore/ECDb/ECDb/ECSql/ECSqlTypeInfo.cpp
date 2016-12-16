@@ -139,15 +139,6 @@ void ECSqlTypeInfo::Populate(bool isArray, ECN::PrimitiveType const* primitiveTy
     m_maxOccurs = maxOccurs >= 0 ? (uint32_t) maxOccurs : std::numeric_limits<uint32_t>::max();
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     09/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool ECSqlTypeInfo::Equals(ECSqlTypeInfo const& rhs) const
-    {
-    return m_kind == rhs.m_kind && m_primitiveType == rhs.m_primitiveType && m_structType == rhs.m_structType;
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------

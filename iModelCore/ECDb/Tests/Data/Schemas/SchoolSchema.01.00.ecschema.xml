@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="SchoolSchema" nameSpacePrefix="SS" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.13" prefix="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
     <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs"/>
     <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
             <SchemaFullNameAtEditingStart>SchoolSchema.01.00</SchemaFullNameAtEditingStart>
             <TrackingEnabled>True</TrackingEnabled>
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
     <ECEntityClass typeName="Course" modifier="None">
         <ECCustomAttributes>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <NodeBackColor>ActiveBorder</NodeBackColor>
                 <NodeForeColor>ActiveCaption</NodeForeColor>
             </TreeColorCustomAttributes>
@@ -20,7 +20,7 @@
     <ECEntityClass typeName="CourseTitle" modifier="None">
         <BaseClass>Course</BaseClass>
         <ECCustomAttributes>
-            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <Hidden>False</Hidden>
                 <HideRelated>False</HideRelated>
             </DisplayOptions>
@@ -28,8 +28,8 @@
     </ECEntityClass>
     <ECEntityClass typeName="Department" modifier="None">
         <ECCustomAttributes>
-            <CEContentPaneCustomization xmlns="Bentley_Standard_CustomAttributes.01.12"/>
-            <ChangeManagement xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <CEContentPaneCustomization xmlns="Bentley_Standard_CustomAttributes.01.13"/>
+            <ChangeManagement xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <Supported>True</Supported>
             </ChangeManagement>
         </ECCustomAttributes>
@@ -51,7 +51,7 @@
                 <TrueString>yes</TrueString>
                 <FalseString>no</FalseString>
             </BooleanDisplay>
-            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <TreeColorCustomAttributes xmlns="Bentley_Standard_CustomAttributes.01.13">
                 <NodeBackColor>ActiveBorder</NodeBackColor>
                 <NodeForeColor>ActiveCaption</NodeForeColor>
             </TreeColorCustomAttributes>

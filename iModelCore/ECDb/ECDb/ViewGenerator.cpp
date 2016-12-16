@@ -368,7 +368,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         {
         sql.Reset();
         std::vector<Utf8String> values;
-        SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data); //Only include none-system properties
+        SearchPropertyMapVisitor typeVisitor(PropertyMap::Type::Data);
         baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
         for (PropertyMap const* result : typeVisitor.Results())
             {
@@ -542,7 +542,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
     {
     viewSql.Append("SELECT ");
     DbTable const* requireJoinTo = nullptr;
-    if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Entity) != SUCCESS)
+    if (RenderPropertyMaps(viewSql, ctx, requireJoinTo, classMap, contextTable, castAs, PropertyMap::Type::Data | PropertyMap::Type::ECInstanceId | PropertyMap::Type::ECClassId) != SUCCESS)
         return ERROR;
 
     viewSql.Append(" FROM ").AppendEscaped(contextTable.GetName().c_str());
@@ -564,7 +564,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap)
     {
-    SearchPropertyMapVisitor visitor(PropertyMap::Type::All, true);
+    SearchPropertyMapVisitor visitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
     classMap.GetPropertyMaps().AcceptVisitor(visitor);
     if (ctx.GetViewType() == ViewType::SelectFromView)
         viewSql.AppendParenLeft();
@@ -885,7 +885,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     DbTable const* requireJoinToTableForDataProperties = nullptr;
     if (baseClass != nullptr)
         {
-        SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::All, true /*traverse compound properties but compound properties themself is not included*/);
+        SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
         baseClass->GetPropertyMaps().AcceptVisitor(propertyVisitor);
         for (PropertyMap const* basePropertyMap : propertyVisitor.Results())
             {
@@ -919,7 +919,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         }
     else
         {
-        SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::All, true /*traverse compound properties but compound properties themself is not included*/);
+        SearchPropertyMapVisitor propertyVisitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
         classMap.GetPropertyMaps().AcceptVisitor(propertyVisitor);
         for (PropertyMap const* propertyMap : propertyVisitor.Results())
             {

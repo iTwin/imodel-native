@@ -1489,7 +1489,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "<ECSchema schemaName='TestSchema' alias='ts' displayLabel='Test Schema' description='This is Test Schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='TestClass' displayLabel='Test Class' description='This is test Class' modifier='None' />"
         "</ECSchema>");
 
@@ -1503,14 +1503,15 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
     //Add new CA
     Utf8CP addCAOnClass =
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' displayLabel='Modified Test Schema' description='modified test schema' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECEntityClass typeName='TestClass' displayLabel='Modified Test Class' description='modified test class' modifier='None' >"
         "        <ECCustomAttributes>"
-        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <Hidden>True</Hidden>"
-        "            </DisplayOptions>"
+        "            <ClassHasCurrentTimeStampProperty xmlns='CoreCustomAttributes.01.00'>"
+        "                <PropertyName>LastMod</PropertyName>"
+        "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
         "   </ECEntityClass>"
         "</ECSchema>";
 
@@ -1556,13 +1557,12 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         //Verify newly added CA
         testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
         ASSERT_TRUE(testClass != nullptr);
-        IECInstancePtr bsca = testClass->GetCustomAttribute("DisplayOptions");
+        IECInstancePtr bsca = testClass->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
         ASSERT_TRUE(bsca != nullptr);
 
         ECValue val;
-        ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "Hidden"));
-        ASSERT_TRUE(val.GetBoolean());
-
+        ASSERT_EQ(ECObjectsStatus::Success, bsca->GetValue(val, "PropertyName"));
+        ASSERT_STRCASEEQ("LastMod", val.GetUtf8CP());
         GetECDb().CloseDb();
         }
     }
@@ -5700,25 +5700,23 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     {
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECCustomAttributes>"
-        "       <TreeColorCustomAttributes xmlns = 'Bentley_Standard_CustomAttributes.01.13' >"
-        "           <NodeBackColor>Black</NodeBackColor>"
-        "       </TreeColorCustomAttributes>"
+        "       <DynamicSchema xmlns = 'CoreCustomAttributes.01.00' />"
         "   </ECCustomAttributes>"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "        <ECCustomAttributes>"
-        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <SearchPolymorphically>true</SearchPolymorphically>"
-        "            </SearchOptions>"
+        "            <ClassHasCurrentTimeStampProperty xmlns='CoreCustomAttributes.01.00'>"
+        "                <PropertyName>LastMod</PropertyName>"
+        "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
         "        <ECCustomAttributes>"
-        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <Hidden>True</Hidden>"
-        "            </DisplayOptions>"
+        "            <Localizable xmlns='CoreCustomAttributes.01.00'/>"
         "        </ECCustomAttributes>"
+        "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
     bool asserted = false;
@@ -5730,58 +5728,58 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     ecdb.SaveChanges();
     SchemaItem deleteCAFromSchema(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
         "        <ECCustomAttributes>"
-        "            <SearchOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <SearchPolymorphically>true</SearchPolymorphically>"
-        "            </SearchOptions>"
+        "            <ClassHasCurrentTimeStampProperty xmlns='CoreCustomAttributes.01.00'>"
+        "                <PropertyName>LastMod</PropertyName>"
+        "            </ClassHasCurrentTimeStampProperty>"
         "        </ECCustomAttributes>"
-        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
         "        <ECCustomAttributes>"
-        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <Hidden>True</Hidden>"
-        "            </DisplayOptions>"
+        "            <Localizable xmlns='CoreCustomAttributes.01.00'/>"
         "        </ECCustomAttributes>"
+        "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
 
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromSchema);
     ASSERT_FALSE(asserted);
-    IECInstancePtr schemaCA = ecdb.Schemas().GetECSchema("TestSchema")->GetCustomAttribute("TreeColorCustomAttributes");
+    IECInstancePtr schemaCA = ecdb.Schemas().GetECSchema("TestSchema")->GetCustomAttribute("DynamicSchema");
     ASSERT_TRUE(schemaCA == nullptr);
 
     //Delete CA from Class
     ecdb.SaveChanges();
     SchemaItem deleteCAFromClass(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECSchemaReference name = 'CoreCustomAttributes' version = '01.00' alias = 'CoreCA' />"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
-        "       <ECProperty propertyName='prop' typeName='boolean' />"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
+        "       <ECProperty propertyName='prop' typeName='boolean' >"
         "        <ECCustomAttributes>"
-        "            <DisplayOptions xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "                <Hidden>True</Hidden>"
-        "            </DisplayOptions>"
+        "            <Localizable xmlns='CoreCustomAttributes.01.00'/>"
         "        </ECCustomAttributes>"
+        "       </ECProperty>"
         "   </ECEntityClass>"
         "</ECSchema>");
 
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromClass);
     ASSERT_FALSE(asserted);
-    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("TreeColorCustomAttributes");
+    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
     ASSERT_TRUE(classCA == nullptr);
 
     //Delete CA from property
     ecdb.SaveChanges();
     SchemaItem deleteCAFromProperty(
         "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
+        "<ECSchema schemaName='TestSchema' alias='ts_modified' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"
+        "       <ECProperty propertyName='LastMod' typeName='dateTime' />"
         "       <ECProperty propertyName='prop' typeName='boolean' />"
         "   </ECEntityClass>"
         "</ECSchema>");
@@ -5789,8 +5787,13 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromProperty);
     ASSERT_FALSE(asserted);
-    IECInstancePtr propertyCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttribute("TreeColorCustomAttributes");
-    ASSERT_TRUE(propertyCA == nullptr);
+    int caCount = 0;
+    for (IECInstancePtr ca : ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetPropertyP("prop")->GetCustomAttributes(true))
+        {
+        caCount++;
+        }
+
+    ASSERT_EQ(0, caCount);
     }
 
 //---------------------------------------------------------------------------------------
@@ -5913,7 +5916,6 @@ TEST_F(ECSchemaUpdateTests, DeleteCAInstanceWithoutProperty)
     SchemaItem schemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "   <ECSchemaReference name = 'Bentley_Standard_CustomAttributes' version = '01.13' prefix = 'bsca' />"
         "   <ECCustomAttributeClass typeName = 'TestCA' appliesTo = 'PrimitiveProperty,EntityClass'>"
         "   </ECCustomAttributeClass>"
         "   <ECEntityClass typeName='TestClass' modifier='None' >"

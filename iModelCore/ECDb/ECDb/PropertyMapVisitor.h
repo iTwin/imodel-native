@@ -69,7 +69,7 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
         PropertyMap::Type m_filter;
-        bool m_doNotAddCompoundPropertiesToResult;
+        bool m_recurseIntoCompoundPropertyMaps;
         mutable std::vector<PropertyMap const*> m_foundPropertyMaps;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
@@ -77,8 +77,8 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool doNotAddCompoundPropertiesToResult = false)
-            : IPropertyMapVisitor(), m_filter(filter), m_doNotAddCompoundPropertiesToResult(doNotAddCompoundPropertiesToResult)
+        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
+            : IPropertyMapVisitor(), m_filter(filter), m_recurseIntoCompoundPropertyMaps(recurseIntoCompoundPropertyMaps)
             {}
         ~SearchPropertyMapVisitor() {}
 

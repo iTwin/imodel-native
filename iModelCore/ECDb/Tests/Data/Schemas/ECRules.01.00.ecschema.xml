@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="ECRules" nameSpacePrefix="ecr" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
+<ECSchema schemaName="ECRules" alias="ecr" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECStructClass typeName="ReplacementLocatorContext" modifier="None">
         <ECProperty propertyName="ContextType" typeName="string" readOnly="false"/>
         <ECProperty propertyName="Context" typeName="string" readOnly="false"/>
@@ -73,10 +73,10 @@
         <ECArrayProperty propertyName="Context" typeName="string" description="An array containing relevant context for the rule set." readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="RuleSet_to_RuleSet" description="Relates a RuleSet to other RuleSet" modifier="Sealed" strength="referencing" strengthDirection="backward">
-        <Source cardinality="(0,N)" roleLabel="contained in" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="contained in" polymorphic="true">
             <Class class="RuleSet"/>
         </Source>
-        <Target cardinality="(0,N)" roleLabel="contains" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="contains" polymorphic="true">
             <Class class="RuleSet"/>
         </Target>
     </ECRelationshipClass>

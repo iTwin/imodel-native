@@ -1138,14 +1138,82 @@ TEST_F(ECSqlStatementTestFixture, DeleteStructArray)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ColumnInfoAndSystemProperties)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::Readonly));
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, MyPSA.Id, MyPSA.RelECClassId, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z FROM ecsql.P LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+
+    ASSERT_EQ(9, statement.GetColumnCount());
+    for (int i = 0; i < 9; i++)
+        {
+        ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
+        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
+
+        if (i < 2)
+            {
+            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+            }
+        else if (i < 4)
+            {
+            ECClassCR navPropMemberClass = colInfo.GetProperty()->GetClass();
+            ASSERT_STREQ("NavigationECSqlSystemProperties", navPropMemberClass.GetName().c_str());
+            ASSERT_TRUE(navPropMemberClass.IsStructClass());
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+            }
+        else
+            {
+            ECClassCR pointMemberClass = colInfo.GetProperty()->GetClass();
+            ASSERT_STREQ("PointECSqlSystemProperties", pointMemberClass.GetName().c_str());
+            ASSERT_TRUE(pointMemberClass.IsStructClass());
+            ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Double, colInfo.GetDataType().GetPrimitiveType());
+            }
+
+        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
+        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str());
+        }
+    }
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ecsql.PSAHasPSA_NN LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
+
+    ASSERT_EQ(6, statement.GetColumnCount());
+    for (int i = 0; i < 6; i++)
+        {
+        ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
+        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
+        ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Long, colInfo.GetDataType().GetPrimitiveType());
+        if (i < 2)
+            ASSERT_STREQ("ClassECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
+        else
+            ASSERT_STREQ("RelationshipECSqlSystemProperties", colInfo.GetProperty()->GetClass().GetName().c_str());
+
+        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
+        ASSERT_STREQ("PSAHasPSA_NN", colInfo.GetRootClass().GetName().c_str());
+        }
+    }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlStatementTestFixture, ECInstanceIdColumnInfo)
+TEST_F(ECSqlStatementTestFixture, ColumnInfoWithJoin)
     {
     const int perClassRowCount = 10;
     ECDbR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), perClassRowCount, ECDb::OpenParams(Db::OpenMode::Readonly));
 
-    auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
+    auto ecsql = "SELECT c1.ECInstanceId, c2.ECInstanceId, c1.ECClassId, c2.ECClassId FROM ecsql.PSA c1, ecsql.P c2 LIMIT 1";
     ECSqlStatement statement;
     auto stat = statement.Prepare(ecdb, ecsql);
     ASSERT_EQ(ECSqlStatus::Success, stat) << "Preparation of '" << ecsql << "' failed";
@@ -1156,7 +1224,7 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdColumnInfo)
 
     ASSERT_FALSE(value1.IsNull());
     ASSERT_FALSE(columnInfo1.IsGeneratedProperty());
-    ASSERT_STREQ("ECSqlSystemProperties", columnInfo1.GetProperty()->GetClass().GetName().c_str());
+    ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo1.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c1", columnInfo1.GetRootClassAlias());
     ASSERT_STREQ("PSA", columnInfo1.GetRootClass().GetName().c_str());
 
@@ -1165,9 +1233,65 @@ TEST_F(ECSqlStatementTestFixture, ECInstanceIdColumnInfo)
 
     ASSERT_FALSE(value2.IsNull());
     ASSERT_FALSE(columnInfo2.IsGeneratedProperty());
-    ASSERT_STREQ("ECSqlSystemProperties", columnInfo2.GetProperty()->GetClass().GetName().c_str());
+    ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo2.GetProperty()->GetClass().GetName().c_str());
     ASSERT_STREQ("c2", columnInfo2.GetRootClassAlias());
     ASSERT_STREQ("P", columnInfo2.GetRootClass().GetName().c_str());
+
+    auto const& value3 = statement.GetValue(2);
+    auto const& columnInfo3 = value3.GetColumnInfo();
+
+    ASSERT_FALSE(value3.IsNull());
+    ASSERT_FALSE(columnInfo3.IsGeneratedProperty());
+    ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo3.GetProperty()->GetClass().GetName().c_str());
+    ASSERT_STREQ("c1", columnInfo3.GetRootClassAlias());
+    ASSERT_STREQ("PSA", columnInfo3.GetRootClass().GetName().c_str());
+
+    auto const& value4 = statement.GetValue(3);
+    auto const& columnInfo4 = value4.GetColumnInfo();
+
+    ASSERT_FALSE(value4.IsNull());
+    ASSERT_FALSE(columnInfo4.IsGeneratedProperty());
+    ASSERT_STREQ("ClassECSqlSystemProperties", columnInfo4.GetProperty()->GetClass().GetName().c_str());
+    ASSERT_STREQ("c2", columnInfo4.GetRootClassAlias());
+    ASSERT_STREQ("P", columnInfo4.GetRootClass().GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ColumnInfoAndNavigationAndPointProp)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlstatementtests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), 3, ECDb::OpenParams(Db::OpenMode::Readonly));
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT MyPSA, P2D, P3D FROM ecsql.P LIMIT 1"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
+
+    ASSERT_EQ(3, statement.GetColumnCount());
+    for (int i = 0; i < 3; i++)
+        {
+        ECSqlColumnInfo const& colInfo = statement.GetColumnInfo(i);
+        ASSERT_FALSE(colInfo.IsGeneratedProperty());
+        switch (i)
+            {
+                case 0:
+                    ASSERT_TRUE(colInfo.GetDataType().IsNavigation());
+                    break;
+                case 1:
+                    ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
+                    ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Point2d, colInfo.GetDataType().GetPrimitiveType());
+                    break;
+                case 2:
+                    ASSERT_TRUE(colInfo.GetDataType().IsPrimitive());
+                    ASSERT_EQ(PrimitiveType::PRIMITIVETYPE_Point3d, colInfo.GetDataType().GetPrimitiveType());
+                    break;
+            }
+
+        ASSERT_STREQ("P", colInfo.GetProperty()->GetClass().GetName().c_str());
+        ASSERT_TRUE(Utf8String::IsNullOrEmpty(colInfo.GetRootClassAlias()));
+        ASSERT_STREQ("P", colInfo.GetRootClass().GetName().c_str());
+        }
+
     }
 
 //---------------------------------------------------------------------------------------

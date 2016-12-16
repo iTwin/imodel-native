@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="Computers" nameSpacePrefix="TR" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECCustomAttributes>
-        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.12">
-            <SchemaFullNameAtEditingStart>Computers.01.00</SchemaFullNameAtEditingStart>
-            <TrackingEnabled>True</TrackingEnabled>
-        </SchemaChangeTrackingState>
-    </ECCustomAttributes>
+<ECSchema schemaName="Computers" alias="TR" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECEntityClass typeName="Desktop" modifier="None">
         <ECProperty propertyName="OS" typeName="string" readOnly="false"/>
     </ECEntityClass>
@@ -14,10 +7,10 @@
         <ECProperty propertyName="OS" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="LaptopHasLaptop" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="holds">
             <Class class="Laptop"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is held by">
             <Class class="Laptop"/>
         </Target>
     </ECRelationshipClass>
@@ -25,27 +18,27 @@
         <ECProperty propertyName="Size" typeName="string" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="LaptopHasRam" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
             <Class class="Laptop"/>
         </Source>
-        <Target cardinality="(0,1)" polymorphic="true">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is built into">
             <Class class="RAM"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="LaptopHaveManyRams" modifier="Sealed" strength="referencing" strengthDirection="forward">
         <ECProperty propertyName="price" typeName="int" readOnly="false"/>
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">
             <Class class="Laptop"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is built into">
             <Class class="RAM"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="ManyLaptopsHaveManyRams" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,N)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="has">
             <Class class="Laptop"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is built into">
             <Class class="RAM"/>
         </Target>
     </ECRelationshipClass>

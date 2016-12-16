@@ -25,7 +25,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     PropertyMap const& propMap = exp->GetPropertyMap();
     ECSqlPrepareContext::ExpScope const& currentScope = ctx.GetCurrentScope();
 
-    if (!NeedsPreparation(currentScope, propMap))
+    if (!NeedsPreparation(ctx, currentScope, propMap))
         return ECSqlStatus::Success;
 
     Utf8String classIdentifier;
@@ -82,7 +82,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
+bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, ECSqlPrepareContext::ExpScope const& currentScope, PropertyMap const& propertyMap)
     {
     const ECSqlType currentScopeECSqlType = currentScope.GetECSqlType();
     GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
@@ -101,7 +101,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext::ExpScop
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             {
-            if (ECDbSystemSchemaHelper::IsSystemProperty(propertyMap.GetProperty(), ECSqlSystemPropertyKind::ECClassId))
+            if (ECDbSystemSchemaHelper::Equals(ctx.GetECDb().Schemas(), propertyMap.GetProperty(), ECSqlSystemPropertyInfo::Class::ECClassId))
                 {
                 return true;
                 }

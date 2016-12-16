@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="IntegrityCheck" nameSpacePrefix="ic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+<ECSchema schemaName="IntegrityCheck" alias="ic" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECEntityClass typeName="SourceBase">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -30,15 +29,15 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="SourceToTarget_Embedding" strength="embedding" strengthDirection="forward" modifier="Sealed">
         <ECCustomAttributes>
-            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>Cascade</OnDeleteAction>
                 <OnUpdateAction>NoAction</OnUpdateAction>
-            </ForeignKeyRelationshipMap>
+            </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source cardinality="(1,1)" polymorphic="true">
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="has">
             <Class class="SourceBase"/>
         </Source>
-        <Target cardinality="(1,N)" polymorphic="true">
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="has">
             <Class class="TargetBase"/>
         </Target>
     </ECRelationshipClass>

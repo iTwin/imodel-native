@@ -253,23 +253,6 @@ public:
 
     };
 
-
-    //=======================================================================================
-    //! @bsiclass                                                Krischan.Eberle      12/2013
-    //+===============+===============+===============+===============+===============+======
-    struct SystemPropertyExpIndexMap : NonCopyableClass
-        {
-    private:
-        bmap<ECSqlSystemPropertyKind, size_t> m_indexMap;
-
-    public:
-        SystemPropertyExpIndexMap() {}
-
-        void AddIndex(ECSqlSystemPropertyKind systemPropertyExp, size_t index);
-        bool IsUnset(ECSqlSystemPropertyKind systemPropertyExp) const;
-        int GetIndex(ECSqlSystemPropertyKind systemPropertyExp) const;
-        };
-
     enum class FinalizeParseStatus {Completed, NotCompleted, Error};
 
 protected:

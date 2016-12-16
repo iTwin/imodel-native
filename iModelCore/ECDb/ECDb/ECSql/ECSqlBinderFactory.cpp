@@ -29,9 +29,9 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
         {
         BeAssert(dynamic_cast<PropertyNameExp const*> (targetExp) != nullptr);
         PropertyNameExp const* propNameExp = static_cast<PropertyNameExp const*> (targetExp);
-        ECSqlSystemPropertyKind sysPropKind;
-        if (propNameExp->TryGetSystemProperty(sysPropKind) && Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropKind))
-            return CreateIdBinder(ctx, propNameExp->GetPropertyMap(), sysPropKind);
+        ECSqlSystemPropertyInfo const& sysPropInfo = propNameExp->GetSystemPropertyInfo();
+        if (sysPropInfo.IsSystemProperty() && sysPropInfo.IsId())
+            return CreateIdBinder(ctx, propNameExp->GetPropertyMap(), sysPropInfo);
         }
 
     return CreateBinder(ctx, parameterExp.GetTypeInfo());
@@ -108,22 +108,22 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
+std::unique_ptr<IdECSqlBinder> ECSqlBinderFactory::CreateIdBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyInfo const& sysPropertyInfo)
     {
-    if (!Enum::Contains(ECSqlSystemPropertyKind::IsId, sysPropertyKind))
+    if (!sysPropertyInfo.IsId())
         {
         BeAssert(false);
         return nullptr;
         }
 
-    const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyKind);
+    const bool isNoopBinder = RequiresNoopBinder(ctx, propMap, sysPropertyInfo);
     return std::unique_ptr<IdECSqlBinder>(new IdECSqlBinder(ctx.GetECSqlStatementR(), ECSqlTypeInfo(propMap), isNoopBinder));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
-bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyKind sysPropertyKind)
+bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMap const& propMap, ECSqlSystemPropertyInfo const& sysPropertyInfo)
     {
     const ECSqlType ecsqlType = ctx.GetCurrentScope().GetECSqlType();
     if (ecsqlType == ECSqlType::Select || ecsqlType == ECSqlType::Delete ||
@@ -134,7 +134,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
     //only INSERT and UPDATE SET clauses require no-op binders because they directly translate to columns. All other expressions
     //can use constant values for virtual columns and therefore don't need no-op binders.
     
-    BeAssert(sysPropertyKind != ECSqlSystemPropertyKind::ECClassId && "Inserting/updating ECClassId is not supported and should have been caught before");
+    BeAssert((sysPropertyInfo.GetType() != ECSqlSystemPropertyInfo::Type::Class || sysPropertyInfo.GetClass() != ECSqlSystemPropertyInfo::Class::ECClassId) && "Inserting/updating ECClassId is not supported and should have been caught before");
     BeAssert(propMap.GetType() != PropertyMap::Type::ECClassId && "Inserting/updating ECClassId is not supported and should have been caught before");
 
     if (propMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable)
@@ -144,8 +144,8 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
         //* this end's class id (foreign end class id) as it is the same the end's class ECClassId. It cannot be set through
         //an ECSQL INSERT INTO ECRel.
         RelationshipClassEndTableMap const& relClassMap = static_cast<RelationshipClassEndTableMap const&> (propMap.GetClassMap());
-        const ECSqlSystemPropertyKind foreignEndClassId = relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyKind::SourceECClassId : ECSqlSystemPropertyKind::TargetECClassId;
-        if (sysPropertyKind == ECSqlSystemPropertyKind::ECInstanceId || sysPropertyKind == foreignEndClassId)
+        if (sysPropertyInfo == ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId) || 
+            sysPropertyInfo == ECSqlSystemPropertyInfo(relClassMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
             return true;
         }
 

@@ -56,21 +56,14 @@
     </ECEntityClass>
     <ECEntityClass typeName="ClassWithLastModProp">
         <ECCustomAttributes>
-            <ClassHasCurrentTimeStampProperty xmlns="Bentley_Standard_CustomAttributes.01.12">
+            <ClassHasCurrentTimeStampProperty xmlns="CoreCustomAttributes.01.00">
                 <PropertyName>LastMod</PropertyName>
             </ClassHasCurrentTimeStampProperty>
         </ECCustomAttributes>
         <ECProperty propertyName="I" typeName="int"/>
         <ECProperty propertyName="FirstName" typeName="string"/>
         <ECProperty propertyName="LastName" typeName="string"/>
-        <ECProperty propertyName="FullName" typeName="string">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <ECExpression>this.FirstName this.LastName</ECExpression>
-                    <FailureValue>-</FailureValue>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="FullName" typeName="string"/>
         <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True">
             <ECCustomAttributes>
                 <DateTimeInfo xmlns="CoreCustomAttributes.01.00">

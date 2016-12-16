@@ -162,11 +162,11 @@ BentleyStatus SearchPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const
 //---------------------------------------------------------------------------------------
 BentleyStatus SearchPropertyMapVisitor::_Visit(CompoundDataPropertyMap const& propertyMap) const
     {
-    if (!Enum::Contains(m_filter, propertyMap.GetType()))
-        return SUCCESS;
-
-    if (!m_doNotAddCompoundPropertiesToResult)
+    if (Enum::Contains(m_filter, propertyMap.GetType()))
         m_foundPropertyMaps.push_back(&propertyMap);
+
+    if (!m_recurseIntoCompoundPropertyMaps)
+        return SUCCESS;
 
     for (DataPropertyMap const* childPropMap : propertyMap)
         {

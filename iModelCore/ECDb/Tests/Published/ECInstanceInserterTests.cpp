@@ -431,7 +431,6 @@ TEST_F(ECInstanceInserterTests, GroupByClauseWithAndWithOutFunctions)
     auto const schema =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='ClassA' >"
         "        <ECCustomAttributes>"
@@ -550,7 +549,6 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
     auto const schema =
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='SchemaWithReuseColumn' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='ClassA' >"
         "        <ECCustomAttributes>"

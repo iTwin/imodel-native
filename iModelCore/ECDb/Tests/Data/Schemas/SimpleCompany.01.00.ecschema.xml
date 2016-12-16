@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="SimpleCompany" nameSpacePrefix="sico" version="01.00" description="A Simple Company" displayLabel="A Simple Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" prefix="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="01.02" prefix="beca"/>
-    <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="unitSpec"/>
-    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+<ECSchema schemaName="SimpleCompany" alias="sico" version="01.00" description="A Simple Company" displayLabel="A Simple Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaMap xmlns="ECDbMap.02.00">
             <TablePrefix>sic</TablePrefix>
@@ -22,9 +20,6 @@
             <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
                 <Property>EmployeeId</Property>
             </SyncIDSpecification>
-            <InstanceLabelSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <PropertyName>FullName</PropertyName>
-            </InstanceLabelSpecification>
         </ECCustomAttributes>
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
@@ -32,15 +27,7 @@
         <ECProperty propertyName="DateJoined" typeName="dateTime" displayLabel="Date Joined" readOnly="false"/>
         <ECStructProperty propertyName="LatestEducation" typeName="EducationStruct" readOnly="false"/>
         <ECStructArrayProperty propertyName="EducationHistory" typeName="EducationStruct" readOnly="false" minOccurs="0" maxOccurs="unbounded"/>
-        <ECProperty propertyName="FullName" typeName="string" displayLabel="FullName" readOnly="true">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                    <ECExpression>this.FirstName &amp; &quot; &quot; &amp; this.LastName</ECExpression>
-                    <FailureValue>Anonymous</FailureValue>
-                    <ParserRegularExpression>^(?&lt;FirstName&gt;[\w]+) (?&lt;LastName&gt;[\w]+)</ParserRegularExpression>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="FullName" readOnly="true"/>
     </ECEntityClass>
     <ECEntityClass typeName="Manager" modifier="None">
         <BaseClass>Employee</BaseClass>
@@ -57,18 +44,18 @@
         <ECProperty propertyName="SubContractorId" typeName="int" displayLabel="Sub Contractor Id" readOnly="false"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="ManagerRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="true">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is reported to by">
             <Class class="Manager"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="reports to">
             <Class class="Employee"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="SubContractorRelationship" modifier="Sealed" strength="referencing" strengthDirection="forward">
-        <Source cardinality="(0,1)" polymorphic="false">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="has">
             <Class class="SubContractor"/>
         </Source>
-        <Target cardinality="(0,N)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has">
             <Class class="Employee"/>
         </Target>
     </ECRelationshipClass>
