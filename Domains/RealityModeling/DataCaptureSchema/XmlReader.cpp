@@ -185,7 +185,7 @@ BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot)
+BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot, PoseR pose)
     {
     BeXmlStatus status(BEXML_Success);
 
@@ -213,8 +213,8 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot)
         BEXML_Success == (status = ReadRotationFromCameraDevicePose(sourceNodeRef, rotation)))
         {
         //set pose in photo
-        PoseType pose(poseCenter, rotation);
-        shot.SetPose(pose);
+        pose.SetCenter(poseCenter);
+        pose.SetRotation(rotation);
         }                                                                                                           
 
     return BEXML_Success;
@@ -257,11 +257,23 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
 
     for (BeXmlNodeP const& photoNode : photoList)
         {
-        ShotPtr pShot(Shot::Create(m_spatialModel,pCameraDeviceInfo->GetId()));
-        BeXmlStatus status = ReadPhotoNode(*photoNode,*pShot);
-        if (BEXML_Success != status)
-            return status;
+        //Insert into the database
+        Dgn::DgnDbStatus dbStatus;
+        PosePtr pPose = Pose::Create(m_spatialModel);
+        pPose->Insert(&dbStatus);
+        ShotPtr pShot(Shot::Create(m_spatialModel, pCameraDeviceInfo->GetId(), pPose->GetId()));
         pShot->Insert(&dbStatus);
+
+        if (pPose.IsValid() && pShot.IsValid())
+            status = ReadPhotoNode(*photoNode, *pShot, *pPose);
+        if (BEXML_Success != status)
+            {
+            //Delete newly inserted element and return error
+            pPose->Delete();
+            pShot->Delete();
+            return status;
+            }
+
         }
 
     return BEXML_Success;

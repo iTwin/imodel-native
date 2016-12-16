@@ -73,12 +73,14 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CLASS_CameraDeviceModel                             "CameraDeviceModel"
 #define BDCP_CLASS_CameraDevice                                  "CameraDevice"
 #define BDCP_CLASS_Shot                                          "Shot"
+#define BDCP_CLASS_Pose                                          "Pose"
 #define BDCP_CLASS_RadialDistortion                              "RadialDistortion"
 #define BDCP_CLASS_TangentialDistortion                          "TangentialDistortion"
 
 // Relationships
 #define BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel            "CameraDeviceIsDefinedByCameraDeviceModel"
 #define BDCP_REL_ShotIsTakenByCameraDevice                           "ShotIsTakenByCameraDevice"
+#define BDCP_REL_ShotIsTakenAtPose                                   "ShotIsTakenAtPose"
 
 
 //-----------------------------------------------------------------------------------------
@@ -86,6 +88,7 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BDCP_CATEGORY_CameraDevice                                         "CameraDevice"
 #define BDCP_CATEGORY_Shot                                                 "Shot"
+#define BDCP_CATEGORY_Pose                                                 "Pose"
 
 
 //-----------------------------------------------------------------------------------------
@@ -132,7 +135,7 @@ DATACAPTURE_TYPEDEFS(CameraDeviceModel)
 DATACAPTURE_TYPEDEFS(RadialDistortion)
 DATACAPTURE_TYPEDEFS(TangentialDistortion)
 DATACAPTURE_TYPEDEFS(Shot)
-DATACAPTURE_TYPEDEFS(PoseType)
+DATACAPTURE_TYPEDEFS(Pose)
 DATACAPTURE_TYPEDEFS(RotationMatrixType)
 
 
@@ -141,12 +144,14 @@ DATACAPTURE_REFCOUNTED_PTR(TangentialDistortion)
 DATACAPTURE_REFCOUNTED_PTR(CameraDeviceModel)
 DATACAPTURE_REFCOUNTED_PTR(CameraDevice)
 DATACAPTURE_REFCOUNTED_PTR(Shot)
+DATACAPTURE_REFCOUNTED_PTR(Pose)
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceModelElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(CameraDeviceElementId, Dgn::DgnElementId)
 BEBRIEFCASEBASED_ID_SUBCLASS(ShotElementId, Dgn::DgnElementId)
+BEBRIEFCASEBASED_ID_SUBCLASS(PoseElementId, Dgn::DgnElementId)
 
 /**
 @addtogroup DataCaptureGroup DataCapture

@@ -19,6 +19,7 @@ DataCaptureDomain::DataCaptureDomain() : DgnDomain(BDCP_SCHEMA_NAME, "Bentley Da
     RegisterHandler(CameraDeviceHandler::GetHandler());    
     RegisterHandler(CameraDeviceModelHandler::GetHandler());
     RegisterHandler(ShotHandler::GetHandler());
+    RegisterHandler(PoseHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -35,6 +36,9 @@ void DataCaptureDomain::_OnSchemaImported(DgnDbR dgndb) const
     DgnCategory shotCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Shot, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
     shotCategory.Insert(defaultApperance);
     BeAssert(shotCategory.GetCategoryId().IsValid());
+    DgnCategory PoseCategory(DgnCategory::CreateParams(dgndb, BDCP_CATEGORY_Pose, DgnCategory::Scope::Any, DgnCategory::Rank::Domain));
+    PoseCategory.Insert(defaultApperance);
+    BeAssert(PoseCategory.GetCategoryId().IsValid());
 
 
     auto authority = NamespaceAuthority::CreateNamespaceAuthority(BDCP_AUTHORITY_DataCapture, dgndb);
@@ -63,6 +67,7 @@ DgnCode DataCaptureDomain::CreateCode(DgnDbR dgndb, Utf8StringCR nameSpace, Utf8
     {
     BeAssert((nameSpace == BDCP_CLASS_CameraDeviceModel) ||
              (nameSpace == BDCP_CLASS_CameraDevice) ||
+             (nameSpace == BDCP_CLASS_Pose)         ||
              (nameSpace == BDCP_CLASS_Shot));
 
     return NamespaceAuthority::CreateCode(BDCP_AUTHORITY_DataCapture, value, dgndb, nameSpace);

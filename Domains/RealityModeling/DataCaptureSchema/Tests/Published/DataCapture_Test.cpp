@@ -268,7 +268,7 @@ TEST_F(DataCaptureTests, CreateShot)
     ShotPtr->SetLabel("BasicPhoto1");
     RotationMatrixType rotation(RotationMatrixType::FromIdentity());
     DPoint3d center = {1.0,2.0,3.0};
-    PoseType pose(center,rotation);
+    Pose pose(center,rotation);
     ShotPtr->SetPose(pose);
     DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDeviceInsertedPtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
     ShotPtr->SetCode(shotCode);
@@ -335,7 +335,7 @@ TEST_F(DataCaptureTests, ModifyShot)
     //Change Shot properties
     RotationMatrixType rotation(RotationMatrixType::FromRowValues(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0));
     DPoint3d center = { 10.0,11.0,12.0 };
-    PoseType pose(center, rotation);
+    Pose pose(center, rotation);
     shotPtr->SetPose(pose);
 
     CameraDeviceElementId cameraDeviceId = shotPtr->GetCameraDeviceId();

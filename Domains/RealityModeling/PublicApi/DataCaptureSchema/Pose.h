@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/DataCaptureSchema/Shot.h $
+|     $Source: PublicApi/DataCaptureSchema/Pose.h $
 |
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,41 +9,67 @@
 
 //__PUBLISH_SECTION_START__
 #include "DataCaptureSchemaDefinitions.h"
-#include "Pose.h"
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 
 //=======================================================================================
-//! Base class for Shot 
+//! Base class for RotationMatrixType 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Shot : Dgn::SpatialLocationElement
-{
-    friend struct ShotHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Shot, Dgn::SpatialLocationElement);
+struct RotationMatrixType : public RotMatrix
+    {
+public:
+    //! Constructor
+    RotationMatrixType(RotMatrixCR in)
+        {
+        Copy(in);
+        }
+
+    //! Empty constructor 
+    RotationMatrixType() {}
+
+    //! Copy constructor
+    RotationMatrixType(RotationMatrixTypeCR rhs) { *this = rhs; }
+
+    //! Assignment operator
+    RotationMatrixType& operator= (RotationMatrixTypeCR rhs)
+        {
+        Copy(rhs);
+        return *this;
+        }
+
+    RotationMatrixType& operator= (RotMatrixCR rhs)
+        {
+        Copy(rhs);
+        return *this;
+        }
+
+    //! Bind the otationMatrixType field in a ECSQL statement
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
+
+    //! Get the otationMatrixType value at the specified column from a ECSQL statement
+    static RotationMatrixType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
+    };
+
+//=======================================================================================
+//! Base class for Pose 
+//! @ingroup DataCaptureGroup
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE Pose  : Dgn::SpatialLocationElement
+    {
+    friend struct PoseHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Pose, Dgn::SpatialLocationElement);
 
 private:
-    mutable CameraDeviceElementId m_cameraDevice;//Query and cached from DgnDb or given at creation time
-    mutable PoseElementId         m_pose;//Query and cached from DgnDb or given at creation time
+    DPoint3d            m_center;
+    RotationMatrixType  m_rotation;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
 
-    Shot(CreateParams const& params, CameraDeviceElementId cameraDevice=CameraDeviceElementId(), PoseElementId pose=PoseElementId());
-
-    static BentleyStatus InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId, CameraDeviceElementId cameraDeviceElmId);
-    static BentleyStatus InsertShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId, PoseElementId poseElmId);
-    static CameraDeviceElementId QueryShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb,  ShotElementId shotElmId);
-    static PoseElementId QueryShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId);
-
-    void InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdateShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void DeleteShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void InsertShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdateShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
-    void DeleteShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
+    explicit Pose(CreateParams const& params);
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -53,10 +79,6 @@ protected:
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
-
-    //! Remap any IDs that might refer to elements or resources in the source DgnDb.
-    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
-    virtual void _RemapIds(Dgn::DgnImportContext&) override;
 
     //! Called to bind the parameters when inserting a new Shot into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
@@ -90,37 +112,36 @@ protected:
 
     virtual Dgn::DgnCode _GenerateDefaultCode() const override;
 
-
 public:
-    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Shot)
-    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Shot)
+    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Pose)
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Pose)
 
     //! Create a new Shot 
-    DATACAPTURE_EXPORT static ShotPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice, PoseElementId pose);
+    DATACAPTURE_EXPORT static PosePtr Create(Dgn::SpatialModelR model);
 
-    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR CameraDeviceValue, Utf8StringCR value);
+    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
-    //! Query for an Shot (Id) by label
-    //! @return Id of the Shot or invalid Id if an Shot was not found
-    DATACAPTURE_EXPORT static ShotElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+    //! Validates 
+    DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
+
+    DATACAPTURE_EXPORT DPoint3d            GetCenter() const;
+    DATACAPTURE_EXPORT RotationMatrixType  GetRotation() const;
+    DATACAPTURE_EXPORT void SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT void SetRotation(RotationMatrixTypeCR val);
 
     //! Get the id of this Shot element
-    DATACAPTURE_EXPORT ShotElementId GetId() const;
+    DATACAPTURE_EXPORT PoseElementId GetId() const;
+    };
 
-    DATACAPTURE_EXPORT CameraDeviceElementId  GetCameraDeviceId() const;
-    DATACAPTURE_EXPORT void             SetCameraDeviceId(CameraDeviceElementId val);
-    DATACAPTURE_EXPORT PoseElementId    GetPoseId() const;
-    DATACAPTURE_EXPORT void             SetPoseId(PoseElementId val);
 
-};
 
 //=================================================================================
-//! ElementHandler for Shot-s
+//! ElementHandler for Pose-s
 //! @ingroup DataCaptureGroup
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ShotHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct EXPORT_VTABLE_ATTRIBUTE PoseHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Shot, Shot, ShotHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Pose, Pose, PoseHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };

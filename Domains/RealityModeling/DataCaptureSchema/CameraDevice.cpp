@@ -389,9 +389,9 @@ void CameraDeviceModel::_CopyFrom(DgnElementCR el)
     if (nullptr == other)
         return;
 
-    SetFocalLength(other->GetFocalLength());
     SetImageWidth(other->GetImageWidth());
     SetImageHeight(other->GetImageHeight());
+    SetFocalLength(other->GetFocalLength());
     SetPrincipalPoint(other->GetPrincipalPoint());
     SetAspectRatio(other->GetAspectRatio());
     SetSkew(other->GetSkew());
@@ -803,9 +803,26 @@ void CameraDevice::_CopyFrom(DgnElementCR el)
     if (nullptr == other)
         return;
 
+    SetImageWidth(other->GetImageWidth());
+    SetImageHeight(other->GetImageHeight());
+    SetAspectRatio(other->GetAspectRatio());
+    SetSkew(other->GetSkew());
     SetFocalLength(other->GetFocalLength());
     SetPrincipalPoint(other->GetPrincipalPoint());
     SetCameraDeviceModelId(other->GetCameraDeviceModelId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void CameraDevice::_RemapIds(DgnImportContext& importer)
+    {
+    BeAssert(importer.IsBetweenDbs());
+    T_Super::_RemapIds(importer);
+    DgnElementId cameraModelId(GetCameraDeviceModelId());
+    DgnElementId newId = importer.FindElementId(cameraModelId);
+    CameraDeviceModelElementId newCameraModelId(newId.GetValue());
+    SetCameraDeviceModelId(newCameraModelId);
     }
 
 /*---------------------------------------------------------------------------------**//**

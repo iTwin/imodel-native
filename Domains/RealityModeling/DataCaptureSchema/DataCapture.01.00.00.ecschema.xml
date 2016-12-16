@@ -82,10 +82,14 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECProperty propertyName="M_22" typeName="double" />
     </ECStructClass>
 
-    <ECStructClass typeName="PoseType"  description="CameraDevice cone position in space">
+    <ECEntityClass typeName="Pose"  description="CameraDevice cone position in space">
+        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
         <ECProperty         propertyName="Center"   typeName="point3d"              displayLabel="Center"/>
         <ECStructProperty   propertyName="Rotation" typeName="RotationMatrixType"   displayLabel="Rotation"/> 
-    </ECStructClass>
+    </ECEntityClass>
 
     <ECEntityClass typeName="Shot" description="Shot taken by a cameraDevice at a position and orientation.">
         <BaseClass>dgn:SpatialLocationElement</BaseClass>
@@ -93,7 +97,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="CameraDeviceId" relationshipName="ShotIsTakenByCameraDevice" direction="Forward"/>
-        <ECStructProperty   propertyName="Pose"      typeName="PoseType" displayLabel="Pose"/> 
+        <ECNavigationProperty propertyName="PoseId" relationshipName="ShotIsTakenAtPose" direction="Forward"/>
     </ECEntityClass>
     <!-- END Shot element classes -->
 
@@ -107,11 +111,18 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
             <Class class="Shot" />
         </Source>
         <Target cardinality="(1,1)" polymorphic="False">
-            <Class class="CameraDevice" >
-            </Class>
+            <Class class="CameraDevice" />
         </Target>
     </ECRelationshipClass>
 
+    <ECRelationshipClass typeName="ShotIsTakenAtPose" displayLabel="Shot is taken at Pose" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,N)" polymorphic="False">
+            <Class class="Shot" />
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="False">
+            <Class class="Pose" />
+        </Target>
+    </ECRelationshipClass>
 
 
 </ECSchema>

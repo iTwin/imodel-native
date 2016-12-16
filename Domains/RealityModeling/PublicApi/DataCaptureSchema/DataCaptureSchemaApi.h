@@ -13,5 +13,6 @@
 #include "XmlReader.h"
 #include "XmlWriter.h"
 #include "CameraDevice.h"
+#include "Pose.h"
 #include "Shot.h"
 

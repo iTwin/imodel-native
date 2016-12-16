@@ -284,6 +284,10 @@ protected:
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
 
+    //! Remap any IDs that might refer to elements or resources in the source DgnDb.
+    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
+    virtual void _RemapIds(Dgn::DgnImportContext&) override;
+
     //! Called to bind the parameters when inserting a new Activity into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
