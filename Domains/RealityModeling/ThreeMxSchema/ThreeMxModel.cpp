@@ -130,7 +130,7 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
 //=======================================================================================
-struct ThreeMxProgressive : ProgressiveTask
+struct ThreeMxProgressive : Dgn::ProgressiveTask
 {
     SceneR m_scene;
     DrawArgs::MissingNodes m_missing;
@@ -146,7 +146,7 @@ struct ThreeMxProgressive : ProgressiveTask
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
+Dgn::ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
     {
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, m_scene.GetLocation(), m_scene, now, now-m_scene.GetExpirationTime(), m_clip.get());

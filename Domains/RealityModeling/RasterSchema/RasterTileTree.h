@@ -84,6 +84,7 @@ protected:
 
     bvector<Resolution> m_resolution;
 
+    Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
 public:
     RasterRoot(RasterModel& model, Utf8CP rootUrl, Dgn::Render::SystemP system);
     ~RasterRoot() {ClearAllTiles();}
