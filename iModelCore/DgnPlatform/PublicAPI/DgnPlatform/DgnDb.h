@@ -148,7 +148,6 @@ protected:
     DgnSearchableText   m_searchableText;
     mutable std::unique_ptr<RevisionManager> m_revisionManager;
     mutable BeSQLite::EC::ECSqlStatementCache m_ecsqlCache;
-    SceneQueue m_sceneQueue;
 
     DGNPLATFORM_EXPORT virtual BeSQLite::DbResult _VerifySchemaVersion(BeSQLite::Db::OpenParams const& params) override;
     DGNPLATFORM_EXPORT virtual void _OnDbClose() override;
@@ -215,7 +214,6 @@ public:
     MemoryManager& Memory() const {return const_cast<MemoryManager&>(m_memoryManager);} //!< Manages memory associated with this DgnDb.
     SessionManager& Sessions() const {return const_cast<SessionManager&>(m_sessionManager);} //!< Manages Sessions associated with this DgnDb.
     DGNPLATFORM_EXPORT IBriefcaseManager& BriefcaseManager(); //!< Manages this briefcase's held locks and codes
-    SceneQueue& GetSceneQueue() const {return const_cast<SceneQueue&>(m_sceneQueue);}
 
     //! Inserts a new ECRelationship
     //! @param[out] relKey key of the new ECRelationship
@@ -261,7 +259,7 @@ public:
 /** @name DgnPlatform Threads */
 /** @{ */
     //! Ids for DgnPlatform threads
-    enum class ThreadId {Unknown=0, Client=100, Render=101, Scene=102, IoPool=103, CpuPool=104, SheetTile=105};
+    enum class ThreadId {Unknown=0, Client=100, Render=101, IoPool=103, CpuPool=104, SheetTile=105};
 
     DGNPLATFORM_EXPORT static ThreadId GetThreadId();    //!< Get the ThreadId for the current thread
     DGNPLATFORM_EXPORT static WCharCP GetThreadIdName(); //!< For debugging purposes, get the current ThreadId as a string
@@ -269,7 +267,6 @@ public:
     static void VerifyThread(ThreadId id) {BeAssert(id==GetThreadId());}   //!< assert that this is a specific thread
     static void VerifyClientThread() {VerifyThread(ThreadId::Client);}     //!< assert that this is the Client thread
     static void VerifyRenderThread() {VerifyThread(ThreadId::Render);}     //!< assert that this is the Render thread
-    static void VerifySceneThread()  {VerifyThread(ThreadId::Scene);}      //!< assert that this is the Query thread
     static void VerifyIoPoolThread() {VerifyThread(ThreadId::IoPool);}     //!< assert that this is one of the IoPool threads
     static void VerifyCpuPoolThread() {VerifyThread(ThreadId::CpuPool);}   //!< assert that this is one of the CpuPool threads
 /** @} */

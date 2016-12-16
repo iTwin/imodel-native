@@ -136,23 +136,9 @@ AxisAlignedBox3d SpatialViewController::_GetViewedExtents(DgnViewportCR vp) cons
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ViewController::RequestAbort(bool wait)
-    {
-    DgnDb::VerifyClientThread();
-
-    auto& queue = GetDgnDb().GetSceneQueue();
-    queue.RemovePending(*this);
-
-    if (wait)
-        queue.WaitFor(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp, UpdatePlan const& plan) 
     {
     BeAssert(plan.GetQuery().GetTargetNumElements() > 0);
     BeAssert(plan.GetQuery().GetTargetNumElements() <= plan.GetQuery().GetMaxElements());
@@ -166,7 +152,7 @@ ViewController::QueryResults SpatialViewController::_QueryScene(DgnViewportR vp,
     query.SetSizeFilter(vp, GetSceneLODSize());
 
     if (!m_noQuery)
-        query.DoQuery(task);
+        query.DoQuery();
 
     return results;
     }
@@ -232,6 +218,17 @@ void SpatialViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewController::RequestAbort(bool wait)
+    {
+    // ###TODO_ELEMENT_TILE: This is generally called when the criteria defining the scene have changed. e.g., we turned off a category or changed the sets of always/never drawn elemets.
+    // In tile-based rendering we will want to invalidate tiles - though we'd probably also like to change how these criteria are defined and applied.
+    DgnDb::VerifyClientThread();
+    BeAssert(false && "RequestAbort unimplemented");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -362,181 +359,6 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-THREAD_MAIN_IMPL SceneQueue::Main(void* arg)
-    {
-    BeThreadUtilities::SetCurrentThreadName("SceneCreate");
-    DgnDb::SetThreadId(DgnDb::ThreadId::Scene);
-
-    ((SceneQueue*)arg)->Process();
-
-    // After the owning DgnDb calls Terminate()
-    return 0;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Terminate()
-    {
-    DgnDb::VerifyClientThread();
-
-    BeMutexHolder lock(m_cv.GetMutex());
-    if (State::Active != m_state)
-        return;
-
-    if (m_active.IsValid())
-        m_active->RequestAbort();  // if we're working on a query tell it to stop
-
-    m_state = State::TerminateRequested;
-    while (State::TerminateRequested == m_state)
-        {
-        m_cv.notify_all();
-        m_cv.RelativeWait(lock, 10000);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::RemovePending(ViewControllerCR view)
-    {
-    // We may currently be processing a query for this model. If so, let it complete and queue up another one.
-    // But remove any other previously-queued processing requests for this model.
-    BeMutexHolder lock(m_cv.GetMutex());
-
-    if (m_active.IsValid() && m_active->IsForView(view))
-        m_active->RequestAbort();  // if we're working on a query tell it to stop
-
-    for (auto iter = m_pending.begin(); iter != m_pending.end(); )
-        {
-        if ((*iter)->IsForView(view))
-            {
-            (*iter)->RequestAbort();
-            iter = m_pending.erase(iter);
-            }
-        else
-            ++iter;
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Add(Task& task)
-    {
-    if (&task.m_view.GetDgnDb() != &m_db)
-        {
-        BeAssert(false);
-        return;
-        }
-
-    BeMutexHolder mux(m_cv.GetMutex());
-
-    RemovePending(task.m_view);
-    m_pending.push_back(&task);
-
-    mux.unlock(); // release lock before notify so other thread will start immediately vs. "hurry up and wait" problem
-    m_cv.notify_all();
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* Note: Must be called with query queue mutex held!
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::HasActiveOrPending(ViewControllerCR view)
-    {
-    if (m_active.IsValid() && m_active->IsForView(view))
-        return true;
-
-    for (auto const& pending : m_pending)
-        {
-        if (pending->IsForView(view))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::WaitFor(ViewControllerCR view)
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    while (HasActiveOrPending(view))
-        m_cv.InfiniteWait(holder);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-SceneQueue::SceneQueue(DgnDbR db) : m_db(db), m_state(State::Active)
-    {
-    BeThreadUtilities::StartNewThread(50*1024, Main, this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::IsIdle() const
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    return m_pending.empty() && !m_active.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SceneQueue::WaitForWork()
-    {
-    BeMutexHolder holder(m_cv.GetMutex());
-    while (m_pending.empty() && State::Active == m_state)
-        m_cv.InfiniteWait(holder);
-
-    if (State::Active != m_state)
-        return false;
-
-    m_active = m_pending.front();
-    m_pending.pop_front();
-
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SceneQueue::Process()
-    {
-    DgnDb::VerifySceneThread();
-
-    while (WaitForWork())
-        {
-        if (!m_active.IsValid())
-            continue;
-
-        m_active->_Go();
-        uint32_t delay = m_active->GetDelayAfter();
-        BeAssert(delay<2000);
-
-        {
-        BeMutexHolder holder(m_cv.GetMutex());
-        m_active = nullptr;
-        }
-
-        m_cv.notify_all();
-        if (delay) // optionally, wait before starting the next task
-            BeThreadUtilities::BeSleep(delay);
-        }
-
-    BeMutexHolder holder(m_cv.GetMutex());
-    m_state = State::Terminated;
-    m_cv.notify_all();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)
@@ -561,7 +383,7 @@ void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR v
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
+void SpatialViewController::RangeQuery::DoQuery()
     {
     StopWatch watch(true);
 
@@ -594,11 +416,6 @@ void SpatialViewController::RangeQuery::DoQuery(SceneQueue::Task& task)
             break;
 
         BeAssert(m_lastId==thisId.GetValueUnchecked());
-        if (task.IsAborted())
-            {
-            ERROR_PRINTF("Query aborted");
-            return;
-            }
 
         if (TestElement(thisId) && !IsAlways(thisId))
             {

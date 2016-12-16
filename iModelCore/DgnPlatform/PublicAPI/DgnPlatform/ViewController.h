@@ -77,7 +77,6 @@ To create a subclass of ViewController, create a ViewDefinition and implement _S
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE ViewController : RefCountedBase
 {
-    friend struct SceneQueue::Task;
     friend struct CreateSceneTask;
 
     struct EXPORT_VTABLE_ATTRIBUTE AppData : RefCountedBase
@@ -161,7 +160,7 @@ protected:
     virtual void _OnAttachedToViewport(DgnViewportR vp) {m_vp = &vp;}
     virtual bool _Is3d() const {return false;}
     virtual GeometricModelP _GetTargetModel() const = 0;
-    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) = 0;
+    virtual QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) = 0;
     virtual ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) = 0;
     DGNPLATFORM_EXPORT virtual void _LoadState();
     DGNPLATFORM_EXPORT virtual void _StoreState();
@@ -254,7 +253,7 @@ protected:
 
 public:
     ScenePtr UseReadyScene() {BeMutexHolder lock(m_mutex); if (!m_readyScene.IsValid()) return nullptr; std::swap(m_currentScene, m_readyScene); m_readyScene = nullptr; return m_currentScene;}
-    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task);
+    BentleyStatus CreateScene(DgnViewportR vp, UpdatePlan const& plan);
     void RequestScene(DgnViewportR vp, UpdatePlan const& plan);
     ScenePtr GetScene() const {BeMutexHolder lock(m_mutex); return m_currentScene;}
     void DrawView(ViewContextR context) {return _DrawView(context);}
@@ -591,7 +590,7 @@ public:
 
     public:
         RangeQuery(SpatialViewControllerCR, FrustumCR, DgnViewportCR, UpdatePlan::Query const& plan, QueryResults*);
-        void DoQuery(SceneQueue::Task&);
+        void DoQuery();
     };
 
     //=======================================================================================
@@ -649,7 +648,7 @@ protected:
     SpatialViewControllerCP _ToSpatialView() const override {return this;}
     bool _Allow3dManipulations() const override {return true;}
     GridOrientationType _GetGridOrientationType() const override {return GridOrientationType::ACS;}
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
 
     //! Construct a new SpatialViewController from a View in the project.
     //! @param[in] definition the view definition
@@ -915,7 +914,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewController2d : ViewController
 
 protected:
     ProgressiveTaskPtr _CreateProgressive(DgnViewportR vp) {return nullptr;} // needs work
-    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) override;
+    DGNPLATFORM_EXPORT QueryResults _QueryScene(DgnViewportR vp, UpdatePlan const& plan) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR) override;
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;

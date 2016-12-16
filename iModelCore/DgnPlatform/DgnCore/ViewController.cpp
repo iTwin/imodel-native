@@ -1725,7 +1725,7 @@ struct View2dSceneContext : ViewContext
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan, SceneQueue::Task& task) 
+ViewController::QueryResults ViewController2d::_QueryScene(DgnViewportR vp, UpdatePlan const& plan) 
     {
     QueryResults results;
     auto model = GetViewedModel();
