@@ -964,6 +964,39 @@ DgnDbServerBriefcaseInfoTaskPtr DgnDbClient::AcquireBriefcase(RepositoryInfoCR r
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Eligijus.Mauragas              12/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbClient::AbandonBriefcase(RepositoryInfoCR repositoryInfo, BeSQLite::BeBriefcaseId briefcaseId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbClient::AbandonBriefcase";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    IWSRepositoryClientPtr client = WSRepositoryClient::Create(m_serverUrl, repositoryInfo.GetWSRepositoryName(), m_clientInfo, nullptr, m_customHandler);
+    client->SetCredentials(m_credentials);
+
+    Utf8String briefcaseIdString;
+    briefcaseIdString.Sprintf("%u", briefcaseId);
+    ObjectId repositoryId = ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::Briefcase, briefcaseIdString);
+
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Sending abandon briefcase request. Repository ID: %s.", repositoryInfo.GetId().c_str());
+    return client->SendDeleteObjectRequest(repositoryId, cancellationToken)->Then<DgnDbServerStatusResult>([=] (WSDeleteObjectResult const& result)
+        {
+        if (!result.IsSuccess())
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return DgnDbServerStatusResult::Error(result.GetError());
+            }
+        else
+            {
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Success.");
+            return DgnDbServerStatusResult::Success();
+            }
+        });
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             07/2016
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbClient::DeleteRepository(RepositoryInfoCR repositoryInfo, ICancellationTokenPtr cancellationToken) const
