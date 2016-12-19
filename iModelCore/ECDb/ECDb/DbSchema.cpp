@@ -11,117 +11,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-//****************************************************************************************
-//ExistingColumn
-//****************************************************************************************
-struct ExistingColumn
-    {
-    private:
-        DbColumn::Type m_type;
-        Utf8String m_name;
-        int m_pkordinal;
-        bool m_isnotnull;
-        Utf8String m_defaultConstraint;
-    public:
-        ExistingColumn(Utf8CP name, DbColumn::Type type, int pkordinal, bool isnotnull, Utf8CP defaultConstraint)
-            :m_type(type), m_name(name), m_pkordinal(pkordinal), m_defaultConstraint(defaultConstraint), m_isnotnull(isnotnull)
-            {}
-        ExistingColumn(ExistingColumn const&& rhs)
-            :m_type(std::move(rhs.m_type)), m_name(std::move(rhs.m_name)), m_pkordinal(std::move(rhs.m_pkordinal)), m_defaultConstraint(std::move(rhs.m_defaultConstraint)), m_isnotnull(std::move(rhs.m_isnotnull))
-            {}
-        ExistingColumn(ExistingColumn const& rhs)
-            :m_type(rhs.m_type), m_name(rhs.m_name), m_pkordinal(rhs.m_pkordinal), m_defaultConstraint(rhs.m_defaultConstraint), m_isnotnull(rhs.m_isnotnull)
-            {}
-        ExistingColumn& operator = (ExistingColumn const&& rhs)
-            {
-            if (this != &rhs)
-                {
-                m_type = std::move(rhs.m_type);
-                m_name = std::move(rhs.m_name);
-                m_pkordinal = std::move(rhs.m_pkordinal);
-                m_defaultConstraint = std::move(rhs.m_defaultConstraint);
-                m_isnotnull = std::move(rhs.m_isnotnull);
-                }
 
-            return *this;
-            }
-        ExistingColumn& operator = (ExistingColumn const& rhs)
-            {
-            if (this != &rhs)
-                {
-                m_type = rhs.m_type;
-                m_name = rhs.m_name;
-                m_pkordinal = rhs.m_pkordinal;
-                m_defaultConstraint = rhs.m_defaultConstraint;
-                m_isnotnull = rhs.m_isnotnull;
-                }
-
-            return *this;
-            }
-        DbColumn::Type GetType() const { return m_type; }
-        Utf8StringCR GetName() const { return m_name; }
-        int GetPrimaryKeyOrdinal() const { return m_pkordinal; }
-        bool IsNotNull() const { return m_isnotnull; }
-        Utf8StringCR GetDefault() const { return m_defaultConstraint; }
-
-        static BentleyStatus GetColumns(std::vector<ExistingColumn>& columns, DbCR db, Utf8CP existingTableName)
-            {
-            columns.clear();
-            Utf8String sql;
-            sql.Sprintf("PRAGMA table_info('%s')", existingTableName);
-            Statement stmt;
-            if (stmt.Prepare(db, sql.c_str()) != BE_SQLITE_OK)
-                return ERROR;
-
-            while (stmt.Step() == BE_SQLITE_ROW)
-                {
-                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
-                Utf8CP colName = stmt.GetValueText(1);
-
-                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
-                Utf8String colTypeName;
-                if (!stmt.IsColumnNull(2))
-                    colTypeName.assign(stmt.GetValueText(2));
-
-                DbColumn::Type colType = DbColumn::Type::Any;
-                if (!colTypeName.empty())
-                    {
-                    if (colTypeName.ContainsI("long") ||
-                        colTypeName.ContainsI("int"))
-                        colType = DbColumn::Type::Integer;
-                    else if (colTypeName.ContainsI("char") ||
-                             colTypeName.ContainsI("clob") ||
-                             colTypeName.ContainsI("text"))
-                        colType = DbColumn::Type::Text;
-                    else if (colTypeName.ContainsI("blob") ||
-                             colTypeName.ContainsI("binary"))
-                        colType = DbColumn::Type::Blob;
-                    else if (colTypeName.ContainsI("real") ||
-                             colTypeName.ContainsI("floa") ||
-                             colTypeName.ContainsI("doub"))
-                        colType = DbColumn::Type::Real;
-                    else if (colTypeName.ContainsI("date") ||
-                             colTypeName.ContainsI("timestamp"))
-                        colType = DbColumn::Type::TimeStamp;
-                    else if (colTypeName.ContainsI("bool"))
-                        colType = DbColumn::Type::Boolean;
-                    }
-
-                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
-                const bool colIsNotNull = stmt.GetValueInt(3) == 1;
-
-                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
-                Utf8CP colDefaultValue = stmt.GetValueText(4);
-
-                BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
-                const int pkOrdinal = stmt.GetValueInt(5) ; //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
-
-                columns.push_back(ExistingColumn(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
-                }
-
-            return SUCCESS;
-            }
-    };
 
 //****************************************************************************************
 //DbSchema
@@ -146,7 +36,7 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, Persi
 
         if (!m_ecdb.TableExists(name.c_str()))
             {
-            LOG.errorv("Table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", name);
+            LOG.errorv("Table '%s' specified in ClassMap custom attribute must exist if MapStrategy is ExistingTable.", name.c_str());
             return nullptr;
             }
         }
@@ -203,33 +93,33 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
     {
     SyncTableCache();
 
-    std::vector<DbTable*> tables;
-    for (auto& tableKey : GetExistingTableMap())
+    bvector<DbTable const*> tables;
+    for (bpair<Utf8String, DbTableId> const& tableKey : GetExistingTableMap())
         {
-        Utf8CP tableName = tableKey.first.c_str();
-        DbTable* table = FindTableP(tableName);
-        std::set<Utf8CP, CompareIUtf8Ascii> oldColumnList;
-        std::map<Utf8CP, ExistingColumn*, CompareIUtf8Ascii> newColumnList;
-        std::vector<ExistingColumn> dbColumnList;
-        if (ExistingColumn::GetColumns(dbColumnList, m_ecdb, tableName) == ERROR)
+        Utf8StringCR tableName = tableKey.first;
+        DbTable* table = FindTableP(tableName.c_str());
+        bset<Utf8StringCP, CompareIUtf8Ascii> oldColumnList;
+        bmap<Utf8StringCP, SqliteColumnInfo const*, CompareIUtf8Ascii> newColumnList;
+        bvector<SqliteColumnInfo> dbColumnList;
+        if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(dbColumnList, m_ecdb, tableName))
             {
-            BeAssert(false && "Failed to get column informations");
+            BeAssert(false);
             return ERROR;
             }
 
-        for (auto& dbColumn : dbColumnList)
-            newColumnList[dbColumn.GetName().c_str()] = &dbColumn;
+        for (SqliteColumnInfo const& dbColumn : dbColumnList)
+            newColumnList[&dbColumn.GetName()] = &dbColumn;
 
-        for (auto dbColumn : table->GetColumns())
+        for (DbColumn const* dbColumn : table->GetColumns())
             {
             if (dbColumn->GetPersistenceType() == PersistenceType::Persisted)
-                oldColumnList.insert(dbColumn->GetName().c_str());
+                oldColumnList.insert(&dbColumn->GetName());
             }
 
-        //Compute how table have changed
-        std::set<Utf8CP, CompareIUtf8Ascii> added;
-        std::set<Utf8CP, CompareIUtf8Ascii> deleted;
-        for (auto oldColumn : oldColumnList)
+        //Compute how table has changed
+        bset<Utf8StringCP, CompareIUtf8Ascii> added;
+        bset<Utf8StringCP, CompareIUtf8Ascii> deleted;
+        for (Utf8StringCP oldColumn : oldColumnList)
             {
             if (newColumnList.find(oldColumn) != newColumnList.end())
                 continue;
@@ -237,12 +127,12 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
             deleted.insert(oldColumn);
             }
 
-        for (auto const& newColumnKey : newColumnList)
+        for (bpair<Utf8StringCP, SqliteColumnInfo const*> const& kvPair : newColumnList)
             {
-            if (oldColumnList.find(newColumnKey.first) != oldColumnList.end())
+            if (oldColumnList.find(kvPair.first) != oldColumnList.end())
                 continue;
 
-            added.insert(newColumnKey.first);
+            added.insert(kvPair.first);
             }
 
         if (!deleted.empty())
@@ -254,10 +144,10 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         if (!table->GetEditHandle().CanEdit())
             table->GetEditHandleR().BeginEdit();
 
-        for (Utf8CP addColumn : added)
+        for (Utf8StringCP addColumn : added)
             {
             auto itor = newColumnList.find(addColumn);
-            if (table->CreateColumn(Utf8String(addColumn), itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
+            if (table->CreateColumn(*addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
                 {
                 BeAssert("Failed to create column");
                 return ERROR;
@@ -510,7 +400,7 @@ DbIndex* DbSchema::CreateIndex(DbIndexId id, DbTable& table, Utf8CP indexName, b
 BentleyStatus DbSchema::SaveOrUpdateTables() const
     {
     //Following return the list of table and there id from db
-    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap = GetPersistedTableMap();
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap = GetPersistedTableMap();
     for (DbTable const* table : GetCachedTables())
         {
         // This would be null in case a table is not loaded yet and if its not loaded then we do not need to update it
@@ -536,9 +426,9 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetPersistedTableMap() const
+bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetPersistedTableMap() const
     {
-    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
     if (stmt == nullptr)
         {
@@ -556,9 +446,9 @@ std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetPersistedTableMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetExistingTableMap() const
+bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetExistingTableMap() const
     {
-    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> persistedTableMap;
 
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table WHERE Type=" SQLVAL_DbTable_Type_Existing);
     if (stmt == nullptr)
@@ -577,9 +467,9 @@ std::map<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchema::GetExistingTableMap
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
-std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchema::GetPersistedColumnMap(DbTableId tableId) const
+bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchema::GetPersistedColumnMap(DbTableId tableId) const
     {
-    std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap;
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap;
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
     if (stmt == nullptr)
         {
@@ -604,12 +494,12 @@ void DbSchema::SyncTableCache() const
     if (m_syncTableCacheNames)
         return;
 
-    for (auto const& tableKey : GetPersistedTableMap())
+    for (bpair<Utf8String, DbTableId> const& tableKey : GetPersistedTableMap())
         {
         if (m_tableMapByName.find(tableKey.first) == m_tableMapByName.end())
             {
             m_tableMapByName.insert(std::make_pair(tableKey.first, std::unique_ptr<DbTable>()));
-            m_tableMapById.insert(std::make_pair(tableKey.second, tableKey.first));
+            m_tableMapById.insert(bpair<DbTableId, Utf8String>(tableKey.second, tableKey.first));
             }
         }
 
@@ -637,6 +527,7 @@ std::vector<DbTable const*> DbSchema::GetCachedTables() const
     {
     std::vector<DbTable const*> cachedTables;
     for (auto const& tableKey : m_tableMapByName)
+        {
         if (tableKey.second != nullptr)
             {
             if (tableKey.second->GetType() == DbTable::Type::Joined)
@@ -644,6 +535,8 @@ std::vector<DbTable const*> DbSchema::GetCachedTables() const
             else
                 cachedTables.insert(cachedTables.begin(), tableKey.second.get());
             }
+        }
+
     return cachedTables;
     }
 
@@ -713,7 +606,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
         return ERROR;
         }
 
-    std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap = GetPersistedColumnMap(table.GetId());
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> persistedColumnMap = GetPersistedColumnMap(table.GetId());
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement("UPDATE ec_Table SET Name =?, Type =?, IsVirtual=?, PrimaryTableId=? WHERE Id = ?");
     if (stmt == nullptr)
         return ERROR;
@@ -2208,12 +2101,12 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
 
     //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
     //cases where schema authors want to map two ECClasses to the same existing table.
-    DbTable* table = dbSchema.CreateTable(existingTableName.c_str(), DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
+    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
     if (table == nullptr)
         return nullptr;
 
-    std::vector<ExistingColumn> existingColumns;
-    if (SUCCESS != ExistingColumn::GetColumns(existingColumns, dbSchema.GetECDb(), existingTableName.c_str()))
+    bvector<SqliteColumnInfo> existingColumnInfos;
+    if (SUCCESS != DbSchemaPersistenceManager::RunPragmaTableInfo(existingColumnInfos, dbSchema.GetECDb(), existingTableName))
         {
         BeAssert(false && "Failed to get column informations");
         return nullptr;
@@ -2225,25 +2118,25 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     DbColumn* idColumn = nullptr;
     std::vector<DbColumn*> pkColumns;
     std::vector<size_t> pkOrdinals;
-    for (ExistingColumn const& col : existingColumns)
+    for (SqliteColumnInfo const& colInfo : existingColumnInfos)
         {
-        DbColumn* column = table->CreateColumn(col.GetName(), col.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
             return nullptr;
             }
 
-        if (!col.GetDefault().empty())
-            column->GetConstraintsR().SetDefaultValueExpression(col.GetDefault().c_str());
+        if (!colInfo.GetDefaultConstraint().empty())
+            column->GetConstraintsR().SetDefaultValueExpression(colInfo.GetDefaultConstraint().c_str());
 
-        if (col.IsNotNull())
+        if (colInfo.IsNotNull())
             column->GetConstraintsR().SetNotNullConstraint();
 
-        if (col.GetPrimaryKeyOrdinal() > 0)
+        if (colInfo.GetPrimaryKeyOrdinal() > 0)
             {
             pkColumns.push_back(column);
-            pkOrdinals.push_back(static_cast<size_t>(col.GetPrimaryKeyOrdinal() - 1));
+            pkOrdinals.push_back(static_cast<size_t>(colInfo.GetPrimaryKeyOrdinal() - 1));
             }
 
         if (column->GetName().EqualsIAscii(primaryKeyColName))

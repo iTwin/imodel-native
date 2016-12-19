@@ -45,7 +45,7 @@ void BlobToBase64::_ComputeScalar(Context& ctx, int nArgs, DbValue* args)
         return;
         }
 
-    const Byte const* blob = static_cast<const Byte const*> (blobArg.GetValueBlob());
+    Byte const* blob = static_cast<Byte const*> (blobArg.GetValueBlob());
     const int byteCount = blobArg.GetValueBytes();
     BeAssert(byteCount >= 0);
     Utf8String str;

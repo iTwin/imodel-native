@@ -495,14 +495,11 @@ public:
         Trigger
         };
 
-    typedef std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> TableMapByName;
-    typedef std::map<DbTableId, Utf8String> TableMapById;
-
 private:
     ECDbCR m_ecdb;
     DbSchemaNameGenerator m_nameGenerator;
-    mutable TableMapByName m_tableMapByName;
-    mutable TableMapById m_tableMapById;
+    mutable std::map<Utf8String, std::unique_ptr<DbTable>, CompareIUtf8Ascii> m_tableMapByName;
+    mutable bmap<DbTableId, Utf8String> m_tableMapById;
 
     mutable DbTable* m_nullTable;
     mutable std::vector<std::unique_ptr<DbIndex>> m_indexes;
@@ -521,9 +518,9 @@ private:
 
     bool IsTableNameInUse(Utf8StringCR tableName) const;
 
-    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> GetPersistedTableMap() const;
-    std::map<Utf8String, DbTableId, CompareIUtf8Ascii> GetExistingTableMap() const;
-    std::map<Utf8String, DbColumnId, CompareIUtf8Ascii> GetPersistedColumnMap(DbTableId) const;
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetPersistedTableMap() const;
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetExistingTableMap() const;
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetPersistedColumnMap(DbTableId) const;
 
 public:
     explicit DbSchema(ECDbCR ecdb) : m_ecdb(ecdb), m_nameGenerator("ecdb_%d"), m_nullTable(nullptr), m_indexesLoaded(false), m_syncTableCacheNames(false) { }

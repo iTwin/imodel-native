@@ -686,4 +686,70 @@ void DbSchemaPersistenceManager::DoAppendForeignKeyDdl(Utf8StringR ddl, ForeignK
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        01/2016
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR ecdb, Utf8StringCR tableName)
+    {
+    colInfos.clear();
+    Utf8String sql("PRAGMA table_info('");
+    sql.append(tableName).append("')");
+
+    Statement stmt;
+    if (stmt.Prepare(ecdb, sql.c_str()) != BE_SQLITE_OK)
+        return ERROR;
+
+    while (stmt.Step() == BE_SQLITE_ROW)
+        {
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(1), "name") == 0);
+        Utf8String colName(stmt.GetValueText(1));
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(2), "type") == 0);
+        Utf8String colTypeName;
+        if (!stmt.IsColumnNull(2))
+            colTypeName.assign(stmt.GetValueText(2));
+
+        DbColumn::Type colType = DbColumn::Type::Any;
+        if (!colTypeName.empty())
+            {
+            if (colTypeName.ContainsI("long") ||
+                colTypeName.ContainsI("int"))
+                colType = DbColumn::Type::Integer;
+            else if (colTypeName.ContainsI("char") ||
+                     colTypeName.ContainsI("clob") ||
+                     colTypeName.ContainsI("text"))
+                colType = DbColumn::Type::Text;
+            else if (colTypeName.ContainsI("blob") ||
+                     colTypeName.ContainsI("binary"))
+                colType = DbColumn::Type::Blob;
+            else if (colTypeName.ContainsI("real") ||
+                     colTypeName.ContainsI("floa") ||
+                     colTypeName.ContainsI("doub"))
+                colType = DbColumn::Type::Real;
+            else if (colTypeName.ContainsI("date") ||
+                     colTypeName.ContainsI("timestamp"))
+                colType = DbColumn::Type::TimeStamp;
+            else if (colTypeName.ContainsI("bool"))
+                colType = DbColumn::Type::Boolean;
+            }
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
+        const bool colIsNotNull = stmt.GetValueInt(3) == 1;
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
+        Utf8String colDefaultValue;
+        if (!stmt.IsColumnNull(4))
+            colDefaultValue.assign(stmt.GetValueText(4));
+
+        BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(5), "pk") == 0);
+        const int pkOrdinal = stmt.GetValueInt(5); //PK column ordinals returned by this pragma are 1-based as 0 indicates "not a PK col"
+
+        colInfos.push_back(SqliteColumnInfo(colName, colType, pkOrdinal, colIsNotNull, colDefaultValue));
+        }
+
+    return SUCCESS;
+    }
+
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

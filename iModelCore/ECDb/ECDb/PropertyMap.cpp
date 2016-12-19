@@ -640,17 +640,27 @@ RefCountedPtr<SystemPropertyMap> PropertyMapCopier::CreateCopy(SystemPropertyMap
         columns.push_back(&child->GetColumn());
         }
 
-    if (auto pm = dynamic_cast<ECInstanceIdPropertyMap const*>(&propertyMap))
+    if (propertyMap.GetType() == PropertyMap::Type::ECInstanceId)
         return ECInstanceIdPropertyMap::CreateInstance(newContext, columns);
 
-    if (auto pm = dynamic_cast<ECClassIdPropertyMap const*>(&propertyMap))
-        return ECClassIdPropertyMap::CreateInstance(newContext, pm->GetDefaultECClassId(), columns);
+    if (propertyMap.GetType() == PropertyMap::Type::ECClassId)
+        {
+        BeAssert(dynamic_cast<ECClassIdPropertyMap const*>(&propertyMap) != nullptr);
+        return ECClassIdPropertyMap::CreateInstance(newContext, static_cast<ECClassIdPropertyMap const&> (propertyMap).GetDefaultECClassId(), columns);
+        }
 
-    if (auto pm = dynamic_cast<ConstraintECInstanceIdPropertyMap const*>(&propertyMap))
-        return ConstraintECInstanceIdPropertyMap::CreateInstance(newContext, pm->GetEnd(), columns);
+    if (propertyMap.GetType() == PropertyMap::Type::ConstraintECInstanceId)
+        {
+        BeAssert(dynamic_cast<ConstraintECInstanceIdPropertyMap const*>(&propertyMap) != nullptr);
+        return ConstraintECInstanceIdPropertyMap::CreateInstance(newContext, static_cast<ConstraintECInstanceIdPropertyMap const&> (propertyMap).GetEnd(), columns);
+        }
 
-    if (auto pm = dynamic_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap))
-        return ConstraintECClassIdPropertyMap::CreateInstance(newContext, pm->GetDefaultECClassId(), pm->GetEnd(), columns);
+    if (propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId)
+        {
+        BeAssert(dynamic_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap) != nullptr);
+        ConstraintECClassIdPropertyMap const& constraintECClassIdPropMap = static_cast<ConstraintECClassIdPropertyMap const&> (propertyMap);
+        return ConstraintECClassIdPropertyMap::CreateInstance(newContext, constraintECClassIdPropMap.GetDefaultECClassId(), constraintECClassIdPropMap.GetEnd(), columns);
+        }
 
     BeAssert(false && "Unhandled case");
     return nullptr;

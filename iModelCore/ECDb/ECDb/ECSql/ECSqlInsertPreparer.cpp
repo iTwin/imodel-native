@@ -110,9 +110,8 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoLinkTableRelationship(ECSqlPre
 ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, InsertStatementExp const& exp, RelationshipClassEndTableMap const& relationshipClassMap)
     {
     const ECRelationshipEnd foreignEnd = relationshipClassMap.GetForeignEnd();
-    const ECRelationshipEnd referencedEnd = relationshipClassMap.GetReferencedEnd();
 
-    auto const& specialTokenExpIndexMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
+    SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetPropertyNameListExp()->GetSpecialTokenExpIndexMap();
 
     std::vector<size_t> expIndexSkipList;
     //if ECInstanceId was specified, put it in skip list as it will always be ignored for end table mappings

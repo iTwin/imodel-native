@@ -293,8 +293,6 @@ NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& li
 NativeSqlBuilder::List NativeSqlBuilder::FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t,std::vector<size_t>> const& indexSkipList)
     {
     List flattenedList;
-    auto skipIt = indexSkipList.begin();
-    auto skipEndIt = indexSkipList.end();
     for (size_t i = 0; i < listOfLists.size(); i++)
         {
         NativeSqlBuilder::List const& innerList = listOfLists[i];

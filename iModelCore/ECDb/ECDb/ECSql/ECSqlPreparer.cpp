@@ -1117,7 +1117,6 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     ECSqlStatus r;
 
     auto& sql = ctx.GetSqlBuilderR();
-    const auto ecsqlType = ctx.GetCurrentScope().GetECSqlType();
 
     ///Resolve direction of the relationship
     auto& fromEP = exp.GetResolvedFromEndPoint();

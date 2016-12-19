@@ -12,6 +12,30 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //======================================================================================
+//! Represents one row of the result set when running the SQLite pragma table_info
+// @bsiclass                                                 Affan.Khan         06/2016
+//======================================================================================
+struct SqliteColumnInfo
+    {
+    private:
+        Utf8String m_name;
+        DbColumn::Type m_type;
+        int m_pkordinal;
+        bool m_isnotnull;
+        Utf8String m_defaultConstraint;
+
+    public:
+        SqliteColumnInfo(Utf8StringCR name, DbColumn::Type type, int pkordinal, bool isnotnull, Utf8StringCR defaultConstraint)
+            :m_name(name), m_type(type), m_pkordinal(pkordinal), m_isnotnull(isnotnull), m_defaultConstraint(defaultConstraint) {}
+
+        DbColumn::Type GetType() const { return m_type; }
+        Utf8StringCR GetName() const { return m_name; }
+        int GetPrimaryKeyOrdinal() const { return m_pkordinal; }
+        bool IsNotNull() const { return m_isnotnull; }
+        Utf8StringCR GetDefaultConstraint() const { return m_defaultConstraint; }
+    };
+
+//======================================================================================
 // @bsiclass                                                 Affan.Khan         09/2014
 //======================================================================================
 struct DbSchemaPersistenceManager : public NonCopyableClass
@@ -26,6 +50,7 @@ public:
         Error = 5
         };
 
+    
 private:
     DbSchemaPersistenceManager();
     ~DbSchemaPersistenceManager();
@@ -54,6 +79,8 @@ public:
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&, DbSchemaModificationToken const*);
     static BentleyStatus RepopulateClassHierarchyCacheTable(ECDbCR);
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
+
+    static BentleyStatus RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
