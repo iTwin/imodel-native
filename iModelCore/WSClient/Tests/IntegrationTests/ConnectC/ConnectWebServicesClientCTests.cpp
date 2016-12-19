@@ -161,6 +161,8 @@ TEST_F (ConnectWebServicesClientCTests, Ctor_NoProxyUrlOrCredentials_ApiIsNotNul
     ASSERT_TRUE (status == SUCCESS);
     }
 
+#ifdef WIP_MERGE_Vincas
+
 TEST_F (ConnectWebServicesClientCTests, ReadProject_ProjectExists_SuccessfulRetreival)
     {
     auto api = ConnectWebServicesClientC_InitializeApiWithCredentials
@@ -1009,3 +1011,5 @@ TEST_F (ConnectWebServicesClientCTests, CRUDProjectMRUV2Functions_CRUDsSuccessfu
     ASSERT_TRUE (status == SUCCESS);
     }
 
+#endif
+    
