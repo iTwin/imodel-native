@@ -63,7 +63,9 @@
 #endif
 
 #include <folly/Portability.h>
+#include <folly/portability/Builtins.h>
 
+#include <folly/Assume.h>
 #include <folly/detail/BitsDetail.h>
 #include <folly/detail/BitIteratorDetail.h>
 #include <folly/Likely.h>
@@ -77,9 +79,7 @@
 #include <iterator>
 #include <limits>
 #include <type_traits>
-#if defined (BENTLEY_CHANGE)
-#include <boost/iterator/iterator_adaptor.hpp>
-#endif
+//#include <boost/iterator/iterator_adaptor.hpp>
 #include <stdint.h>
 
 namespace folly {
@@ -143,7 +143,9 @@ typename std::enable_if<
    sizeof(T) <= sizeof(unsigned int)),
   unsigned int>::type
   findLastSet(T x) {
-  return x ? 8 * sizeof(unsigned int) - __builtin_clz(x) : 0;
+  // If X is a power of two X - Y = ((X - 1) ^ Y) + 1. Doing this transformation
+  // allows GCC to remove its own xor that it adds to implement clz using bsr
+  return x ? ((8 * sizeof(unsigned int) - 1) ^ __builtin_clz(x)) + 1 : 0;
 }
 
 template <class T>
@@ -155,7 +157,7 @@ typename std::enable_if<
    sizeof(T) <= sizeof(unsigned long)),
   unsigned int>::type
   findLastSet(T x) {
-  return x ? 8 * sizeof(unsigned long) - __builtin_clzl(x) : 0;
+  return x ? ((8 * sizeof(unsigned long) - 1) ^ __builtin_clzl(x)) + 1 : 0;
 }
 
 template <class T>
@@ -167,7 +169,8 @@ typename std::enable_if<
    sizeof(T) <= sizeof(unsigned long long)),
   unsigned int>::type
   findLastSet(T x) {
-  return x ? 8 * sizeof(unsigned long long) - __builtin_clzll(x) : 0;
+  return x ? ((8 * sizeof(unsigned long long) - 1) ^ __builtin_clzll(x)) + 1
+           : 0;
 }
 
 template <class T>
@@ -186,14 +189,20 @@ typename std::enable_if<
   std::is_integral<T>::value && std::is_unsigned<T>::value,
   T>::type
 nextPowTwo(T v) {
-  return v ? (1ul << findLastSet(v - 1)) : 1;
+  return v ? (T(1) << findLastSet(v - 1)) : 1;
 }
 
 template <class T>
-inline constexpr
-typename std::enable_if<
-  std::is_integral<T>::value && std::is_unsigned<T>::value,
-  bool>::type
+inline FOLLY_INTRINSIC_CONSTEXPR typename std::
+    enable_if<std::is_integral<T>::value && std::is_unsigned<T>::value, T>::type
+    prevPowTwo(T v) {
+  return v ? (T(1) << (findLastSet(v) - 1)) : 0;
+}
+
+template <class T>
+inline constexpr typename std::enable_if<
+    std::is_integral<T>::value && std::is_unsigned<T>::value,
+    bool>::type
 isPowTwo(T v) {
   return (v != 0) && !(v & (v - 1));
 }
@@ -376,18 +385,11 @@ class BitIterator
    * Construct a BitIterator that points at a given bit offset (default 0)
    * in iter.
    */
-#if defined (BENTLEY_CHANGE)
-  #pragma GCC diagnostic push // bitOffset shadows a member
-  #pragma GCC diagnostic ignored "-Wshadow"
-#endif
-  explicit BitIterator(const BaseIter& iter, size_t bitOffset=0)
+  explicit BitIterator(const BaseIter& iter, size_t bitOff=0)
     : bititerator_detail::BitIteratorBase<BaseIter>::type(iter),
-      bitOffset_(bitOffset) {
+      bitOffset_(bitOff) {
     assert(bitOffset_ < bitsPerBlock());
   }
-#if defined (BENTLEY_CHANGE)
-  #pragma GCC diagnostic pop
-#endif
 
   size_t bitOffset() const {
     return bitOffset_;
@@ -405,9 +407,7 @@ class BitIterator
   }
 
  private:
-#if defined (BENTLEY_CHANGE)
-  friend class boost::iterator_core_access;
-#endif
+//  friend class boost::iterator_core_access;
   friend BitIterator findFirstSet<>(BitIterator, BitIterator);
 
   typedef bititerator_detail::BitReference<
@@ -556,6 +556,12 @@ inline void storeUnaligned(void* p, T value) {
   static_assert(sizeof(Unaligned<T>) == sizeof(T), "Invalid unaligned size");
   static_assert(alignof(Unaligned<T>) == 1, "Invalid alignment");
   if (kHasUnalignedAccess) {
+    // Prior to C++14, the spec says that a placement new like this
+    // is required to check that p is not nullptr, and to do nothing
+    // if p is a nullptr. By assuming it's not a nullptr, we get a
+    // nice loud segfault in optimized builds if p is nullptr, rather
+    // than just silently doing nothing.
+    folly::assume(p != nullptr);
     new (p) Unaligned<T>(value);
   } else {
     memcpy(p, &value, sizeof(T));

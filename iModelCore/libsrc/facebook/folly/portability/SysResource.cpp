@@ -19,6 +19,7 @@
 #ifdef _WIN32
 #include <folly/portability/Windows.h>
 
+#if defined (BENTLEY_CHANGE)
 extern "C" {
 int getrlimit(int type, rlimit* dst) {
   if (type == RLIMIT_STACK) {
@@ -42,4 +43,5 @@ int setrlimit(int type, rlimit* src) {
   return 0;
 }
 }
+#endif
 #endif

@@ -22,17 +22,20 @@
 #include <folly/FBString.h>
 #include <folly/Portability.h>
 #include <folly/SpookyHashV2.h>
+#include <folly/portability/BitsFunctexcept.h>
 #include <folly/portability/Constexpr.h>
 #include <folly/portability/String.h>
 
 #include <algorithm>
 #if defined (BENTLEY_CHANGE)
 #include <boost/operators.hpp>
-#include <glog/logging.h>
 #endif
 #include <climits>
 #include <cstddef>
 #include <cstring>
+#if defined (BENTLEY_CHANGE)
+#include <glog/logging.h>
+#endif
 #include <iosfwd>
 #include <stdexcept>
 #include <string>
@@ -221,7 +224,7 @@ public:
   template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
   Range(const std::string& str, std::string::size_type startFrom) {
     if (UNLIKELY(startFrom > str.size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
     e_ = str.data() + str.size();
@@ -232,7 +235,7 @@ public:
         std::string::size_type startFrom,
         std::string::size_type size) {
     if (UNLIKELY(startFrom > str.size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
     if (str.size() - startFrom < size) {
@@ -255,7 +258,7 @@ public:
   template <class T = Iter, typename detail::IsCharPointer<T>::const_type = 0>
   Range(const fbstring& str, fbstring::size_type startFrom) {
     if (UNLIKELY(startFrom > str.size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
     e_ = str.data() + str.size();
@@ -265,7 +268,7 @@ public:
   Range(const fbstring& str, fbstring::size_type startFrom,
         fbstring::size_type size) {
     if (UNLIKELY(startFrom > str.size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     b_ = str.data() + startFrom;
     if (str.size() - startFrom < size) {
@@ -357,20 +360,39 @@ public:
     reset(str.data(), str.size());
   }
 
-  size_type size() const {
-    assert(b_ <= e_);
+  constexpr size_type size() const {
+    // It would be nice to assert(b_ <= e_) here.  This can be achieved even
+    // in a C++11 compatible constexpr function:
+    // http://ericniebler.com/2014/09/27/assert-and-constexpr-in-cxx11/
+    // Unfortunately current gcc versions have a bug causing it to reject
+    // this check in a constexpr function:
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=71448
     return e_ - b_;
   }
-  size_type walk_size() const {
+  constexpr size_type walk_size() const {
     return std::distance(b_, e_);
   }
-  bool empty() const { return b_ == e_; }
-  Iter data() const { return b_; }
-  Iter start() const { return b_; }
-  Iter begin() const { return b_; }
-  Iter end() const { return e_; }
-  Iter cbegin() const { return b_; }
-  Iter cend() const { return e_; }
+  constexpr bool empty() const {
+    return b_ == e_;
+  }
+  constexpr Iter data() const {
+    return b_;
+  }
+  constexpr Iter start() const {
+    return b_;
+  }
+  constexpr Iter begin() const {
+    return b_;
+  }
+  constexpr Iter end() const {
+    return e_;
+  }
+  constexpr Iter cbegin() const {
+    return b_;
+  }
+  constexpr Iter cend() const {
+    return e_;
+  }
   value_type& front() {
     assert(b_ < e_);
     return *b_;
@@ -396,7 +418,7 @@ public:
 
   const_range_type castToConst() const {
     return const_range_type(*this);
-  };
+  }
 
   // Works only for Range<const char*> and Range<char*>
   int compare(const const_range_type& o) const {
@@ -425,12 +447,12 @@ public:
   }
 
   value_type& at(size_t i) {
-    if (i >= size()) throw std::out_of_range("index out of range");
+    if (i >= size()) std::__throw_out_of_range("index out of range");
     return b_[i];
   }
 
   const value_type& at(size_t i) const {
-    if (i >= size()) throw std::out_of_range("index out of range");
+    if (i >= size()) std::__throw_out_of_range("index out of range");
     return b_[i];
   }
 
@@ -440,6 +462,19 @@ public:
   // (The above advice does not apply if you are targeting a 32-bit system.)
   //
   // Works only for Range<const char*> and Range<char*>
+  //
+  //
+  //         ** WANT TO GET RID OF THIS LINT? **
+  //
+  // A) Use a better hash function (*cough*folly::Hash*cough*), but
+  //    only if you don't serialize data in a format that depends on
+  //    this formula (ie the writer and reader assume this exact hash
+  //    function is used).
+  //
+  // B) If you have to use this exact function then make your own hasher
+  //    object and copy the body over (see thrift example: D3972362).
+  //    https://github.com/facebook/fbthrift/commit/f8ed502e24ab4a32a9d5f266580
+  FOLLY_DEPRECATED("Replace with folly::Hash if the hash is not serialized")
   uint32_t hash() const {
     // Taken from fbi/nstring.h:
     //    Quick and dirty bernstein hash...fine for short ascii strings
@@ -452,16 +487,40 @@ public:
 
   void advance(size_type n) {
     if (UNLIKELY(n > size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     b_ += n;
   }
 
   void subtract(size_type n) {
     if (UNLIKELY(n > size())) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     e_ -= n;
+  }
+
+  Range subpiece(size_type first, size_type length = npos) const {
+    if (UNLIKELY(first > size())) {
+      std::__throw_out_of_range("index out of range");
+    }
+
+    return Range(b_ + first, std::min(length, size() - first));
+  }
+
+  // unchecked versions
+  void uncheckedAdvance(size_type n) {
+    DCHECK_LE(n, size());
+    b_ += n;
+  }
+
+  void uncheckedSubtract(size_type n) {
+    DCHECK_LE(n, size());
+    e_ -= n;
+  }
+
+  Range uncheckedSubpiece(size_type first, size_type length = npos) const {
+    DCHECK_LE(first, size());
+    return Range(b_ + first, std::min(length, size() - first));
   }
 
   void pop_front() {
@@ -472,14 +531,6 @@ public:
   void pop_back() {
     assert(b_ < e_);
     --e_;
-  }
-
-  Range subpiece(size_type first, size_type length = npos) const {
-    if (UNLIKELY(first > size())) {
-      throw std::out_of_range("index out of range");
-    }
-
-    return Range(b_ + first, std::min(length, size() - first));
   }
 
   // string work-alike functions
@@ -611,7 +662,7 @@ public:
     } else if (e == e_) {
       e_ = b;
     } else {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
   }
 
@@ -833,7 +884,7 @@ void swap(Range<T>& lhs, Range<T>& rhs) {
  * Create a range from two iterators, with type deduction.
  */
 template <class Iter>
-Range<Iter> range(Iter first, Iter last) {
+constexpr Range<Iter> range(Iter first, Iter last) {
   return Range<Iter>(first, last);
 }
 
@@ -841,16 +892,23 @@ Range<Iter> range(Iter first, Iter last) {
  * Creates a range to reference the contents of a contiguous-storage container.
  */
 // Use pointers for types with '.data()' member
-template <class Collection,
-          class T = typename std::remove_pointer<
-              decltype(std::declval<Collection>().data())>::type>
-Range<T*> range(Collection&& v) {
+template <
+    class Collection,
+    class T = typename std::remove_pointer<
+        decltype(std::declval<Collection>().data())>::type>
+constexpr Range<T*> range(Collection&& v) {
   return Range<T*>(v.data(), v.data() + v.size());
 }
 
 template <class T, size_t n>
-Range<T*> range(T (&array)[n]) {
+constexpr Range<T*> range(T (&array)[n]) {
   return Range<T*>(array, array + n);
+}
+
+template <class T, size_t n>
+constexpr Range<const T*> range(const std::array<T, n>& array) {
+  using r = Range<const T*>;
+  return array.empty() ? r{} : r(&array.at(0), &array.at(0) + n);
 }
 
 typedef Range<const char*> StringPiece;
@@ -953,13 +1011,6 @@ std::enable_if<detail::ComparableAsStringPiece<T, U>::value, bool>::type
 operator>=(const T& lhs, const U& rhs) {
   return StringPiece(lhs) >= StringPiece(rhs);
 }
-
-// Do NOT use this, use SpookyHashV2 instead, see commment on hash() above.
-struct StringPieceHash {
-  std::size_t operator()(const StringPiece str) const {
-    return static_cast<std::size_t>(str.hash());
-  }
-};
 
 /**
  * Finds substrings faster than brute force by borrowing from Boyer-Moore
@@ -1084,6 +1135,10 @@ size_t rfind(const Range<T>& haystack,
 // specialization for StringPiece
 template <>
 inline size_t qfind(const Range<const char*>& haystack, const char& needle) {
+  // memchr expects a not-null pointer, early return if the range is empty.
+  if (haystack.empty()) {
+    return std::string::npos;
+  }
   auto pos = static_cast<const char*>(
     ::memchr(haystack.data(), needle, haystack.size()));
   return pos == nullptr ? std::string::npos : pos - haystack.data();
@@ -1091,6 +1146,10 @@ inline size_t qfind(const Range<const char*>& haystack, const char& needle) {
 
 template <>
 inline size_t rfind(const Range<const char*>& haystack, const char& needle) {
+  // memchr expects a not-null pointer, early return if the range is empty.
+  if (haystack.empty()) {
+    return std::string::npos;
+  }
   auto pos = static_cast<const char*>(
     ::memrchr(haystack.data(), needle, haystack.size()));
   return pos == nullptr ? std::string::npos : pos - haystack.data();
@@ -1100,6 +1159,10 @@ inline size_t rfind(const Range<const char*>& haystack, const char& needle) {
 template <>
 inline size_t qfind(const Range<const unsigned char*>& haystack,
                     const unsigned char& needle) {
+  // memchr expects a not-null pointer, early return if the range is empty.
+  if (haystack.empty()) {
+    return std::string::npos;
+  }
   auto pos = static_cast<const unsigned char*>(
     ::memchr(haystack.data(), needle, haystack.size()));
   return pos == nullptr ? std::string::npos : pos - haystack.data();
@@ -1108,6 +1171,10 @@ inline size_t qfind(const Range<const unsigned char*>& haystack,
 template <>
 inline size_t rfind(const Range<const unsigned char*>& haystack,
                     const unsigned char& needle) {
+  // memchr expects a not-null pointer, early return if the range is empty.
+  if (haystack.empty()) {
+    return std::string::npos;
+  }
   auto pos = static_cast<const unsigned char*>(
     ::memrchr(haystack.data(), needle, haystack.size()));
   return pos == nullptr ? std::string::npos : pos - haystack.data();
@@ -1143,6 +1210,14 @@ struct hasher<folly::Range<T*>,
   size_t operator()(folly::Range<T*> r) const {
     return hash::SpookyHashV2::Hash64(r.begin(), r.size() * sizeof(T), 0);
   }
+};
+
+/**
+ * Ubiquitous helper template for knowing what's a string
+ */
+template <class T> struct IsSomeString {
+  enum { value = std::is_same<T, std::string>::value
+         || std::is_same<T, fbstring>::value };
 };
 
 }  // !namespace folly

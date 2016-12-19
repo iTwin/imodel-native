@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Timekeeper.h>
+#include <folly/portability/GTest.h>
 #include <folly/portability/Unistd.h>
 
 using namespace folly;
@@ -129,7 +128,7 @@ TEST(Timekeeper, futureWithinException) {
 
 TEST(Timekeeper, onTimeout) {
   bool flag = false;
-  makeFuture(42).delayed(one_ms)
+  makeFuture(42).delayed(10 * one_ms)
     .onTimeout(zero_ms, [&]{ flag = true; return -1; })
     .get();
   EXPECT_TRUE(flag);
@@ -137,7 +136,7 @@ TEST(Timekeeper, onTimeout) {
 
 TEST(Timekeeper, onTimeoutReturnsFuture) {
   bool flag = false;
-  makeFuture(42).delayed(one_ms)
+  makeFuture(42).delayed(10 * one_ms)
     .onTimeout(zero_ms, [&]{ flag = true; return makeFuture(-1); })
     .get();
   EXPECT_TRUE(flag);

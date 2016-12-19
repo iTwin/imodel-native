@@ -62,11 +62,13 @@
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
+#include <stdexcept>
+#include <type_traits>
 #include <utility>
 #include <vector>
+
 #include <boost/operators.hpp>
-#include <boost/bind.hpp>
-#include <boost/type_traits/is_same.hpp>
+#include <folly/portability/BitsFunctexcept.h>
 
 namespace folly {
 
@@ -105,7 +107,7 @@ namespace detail {
   template<class Iterator>
   int distance_if_multipass(Iterator first, Iterator last) {
     typedef typename std::iterator_traits<Iterator>::iterator_category categ;
-    if (boost::is_same<categ,std::input_iterator_tag>::value)
+    if (std::is_same<categ,std::input_iterator_tag>::value)
       return -1;
     return std::distance(first, last);
   }
@@ -214,7 +216,7 @@ public:
     insert(first, last);
   }
 
-  explicit sorted_vector_set(
+  /* implicit */ sorted_vector_set(
       std::initializer_list<value_type> list,
       const Compare& comp = Compare(),
       const Allocator& alloc = Allocator())
@@ -228,7 +230,9 @@ public:
 
   iterator begin()                      { return m_.cont_.begin();  }
   iterator end()                        { return m_.cont_.end();    }
+  const_iterator cbegin() const         { return m_.cont_.cbegin(); }
   const_iterator begin() const          { return m_.cont_.begin();  }
+  const_iterator cend() const           { return m_.cont_.cend();   }
   const_iterator end() const            { return m_.cont_.end();    }
   reverse_iterator rbegin()             { return m_.cont_.rbegin(); }
   reverse_iterator rend()               { return m_.cont_.rend();   }
@@ -244,7 +248,7 @@ public:
   size_type capacity() const    { return m_.cont_.capacity(); }
 
   std::pair<iterator,bool> insert(const value_type& value) {
-    return insert(value_type(value));
+    return insert(std::move(value_type(value)));
   }
 
   std::pair<iterator,bool> insert(value_type&& value) {
@@ -257,7 +261,7 @@ public:
   }
 
   iterator insert(iterator hint, const value_type& value) {
-    return insert(hint, value_type(value));
+    return insert(hint, std::move(value_type(value)));
   }
 
   iterator insert(iterator hint, value_type&& value) {
@@ -277,7 +281,7 @@ public:
   }
 
   size_type erase(const key_type& key) {
-    iterator it = lower_bound(key);
+    iterator it = find(key);
     if (it == end()) {
       return 0;
     }
@@ -419,10 +423,7 @@ public:
   typedef std::pair<key_type,mapped_type>           value_type;
   typedef Compare                                   key_compare;
 
-  struct value_compare
-    : std::binary_function<value_type,value_type,bool>
-    , private Compare
-  {
+  struct value_compare : private Compare {
     bool operator()(const value_type& a, const value_type& b) const {
       return Compare::operator()(a.first, b.first);
     }
@@ -472,7 +473,9 @@ public:
 
   iterator begin()                      { return m_.cont_.begin();  }
   iterator end()                        { return m_.cont_.end();    }
+  const_iterator cbegin() const         { return m_.cont_.cbegin(); }
   const_iterator begin() const          { return m_.cont_.begin();  }
+  const_iterator cend() const           { return m_.cont_.cend();   }
   const_iterator end() const            { return m_.cont_.end();    }
   reverse_iterator rbegin()             { return m_.cont_.rbegin(); }
   reverse_iterator rend()               { return m_.cont_.rend();   }
@@ -488,7 +491,7 @@ public:
   size_type capacity() const    { return m_.cont_.capacity(); }
 
   std::pair<iterator,bool> insert(const value_type& value) {
-    return insert(value_type(value));
+    return insert(std::move(value_type(value)));
   }
 
   std::pair<iterator,bool> insert(value_type&& value) {
@@ -501,7 +504,7 @@ public:
   }
 
   iterator insert(iterator hint, const value_type& value) {
-    return insert(hint, value_type(value));
+    return insert(hint, std::move(value_type(value)));
   }
 
   iterator insert(iterator hint, value_type&& value) {
@@ -556,7 +559,7 @@ public:
     if (it != end()) {
       return it->second;
     }
-    throw std::out_of_range("sorted_vector_map::at");
+    std::__throw_out_of_range("sorted_vector_map::at");
   }
 
   const mapped_type& at(const key_type& key) const {
@@ -564,7 +567,7 @@ public:
     if (it != end()) {
       return it->second;
     }
-    throw std::out_of_range("sorted_vector_map::at");
+    std::__throw_out_of_range("sorted_vector_map::at");
   }
 
   size_type count(const key_type& key) const {
@@ -572,23 +575,35 @@ public:
   }
 
   iterator lower_bound(const key_type& key) {
-    return std::lower_bound(begin(), end(), key,
-      boost::bind(key_comp(), boost::bind(&value_type::first, _1), _2));
+    auto c = key_comp();
+    auto f = [&](const value_type& a, const key_type& b) {
+      return c(a.first, b);
+    };
+    return std::lower_bound(begin(), end(), key, f);
   }
 
   const_iterator lower_bound(const key_type& key) const {
-    return std::lower_bound(begin(), end(), key,
-      boost::bind(key_comp(), boost::bind(&value_type::first, _1), _2));
+    auto c = key_comp();
+    auto f = [&](const value_type& a, const key_type& b) {
+      return c(a.first, b);
+    };
+    return std::lower_bound(begin(), end(), key, f);
   }
 
   iterator upper_bound(const key_type& key) {
-    return std::upper_bound(begin(), end(), key,
-      boost::bind(key_comp(), _1, boost::bind(&value_type::first, _2)));
+    auto c = key_comp();
+    auto f = [&](const key_type& a, const value_type& b) {
+      return c(a, b.first);
+    };
+    return std::upper_bound(begin(), end(), key, f);
   }
 
   const_iterator upper_bound(const key_type& key) const {
-    return std::upper_bound(begin(), end(), key,
-      boost::bind(key_comp(), _1, boost::bind(&value_type::first, _2)));
+    auto c = key_comp();
+    auto f = [&](const key_type& a, const value_type& b) {
+      return c(a, b.first);
+    };
+    return std::upper_bound(begin(), end(), key, f);
   }
 
   std::pair<iterator,iterator> equal_range(const key_type& key) {
@@ -596,8 +611,11 @@ public:
     // argument types different from the iterator value_type, so we
     // have to do this.
     iterator low = lower_bound(key);
-    iterator high = std::upper_bound(low, end(), key,
-      boost::bind(key_comp(), _1, boost::bind(&value_type::first, _2)));
+    auto c = key_comp();
+    auto f = [&](const key_type& a, const value_type& b) {
+      return c(a, b.first);
+    };
+    iterator high = std::upper_bound(low, end(), key, f);
     return std::make_pair(low, high);
   }
 

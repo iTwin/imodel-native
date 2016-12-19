@@ -8,6 +8,8 @@
 #pragma once
 #include <folly/BeFolly.h>
 #include <folly/Singleton.h>
+#include <folly/SingletonThreadLocal.h>
+#include <folly/io/async/Request.h>
 
 using namespace BeFolly;
 
@@ -20,7 +22,7 @@ void ThreadPool::Worker::Work()
 
     for (;;)
         {
-        std::function<void()> task;
+        folly::Function<void()> task;
             {
             BeMutexHolder lock(m_pool.m_cv.GetMutex());
             while (!m_pool.HasWork() && !m_pool.IsStopped())
@@ -88,7 +90,7 @@ void ThreadPool::add(folly::Func func)
             BeAssert(false);
             return;
             }
-        m_tasks.emplace(func);
+        m_tasks.emplace(std::move(func));
         }
 
     m_cv.notify_one();
@@ -155,3 +157,12 @@ ThreadPool& ThreadPool::GetCpuPool()
     static folly::Singleton<CpuThreadPoolImp> s_pool;
     return *s_pool.try_get_fast();
     }
+
+namespace folly{
+template<>
+    LeakySingleton<ThreadLocal<SingletonThreadLocal<std::shared_ptr<RequestContext>,detail::DefaultTag>::Wrapper,void,void>,detail::DefaultTag>::Entry &
+    LeakySingleton<ThreadLocal<SingletonThreadLocal<std::shared_ptr<RequestContext>,detail::DefaultTag>::Wrapper,void,void>,detail::DefaultTag>::entryInstance(){
+    static auto entry = detail::createGlobal<Entry, void>();
+    return *entry;
+  }
+}

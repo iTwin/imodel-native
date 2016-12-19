@@ -50,9 +50,10 @@
 #endif
 
 // Defined in the GDI interface.
-#ifdef ERROR
 #undef ERROR
-#endif
+#undef SUCCESS
+#undef min
+#undef max
 
 // Defined in minwindef.h
 #ifdef IN

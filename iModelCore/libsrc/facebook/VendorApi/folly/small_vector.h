@@ -23,7 +23,6 @@
 
 #pragma once
 
-#if defined (BENTLEY_CHANGE)
 #include <stdexcept>
 #include <cstdlib>
 #include <type_traits>
@@ -47,19 +46,11 @@
 #include <folly/FormatTraits.h>
 #include <folly/Malloc.h>
 #include <folly/Portability.h>
+#include <folly/SmallLocks.h>
+#include <folly/portability/BitsFunctexcept.h>
 #include <folly/portability/Constexpr.h>
 #include <folly/portability/Malloc.h>
-
-#if defined(__GNUC__) && (FOLLY_X64 || FOLLY_PPC64)
-# include <folly/SmallLocks.h>
-# define FB_PACK_ATTR FOLLY_PACK_ATTR
-# define FB_PACK_PUSH FOLLY_PACK_PUSH
-# define FB_PACK_POP FOLLY_PACK_POP
-#else
-# define FB_PACK_ATTR
-# define FB_PACK_PUSH
-# define FB_PACK_POP
-#endif
+#include <folly/portability/TypeTraits.h>
 
 // Ignore shadowing warnings within this file, so includers can use -Wshadow.
 #pragma GCC diagnostic push
@@ -334,7 +325,7 @@ namespace detail {
 }
 
 //////////////////////////////////////////////////////////////////////
-FB_PACK_PUSH
+FOLLY_PACK_PUSH
 template<class Value,
          std::size_t RequestedMaxInline    = 1,
          class PolicyA                     = void,
@@ -355,12 +346,10 @@ class small_vector
    * the user asks for less inlined elements than we can fit unioned
    * into our value_type*, we will inline more than they asked.)
    */
-  enum {
-    MaxInline =
-        constexpr_max(sizeof(Value*) / sizeof(Value), RequestedMaxInline),
-  };
+  static constexpr std::size_t MaxInline{
+      constexpr_max(sizeof(Value*) / sizeof(Value), RequestedMaxInline)};
 
-public:
+ public:
   typedef std::size_t        size_type;
   typedef Value              value_type;
   typedef value_type&        reference;
@@ -448,7 +437,7 @@ public:
   }
 
   static constexpr size_type max_size() {
-    return !BaseType::kShouldUseHeap ? MaxInline
+    return !BaseType::kShouldUseHeap ? static_cast<size_type>(MaxInline)
                                      : BaseType::policyMaxSize();
   }
 
@@ -793,14 +782,14 @@ public:
 
   reference at(size_type i) {
     if (i >= size()) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     return (*this)[i];
   }
 
   const_reference at(size_type i) const {
     if (i >= size()) {
-      throw std::out_of_range("index out of range");
+      std::__throw_out_of_range("index out of range");
     }
     return (*this)[i];
   }
@@ -1034,7 +1023,7 @@ private:
     InternalSizeType* getCapacity() {
       return &capacity_;
     }
-  } FB_PACK_ATTR;
+  } FOLLY_PACK_ATTR;
 
   struct HeapPtr {
     // Lower order bit of heap_ is used as flag to indicate whether capacity is
@@ -1046,16 +1035,22 @@ private:
       return static_cast<InternalSizeType*>(
         detail::pointerFlagClear(heap_));
     }
-  } FB_PACK_ATTR;
+  } FOLLY_PACK_ATTR;
 
 #if (FOLLY_X64 || FOLLY_PPC64)
-  typedef unsigned char InlineStorageType[sizeof(value_type) * MaxInline];
+  typedef unsigned char InlineStorageDataType[sizeof(value_type) * MaxInline];
 #else
   typedef typename std::aligned_storage<
     sizeof(value_type) * MaxInline,
     alignof(value_type)
-  >::type InlineStorageType;
+  >::type InlineStorageDataType;
 #endif
+
+  typedef typename std::conditional<
+    sizeof(value_type) * MaxInline != 0,
+    InlineStorageDataType,
+    void*
+  >::type InlineStorageType;
 
   static bool const kHasInlineCapacity =
     sizeof(HeapPtrWithCapacity) < sizeof(InlineStorageType);
@@ -1115,9 +1110,9 @@ private:
       auto vp = detail::pointerFlagClear(pdata_.heap_);
       free(vp);
     }
-  } FB_PACK_ATTR u;
-} FB_PACK_ATTR;
-FB_PACK_POP
+  } FOLLY_PACK_ATTR u;
+} FOLLY_PACK_ATTR;
+FOLLY_PACK_POP
 
 //////////////////////////////////////////////////////////////////////
 
@@ -1144,10 +1139,3 @@ struct IndexableTraits<small_vector<T, M, A, B, C>>
 }  // namespace folly
 
 #pragma GCC diagnostic pop
-
-#ifdef FB_PACK_ATTR
-# undef FB_PACK_ATTR
-# undef FB_PACK_PUSH
-# undef FB_PACK_POP
-#endif
-#endif

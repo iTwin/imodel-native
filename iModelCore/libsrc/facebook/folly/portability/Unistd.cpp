@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-#include <folly/BentleyFolly.h>
+// We need to prevent winnt.h from defining the core STATUS codes,
+// otherwise they will conflict with what we're getting from ntstatus.h
+#define UMDF_USING_NTSTATUS
+
 #include <folly/portability/Unistd.h>
 
 #ifdef _WIN32
@@ -22,6 +25,12 @@
 #include <fcntl.h>
 #include <folly/portability/Sockets.h>
 #include <folly/portability/Windows.h>
+
+// Including ntdef.h requires building as a driver, but all we want
+// is a status code, but we need NTSTATUS defined for that. Luckily
+// bcrypt.h also defines NTSTATUS, so we'll use that one instead.
+#include <bcrypt.h>
+#include <ntstatus.h>
 
 // Generic wrapper for the p* family of functions.
 template <class F, class... Args>
@@ -55,15 +64,52 @@ int access(char const* fn, int am) { return _access(fn, am); }
 
 int chdir(const char* path) { return _chdir(path); }
 
-#if defined (BENTLEY_CHANGE)
 int close(int fh) {
   if (folly::portability::sockets::is_fh_socket(fh)) {
     SOCKET h = (SOCKET)_get_osfhandle(fh);
+
+    // If we were to just call _close on the descriptor, it would
+    // close the HANDLE, but it wouldn't free any of the resources
+    // associated to the SOCKET, and we can't call _close after
+    // calling closesocket, because closesocket has already closed
+    // the HANDLE, and _close would attempt to close the HANDLE
+    // again, resulting in a double free.
+    // We can however protect the HANDLE from actually being closed
+    // long enough to close the file descriptor, then close the
+    // socket itself.
+    constexpr DWORD protectFlag = HANDLE_FLAG_PROTECT_FROM_CLOSE;
+    DWORD handleFlags = 0;
+    if (!GetHandleInformation((HANDLE)h, &handleFlags)) {
+      return -1;
+    }
+    if (!SetHandleInformation((HANDLE)h, protectFlag, protectFlag)) {
+      return -1;
+    }
+    int c = 0;
+    __try {
+      // We expect this to fail. It still closes the file descriptor though.
+      c = _close(fh);
+      // We just have to catch the SEH exception that gets thrown when we do
+      // this with a debugger attached -_-....
+    } __except (
+        GetExceptionCode() == STATUS_HANDLE_NOT_CLOSABLE
+            ? EXCEPTION_CONTINUE_EXECUTION
+            : EXCEPTION_CONTINUE_SEARCH) {
+      // We told it to continue execution, so there's nothing here would
+      // be run anyways.
+    }
+    // We're at the core, we don't get the luxery of SCOPE_EXIT because
+    // of circular dependencies.
+    if (!SetHandleInformation((HANDLE)h, protectFlag, handleFlags)) {
+      return -1;
+    }
+    if (c != -1) {
+      return -1;
+    }
     return closesocket(h);
   }
   return _close(fh);
 }
-#endif
 
 int dup(int fh) { return _dup(fh); }
 
@@ -81,7 +127,7 @@ int fsync(int fd) {
 }
 
 int ftruncate(int fd, off_t len) {
-  if (_lseek(fd, len, SEEK_SET)) {
+  if (_lseek(fd, len, SEEK_SET) == -1) {
     return -1;
   }
 
@@ -117,7 +163,11 @@ long lseek(int fh, long off, int orig) { return _lseek(fh, off, orig); }
 
 int rmdir(const char* path) { return _rmdir(path); }
 
-int pipe(int* pth) { return _pipe(pth, 0, _O_BINARY); }
+int pipe(int pth[2]) {
+  // We need to be able to listen to pipes with
+  // libevent, so they need to be actual sockets.
+  return socketpair(PF_UNIX, SOCK_STREAM, 0, pth);
+}
 
 int pread(int fd, void* buf, size_t count, off_t offset) {
   return wrapPositional(_read, fd, offset, buf, (unsigned int)count);
@@ -127,9 +177,28 @@ int pwrite(int fd, const void* buf, size_t count, off_t offset) {
   return wrapPositional(_write, fd, offset, buf, (unsigned int)count);
 }
 
-int read(int fh, void* buf, unsigned int mcc) { return _read(fh, buf, mcc); }
+int read(int fh, void* buf, unsigned int mcc) {
+  if (folly::portability::sockets::is_fh_socket(fh)) {
+    SOCKET s = (SOCKET)_get_osfhandle(fh);
+    if (s != INVALID_SOCKET) {
+      auto r = folly::portability::sockets::recv(fh, buf, (size_t)mcc, 0);
+      if (r == -1 && WSAGetLastError() == WSAEWOULDBLOCK) {
+        errno = EAGAIN;
+      }
+      return r;
+    }
+  }
+  auto r = _read(fh, buf, mcc);
+  if (r == -1 && GetLastError() == ERROR_NO_DATA) {
+    // This only happens if the file was non-blocking and
+    // no data was present. We have to translate the error
+    // to a form that the rest of the world is expecting.
+    errno = EAGAIN;
+  }
+  return r;
+}
 
-folly::ssize_t readlink(const char* path, char* buf, size_t buflen) {
+ssize_t readlink(const char* path, char* buf, size_t buflen) {
   if (!buflen) {
     return -1;
   }
@@ -201,8 +270,36 @@ int usleep(unsigned int ms) {
   return 0;
 }
 
-int write(int fh, void const* buf, unsigned int mcc) {
-  return _write(fh, buf, mcc);
+int write(int fh, void const* buf, unsigned int count) {
+  if (folly::portability::sockets::is_fh_socket(fh)) {
+    SOCKET s = (SOCKET)_get_osfhandle(fh);
+    if (s != INVALID_SOCKET) {
+      auto r = folly::portability::sockets::send(fh, buf, (size_t)count, 0);
+      if (r == -1 && WSAGetLastError() == WSAEWOULDBLOCK) {
+        errno = EAGAIN;
+      }
+      return r;
+    }
+  }
+  auto r = _write(fh, buf, count);
+  if ((r > 0 && r != count) || (r == -1 && errno == ENOSPC)) {
+    // Writing to a pipe with a full buffer doesn't generate
+    // any error type, unless it caused us to write exactly 0
+    // bytes, so we have to see if we have a pipe first. We
+    // don't touch the errno for anything else.
+    HANDLE h = (HANDLE)_get_osfhandle(fh);
+    if (GetFileType(h) == FILE_TYPE_PIPE) {
+      DWORD state = 0;
+      if (GetNamedPipeHandleState(
+              h, &state, nullptr, nullptr, nullptr, nullptr, 0)) {
+        if ((state & PIPE_NOWAIT) == PIPE_NOWAIT) {
+          errno = EAGAIN;
+          return -1;
+        }
+      }
+    }
+  }
+  return r;
 }
 }
 }

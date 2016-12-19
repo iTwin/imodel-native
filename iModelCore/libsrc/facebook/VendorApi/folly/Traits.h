@@ -89,52 +89,121 @@ namespace folly {
  * IsZeroInitializable describes the property that default construction is the
  * same as memset(dst, 0, sizeof(T)).
  */
-
+#if defined (BENTLEY_CHANGE)
 namespace traits_detail {
 
-#if defined (BENTLEY_CHANGE)
-#define FOLLY_HAS_TRUE_XXX(name)                          \
-  BOOST_MPL_HAS_XXX_TRAIT_DEF(name);                      \
-  template <class T> struct name ## _is_true              \
-    : std::is_same<typename T::name, std::true_type> {};  \
-  template <class T> struct has_true_ ## name             \
-    : std::conditional<                                   \
-        has_ ## name <T>::value,                          \
-        name ## _is_true<T>,                              \
-        std::false_type                                   \
-      >:: type {};
+#define FOLLY_HAS_TRUE_XXX(name)                                             \
+  BOOST_MPL_HAS_XXX_TRAIT_DEF(name)                                          \
+  template <class T>                                                         \
+  struct name##_is_true : std::is_same<typename T::name, std::true_type> {}; \
+  template <class T>                                                         \
+  struct has_true_##name : std::conditional<                                 \
+                               has_##name<T>::value,                         \
+                               name##_is_true<T>,                            \
+                               std::false_type>::type {};
 
 FOLLY_HAS_TRUE_XXX(IsRelocatable)
 FOLLY_HAS_TRUE_XXX(IsZeroInitializable)
 FOLLY_HAS_TRUE_XXX(IsTriviallyCopyable)
 
 #undef FOLLY_HAS_TRUE_XXX
-#endif
 }
+#endif
 
 template <class T> struct IsTriviallyCopyable
   : std::integral_constant<bool,
       !std::is_class<T>::value ||
-      // TODO: add alternate clause is_trivially_copyable, when available
       std::is_trivially_copyable<T>::value
     > {};
 
 template <class T> struct IsRelocatable
   : std::integral_constant<bool,
       !std::is_class<T>::value ||
-      // TODO add this line (and some tests for it) when we upgrade to gcc 4.7
-      //std::is_trivially_move_constructible<T>::value ||
       IsTriviallyCopyable<T>::value ||
       std::is_trivially_move_constructible<T>::value
     > {};
 
-#if defined (BENTLEY_CHANGE)
-template <class T> struct IsZeroInitializable
-  : std::integral_constant<bool,
-      !std::is_class<T>::value ||
-      traits_detail::has_true_IsZeroInitializable<T>::value
-    > {};
+struct Ignore {
+  template <class T>
+  /* implicit */ Ignore(const T&) {}
+  template <class T>
+  const Ignore& operator=(T const&) const { return *this; }
+};
 
+template <class...>
+using Ignored = Ignore;
+
+namespace traits_detail_IsEqualityComparable {
+Ignore operator==(Ignore, Ignore);
+
+template <class T, class U = T>
+struct IsEqualityComparable
+    : std::is_convertible<
+          decltype(std::declval<T>() == std::declval<U>()),
+          bool
+      > {};
+}
+
+/* using override */ using traits_detail_IsEqualityComparable::
+    IsEqualityComparable;
+
+namespace traits_detail_IsLessThanComparable {
+Ignore operator<(Ignore, Ignore);
+
+template <class T, class U = T>
+struct IsLessThanComparable
+    : std::is_convertible<
+          decltype(std::declval<T>() < std::declval<U>()),
+          bool
+      > {};
+}
+
+/* using override */ using traits_detail_IsLessThanComparable::
+    IsLessThanComparable;
+
+#if defined (BENTLEY_CHANGE)
+namespace traits_detail_IsNothrowSwappable {
+#if defined(_MSC_VER) || defined(__cpp_lib_is_swappable)
+// MSVC already implements the C++17 P0185R1 proposal which
+// adds std::is_nothrow_swappable, so use it instead.
+template <typename T>
+using IsNothrowSwappable = std::is_nothrow_swappable<T>;
+#else
+/* using override */ using std::swap;
+
+template <class T>
+struct IsNothrowSwappable
+    : std::integral_constant<bool,
+        std::is_nothrow_move_constructible<T>::value &&
+        noexcept(swap(std::declval<T&>(), std::declval<T&>()))
+      > {};
+#endif
+}
+
+/* using override */ using traits_detail_IsNothrowSwappable::IsNothrowSwappable;
+
+template <class T> struct IsTriviallyCopyable
+  : std::conditional<
+      traits_detail::has_IsTriviallyCopyable<T>::value,
+      traits_detail::has_true_IsTriviallyCopyable<T>,
+      traits_detail::is_trivially_copyable<T>
+    >::type {};
+
+template <class T> struct IsRelocatable
+  : std::conditional<
+      traits_detail::has_IsRelocatable<T>::value,
+      traits_detail::has_true_IsRelocatable<T>,
+      // TODO add this line (and some tests for it) when we upgrade to gcc 4.7
+      //std::is_trivially_move_constructible<T>::value ||
+      IsTriviallyCopyable<T>
+    >::type {};
+
+template <class T> struct IsZeroInitializable
+  : std::conditional<
+      traits_detail::has_IsZeroInitializable<T>::value,
+      traits_detail::has_true_IsZeroInitializable<T>,
+      std::integral_constant<bool, !std::is_class<T>::value>
+    >::type {};
 #endif
 
 template <typename...>
@@ -155,6 +224,19 @@ struct Disjunction<T, TList...>
 
 template <typename T>
 struct Negation : std::integral_constant<bool, !T::value> {};
+
+template <bool... Bs>
+struct Bools {
+  using valid_type = bool;
+  static constexpr std::size_t size() {
+    return sizeof...(Bs);
+  }
+};
+
+// Lighter-weight than Conjunction, but evaluates all sub-conditions eagerly.
+template <class... Ts>
+using StrictConjunction =
+    std::is_same<Bools<Ts::value..., true>, Bools<true, Ts::value...>>;
 
 } // namespace folly
 
@@ -307,7 +389,7 @@ namespace folly {
 // STL commonly-used types
 template <class T, class U>
 struct IsRelocatable< std::pair<T, U> >
-    : std::integral_constant<bool,
+    : ::std::integral_constant<bool,
         IsRelocatable<T>::value &&
         IsRelocatable<U>::value> {};
 
@@ -348,14 +430,13 @@ struct is_negative_impl<T, false> {
 // inside what are really static ifs (not executed because of the templated
 // types) that violate -Wsign-compare and/or -Wbool-compare so suppress them
 // in order to not prevent all calling code from using it.
-#if defined (BENTLEY_CHANGE)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-compare"
+FOLLY_PUSH_WARNING
+FOLLY_GCC_DISABLE_WARNING(sign-compare)
 #if __GNUC_PREREQ(5, 0)
-#pragma GCC diagnostic ignored "-Wbool-compare"
+FOLLY_GCC_DISABLE_WARNING(bool-compare)
 #endif
-#endif
-
+FOLLY_MSVC_DISABLE_WARNING(4388) // sign-compare
+FOLLY_MSVC_DISABLE_WARNING(4804) // bool-compare
 #ifdef min
 #undef max
 #undef min
@@ -377,9 +458,7 @@ bool greater_than_impl(LHS const lhs) {
     lhs > rhs;
 }
 
-#if defined (BENTLEY_CHANGE)
-#pragma GCC diagnostic pop
-#endif
+FOLLY_POP_WARNING
 
 } // namespace detail {
 
@@ -417,29 +496,116 @@ bool greater_than(LHS const lhs) {
   >(lhs);
 }
 
+namespace traits_detail {
+struct InPlaceTag {};
+template <class>
+struct InPlaceTypeTag {};
+template <std::size_t>
+struct InPlaceIndexTag {};
+}
+
 /**
  * Like std::piecewise_construct, a tag type & instance used for in-place
  * construction of non-movable contained types, e.g. by Synchronized.
+ * Follows the naming and design of std::in_place suggested in
+ * http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0032r2.pdf
  */
-struct construct_in_place_t {};
-constexpr construct_in_place_t construct_in_place{};
+using in_place_t = traits_detail::InPlaceTag (&)(traits_detail::InPlaceTag);
+
+template <class T>
+using in_place_type_t =
+    traits_detail::InPlaceTypeTag<T> (&)(traits_detail::InPlaceTypeTag<T>);
+
+template <std::size_t I>
+using in_place_index_t =
+    traits_detail::InPlaceIndexTag<I> (&)(traits_detail::InPlaceIndexTag<I>);
+
+inline traits_detail::InPlaceTag in_place(traits_detail::InPlaceTag = {}) {
+  return {};
+}
+
+template <class T>
+inline traits_detail::InPlaceTypeTag<T> in_place(
+    traits_detail::InPlaceTypeTag<T> = {}) {
+  return {};
+}
+
+template <std::size_t I>
+inline traits_detail::InPlaceIndexTag<I> in_place(
+    traits_detail::InPlaceIndexTag<I> = {}) {
+  return {};
+}
+
+// For backwards compatibility:
+using construct_in_place_t = in_place_t;
+
+inline traits_detail::InPlaceTag construct_in_place(
+    traits_detail::InPlaceTag = {}) {
+  return {};
+}
+
+/**
+ * Initializer lists are a powerful compile time syntax introduced in C++11
+ * but due to their often conflicting syntax they are not used by APIs for
+ * construction.
+ *
+ * Further standard conforming compilers *strongly* favor an
+ * std::initalizer_list overload for construction if one exists.  The
+ * following is a simple tag used to disambiguate construction with
+ * initializer lists and regular uniform initialization.
+ *
+ * For example consider the following case
+ *
+ *  class Something {
+ *  public:
+ *    explicit Something(int);
+ *    Something(std::intiializer_list<int>);
+ *
+ *    operator int();
+ *  };
+ *
+ *  ...
+ *  Something something{1}; // SURPRISE!!
+ *
+ * The last call to instantiate the Something object will go to the
+ * initializer_list overload.  Which may be surprising to users.
+ *
+ * If however this tag was used to disambiguate such construction it would be
+ * easy for users to see which construction overload their code was referring
+ * to.  For example
+ *
+ *  class Something {
+ *  public:
+ *    explicit Something(int);
+ *    Something(folly::initlist_construct_t, std::initializer_list<int>);
+ *
+ *    operator int();
+ *  };
+ *
+ *  ...
+ *  Something something_one{1}; // not the initializer_list overload
+ *  Something something_two{folly::initlist_construct, {1}}; // correct
+ */
+struct initlist_construct_t {};
+constexpr initlist_construct_t initlist_construct{};
 
 } // namespace folly
 
+// Assume nothing when compiling with MSVC.
+#ifndef _MSC_VER
 // gcc-5.0 changed string's implementation in libgcc to be non-relocatable
-#if defined (BENTLEY_CHANGE)
 #if __GNUC__ < 5
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_3(std::basic_string);
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_3(std::basic_string)
 #endif
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::vector);
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::list);
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::deque);
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::unique_ptr);
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(std::shared_ptr);
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(std::function);
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::vector)
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::list)
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::deque)
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_2(std::unique_ptr)
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(std::shared_ptr)
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(std::function)
 
 // Boost
-FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(boost::shared_ptr);
+FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(boost::shared_ptr)
 #endif
 
 #define FOLLY_CREATE_HAS_MEMBER_TYPE_TRAITS(classname, type_name) \
@@ -523,3 +689,45 @@ FOLLY_ASSUME_FBVECTOR_COMPATIBLE_1(boost::shared_ptr);
       classname, func_name, /* nolint */ volatile); \
   FOLLY_CREATE_HAS_MEMBER_FN_TRAITS_IMPL( \
       classname, func_name, /* nolint */ volatile const)
+
+/* Some combinations of compilers and C++ libraries make __int128 and
+ * unsigned __int128 available but do not correctly define their standard type
+ * traits.
+ *
+ * If FOLLY_SUPPLY_MISSING_INT128_TRAITS is defined, we define these traits
+ * here.
+ *
+ * @author: Phil Willoughby <philwill@fb.com>
+ */
+#if FOLLY_SUPPLY_MISSING_INT128_TRAITS
+FOLLY_NAMESPACE_STD_BEGIN
+template <>
+struct is_arithmetic<__int128> : ::std::true_type {};
+template <>
+struct is_arithmetic<unsigned __int128> : ::std::true_type {};
+template <>
+struct is_integral<__int128> : ::std::true_type {};
+template <>
+struct is_integral<unsigned __int128> : ::std::true_type {};
+template <>
+struct make_unsigned<__int128> {
+  typedef unsigned __int128 type;
+};
+template <>
+struct make_signed<__int128> {
+  typedef __int128 type;
+};
+template <>
+struct make_unsigned<unsigned __int128> {
+  typedef unsigned __int128 type;
+};
+template <>
+struct make_signed<unsigned __int128> {
+  typedef __int128 type;
+};
+template <>
+struct is_signed<__int128> : ::std::true_type {};
+template <>
+struct is_unsigned<unsigned __int128> : ::std::true_type {};
+FOLLY_NAMESPACE_STD_END
+#endif // FOLLY_SUPPLY_MISSING_INT128_TRAITS

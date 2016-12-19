@@ -17,7 +17,9 @@
 #pragma once
 
 #include <utility>
+#if defined (BENTLEY_CHANGE)
 #include <glog/logging.h>
+#endif
 #include <folly/Likely.h>
 #include <folly/Portability.h>
 
@@ -62,7 +64,7 @@ class Indestructible final {
  public:
   template <typename... Args>
   explicit constexpr Indestructible(Args&&... args) noexcept(
-      std::is_nothrow_constructible<T, decltype(args)...>::value)
+      std::is_nothrow_constructible<T, Args&&...>::value)
       : storage_(std::forward<Args>(args)...), inited_(true) {}
 
   ~Indestructible() = default;
@@ -102,7 +104,9 @@ class Indestructible final {
   }
 
   [[noreturn]] FOLLY_NOINLINE static void fail() {
+#if defined (BENTLEY_CHANGE)
     LOG(FATAL) << "Indestructible is not initialized";
+#endif
   }
 
   union Storage {

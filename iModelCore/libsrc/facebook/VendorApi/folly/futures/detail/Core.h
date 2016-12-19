@@ -29,7 +29,6 @@
 #include <folly/futures/Promise.h>
 #include <folly/Try.h>
 #include <folly/futures/detail/FSM.h>
-
 #include <folly/io/async/Request.h>
 
 namespace folly { namespace detail {

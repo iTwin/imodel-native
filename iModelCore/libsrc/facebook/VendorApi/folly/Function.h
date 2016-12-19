@@ -226,10 +226,6 @@
 #include <folly/CppAttributes.h>
 #include <folly/Portability.h>
 
-#ifdef small
-#undef small
-#endif
-
 namespace folly {
 
 template <typename FunctionType>
@@ -246,19 +242,15 @@ enum class Op { MOVE, NUKE, FULL, HEAP };
 
 union Data {
   void* big;
-  // BENTLEY_CHANGE
-  // VS 2015 RTM emits: error C2899: typename cannot be used outside a template declaration 
-  // Was typename std::aligned_storage<6 * sizeof(void*)>::type small;
-  std::aligned_storage<6 * sizeof(void*)>::type small;
+  std::aligned_storage<6 * sizeof(void*)>::type tiny;
 };
 
 template <typename Fun, typename FunT = typename std::decay<Fun>::type>
 using IsSmall = std::integral_constant<
     bool,
-    (sizeof(FunT) <= sizeof(Data::small) &&
+    (sizeof(FunT) <= sizeof(Data::tiny) &&
      // Same as is_nothrow_move_constructible, but w/ no template instantiation.
-     noexcept(FunT(std::declval<FunT&&>()))
-     )>;
+     noexcept(FunT(std::declval<FunT&&>())))>;
 using SmallTag = std::true_type;
 using HeapTag = std::false_type;
 
@@ -295,7 +287,7 @@ struct FunctionTraits<ReturnType(Args...)> {
   template <typename Fun>
   static ReturnType callSmall(Data& p, Args&&... args) {
     return static_cast<ReturnType>((*static_cast<Fun*>(
-        static_cast<void*>(&p.small)))(static_cast<Args&&>(args)...));
+        static_cast<void*>(&p.tiny)))(static_cast<Args&&>(args)...));
   }
 
   template <typename Fun>
@@ -313,8 +305,13 @@ struct FunctionTraits<ReturnType(Args...)> {
     return fn.call_(fn.data_, static_cast<Args&&>(args)...);
   }
 
-  struct SharedFunctionImpl {
+  class SharedProxy {
     std::shared_ptr<Function<ReturnType(Args...)>> sp_;
+
+   public:
+    explicit SharedProxy(Function<ReturnType(Args...)>&& func)
+        : sp_(std::make_shared<Function<ReturnType(Args...)>>(
+              std::move(func))) {}
     ReturnType operator()(Args&&... args) const {
       return (*sp_)(static_cast<Args&&>(args)...);
     }
@@ -336,7 +333,7 @@ struct FunctionTraits<ReturnType(Args...) const> {
   template <typename Fun>
   static ReturnType callSmall(Data& p, Args&&... args) {
     return static_cast<ReturnType>((*static_cast<const Fun*>(
-        static_cast<void*>(&p.small)))(static_cast<Args&&>(args)...));
+        static_cast<void*>(&p.tiny)))(static_cast<Args&&>(args)...));
   }
 
   template <typename Fun>
@@ -354,8 +351,13 @@ struct FunctionTraits<ReturnType(Args...) const> {
     return fn.call_(fn.data_, static_cast<Args&&>(args)...);
   }
 
-  struct SharedFunctionImpl {
+  struct SharedProxy {
     std::shared_ptr<Function<ReturnType(Args...) const>> sp_;
+
+   public:
+    explicit SharedProxy(Function<ReturnType(Args...) const>&& func)
+        : sp_(std::make_shared<Function<ReturnType(Args...) const>>(
+              std::move(func))) {}
     ReturnType operator()(Args&&... args) const {
       return (*sp_)(static_cast<Args&&>(args)...);
     }
@@ -366,11 +368,11 @@ template <typename Fun>
 bool execSmall(Op o, Data* src, Data* dst) {
   switch (o) {
     case Op::MOVE:
-      ::new (static_cast<void*>(&dst->small))
-          Fun(std::move(*static_cast<Fun*>(static_cast<void*>(&src->small))));
+      ::new (static_cast<void*>(&dst->tiny))
+          Fun(std::move(*static_cast<Fun*>(static_cast<void*>(&src->tiny))));
       FOLLY_FALLTHROUGH;
     case Op::NUKE:
-      static_cast<Fun*>(static_cast<void*>(&src->small))->~Fun();
+      static_cast<Fun*>(static_cast<void*>(&src->tiny))->~Fun();
       break;
     case Op::FULL:
       return true;
@@ -395,6 +397,19 @@ bool execBig(Op o, Data* src, Data* dst) {
       break;
   }
   return true;
+}
+
+// Invoke helper
+template <typename F, typename... Args>
+inline auto invoke(F&& f, Args&&... args)
+    -> decltype(std::forward<F>(f)(std::forward<Args>(args)...)) {
+  return std::forward<F>(f)(std::forward<Args>(args)...);
+}
+
+template <typename M, typename C, typename... Args>
+inline auto invoke(M(C::*d), Args&&... args)
+    -> decltype(std::mem_fn(d)(std::forward<Args>(args)...)) {
+  return std::mem_fn(d)(std::forward<Args>(args)...);
 }
 
 } // namespace function
@@ -440,7 +455,7 @@ class Function final : private detail::function::FunctionTraits<FunctionType> {
   Function(Fun&& fun, SmallTag) noexcept {
     using FunT = typename std::decay<Fun>::type;
     if (!detail::function::isNullPtrFn(fun)) {
-      ::new (static_cast<void*>(&data_.small)) FunT(static_cast<Fun&&>(fun));
+      ::new (static_cast<void*>(&data_.tiny)) FunT(static_cast<Fun&&>(fun));
       call_ = &Traits::template callSmall<FunT>;
       exec_ = &detail::function::execSmall<FunT>;
     }
@@ -473,6 +488,7 @@ class Function final : private detail::function::FunctionTraits<FunctionType> {
   // (i.e., `template <typename Fun> Function(Fun&&)`).
   Function(Function&) = delete;
   Function(const Function&) = delete;
+  Function(const Function&&) = delete;
 
   /**
    * Move constructor
@@ -628,14 +644,23 @@ class Function final : private detail::function::FunctionTraits<FunctionType> {
     return exec_(Op::HEAP, nullptr, nullptr);
   }
 
+  using typename Traits::SharedProxy;
+
+  /**
+   * Move this `Function` into a copyable callable object, of which all copies
+   * share the state.
+   */
+  SharedProxy asSharedProxy() && {
+    return SharedProxy{std::move(*this)};
+  }
+
   /**
    * Construct a `std::function` by moving in the contents of this `Function`.
    * Note that the returned `std::function` will share its state (i.e. captured
    * data) across all copies you make of it, so be very careful when copying.
    */
   std::function<typename Traits::NonConstSignature> asStdFunction() && {
-    using Impl = typename Traits::SharedFunctionImpl;
-    return Impl{std::make_shared<Function>(std::move(*this))};
+    return std::move(*this).asSharedProxy();
   }
 };
 FOLLY_POP_WARNING
@@ -681,4 +706,80 @@ Function<ReturnType(Args...) const> constCastFunction(
     Function<ReturnType(Args...) const>&& that) noexcept {
   return std::move(that);
 }
+
+/**
+ * @class FunctionRef
+ *
+ * @brief A reference wrapper for callable objects
+ *
+ * FunctionRef is similar to std::reference_wrapper, but the template parameter
+ * is the function signature type rather than the type of the referenced object.
+ * A folly::FunctionRef is cheap to construct as it contains only a pointer to
+ * the referenced callable and a pointer to a function which invokes the
+ * callable.
+ *
+ * The user of FunctionRef must be aware of the reference semantics: storing a
+ * copy of a FunctionRef is potentially dangerous and should be avoided unless
+ * the referenced object definitely outlives the FunctionRef object. Thus any
+ * function that accepts a FunctionRef parameter should only use it to invoke
+ * the referenced function and not store a copy of it. Knowing that FunctionRef
+ * itself has reference semantics, it is generally okay to use it to reference
+ * lambdas that capture by reference.
+ */
+
+template <typename FunctionType>
+class FunctionRef;
+
+template <typename ReturnType, typename... Args>
+class FunctionRef<ReturnType(Args...)> final {
+  using Call = ReturnType (*)(void*, Args&&...);
+
+  void* object_{nullptr};
+  Call call_{&FunctionRef::uninitCall};
+
+  static ReturnType uninitCall(void*, Args&&...) {
+    throw std::bad_function_call();
+  }
+
+  template <typename Fun>
+  static ReturnType call(void* object, Args&&... args) {
+    return static_cast<ReturnType>(detail::function::invoke(
+        *static_cast<Fun*>(object), static_cast<Args&&>(args)...));
+  }
+
+ public:
+  /**
+   * Default constructor. Constructs an empty FunctionRef.
+   *
+   * Invoking it will throw std::bad_function_call.
+   */
+  FunctionRef() = default;
+
+  /**
+   * Construct a FunctionRef from a reference to a callable object.
+   */
+  template <typename Fun>
+  /* implicit */ FunctionRef(Fun&& fun) noexcept {
+    using ReferencedType = typename std::remove_reference<Fun>::type;
+
+    static_assert(
+        std::is_convertible<
+            typename std::result_of<ReferencedType&(Args && ...)>::type,
+            ReturnType>::value,
+        "FunctionRef cannot be constructed from object with "
+        "incompatible function signature");
+
+    // `Fun` may be a const type, in which case we have to do a const_cast
+    // to store the address in a `void*`. This is safe because the `void*`
+    // will be cast back to `Fun*` (which is a const pointer whenever `Fun`
+    // is a const type) inside `FunctionRef::call`
+    object_ = const_cast<void*>(static_cast<void const*>(std::addressof(fun)));
+    call_ = &FunctionRef::call<ReferencedType>;
+  }
+
+  ReturnType operator()(Args... args) const {
+    return call_(object_, static_cast<Args&&>(args)...);
+  }
+};
+
 } // namespace folly

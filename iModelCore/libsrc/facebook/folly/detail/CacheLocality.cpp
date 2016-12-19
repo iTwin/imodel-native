@@ -49,7 +49,10 @@ static CacheLocality getSystemLocalityInfo() {
   }
 #endif
 
-  long numCpus = (long) sysconf(_SC_NPROCESSORS_CONF);
+#if defined (BENTLEY_CHANGE)
+  long numCpus = sysconf(_SC_NPROCESSORS_CONF);
+#endif
+  long numCpus = std::thread::hardware_concurrency();
   if (numCpus <= 0) {
     // This shouldn't happen, but if it does we should try to keep
     // going.  We are probably not going to be able to parse /sys on
@@ -163,7 +166,7 @@ CacheLocality CacheLocality::readFromSysfsTree(
               // a sub-optimal ordering, but it won't crash
               auto& lhsEquiv = equivClassesByCpu[lhs];
               auto& rhsEquiv = equivClassesByCpu[rhs];
-              for (int i = (int) std::min(lhsEquiv.size(), rhsEquiv.size()) - 1;
+              for (int i = std::min(lhsEquiv.size(), rhsEquiv.size()) - 1;
                    i >= 0;
                    --i) {
                 if (lhsEquiv[i] != rhsEquiv[i]) {

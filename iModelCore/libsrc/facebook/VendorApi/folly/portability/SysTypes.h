@@ -29,9 +29,7 @@ using pid_t = void*;
 // This isn't actually supposed to be defined here, but it's the most
 // appropriate place without defining a portability header for stdint.h
 // with just this single typedef.
-namespace folly {
 using ssize_t = SSIZE_T;
-}
 // The Windows headers don't define this anywhere, nor do any of the libs
 // that Folly depends on, so define it here.
 using mode_t = unsigned short;

@@ -32,6 +32,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include <folly/detail/SpinLockImpl.h>
 
 namespace folly {

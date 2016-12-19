@@ -334,7 +334,7 @@ bool splitFixed(const Delim& delimiter, StringPiece input, OutputType& output) {
   if (exact && UNLIKELY(std::string::npos != input.find(delimiter))) {
     return false;
   }
-  parseTo(input, output);
+  output = folly::to<OutputType>(input);
   return true;
 }
 
@@ -352,7 +352,7 @@ bool splitFixed(
   StringPiece tail(input.begin() + cut + detail::delimSize(delimiter),
                    input.end());
   if (LIKELY(splitFixed<exact>(delimiter, tail, outTail...))) {
-    parseTo(head, outHead);
+    outHead = folly::to<OutputType>(head);
     return true;
   }
   return false;
@@ -598,17 +598,12 @@ bool unhexlify(const InputString& input, OutputString& output) {
   }
   output.resize(input.size() / 2);
   int j = 0;
-  auto unhex = [](char c) -> int {
-    return c >= '0' && c <= '9' ? c - '0' :
-           c >= 'A' && c <= 'F' ? c - 'A' + 10 :
-           c >= 'a' && c <= 'f' ? c - 'a' + 10 :
-           -1;
-  };
 
   for (size_t i = 0; i < input.size(); i += 2) {
-    int highBits = unhex(input[i]);
-    int lowBits = unhex(input[i + 1]);
-    if (highBits < 0 || lowBits < 0) {
+    int highBits = detail::hexTable[static_cast<uint8_t>(input[i])];
+    int lowBits = detail::hexTable[static_cast<uint8_t>(input[i + 1])];
+    if ((highBits | lowBits) & 0x10) {
+      // One of the characters wasn't a hex digit
       return false;
     }
     output[j++] = (highBits << 4) + lowBits;

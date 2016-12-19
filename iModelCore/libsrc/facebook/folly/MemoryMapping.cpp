@@ -32,9 +32,22 @@
 #include <sys/types.h>
 #include <system_error>
 
-DEFINE_int64(mlock_chunk_size, 1 << 20,  // 1MB
+static constexpr ssize_t kDefaultMlockChunkSize =
+#ifndef _MSC_VER
+    // Linux implementations of unmap/mlock/munlock take a kernel
+    // semaphore and block other threads from doing other memory
+    // operations. Split the operations in chunks.
+    (1 << 20) // 1MB
+#else // _MSC_VER
+    // MSVC doesn't have this problem, and calling munmap many times
+    // with the same address is a bad idea with the windows implementation.
+    (-1)
+#endif // _MSC_VER
+    ;
+
+DEFINE_int64(mlock_chunk_size, kDefaultMlockChunkSize,
              "Maximum bytes to mlock/munlock/munmap at once "
-             "(will be rounded up to PAGESIZE)");
+             "(will be rounded up to PAGESIZE). Ignored if negative.");
 
 #ifndef MAP_POPULATE
 #define MAP_POPULATE 0
@@ -103,7 +116,9 @@ void MemoryMapping::init(off_t offset, off_t length) {
 
   if (!anon) {
     // Stat the file
+#if defined (BENTLEY_CHANGE)
     CHECK_ERR(fstat(file_.fd(), &st));
+#endif
 
     if (pageSize == 0) {
       getDeviceOptions(st.st_dev, pageSize, autoExtend);
@@ -143,9 +158,11 @@ void MemoryMapping::init(off_t offset, off_t length) {
     if (length > remaining) {
       if (grow) {
         if (!autoExtend) {
+#if defined (BENTLEY_CHANGE)
           PCHECK(0 == ftruncate(file_.fd(), offset + length))
             << "ftruncate() failed, couldn't grow file to "
             << offset + length;
+#endif
           remaining = length;
         } else {
           // Extend mapping to multiple of page size, don't use ftruncate
@@ -177,9 +194,11 @@ void MemoryMapping::init(off_t offset, off_t length) {
 
     unsigned char* start = static_cast<unsigned char*>(
       mmap(options_.address, mapLength_, prot, flags, file_.fd(), offset));
+#if defined (BENTLEY_CHANGE)
     PCHECK(start != MAP_FAILED)
       << " offset=" << offset
       << " length=" << mapLength_;
+#endif
     mapStart_ = start;
     data_.reset(start + skipStart, length);
   }
@@ -211,17 +230,8 @@ off_t memOpChunkSize(off_t length, off_t pageSize) {
 bool memOpInChunks(std::function<int(void*, size_t)> op,
                    void* mem, size_t bufSize, off_t pageSize,
                    size_t& amountSucceeded) {
-#ifdef _MSC_VER
-  // MSVC doesn't have this problem, and calling munmap many times
-  // with the same address is a bad idea with the windows implementation.
-  int ret = op(mem, bufSize);
-  if (ret == 0) {
-    amountSucceeded = bufSize;
-  }
-  return ret == 0;
-#else
-  // unmap/mlock/munlock take a kernel semaphore and block other threads from
-  // doing other memory operations. If the size of the buffer is big the
+  // Linux' unmap/mlock/munlock take a kernel semaphore and block other threads
+  // from doing other memory operations. If the size of the buffer is big the
   // semaphore can be down for seconds (for benchmarks see
   // http://kostja-osipov.livejournal.com/42963.html).  Doing the operations in
   // chunks breaks the locking into intervals and lets other threads do memory
@@ -232,6 +242,7 @@ bool memOpInChunks(std::function<int(void*, size_t)> op,
   char* addr = static_cast<char*>(mem);
   amountSucceeded = 0;
 
+#undef min
   while (amountSucceeded < bufSize) {
     size_t size = std::min(chunkSize, bufSize - amountSucceeded);
     if (op(addr + amountSucceeded, size) != 0) {
@@ -241,7 +252,6 @@ bool memOpInChunks(std::function<int(void*, size_t)> op,
   }
 
   return true;
-#endif
 }
 
 }  // anonymous namespace
@@ -255,21 +265,28 @@ bool MemoryMapping::mlock(LockMode lock) {
   }
 
   auto msg =
-    folly::sformat("mlock({}) failed at {}", mapLength_, amountSucceeded);
-
-  if (lock == LockMode::TRY_LOCK && (errno == EPERM || errno == ENOMEM)) {
+      folly::format("mlock({}) failed at {}", mapLength_, amountSucceeded);
+  if (lock == LockMode::TRY_LOCK && errno == EPERM) {
+#if defined (BENTLEY_CHANGE)
     PLOG(WARNING) << msg;
+#endif
+  } else if (lock == LockMode::TRY_LOCK && errno == ENOMEM) {
+#if defined (BENTLEY_CHANGE)
+    VLOG(1) << msg;
+#endif
   } else {
+#if defined (BENTLEY_CHANGE)
     PLOG(FATAL) << msg;
+#endif
   }
 
-#ifndef _MSC_VER
   // only part of the buffer was mlocked, unlock it back
   if (!memOpInChunks(::munlock, mapStart_, amountSucceeded, options_.pageSize,
                      amountSucceeded)) {
+#if defined (BENTLEY_CHANGE)
     PLOG(WARNING) << "munlock()";
-  }
 #endif
+  }
 
   return false;
 }
@@ -280,11 +297,15 @@ void MemoryMapping::munlock(bool dontneed) {
   size_t amountSucceeded = 0;
   if (!memOpInChunks(::munlock, mapStart_, mapLength_, options_.pageSize,
                      amountSucceeded)) {
+#if defined (BENTLEY_CHANGE)
     PLOG(WARNING) << "munlock()";
+#endif
   }
   if (mapLength_ && dontneed &&
       ::madvise(mapStart_, mapLength_, MADV_DONTNEED)) {
+#if defined (BENTLEY_CHANGE)
     PLOG(WARNING) << "madvise()";
+#endif
   }
   locked_ = false;
 }
@@ -298,8 +319,10 @@ MemoryMapping::~MemoryMapping() {
     size_t amountSucceeded = 0;
     if (!memOpInChunks(::munmap, mapStart_, mapLength_, options_.pageSize,
                        amountSucceeded)) {
+#if defined (BENTLEY_CHANGE)
       PLOG(FATAL) << folly::format("munmap({}) failed at {}",
                                    mapLength_, amountSucceeded);
+#endif
     }
   }
 }
@@ -307,10 +330,12 @@ MemoryMapping::~MemoryMapping() {
 void MemoryMapping::advise(int advice) const { advise(advice, 0, mapLength_); }
 
 void MemoryMapping::advise(int advice, size_t offset, size_t length) const {
-  CHECK_LE(offset + length, mapLength_)
+#if defined (BENTLEY_CHANGE)
+  CHECK_LE(offset + length, size_t(mapLength_))
     << " offset: " << offset
     << " length: " << length
     << " mapLength_: " << mapLength_;
+#endif
 
   // Include the entire start page: round down to page boundary.
   const auto offMisalign = offset % options_.pageSize;
@@ -327,7 +352,9 @@ void MemoryMapping::advise(int advice, size_t offset, size_t length) const {
   }
 
   char* mapStart = static_cast<char*>(mapStart_) + offset;
+#if defined (BENTLEY_CHANGE)
   PLOG_IF(WARNING, ::madvise(mapStart, length, advice)) << "madvise";
+#endif
 }
 
 MemoryMapping& MemoryMapping::operator=(MemoryMapping other) {

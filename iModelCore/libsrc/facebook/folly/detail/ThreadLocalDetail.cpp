@@ -20,8 +20,8 @@
 
 namespace folly { namespace threadlocal_detail {
 
-StaticMetaBase::StaticMetaBase(ThreadEntry* (*threadEntry)())
-    : nextId_(1), threadEntry_(threadEntry) {
+StaticMetaBase::StaticMetaBase(ThreadEntry* (*threadEntry)(), bool strict)
+    : nextId_(1), threadEntry_(threadEntry), strict_(strict) {
   head_.next = head_.prev = &head_;
   int ret = pthread_key_create(&pthreadKey_, &onThreadExit);
   checkPosixError(ret, "pthread_key_create failed");
@@ -34,7 +34,7 @@ void StaticMetaBase::onThreadExit(void* ptr) {
 #else
   std::unique_ptr<ThreadEntry> threadEntry(static_cast<ThreadEntry*>(ptr));
 #endif
-  DCHECK_GT(threadEntry->elementsCapacity, 0);
+  DCHECK_GT(threadEntry->elementsCapacity, 0u);
   auto& meta = *threadEntry->meta;
 
   // Make sure this ThreadEntry is available if ThreadLocal A is accessed in
@@ -45,20 +45,26 @@ void StaticMetaBase::onThreadExit(void* ptr) {
   };
 
   {
-    std::lock_guard<std::mutex> g(meta.lock_);
-    meta.erase(&(*threadEntry));
-    // No need to hold the lock any longer; the ThreadEntry is private to this
-    // thread now that it's been removed from meta.
-  }
-  // NOTE: User-provided deleter / object dtor itself may be using ThreadLocal
-  // with the same Tag, so dispose() calls below may (re)create some of the
-  // elements or even increase elementsCapacity, thus multiple cleanup rounds
-  // may be required.
-  for (bool shouldRun = true; shouldRun;) {
-    shouldRun = false;
-    FOR_EACH_RANGE (i, 0, threadEntry->elementsCapacity) {
-      if (threadEntry->elements[i].dispose(TLPDestructionMode::THIS_THREAD)) {
-        shouldRun = true;
+    SharedMutex::ReadHolder rlock;
+    if (meta.strict_) {
+      rlock = SharedMutex::ReadHolder(meta.accessAllThreadsLock_);
+    }
+    {
+      std::lock_guard<std::mutex> g(meta.lock_);
+      meta.erase(&(*threadEntry));
+      // No need to hold the lock any longer; the ThreadEntry is private to this
+      // thread now that it's been removed from meta.
+    }
+    // NOTE: User-provided deleter / object dtor itself may be using ThreadLocal
+    // with the same Tag, so dispose() calls below may (re)create some of the
+    // elements or even increase elementsCapacity, thus multiple cleanup rounds
+    // may be required.
+    for (bool shouldRun = true; shouldRun;) {
+      shouldRun = false;
+      FOR_EACH_RANGE (i, 0, threadEntry->elementsCapacity) {
+        if (threadEntry->elements[i].dispose(TLPDestructionMode::THIS_THREAD)) {
+          shouldRun = true;
+        }
       }
     }
   }
@@ -92,38 +98,54 @@ uint32_t StaticMetaBase::allocate(EntryID* ent) {
 void StaticMetaBase::destroy(EntryID* ent) {
   try {
     auto& meta = *this;
+
     // Elements in other threads that use this id.
     std::vector<ElementWrapper> elements;
+
     {
-      std::lock_guard<std::mutex> g(meta.lock_);
-      uint32_t id = ent->value.exchange(kEntryIDInvalid);
-      if (id == kEntryIDInvalid) {
-        return;
+      SharedMutex::WriteHolder wlock;
+      if (meta.strict_) {
+        /*
+         * In strict mode, the logic guarantees per-thread instances are
+         * destroyed by the moment ThreadLocal<> dtor returns.
+         * In order to achieve that, we should wait until concurrent
+         * onThreadExit() calls (that might acquire ownership over per-thread
+         * instances in order to destroy them) are finished.
+         */
+        wlock = SharedMutex::WriteHolder(meta.accessAllThreadsLock_);
       }
 
-      for (ThreadEntry* e = meta.head_.next; e != &meta.head_; e = e->next) {
-        if (id < e->elementsCapacity && e->elements[id].ptr) {
-          elements.push_back(e->elements[id]);
-
-          /*
-           * Writing another thread's ThreadEntry from here is fine;
-           * the only other potential reader is the owning thread --
-           * from onThreadExit (which grabs the lock, so is properly
-           * synchronized with us) or from get(), which also grabs
-           * the lock if it needs to resize the elements vector.
-           *
-           * We can't conflict with reads for a get(id), because
-           * it's illegal to call get on a thread local that's
-           * destructing.
-           */
-          e->elements[id].ptr = nullptr;
-          e->elements[id].deleter1 = nullptr;
-          e->elements[id].ownsDeleter = false;
+      {
+        std::lock_guard<std::mutex> g(meta.lock_);
+        uint32_t id = ent->value.exchange(kEntryIDInvalid);
+        if (id == kEntryIDInvalid) {
+          return;
         }
+
+        for (ThreadEntry* e = meta.head_.next; e != &meta.head_; e = e->next) {
+          if (id < e->elementsCapacity && e->elements[id].ptr) {
+            elements.push_back(e->elements[id]);
+
+            /*
+             * Writing another thread's ThreadEntry from here is fine;
+             * the only other potential reader is the owning thread --
+             * from onThreadExit (which grabs the lock, so is properly
+             * synchronized with us) or from get(), which also grabs
+             * the lock if it needs to resize the elements vector.
+             *
+             * We can't conflict with reads for a get(id), because
+             * it's illegal to call get on a thread local that's
+             * destructing.
+             */
+            e->elements[id].ptr = nullptr;
+            e->elements[id].deleter1 = nullptr;
+            e->elements[id].ownsDeleter = false;
+          }
+        }
+        meta.freeIds_.push_back(id);
       }
-      meta.freeIds_.push_back(id);
     }
-    // Delete elements outside the lock
+    // Delete elements outside the locks.
     for (ElementWrapper& elem : elements) {
       elem.dispose(TLPDestructionMode::ALL_THREADS);
     }

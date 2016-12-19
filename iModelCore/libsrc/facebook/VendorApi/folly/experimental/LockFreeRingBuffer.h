@@ -18,14 +18,14 @@
 
 #include <atomic>
 #include <boost/noncopyable.hpp>
-#include <iostream>
 #include <cmath>
 #include <memory>
 #include <string.h>
 #include <type_traits>
 
-#include <folly/detail/TurnSequencer.h>
 #include <folly/Portability.h>
+#include <folly/detail/TurnSequencer.h>
+#include <folly/portability/TypeTraits.h>
 #include <folly/portability/Unistd.h>
 
 namespace folly {
@@ -203,7 +203,8 @@ public:
   bool waitAndTryRead(T& dest, uint32_t turn) noexcept {
     uint32_t desired_turn = (turn + 1) * 2;
     Atom<uint32_t> cutoff(0);
-    if(!sequencer_.tryWaitForTurn(desired_turn, cutoff, false)) {
+    if (sequencer_.tryWaitForTurn(desired_turn, cutoff, false) !=
+        TurnSequencer<Atom>::TryWaitResult::SUCCESS) {
       return false;
     }
     memcpy(&dest, &data, sizeof(T));

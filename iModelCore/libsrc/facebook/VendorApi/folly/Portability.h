@@ -28,6 +28,8 @@
  #include <sched.h>
 #endif
 
+#undef min
+#undef max
 // Unaligned loads and stores
 namespace folly {
 #if FOLLY_HAVE_UNALIGNED_ACCESS
@@ -74,22 +76,20 @@ constexpr bool kHasUnalignedAccess = false;
 # define FOLLY_DEPRECATED(msg)
 #endif
 
-// noinline
-#ifdef _MSC_VER
-# define FOLLY_NOINLINE __declspec(noinline)
+// warn unused result
+#if defined(_MSC_VER) && (_MSC_VER >= 1700)
+#define FOLLY_WARN_UNUSED_RESULT _Check_return_
 #elif defined(__clang__) || defined(__GNUC__)
-# define FOLLY_NOINLINE __attribute__((__noinline__))
+#define FOLLY_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
 #else
-# define FOLLY_NOINLINE
+#define FOLLY_WARN_UNUSED_RESULT
 #endif
 
-// always inline
+// target
 #ifdef _MSC_VER
-# define FOLLY_ALWAYS_INLINE __forceinline
-#elif defined(__clang__) || defined(__GNUC__)
-# define FOLLY_ALWAYS_INLINE inline __attribute__((__always_inline__))
+# define FOLLY_TARGET_ATTRIBUTE(target)
 #else
-# define FOLLY_ALWAYS_INLINE inline
+# define FOLLY_TARGET_ATTRIBUTE(target) __attribute__((__target__(target)))
 #endif
 
 // detection for 64 bit
@@ -151,16 +151,12 @@ constexpr bool kHasUnalignedAccess = false;
 # define FOLLY_MSVC_DISABLE_WARNING(warningNumber)
 #endif
 
-// portable version check
-#ifndef __GNUC_PREREQ
-# if defined __GNUC__ && defined __GNUC_MINOR__
-/* nolint */
-#  define __GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= \
-                                   ((maj) << 16) + (min))
-# else
-/* nolint */
-#  define __GNUC_PREREQ(maj, min) 0
-# endif
+#ifdef HAVE_SHADOW_LOCAL_WARNINGS
+#define FOLLY_GCC_DISABLE_NEW_SHADOW_WARNINGS        \
+  FOLLY_GCC_DISABLE_WARNING(shadow-compatible-local) \
+  FOLLY_GCC_DISABLE_WARNING(shadow-local)
+#else
+#define FOLLY_GCC_DISABLE_NEW_SHADOW_WARNINGS /* empty */
 #endif
 
 #if defined(__GNUC__) && !defined(__APPLE__) && !__GNUC_PREREQ(4,9)
@@ -225,41 +221,13 @@ namespace std { typedef ::max_align_t max_align_t; }
 // If the new c++ ABI is used, __cxx11 inline namespace needs to be added to
 // some types, e.g. std::list.
 #if _GLIBCXX_USE_CXX11_ABI
-# define FOLLY_GLIBCXX_NAMESPACE_CXX11_BEGIN _GLIBCXX_BEGIN_NAMESPACE_CXX11
+#define FOLLY_GLIBCXX_NAMESPACE_CXX11_BEGIN \
+  inline _GLIBCXX_BEGIN_NAMESPACE_CXX11
 # define FOLLY_GLIBCXX_NAMESPACE_CXX11_END   _GLIBCXX_END_NAMESPACE_CXX11
 #else
 # define FOLLY_GLIBCXX_NAMESPACE_CXX11_BEGIN
 # define FOLLY_GLIBCXX_NAMESPACE_CXX11_END
 #endif
-
-// Provide our own std::__throw_* wrappers for platforms that don't have them
-#if FOLLY_HAVE_BITS_FUNCTEXCEPT_H
-#include <bits/functexcept.h>
-#else
-#include <folly/detail/FunctionalExcept.h>
-#endif
-
-#if defined(__cplusplus)
-// Unfortunately, boost::has_trivial_copy<T> is broken in libc++ due to its
-// usage of __has_trivial_copy(), so we can't use it as a
-// least-common-denominator for C++11 implementations that don't support
-// std::is_trivially_copyable<T>.
-//
-//      http://stackoverflow.com/questions/12754886/has-trivial-copy-behaves-differently-in-clang-and-gcc-whos-right
-//
-// As a result, use std::is_trivially_copyable() where it exists, and fall back
-// to Boost otherwise.
-#if FOLLY_HAVE_STD__IS_TRIVIALLY_COPYABLE
-#include <type_traits>
-#define FOLLY_IS_TRIVIALLY_COPYABLE(T)                   \
-  (std::is_trivially_copyable<T>::value)
-#else
-#include <boost/type_traits.hpp>
-#define FOLLY_IS_TRIVIALLY_COPYABLE(T)                   \
-  (boost::has_trivial_copy<T>::value &&                  \
-   boost::has_trivial_destructor<T>::value)
-#endif
-#endif // __cplusplus
 
 // MSVC specific defines
 // mainly for posix compat
@@ -357,3 +325,18 @@ using namespace FOLLY_GFLAGS_NAMESPACE;
 // we will take the next one.
 #define FOLLY_STATIC_CTOR_PRIORITY_MAX __attribute__((__init_priority__(102)))
 #endif
+
+namespace folly {
+
+#if defined(__linux__) && !FOLLY_MOBILE
+constexpr auto kIsLinux = true;
+#else
+constexpr auto kIsLinux = false;
+#endif
+
+#if defined(_WIN32)
+constexpr auto kIsWindows = true;
+#else
+constexpr auto kIsWindows = false;
+#endif
+}

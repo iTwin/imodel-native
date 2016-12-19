@@ -268,13 +268,13 @@ struct AccessSpreader {
   /// valid value in the pre-constructed state and avoid the need for a
   /// conditional on every subsequent invocation (not normally a big win,
   /// but 20% on some inner loops here).
-  static Getcpu::Func getcpuFunc;
+  BE_FOLLY_EXPORT static Getcpu::Func getcpuFunc;
 
   /// For each level of splitting up to kMaxCpus, maps the cpu (mod
   /// kMaxCpus) to the stripe.  Rather than performing any inequalities
   /// or modulo on the actual number of cpus, we just fill in the entire
   /// array.
-  static CompactStripe widthAndCpuToStripe[kMaxCpus + 1][kMaxCpus];
+  BE_FOLLY_EXPORT static CompactStripe widthAndCpuToStripe[kMaxCpus + 1][kMaxCpus];
 
   static bool initialized;
 

@@ -47,6 +47,7 @@ private:
     Utf8CP GetName() const {return m_name.c_str();}
     bool HasWork() const {return !m_tasks.empty();}
     bool IsStopped() const {return m_stop;}
+    virtual void addWithPriority(folly::Func func, int8_t) override {add(std::move(func));}
     BE_FOLLY_EXPORT virtual void add(folly::Func func) override;
 
 protected:

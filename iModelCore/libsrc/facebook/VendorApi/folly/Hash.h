@@ -154,8 +154,7 @@ inline uint32_t twang_32from64(uint64_t key) {
   key = key ^ (key >> 11);
   key = key + (key << 6);
   key = key ^ (key >> 22);
-  // BENTLEY_CHANGE: avoid RTC error in purposeful truncation - return (uint32_t) key;
-  return (uint32_t)(key & 0xffffffff);
+  return (uint32_t) key;
 }
 
 /*
@@ -282,7 +281,7 @@ inline uint64_t fnv64(const std::string& str,
 
 inline uint32_t hsieh_hash32_buf(const void* buf, size_t len) {
   // forcing signed char, since other platforms can use unsigned
-  const signed char* s = reinterpret_cast<const signed char*>(buf);
+  const unsigned char* s = reinterpret_cast<const unsigned char*>(buf);
   uint32_t hash = static_cast<uint32_t>(len);
   uint32_t tmp;
   size_t rem;

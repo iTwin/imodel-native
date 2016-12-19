@@ -16,6 +16,7 @@
 #pragma once
 
 #include <folly/ThreadLocal.h>
+#include <folly/experimental/AsymmetricMemoryBarrier.h>
 
 namespace folly {
 
@@ -80,23 +81,36 @@ class TLRefCount {
   }
 
   void useGlobal() noexcept {
-    std::lock_guard<std::mutex> lg(globalMutex_);
+    std::array<TLRefCount*, 1> ptrs{{this}};
+    useGlobal(ptrs);
+  }
 
-    state_ = State::GLOBAL_TRANSITION;
+  template <typename Container>
+  static void useGlobal(const Container& refCountPtrs) {
+    std::vector<std::unique_lock<std::mutex>> lgs_;
+    for (auto refCountPtr : refCountPtrs) {
+      lgs_.emplace_back(refCountPtr->globalMutex_);
 
-    std::weak_ptr<void> collectGuardWeak = collectGuard_;
-
-    // Make sure we can't create new LocalRefCounts
-    collectGuard_.reset();
-
-    while (!collectGuardWeak.expired()) {
-      auto accessor = localCount_.accessAllThreads();
-      for (auto& count : accessor) {
-        count.collect();
-      }
+      refCountPtr->state_ = State::GLOBAL_TRANSITION;
     }
 
-    state_ = State::GLOBAL;
+    asymmetricHeavyBarrier();
+
+    for (auto refCountPtr : refCountPtrs) {
+      std::weak_ptr<void> collectGuardWeak = refCountPtr->collectGuard_;
+
+      // Make sure we can't create new LocalRefCounts
+      refCountPtr->collectGuard_.reset();
+
+      while (!collectGuardWeak.expired()) {
+        auto accessor = refCountPtr->localCount_.accessAllThreads();
+        for (auto& count : accessor) {
+          count.collect();
+        }
+      }
+
+      refCountPtr->state_ = State::GLOBAL;
+    }
   }
 
  private:
@@ -147,7 +161,14 @@ class TLRefCount {
         return false;
       }
 
-      auto count = count_ += delta;
+      // This is equivalent to atomic fetch_add. We know that this operation
+      // is always performed from a single thread. asymmetricLightBarrier()
+      // makes things faster than atomic fetch_add on platforms with native
+      // support.
+      auto count = count_.load(std::memory_order_relaxed) + delta;
+      count_.store(count, std::memory_order_relaxed);
+
+      asymmetricLightBarrier();
 
       if (UNLIKELY(refCount_.state_.load() != State::LOCAL)) {
         std::lock_guard<std::mutex> lg(collectMutex_);

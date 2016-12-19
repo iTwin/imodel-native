@@ -53,6 +53,14 @@ $(o)StaticSingletonManager$(oext) : $(FollyDir)detail/StaticSingletonManager.cpp
 
 $(o)MallocImpl$(oext) : $(FollyDir)detail/MallocImpl.cpp ${MultiCompileDepends}
 
+$(o)CacheLocality$(oext) : $(FollyDir)detail/CacheLocality.cpp ${MultiCompileDepends}
+
+$(o)SysResource$(oext) : $(FollyDir)portability/SysResource.cpp ${MultiCompileDepends}
+
+$(o)SharedMutex$(oext) : $(FollyDir)SharedMutex.cpp ${MultiCompileDepends}
+
+$(o)ExceptionWrapper$(oext) : $(FollyDir)ExceptionWrapper.cpp ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 DLM_OBJECT_FILES    = $(MultiCompileObjectList)

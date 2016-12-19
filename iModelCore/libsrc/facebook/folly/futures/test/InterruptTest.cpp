@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Future.h>
 #include <folly/futures/Promise.h>
 #include <folly/Baton.h>
+#include <folly/portability/GTest.h>
 
 using namespace folly;
 
 TEST(Interrupt, raise) {
-  std::runtime_error eggs("eggs");
+  using eggs_t = std::runtime_error;
   Promise<Unit> p;
   p.setInterruptHandler([&](const exception_wrapper& e) {
-    EXPECT_THROW(e.throwException(), decltype(eggs));
+    EXPECT_THROW(e.throwException(), eggs_t);
   });
-  p.getFuture().raise(eggs);
+  p.getFuture().raise(eggs_t("eggs"));
 }
 
 TEST(Interrupt, cancel) {

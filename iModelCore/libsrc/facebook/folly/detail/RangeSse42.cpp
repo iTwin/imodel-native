@@ -29,7 +29,6 @@ namespace folly {
 namespace detail {
 size_t qfind_first_byte_of_sse42(const StringPieceLite haystack,
                                  const StringPieceLite needles) {
-  CHECK(false) << "Function " << __func__ << " only works with SSE42!";
   return qfind_first_byte_of_nosse(haystack, needles);
 }
 }
@@ -89,9 +88,9 @@ static size_t qfind_first_byte_of_needles16(const StringPieceLite haystack,
 // helper method for case where needles.size() <= 16
 size_t qfind_first_byte_of_needles16(const StringPieceLite haystack,
                                      const StringPieceLite needles) {
-  DCHECK_GT(haystack.size(), 0);
-  DCHECK_GT(needles.size(), 0);
-  DCHECK_LE(needles.size(), 16);
+  DCHECK_GT(haystack.size(), 0u);
+  DCHECK_GT(needles.size(), 0u);
+  DCHECK_LE(needles.size(), 16u);
   if ((needles.size() <= 2 && haystack.size() >= 256) ||
       // must bail if we can't even SSE-load a single segment of haystack
       (haystack.size() < 16 &&
@@ -143,7 +142,7 @@ template <bool HAYSTACK_ALIGNED>
 size_t scanHaystackBlock(const StringPieceLite haystack,
                          const StringPieceLite needles,
                          uint64_t blockStartIdx) {
-  DCHECK_GT(needles.size(), 16);  // should handled by *needles16() method
+  DCHECK_GT(needles.size(), 16u); // should handled by *needles16() method
   DCHECK(blockStartIdx + 16 <= haystack.size() ||
          (page_for(haystack.data() + blockStartIdx) ==
           page_for(haystack.data() + blockStartIdx + 15)));

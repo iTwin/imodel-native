@@ -16,15 +16,12 @@
 
 #pragma once
 
-#if defined (BENTLEY_CHANGE)
 /*
  * This file contains convenience aliases that make boost::intrusive::list
  * easier to use.
  */
 
-#if defined (BENTLEY_CHANGE)
 #include <boost/intrusive/list.hpp>
-#endif
 
 namespace folly {
 
@@ -119,4 +116,3 @@ using CountedIntrusiveList = boost::intrusive::list<
     boost::intrusive::constant_time_size<true>>;
 
 } // folly
-#endif

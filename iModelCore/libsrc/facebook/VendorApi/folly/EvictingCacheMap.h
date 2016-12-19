@@ -24,6 +24,7 @@
 #include <boost/intrusive/list.hpp>
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/iterator/iterator_adaptor.hpp>
+#include <folly/portability/BitsFunctexcept.h>
 
 namespace folly {
 
@@ -89,9 +90,8 @@ namespace folly {
  * unless evictions of LRU items are triggered by calling prune() by clients
  * (using their own eviction criteria).
  */
-template <class TKey, class TValue, class THash = std::hash<TKey> >
-class EvictingCacheMap : private boost::noncopyable {
-
+template <class TKey, class TValue, class THash = std::hash<TKey>>
+class EvictingCacheMap {
  private:
   // typedefs for brevity
   struct Node;
@@ -147,6 +147,10 @@ class EvictingCacheMap : private boost::noncopyable {
         maxSize_(maxSize),
         clearSize_(clearSize) { }
 
+  EvictingCacheMap(const EvictingCacheMap&) = delete;
+  EvictingCacheMap& operator=(const EvictingCacheMap&) = delete;
+  EvictingCacheMap(EvictingCacheMap&&) = default;
+  EvictingCacheMap& operator=(EvictingCacheMap&&) = default;
 
   ~EvictingCacheMap() {
     setPruneHook(nullptr);
@@ -205,7 +209,7 @@ class EvictingCacheMap : private boost::noncopyable {
   TValue& get(const TKey& key) {
     auto it = find(key);
     if (it == end()) {
-      throw std::out_of_range("Key does not exist");
+      std::__throw_out_of_range("Key does not exist");
     }
     return it->second;
   }
@@ -237,7 +241,7 @@ class EvictingCacheMap : private boost::noncopyable {
   const TValue& getWithoutPromotion(const TKey& key) const {
     auto it = findWithoutPromotion(key);
     if (it == end()) {
-      throw std::out_of_range("Key does not exist");
+      std::__throw_out_of_range("Key does not exist");
     }
     return it->second;
   }

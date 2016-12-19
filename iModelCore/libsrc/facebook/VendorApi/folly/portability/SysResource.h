@@ -19,8 +19,9 @@
 #ifndef _WIN32
 #include <sys/resource.h>
 #else
-#include <cstdint>
 
+#if defined (BENTLEY_CHANGE)
+#include <cstdint>
 #include <folly/portability/SysTime.h>
 
 #define RLIMIT_CORE 0
@@ -39,9 +40,15 @@ struct rlimit {
   rlim_t rlim_max;
 };
 
+struct rusage_timeval
+{
+        long    tv_sec;         /* seconds */
+        long    tv_usec;        /* and microseconds */
+};
+
 struct rusage {
-  timeval ru_utime;
-  timeval ru_stime;
+  rusage_timeval ru_utime;
+  rusage_timeval ru_stime;
   long ru_maxrss;
   long ru_ixrss;
   long ru_idrss;
@@ -63,4 +70,5 @@ int getrlimit(int type, rlimit* dst);
 int getrusage(int who, rusage* usage);
 int setrlimit(int type, rlimit* src);
 }
+#endif
 #endif

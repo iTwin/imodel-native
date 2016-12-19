@@ -35,18 +35,30 @@ using namespace std;
 DEFINE_bool(benchmark, false, "Run benchmarks.");
 DEFINE_bool(json, false, "Output in JSON format.");
 
-DEFINE_string(bm_regex, "",
-              "Only benchmarks whose names match this regex will be run.");
+DEFINE_string(
+    bm_regex,
+    "",
+    "Only benchmarks whose names match this regex will be run.");
 
-DEFINE_int64(bm_min_usec, 100,
-             "Minimum # of microseconds we'll accept for each benchmark.");
+DEFINE_int64(
+    bm_min_usec,
+    100,
+    "Minimum # of microseconds we'll accept for each benchmark.");
 
-DEFINE_int64(bm_min_iters, 1,
-             "Minimum # of iterations we'll try for each benchmark.");
+DEFINE_int32(
+    bm_min_iters,
+    1,
+    "Minimum # of iterations we'll try for each benchmark.");
 
-DEFINE_int32(bm_max_secs, 1,
-             "Maximum # of seconds we'll spend on each benchmark.");
+DEFINE_int64(
+    bm_max_iters,
+    1L << 30L,
+    "Maximum # of iterations we'll try for each benchmark.");
 
+DEFINE_int32(
+    bm_max_secs,
+    1,
+    "Maximum # of seconds we'll spend on each benchmark.");
 
 namespace folly {
 
@@ -229,7 +241,7 @@ static double runBenchmarkGetNSPerIteration(const BenchmarkFun& fun,
   static uint64_t resolutionInNs = 0;
   if (!resolutionInNs) {
     timespec ts;
-    CHECK_EQ(0, clock_getres(detail::DEFAULT_CLOCK_ID, &ts));
+    CHECK_EQ(0, clock_getres(CLOCK_REALTIME, &ts));
     CHECK_EQ(0, ts.tv_sec) << "Clock sucks.";
     CHECK_LT(0, ts.tv_nsec) << "Clock too fast for its own good.";
     CHECK_EQ(1, ts.tv_nsec) << "Clock too coarse, upgrade your kernel.";
@@ -255,7 +267,8 @@ static double runBenchmarkGetNSPerIteration(const BenchmarkFun& fun,
   size_t actualEpochs = 0;
 
   for (; actualEpochs < epochs; ++actualEpochs) {
-    for (unsigned int n = FLAGS_bm_min_iters; n < (1UL << 30); n *= 2) {
+    const auto maxIters = FLAGS_bm_max_iters;
+    for (unsigned int n = FLAGS_bm_min_iters; n < maxIters; n *= 2) {
       auto const nsecsAndIter = fun(n);
       if (nsecsAndIter.first < minNanoseconds) {
         continue;

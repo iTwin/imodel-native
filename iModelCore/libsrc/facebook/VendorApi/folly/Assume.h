@@ -16,10 +16,17 @@
 
 #pragma once
 
+#include <cstdlib>
+
 #include <folly/Portability.h>
-#include <glog/logging.h>
 
 namespace folly {
+
+namespace detail {
+
+extern void assume_check(bool cond);
+
+}
 
 /**
  * Inform the compiler that the argument can be assumed true. It is
@@ -32,16 +39,32 @@ namespace folly {
  */
 
 FOLLY_ALWAYS_INLINE void assume(bool cond) {
-#ifndef NDEBUG
-  DCHECK(cond);
-#elif defined(__clang__)  // Must go first because Clang also defines __GNUC__.
-  __builtin_assume(cond);
+  if (kIsDebug) {
+    detail::assume_check(cond);
+  } else {
+#if defined(__clang__)  // Must go first because Clang also defines __GNUC__.
+    __builtin_assume(cond);
 #elif defined(__GNUC__)
-  if (!cond) { __builtin_unreachable(); }
+    if (!cond) { __builtin_unreachable(); }
 #elif defined(_MSC_VER)
-  __assume(cond);
+    __assume(cond);
 #else
-  // Do nothing.
+    // Do nothing.
+#endif
+  }
+}
+
+[[noreturn]] FOLLY_ALWAYS_INLINE void assume_unreachable() {
+  assume(false);
+  // Do a bit more to get the compiler to understand
+  // that this function really will never return.
+#if defined(__GNUC__)
+  __builtin_unreachable();
+#elif defined(_MSC_VER)
+  __assume(0);
+#else
+  // Well, it's better than nothing.
+  std::abort();
 #endif
 }
 

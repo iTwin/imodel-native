@@ -29,12 +29,6 @@
 
 namespace folly {
 
-// BENTLEY_CHANGE
-// clang/iOS: no type named 'ssize_t'. Not sure why this doesn't resolve... Intention is to be a signed size_t; ptrdiff_t sounds like a nice cross-architecture alternative.
-#if defined(__clang__)
-    using ssize_t = ptrdiff_t;
-#endif
-
 // Various helpers to throw appropriate std::system_error exceptions from C
 // library errors (returned in errno, as positive return values (many POSIX
 // functions), or as negative return values (Linux syscalls))
@@ -70,7 +64,7 @@ void checkPosixError(int err, Args&&... args) {
 // Check a Linux kernel-style return code (>= 0 on success, negative error
 // number on error), throw on error.
 template <class... Args>
-void checkKernelError(folly::ssize_t ret, Args&&... args) {
+void checkKernelError(size_t ret, Args&&... args) {
   if (UNLIKELY(ret < 0)) {
     throwSystemErrorExplicit(-ret, std::forward<Args>(args)...);
   }
@@ -79,14 +73,14 @@ void checkKernelError(folly::ssize_t ret, Args&&... args) {
 // Check a traditional Unix return code (-1 and sets errno on error), throw
 // on error.
 template <class... Args>
-void checkUnixError(folly::ssize_t ret, Args&&... args) {
+void checkUnixError(size_t ret, Args&&... args) {
   if (UNLIKELY(ret == -1)) {
     throwSystemError(std::forward<Args>(args)...);
   }
 }
 
 template <class... Args>
-void checkUnixErrorExplicit(ssize_t ret, int savedErrno, Args&&... args) {
+void checkUnixErrorExplicit(size_t ret, int savedErrno, Args&&... args) {
   if (UNLIKELY(ret == -1)) {
     throwSystemErrorExplicit(savedErrno, std::forward<Args>(args)...);
   }

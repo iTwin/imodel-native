@@ -12,6 +12,13 @@ AC_INIT([folly], m4_translit(folly_version_str, [:], [.]), [folly@fb.com])
 LT_VERSION=folly_version_str:0
 AC_SUBST([LT_VERSION])
 
+#declare pkg-config variables
+PKG_VERSION=m4_join([.], m4_reverse(m4_translit(folly_version_str, [:], [,])))
+AC_SUBST([PKG_VERSION])
+AC_SUBST([PKG_CXXFLAGS])
+AC_SUBST([PKG_DEPS])
+AC_SUBST([PKG_LIBS])
+
 AC_CONFIG_SRCDIR([Likely.h])
 AC_CONFIG_HEADERS([config.h])
 AX_PREFIX_CONFIG_H([folly-config.h], [folly], [config.h])
@@ -53,6 +60,26 @@ fi
 
 CXXFLAGS="$STD $CXXFLAGS"
 
+# expose required -std option via pkg-config
+PKG_CXXFLAGS=$STD
+
+# See if -Wshadow-local and -Wshadow-compatible-local are supported
+AC_MSG_CHECKING(
+  [whether -Wshadow-local and -Wshadow-compatible-local are supported])
+AC_CACHE_VAL([folly_cv_cxx_shadow_local_support], [
+  folly_save_CXXFLAGS="$CXXFLAGS"
+  CXXFLAGS="$CXXFLAGS -Wshadow-local -Wshadow-compatible-local"
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[]], [[]])],
+    [folly_cv_cxx_shadow_local_support=yes],
+    [folly_cv_cxx_shadow_local_support=no])
+  CXXFLAGS="$folly_save_CXXFLAGS"])
+AC_MSG_RESULT([$folly_cv_cxx_shadow_local_support])
+if test "$folly_cv_cxx_shadow_local_support" = yes; then
+  AC_DEFINE([HAVE_SHADOW_LOCAL_WARNINGS], [1],
+  [Define if both -Wshadow-local and -Wshadow-compatible-local are supported.])
+fi
+
 # Checks for glog and gflags
 # There are no symbols with C linkage, so we do a try-run
 AC_HAVE_LIBRARY([gflags],[],[AC_MSG_ERROR(
@@ -77,6 +104,7 @@ AC_CACHE_CHECK(
 if test "$folly_cv_prog_cc_gflags" != "yes"; then
   AC_MSG_ERROR(["libgflags invalid, see config.log for details"])
 fi
+FB_CHECK_PKG_CONFIG([GFLAGS], [libgflags])
 
 AC_HAVE_LIBRARY([glog],[],[AC_MSG_ERROR(
                 [Please install google-glog library])])
@@ -100,11 +128,11 @@ AC_CACHE_CHECK(
 if test "$folly_cv_prog_cc_glog" != "yes"; then
   AC_MSG_ERROR(["libglog invalid, see config.log for details"])
 fi
+FB_CHECK_PKG_CONFIG([GLOG], [libglog])
 
-AC_CHECK_LIB(ssl,
-        SSL_ctrl,
-        [],
+AX_CHECK_OPENSSL([],
         [AC_MSG_ERROR(["Error: libssl required"])])
+FB_CHECK_PKG_CONFIG([OPENSSL], [openssl])
 
 # check for boost libs
 AX_BOOST_BASE([1.51.0], [], [AC_MSG_ERROR(
@@ -131,8 +159,17 @@ AC_CHECK_LIB([double-conversion],[ceil],[],[AC_MSG_ERROR(
              [Please install double-conversion library])])
 
 AC_CHECK_LIB([event], [event_set], [], [AC_MSG_ERROR([Unable to find libevent])])
+FB_CHECK_PKG_CONFIG([EVENT], [libevent])
 
-AC_CHECK_LIB([jemalloc], [xallocx])
+AC_ARG_WITH([jemalloc], [
+  --with-jemalloc     Whether to make folly jemalloc aware
+],[
+  AC_CHECK_LIB([jemalloc], [xallocx],[
+    AC_DEFINE([USE_JEMALLOC], [1], [Enable jemalloc])
+  ],[
+    AC_MSG_ERROR([--with-jemalloc requested, but jemalloc not found])
+  ])
+])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -141,7 +178,28 @@ AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_C_VOLATILE
-AC_CHECK_TYPE([__int128], AC_DEFINE([HAVE_INT128_T], [1], [Define if we have __int128]))
+AC_CHECK_TYPE([__int128], [folly_cv_prog_cc_int128=yes],
+    [folly_cv_prog_cc_int128=no])
+if test "$folly_cv_prog_cc_int128" = "yes"; then
+  AC_DEFINE([HAVE_INT128_T], [1], [Define if we have __int128])
+  AC_CACHE_CHECK(
+    [for __int128 type traits],
+    [folly_cv_prog_cc_int128traits],
+    [AC_COMPILE_IFELSE(
+      [AC_LANG_SOURCE([[
+#include <type_traits>
+static_assert(
+  ::std::is_same<::std::make_signed<unsigned __int128>::type, __int128>::value,
+  "signed form of \`unsigned __uint128\` must be \`__int128\`.");
+      ]])],
+      [folly_cv_prog_cc_int128traits=yes],
+      [folly_cv_prog_cc_int128traits=no])
+    ])
+  if test "$folly_cv_prog_cc_int128traits" = "no"; then
+    AC_DEFINE([SUPPLY_MISSING_INT128_TRAITS], [1], [Define if we need the standard integer traits defined for the type `__int128'.])
+  fi
+fi
+
 AC_CHECK_TYPES([ptrdiff_t, pthread_spinlock_t])
 
 AC_CACHE_CHECK(
@@ -340,6 +398,27 @@ if test "$folly_cv_prog_cc_weak_symbols" = yes; then
             [Define to 1 if the linker supports weak symbols.])
 fi
 
+
+# Figure out if we support wchar well
+AC_CACHE_CHECK(
+  [for wchar support],
+  [folly_cv_prog_cc_wchar_support],
+  [AC_RUN_IFELSE(
+    [AC_LANG_SOURCE[
+      #include <cstddef>
+      #include <cwchar>
+
+      int main(int argc, char** argv) {
+        return wcstol(L"01", nullptr, 10) == 1 ? 0 : 1;
+      }
+    ]],
+    [folly_cv_prog_cc_wchar_support=yes],
+    [folly_cv_prog_cc_wchar_support=no])])
+
+if test "$folly_cv_prog_cc_wchar_support" = "yes"; then
+  AC_DEFINE([HAVE_WCHAR_SUPPORT], [1], [Define to 1 if the libc supports wchar well])
+fi
+
 # Figure out whether the architecture supports unaligned accesses
 AC_CACHE_CHECK(
   [for unaligned access support],
@@ -488,20 +567,27 @@ AC_CHECK_HEADER([lz4.h], AC_CHECK_LIB([lz4], [LZ4_decompress_safe]))
 AC_CHECK_HEADER([snappy.h], AC_CHECK_LIB([snappy], [main]))
 AC_CHECK_HEADER([zlib.h], AC_CHECK_LIB([z], [main]))
 AC_CHECK_HEADER([lzma.h], AC_CHECK_LIB([lzma], [main]))
-AC_CHECK_HEADER([zstd.h], AC_CHECK_LIB([zstd], [main]))
+AC_CHECK_HEADER([zstd.h], AC_CHECK_LIB([zstd], [ZSTD_compressStream]))
+AC_CHECK_HEADER([linux/membarrier.h], AC_DEFINE([HAVE_LINUX_MEMBARRIER_H], [1], [Define to 1 if membarrier.h is available]))
 
 AC_ARG_ENABLE([follytestmain],
    AS_HELP_STRING([--enable-follytestmain], [enables using main function from folly for tests]),
    [follytestmain=${enableval}], [follytestmain=no])
 
 use_follytestmain=yes
+# libdwarf used to install in /usr/include, now installs in /usr/include/libdwarf.
+AC_CHECK_HEADERS([libdwarf/dwarf.h dwarf.h], [break])
+# Check whether we have both the library and the header
+have_libdwarf=no
+AS_IF([test "x${ac_cv_header_libdwarf_dwarf_h}" = xyes], [have_libdwarf=yes])
+AS_IF([test "x${ac_cv_header_dwarf_h}" = xyes], [have_libdwarf=yes])
 if test "x${follytestmain}" = "xyes"; then
-   AC_CHECK_HEADERS([libdwarf.h dwarf.h],, AC_MSG_ERROR([Please install libdwarf development package]))
-   AC_CHECK_HEADERS([libelf.h elf.h],, AC_MSG_ERROR([Please install libelf development package]))
-   AC_CHECK_HEADERS([libunwind.h],, AC_MSG_ERROR([Please install libinwind development package]))
+   AS_IF([test "x${have_libdwarf}" = xno], [AC_MSG_ERROR([Please install libdwarf development library and headers])])
+   AC_CHECK_HEADERS([elf.h],, AC_MSG_ERROR([Please install libelf development package]))
+   AC_CHECK_HEADERS([libunwind.h],, AC_MSG_ERROR([Please install libunwind development package]))
 else
-   AC_CHECK_HEADERS([libdwarf.h dwarf.h],, [use_follytestmain=no])
-   AC_CHECK_HEADERS([libelf.h elf.h],, [use_follytestmain=no])
+   AS_IF([test "x${have_libdwarf}" = xno],, [use_follytestmain=no])
+   AC_CHECK_HEADERS([elf.h],, [use_follytestmain=no])
    AC_CHECK_HEADERS([libunwind.h],, [use_follytestmain=no])
 fi
 
@@ -522,6 +608,8 @@ AM_LDFLAGS="$AM_LDFLAGS $BOOST_THREAD_LIB $BOOST_FILESYSTEM_LIB"
 AM_LDFLAGS="$AM_LDFLAGS $BOOST_SYSTEM_LIB $BOOST_REGEX_LIB -lpthread"
 AM_LDFLAGS="$AM_LDFLAGS $BOOST_CHRONO_LIB"
 
+AM_LDFLAGS="$AM_LDFLAGS $OPENSSL_LDFLAGS $OPENSSL_LIBS"
+
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_LDFLAGS])
 
@@ -536,9 +624,15 @@ AM_CONDITIONAL([HAVE_BITS_FUNCTEXCEPT_H], [test "$ac_cv_header_bits_functexcept_
 AM_CONDITIONAL([HAVE_EXTRANDOM_SFMT19937],
                [test "$folly_cv_prog_cc_have_extrandom_sfmt19937" = "yes"])
 AM_CONDITIONAL([FOLLY_TESTMAIN], [test "x${use_follytestmain}" = "xyes"])
+AM_CONDITIONAL([HAVE_BOOST_CONTEXT], [test "x${ax_cv_boost_context}" = "xyes"])
+
+# remove pkg-config deps from dependent libraries
+# (at least for pkg-config file purposes)
+FB_FILTER_PKG_LIBS([$AM_LDFLAGS $LIBS])
 
 # Output
 AC_CONFIG_FILES([Makefile
+                 libfolly.pc
                  test/Makefile
                  test/function_benchmark/Makefile
                  experimental/Makefile

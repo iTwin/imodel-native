@@ -28,12 +28,14 @@ template <typename T, typename RefCount>
 class ReadMostlyWeakPtr;
 template <typename T, typename RefCount>
 class ReadMostlySharedPtr;
+template <typename RefCount>
+class ReadMostlyMainPtrDeleter;
 
 using DefaultRefCount = TLRefCount;
 
 namespace detail {
 
-template <typename T, typename RefCount /* = DefaultRefCount*/>
+template <typename T, typename RefCount = DefaultRefCount>
 class ReadMostlySharedPtrCore {
  public:
   T* get() {
@@ -59,7 +61,6 @@ class ReadMostlySharedPtrCore {
 
   void increfWeak() {
     auto value = ++weakCount_;
-    UNUSED_VARIABLE(value);
     DCHECK_GT(value, 0);
   }
 
@@ -80,6 +81,7 @@ class ReadMostlySharedPtrCore {
 
  private:
   friend class ReadMostlyMainPtr<T, RefCount>;
+  friend class ReadMostlyMainPtrDeleter<RefCount>;
 
   explicit ReadMostlySharedPtrCore(std::shared_ptr<T> ptr) :
       ptrRaw_(ptr.get()),
@@ -184,6 +186,7 @@ class ReadMostlyMainPtr {
  private:
   friend class ReadMostlyWeakPtr<T, RefCount>;
   friend class ReadMostlySharedPtr<T, RefCount>;
+  friend class ReadMostlyMainPtrDeleter<RefCount>;
 
   detail::ReadMostlySharedPtrCore<T, RefCount>* impl_{nullptr};
 };
@@ -363,4 +366,89 @@ class ReadMostlySharedPtr {
   detail::ReadMostlySharedPtrCore<T, RefCount>* impl_{nullptr};
 };
 
+/**
+ * This can be used to destroy multiple ReadMostlyMainPtrs at once.
+ */
+template <typename RefCount = DefaultRefCount>
+class ReadMostlyMainPtrDeleter {
+ public:
+  ~ReadMostlyMainPtrDeleter() noexcept {
+    RefCount::useGlobal(refCounts_);
+    for (auto& decref : decrefs_) {
+      decref();
+    }
+  }
+
+  template <typename T>
+  void add(ReadMostlyMainPtr<T, RefCount> ptr) noexcept {
+    if (!ptr.impl_) {
+      return;
+    }
+
+    refCounts_.push_back(&ptr.impl_->count_);
+    refCounts_.push_back(&ptr.impl_->weakCount_);
+    decrefs_.push_back([impl = ptr.impl_] { impl->decref(); });
+    ptr.impl_ = nullptr;
+  }
+
+ private:
+  std::vector<RefCount*> refCounts_;
+  std::vector<folly::Function<void()>> decrefs_;
+};
+
+template <typename T, typename RefCount>
+inline bool operator==(
+    const ReadMostlyMainPtr<T, RefCount>& ptr,
+    std::nullptr_t) {
+  return ptr.get() == nullptr;
+}
+
+template <typename T, typename RefCount>
+inline bool operator==(
+    std::nullptr_t,
+    const ReadMostlyMainPtr<T, RefCount>& ptr) {
+  return ptr.get() == nullptr;
+}
+
+template <typename T, typename RefCount>
+inline bool operator==(
+    const ReadMostlySharedPtr<T, RefCount>& ptr,
+    std::nullptr_t) {
+  return ptr.get() == nullptr;
+}
+
+template <typename T, typename RefCount>
+inline bool operator==(
+    std::nullptr_t,
+    const ReadMostlySharedPtr<T, RefCount>& ptr) {
+  return ptr.get() == nullptr;
+}
+
+template <typename T, typename RefCount>
+inline bool operator!=(
+    const ReadMostlyMainPtr<T, RefCount>& ptr,
+    std::nullptr_t) {
+  return !(ptr == nullptr);
+}
+
+template <typename T, typename RefCount>
+inline bool operator!=(
+    std::nullptr_t,
+    const ReadMostlyMainPtr<T, RefCount>& ptr) {
+  return !(ptr == nullptr);
+}
+
+template <typename T, typename RefCount>
+inline bool operator!=(
+    const ReadMostlySharedPtr<T, RefCount>& ptr,
+    std::nullptr_t) {
+  return !(ptr == nullptr);
+}
+
+template <typename T, typename RefCount>
+inline bool operator!=(
+    std::nullptr_t,
+    const ReadMostlySharedPtr<T, RefCount>& ptr) {
+  return !(ptr == nullptr);
+}
 }

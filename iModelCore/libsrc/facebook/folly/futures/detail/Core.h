@@ -25,9 +25,10 @@
 #include <folly/Function.h>
 #include <folly/MicroSpinLock.h>
 #include <folly/Optional.h>
+#include <folly/ScopeGuard.h>
+#include <folly/Try.h>
 #include <folly/futures/Future.h>
 #include <folly/futures/Promise.h>
-#include <folly/Try.h>
 #include <folly/futures/detail/FSM.h>
 
 #include <folly/io/async/Request.h>
@@ -73,7 +74,7 @@ enum class State : uint8_t {
 /// doesn't access a Future or Promise object from more than one thread at a
 /// time there won't be any problems.
 template<typename T>
-class Core {
+class Core final {
   static_assert(!std::is_void<T>::value,
                 "void futures are not supported. Use Unit instead.");
  public:
@@ -300,7 +301,55 @@ class Core {
     interruptHandler_ = std::move(fn);
   }
 
- protected:
+ private:
+  class CountedReference {
+   public:
+    ~CountedReference() {
+      if (core_) {
+        core_->detachOne();
+        core_ = nullptr;
+      }
+    }
+
+    explicit CountedReference(Core* core) noexcept : core_(core) {
+      // do not construct a CountedReference from nullptr!
+      DCHECK(core);
+
+      ++core_->attached_;
+    }
+
+    // CountedReference must be copy-constructable as long as
+    // folly::Executor::add takes a std::function
+    CountedReference(CountedReference const& o) noexcept : core_(o.core_) {
+      if (core_) {
+        ++core_->attached_;
+      }
+    }
+
+    CountedReference& operator=(CountedReference const& o) noexcept {
+      ~CountedReference();
+      new (this) CountedReference(o);
+      return *this;
+    }
+
+    CountedReference(CountedReference&& o) noexcept {
+      std::swap(core_, o.core_);
+    }
+
+    CountedReference& operator=(CountedReference&& o) noexcept {
+      ~CountedReference();
+      new (this) CountedReference(std::move(o));
+      return *this;
+    }
+
+    Core* getCore() const noexcept {
+      return core_;
+    }
+
+   private:
+    Core* core_{nullptr};
+  };
+
   void maybeCallback() {
     FSM_START(fsm_)
       case State::Armed:
@@ -326,35 +375,34 @@ class Core {
       executorLock_.unlock();
     }
 
-    // keep Core alive until callback did its thing
-    ++attached_;
-
     if (x) {
       try {
         if (LIKELY(x->getNumPriorities() == 1)) {
-          x->add([this]() mutable {
-            SCOPE_EXIT { detachOne(); };
-            RequestContextScopeGuard rctx(context_);
-            SCOPE_EXIT { callback_ = {}; };
-            callback_(std::move(*result_));
+          x->add([core_ref = CountedReference(this)]() mutable {
+            auto cr = std::move(core_ref);
+            Core* const core = cr.getCore();
+            RequestContextScopeGuard rctx(core->context_);
+            SCOPE_EXIT { core->callback_ = {}; };
+            core->callback_(std::move(*core->result_));
           });
         } else {
-          x->addWithPriority([this]() mutable {
-            SCOPE_EXIT { detachOne(); };
-            RequestContextScopeGuard rctx(context_);
-            SCOPE_EXIT { callback_ = {}; };
-            callback_(std::move(*result_));
+          x->addWithPriority([core_ref = CountedReference(this)]() mutable {
+            auto cr = std::move(core_ref);
+            Core* const core = cr.getCore();
+            RequestContextScopeGuard rctx(core->context_);
+            SCOPE_EXIT { core->callback_ = {}; };
+            core->callback_(std::move(*core->result_));
           }, priority);
         }
       } catch (...) {
-        --attached_; // Account for extra ++attached_ before try
+        CountedReference core_ref(this);
         RequestContextScopeGuard rctx(context_);
         result_ = Try<T>(exception_wrapper(std::current_exception()));
         SCOPE_EXIT { callback_ = {}; };
         callback_(std::move(*result_));
       }
     } else {
-      SCOPE_EXIT { detachOne(); };
+      CountedReference core_ref(this);
       RequestContextScopeGuard rctx(context_);
       SCOPE_EXIT { callback_ = {}; };
       callback_(std::move(*result_));
@@ -362,10 +410,9 @@ class Core {
   }
 
   void detachOne() {
-    auto a = --attached_;
-    assert(a >= 0);
-    assert(a <= 2);
-    if (a == 0) {
+    auto a = attached_--;
+    assert(a >= 1);
+    if (a == 1) {
       delete this;
     }
   }
@@ -419,34 +466,15 @@ struct CollectVariadicContext {
        std::get<I>(results) = std::move(t);
      }
   }
-  ~CollectVariadicContext() {
+  ~CollectVariadicContext() noexcept {
     if (!threw.exchange(true)) {
-      p.setValue(unwrap(std::move(results)));
+      p.setValue(unwrapTryTuple(std::move(results)));
     }
   }
   Promise<std::tuple<Ts...>> p;
   std::tuple<folly::Try<Ts>...> results;
   std::atomic<bool> threw {false};
   typedef Future<std::tuple<Ts...>> type;
-
- private:
-  template <typename... Ts2>
-  static std::tuple<Ts...> unwrap(std::tuple<folly::Try<Ts>...>&& o,
-                                  Ts2&&... ts2) {
-    static_assert(sizeof...(ts2) <
-                  std::tuple_size<std::tuple<folly::Try<Ts>...>>::value,
-                  "Non-templated unwrap should be used instead");
-    assert(std::get<sizeof...(ts2)>(o).hasValue());
-
-    return unwrap(std::move(o),
-                  std::forward<Ts2>(ts2)...,
-                  std::move(*std::get<sizeof...(ts2)>(o)));
-  }
-
-  static std::tuple<Ts...> unwrap(std::tuple<folly::Try<Ts>...>&& /* o */,
-                                  Ts&&... ts) {
-    return std::tuple<Ts...>(std::forward<Ts>(ts)...);
-  }
 };
 
 template <template <typename...> class T, typename... Ts>

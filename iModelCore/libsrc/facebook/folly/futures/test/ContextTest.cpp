@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Future.h>
+#include <folly/portability/GTest.h>
 
 using namespace folly;
 
@@ -30,7 +29,7 @@ class TestData : public RequestData {
 TEST(Context, basic) {
 
   // Start a new context
-  RequestContext::create();
+  folly::RequestContextScopeGuard rctx;
 
   EXPECT_EQ(nullptr, RequestContext::get()->getContextData("test"));
 

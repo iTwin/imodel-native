@@ -23,19 +23,11 @@
 
 // These aren't generic implementations, so we can only declare them on
 // platforms we support.
-// BENTLEY_CHANGE
-// Xcode 8.x emits: error: typedef redefinition with different types ('uint8_t' (aka 'unsigned char') vs 'enum clockid_t')
-//  .../iPhoneOS10.0.sdk/usr/include/time.h:171:3: note: previous definition is here
-// Was: #if !FOLLY_HAVE_CLOCK_GETTIME && (defined(__MACH__) || defined(_WIN32))
-#if !FOLLY_HAVE_CLOCK_GETTIME && ((defined(__MACH__) && __clang_major__ < 8) || defined(_WIN32))
+#if !FOLLY_HAVE_CLOCK_GETTIME && (defined(__MACH__) || defined(_WIN32))
 #define CLOCK_REALTIME 0
-// The Windows implementation supports a few other
-// clock types as well.
-#ifdef _WIN32
-# define CLOCK_MONOTONIC 1
-# define CLOCK_PROCESS_CPUTIME_ID 2
-# define CLOCK_THREAD_CPUTIME_ID 3
-#endif
+#define CLOCK_MONOTONIC 1
+#define CLOCK_PROCESS_CPUTIME_ID 2
+#define CLOCK_THREAD_CPUTIME_ID 3
 
 typedef uint8_t clockid_t;
 extern "C" int clock_gettime(clockid_t clk_id, struct timespec* ts);

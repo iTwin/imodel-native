@@ -19,19 +19,15 @@
 #include <type_traits>
 #include <stdint.h>
 #include <assert.h>
-#if defined (BENTLEY_CHANGE)
 #include <boost/noncopyable.hpp>
-#endif
 #include <folly/AtomicStruct.h>
 #include <folly/detail/CacheLocality.h>
 #include <folly/portability/SysMman.h>
 #include <folly/portability/Unistd.h>
 
 // Ignore shadowing warnings within this file, so includers can use -Wshadow.
-#if defined (BENTLEY_CHANGE)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
-#endif
 
 namespace folly {
 
@@ -93,8 +89,7 @@ template <typename T,
           template<typename> class Atom = std::atomic,
           bool EagerRecycleWhenTrivial = false,
           bool EagerRecycleWhenNotTrivial = true>
-struct IndexedMemPool :  NonCopyable {
-
+struct IndexedMemPool : boost::noncopyable {
   typedef T value_type;
 
   typedef std::unique_ptr<T, detail::IndexedMemPoolRecycler<IndexedMemPool>>
@@ -225,8 +220,8 @@ struct IndexedMemPool :  NonCopyable {
     auto rv = slot - slots_;
 
     // this assert also tests that rv is in range
-    assert(elem == &(*this)[(uint32_t) rv]);
-    return (uint32_t)rv;
+    assert(elem == &(*this)[rv]);
+    return rv;
   }
 
   /// Returns true iff idx has been alloc()ed and not recycleIndex()ed
@@ -469,6 +464,4 @@ struct IndexedMemPoolRecycler {
 
 } // namespace folly
 
-#if defined (BENTLEY_CHANGE)
 # pragma GCC diagnostic pop
-#endif

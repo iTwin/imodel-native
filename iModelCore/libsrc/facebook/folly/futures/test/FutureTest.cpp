@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Future.h>
 #include <folly/Unit.h>
 #include <folly/Memory.h>
 #include <folly/Executor.h>
 #include <folly/dynamic.h>
 #include <folly/Baton.h>
+#include <folly/portability/GTest.h>
 #include <folly/portability/Unistd.h>
 
 #include <algorithm>
@@ -238,18 +237,16 @@ TEST(Future, onError) {
 
   // Returned value propagates
   {
-    auto f = makeFuture().then([] {
+    auto f = makeFuture().then([]() -> int {
       throw eggs;
-      return 0;
     }).onError([&](eggs_t& /* e */) { return 42; });
     EXPECT_EQ(42, f.value());
   }
 
   // Returned future propagates
   {
-    auto f = makeFuture().then([] {
+    auto f = makeFuture().then([]() -> int {
       throw eggs;
-      return 0;
     }).onError([&](eggs_t& /* e */) { return makeFuture<int>(42); });
     EXPECT_EQ(42, f.value());
   }
@@ -257,15 +254,15 @@ TEST(Future, onError) {
   // Throw in callback
   {
     auto f = makeFuture()
-      .then([] { throw eggs; return 0; })
-      .onError([&] (eggs_t& e) { throw e; return -1; });
+      .then([]() -> int { throw eggs; })
+      .onError([&] (eggs_t& e) -> int { throw e; });
     EXPECT_THROW(f.value(), eggs_t);
   }
 
   {
     auto f = makeFuture()
-      .then([] { throw eggs; return 0; })
-      .onError([&] (eggs_t& e) { throw e; return makeFuture<int>(-1); });
+      .then([]() -> int { throw eggs; })
+      .onError([&] (eggs_t& e) -> Future<int> { throw e; });
     EXPECT_THROW(f.value(), eggs_t);
   }
 
@@ -284,14 +281,12 @@ TEST(Future, onError) {
   // exception_wrapper, return Future<T> but throw
   {
     auto f = makeFuture()
-                 .then([] {
+                 .then([]() -> int {
                    throw eggs;
-                   return 0;
                  })
-                 .onError([&](exception_wrapper /* e */) {
+                 .onError([&](exception_wrapper /* e */) -> Future<int> {
                    flag();
                    throw eggs;
-                   return makeFuture<int>(-1);
                  });
     EXPECT_FLAG();
     EXPECT_THROW(f.value(), eggs_t);
@@ -300,9 +295,8 @@ TEST(Future, onError) {
   // exception_wrapper, return T
   {
     auto f = makeFuture()
-                 .then([] {
+                 .then([]() -> int {
                    throw eggs;
-                   return 0;
                  })
                  .onError([&](exception_wrapper /* e */) {
                    flag();
@@ -315,14 +309,12 @@ TEST(Future, onError) {
   // exception_wrapper, return T but throw
   {
     auto f = makeFuture()
-                 .then([] {
+                 .then([]() -> int {
                    throw eggs;
-                   return 0;
                  })
-                 .onError([&](exception_wrapper /* e */) {
+                 .onError([&](exception_wrapper /* e */) -> int {
                    flag();
                    throw eggs;
-                   return -1;
                  });
     EXPECT_FLAG();
     EXPECT_THROW(f.value(), eggs_t);
@@ -621,7 +613,7 @@ TEST(Future, finishBigLambda) {
   // bulk_data, to be captured in the lambda passed to Future::then.
   // This is meant to force that the lambda can't be stored inside
   // the Future object.
-  std::array<char, sizeof(detail::Core<int>)> bulk_data = {0};
+  std::array<char, sizeof(detail::Core<int>)> bulk_data = {{0}};
 
   // suppress gcc warning about bulk_data not being used
   EXPECT_EQ(bulk_data[0], 0);
@@ -822,30 +814,32 @@ TEST(Future, RequestContext) {
     bool value;
   };
 
-  NewThreadExecutor e;
-  RequestContext::create();
-  RequestContext::get()->setContextData("key",
-      folly::make_unique<MyRequestData>(true));
-  auto checker = [](int lineno) {
-    return [lineno](Try<int>&& /* t */) {
-      auto d = static_cast<MyRequestData*>(
-        RequestContext::get()->getContextData("key"));
-      EXPECT_TRUE(d && d->value) << "on line " << lineno;
-    };
-  };
-
-  makeFuture(1).via(&e).then(checker(__LINE__));
-
-  e.setHandlesPriorities();
-  makeFuture(2).via(&e).then(checker(__LINE__));
-
   Promise<int> p1, p2;
-  p1.getFuture().then(checker(__LINE__));
+  NewThreadExecutor e;
+  {
+    folly::RequestContextScopeGuard rctx;
+    RequestContext::get()->setContextData(
+        "key", folly::make_unique<MyRequestData>(true));
+    auto checker = [](int lineno) {
+      return [lineno](Try<int>&& /* t */) {
+        auto d = static_cast<MyRequestData*>(
+            RequestContext::get()->getContextData("key"));
+        EXPECT_TRUE(d && d->value) << "on line " << lineno;
+      };
+    };
 
-  e.setThrowsOnAdd();
-  p2.getFuture().via(&e).then(checker(__LINE__));
+    makeFuture(1).via(&e).then(checker(__LINE__));
 
-  RequestContext::create();
+    e.setHandlesPriorities();
+    makeFuture(2).via(&e).then(checker(__LINE__));
+
+    p1.getFuture().then(checker(__LINE__));
+
+    e.setThrowsOnAdd();
+    p2.getFuture().via(&e).then(checker(__LINE__));
+  }
+  // Assert that no RequestContext is set
+  EXPECT_FALSE(RequestContext::saveContext());
   p1.setValue(3);
   p2.setValue(4);
 }

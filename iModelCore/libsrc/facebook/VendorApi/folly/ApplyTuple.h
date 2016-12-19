@@ -28,6 +28,7 @@
 #pragma once
 
 #include <functional>
+#include <tuple>
 #include <utility>
 
 namespace folly {
@@ -46,9 +47,22 @@ struct MakeIndexSequence : MakeIndexSequence<N - 1, N - 1, Is...> {};
 template <std::size_t... Is>
 struct MakeIndexSequence<0, Is...> : IndexSequence<Is...> {};
 
-template <class Tuple>
-using MakeIndexSequenceFromTuple =
-    MakeIndexSequence<std::tuple_size<typename std::decay<Tuple>::type>::value>;
+inline constexpr std::size_t sum() {
+  return 0;
+}
+template <typename... Args>
+inline constexpr std::size_t sum(std::size_t v1, Args... vs) {
+  return v1 + sum(vs...);
+}
+
+template <typename... Tuples>
+struct TupleSizeSum {
+  static constexpr auto value = sum(std::tuple_size<Tuples>::value...);
+};
+
+template <typename... Tuples>
+using MakeIndexSequenceFromTuple = MakeIndexSequence<
+    TupleSizeSum<typename std::decay<Tuples>::type...>::value>;
 
 // This is to allow using this with pointers to member functions,
 // where the first argument in the tuple will be the this pointer.
@@ -68,21 +82,42 @@ inline constexpr auto call(F&& f, Tuple&& t, IndexSequence<Indexes...>)
   return std::forward<F>(f)(std::get<Indexes>(std::forward<Tuple>(t))...);
 }
 
+template <class Tuple, std::size_t... Indexes>
+inline constexpr auto forwardTuple(Tuple&& t, IndexSequence<Indexes...>)
+    -> decltype(
+        std::forward_as_tuple(std::get<Indexes>(std::forward<Tuple>(t))...)) {
+  return std::forward_as_tuple(std::get<Indexes>(std::forward<Tuple>(t))...);
+}
+
 } // namespace apply_tuple
 } // namespace detail
 
 //////////////////////////////////////////////////////////////////////
 
-template <class F, class Tuple>
-inline constexpr auto applyTuple(F&& f, Tuple&& t)
+/**
+ * Invoke a callable object with a set of arguments passed as a tuple, or a
+ *     series of tuples
+ *
+ * Example: the following lines are equivalent
+ *     func(1, 2, 3, "foo");
+ *     applyTuple(func, std::make_tuple(1, 2, 3, "foo"));
+ *     applyTuple(func, std::make_tuple(1, 2), std::make_tuple(3, "foo"));
+ */
+
+template <class F, class... Tuples>
+inline constexpr auto applyTuple(F&& f, Tuples&&... t)
     -> decltype(detail::apply_tuple::call(
         detail::apply_tuple::makeCallable(std::forward<F>(f)),
-        std::forward<Tuple>(t),
-        detail::apply_tuple::MakeIndexSequenceFromTuple<Tuple>{})) {
+        std::tuple_cat(detail::apply_tuple::forwardTuple(
+            std::forward<Tuples>(t),
+            detail::apply_tuple::MakeIndexSequenceFromTuple<Tuples>{})...),
+        detail::apply_tuple::MakeIndexSequenceFromTuple<Tuples...>{})) {
   return detail::apply_tuple::call(
       detail::apply_tuple::makeCallable(std::forward<F>(f)),
-      std::forward<Tuple>(t),
-      detail::apply_tuple::MakeIndexSequenceFromTuple<Tuple>{});
+      std::tuple_cat(detail::apply_tuple::forwardTuple(
+          std::forward<Tuples>(t),
+          detail::apply_tuple::MakeIndexSequenceFromTuple<Tuples>{})...),
+      detail::apply_tuple::MakeIndexSequenceFromTuple<Tuples...>{});
 }
 
 //////////////////////////////////////////////////////////////////////

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Future.h>
 #include <folly/futures/InlineExecutor.h>
 #include <folly/futures/ManualExecutor.h>
 #include <folly/futures/QueuedImmediateExecutor.h>
 #include <folly/Baton.h>
+#include <folly/portability/GTest.h>
 
 using namespace folly;
 
@@ -121,6 +120,19 @@ TEST(ManualExecutor, getViaDoesNotDeadlock) {
   t.join();
 }
 
+TEST(ManualExecutor, clear) {
+  ManualExecutor x;
+  size_t count = 0;
+  x.add([&] { ++count; });
+  x.scheduleAt([&] { ++count; }, x.now() + std::chrono::milliseconds(10));
+  EXPECT_EQ(0, count);
+
+  x.clear();
+  x.advance(std::chrono::milliseconds(10));
+  x.run();
+  EXPECT_EQ(0, count);
+}
+
 TEST(Executor, InlineExecutor) {
   InlineExecutor x;
   size_t counter = 0;
@@ -196,4 +208,31 @@ TEST(Executor, CrappyExecutor) {
     flag = true;
   });
   EXPECT_TRUE(flag);
+}
+
+class DoNothingExecutor : public Executor {
+ public:
+  void add(Func f) override {
+    storedFunc_ = std::move(f);
+  }
+
+ private:
+  Func storedFunc_;
+};
+
+TEST(Executor, DoNothingExecutor) {
+  DoNothingExecutor x;
+
+  // Submit future callback to DoNothingExecutor
+  auto f = folly::via(&x).then([] { return 42; });
+
+  // Callback function is stored in DoNothingExecutor, but not executed.
+  EXPECT_FALSE(f.isReady());
+
+  // Destroy the function stored in DoNothingExecutor. The future callback
+  // will never get executed.
+  x.add({});
+
+  EXPECT_TRUE(f.isReady());
+  EXPECT_THROW(f.get(), folly::BrokenPromise);
 }

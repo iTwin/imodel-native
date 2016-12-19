@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
-
 #include <folly/futures/Future.h>
 #include <folly/futures/InlineExecutor.h>
 #include <folly/futures/ManualExecutor.h>
 #include <folly/futures/DrivableExecutor.h>
 #include <folly/Baton.h>
 #include <folly/MPMCQueue.h>
+#include <folly/portability/GTest.h>
 
 #include <thread>
 
@@ -31,7 +30,7 @@ struct ManualWaiter : public DrivableExecutor {
   explicit ManualWaiter(std::shared_ptr<ManualExecutor> ex) : ex(ex) {}
 
   void add(Func f) override {
-    ex->add(f);
+    ex->add(std::move(f));
   }
 
   void drive() override {
@@ -144,9 +143,9 @@ TEST_F(ViaFixture, chainVias) {
     return 1;
   }).then([=](int val) {
     return makeFuture(val).via(westExecutor.get())
-      .then([=](int val) mutable {
+      .then([=](int v) mutable {
         EXPECT_EQ(std::this_thread::get_id(), westThreadId);
-        return val + 1;
+        return v + 1;
       });
   }).then([=](int val) {
     // even though ultimately the future that triggers this one executed in
@@ -397,6 +396,32 @@ TEST(Via, getVia) {
     DummyDrivableExecutor x;
     auto f = makeFuture(true);
     EXPECT_TRUE(f.getVia(&x));
+    EXPECT_FALSE(x.ran);
+  }
+}
+
+TEST(Via, getTryVia) {
+  {
+    // non-void
+    ManualExecutor x;
+    auto f = via(&x).then([] { return 23; });
+    EXPECT_FALSE(f.isReady());
+    EXPECT_EQ(23, f.getTryVia(&x).value());
+  }
+
+  {
+    // void
+    ManualExecutor x;
+    auto f = via(&x).then();
+    EXPECT_FALSE(f.isReady());
+    auto t = f.getTryVia(&x);
+    EXPECT_TRUE(t.hasValue());
+  }
+
+  {
+    DummyDrivableExecutor x;
+    auto f = makeFuture(23);
+    EXPECT_EQ(23, f.getTryVia(&x).value());
     EXPECT_FALSE(x.ran);
   }
 }

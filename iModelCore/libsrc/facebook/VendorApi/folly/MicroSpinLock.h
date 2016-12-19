@@ -42,13 +42,17 @@
 #include <type_traits>
 #if defined (BENTLEY_CHANGE)
 #include <boost/noncopyable.hpp>
-#include <pthread.h>
-#include <glog/logging.h>
 #endif
 #include <cstdlib>
+#if defined (BENTLEY_CHANGE)
+#include <pthread.h>
+#endif
 #include <mutex>
 #include <atomic>
 
+#if defined (BENTLEY_CHANGE)
+#include <glog/logging.h>
+#endif
 #include <folly/detail/Sleeper.h>
 #include <folly/Portability.h>
 

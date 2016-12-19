@@ -21,7 +21,7 @@ namespace detail {
 template <typename T>
 template <typename Tag, typename VaultTag>
 SingletonHolder<T>& SingletonHolder<T>::singleton() {
-  static auto entry =
+  /* library-local */ static auto entry =
       createGlobal<SingletonHolder<T>, std::pair<Tag, VaultTag>>([]() {
         return new SingletonHolder<T>({typeid(T), typeid(Tag)},
                                       *SingletonVault::singleton<VaultTag>());
@@ -54,7 +54,7 @@ void SingletonHolder<T>::registerSingleton(CreateFunc c, TeardownFunc t) {
      * Singleton<int> b([] { return new int(4); });
      *
      */
-    singletonWarnDoubleRegistrationAndAbort(type_);
+    singletonWarnDoubleRegistrationAndAbort(type());
   }
 
   create_ = std::move(c);
@@ -76,6 +76,15 @@ void SingletonHolder<T>::registerSingletonMock(CreateFunc c, TeardownFunc t) {
   }
   destroyInstance();
 
+  {
+    auto creationOrder = vault_.creationOrder_.wlock();
+
+    auto it = std::find(creationOrder->begin(), creationOrder->end(), type());
+    if (it != creationOrder->end()) {
+      creationOrder->erase(it);
+    }
+  }
+
   std::lock_guard<std::mutex> entry_lock(mutex_);
 
   create_ = std::move(c);
@@ -94,7 +103,7 @@ T* SingletonHolder<T>::get() {
     throw std::runtime_error(
         "Raw pointer to a singleton requested after its destruction."
         " Singleton type is: " +
-        type_.name());
+        type().name());
   }
 
   return instance_ptr_;
@@ -131,19 +140,22 @@ folly::ReadMostlySharedPtr<T> SingletonHolder<T>::try_get_fast() {
 }
 
 template <typename T>
-TypeDescriptor SingletonHolder<T>::type() {
-  return type_;
+bool SingletonHolder<T>::hasLiveInstance() {
+  return !instance_weak_.expired();
 }
 
 template <typename T>
-bool SingletonHolder<T>::hasLiveInstance() {
-  return !instance_weak_.expired();
+void SingletonHolder<T>::preDestroyInstance(
+    ReadMostlyMainPtrDeleter<>& deleter) {
+  instance_copy_ = instance_;
+  deleter.add(std::move(instance_));
 }
 
 template <typename T>
 void SingletonHolder<T>::destroyInstance() {
   state_ = SingletonHolderState::Dead;
   instance_.reset();
+  instance_copy_.reset();
   if (destroy_baton_) {
     constexpr std::chrono::seconds kDestroyWaitTime{5};
     auto wait_result = destroy_baton_->timed_wait(
@@ -163,10 +175,10 @@ void SingletonHolder<T>::destroyInstance() {
 }
 
 template <typename T>
-SingletonHolder<T>::SingletonHolder(TypeDescriptor type__,
-                                    SingletonVault& vault) :
-    type_(type__), vault_(vault) {
-}
+SingletonHolder<T>::SingletonHolder(
+    TypeDescriptor typeDesc,
+    SingletonVault& vault)
+    : SingletonHolderBase(typeDesc), vault_(vault) {}
 
 template <typename T>
 bool SingletonHolder<T>::creationStarted() {
@@ -221,8 +233,8 @@ void SingletonHolder<T>::createInstance() {
 
   creating_thread_.store(std::this_thread::get_id(), std::memory_order_release);
 
-  RWSpinLock::ReadHolder rh(&vault_.stateMutex_);
-  if (vault_.state_ == SingletonVault::SingletonVaultState::Quiescing) {
+  auto state = vault_.state_.rlock();
+  if (state->state == SingletonVault::SingletonVaultState::Quiescing) {
     return;
   }
 
@@ -230,17 +242,16 @@ void SingletonHolder<T>::createInstance() {
   auto print_destructor_stack_trace =
     std::make_shared<std::atomic<bool>>(false);
   auto teardown = teardown_;
-  auto type_name = type_.name();
 
   // Can't use make_shared -- no support for a custom deleter, sadly.
   std::shared_ptr<T> instance(
     create_(),
-    [destroy_baton, print_destructor_stack_trace, teardown, type_name]
+    [destroy_baton, print_destructor_stack_trace, teardown, type = type()]
     (T* instance_ptr) mutable {
       teardown(instance_ptr);
       destroy_baton->post();
       if (print_destructor_stack_trace->load()) {
-        std::string output = "Singleton " + type_name + " was destroyed.\n";
+        std::string output = "Singleton " + type.name() + " was destroyed.\n";
 
         auto stack_trace_getter = SingletonVault::stackTraceGetter().load();
         auto stack_trace = stack_trace_getter ? stack_trace_getter() : "";
@@ -275,10 +286,7 @@ void SingletonHolder<T>::createInstance() {
   // may access instance and instance_weak w/o synchronization.
   state_.store(SingletonHolderState::Living, std::memory_order_release);
 
-  {
-    RWSpinLock::WriteHolder wh(&vault_.mutex_);
-    vault_.creation_order_.push_back(type_);
-  }
+  vault_.creationOrder_.wlock()->push_back(type());
 }
 
 }

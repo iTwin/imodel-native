@@ -16,26 +16,17 @@
 
 #pragma once
 
-#if defined (BENTLEY_CHANGE)
 #include <event.h>
-#endif
 
 #ifdef _MSC_VER
-#if defined (BENTLEY_CHANGE)
 # include <event2/event_compat.h>
-#endif
 # include <folly/portability/Fcntl.h>
 # include <folly/portability/Windows.h>
 #endif
 
 namespace folly {
-struct event {};
-
 #ifdef _MSC_VER
-#if defined (BENTLEY_CHANGE)
 using libevent_fd_t = evutil_socket_t;
-#endif
-using libevent_fd_t = intptr_t;
 #else
 using libevent_fd_t = int;
 #endif
@@ -65,9 +56,7 @@ inline int libeventFdToFd(libevent_fd_t fd) {
 using EventSetCallback = void (*)(libevent_fd_t, short, void*);
 inline void
 folly_event_set(event* e, int fd, short s, EventSetCallback f, void* arg) {
-#if defined (BENTLEY_CHANGE)
   auto lfd = getLibeventFd(fd);
   event_set(e, lfd, s, f, arg);
-#endif
 }
 }

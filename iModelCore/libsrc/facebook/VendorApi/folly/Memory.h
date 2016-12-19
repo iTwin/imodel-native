@@ -17,7 +17,6 @@
 #pragma once
 
 #include <folly/Traits.h>
-#include <folly/portability/Memory.h>
 
 #include <cstddef>
 #include <cstdlib>
@@ -88,7 +87,9 @@ make_unique(Args&&...) = delete;
 
 template <typename T, void(*f)(T*)>
 struct static_function_deleter {
-  void operator()(T* t) { f(t); }
+  void operator()(T* t) const {
+    f(t);
+  }
 };
 
 /**
@@ -112,6 +113,12 @@ struct static_function_deleter {
 template <typename T, typename D>
 std::shared_ptr<T> to_shared_ptr(std::unique_ptr<T, D>&& ptr) {
   return std::shared_ptr<T>(std::move(ptr));
+}
+
+using SysBufferDeleter = static_function_deleter<void, ::free>;
+using SysBufferUniquePtr = std::unique_ptr<void, SysBufferDeleter>;
+inline SysBufferUniquePtr allocate_sys_buffer(size_t size) {
+  return SysBufferUniquePtr(::malloc(size));
 }
 
 /**

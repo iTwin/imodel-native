@@ -211,7 +211,7 @@ inline std::string FormatArg::errorStr(Args&&... args) const {
 }
 
 template <typename... Args>
-inline void FormatArg::error(Args&&... args) const {
+[[noreturn]] inline void FormatArg::error(Args&&... args) const {
   throw BadFormatArg(errorStr(std::forward<Args>(args)...));
 }
 
@@ -267,7 +267,7 @@ inline int FormatArg::splitIntKey() {
   }
   try {
     return to<int>(doSplitKey<true>());
-  } catch (const std::out_of_range& ) {
+  } catch (const std::out_of_range&) {
     error("integer key required");
     return 0;  // unreached
   }

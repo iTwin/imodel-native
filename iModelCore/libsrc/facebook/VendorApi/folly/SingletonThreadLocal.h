@@ -48,7 +48,6 @@ class SingletonThreadLocal {
 #endif
   }
 
- private:
 #ifdef FOLLY_TLS
   static T** localPtr() {
     static FOLLY_TLS T* localPtr = nullptr;

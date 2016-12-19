@@ -19,8 +19,10 @@
 #include <folly/FBString.h>
 #include <folly/File.h>
 #include <folly/Range.h>
+#if defined (BENTLEY_CHANGE)
 #include <glog/logging.h>
 #include <boost/noncopyable.hpp>
+#endif
 
 namespace folly {
 
@@ -29,7 +31,7 @@ namespace folly {
  *
  * @author Tudor Bosman (tudorb@fb.com)
  */
-class MemoryMapping : boost::noncopyable {
+class MemoryMapping : NonCopyableClass {
  public:
   /**
    * Lock the pages in memory?

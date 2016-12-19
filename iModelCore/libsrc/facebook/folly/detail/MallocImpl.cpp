@@ -33,27 +33,17 @@ int (*mallctlbymib)(const size_t*, size_t, void*, size_t*, void*, size_t) =
 #if defined (BENTLEY_CHANGE)
 #ifdef _MSC_VER
 // MSVC doesn't have weak symbols, so do some linker magic
-// to emulate them.
+// to emulate them. (the magic is in the header)
 const char* mallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:_mallocx=_mallocxWeak")
 const char* rallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:rallocx=rallocxWeak")
 const char* xallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:xallocx=xallocxWeak")
 const char* sallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:sallocx=sallocxWeak")
 const char* dallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:dallocx=dallocxWeak")
 const char* sdallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:sdallocx=sdallocxWeak")
 const char* nallocxWeak = nullptr;
-#pragma comment(linker, "/alternatename:nallocx=nallocxWeak")
 const char* mallctlWeak = nullptr;
-#pragma comment(linker, "/alternatename:mallctl=mallctlWeak")
 const char* mallctlnametomibWeak = nullptr;
-#pragma comment(linker, "/alternatename:mallctlnametomib=mallctlnametomibWeak")
 const char* mallctlbymibWeak = nullptr;
-#pragma comment(linker, "/alternatename:mallctlbymib=mallctlbymibWeak")
 #elif !FOLLY_HAVE_WEAK_SYMBOLS
 void* (*mallocx)(size_t, int) = nullptr;
 void* (*rallocx)(void*, size_t, int) = nullptr;

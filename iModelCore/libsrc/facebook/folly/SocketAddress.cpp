@@ -20,6 +20,7 @@
 
 #include <folly/SocketAddress.h>
 
+#include <folly/Exception.h>
 #include <folly/Hash.h>
 
 #include <boost/functional/hash.hpp>
@@ -28,6 +29,7 @@
 #include <errno.h>
 #include <sstream>
 #include <string>
+#include <system_error>
 
 namespace {
 
@@ -227,7 +229,7 @@ void SocketAddress::setFromPath(StringPiece path) {
   }
 
   size_t len = path.size();
-  storage_.un.len = offsetof(struct sockaddr_un, sun_path) + len;
+  storage_.un.len = socklen_t(offsetof(struct sockaddr_un, sun_path) + len);
   memcpy(storage_.un.addr->sun_path, path.data(), len);
   // If there is room, put a terminating NUL byte in sun_path.  In general the
   // path should be NUL terminated, although getsockname() and getpeername()
@@ -238,11 +240,11 @@ void SocketAddress::setFromPath(StringPiece path) {
   }
 }
 
-void SocketAddress::setFromPeerAddress(SocketDesc socket) {
+void SocketAddress::setFromPeerAddress(int socket) {
   setFromSocket(socket, getpeername);
 }
 
-void SocketAddress::setFromLocalAddress(SocketDesc socket) {
+void SocketAddress::setFromLocalAddress(int socket) {
   setFromSocket(socket, getsockname);
 }
 
@@ -323,7 +325,10 @@ void SocketAddress::setFromSockaddr(const struct sockaddr_un* address,
       "with length too long for a sockaddr_un");
   }
 
-  prepFamilyChange(AF_UNIX);
+  if (!external_) {
+    storage_.un.init();
+  }
+  external_ = true;
   memcpy(storage_.un.addr, address, addrlen);
   updateUnixAddressLength(addrlen);
 
@@ -360,26 +365,27 @@ socklen_t SocketAddress::getActualSize() const {
 }
 
 std::string SocketAddress::getFullyQualified() const {
-  auto family = getFamily();
-  if (family != AF_INET && family != AF_INET6) {
+  if (!isFamilyInet()) {
     throw std::invalid_argument("Can't get address str for non ip address");
   }
   return storage_.addr.toFullyQualified();
 }
 
 std::string SocketAddress::getAddressStr() const {
-  char buf[INET6_ADDRSTRLEN];
-  getAddressStr(buf, sizeof(buf));
-  return buf;
+  if (!isFamilyInet()) {
+    throw std::invalid_argument("Can't get address str for non ip address");
+  }
+  return storage_.addr.str();
+}
+
+bool SocketAddress::isFamilyInet() const {
+  auto family = getFamily();
+  return family == AF_INET || family == AF_INET6;
 }
 
 void SocketAddress::getAddressStr(char* buf, size_t buflen) const {
-  auto family = getFamily();
-  if (family != AF_INET && family != AF_INET6) {
-    throw std::invalid_argument("Can't get address str for non ip address");
-  }
-  std::string ret = storage_.addr.str();
-  size_t len = std::min(buflen, ret.size());
+  auto ret = getAddressStr();
+  size_t len = std::min(buflen - 1, ret.size());
   memcpy(buf, ret.data(), len);
   buf[len] = '\0';
 }
@@ -542,7 +548,7 @@ bool SocketAddress::prefixMatch(const SocketAddress& other,
   if (other.getFamily() != getFamily()) {
     return false;
   }
-  int mask_length = 128;
+  uint8_t mask_length = 128;
   switch (getFamily()) {
     case AF_INET:
       mask_length = 32;
@@ -625,7 +631,7 @@ struct addrinfo* SocketAddress::getAddrInfo(const char* host,
 }
 
 void SocketAddress::setFromAddrInfo(const struct addrinfo* info) {
-  setFromSockaddr(info->ai_addr, info->ai_addrlen);
+  setFromSockaddr(info->ai_addr, socklen_t(info->ai_addrlen));
 }
 
 void SocketAddress::setFromLocalAddr(const struct addrinfo* info) {
@@ -633,16 +639,18 @@ void SocketAddress::setFromLocalAddr(const struct addrinfo* info) {
   // can be mapped into IPv6 space.
   for (const struct addrinfo* ai = info; ai != nullptr; ai = ai->ai_next) {
     if (ai->ai_family == AF_INET6) {
-      setFromSockaddr(ai->ai_addr, ai->ai_addrlen);
+      setFromSockaddr(ai->ai_addr, socklen_t(ai->ai_addrlen));
       return;
     }
   }
 
   // Otherwise, just use the first address in the list.
-  setFromSockaddr(info->ai_addr, info->ai_addrlen);
+  setFromSockaddr(info->ai_addr, socklen_t(info->ai_addrlen));
 }
 
-void SocketAddress::setFromSocket(SocketDesc socket, GetPeerNameFunc fn) {
+void SocketAddress::setFromSocket(
+    int socket,
+    int (*fn)(int, struct sockaddr*, socklen_t*)) {
   // Try to put the address into a local storage buffer.
   sockaddr_storage tmp_sock;
   socklen_t addrLen = sizeof(tmp_sock);
@@ -699,7 +707,8 @@ void SocketAddress::updateUnixAddressLength(socklen_t addrlen) {
     // Call strnlen(), just in case the length was overspecified.
     socklen_t maxLength = addrlen - offsetof(struct sockaddr_un, sun_path);
     size_t pathLength = strnlen(storage_.un.addr->sun_path, maxLength);
-    storage_.un.len = offsetof(struct sockaddr_un, sun_path) + pathLength;
+    storage_.un.len =
+        socklen_t(offsetof(struct sockaddr_un, sun_path) + pathLength);
   }
 }
 

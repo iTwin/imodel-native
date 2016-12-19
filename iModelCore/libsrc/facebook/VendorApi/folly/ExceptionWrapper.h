@@ -16,10 +16,14 @@
 
 #pragma once
 
-#include <cassert>
 #include <exception>
 #include <memory>
-#include <folly/String.h>
+#include <string>
+#include <type_traits>
+#include <utility>
+
+#include <folly/ExceptionString.h>
+#include <folly/FBString.h>
 #include <folly/detail/ExceptionWrapper.h>
 
 namespace folly {
@@ -148,13 +152,9 @@ class exception_wrapper {
     assign_eptr(eptr);
   }
 
-  void throwException() const {
-    if (throwfn_) {
-      throwfn_(item_.get());
-    } else if (eptr_) {
-      std::rethrow_exception(eptr_);
-    }
-  }
+  // If the exception_wrapper does not contain an exception, std::terminate()
+  // is invoked to assure the [[noreturn]] behaviour.
+  [[noreturn]] BE_FOLLY_EXPORT void throwException() const;
 
   explicit operator bool() const {
     return item_ || eptr_;
@@ -184,26 +184,8 @@ class exception_wrapper {
   std::exception* getCopied() { return item_.get(); }
   const std::exception* getCopied() const { return item_.get(); }
 
-  fbstring what() const {
-    if (item_) {
-      return exceptionStr(*item_);
-    } else if (eptr_) {
-      return estr_;
-    } else {
-      return fbstring();
-    }
-  }
-
-  fbstring class_name() const {
-    if (item_) {
-      auto& i = *item_;
-      return demangle(typeid(i));
-    } else if (eptr_) {
-      return ename_;
-    } else {
-      return fbstring();
-    }
-  }
+  fbstring what() const;
+  fbstring class_name() const;
 
   template <class Ex>
   bool is_compatible_with() const {
@@ -260,7 +242,9 @@ class exception_wrapper {
     bool>::type
   with_exception(F f) const {
     try {
-      throwException();
+      if (*this) {
+        throwException();
+      }
     } catch (typename std::decay<Ex>::type& e) {
       f(e);
       return true;
@@ -276,7 +260,9 @@ class exception_wrapper {
     }
 
     try {
-      throwException();
+      if (*this) {
+        throwException();
+      }
     } catch (...) {
       return std::current_exception();
     }
@@ -367,9 +353,7 @@ exception_wrapper make_exception_wrapper(Args&&... args) {
 }
 
 // For consistency with exceptionStr() functions in String.h
-inline fbstring exceptionStr(const exception_wrapper& ew) {
-  return ew.what();
-}
+fbstring exceptionStr(const exception_wrapper& ew);
 
 /*
  * try_and_catch is a simple replacement for try {} catch(){} that allows you to
@@ -466,4 +450,5 @@ class try_and_catch<> : public exception_wrapper {
     fn();
   }
 };
-}
+
+} // folly

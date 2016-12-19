@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <folly/fibers/Baton.h>
+#include "Baton.h"
 
 #include <chrono>
 
 #include <folly/detail/MemoryIdler.h>
-#include <folly/fibers/FiberManager.h>
+#include <folly/fibers/FiberManagerInternal.h>
 #include <folly/portability/Asm.h>
 
 namespace folly {
@@ -58,7 +58,7 @@ void Baton::waitThread() {
           waitingFiber_.compare_exchange_strong(fiber, THREAD_WAITING))) {
     do {
       folly::detail::MemoryIdler::futexWait(futex_.futex, THREAD_WAITING);
-      fiber = waitingFiber_.load(std::memory_order_relaxed);
+      fiber = waitingFiber_.load(std::memory_order_acquire);
     } while (fiber == THREAD_WAITING);
   }
 
@@ -151,7 +151,7 @@ void Baton::postHelper(intptr_t new_value) {
   } while (!waitingFiber_.compare_exchange_weak(fiber, new_value));
 
   if (fiber != NO_WAITER) {
-    reinterpret_cast<Fiber*>(fiber)->setData(0);
+    reinterpret_cast<Fiber*>(fiber)->resume();
   }
 }
 

@@ -39,6 +39,7 @@
 #include <folly/Likely.h>
 #include <folly/Malloc.h>
 #include <folly/Traits.h>
+#include <folly/portability/BitsFunctexcept.h>
 
 #if defined (BENTLEY_CHANGE)
 #include <boost/operators.hpp>
@@ -75,10 +76,7 @@ namespace folly {
 namespace folly {
 
 template <class T, class Allocator>
-#if defined (BENTLEY_CHANGE)
-class fbvector : private boost::totally_ordered<fbvector<T, Allocator>> {
-#endif
-class fbvector  {
+class fbvector /*: private boost::totally_ordered<fbvector<T, Allocator>> */{
 
   //===========================================================================
   //---------------------------------------------------------------------------
@@ -216,7 +214,7 @@ public:
 private:
 
   typedef std::integral_constant<bool,
-      std::is_trivially_copy_constructible<T>::value &&
+/*      boost::has_trivial_copy_constructor<T>::value && */
       sizeof(T) <= 16 // don't force large structures to be passed by value
     > should_pass_by_value;
   typedef typename std::conditional<
@@ -326,9 +324,6 @@ private:
   //---------------------------------------------------------------------------
   // destroy
 
-#if BENTLEY_CHANGE
-// clang/iOS: cannot use boost.
-
   void M_destroy(T* p) noexcept {
     if (usingStdAllocator::value) {
       if (!boost::has_trivial_destructor<T>::value) p->~T();
@@ -336,8 +331,6 @@ private:
       std::allocator_traits<Allocator>::destroy(impl_, p);
     }
   }
-  
-#endif
 
   //===========================================================================
   //---------------------------------------------------------------------------
@@ -370,9 +363,6 @@ private:
   }
 
   // optimized
-#if BENTLEY_CHANGE
-// clang/iOS: cannot use boost.
-
   static void S_destroy_range(T* first, T* last) noexcept {
     if (!boost::has_trivial_destructor<T>::value) {
       // EXPERIMENTAL DATA on fbvector<vector<int>> (where each vector<int> has
@@ -391,8 +381,6 @@ private:
       #undef FOLLY_FBV_OP
     }
   }
-
-#endif
 
   //---------------------------------------------------------------------------
   // uninitialized_fill_n
@@ -442,13 +430,11 @@ private:
   }
 
   // optimized
-
-#if BENTLEY_CHANGE
-// clang/iOS: we carve around IsZeroInitializable, so cannot call it.
-
   static void S_uninitialized_fill_n(T* dest, size_type n) {
     if (folly::IsZeroInitializable<T>::value) {
-      std::memset(dest, 0, sizeof(T) * n);
+      if (LIKELY(n != 0)) {
+        std::memset(dest, 0, sizeof(T) * n);
+      }
     } else {
       auto b = dest;
       auto e = dest + n;
@@ -462,8 +448,6 @@ private:
     }
   }
 
-#endif
-  
   static void S_uninitialized_fill_n(T* dest, size_type n, const T& value) {
     auto b = dest;
     auto e = dest + n;
@@ -1063,7 +1047,7 @@ public:
   }
   const_reference at(size_type n) const {
     if (UNLIKELY(n >= size())) {
-      throw std::out_of_range("fbvector: index is greater than size.");
+      std::__throw_out_of_range("fbvector: index is greater than size.");
     }
     return (*this)[n];
   }
@@ -1160,9 +1144,9 @@ private:
   // fbvector grows differently on two counts:
   //
   // (1) initial size
-  //     Instead of grwoing to size 1 from empty, and fbvector allocates at
-  //     least 64 bytes. You may still use reserve to reserve a lesser amount
-  //     of memory.
+  //     Instead of growing to size 1 from empty, fbvector allocates at least
+  //     64 bytes. You may still use reserve to reserve a lesser amount of
+  //     memory.
   // (2) 1.5x
   //     For medium-sized vectors, the growth strategy is 1.5x. See the docs
   //     for details.

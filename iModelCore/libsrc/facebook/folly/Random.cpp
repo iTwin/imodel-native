@@ -21,13 +21,14 @@
 #include <random>
 #include <array>
 
-#include <glog/logging.h>
 #include <folly/CallOnce.h>
 #include <folly/File.h>
 #include <folly/FileUtil.h>
+#include <folly/SingletonThreadLocal.h>
 #include <folly/ThreadLocal.h>
 #include <folly/portability/SysTime.h>
 #include <folly/portability/Unistd.h>
+#include <glog/logging.h>
 
 #ifdef _MSC_VER
 # include <wincrypt.h>
@@ -42,8 +43,21 @@ void readRandomDevice(void* data, size_t size) {
   static folly::once_flag flag;
   static HCRYPTPROV cryptoProv;
   folly::call_once(flag, [&] {
-    PCHECK(CryptAcquireContext(&cryptoProv, nullptr, nullptr,
-                               PROV_RSA_FULL, 0));
+    if (!CryptAcquireContext(
+            &cryptoProv,
+            nullptr,
+            nullptr,
+            PROV_RSA_FULL,
+            CRYPT_VERIFYCONTEXT)) {
+      if (GetLastError() == NTE_BAD_KEYSET) {
+        // Mostly likely cause of this is that no key container
+        // exists yet, so try to create one.
+        PCHECK(CryptAcquireContext(
+            &cryptoProv, nullptr, nullptr, PROV_RSA_FULL, CRYPT_NEWKEYSET));
+      } else {
+        LOG(FATAL) << "Failed to acquire the default crypto context.";
+      }
+    }
   });
   CHECK(size <= std::numeric_limits<DWORD>::max());
   PCHECK(CryptGenRandom(cryptoProv, (DWORD)size, (BYTE*)data));
@@ -110,28 +124,30 @@ void BufferedRandomDevice::getSlow(unsigned char* data, size_t size) {
   ptr_ += size;
 }
 
+struct RandomTag {};
 
-}  // namespace
+} // namespace
 
 void Random::secureRandom(void* data, size_t size) {
-  static ThreadLocal<BufferedRandomDevice> bufferedRandomDevice;
-  bufferedRandomDevice->get(data, size);
+  static SingletonThreadLocal<BufferedRandomDevice, RandomTag>
+      bufferedRandomDevice;
+  bufferedRandomDevice.get().get(data, size);
 }
 
 class ThreadLocalPRNG::LocalInstancePRNG {
  public:
-  LocalInstancePRNG() : rng(Random::create()) { }
+  LocalInstancePRNG() : rng(Random::create()) {}
 
   Random::DefaultGenerator rng;
 };
 
 ThreadLocalPRNG::ThreadLocalPRNG() {
-  static folly::ThreadLocal<ThreadLocalPRNG::LocalInstancePRNG> localInstance;
-  local_ = localInstance.get();
+  static SingletonThreadLocal<ThreadLocalPRNG::LocalInstancePRNG, RandomTag>
+      localInstancePRNG;
+  local_ = &localInstancePRNG.get();
 }
 
 uint32_t ThreadLocalPRNG::getImpl(LocalInstancePRNG* local) {
   return local->rng();
 }
-
 }

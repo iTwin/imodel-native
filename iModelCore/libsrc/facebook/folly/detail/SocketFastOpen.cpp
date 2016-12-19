@@ -21,7 +21,7 @@
 namespace folly {
 namespace detail {
 
-#if FOLLY_ALLOW_TFO
+#if FOLLY_ALLOW_TFO && defined(__linux__)
 
 #include <netinet/tcp.h>
 #include <stdio.h>
@@ -36,6 +36,10 @@ namespace detail {
 #define TCP_FASTOPEN 23
 #endif
 
+#if !defined(TCPI_OPT_SYN_DATA)
+#define TCPI_OPT_SYN_DATA 32
+#endif
+
 ssize_t tfo_sendmsg(int sockfd, const struct msghdr* msg, int flags) {
   flags |= MSG_FASTOPEN;
   return sendmsg(sockfd, msg, flags);
@@ -44,6 +48,61 @@ ssize_t tfo_sendmsg(int sockfd, const struct msghdr* msg, int flags) {
 int tfo_enable(int sockfd, size_t max_queue_size) {
   return setsockopt(
       sockfd, SOL_TCP, TCP_FASTOPEN, &max_queue_size, sizeof(max_queue_size));
+}
+
+bool tfo_succeeded(int sockfd) {
+  // Call getsockopt to check if TFO was used.
+  struct tcp_info info;
+  socklen_t info_len = sizeof(info);
+  errno = 0;
+  if (getsockopt(sockfd, IPPROTO_TCP, TCP_INFO, &info, &info_len) != 0) {
+    // errno is set from getsockopt
+    return false;
+  }
+  return info.tcpi_options & TCPI_OPT_SYN_DATA;
+}
+
+#elif FOLLY_ALLOW_TFO && defined(__APPLE__)
+
+#include <netinet/tcp.h>
+#include <sys/socket.h>
+
+ssize_t tfo_sendmsg(int sockfd, const struct msghdr* msg, int flags) {
+  sa_endpoints_t endpoints;
+  endpoints.sae_srcif = 0;
+  endpoints.sae_srcaddr = nullptr;
+  endpoints.sae_srcaddrlen = 0;
+  endpoints.sae_dstaddr = (struct sockaddr*)msg->msg_name;
+  endpoints.sae_dstaddrlen = msg->msg_namelen;
+  int ret = connectx(
+      sockfd,
+      &endpoints,
+      SAE_ASSOCID_ANY,
+      CONNECT_RESUME_ON_READ_WRITE | CONNECT_DATA_IDEMPOTENT,
+      nullptr,
+      0,
+      nullptr,
+      nullptr);
+
+  if (ret != 0) {
+    return ret;
+  }
+  ret = sendmsg(sockfd, msg, flags);
+  return ret;
+}
+
+int tfo_enable(int sockfd, size_t max_queue_size) {
+  return setsockopt(
+      sockfd,
+      IPPROTO_TCP,
+      TCP_FASTOPEN,
+      &max_queue_size,
+      sizeof(max_queue_size));
+}
+
+bool tfo_succeeded(int sockfd) {
+  errno = EOPNOTSUPP;
+  return false;
 }
 
 #else
@@ -56,6 +115,11 @@ ssize_t tfo_sendmsg(int sockfd, const struct msghdr* msg, int flags) {
 int tfo_enable(int sockfd, size_t max_queue_size) {
   errno = ENOPROTOOPT;
   return -1;
+}
+
+bool tfo_succeeded(int sockfd) {
+  errno = EOPNOTSUPP;
+  return false;
 }
 
 #endif

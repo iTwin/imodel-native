@@ -19,6 +19,20 @@
 /* These definitions are in a separate file so that they
  * may be included from C- as well as C++-based projects. */
 
+/**
+ * Portable version check.
+ */
+#ifndef __GNUC_PREREQ
+# if defined __GNUC__ && defined __GNUC_MINOR__
+/* nolint */
+#  define __GNUC_PREREQ(maj, min) ((__GNUC__ << 16) + __GNUC_MINOR__ >= \
+                                   ((maj) << 16) + (min))
+# else
+/* nolint */
+#  define __GNUC_PREREQ(maj, min) 0
+# endif
+#endif
+
 /* Define a convenience macro to test when address sanitizer is being used
  * across the different compilers (e.g. clang, gcc) */
 #if defined(__clang__)
@@ -55,6 +69,15 @@
 # define FOLLY_DISABLE_ADDRESS_SANITIZER
 #endif
 
+/* Define a convenience macro to test when thread sanitizer is being used
+ * across the different compilers (e.g. clang, gcc) */
+#if defined(__clang__)
+# if __has_feature(thread_sanitizer)
+#  define FOLLY_SANITIZE_THREAD 1
+# endif
+#elif defined(__GNUC__) && __SANITIZE_THREAD__
+# define FOLLY_SANITIZE_THREAD 1
+#endif
 
 /**
  * ASAN/MSAN/TSAN define pre-processor symbols:
@@ -71,3 +94,34 @@
 #else
 # define UBSAN_DISABLE(x)
 #endif // UNDEFINED_SANITIZER
+
+/**
+ * Macro for marking functions as having public visibility.
+ */
+#if defined(__GNUC__)
+# if __GNUC_PREREQ(4, 9)
+#  define FOLLY_EXPORT [[gnu::visibility("default")]]
+# else
+#  define FOLLY_EXPORT __attribute__((__visibility__("default")))
+# endif
+#else
+# define FOLLY_EXPORT
+#endif
+
+// noinline
+#ifdef _MSC_VER
+# define FOLLY_NOINLINE __declspec(noinline)
+#elif defined(__clang__) || defined(__GNUC__)
+# define FOLLY_NOINLINE __attribute__((__noinline__))
+#else
+# define FOLLY_NOINLINE
+#endif
+
+// always inline
+#ifdef _MSC_VER
+# define FOLLY_ALWAYS_INLINE __forceinline
+#elif defined(__clang__) || defined(__GNUC__)
+# define FOLLY_ALWAYS_INLINE inline __attribute__((__always_inline__))
+#else
+# define FOLLY_ALWAYS_INLINE inline
+#endif

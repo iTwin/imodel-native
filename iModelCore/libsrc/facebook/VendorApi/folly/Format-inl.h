@@ -30,16 +30,9 @@
 #include <folly/Traits.h>
 #include <folly/portability/Windows.h>
 
-#ifdef max
-#undef min
-#undef max
-#endif
-
 // Ignore -Wformat-nonliteral warnings within this file
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
 namespace folly {
 
@@ -263,7 +256,7 @@ void BaseFormatter<Derived, containerMode, Args...>::operator()(Output& out)
 
         try {
           argIndex = to<int>(piece);
-        } catch (const std::out_of_range& e) {
+        } catch (const std::out_of_range&) {
           arg.error("argument index must be integer");
         }
         arg.enforce(argIndex >= 0, "argument index must be non-negative");
@@ -499,23 +492,12 @@ class FormatValue<
                   "' specifier");
 
       valBufBegin = valBuf + 3;  // room for sign and base prefix
-#ifdef _MSC_VER
-      char valBuf2[valBufSize];
-      snprintf(valBuf2, valBufSize, "%ju", static_cast<uintmax_t>(uval));
-      int len = GetNumberFormat(
-        LOCALE_USER_DEFAULT,
-        0,
-        valBuf2,
-        nullptr,
-        valBufBegin,
-        (int)((valBuf + valBufSize) - valBufBegin)
-      );
-#elif defined(__ANDROID__)
+#if defined(__ANDROID__)
       int len = snprintf(valBufBegin, (valBuf + valBufSize) - valBufBegin,
                          "%" PRIuMAX, static_cast<uintmax_t>(uval));
 #else
       int len = snprintf(valBufBegin, (valBuf + valBufSize) - valBufBegin,
-                         "%'ju", static_cast<uintmax_t>(uval));
+                         "%ju", static_cast<uintmax_t>(uval));
 #endif
       // valBufSize should always be big enough, so this should never
       // happen.
@@ -1113,6 +1095,4 @@ typename std::enable_if<IsSomeString<Tgt>::value>::type toAppend(
 
 }  // namespace folly
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+#pragma GCC diagnostic pop

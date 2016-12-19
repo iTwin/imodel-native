@@ -34,9 +34,11 @@
 
 #include <glog/logging.h>
 
+#include <folly/Assume.h>
 #include <folly/Conv.h>
 #include <folly/Exception.h>
 #include <folly/ScopeGuard.h>
+#include <folly/Shell.h>
 #include <folly/String.h>
 #include <folly/io/Cursor.h>
 #include <folly/portability/Environment.h>
@@ -105,8 +107,7 @@ std::string ProcessReturnCode::str() const {
     return to<std::string>("killed by signal ", killSignal(),
                            (coreDumped() ? " (core dumped)" : ""));
   }
-  CHECK(false);  // unreached
-  return "";  // silence GCC warning
+  assume_unreachable();
 }
 
 CalledProcessError::CalledProcessError(ProcessReturnCode rc)
@@ -182,17 +183,9 @@ Subprocess::Subprocess(
   if (options.usePath_) {
     throw std::invalid_argument("usePath() not allowed when running in shell");
   }
-  const char* shell = getenv("SHELL");
-  if (!shell) {
-    shell = "/bin/sh";
-  }
 
-  std::unique_ptr<const char*[]> argv(new const char*[4]);
-  argv[0] = shell;
-  argv[1] = "-c";
-  argv[2] = cmd.c_str();
-  argv[3] = nullptr;
-  spawn(std::move(argv), shell, options, env);
+  std::vector<std::string> argv = {"/bin/sh", "-c", cmd};
+  spawn(cloneStrings(argv), argv[0].c_str(), options, env);
 }
 
 Subprocess::~Subprocess() {
@@ -832,7 +825,8 @@ std::vector<Subprocess::ChildPipe> Subprocess::takeOwnershipOfPipes() {
   for (auto& p : pipes_) {
     pipes.emplace_back(p.childFd, std::move(p.pipe));
   }
-  pipes_.clear();
+  // release memory
+  std::vector<Pipe>().swap(pipes_);
   return pipes;
 }
 

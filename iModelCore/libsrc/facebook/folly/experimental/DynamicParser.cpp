@@ -23,7 +23,6 @@
  *
  */
 #include <folly/experimental/DynamicParser.h>
-#include <folly/CppAttributes.h>
 
 #include <folly/Optional.h>
 
@@ -108,7 +107,7 @@ void DynamicParser::ParserStack::Pop::operator()() noexcept {
   stackPtr_->value_ = value_;
   if (stackPtr_->unmaterializedSubErrorKeys_.empty()) {
     // There should be the current error, and the root.
-    CHECK_GE(stackPtr_->subErrors_.size(), 2)
+    CHECK_GE(stackPtr_->subErrors_.size(), 2u)
       << "Internal bug: out of suberrors";
     stackPtr_->subErrors_.pop_back();
   } else {
@@ -169,7 +168,7 @@ folly::dynamic DynamicParser::ParserStack::releaseErrors() {
   return releaseErrorsImpl();
 }
 
-void DynamicParser::ParserStack::throwErrors() {
+[[noreturn]] void DynamicParser::ParserStack::throwErrors() {
   throw DynamicParserParseError(releaseErrorsImpl());
 }
 

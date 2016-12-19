@@ -28,10 +28,8 @@
 #include <folly/FormatArg.h>
 
 // Ignore shadowing warnings within this file, so includers can use -Wshadow.
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshadow"
-#endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
 
 namespace folly {
 
@@ -133,7 +131,6 @@ class BaseFormatter {
   typename std::enable_if<K == valueCount, int>::type
   getSizeArgFrom(size_t i, const FormatArg& arg) const {
     arg.error("argument index out of range, max=", i);
-    return i;
   }
 
   template <class T>
@@ -435,6 +432,4 @@ vformatChecked(Str* out, StringPiece fmt, Container&& container) {
 
 #include <folly/Format-inl.h>
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+#pragma GCC diagnostic pop

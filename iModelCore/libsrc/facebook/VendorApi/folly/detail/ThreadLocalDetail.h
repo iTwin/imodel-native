@@ -47,7 +47,7 @@
 // XXX: Ideally we would instead determine if emutls is in use at runtime as it
 // is possible to configure glibc on Linux to use emutls regardless.
 // BENTLEY_CHANGE #if !FOLLY_MOBILE
-#if !FOLLY_MOBILE && !defined(__APPLE__) && !defined(BENTLEY_WINRT)
+#if !FOLLY_MOBILE && !defined(__APPLE__) && !defined(BENTLEYCONFIG_OS_WINRT)
 #define FOLLY_TLD_USE_FOLLY_TLS 1
 #else
 #undef FOLLY_TLD_USE_FOLLY_TLS
@@ -111,10 +111,11 @@ struct ElementWrapper {
     DCHECK(deleter2 == nullptr);
     if (p) {
       ptr = p;
-      deleter2 = new std::function<DeleterFunType>([d = d](
-          void* pt, TLPDestructionMode mode) {
-        d(static_cast<Ptr>(pt), mode);
-      });
+      auto d2 = d; // gcc-4.8 doesn't decay types correctly in lambda captures
+      deleter2 = new std::function<DeleterFunType>(
+          [d2](void* pt, TLPDestructionMode mode) {
+            d2(static_cast<Ptr>(pt), mode);
+          });
       ownsDeleter = true;
       guard.dismiss();
     }
@@ -152,10 +153,10 @@ struct ThreadEntry {
   ThreadEntry* prev{nullptr};
   StaticMetaBase* meta{nullptr};
 };
-
+#undef max
 constexpr uint32_t kEntryIDInvalid = std::numeric_limits<uint32_t>::max();
 
-class PthreadKeyUnregisterTester;
+struct PthreadKeyUnregisterTester;
 
 /**
  * We want to disable onThreadExit call at the end of shutdown, we don't care
@@ -175,10 +176,14 @@ class PthreadKeyUnregister {
   static constexpr size_t kMaxKeys = 1UL << 16;
 
   ~PthreadKeyUnregister() {
+    // If static constructor priorities are not supported then
+    // ~PthreadKeyUnregister logic is not safe.
+#if !defined(__APPLE__) && !defined(_MSC_VER)
     MSLGuard lg(lock_);
     while (size_) {
       pthread_key_delete(keys_[--size_]);
     }
+#endif
   }
 
   static void registerKey(pthread_key_t key) {
@@ -192,7 +197,7 @@ class PthreadKeyUnregister {
    * usage.
    */
   constexpr PthreadKeyUnregister() : lock_(), size_(0), keys_() { }
-  friend class folly::threadlocal_detail::PthreadKeyUnregisterTester;
+  friend struct folly::threadlocal_detail::PthreadKeyUnregisterTester;
 
   void registerKeyImpl(pthread_key_t key) {
     MSLGuard lg(lock_);
@@ -253,9 +258,9 @@ struct StaticMetaBase {
     }
   };
 
-  BE_FOLLY_EXPORT explicit StaticMetaBase(ThreadEntry* (*threadEntry)());
+  BE_FOLLY_EXPORT StaticMetaBase(ThreadEntry* (*threadEntry)(), bool strict);
 
-  ~StaticMetaBase() {
+  [[noreturn]] ~StaticMetaBase() {
 #if defined (BENTLEY_CHANGE)
     LOG(FATAL) << "StaticMeta lives forever!";
 #endif
@@ -297,9 +302,11 @@ struct StaticMetaBase {
   uint32_t nextId_;
   std::vector<uint32_t> freeIds_;
   std::mutex lock_;
+  SharedMutex accessAllThreadsLock_;
   pthread_key_t pthreadKey_;
   ThreadEntry head_;
   ThreadEntry* (*threadEntry_)();
+  bool strict_;
 };
 
 // Held in a singleton to track our global instances.
@@ -309,19 +316,23 @@ struct StaticMetaBase {
 // Creating and destroying ThreadLocalPtr objects, as well as thread exit
 // for threads that use ThreadLocalPtr objects collide on a lock inside
 // StaticMeta; you can specify multiple Tag types to break that lock.
-template <class Tag>
+template <class Tag, class AccessMode>
 struct StaticMeta : StaticMetaBase {
-  StaticMeta() : StaticMetaBase(&StaticMeta::getThreadEntrySlow) {
+  StaticMeta()
+      : StaticMetaBase(
+            &StaticMeta::getThreadEntrySlow,
+            std::is_same<AccessMode, AccessModeStrict>::value) {
     registerAtFork(
         /*prepare*/ &StaticMeta::preFork,
         /*parent*/ &StaticMeta::onForkParent,
         /*child*/ &StaticMeta::onForkChild);
   }
 
-  static StaticMeta<Tag>& instance() {
+  static StaticMeta<Tag, AccessMode>& instance() {
     // Leak it on exit, there's only one per process and we don't have to
     // worry about synchronization with exiting threads.
-    static auto instance = detail::createGlobal<StaticMeta<Tag>, void>();
+    /* library-local */ static auto instance =
+        detail::createGlobal<StaticMeta<Tag, AccessMode>, void>();
     return *instance;
   }
 
@@ -359,7 +370,7 @@ struct StaticMeta : StaticMetaBase {
 
   inline static ThreadEntry* getThreadEntry() {
 #ifdef FOLLY_TLD_USE_FOLLY_TLS
-    static FOLLY_TLS ThreadEntry* threadEntryCache = nullptr;
+    static FOLLY_TLS ThreadEntry* threadEntryCache{nullptr};
     if (UNLIKELY(threadEntryCache == nullptr)) {
       threadEntryCache = instance().threadEntry_();
     }

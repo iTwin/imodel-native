@@ -18,7 +18,6 @@
 // http://www.canonware.com/download/jemalloc/jemalloc-latest/doc/jemalloc.html
 
 #pragma once
-#define FOLLY_MALLOC_H_
 
 /**
  * Define various MALLOCX_* macros normally provided by jemalloc.  We define
@@ -40,6 +39,7 @@
 #if defined(_GLIBCXX_USE_FB) && !defined(_LIBSTDCXX_FBSTRING)
 
 #include <folly/detail/Malloc.h>
+#include <folly/portability/BitsFunctexcept.h>
 
 #include <string>
 
@@ -86,13 +86,18 @@ extern "C" int mallctlbymib(const size_t*, size_t, void*, size_t*, void*,
 __attribute__((__weak__));
 
 #include <bits/functexcept.h>
+
 #define FOLLY_HAVE_MALLOC_H 1
-#else
+
+#else // !defined(_LIBSTDCXX_FBSTRING)
+
 #include <folly/detail/Malloc.h> /* nolint */
+#include <folly/portability/BitsFunctexcept.h> /* nolint */
+
 #endif
 
 // for malloc_usable_size
-// NOTE: FreeBSD 9 doesn't have malloc.h.  It's defitions
+// NOTE: FreeBSD 9 doesn't have malloc.h.  Its definitions
 // are found in stdlib.h.
 #if FOLLY_HAVE_MALLOC_H
 #include <malloc.h>
@@ -106,6 +111,7 @@ __attribute__((__weak__));
 #include <cstdlib>
 #include <cstring>
 
+#include <atomic>
 #include <new>
 
 #ifdef _LIBSTDCXX_FBSTRING
@@ -116,17 +122,25 @@ namespace folly {
 #endif
 
 // Cannot depend on Portability.h when _LIBSTDCXX_FBSTRING.
-// Disabled for nvcc because it fails on attributes on lambdas.
-#if defined(__GNUC__) && !defined(__NVCC__)
+#if defined(__GNUC__)
 #define FOLLY_MALLOC_NOINLINE __attribute__((__noinline__))
+#if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL) >= 40900
+// This is for checked malloc-like functions (returns non-null pointer
+// which cannot alias any outstanding pointer).
+#define FOLLY_MALLOC_CHECKED_MALLOC                     \
+  __attribute__((__returns_nonnull__, __malloc__))
+#else
+#define FOLLY_MALLOC_CHECKED_MALLOC __attribute__((__malloc__))
+#endif
 #else
 #define FOLLY_MALLOC_NOINLINE
+#define FOLLY_MALLOC_CHECKED_MALLOC
 #endif
 
 /**
  * Determine if we are using jemalloc or not.
  */
-inline bool usingJEMalloc() noexcept {
+FOLLY_MALLOC_NOINLINE inline bool usingJEMalloc() noexcept {
 #if defined (BENTLEY_CHANGE)
   // Checking for rallocx != NULL is not sufficient; we may be in a dlopen()ed
   // module that depends on libjemalloc, so rallocx is resolved, but the main
@@ -136,7 +150,7 @@ inline bool usingJEMalloc() noexcept {
   // per-thread counter of allocated memory increases. This makes me
   // feel dirty inside. Also note that this requires jemalloc to have
   // been compiled with --enable-stats.
-  static const bool result = [] () FOLLY_MALLOC_NOINLINE noexcept {
+  static const bool result = [] () noexcept {
     // Some platforms (*cough* OSX *cough*) require weak symbol checks to be
     // in the form if (mallctl != nullptr). Not if (mallctl) or if (!mallctl)
     // (!!). http://goo.gl/xpmctm
@@ -166,7 +180,7 @@ inline bool usingJEMalloc() noexcept {
     // Static because otherwise clever compilers will find out that
     // the ptr is not used and does not escape the scope, so they will
     // just optimize away the malloc.
-    static void* ptr = malloc(1);
+    static const void* ptr = malloc(1);
     if (!ptr) {
       // wtf, failing to allocate 1 byte
       return false;
@@ -236,10 +250,11 @@ inline void* checkedRealloc(void* ptr, size_t size) {
  * routine just tries to call realloc() (thus benefitting of potential
  * copy-free coalescing) unless there's too much slack memory.
  */
-inline void* smartRealloc(void* p,
-                          const size_t currentSize,
-                          const size_t currentCapacity,
-                          const size_t newCapacity) {
+FOLLY_MALLOC_CHECKED_MALLOC FOLLY_MALLOC_NOINLINE inline void* smartRealloc(
+    void* p,
+    const size_t currentSize,
+    const size_t currentCapacity,
+    const size_t newCapacity) {
   assert(p);
   assert(currentSize <= currentCapacity &&
          currentCapacity < newCapacity);

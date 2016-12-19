@@ -55,8 +55,21 @@ get_default(const Map& map, const typename Map::key_type& key, Func&& dflt) {
  * or throw an exception of the specified type.
  */
 template <class E = std::out_of_range, class Map>
-typename Map::mapped_type get_or_throw(
-    const Map& map, const typename Map::key_type& key,
+const typename Map::mapped_type& get_or_throw(
+    const Map& map,
+    const typename Map::key_type& key,
+    const std::string& exceptionStrPrefix = std::string()) {
+  auto pos = map.find(key);
+  if (pos != map.end()) {
+    return pos->second;
+  }
+  throw E(folly::to<std::string>(exceptionStrPrefix, key));
+}
+
+template <class E = std::out_of_range, class Map>
+typename Map::mapped_type& get_or_throw(
+    Map& map,
+    const typename Map::key_type& key,
     const std::string& exceptionStrPrefix = std::string()) {
   auto pos = map.find(key);
   if (pos != map.end()) {
@@ -103,7 +116,9 @@ template <
     typename Func,
     typename = typename std::enable_if<std::is_convertible<
         typename std::result_of<Func()>::type,
-        const typename Map::mapped_type&>::value>::type>
+        const typename Map::mapped_type&>::value>::type,
+    typename = typename std::enable_if<
+        std::is_reference<typename std::result_of<Func()>::type>::value>::type>
 const typename Map::mapped_type& get_ref_default(
     const Map& map,
     const typename Map::key_type& key,
