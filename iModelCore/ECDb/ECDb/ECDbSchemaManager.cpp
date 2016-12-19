@@ -202,7 +202,7 @@ BentleyStatus ECDbSchemaManager::DoImportECSchemas(bvector<ECSchemaCP> const& sc
     if (compareContext.HasNoSchemasToImport())
         return SUCCESS;
 
-    if (compareContext.ReloadECSchemaIfRequired(*this) == ERROR)
+    if (compareContext.ReloadContextECSchemas(*this) == ERROR)
         return ERROR;
 
     if (SUCCESS != GetDbMap().MapSchemas(context, mayModifyDbSchemaToken))

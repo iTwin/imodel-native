@@ -72,10 +72,11 @@ bool SchemaImportContext::ClassMapSaveContext::NeedsSaving(ClassMap const& class
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ECSchemaCompareContext::ReloadECSchemaIfRequired(ECDbSchemaManager const& schemaManager)
+BentleyStatus ECSchemaCompareContext::ReloadContextECSchemas(ECDbSchemaManager const& schemaManager)
     {
-    if (HasNoSchemasToImport() || !RequiresUpdate())
-        return SUCCESS;
+    //We need to reload context schemas
+    //if (HasNoSchemasToImport() || !RequiresUpdate())
+    //    return SUCCESS;
 
     //save names
     std::vector<Utf8String> existingSchemaNames, importingSchemaNames;

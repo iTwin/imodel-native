@@ -38,7 +38,7 @@ public:
     bool HasNoSchemasToImport() const { return m_importedSchemaList.empty(); }
     bool RequiresUpdate() const;
 
-    BentleyStatus ReloadECSchemaIfRequired(ECDbSchemaManager const&);
+    BentleyStatus ReloadContextECSchemas(ECDbSchemaManager const&);
     };
 
 //=======================================================================================
