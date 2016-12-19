@@ -315,10 +315,6 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         if (mesh.Triangles().empty())
             return;
 
-        auto const& displayParams = mesh.GetDisplayParams();
-        if (!displayParams.GetIgnoreLighting())
-            m_flags = 1;    // QV_QTMESH_GENNORMALS
-
         for (auto const& triangle : mesh.Triangles())
             {
             m_indices.push_back(static_cast<int32_t>(triangle.m_indices[0]));
@@ -331,6 +327,7 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         Set(m_normals, mesh.Normals());
         Set(m_textureUV, mesh.Params());
 
+        auto const& displayParams = mesh.GetDisplayParams();
         displayParams.ResolveTextureImage(db);
         if (nullptr != displayParams.GetTextureImage())
             m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
