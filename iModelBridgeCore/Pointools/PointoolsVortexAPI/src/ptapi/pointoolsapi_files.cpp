@@ -669,8 +669,8 @@ PTbool PTAPI ptInitialize(const PTubyte* licenseData)
 
 			if (strcmp(expires.c_str(), "000000"))
 			{
-				char year[] = { expires[0], expires[1] };
-				char month[] = { expires[2], expires[3] };
+				char year[] = { expires[0], expires[1], 0 };
+				char month[] = { expires[2], expires[3], 0 };
 				expire_day = atoi(&expires[4]); 
 				expire_month =  atoi(month);
 				expire_year = 2000 +  atoi(year);
