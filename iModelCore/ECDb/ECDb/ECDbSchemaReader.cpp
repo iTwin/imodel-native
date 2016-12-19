@@ -774,7 +774,6 @@ BentleyStatus ECDbSchemaReader::LoadECSchemaFromDb(DbECSchemaEntry*& schemaEntry
     std::unique_ptr<DbECSchemaEntry> schemaEntryPtr = std::unique_ptr<DbECSchemaEntry>(new DbECSchemaEntry(schema, typesInSchema));
     schemaEntry = schemaEntryPtr.get();
     m_ecSchemaCache[ecSchemaId] = std::move(schemaEntryPtr);
-    m_cache.AddSchema(*schemaEntry->m_cachedECSchema);
     return SUCCESS;
     }
 
@@ -1337,7 +1336,6 @@ void ECDbSchemaReader::ClearCache() const
     m_koqCache.clear();
     m_ecClassCache.clear();
     m_ecSchemaCache.clear();
-    m_cache.Clear();
     }
 
 //---------------------------------------------------------------------------------------

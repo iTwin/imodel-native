@@ -95,7 +95,6 @@ struct ECDbSchemaReader
             };
 
         ECDbCR m_ecdb;
-        mutable ECN::ECSchemaCache m_cache;
         mutable std::map<ECN::ECSchemaId, std::unique_ptr<DbECSchemaEntry>> m_ecSchemaCache;
         mutable std::map<ECN::ECClassId, std::unique_ptr<DbECClassEntry>> m_ecClassCache;
         mutable std::map<ECN::ECEnumerationId, std::unique_ptr<DbECEnumEntry>> m_ecEnumCache;
