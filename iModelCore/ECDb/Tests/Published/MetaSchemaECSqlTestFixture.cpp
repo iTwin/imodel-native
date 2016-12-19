@@ -179,10 +179,10 @@ void MetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECSqlSt
             continue;
             }
 
-        if (colName.EqualsI("SchemaId"))
+        if (colName.EqualsI("Schema"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(expectedClass.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECClassDef.SchemaId";
+            ASSERT_EQ(expectedClass.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECClassDef.Schema";
             ASSERT_EQ(schemaOwnsClassesRelClassId.GetValue(), actualRelClassId.GetValueUnchecked());
             continue;
             }
@@ -351,11 +351,11 @@ void MetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEn
             }
 
 
-        if (colName.EqualsI("SchemaId"))
+        if (colName.EqualsI("Schema"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(expectedEnum.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECEnumerationDef.SchemaId";
-            ASSERT_EQ(schemaOwnsEnumsRelClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << "ECEnumerationDef.SchemaId";
+            ASSERT_EQ(expectedEnum.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECEnumerationDef.Schema";
+            ASSERT_EQ(schemaOwnsEnumsRelClassId.GetValue(), actualRelClassId.GetValueUnchecked()) << "ECEnumerationDef.Schema";
             continue;
             }
 
@@ -521,11 +521,11 @@ void MetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR expect
             continue;
             }
 
-        if (colName.EqualsI("SchemaId"))
+        if (colName.EqualsI("Schema"))
             {
             ECClassId actualRelClassId;
-            ASSERT_EQ(expectedKoq.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "KindOfQuantityDef.SchemaId";
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "KindOfQuantityDef.SchemaId";
+            ASSERT_EQ(expectedKoq.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "KindOfQuantityDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "KindOfQuantityDef.Schema";
             continue;
             }
 
@@ -671,11 +671,11 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("ClassId"))
+        if (colName.EqualsI("Class"))
             {
             ECClassId relClassId;
-            ASSERT_EQ(expectedProp.GetClass().GetId().GetValue(), val.GetNavigation(&relClassId).GetValueUnchecked()) << "ECPropertyDef.ClassId for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), relClassId.GetValueUnchecked()) << "ECPropertyDef.ClassId for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            ASSERT_EQ(expectedProp.GetClass().GetId().GetValue(), val.GetNavigation(&relClassId).GetValueUnchecked()) << "ECPropertyDef.Class for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), relClassId.GetValueUnchecked()) << "ECPropertyDef.Class for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             continue;
             }
 
@@ -758,7 +758,7 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("EnumerationId"))
+        if (colName.EqualsI("Enumeration"))
             {
             ECEnumerationCP expectedEnum = nullptr;
             if (primProp != nullptr)
@@ -767,8 +767,8 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             if (expectedEnum != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(expectedEnum->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId(), actualRelClassId) << "ECPropertyDef.EnumerationId for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(expectedEnum->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.Enumeration for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId(), actualRelClassId) << "ECPropertyDef.Enumeration for prim prop with enumeration for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.EnumerationId for prim prop without enumeration or non-prim prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
@@ -798,27 +798,27 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("StructClassId"))
+        if (colName.EqualsI("StructClass"))
             {
             if (structProp != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(structProp->GetType().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValue()) << "ECPropertyDef.StructClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.StructClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(structProp->GetType().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValue()) << "ECPropertyDef.StructClass for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.StructClass for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else if (structArrayProp != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(structArrayProp->GetStructElementType().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.StructClassId for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.StructClassId for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(structArrayProp->GetStructElementType().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.StructClass for struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.StructClass for struct prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.StructClassId for neither struct nor struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.StructClass for neither struct nor struct array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
 
-        if (colName.EqualsI("KindOfQuantityId"))
+        if (colName.EqualsI("KindOfQuantity"))
             {
             KindOfQuantityCP expectedKoq = nullptr;
             if (primProp != nullptr)
@@ -829,11 +829,11 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             if (expectedKoq != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantityId for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantityId for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantityId for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
@@ -870,16 +870,16 @@ void MetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp, EC
             continue;
             }
 
-        if (colName.EqualsI("NavigationRelationshipClassId"))
+        if (colName.EqualsI("NavigationRelationshipClass"))
             {
             if (navProp != nullptr)
                 {
                 ECClassId actualRelClassId;
-                ASSERT_EQ(navProp->GetRelationshipClass()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.NavigationRelationshipClassId for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.NavigationRelationshipClassId for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(navProp->GetRelationshipClass()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.NavigationRelationshipClass for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.NavigationRelationshipClass for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
                 }
             else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationRelationshipClassId for non-navigation prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationRelationshipClass for non-navigation prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }
