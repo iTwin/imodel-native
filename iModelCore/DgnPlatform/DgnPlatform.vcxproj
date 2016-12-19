@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClInclude Include="DgnCore\DgnCoreDLLInlines.h" />
     <ClInclude Include="DgnCore\DgnCoreLog.h" />
+    <ClInclude Include="DgnCore\ElementECInstanceAdapter.h" />
     <ClInclude Include="DgnCore\JsonUtils.h" />
     <ClInclude Include="DgnCore\UpdateLogging.h" />
     <ClInclude Include="DgnGeoCoord\GeoCoordElement.h" />
@@ -236,6 +237,7 @@
   <ItemGroup>
     <None Include="DgnCore\Annotations\Annotations.fbs" />
     <None Include="DgnCore\DgnFont.fbs" />
+    <None Include="DgnCore\ElementGraphics.fbs" />
     <None Include="DgnPlatform.mke" />
     <None Include="DgnPlatform.prewire.mke" />
     <None Include="PublicAPI\DgnPlatform\DesktopTools\pagalloc.fdf" />
@@ -307,11 +309,14 @@
     <ClCompile Include="DgnCore\DgnViewport.cpp" />
     <ClCompile Include="DgnCore\DisplayFilter.cpp" />
     <ClCompile Include="DgnCore\DrawAreaPattern.cpp" />
+    <ClCompile Include="DgnCore\ECSqlClassParams.cpp" />
     <ClCompile Include="DgnCore\ECUtils.cpp" />
     <ClCompile Include="DgnCore\ElementDependencyGraph.cpp" />
     <ClCompile Include="DgnCore\ElementGeometry.cpp" />
     <ClCompile Include="DgnCore\ElementGraphics.cpp" />
     <ClCompile Include="DgnCore\ElementUtil.cpp" />
+    <ClCompile Include="DgnCore\ExternalReference.cpp" />
+    <ClCompile Include="DgnCore\FacetCount.cpp" />
     <ClCompile Include="DgnCore\FenceParams.cpp" />
     <ClCompile Include="DgnCore\GeomPart.cpp" />
     <ClCompile Include="DgnCore\GParray.cpp" />

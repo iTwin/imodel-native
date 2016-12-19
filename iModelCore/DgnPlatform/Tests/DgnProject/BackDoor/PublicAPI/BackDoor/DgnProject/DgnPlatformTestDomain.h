@@ -125,9 +125,9 @@ public:
     Utf8StringCR GetTestElementProperty() const { return m_testElemProperty; }
     void SetTestElementProperty(Utf8StringCR value) { m_testElemProperty = value; }
 
-    int32_t GetIntegerProperty(uint8_t which) const { BeAssert(4 > which); return m_intProps[which]; }
-    double GetDoubleProperty(uint8_t which) const { BeAssert(4 > which); return m_doubleProps[which]; }
-    DPoint3d GetPointProperty(uint8_t which) const { BeAssert(4 > which); return m_pointProps[which]; }
+    int32_t GetIntegerProperty(uint8_t which) const { if (4 <= which) { BeAssert(false); return 0; } return m_intProps[which]; }
+    double GetDoubleProperty(uint8_t which) const { if (4 <= which) { BeAssert(false); return 0.0; } return m_doubleProps[which]; }
+    DPoint3d GetPointProperty(uint8_t which) const { if (4 <= which) { BeAssert(false); return DPoint3d::FromZero(); } return m_pointProps[which]; }
 
     void SetIntegerProperty(uint8_t which, int32_t i) { if (4 > which) m_intProps[which] = i; }
     void SetDoubleProperty(uint8_t which, double d) { if (4 > which) m_doubleProps[which] = d; }
@@ -442,7 +442,7 @@ private:
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
 
 public:
     static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
@@ -483,7 +483,7 @@ private:
     explicit TestMultiAspect(Utf8CP prop) : m_testMultiAspectProperty(prop) {;}
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el) override;
+    Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
 
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}

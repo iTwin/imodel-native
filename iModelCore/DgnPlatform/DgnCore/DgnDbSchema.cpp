@@ -193,7 +193,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     DgnCode partitionCode(Authorities().QueryAuthorityId(BIS_AUTHORITY_InformationPartitionElement), partitionName, Elements().GetRootSubjectId());
 
     // element handlers are not initialized yet, so insert DefinitionPartition directly
-    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,ModelId,ParentId,CodeAuthorityId,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
+    Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeAuthority.Id,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
     ECSqlStatement statement;
     if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECSqlWriteToken()))
         {
@@ -282,7 +282,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,ModelId,CodeAuthorityId,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeAuthority.Id,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECSqlWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -379,6 +379,60 @@ DbResult DgnDb::SaveDgnDbSchemaVersion(DgnVersion version)
     {
     m_schemaVersion = version;
     return  SavePropertyString(DgnProjectProperty::SchemaVersion(), m_schemaVersion.ToJson());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2016
+//---------------------------------------------------------------------------------------
+DgnDbSchemaVersion DgnDbSchemaVersion::FromLegacy(Utf8CP legacyVersionString)
+    {
+    SchemaVersion legacyVersion(legacyVersionString);
+
+    if (5 == legacyVersion.GetMajor())
+        return DgnDbSchemaVersion::Version_1_5(); // Graphite05
+
+    if ((6 == legacyVersion.GetMajor()) && (1 == legacyVersion.GetMinor()))
+        return DgnDbSchemaVersion::Version_1_6(); // DgnDb0601
+
+    return DgnDbSchemaVersion(); // Unknown/Invalid
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    12/2016
+//---------------------------------------------------------------------------------------
+DgnDbSchemaVersion DgnDbSchemaVersion::Extract(BeFileNameCR fileName)
+    {
+    BeSQLite::Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(fileName, Db::OpenParams (Db::OpenMode::Readonly)))
+        return DgnDbSchemaVersion(); // not a BeSQLite database
+
+    Utf8String packageSchemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(packageSchemaVersion, PackageProperty::SchemaVersion()))
+        {
+        // is a package, query DgnDbSchemaVersion from embedded DgnDb (use current PropertySpec)
+        Utf8String schemaVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(schemaVersion, DgnEmbeddedProjectProperty::SchemaVersion(), 1 /* first embedded file */))
+            return DgnDbSchemaVersion(schemaVersion.c_str());
+
+        // is a package, query DgnDbSchemaVersion from embedded DgnDb (use legacy PropertySpec)
+        Utf8String legacySchemaVersion;
+        if (BE_SQLITE_ROW == db.QueryProperty(legacySchemaVersion, LegacyEmbeddedDbSchemaVersionProperty(), 1 /* first embedded file */))
+            return DgnDbSchemaVersion::FromLegacy(legacySchemaVersion.c_str());
+
+        return DgnDbSchemaVersion(); // valid package, but invalid or non-existent payload
+        }
+
+    // not a package, query DgnDbSchemaVersion directly (use current PropertySpec)
+    Utf8String schemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(schemaVersion, DgnProjectProperty::SchemaVersion()))
+        return DgnDbSchemaVersion(schemaVersion.c_str());
+
+    // not a package, query DgnDbSchemaVersion directly (use legacy PropertySpec)
+    Utf8String legacySchemaVersion;
+    if (BE_SQLITE_ROW == db.QueryProperty(legacySchemaVersion, LegacyDbSchemaVersionProperty()))
+        return DgnDbSchemaVersion::FromLegacy(legacySchemaVersion.c_str());
+
+    return DgnDbSchemaVersion(); // unknown BeSQLite database type
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -489,7 +543,12 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
     Utf8String versionString;
     stat = QueryProperty(versionString, DgnProjectProperty::SchemaVersion());
     if (BE_SQLITE_ROW != stat)
+        {
+        if (BE_SQLITE_ROW == QueryProperty(versionString, DgnDbSchemaVersion::LegacyDbSchemaVersionProperty()))
+            return BE_SQLITE_ERROR_ProfileTooOld; // report Graphite05 and DgnDb0601 as too old rather than invalid
+
         return BE_SQLITE_ERROR_InvalidProfileVersion;
+        }
 
     m_schemaVersion.FromJson(versionString.c_str());
     DgnVersion expectedVersion = getCurrentSchemaVerion();

@@ -382,7 +382,7 @@ TestGraphicalType2dPtr TestGraphicalType2d::Create(DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty " FROM %s WHERE(Element.Id=?)", GetFullEcSqlClassName().c_str()).c_str());
     stmt->BindId(1, el.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
         return DgnDbStatus::ReadError;
@@ -393,9 +393,9 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el)
+DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(ElementId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(Element.Id=?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, el.GetElementId());
     return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
@@ -417,9 +417,9 @@ DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el)
+DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
     {
-    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str());
+    CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId());
     return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
@@ -463,11 +463,9 @@ void TestElementDrivesElementHandler::UpdateProperty1(DgnDbR db, EC::ECInstanceK
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TestElementDrivesElementHandler::SetProperty1(DgnDbR db, Utf8CP value, EC::ECInstanceKeyCR key)
     {
-    ECSqlStatement stmt;
-    stmt.Prepare(db, "UPDATE ONLY " DPTEST_SCHEMA_NAME "." DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME " SET Property1=?  WHERE(ECInstanceId=?)");
-    stmt.BindText(1, value, IECSqlBinder::MakeCopy::No);
-    stmt.BindId(2, key.GetECInstanceId());
-    ASSERT_EQ( stmt.Step(), BE_SQLITE_DONE );
+    auto inst = db.Schemas().GetECClass(key.GetECClassId())->GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->SetValue("Property1", ECN::ECValue(value));
+    ASSERT_EQ(BE_SQLITE_OK, db.UpdateECRelationshipProperties(key, *inst));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -487,18 +485,8 @@ Utf8String TestElementDrivesElementHandler::GetProperty1(DgnDbR db, EC::ECInstan
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECInstanceKey TestElementDrivesElementHandler::Insert(DgnDbR db, DgnElementId root, DgnElementId dependent)
     {
-    Utf8String ecsql("INSERT INTO ");
-    ecsql.append(GetECClass(db).GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-
-    stmt->BindId(1, root);
-    stmt->BindId(2, dependent);
-
     ECInstanceKey rkey;
-    if (BE_SQLITE_DONE != stmt->Step(rkey))
-        return ECInstanceKey();
-
+    db.InsertECRelationship(rkey, (ECN::ECRelationshipClassCR)(GetECClass(db)), root, dependent);
     return rkey;
     }
 

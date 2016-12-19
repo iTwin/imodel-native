@@ -97,10 +97,10 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
             else if (prop->GetIsNavigation())
                 {
                 ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-                if (!navProp->IsMultiple())
-                    cellValue = PrimitiveToString(value);
-                else
-                    cellValue = ArrayToString(value, prop);
+                if (navProp->IsMultiple())
+                    cellValue = "{...}";
+                else//we do not print out the rel class id by default
+                    cellValue = PrimitiveToString(value.GetStruct().GetValue(0));
                 }
 
             const int columnSize = columnSizes[(size_t) i];

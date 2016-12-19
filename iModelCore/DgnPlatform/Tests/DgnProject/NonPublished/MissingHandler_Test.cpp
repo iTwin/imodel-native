@@ -263,9 +263,11 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
 
     // Change parent
     auto pElem = cpElem->MakeCopy<GeometricElement3d>();
-    DgnElementId parentId;
     ASSERT_TRUE(pElem.IsValid());
-    status = pElem->SetParentId(parentId);
+    DgnElementId parentId;
+    DgnClassId parentRelClassId = db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
+    ASSERT_TRUE(parentRelClassId.IsValid());
+    status = pElem->SetParentId(parentId, parentRelClassId);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetParent));
     EXPECT_EQ(ALLOWED(Restriction::SetParent), pElem->GetParentId() == parentId);
 

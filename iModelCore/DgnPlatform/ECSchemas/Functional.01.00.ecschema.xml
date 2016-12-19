@@ -68,30 +68,30 @@
     </ECEntityClass>
     
     <ECRelationshipClass typeName="FunctionalElementIsOfType" strength="referencing" modifier="None">
-        <Source multiplicity="(0..*)" roleLabel="FunctionalElement is of FunctionalType" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="FunctionalElement" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="FunctionalType defines FunctionalElements" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="FunctionalType"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" strength="referencing" modifier="None">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="PhysicalElement fulfills FunctionalElements" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="fulfills" polymorphic="true">
             <Class class="bis:PhysicalElement"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="FunctionalElement is fulfilled by PhysicalElements" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is fulfilled by" polymorphic="true">
             <Class class="FunctionalElement"/>
         </Target>
     </ECRelationshipClass>
 
     <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" strength="referencing" modifier="None">
         <BaseClass>bis:ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="DrawingGraphic represents FunctionalElements" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="represents" polymorphic="true">
             <Class class="bis:DrawingGraphic"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="FunctionalElement is represented by DrawingGraphics" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is represented by" polymorphic="true">
             <Class class="FunctionalElement"/>
         </Target>
     </ECRelationshipClass>

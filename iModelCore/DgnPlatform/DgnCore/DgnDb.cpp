@@ -211,7 +211,8 @@ CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
+DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::ECRelationshipClassCR relClass, BeSQLite::EC::ECInstanceId sourceId, 
+                                     BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
     //WIP this might need a cache of inserters if called often
     ECInstanceInserter inserter(*this, relClass, GetECSqlWriteToken());
@@ -219,6 +220,43 @@ DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::E
         return BE_SQLITE_ERROR;
 
     return inserter.InsertRelationship(relKey, sourceId, targetId, relInstanceProperties);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/16
+//--------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::UpdateECRelationshipProperties(EC::ECInstanceKeyCR key, ECN::IECInstanceR props)
+    {
+    auto eclass = Schemas().GetECClass(key.GetECClassId());
+    if (nullptr == eclass)
+        return DbResult::BE_SQLITE_ERROR;
+    auto updater = Elements().m_updaterCache.GetUpdater(*this, *eclass);
+    if (nullptr == updater)
+        return DbResult::BE_SQLITE_ERROR;
+    Utf8Char instidstr[32];
+    BeStringUtilities::FormatUInt64(instidstr, key.GetECInstanceId().GetValue());
+    props.SetInstanceId(instidstr);
+    return updater->Update(props);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      12/16
+//--------------+---------------+---------------+---------------+---------------+------
+DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
+    {
+    auto eclass = Schemas().GetECClass(key.GetECClassId());
+    if (nullptr == eclass)
+        return DbResult::BE_SQLITE_ERROR;
+
+    Utf8String ecsql("DELETE FROM ");
+    ecsql.append(eclass->GetECSqlName().c_str()).append(" WHERE ECInstanceId=?");
+
+    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECSqlWriteToken());
+    if (stmt == nullptr)
+        return BE_SQLITE_ERROR;
+
+    stmt->BindId(1, key.GetECInstanceId());
+    return stmt->Step();
     }
 
 //--------------------------------------------------------------------------------------

@@ -247,11 +247,19 @@ template<typename T> void PublishTileData::AddBufferView(Utf8CP name, T const& b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublishTileData::AddBinaryData (void const* data, size_t size)
+void    PublishTileData::AddBinaryData (void const* data, size_t size) 
     {
-    size_t currentBufferSize = m_binaryData.size();
-    m_binaryData.resize(m_binaryData.size() + size);
-    memcpy(m_binaryData.data() + currentBufferSize, data, size);
+    m_binaryData.Append (static_cast<uint8_t const*> (data), size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
+    {
+    uint8_t        zero = 0;
+    while (0 != (m_binaryData.size() % boundarySize))
+        m_binaryData.Append(&zero, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,16 +382,16 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    padTo8ByteBoundary(std::FILE* outputFile)
+static void    padTo4ByteBoundary(std::FILE* outputFile)
     {
-    fseek(outputFile, 0, SEEK_END);
-    long        position = ftell(outputFile), padBytes = (8 - position % 8);
+    std::fseek(outputFile, 0, SEEK_END);
+    long        position = ftell(outputFile), padBytes = (4 - position % 4);
 
     if (0 != padBytes)
         {
         uint64_t    zero = 0;
 
-        fwrite (&zero, 1, padBytes, outputFile);
+        std::fwrite (&zero, 1, padBytes, outputFile);
         }
     }
 
@@ -392,124 +400,7 @@ static void    padTo8ByteBoundary(std::FILE* outputFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
     {
-    DRange3d        publishedRange = DRange3d::NullRange();
-
-    for (auto& part: publishableGeometry.Parts())
-        {
-        PublishTileData     featureTableData, partData;
-        bvector<uint16_t>   batchValues;
-        bool                rotationPresent = false;
-
-        featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
-
-        bvector<float>      positionFloats, upFloats, rightFloats;
-        BatchIdMap          batchIds(TileSource::Element);
-
-        for (auto& instance : part->Instances())
-            {
-            DPoint3d    translation;
-            DVec3d      right, up;
-            RotMatrix   rMatrix;
-
-            instance.GetTransform().GetTranslation(translation);
-            instance.GetTransform().GetMatrix(rMatrix);
-
-            positionFloats.push_back(translation.x);
-            positionFloats.push_back(translation.y);
-            positionFloats.push_back(translation.z);
-            
-            rotationPresent |= !rMatrix.IsIdentity();
-
-            rMatrix.GetColumn(right, 0);
-            rMatrix.GetColumn(up, 1);
-
-            rightFloats.push_back(right.x);
-            rightFloats.push_back(right.y);
-            rightFloats.push_back(right.z);
-
-
-            upFloats.push_back(up.x);
-            upFloats.push_back(up.y);
-            upFloats.push_back(up.z);
-
-            extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
-            batchValues.push_back (batchIds.GetBatchId(instance.GetId()));
-            }
-        
-        AddExtensions(partData);
-        AddDefaultScene(partData);
-        AddMeshes (partData, part->Meshes());
-            
-        featureTableData.m_json["POSITION"]["byteOffset"] = featureTableData.BinaryDataSize();
-        featureTableData.AddBinaryData(positionFloats.data(), positionFloats.size()*sizeof(float));
-        if (rotationPresent)
-            {
-            featureTableData.m_json["NORMAL_UP"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(upFloats.data(), upFloats.size()*sizeof(float));
-
-            featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
-            featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
-            }
-
-        Utf8String      batchTableStr = batchIds.ToJsonString (m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
-        Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
-
-        // Pad the feature table string to insure that the binary is 8 byte aligned (range crash in cesium reading the data otherwise).
-        while (0 != featureTableStr.size() % 8)
-            featureTableStr = featureTableStr + " ";
-
-        uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-        uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
-        uint32_t        featureTableBinarySize = featureTableData.BinaryDataSize(), gltfFormat = 1, zero = 0;
-
-        uint32_t        padBytes = (featureTableJsonLength + featureTableBinarySize + batchTableStrLen) % 8;
-        uint64_t        padZero;
-
-        featureTableData.AddBinaryData (&padZero, padBytes);
-        featureTableBinarySize += padBytes;
-        
-
-//#define INSTANCE_TESTING
-//#define GLTF_TESTING
-#ifdef INSTANCE_TESTING
-        {
-        AutoRestore<std::FILE*> saveOutput(&outputFile, fopen ("d:\\tmp\\test.i3dm", "wb"));
-#endif
-        long            startPosition = ftell(outputFile);
-
-        std::fwrite(s_instanced3dMagic, 1, 4, outputFile);
-        std::fwrite(&s_instanced3dVersion, 1, 4, outputFile);
-        long    lengthDataPosition = ftell(outputFile);
-        std::fwrite (&zero, 1, sizeof(uint32_t),outputFile);        // Filled in later.
-        std::fwrite(&featureTableJsonLength, 1, sizeof(uint32_t),outputFile);
-        std::fwrite(&featureTableBinarySize, 1, sizeof(uint32_t),outputFile);
-        std::fwrite(&batchTableStrLen, 1, sizeof(uint32_t),outputFile);  
-        std::fwrite(&zero, 1, sizeof(uint32_t),outputFile);         // Batch table binary (not used).
-        std::fwrite(&gltfFormat, 1, sizeof(uint32_t), outputFile);
-        std::fwrite(featureTableStr.data(), 1, featureTableJsonLength, outputFile);
-        std::fwrite(featureTableData.BinaryData(), 1, featureTableData.BinaryDataSize(), outputFile);
-        std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
-
-#ifdef GLTF_TESTING
-        {
-        AutoRestore<std::FILE*> saveOutput(&outputFile, fopen ("d:\\tmp\\test.glb", "wb"));
-        WriteGltf(outputFile, partData);
-        fclose (outputFile);
-        }
-#else
-        WriteGltf(outputFile, partData);
-#endif
-        padTo8ByteBoundary (outputFile);
-        uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
-        fseek(outputFile, lengthDataPosition, SEEK_SET);
-        fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
-        fseek(outputFile, 0, SEEK_END);
-
-#ifdef INSTANCE_TESTING
-        std::fclose (outputFile);
-        }
-#endif
-        }
+    DRange3d    publishedRange = DRange3d::NullRange();
 
     if (!publishableGeometry.Meshes().empty())
         {
@@ -517,9 +408,134 @@ void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGe
         WriteBatched3dModel (outputFile, publishableGeometry.Meshes());
         }
 
+    for (auto& part: publishableGeometry.Parts())
+        WritePartInstances(outputFile, publishedRange, part);
+
     m_tile.SetPublishedRange (publishedRange);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part)
+    {
+    PublishTileData     featureTableData, partData;
+    bvector<uint16_t>   batchValues;
+    bool                rotationPresent = false;
+
+    featureTableData.m_json["INSTANCES_LENGTH"] = part->Instances().size();
+
+    bvector<float>      upFloats, rightFloats;
+    BatchIdMap          batchIds(TileSource::Element);
+    DRange3d            positionRange = DRange3d::NullRange();
+
+    for (auto& instance : part->Instances())
+        {
+        DPoint3d    translation;
+        DVec3d      right, up;
+        RotMatrix   rMatrix;
+
+        instance.GetTransform().GetTranslation(translation);
+        instance.GetTransform().GetMatrix(rMatrix);
+
+        positionRange.Extend(translation);
+        rotationPresent |= !rMatrix.IsIdentity();
+
+        rMatrix.GetColumn(right, 0);
+        rMatrix.GetColumn(up, 1);
+
+        rightFloats.push_back(right.x);
+        rightFloats.push_back(right.y);
+        rightFloats.push_back(right.z);
+
+
+        upFloats.push_back(up.x);
+        upFloats.push_back(up.y);
+        upFloats.push_back(up.z);
+
+        extendRange (publishedRange, part->Meshes(), &instance.GetTransform());
+        batchValues.push_back (batchIds.GetBatchId(instance.GetId()));
+        }
+    DVec3d              positionScale;
+    bvector<uint16_t>   quantizedPosition;
+    double              range = (double) (0xffff);
+
+    positionScale = DVec3d::FromStartEnd(positionRange.low, positionRange.high);
+    for (auto& instance : part->Instances())
+        {
+        DPoint3d    translation;
+
+        instance.GetTransform().GetTranslation(translation);
+
+        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.x - positionRange.low.x) / positionScale.x));
+        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.y - positionRange.low.y) / positionScale.y));
+        quantizedPosition.push_back((uint16_t) (.5 + range * (translation.z - positionRange.low.z) / positionScale.z));
+        }
+
+    AddExtensions(partData);
+    AddDefaultScene(partData);
+    AddMeshes (partData, part->Meshes());
+
+    featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.x);
+    featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.y);
+    featureTableData.m_json["QUANTIZED_VOLUME_OFFSET"].append(positionRange.low.z);
+    featureTableData.m_json["QUANTIZED_VOLUME_SCALE"].append(positionScale.x);
+    featureTableData.m_json["QUANTIZED_VOLUME_SCALE"].append(positionScale.y);
+    featureTableData.m_json["QUANTIZED_VOLUME_SCALE"].append(positionScale.z);
+
+    featureTableData.m_json["POSITION_QUANTIZED"]["byteOffset"] = featureTableData.BinaryDataSize();
+    featureTableData.AddBinaryData(quantizedPosition.data(), quantizedPosition.size()*sizeof(uint16_t));
+                  
+    featureTableData.PadBinaryDataToBoundary(4);
+    if (rotationPresent)
+        {
+        featureTableData.m_json["NORMAL_UP"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(upFloats.data(), upFloats.size()*sizeof(float));
+
+        featureTableData.m_json["NORMAL_RIGHT"]["byteOffset"] = featureTableData.BinaryDataSize();
+        featureTableData.AddBinaryData(rightFloats.data(), rightFloats.size()*sizeof(float));
+        }
+
+    Utf8String      batchTableStr = batchIds.ToJsonString (m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
+    Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
+
+    // Pad the feature table string to insure that the binary is 4 byte aligned.
+    while (0 != featureTableStr.size() % 4)
+        featureTableStr = featureTableStr + " ";
+
+    uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+    uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
+    uint32_t        featureTableBinarySize = featureTableData.BinaryDataSize(), gltfFormat = 1, zero = 0;
+
+    uint32_t        padBytes = (featureTableJsonLength + featureTableBinarySize + batchTableStrLen) % 8;
+    uint64_t        padZero;
+
+    featureTableData.AddBinaryData (&padZero, padBytes);
+    featureTableBinarySize += padBytes;
+
+
+    long            startPosition = ftell(outputFile);
+
+    std::fwrite(s_instanced3dMagic, 1, 4, outputFile);
+    std::fwrite(&s_instanced3dVersion, 1, 4, outputFile);
+    long    lengthDataPosition = ftell(outputFile);
+    std::fwrite (&zero, 1, sizeof(uint32_t),outputFile);        // Filled in later.
+    std::fwrite(&featureTableJsonLength, 1, sizeof(uint32_t),outputFile);
+    std::fwrite(&featureTableBinarySize, 1, sizeof(uint32_t),outputFile);
+    std::fwrite(&batchTableStrLen, 1, sizeof(uint32_t),outputFile);
+    std::fwrite(&zero, 1, sizeof(uint32_t),outputFile);         // Batch table binary (not used).
+    std::fwrite(&gltfFormat, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(featureTableStr.data(), 1, featureTableJsonLength, outputFile);
+    std::fwrite(featureTableData.BinaryData(), 1, featureTableData.BinaryDataSize(), outputFile);
+    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
+
+    WriteGltf(outputFile, partData);
+    padTo4ByteBoundary (outputFile);
+    uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
@@ -549,11 +565,11 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
 
     WriteGltf (outputFile, tileData);
 
-    padTo8ByteBoundary (outputFile);
+    padTo4ByteBoundary (outputFile);
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
-    fseek(outputFile, lengthDataPosition, SEEK_SET);
-    fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
-    fseek(outputFile, 0, SEEK_END);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -577,9 +593,9 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData tileData)
         std::fwrite(tileData.m_binaryData.data(), 1, tileData.BinaryDataSize(), outputFile);
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
-    fseek(outputFile, lengthDataPosition, SEEK_SET);
-    fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
-    fseek(outputFile, 0, SEEK_END);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
     }       
 
 /*---------------------------------------------------------------------------------**//**

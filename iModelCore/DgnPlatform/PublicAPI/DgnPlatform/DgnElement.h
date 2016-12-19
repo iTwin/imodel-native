@@ -112,21 +112,24 @@ public:
     DgnElementId AddElementId(DgnElementId sourceId, DgnElementId targetId) {return m_remap.Add(sourceId, targetId);}
 };
 
+#if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
-//! A cache of ECInstanceUpdaters
+// A cache of ECInstanceUpdaters
+// THIS MUST NOT BE EXPORTED, AS IT DOES NOT REQUIRE THE CALLER TO SUPPLY THE ECSQLWRITETOKEN
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ECInstanceUpdaterCache
+struct ECInstanceUpdaterCache
     {
     private:
         bmap<DgnClassId, BeSQLite::EC::ECInstanceUpdater*> m_updaters;
     protected:
         virtual void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) = 0;
     public:
-        DGNPLATFORM_EXPORT ECInstanceUpdaterCache();
-        DGNPLATFORM_EXPORT ~ECInstanceUpdaterCache();
-        DGNPLATFORM_EXPORT void Clear();
-        DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR, ECN::ECClassCR);
+        ECInstanceUpdaterCache();
+        ~ECInstanceUpdaterCache();
+        void Clear();
+        BeSQLite::EC::ECInstanceUpdater* GetUpdater(DgnDbR, ECN::ECClassCR);
     };
+#endif
 
 //=======================================================================================
 //! Helps models, elements, aspects and other data structures copy themselves between DgnDbs
@@ -223,8 +226,6 @@ public:
     //! Remap a font between databases. If it exists by-type and -name, the Id is simply remapped; if not, a deep copy is made. If a deep copy is made and the source database contained the font data, the font data is also deep copied.
     DgnFontId RemapFont(DgnFontId srcId) {return _RemapFont(srcId);}
     //! @}
-
-    BeSQLite::EC::ECInstanceUpdater const& GetUpdater(ECN::ECClassCR) const;
 
     //! @name GCS coordinate system shift
     //! @{
@@ -597,6 +598,7 @@ public:
         Utf8String          m_userLabel;
         DgnElementId        m_id;
         DgnElementId        m_parentId;
+        DgnClassId          m_parentRelClassId;
 
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parent), m_federationGuid(federationGuid) {SetUserLabel(label);}
@@ -606,7 +608,7 @@ public:
         void SetUserLabel(Utf8CP label) {m_userLabel.AssignOrClear(label);} //!< Set the Label for elements created with this CreateParams
         void SetElementId(DgnElementId id) {m_id = id;}             //!< @private
         void SetModelId(DgnModelId modelId) {m_modelId = modelId;}  //!< @private
-        void SetParentId(DgnElementId parent) {m_parentId=parent;}  //!< Set the ParentId for elements created with this CreateParams
+        void SetParentId(DgnElementId parent, DgnClassId parentRelClassId) {m_parentId=parent; m_parentRelClassId=parentRelClassId;}  //!< Set the ParentId for elements created with this CreateParams
         void SetFederationGuid(BeSQLite::BeGuidCR federationGuid) {m_federationGuid = federationGuid;} //!< Set the FederationGuid for the DgnElement created with this CreateParams
         bool IsValid() const {return m_modelId.IsValid() && m_classId.IsValid();}
     };
@@ -658,6 +660,18 @@ public:
         virtual bool _IgnoreErrors() const {return m_ignoreErrors;}
     };
 
+    //! Information about an ECNavigationProperty
+    struct NavigationPropertyInfo
+    {
+    private:
+        BeInt64Id m_id;
+        DgnClassId m_relClassId;
+
+    public:
+        explicit NavigationPropertyInfo(BeInt64Id id=BeInt64Id(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
+        DgnClassId GetRelClassId() const {return m_relClassId;}
+        template <class TBeInt64Id> TBeInt64Id GetId() const {return TBeInt64Id(m_id.GetValueUnchecked());}
+    };
 
     //! The Hilite state of a DgnElement. If an element is "hilited", its appearance is changed to call attention to it.
     enum class Hilited : uint8_t
@@ -774,15 +788,19 @@ public:
 
         //! The subclass must override this method to insert an empty instance into the Db and associate it with the host element.
         //! @param el   The host element
+        //! @param writeToken The token for updating element-related data
         //! @note The caller will call _UpdateProperties immediately after calling this method.
-        virtual DgnDbStatus _InsertInstance(DgnElementCR el) = 0;
+        virtual DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
 
         //! The subclass must override this method to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
         //! @param el   The host element
-        virtual DgnDbStatus _DeleteInstance(DgnElementCR el) = 0;
+        //! @param writeToken The token for updating element-related data
+        virtual DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to update the instance properties.
-        virtual DgnDbStatus _UpdateProperties(DgnElementCR el) = 0;
+        //! @param el   The host element
+        //! @param writeToken The token for updating element-related data
+        virtual DgnDbStatus _UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to load properties from the Db.
         //! @param el   The host element
@@ -827,8 +845,8 @@ public:
         DEFINE_T_SUPER(Aspect)
     protected:
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
 
     public:
         //! Load the specified instance
@@ -868,8 +886,8 @@ public:
         static UniqueAspect* Load(DgnElementCR, DgnClassId);
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override;
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
-        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el) override;
-        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
 
     public:
         //! The reason why GenerateGeometricPrimitive is being called
@@ -908,6 +926,49 @@ public:
 
         template<typename T> static T const* Get(DgnElementCR el, ECN::ECClassCR cls) {return dynamic_cast<T const*>(GetAspect(el,cls));}
     };
+
+    //! holds the properties of an aspect in memory in the case where the aspect does not have its own handler
+    struct EXPORT_VTABLE_ATTRIBUTE GenericUniqueAspect : UniqueAspect
+        {
+        DEFINE_T_SUPER(UniqueAspect)
+        friend struct UniqueAspect;
+     protected:
+        ECN::IECInstancePtr m_instance;
+        Utf8String m_ecclassName;
+        Utf8String m_ecschemaName;
+
+        Utf8CP _GetECSchemaName() const override {return m_ecschemaName.c_str();}
+        Utf8CP _GetECClassName() const override {return m_ecclassName.c_str();}
+        Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+        DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
+
+        GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
+            {}
+
+     public:
+        GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName())
+            {}
+
+        //! Schedule a generic unique aspect to be inserted or updated on the specified element.
+        //! @param el   The host element
+        //! @param instance The instance that holds the properties of the aspect that are to be written
+        static void SetAspect(DgnElementR el, ECN::IECInstanceR instance) {T_Super::SetAspect(el, *new GenericUniqueAspect(instance));}
+
+        //! Get the specified type of generic unique aspect, if any, from an element.
+        //! @param el   The host element
+        //! @param ecclass The type of aspect to look for
+        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        DGNPLATFORM_EXPORT static ECN::IECInstanceCP GetAspect(DgnElementCR el, ECN::ECClassCR ecclass);
+
+        //! Get the specified type of generic unique aspect, if any, from an element, with the intention of modifying the aspect's properties.
+        //! @note Call Update on the host element after modifying the properties of the instance. 
+        //! @note Do not free the returned instance!
+        //! @param el   The host element
+        //! @param ecclass The type of aspect to look for
+        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
+        };
 
     //! Allows a business key (unique identifier string) from an external system (identified by DgnAuthorityId) to be associated with a DgnElement via a persistent ElementAspect
     struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
@@ -973,6 +1034,7 @@ protected:
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
     DgnElementId m_parentId;
+    DgnClassId m_parentRelClassId;
     DgnModelId m_modelId;
     DgnClassId m_classId;
     DgnCode m_code;
@@ -1238,11 +1300,12 @@ protected:
     //! Override to generate the display label in a different way.
     virtual Utf8String _GetDisplayLabel() const {return HasUserLabel() ? m_userLabel : GetCode().GetValue();}
 
-    //! Change the parent (owner) of this DgnElement.
-    //! The default implementation sets the parent without doing any checking.
+    //! Change the parent (owner) of this DgnElement. The default implementation sets the parent without doing any checking.
+    //! @param[in] parentId The DgnElementId of the new parent element.
+    //! @param[in] parentRelClassId The DgnClassId of the ElementOwnsChildElements subclass that relates this element to its parent element.
     //! @return DgnDbStatus::Success if the parentId was changed, error status otherwise.
     //! Override to validate the parent/child relationship and return a value other than DgnDbStatus::Success to reject proposed new parent.
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId);
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId);
 
     //! Disclose any locks which must be acquired and/or codes which must be reserved to perform the specified operation on this element.
     //! @param[in] request Request to populate
@@ -1477,11 +1540,15 @@ public:
     //! @return Id will be invalid if this element does not have a parent element.
     DgnElementId GetParentId() const {return m_parentId;}
 
+    //! Get the DgnClassId of the ElementOwnsChildElements subclass used to relate this element to its parent element.
+    //! @return Will be invalid if this element does not have a parent element.
+    DgnClassId GetParentRelClassId() const {return m_parentId.IsValid() ? m_parentRelClassId : DgnClassId();}
+
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
     //! @return DgnDbStatus::Success if the parent was set
     //! @note This call can fail if a DgnElement subclass overrides _SetParentId and rejects the parent.
-    DgnDbStatus SetParentId(DgnElementId parentId) {return parentId == GetParentId() ? DgnDbStatus::Success : _SetParentId(parentId);}
+    DgnDbStatus SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) {return parentId == GetParentId() && parentRelClassId == GetParentRelClassId() ? DgnDbStatus::Success : _SetParentId(parentId, parentRelClassId);}
 
     //! Return the DgnCode of this DgnElement
     DgnCodeCR GetCode() const {return m_code;}
@@ -1581,10 +1648,13 @@ public:
     //! @see GetPropertyValue
     DGNPLATFORM_EXPORT uint64_t GetPropertyValueUInt64(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const;
 
-    //! Return the value of an ECNavigationProperty by name
-    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex()) const
+    //! Return the NavigationPropertyInfo for an ECNavigationProperty of the specified name
+    DGNPLATFORM_EXPORT NavigationPropertyInfo GetNavigationPropertyInfo(Utf8CP propertyName) const;
+
+    //! Return the value of the ID of an ECNavigationProperty by name
+    template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
-        return TBeInt64Id(GetPropertyValueUInt64(propertyName, arrayIdx));
+        return GetNavigationPropertyInfo(propertyName).GetId<TBeInt64Id>();
         }
 
     //! Return the value of a string ECProperty by name
@@ -1594,42 +1664,25 @@ public:
     DGNPLATFORM_EXPORT YawPitchRollAngles GetPropertyValueYpr(Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName) const;
 
     //! Set a DateTime ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a DPoint3d ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint3dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a DPoint2d ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, DPoint2dCR value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a boolean ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, bool value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set a double ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, double value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set an integer ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int32_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set an int64_t ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, int64_t value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
 
     //! Set an ECNavigationProperty by name
     //! @note Passing an invalid ID will cause a null value to be set.
-    //! @see SetPropertyValue
-    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
+    DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, BeInt64Id value, ECN::ECClassId relClassId);
     //! Set a string ECProperty by name
-    //! @see SetPropertyValue
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP propertyName, Utf8CP value, PropertyArrayIndex const& arrayIdx = PropertyArrayIndex());
-
     //! Set the three property values that back a YPR
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValueYpr(YawPitchRollAnglesCR angles, Utf8CP yawName, Utf8CP pitchName, Utf8CP rollName);
 
@@ -2191,7 +2244,9 @@ protected:
 
 public:
     //! Set the PhysicalType for this PhysicalElement
-    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId) {return SetPropertyValue("PhysicalType", physicalTypeId);}
+    //! @param[in] physicalTypeId The DgnElementId of the PhysicalType to be associated with this PhysicalElement
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of PhysicalElementIsOfType
+    DgnDbStatus SetPhysicalType(DgnElementId physicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("PhysicalType", physicalTypeId, relClassId);}
 
     //! Get the DgnElementId of the PhysicalType for this PhysicalElement
     //! @return Will be invalid if there is no PhysicalType associated with this PhysicalElement
@@ -2230,7 +2285,9 @@ protected:
 
 public:
     //! Set the GraphicalType for this GraphicalElement2d
-    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId) {return SetPropertyValue("GraphicalType", graphicalTypeId);}
+    //! @param[in] graphicalTypeId The DgnElementId of the GraphicalType to be associated with this GraphicalElement2d
+    //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of GraphicalElement2dIsOfType
+    DgnDbStatus SetGraphicalType(DgnElementId graphicalTypeId, ECN::ECClassId relClassId) {return SetPropertyValue("GraphicalType", graphicalTypeId, relClassId);}
 
     //! Get the DgnElementId of the GraphicalType for this GraphicalElement2d
     //! @return Will be invalid if there is no GraphicalType associated with this GraphicalElement2d
@@ -2894,6 +2951,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     };
 
 private:
+    // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECSQLWRITETOKEN
     struct AutoHandledPropertyUpdaterCache : ECInstanceUpdaterCache
         {
         void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) override;

@@ -109,7 +109,7 @@ TEST_F (DgnElementTests, UpdateElement)
 TestElementCPtr DgnElementTests::AddChild(DgnElementCR parent)
     {
     TestElementPtr child = TestElement::Create(*m_db, parent.GetModelId(), m_defaultCategoryId);
-    child->SetParentId(parent.GetElementId());
+    child->SetParentId(parent.GetElementId(), m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements));
     auto el = child->Insert();
     if (!el.IsValid())
         return nullptr;
@@ -857,18 +857,12 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
 
     EXPECT_EQ(DPoint3d::From(0, 9, 9), element->GetPropertyValueDPoint3d("p3d"));
     // Get some non-auto-handled properties using the same dynamic property API
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "ModelId"));
-    EXPECT_EQ(element->GetModelId().GetValue(), checkValue.GetLong());
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "CategoryId"));
-    EXPECT_EQ(element->GetCategoryId().GetValue(), checkValue.GetLong());
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "UserLabel"));
-    EXPECT_STREQ(element->GetUserLabel(), checkValue.ToString().c_str());
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "CodeAuthorityId"));
-    EXPECT_EQ(element->GetCode().GetAuthority().GetValueUnchecked(), (uint64_t)checkValue.GetLong());
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "CodeNamespace"));
-    EXPECT_STREQ(element->GetCode().GetNamespace().c_str(), checkValue.ToString().c_str());
-    EXPECT_EQ(DgnDbStatus::Success, element->GetPropertyValue(checkValue, "CodeValue"));
-    EXPECT_STREQ(element->GetCode().GetValue().c_str(), checkValue.ToString().c_str());
+    EXPECT_EQ(element->GetModelId(), element->GetPropertyValueId<DgnModelId>("Model"));
+    EXPECT_EQ(element->GetCategoryId(), element->GetPropertyValueId<DgnCategoryId>("Category"));
+    EXPECT_STREQ(element->GetUserLabel(), element->GetPropertyValueString("UserLabel").c_str());
+    EXPECT_EQ(element->GetCode().GetAuthority(), element->GetPropertyValueId<DgnAuthorityId>("CodeAuthority"));
+    EXPECT_STREQ(element->GetCode().GetNamespace().c_str(), element->GetPropertyValueString("CodeNamespace").c_str());
+    EXPECT_STREQ(element->GetCode().GetValue().c_str(), element->GetPropertyValueString("CodeValue").c_str());
     }
 
     if (true)
@@ -1280,10 +1274,10 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         auto testClassInstance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
         DgnCode code = DgnCode::CreateEmpty();
         // custom-handled properties
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("ModelId", ECN::ECValue((int64_t)m_defaultModelId.GetValue())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthorityId", ECN::ECValue(code.GetAuthority().GetValue())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
@@ -1316,8 +1310,8 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
         ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
         ECN::ECValue v;
-        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
-        ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
+        ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Model"));
+        ASSERT_EQ(m_defaultModelId, v.GetNavigationInfo().GetId<DgnModelId>());
         ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
         ASSERT_STREQ("my label", v.ToString().c_str());
         ASSERT_STREQ("my label", ele->GetUserLabel());
@@ -1349,8 +1343,8 @@ TEST_F(DgnElementTests, CreateFromECInstance)
 
     ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), ele->GetModelId().GetValue());
     ECN::ECValue v;
-    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "ModelId"));
-    ASSERT_EQ((int64_t)m_defaultModelId.GetValue(), v.GetLong());
+    ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "Model"));
+    ASSERT_EQ(m_defaultModelId, v.GetNavigationInfo().GetId<DgnModelId>());
     ASSERT_EQ(DgnDbStatus::Success, ele->GetPropertyValue(v, "UserLabel"));
     ASSERT_STREQ("my label", v.ToString().c_str());
     ASSERT_STREQ("my label", ele->GetUserLabel());
@@ -1673,6 +1667,7 @@ TEST_F(DgnElementTests, ParentChildSameModel)
     EXPECT_TRUE(parentA->Insert().IsValid());
     EXPECT_TRUE(parentB->Insert().IsValid());
     DgnElementId childIdA, childIdB, childIdC;
+    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     // test DgnElement::_OnChildInsert success
         {
@@ -1682,14 +1677,17 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         EXPECT_TRUE(childA.IsValid());
         EXPECT_TRUE(childB.IsValid());
         EXPECT_TRUE(childC.IsValid());
-        childA->SetParentId(parentA->GetElementId()); // Match
-        childB->SetParentId(parentB->GetElementId()); // Match
+        childA->SetParentId(parentA->GetElementId(), parentRelClassId); // Match
+        childB->SetParentId(parentB->GetElementId(), parentRelClassId); // Match
         EXPECT_TRUE(childA->Insert().IsValid()) << "Expecting success because models of parent and child are the same";
         EXPECT_TRUE(childB->Insert().IsValid()) << "Expecting success because models of parent and child are the same";
         EXPECT_TRUE(childC->Insert().IsValid()) << "Expecting success because childC has no parent";
         EXPECT_TRUE(childA->GetParentId().IsValid());
         EXPECT_TRUE(childB->GetParentId().IsValid());
         EXPECT_FALSE(childC->GetParentId().IsValid());
+        EXPECT_TRUE(childA->GetParentRelClassId().IsValid());
+        EXPECT_TRUE(childB->GetParentRelClassId().IsValid());
+        EXPECT_FALSE(childC->GetParentRelClassId().IsValid());
         childIdA = childA->GetElementId();
         childIdB = childB->GetElementId();
         childIdC = childC->GetElementId();
@@ -1701,8 +1699,8 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         GenericPhysicalObjectPtr childB = GenericPhysicalObject::Create(*modelB, categoryId);
         EXPECT_TRUE(childA.IsValid());
         EXPECT_TRUE(childB.IsValid());
-        childA->SetParentId(parentB->GetElementId()); // Mismatch 
-        childB->SetParentId(parentA->GetElementId()); // Mismatch
+        childA->SetParentId(parentB->GetElementId(), parentRelClassId); // Mismatch 
+        childB->SetParentId(parentA->GetElementId(), parentRelClassId); // Mismatch
         DgnDbStatus insertStatusA, insertStatusB;
         BeTest::SetFailOnAssert(false);
         EXPECT_FALSE(childA->Insert(&insertStatusA).IsValid()) << "Expecting failure because models of parent and child are different";
@@ -1720,9 +1718,9 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         EXPECT_TRUE(childA.IsValid());
         EXPECT_TRUE(childB.IsValid());
         EXPECT_TRUE(childC.IsValid());
-        childA->SetParentId(parentB->GetElementId()); // Mismatch
-        childB->SetParentId(parentA->GetElementId()); // Mismatch
-        childC->SetParentId(parentA->GetElementId()); // Mismatch
+        childA->SetParentId(parentB->GetElementId(), parentRelClassId); // Mismatch
+        childB->SetParentId(parentA->GetElementId(), parentRelClassId); // Mismatch
+        childC->SetParentId(parentA->GetElementId(), parentRelClassId); // Mismatch
         DgnDbStatus updateStatusA, updateStatusB, updateStatusC;
         BeTest::SetFailOnAssert(false);
         EXPECT_FALSE(childA->Update(&updateStatusA).IsValid()) << "Expecting failure because models of parent and child are different";
@@ -1733,7 +1731,7 @@ TEST_F(DgnElementTests, ParentChildSameModel)
         EXPECT_EQ(DgnDbStatus::WrongModel, updateStatusB);
         EXPECT_EQ(DgnDbStatus::WrongModel, updateStatusC);
 
-        childC->SetParentId(parentB->GetElementId()); // Match
+        childC->SetParentId(parentB->GetElementId(), parentRelClassId); // Match
         EXPECT_TRUE(childC->Update(&updateStatusC).IsValid()) << "Expecting success because models of parent and child are the same";
         EXPECT_EQ(DgnDbStatus::Success, updateStatusC);
         }
@@ -1890,6 +1888,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
     {
     SetupSeedProject();
 
+    DgnClassId physicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_PhysicalElementIsOfType);
+    ASSERT_TRUE(physicalTypeRelClassId.IsValid());
+
     DgnElementId physicalTypeId[3];
     DgnElementId elementId;
 
@@ -1942,7 +1943,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetPhysicalTypeId().IsValid());
         ASSERT_FALSE(element->GetPhysicalType().IsValid());
-        element->SetPhysicalType(physicalTypeId[0]);
+        element->SetPhysicalType(physicalTypeId[0], physicalTypeRelClassId);
         ASSERT_TRUE(element->GetPhysicalTypeId().IsValid());
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
@@ -1957,7 +1958,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1]));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(physicalTypeId[1], physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1969,7 +1970,7 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
         ASSERT_TRUE(element->GetPhysicalType().IsValid());
         ASSERT_EQ(element->GetPhysicalTypeId().GetValue(), physicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId()));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetPhysicalType(DgnElementId(), physicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -1989,6 +1990,9 @@ TEST_F(DgnElementTests, PhysicalTypeCRUD)
 TEST_F(DgnElementTests, GraphicalType2dCRUD)
     {
     SetupSeedProject();
+
+    DgnClassId graphicalTypeRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_GraphicalElement2dIsOfType);
+    ASSERT_TRUE(graphicalTypeRelClassId.IsValid());
 
     DgnElementId graphicalTypeId[3];
     DgnElementId elementId;
@@ -2044,7 +2048,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element.IsValid());
         ASSERT_FALSE(element->GetGraphicalTypeId().IsValid());
         ASSERT_FALSE(element->GetGraphicalType().IsValid());
-        element->SetGraphicalType(graphicalTypeId[0]);
+        element->SetGraphicalType(graphicalTypeId[0], graphicalTypeRelClassId);
         ASSERT_TRUE(element->GetGraphicalTypeId().IsValid());
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
@@ -2059,7 +2063,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1]));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(graphicalTypeId[1], graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2071,7 +2075,7 @@ TEST_F(DgnElementTests, GraphicalType2dCRUD)
         ASSERT_TRUE(element->GetGraphicalType().IsValid());
         ASSERT_EQ(element->GetGraphicalTypeId().GetValue(), graphicalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId()));
+        ASSERT_EQ(DgnDbStatus::Success, element->SetGraphicalType(DgnElementId(), graphicalTypeRelClassId));
         ASSERT_TRUE(element->Update().IsValid());
         }
 
@@ -2106,7 +2110,7 @@ TEST_F(DgnElementTests, EqualsTests)
     ASSERT_TRUE(elementB.IsValid());
     ASSERT_FALSE(elementA->Equals(*elementB)) << " ModelIds should differ";
     bset<Utf8String> ignoreProps;
-    ignoreProps.insert("ModelId");
+    ignoreProps.insert("Model");
     DgnElement::ComparePropertyFilter filter(ignoreProps);
     ASSERT_TRUE(elementA->Equals(*elementB, filter));
 
@@ -2341,8 +2345,8 @@ TEST_F(DgnElementTests, DemoArrayProblem)
         "\"COMP_DESC\" : \"VALVE, , , 150# CLASS\","
         "\"CONN_PREP\" : null,"
         "\"CREATES_BOLTS\" : false,"
-        "\"CategoryId\" : \"398\","
-        "\"CodeAuthorityId\" : \"1\","
+        "\"Category\" : {\"id\" : \"398\"},"
+        "\"CodeAuthority\" : {\"id\" : \"1\"},"
         "\"CodeNamespace\" : \"\","
         "\"CodeValue\" : null,"
         "\"ELEMENT_ID\" : \"22000\","
@@ -2375,7 +2379,7 @@ TEST_F(DgnElementTests, DemoArrayProblem)
             "\"M14\" : 0.0,"
             "\"M15\" : 1.0"
             "},"
-        "\"ModelId\" : \"4\","
+        "\"Model\" : {\"id\" : \"4\"},"
         "\"NAME\" : \"V_CHEC\","
         "\"NEEDS_GASKETS\" : true,"
         "\"NETWORK_CONNECTIVITY\" : true,"
@@ -2383,7 +2387,7 @@ TEST_F(DgnElementTests, DemoArrayProblem)
         "\"OP_TYPE\" : \"#\","
         "\"OVERLAY\" : \"\","
         "\"Origin\" : null,"
-        "\"ParentId\" : null,"
+        "\"Parent\" : null,"
         "\"Pitch\" : null,"
         "\"RANGE\" : {"
             "\"xMax\" : -100000000000.0,"
@@ -2463,10 +2467,10 @@ TEST_F(DgnElementTests, DemoArrayProblem)
 
     DgnCode code = DgnCode::CreateEmpty();
     // custom-handled properties
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("ModelId", ECN::ECValue((int64_t) m_defaultModelId.GetValue())));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CategoryId", ECN::ECValue(m_defaultCategoryId.GetValue())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("UserLabel", ECN::ECValue("my label")));
-    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeAuthorityId", ECN::ECValue(code.GetAuthority().GetValue())));
+    ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeAuthority", ECN::ECValue(code.GetAuthority())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeNamespace", ECN::ECValue(code.GetNamespace().c_str())));
     ASSERT_EQ(ECN::ECObjectsStatus::Success, ecInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
 

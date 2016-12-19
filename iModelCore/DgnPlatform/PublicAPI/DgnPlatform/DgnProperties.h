@@ -17,13 +17,14 @@
 #define PROPERTY_APPNAME_LineStyle   "dgn_LStyle"
 #define PROPERTY_APPNAME_DgnMaterial "dgn_Material"
 #define PROPERTY_APPNAME_DgnModel    "dgn_Model"
-#define PROPERTY_APPNAME_DgnProject  "dgn_Proj"
 #define PROPERTY_APPNAME_DgnSession  "dgn_Sessn"
 #define PROPERTY_APPNAME_DgnView     "dgn_View"
 #define PROPERTY_APPNAME_Provenance  "dgn_Prov"
-#define PROPERTY_APPNAME_DgnEmbeddedProject "pkge_dgnProj"
 #define PROPERTY_APPNAME_DgnMarkupProject "dgnMarkup_Proj"
 #define PROPERTY_APPNAME_RedlineModel "dgnMarkup_RedlineModel"
+
+#define PROPERTY_APPNAME_DgnDb          "dgn_Db"        // replaces PROPERTY_APPNAME_DgnProject="dgn_Proj" from releases older than 2.0
+#define PROPERTY_APPNAME_DgnEmbeddedDb  "pkge_dgnDb"    // replaces PROPERTY_APPNAME_DgnEmbeddedProject="pkge_dgnProj" from releases older than 2.0
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -37,7 +38,7 @@ struct DgnProjectProperty
 {
     struct Spec : DbPropSpec
     {
-        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnProject, setting) {}
+        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnDb, setting) {}
     };
 
     struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
@@ -63,7 +64,7 @@ struct DgnEmbeddedProjectProperty
 {
     struct Spec : DbPropSpec
     {
-        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnEmbeddedProject, setting, DbPropSpec::Compress::No) {}
+        Spec(Utf8CP name, DbPropTxnMode setting) : DbPropSpec(name, PROPERTY_APPNAME_DgnEmbeddedDb, setting, DbPropSpec::Compress::No) {}
     };
 
     struct ProjectProperty : Spec {ProjectProperty(Utf8CP name) : Spec(name, DbPropSpec::Mode::Normal){}};
