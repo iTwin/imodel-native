@@ -51,7 +51,7 @@ private:
 protected:
     TextAnnotationPtr m_annotation;
     
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECSqlWriteToken const*) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:

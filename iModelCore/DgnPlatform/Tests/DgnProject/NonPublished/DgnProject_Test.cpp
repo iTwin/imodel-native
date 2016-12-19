@@ -106,24 +106,23 @@ TEST_F (DgnDbTest, CheckStandardProperties)
     SetupSeedProject();
 
     DgnDbP project = m_db.get();
-    ASSERT_TRUE( project != NULL );
+    ASSERT_TRUE(project != NULL);
     Utf8String val;
 
     // Check that std properties are in the be_Props table. We can only check the value of a few using this API.
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("DbGuid",            "be_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("BeSQLiteBuild",     "be_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("CreationDate",      "be_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("Units",             "dgn_Proj"      )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("LastEditor",        "dgn_Proj"      )) );
-    
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "be_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "ec_Db"         )) );
-    ASSERT_EQ( BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",     "dgn_Proj"      )) );
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("DbGuid",         "be_Db")));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("BeSQLiteBuild",  "be_Db")));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("CreationDate",   "be_Db")));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",  "be_Db")));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, PropertySpec("SchemaVersion",  "ec_Db")));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::Units()));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::LastEditor()));
+    ASSERT_EQ(BE_SQLITE_ROW, project->QueryProperty(val, DgnProjectProperty::SchemaVersion()));
 
-    //  Use the model API to access model properties and check their values
+    // Use the model API to access model properties and check their values
     PhysicalModelPtr defaultModel = GetDefaultPhysicalModel();
 
-    //  Use ModelInfo as an alt. way to get at some of the same property data
+    // Use ModelInfo as an alt. way to get at some of the same property data
     GeometricModel::DisplayInfo const& displayInfo = defaultModel->GetDisplayInfo();
     ASSERT_TRUE(displayInfo.GetMasterUnits().GetBase() == UnitBase::Meter);
     ASSERT_TRUE(displayInfo.GetSubUnits().GetBase() == UnitBase::Meter);
@@ -453,6 +452,57 @@ TEST_F(DgnProjectPackageTest, CreatePackageUsingDefaults)
     PropertiesInTable propertiesInTableV;
     getPackageProperties(db, propertiesInTableV, fileId.GetValue());
     compareProperties(propertiesInTable, propertiesInTableV);
+
+    ASSERT_TRUE(DgnDbSchemaVersion::GetCurrent().IsCurrent());
+    ASSERT_FALSE(DgnDbSchemaVersion::GetCurrent().IsPast());
+    ASSERT_FALSE(DgnDbSchemaVersion::GetCurrent().IsFuture());
+
+    DgnDbSchemaVersion fileVersion = DgnDbSchemaVersion::Extract(testFile);
+    ASSERT_TRUE(fileVersion.IsValid());
+    ASSERT_TRUE(fileVersion.IsCurrent());
+
+    DgnDbSchemaVersion packageVersion = DgnDbSchemaVersion::Extract(packageFile);
+    ASSERT_TRUE(packageVersion.IsValid());
+    ASSERT_TRUE(packageVersion.IsCurrent());
+
+#if 0 // save for testing
+    BeFileName oldBimFile(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.bim");
+    DgnDbSchemaVersion oldBimFileVersion = DgnDbSchemaVersion::Extract(oldBimFile);
+    ASSERT_FALSE(oldBimFileVersion.IsValid());
+
+    {
+    DbResult openStatus;
+    DgnDbPtr oldBimDb = DgnDb::OpenDgnDb(&openStatus, oldBimFile, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_FALSE(oldBimDb.IsValid());
+    ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, openStatus);
+    }
+
+    DgnDbSchemaVersion oldBimPackageVersion = DgnDbSchemaVersion::Extract(BeFileName(L"d:\\data\\dgndb\\imodel-generations\\Bim02_before_beProp_change.imodel"));
+    ASSERT_FALSE(oldBimPackageVersion.IsValid());
+
+    BeFileName graphite05Package(L"d:\\data\\dgndb\\imodel-generations\\Hydrotreater Expansion_Graphite05.imodel");
+    DgnDbSchemaVersion versionGraphite05 = DgnDbSchemaVersion::Extract(graphite05Package);
+    ASSERT_TRUE(versionGraphite05.IsValid());
+    ASSERT_TRUE(versionGraphite05.IsPast());
+    ASSERT_TRUE(versionGraphite05.IsVersion_1_5());
+
+    BeFileName dgnDb0601Package(L"d:\\data\\dgndb\\imodel-generations\\Hydrotreater Expansion_DgnDb0601.imodel");
+    DgnDbSchemaVersion versionDgnDb0601 = DgnDbSchemaVersion::Extract(dgnDb0601Package);
+    ASSERT_TRUE(versionDgnDb0601.IsValid());
+    ASSERT_TRUE(versionDgnDb0601.IsPast());
+    ASSERT_TRUE(versionDgnDb0601.IsVersion_1_6());
+
+    BeFileName dgnDb0601File(L"d:\\data\\dgndb\\imodel-generations\\04_Plant_DgnDb0601Q4.idgndb");
+    versionDgnDb0601 = DgnDbSchemaVersion::Extract(dgnDb0601File);
+    ASSERT_TRUE(versionDgnDb0601.IsValid());
+    ASSERT_TRUE(versionDgnDb0601.IsPast());
+    ASSERT_TRUE(versionDgnDb0601.IsVersion_1_6());
+
+    DbResult openStatus;
+    DgnDbPtr db0601 = DgnDb::OpenDgnDb(&openStatus, dgnDb0601File, DgnDb::OpenParams(Db::OpenMode::Readonly));
+    ASSERT_FALSE(db0601.IsValid());
+    ASSERT_EQ(BE_SQLITE_ERROR_ProfileTooOld, openStatus);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
