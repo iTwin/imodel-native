@@ -853,6 +853,56 @@ public:
         DGNPLATFORM_EXPORT static void AddAspect(DgnElementR el, MultiAspect& aspect);
     };
 
+    //! Represents a multiaspect that has no handler of its own.
+    struct EXPORT_VTABLE_ATTRIBUTE GenericMultiAspect : MultiAspect
+        {
+        DEFINE_T_SUPER(MultiAspect)
+        friend struct T_Super;
+     protected:
+        ECN::IECInstancePtr m_instance;
+        Utf8String m_ecclassName;
+        Utf8String m_ecschemaName;
+
+        Utf8CP _GetECSchemaName() const override {return m_ecschemaName.c_str();}
+        Utf8CP _GetECClassName() const override {return m_ecclassName.c_str();}
+        Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
+        DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
+
+        //! Use this constructor when you want to load a multiaspect
+        GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id);
+
+        //! Use this constructor when you want to add to the host element or update an existing multiaspect.
+        //! @param inst An instance that holds the properties
+        //! @param id Optional. If valid, the ID of the particular multiaspect that should be updated. If not valid, then this multiaspect will be added.
+        GenericMultiAspect(ECN::IECInstanceR inst, BeSQLite::EC::ECInstanceId id);
+
+     public:
+        //! Schedule a generic multi aspect to be inserted or updated on the specified element.
+        //! @param el   The host element
+        //! @param properties The instance that holds the properties of the aspect that are to be written
+        //! @return non-zero error status if the specified aspect cannot be added
+        DGNPLATFORM_EXPORT static DgnDbStatus AddAspect(DgnElementR el, ECN::IECInstanceR properties);
+
+        //! Prepare to update an aspect for the specified element
+        //! @param el The host element
+        //! @param properties  holds the properties that are to be set on the aspect
+        //! @param id  The ID of the particular multiaspect that should be udpated
+        //! @note The aspect will not actually be updated in the Db until you call DgnElements::Update on \a el
+        //! @return non-zero error status if the specified aspect is not found or cannot be set
+        DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId id);
+
+        //! Get the specified type of generic multi aspect, if any, from an element, with the intention of modifying the aspect's properties.
+        //! @note Call Update on the host element after modifying the properties of the instance. 
+        //! @note Do not free the returned instance!
+        //! @note Call this method only if you intend to modify the aspect. Use ECSql to query existing instances of the subclass.
+        //! @param el   The host element
+        //! @param ecclass The type of aspect to look for
+        //! @param id  The ID of the particular multiaspect that should be loaded
+        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass, BeSQLite::EC::ECInstanceId id);
+        };
+
     //! Represents an ElementAspect subclass in the case where the host Element can have 0 or 1 instance of the subclass. The aspect's Id is the same as the element's Id,
     //! and the aspect class must be stored in its own table (TablePerClass).
     //! A subclass of UniqueAspect must override the following methods:
@@ -933,14 +983,16 @@ public:
         GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
             {}
 
-     public:
         GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName())
             {}
+
+     public:
 
         //! Schedule a generic unique aspect to be inserted or updated on the specified element.
         //! @param el   The host element
         //! @param instance The instance that holds the properties of the aspect that are to be written
-        static void SetAspect(DgnElementR el, ECN::IECInstanceR instance) {T_Super::SetAspect(el, *new GenericUniqueAspect(instance));}
+        //! @return non-zero error status if the specified aspect cannot be set
+        DGNPLATFORM_EXPORT static DgnDbStatus SetAspect(DgnElementR el, ECN::IECInstanceR instance);
 
         //! Get the specified type of generic unique aspect, if any, from an element.
         //! @param el   The host element
@@ -953,7 +1005,7 @@ public:
         //! @note Do not free the returned instance!
         //! @param el   The host element
         //! @param ecclass The type of aspect to look for
-        //! @return the properties of the aspect or nullptr if no such aspect is found.
+        //! @return the properties of the aspect or nullptr if no such aspect is found or cannot be modified.
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 

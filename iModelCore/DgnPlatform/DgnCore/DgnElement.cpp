@@ -36,6 +36,14 @@ namespace ElementStrings
 using namespace ElementStrings;
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasHandler(ECN::ECClassCR cls)
+    {
+    return !cls.GetCustomAttributeLocal("ClassHasHandler").IsNull();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::AddRef() const
@@ -2115,7 +2123,7 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECClassCR cls, ECInstanceId id)
     {
-    //  First, see if we alrady have this particular MultiAspect cached
+    //  First, see if we already have this particular MultiAspect cached
     MultiAspectMux* mux = MultiAspectMux::Find(el,cls);
     if (nullptr != mux)
         {
@@ -2131,11 +2139,15 @@ DgnElement::MultiAspect* DgnElement::MultiAspect::GetAspectP(DgnElementR el, ECC
         }
 
     //  First time we've been asked for this particular aspect. Cache it.
-    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
-    if (nullptr == handler)
-        return nullptr;
 
-    RefCountedPtr<MultiAspect> aspect = dynamic_cast<MultiAspect*>(handler->_CreateInstance().get());
+    RefCountedPtr<MultiAspect> aspect;
+
+    dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), DgnClassId(cls.GetId()));
+    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler()) 
+        aspect = new GenericMultiAspect(cls, id);
+    else
+        aspect = dynamic_cast<MultiAspect*>(handler->_CreateInstance().get());
+
     if (!aspect.IsValid())
         return nullptr;
 
@@ -2250,7 +2262,7 @@ RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::Load0(DgnEleme
     RefCountedPtr<DgnElement::UniqueAspect> aspect;
 
     dgn_AspectHandler::Aspect* handler = dgn_AspectHandler::Aspect::FindHandler(el.GetDgnDb(), classid);
-    if ((nullptr == handler) || handler->_IsMissingHandler()) 
+    if ((nullptr == handler) || handler->_IsMissingHandler() || handler == &dgn_AspectHandler::Aspect::GetHandler()) 
         {
         auto eclass = el.GetDgnDb().Schemas().GetECClass(classid);
         if (nullptr == eclass)
@@ -3739,6 +3751,17 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECInstanceR instance)
+    {
+    if (hasHandler(instance.GetClass()))
+        return DgnDbStatus::MissingHandler;
+    T_Super::SetAspect(el, *new GenericUniqueAspect(instance));
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
     auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE ElementId=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
@@ -3786,6 +3809,8 @@ ECN::IECInstanceP DgnElement::GenericUniqueAspect::GetAspectP(DgnElementR el, EC
     GenericUniqueAspect* aspect = dynamic_cast<GenericUniqueAspect*>(T_Super::GetAspectP(el,cls));
     if (nullptr == aspect)
         return nullptr;
+    if (hasHandler(cls))   // Don't allow caller to modify an aspect that has a handler (which is missing) by using a generic aspect
+        return nullptr;
     return aspect->m_instance.get();
     }
 
@@ -3799,3 +3824,127 @@ ECN::IECInstanceCP DgnElement::GenericUniqueAspect::GetAspect(DgnElementCR el, E
         return nullptr;
     return aspect->m_instance.get();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::_LoadProperties(Dgn::DgnElementCR el)
+    {
+    CachedECSqlStatementPtr stmt;
+    if (m_instanceId.IsValid())
+        {
+        stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE ECInstanceId=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
+        if (!stmt.IsValid())
+            return DgnDbStatus::BadSchema;
+        stmt->BindId(1, m_instanceId);
+        }
+    else
+        {
+        // *** WIP_GenericMultiAspect - if no instance is specified, load the first one...?
+        stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE ElementId=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
+        if (!stmt.IsValid())
+            return DgnDbStatus::BadSchema;
+        stmt->BindId(1, el.GetElementId());
+        }
+    if (BE_SQLITE_ROW != stmt->Step())
+        return DgnDbStatus::NotFound;
+    ECInstanceECSqlSelectAdapter adapter(*stmt);
+    m_instance = adapter.GetInstance();
+    adapter.GetInstanceId(m_instanceId);
+    return m_instance.IsValid()? DgnDbStatus::Success: DgnDbStatus::ReadError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*)
+    {
+    if (!m_instance.IsValid() || !m_instanceId.IsValid())
+        {
+        BeAssert(false);
+        return DgnDbStatus::BadArg;
+        }
+
+    auto updater = el.GetDgnDb().Elements().m_updaterCache.GetUpdater(el.GetDgnDb(), m_instance->GetClass());
+    if (nullptr == updater)
+        return DgnDbStatus::BadSchema;
+
+    if (m_instanceId.IsValid())
+        {
+        // Set the aspect's own ECInstanceId. This is what enables the updater to find and update an existing aspect.
+        Utf8Char ecinstidstr[32];
+        BeStringUtilities::FormatUInt64(ecinstidstr, m_instanceId.GetValue());
+        m_instance->SetInstanceId(ecinstidstr);
+        }
+
+    // Set the MultiAspect's "ElementId" property. This is what links the aspect to its host element.
+    m_instance->SetValue("ElementId", ECN::ECValue(el.GetElementId().GetValue()));
+
+    return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECN::IECInstanceP DgnElement::GenericMultiAspect::GetAspectP(DgnElementR el, ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id)
+    {
+    GenericMultiAspect* aspect = dynamic_cast<GenericMultiAspect*>(T_Super::GetAspectP(el,cls,id));
+    if (nullptr == aspect)
+        return nullptr;
+    if (hasHandler(cls))   // Don't allow caller to modify an aspect that has a handler (which is missing) by using a generic aspect
+        return nullptr;
+    return aspect->m_instance.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id) 
+    : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
+    {
+    m_instanceId = id;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::GenericMultiAspect::GenericMultiAspect(ECN::IECInstanceR inst, BeSQLite::EC::ECInstanceId id) 
+    : m_instance(&inst), m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName())
+    {
+    m_instanceId = id;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::AddAspect(DgnElementR el, ECN::IECInstanceR properties)
+    {
+    if (hasHandler(properties.GetClass()))
+        return DgnDbStatus::MissingHandler;
+    T_Super::AddAspect(el, *new GenericMultiAspect(properties, BeSQLite::EC::ECInstanceId()));
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::SetAspect(DgnElementR el, ECN::IECInstanceR properties, BeSQLite::EC::ECInstanceId id)
+    {
+    if (hasHandler(properties.GetClass()))
+        return DgnDbStatus::MissingHandler;
+
+    auto existing = T_Super::GetAspectP(el, properties.GetClass(), id);
+    if (nullptr == existing)
+        return DgnDbStatus::NotFound;
+
+    auto mexisting = dynamic_cast<GenericMultiAspect*>(existing);
+    if (nullptr == mexisting)
+        {
+        BeAssert(false);
+        return DgnDbStatus::MissingHandler;
+        }
+
+    mexisting->m_instance = &properties;
+    return DgnDbStatus::Success;
+    }
+
