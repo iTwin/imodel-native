@@ -31,6 +31,8 @@ typedef RefCountedPtr <struct ThreadedParasolidErrorHandlerInnerMark>       Thre
 
 class   ParasolidException {};
 
+static bool s_doInstancing = true;
+
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley      10/2015
 *  Called from the main thread to register Thread Local Storage used by
@@ -1352,7 +1354,7 @@ public:
 
     virtual T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override { return m_part->GetPolyfaces(facetOptions, *this); }
     virtual T_TileStrokes _GetStrokes (IFacetOptionsR facetOptions) override { return m_part->GetStrokes(facetOptions, *this); }
-    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter); }
+    virtual size_t _GetFacetCount(FacetCounter& counter) const override { return m_part->GetFacetCount (counter) / m_part->GetInstanceCount(); }
     virtual TileGeomPartCPtr _GetPart() const override { return m_part; }
 
 };  // GeomPartInstanceTileGeometry 
@@ -1380,13 +1382,15 @@ struct SolidPrimitivePartMapKey
 {
     ISolidPrimitivePtr      m_solidPrimitive;
     DRange3d                m_range;
+    TileDisplayParamsPtr    m_displayParams;
+
 
     SolidPrimitivePartMapKey() { }
-    SolidPrimitivePartMapKey(ISolidPrimitiveR solidPrimitive, DRange3dCR range) : m_range(range), m_solidPrimitive(&solidPrimitive) { }
+    SolidPrimitivePartMapKey(ISolidPrimitiveR solidPrimitive, DRange3dCR range, TileDisplayParamsPtr& displayParams) : m_range(range), m_solidPrimitive(&solidPrimitive), m_displayParams(displayParams) { }
 
     bool operator < (SolidPrimitivePartMapKey const& rhs) const { return compareDoubleArray (&m_range.low.x, &rhs.m_range.low.x, 6, s_compareTolerance) < 0; }
     
-    bool IsEqual (SolidPrimitivePartMapKey const& other) const { return m_solidPrimitive->IsSameStructureAndGeometry(*other.m_solidPrimitive, s_compareTolerance); }
+    bool IsEqual (SolidPrimitivePartMapKey const& other) const { return !(*m_displayParams < *other.m_displayParams) && !(*other.m_displayParams < *m_displayParams) && m_solidPrimitive->IsSameStructureAndGeometry(*other.m_solidPrimitive, s_compareTolerance); }
 
 };
 
@@ -2463,17 +2467,29 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
 bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
     bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
+#ifdef NOTNOW
     if (!hasCurvedFaceOrEdge)
         return false;   // Process as facets.
+#endif
 
-    DRange3d            range;
-    ISolidPrimitivePtr  clone = prim.Clone();
+
+    DRange3d                range, thisTileRange;
+    ISolidPrimitivePtr      clone = prim.Clone();
+    Transform               tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
+    TileDisplayParamsPtr    displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     clone->GetRange(range);
+    tf.Multiply(thisTileRange, range);
 
-    SolidPrimitivePartMapKey    key(*clone, range);
+    if (!s_doInstancing || !thisTileRange.IsContained(m_tileRange))
+        {
+        IGeometryPtr geom = IGeometry::Create(clone);
+        return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+        }
+
+    
+    SolidPrimitivePartMapKey    key(*clone, range, displayParams);
     TileGeomPartPtr             tileGeomPart = m_solidPrimitiveParts.Find(key);
-    TileDisplayParamsPtr        displayParams = TileDisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
 
     if (!tileGeomPart.IsValid())
         {
@@ -2484,12 +2500,9 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
         
         m_solidPrimitiveParts.Insert(key, tileGeomPart = TileGeomPart::Create(range, geometryList));
         }
-
-    Transform tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
     
     tileGeomPart->IncrementInstanceCount();
-    tf.Multiply(range, range);
-    AddElementGeometry(*TileGeometry::Create(*tileGeomPart, tf, range, m_curElemId, displayParams, m_dgndb));
+    AddElementGeometry(*TileGeometry::Create(*tileGeomPart, tf, thisTileRange, m_curElemId, displayParams, m_dgndb));
     return true;
     }
 
@@ -2675,9 +2688,7 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 virtual Render::GraphicPtr _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override
     {
-    static bool s_doInstances = true;
-
-    if (s_doInstances)  // && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  Mirroring???
+    if (s_doInstancing)  // && graphic.GetLocalToWorldTransform().Determinant() > 0.0)  Mirroring???
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
@@ -2816,7 +2827,16 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
             }
         }
     TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, twoSidedTriangles, doSurfacesOnly, true, filter, uninstancedGeometry);
+
     meshes.insert (meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
+
+    static bool                 s_omitInstances = false, s_omitUninstanced = false;
+
+    if (s_omitInstances)
+        publishedTileGeometry.Parts().clear();
+
+    if (s_omitUninstanced)
+        publishedTileGeometry.Meshes().clear();
 
     return publishedTileGeometry;
     }
