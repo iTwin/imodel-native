@@ -134,12 +134,12 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
 
     protected:
 
-        PropertyMap::PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
+        PropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : m_type(kind), m_classMap(classMap), m_ecProperty(ecProperty), m_parentPropertMap(nullptr),
             m_propertyAccessString(ecProperty.GetName())
             {}
 
-        PropertyMap::PropertyMap(Type type, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
+        PropertyMap(Type type, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, Utf8StringCR accessString)
             :m_type(type), m_classMap(parentPropertyMap.GetClassMap()), m_ecProperty(ecProperty), m_parentPropertMap(&parentPropertyMap),
             m_propertyAccessString(accessString)
             {}
@@ -193,12 +193,13 @@ struct DataPropertyMap : PropertyMap
         virtual DbTable const& _GetTable() const = 0;
         virtual bool _IsMappedToTable(DbTable const& table) const override { return &GetTable() == &table; }
         virtual OverflowState _GetOverflowState() const = 0;
+
     protected:
-        DataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
-            : PropertyMap(kind, classMap, ecProperty)
-            {}
+        DataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty) : PropertyMap(kind, classMap, ecProperty) {}
         DataPropertyMap(Type kind, PropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty, bool appendToAccessString)
-            : PropertyMap(kind, parentPropertyMap, ecProperty, appendToAccessString ? parentPropertyMap.GetAccessString() + "." + ecProperty.GetName() : ecProperty.GetName())
+            : PropertyMap(kind, parentPropertyMap, ecProperty, appendToAccessString ? 
+                          Utf8PrintfString("%s.%s", parentPropertyMap.GetAccessString().c_str(), ecProperty.GetName().c_str()) : 
+                          ecProperty.GetName())
             {}
 
     public:
