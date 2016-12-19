@@ -372,8 +372,10 @@
         <SubPart PartName="UnitTests-Published"/>
 
         <!-- Ensure that builds, run manually if needed -->
+      <!-- 
         <SubPart PartName="WSClientIntegrationTests"/>
-    </Part>
+      -->
+      </Part>
 
     <!-- Define a gtest program to run the tests. 
         The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
@@ -520,7 +522,7 @@
         
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
-        <SubPart PartName="ConnectWebServicesClientC" />
+        <!--<SubPart PartName="ConnectWebServicesClientC" />-->
         <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
