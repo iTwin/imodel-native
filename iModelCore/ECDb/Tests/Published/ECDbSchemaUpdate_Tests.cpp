@@ -2042,10 +2042,14 @@ TEST_F(ECSchemaUpdateTests, UpdateECDbMapCA_AddSharedColumnCount)
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
+        "   <ECEntityClass typeName='Sub' modifier='None' >"
+        "       <BaseClass>Parent</BaseClass>"
+        "       <ECProperty propertyName='P2' typeName='int' />"
+        "   </ECEntityClass>"
         "</ECSchema>";
 
     m_updatedDbs.clear();
-    AssertSchemaUpdate(editedSchemaXml, filePath, {true, true}, "Adding SharedColumnCount is supported");
+    AssertSchemaUpdate(editedSchemaXml, filePath, { true, true }, "Adding SharedColumnCount is supported");
 
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
