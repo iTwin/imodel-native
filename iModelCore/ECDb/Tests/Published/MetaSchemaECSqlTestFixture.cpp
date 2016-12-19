@@ -1051,7 +1051,7 @@ void MetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecClass
     ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(GetECDb(), "SELECT p.ECInstanceId FROM ec.ECClassDef c1 "
         "JOIN ec.ClassHasAllBaseClasses rel ON rel.SourceECInstanceId = c1.ECInstanceId "
         "JOIN ec.ECClassDef c2 ON c2.ECInstanceId = rel.TargetECInstanceId "
-        "INNER JOIN ec.ECPropertyDef p ON p.ClassId.Id = c2.ECInstanceId "
+        "INNER JOIN ec.ECPropertyDef p ON p.Class.Id = c2.ECInstanceId "
         "WHERE c1.ECInstanceId=? "
         "ORDER BY rel.ECInstanceId"));
     ASSERT_EQ(ECSqlStatus::Success, propertyStatement.BindId(1, ecClass->GetId()));
