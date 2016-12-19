@@ -474,12 +474,9 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
-typedef bmap<double, TileGeometry::T_TilePolyfaces> T_PolyfaceMap; 
-
 struct TileGeomPart : RefCountedBase
 {
 private:
-    DgnGeometryPartId       m_partId;
     DRange3d                m_range;
     TileGeometryList        m_geometries;
     size_t                  m_instanceCount;
@@ -488,19 +485,19 @@ private:
     virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} \
 
 protected:
-    TileGeomPart(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry);
+    TileGeomPart(DRange3dCR range, TileGeometryList const& geometry);
 
 public:
-    static TileGeomPartPtr Create(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(partId, range, geometry); }
+    static TileGeomPartPtr Create(DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(range, geometry); }
     TileGeometry::T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance);
     TileGeometry::T_TileStrokes GetStrokes(IFacetOptionsR facetOptions, TileGeometryCR instance);
     size_t GetFacetCount(FacetCounter& counter) const;
     bool IsCurved() const;
     void IncrementInstanceCount() { m_instanceCount++; }
-    size_t GetInstanceCount() const { return m_instanceCount; }
+    size_t GetInstanceCount() const { return m_instanceCount; }
+
     TileGeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
-    DgnGeometryPartId GetPartId() const { return m_partId; }
     bool IsWorthInstancing(double tolerance) const;
     
 
