@@ -72,7 +72,7 @@ MarkupExternalLinkCPtr MarkupExternalLink::Update()
 void MarkupExternalLink::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindId(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(MARKUPEXTERNALLINK_LinkedElementId), m_linkedElementId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -84,7 +84,7 @@ DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_linkedElementId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
+    m_linkedElementId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(MARKUPEXTERNALLINK_LinkedElementId));
     return DgnDbStatus::Success;
     }
 

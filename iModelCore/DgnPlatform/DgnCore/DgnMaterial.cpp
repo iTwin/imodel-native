@@ -105,7 +105,7 @@ void dgn_ElementHandler::Material::_RegisterPropertyAccessors(ECSqlClassInfo& pa
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId) 
+DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) 
     {
     if (parentId.IsValid())
         {
@@ -119,7 +119,7 @@ DgnDbStatus DgnMaterial::_SetParentId(DgnElementId parentId)
             return DgnDbStatus::InvalidParent;
         }
 
-    return T_Super::_SetParentId(parentId);
+    return T_Super::_SetParentId(parentId, parentRelClassId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -195,15 +195,15 @@ DgnDbStatus DgnMaterial::_OnChildImport(DgnElementCR child, DgnModelR destModel,
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMaterial::Iterator DgnMaterial::Iterator::Create(DgnDbR db, Options const& options)
     {
-    Utf8String ecsql("SELECT ECInstanceId,[CodeValue],[CodeNamespace],ParentId,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
+    Utf8String ecsql("SELECT ECInstanceId,CodeValue,CodeNamespace,Parent.Id,Descr FROM " BIS_SCHEMA(BIS_CLASS_MaterialElement));
     if (options.m_byPalette)
-        ecsql.append(" WHERE [CodeNamespace]=?");
+        ecsql.append(" WHERE CodeNamespace=?");
 
     if (options.m_byParent)
-        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("ParentId=?");
+        ecsql.append(options.m_byPalette ? " AND " : " WHERE ").append("Parent.Id=?");
 
     if (options.m_ordered)
-        ecsql.append(" ORDER BY [CodeNamespace],[CodeValue]");
+        ecsql.append(" ORDER BY CodeNamespace,CodeValue");
 
     Iterator iter;
     ECSqlStatement* stmt = iter.Prepare(db, ecsql.c_str(), 0);
