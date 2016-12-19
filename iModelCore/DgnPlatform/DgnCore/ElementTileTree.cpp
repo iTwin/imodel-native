@@ -1796,10 +1796,7 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
-    if (IsCanceledOrAbandoned())
-        return ERROR;
-
-    return SUCCESS; // ###TODO?
+    return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1883,14 +1880,9 @@ BentleyStatus Loader::_LoadTile()
         }
 #endif
 
-#define ELEMENT_TILE_TRUNCATE_EMPTY_NODES
-#if defined(ELEMENT_TILE_TRUNCATE_EMPTY_NODES)
-    // ###TODO: This produces a race condition on the vector of child tiles...
-    // I don't want to waste time checking for empty tiles when creating the tile tree nodes...
-    // For now assuming empty tiles are cheap and therefore subdividing them is not a problem
+    // No point subdividing empty nodes - improves performance if we don't
     if (geometry.IsEmpty())
         tile.SetIsLeaf();   // ###TODO: Is this true - or can all the geometry be too small for this tile's tolerance?
-#endif
 
     tile.SetIsReady();
     return SUCCESS;
@@ -1996,13 +1988,7 @@ Tile::Tile(Root& octRoot, TileTree::OctTree::TileId id, Tile const* parent, DRan
     double leafTolerance = GetElementRoot().GetLeafTolerance();
     double tileTolerance = m_range.DiagonalDistance() / s_minToleranceRatio;
 
-#if defined(ELEMENT_TILE_STOPPING_CRITERION)
-    static uint8_t s_maxLevel = 6;  // ###TODO: Get rid of this hard cap...
-    bool isLeaf = id.m_level >= s_maxLevel || tileTolerance <= leafTolerance || IsElementCountLessThan(s_minElementsPerTile, tileTolerance);
-#else
     bool isLeaf = tileTolerance <= leafTolerance;
-#endif
-
     if (isLeaf)
         {
         m_tolerance = leafTolerance;

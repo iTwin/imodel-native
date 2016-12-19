@@ -762,17 +762,26 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
-* @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawGraphics(ViewContextR context)
+void Root::_AdjustViewFlags(ViewFlags& flags) const
     {
-    ViewFlags flags = context.GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     flags.m_textures = true;
     flags.m_visibleEdges = false;
     flags.m_shadows = false;
     flags.m_ignoreLighting = true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Add the Render::Graphics from all tiles that were found from this _Draw request to the context.
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::DrawGraphics(ViewContextR context)
+    {
+    // Allow the tile tree to specify how view flags should be overridden
+    ViewFlags flags = context.GetViewFlags();
+    m_root._AdjustViewFlags(flags);
 
     DrawBranch(flags, m_graphics, 0.0, "Main");
     DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");

@@ -562,6 +562,7 @@ private:
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
 
     virtual Utf8CP _GetName() const override { return m_name.c_str(); }
+    virtual void _AdjustViewFlags(Render::ViewFlags&) const override { }
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:
