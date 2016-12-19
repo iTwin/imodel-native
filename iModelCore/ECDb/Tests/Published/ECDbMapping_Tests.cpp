@@ -2887,7 +2887,8 @@ TEST_F(ECDbMappingTestFixture, MapRelationshipsToExistingTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NotNullConstraint)
     {
-    //NotNull constraint on FK Relationship for OwnTable
+
+            //NotNull constraint on FK Relationship for OwnTable
             {
             SchemaItem testItem(
                 "<?xml version='1.0' encoding='utf-8'?>"
@@ -2966,6 +2967,45 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraint)
             ASSERT_EQ(0, sqlstmt.GetValueInt(0));
             }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, NotNullConstraintForRelationshipClassId)
+    {
+
+    //NotNull determination on RelClassIdColumn for FK Relationship
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "<ECEntityClass typeName='Foo' modifier='None' >"
+        "   <ECProperty propertyName='FooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='Goo' modifier='None' >"
+        "   <ECProperty propertyName='GooProp' typeName='int' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='FooHasGoo' modifier='Sealed' strength='referencing'>"
+        "    <Source multiplicity='(0..1)' polymorphic='false' roleLabel='Foo'>"
+        "      <Class class = 'Foo' />"
+        "    </Source>"
+        "    <Target multiplicity='(1..1)' polymorphic='false' roleLabel='Goo'>"
+        "      <Class class = 'Goo' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "NotNull constraint is honoured for an FK Relationship.");
+
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "NotNullConstraintOnRelClassIdColumn.ecdb");
+    ASSERT_FALSE(asserted);
+
+    Statement sqlstmt;
+    ASSERT_EQ(BE_SQLITE_OK, sqlstmt.Prepare(db, "SELECT NotNullConstraint FROM ec_Column WHERE Name='RelECClassId_ts_FooHasGoo'"));
+    ASSERT_EQ(BE_SQLITE_ROW, sqlstmt.Step());
+    ASSERT_EQ(0, sqlstmt.GetValueInt(0));
+    }
+    
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
