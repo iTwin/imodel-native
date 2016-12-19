@@ -334,6 +334,27 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         }
 };
 
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TilePolylineArgs
+{
+    bvector<DPoint3d>   m_vertices;
+
+    bool Init(bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
+        {
+        m_vertices.clear();
+        for (auto const& index : indices)
+            {
+            FPoint3d const& fpt = vertices[index];
+            auto dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+            m_vertices.push_back(dpt);
+            }
+
+        return !m_vertices.empty();
+        }
+};
+
 constexpr double s_half2dDepthRange = 10.0;
 constexpr double s_minRangeBoxSize    = 0.5;     // Threshold below which we consider geometry/element too small to contribute to tile mesh
 constexpr size_t s_maxGeometryIdCount = 0xffff;  // Max batch table ID - 16-bit unsigned integers
@@ -1816,6 +1837,7 @@ BentleyStatus Loader::_LoadTile()
     auto& system = *root.GetRenderSystem();
 
     GeometryOptions options;
+    options.m_surfaces = GeometryOptions::Surfaces::No; // ###TODO: Clean up naming - currently Surfaces::Yes means ONLY surfaces...
     LoadContext loadContext(this);
     auto geometry = tile.GenerateGeometry(options, loadContext);
 
@@ -1826,18 +1848,34 @@ BentleyStatus Loader::_LoadTile()
 #if defined(ELEMENT_TILE_SUBGRAPHICS)
     Render::GraphicBuilderPtr graphic;
     // ###TODO: instanced geometry, polylines...
+    TilePolylineArgs polylineArgs;
     for (auto const& mesh : geometry.Meshes())
         {
-        if (mesh->Triangles().empty())
+        bool haveMesh = !mesh->Triangles().empty();
+        bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+        if (!haveMesh && !havePolyline)
             continue;
 
         if (graphic.IsNull())
             graphic = system._CreateGraphic(Graphic::CreateParams());
 
         auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-        TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
         subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
-        subGraphic->AddTriMesh(meshArgs);
+
+        if (haveMesh)
+            {
+            TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
+            subGraphic->AddTriMesh(meshArgs);
+            }
+        else
+            {
+            BeAssert(havePolyline);
+            for (auto const& polyline : mesh->Polylines())
+                {
+                if (polylineArgs.Init(mesh->Points(), polyline.GetIndices()))
+                    subGraphic->AddLineString(static_cast<int>(polylineArgs.m_vertices.size()), &polylineArgs.m_vertices[0]);
+                }
+            }
 
         subGraphic->Close();
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
@@ -2216,6 +2254,9 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     else
         adjustGeometryTolerance(geometries, m_tolerance);
 #elif defined(ELEMENT_TILE_TRUNCATE_PLANAR)
+    // Always collect geometry at the target leaf tolerance.
+    // If we find no curved geometry, there's no point in creating child nodes.
+    // Otherwise, keep all the geometry that is large enough to display at this tile's tolerance and facet to that tolerance
     GeometryList geometries = CollectGeometry(nullptr, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
     if (context.WasAborted())
         return geom;
@@ -2434,12 +2475,13 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
     if (m_surfacesOnly && !curves.IsAnyRegionType())
         return true;
 
-    if (curves.IsAnyRegionType() && !curves.ContainsNonLinearPrimitive())
+    bool isCurved = curves.ContainsNonLinearPrimitive();
+    if (curves.IsAnyRegionType() && !isCurved)
         return false;   // process as facets.
 
     CurveVectorPtr clone = curves.Clone();
     IGeometryPtr geom = IGeometry::Create(clone);
-    return ProcessGeometry(*geom, false, gf);
+    return ProcessGeometry(*geom, isCurved, gf);
     }
 
 /*---------------------------------------------------------------------------------**//**
