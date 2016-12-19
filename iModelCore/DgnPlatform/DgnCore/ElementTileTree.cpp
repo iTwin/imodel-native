@@ -943,7 +943,8 @@ public:
 
 };
 
-#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS)
+#define ELEMENT_TILE_TRUNCATE_PLANAR
+#if defined(ELEMENT_TILE_CHECK_FACET_COUNTS) || defined(ELEMENT_TILE_TRUNCATE_PLANAR)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1852,7 +1853,7 @@ BentleyStatus Loader::_LoadTile()
         {
         if (root.WantDebugRanges())
             {
-            graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
+            graphic->SetSymbology(tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange(), ColorDef::Green(), 0);
             graphic->AddRangeBox(tile.GetRange());
             }
 
@@ -2231,18 +2232,16 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
         m_tolerance = root.GetLeafTolerance();
     else
         adjustGeometryTolerance(geometries, m_tolerance);
-#else
-    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
+#elif defined(ELEMENT_TILE_TRUNCATE_PLANAR)
+    GeometryList geometries = CollectGeometry(nullptr, root.GetLeafTolerance(), options.WantSurfacesOnly(), m_isLeaf ? 0 : root.GetMaxPointsPerTile(), context);
+    if (context.WasAborted())
+        return geom;
 
-#if defined(ELEMENT_TILE_CHECK_CURVED)
     bool anyCurved = false;
     for (auto const& geometry : geometries)
         {
-        if (geometry->IsCurved())
-            {
-            anyCurved = true;
+        if (anyCurved = geometry->IsCurved())
             break;
-            }
         }
 
     if (!anyCurved)
@@ -2250,8 +2249,12 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
         m_tolerance = root.GetLeafTolerance();
         SetIsLeaf();
         }
-#endif
-
+    else
+        {
+        adjustGeometryTolerance(geometries, m_tolerance);
+        }
+#else
+    GeometryList geometries = CollectGeometry(nullptr, m_tolerance, options.WantSurfacesOnly(), root.GetMaxPointsPerTile(), context);
 #endif
 
     return CreateGeometryCollection(geometries, options, context);
