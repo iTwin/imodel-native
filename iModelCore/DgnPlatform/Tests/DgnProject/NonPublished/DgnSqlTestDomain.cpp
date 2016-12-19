@@ -78,39 +78,38 @@ ObstacleElement::ObstacleElement(SpatialModelR model, DgnCategoryId categoryId, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ObstacleElement::SetSomeProperty(DgnDbR db, Utf8CP value)
+void ObstacleElement::SetSomeProperty(Utf8CP value)
     {
-    ECSqlStatement updateStmt;
-    updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_OBSTACLE_CLASS " SET SomeProperty=? WHERE ECInstanceId=?");
-    updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    updateStmt.BindId(2, GetElementId());
-    updateStmt.Step();
-    ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );
+    ASSERT_EQ(DgnDbStatus::Success, SetPropertyValue("SomeProperty", value));
+    ASSERT_TRUE(Update().IsValid());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Obstacles are always slabs 10 meters long, 1 meter high, and 1 cm thick
 * @bsimethod                                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ObstacleElement::SetTestUniqueAspect(DgnDbR db, Utf8CP value)
+void ObstacleElement::SetTestUniqueAspect(Utf8CP value)
     {
-    ECSqlStatement insertStmt;
-    insertStmt.Prepare(db, "INSERT INTO " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " (TestUniqueAspectProperty,Element.Id,Element.RelECClassId) VALUES(?,?,?)");
-    insertStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-    insertStmt.BindId(2, GetElementId());
-    insertStmt.BindId(3, db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect));
+    auto eclass = GetDgnDb().Schemas().GetECClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
+    auto instance = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
+    instance->SetValue("TestUniqueAspectProperty", ECN::ECValue(value));
+    DgnElement::GenericUniqueAspect::SetAspect(*this, *instance);
+    ASSERT_TRUE(Update().IsValid());
+    }
 
-    if (insertStmt.Step() != BE_SQLITE_DONE)
-        {
-        ECSqlStatement updateStmt;
-        updateStmt.Prepare(db, "UPDATE " DGN_SQL_TEST_SCHEMA_NAME "." DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME " SET TestUniqueAspectProperty=? WHERE Element.Id=?");
-        updateStmt.BindText(1, value, BeSQLite::EC::IECSqlBinder::MakeCopy::No);
-        updateStmt.BindId(2, GetElementId());
-        ASSERT_EQ(BE_SQLITE_DONE , updateStmt.Step() );
-        }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/15
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String ObstacleElement::GetTestUniqueAspect() const
+    {
+    auto eclass = GetDgnDb().Schemas().GetECClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
+    auto inst = DgnElement::GenericUniqueAspect::GetAspect(*this, *eclass);
+    if (nullptr == inst)
+        return "";
+    ECN::ECValue value;
+    inst->GetValue(value, "TestUniqueAspectProperty");
+    return value.ToString();
     }
 
 /*---------------------------------------------------------------------------------**//**

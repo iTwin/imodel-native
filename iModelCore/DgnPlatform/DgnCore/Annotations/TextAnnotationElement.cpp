@@ -28,7 +28,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
+DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
     {
     // T_Super::_UpdateProperties is pure; it is a link error to call super, so don't.
     
@@ -39,7 +39,7 @@ DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el)
             return DgnDbStatus::WriteError;
         }
 
-    CachedECSqlStatementPtr update = el.GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " SET TextAnnotation=? WHERE Element.Id=?", el.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr update = el.GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_TextAnnotationData) " SET TextAnnotation=? WHERE Element.Id=?", writeToken);
     if (!update.IsValid())
         return DgnDbStatus::WriteError;
 

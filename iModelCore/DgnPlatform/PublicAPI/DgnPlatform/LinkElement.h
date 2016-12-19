@@ -158,7 +158,10 @@ public:
 
     //! Query all the source elements that contain this link
     DGNPLATFORM_EXPORT DgnElementIdSet QuerySources();
-};
+
+    DGNPLATFORM_EXPORT static BentleyStatus DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sourceElementId, Utf8CP schemaName, Utf8CP className, DgnElementIdSet const& targetElements);
+    DGNPLATFORM_EXPORT static BentleyStatus DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf8CP className, DgnElementIdSet const& unusedIds);
+    };
 
 //=======================================================================================
 //! LinkElementBase
@@ -257,28 +260,8 @@ public:
     //! @remarks The removed links are NOT deleted. Use @ref DgnElement::Delete to delete the link. 
     static BentleyStatus RemoveAllFromSource(DgnDbR dgndb, DgnElementId sourceElementId)
         {
-        BeAssert(sourceElementId.IsValid());
-
-        // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
-
-        DgnElementIdSet removeLinkIds = QueryBySource(dgndb, sourceElementId);
-
-        Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
-
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
-        BeAssert(stmt.IsValid());
-
-        stmt->BindInt64(1, (int64_t) &removeLinkIds);
-
-        BeSQLite::DbResult stepStatus = stmt->Step();
-        if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        return SUCCESS;
+        return LinkElement::DoRemoveAllFromSource(dgndb, sourceElementId, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName(),
+                                                QueryBySource(dgndb, sourceElementId));
         }
 
     //! Finds all links that do not have a source specified
@@ -296,28 +279,7 @@ public:
     //! Deletes all links that do not have a source specified
     static BentleyStatus PurgeOrphaned(DgnDbCR dgndb)
         {
-        // Note: We have to work around the ECSql limitation of not allowing JOIN clauses with DELETE statements. 
-
-        DgnElementIdSet unusedIds = FindOrphaned(dgndb);
-        if (unusedIds.empty())
-            return SUCCESS;
-
-        Utf8CP ecSqlFmt = "DELETE FROM ONLY %s.%s WHERE InVirtualSet(?, ECInstanceId)";
-        Utf8PrintfString ecSql(ecSqlFmt, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName());
-
-        BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(ecSql.c_str());
-        BeAssert(stmt.IsValid());
-
-        stmt->BindInt64(1, (int64_t) &unusedIds);
-
-        BeSQLite::DbResult stepStatus = stmt->Step();
-        if (BeSQLite::DbResult::BE_SQLITE_DONE != stepStatus)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        return SUCCESS;
+        return LinkElement::DoPurgeOrphaned(dgndb, LINK_SUBTYPE::MyECSchemaName(), LINK_SUBTYPE::MyHandlerECClassName(), FindOrphaned(dgndb));
         }
 
     //! Query the DgnClassId of the LinkElement ECClass in the specified DgnDb.

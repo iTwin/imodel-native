@@ -646,7 +646,11 @@ public:
 
     DgnDbR GetDgnDb() const {return m_dgndb;}
 
-    void SetGlobalOrigin(DPoint3dCR origin) {m_globalOrigin=origin;}
+    //! @private
+    //! Update the global origin. @note Changing global origin invalidates all existing xyz coordinates stored in the BIM.
+    DGNPLATFORM_EXPORT void SetGlobalOrigin(DPoint3dCR origin);
+    
+    //! Get the BIM's global origin. All XYZ coordinates in the BIM are stored relative to its global origin.
     DPoint3dCR GetGlobalOrigin() const {return m_globalOrigin;}
 
     //! Update the project extents, call SaveChanges to commit.
