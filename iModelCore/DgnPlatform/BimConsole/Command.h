@@ -330,22 +330,7 @@ struct DbSchemaCommand : public Command
     };
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                                   Affan.Khan    10/2013
-//---------------------------------------------------------------------------------------
-struct ClassMappingCommand : public Command
-    {
-    private:
-        virtual Utf8String _GetName() const override { return ".classmapping"; }
-        virtual Utf8String _GetUsage() const override;
-        virtual void _Run(Session&, std::vector<Utf8String> const& args) const override;
-
-    public:
-        ClassMappingCommand() : Command() {}
-        ~ClassMappingCommand() {}
-    };
-
-//---------------------------------------------------------------------------------------
-// @bsiclass                                                   krischan.Eberle 10/2016
+// @bsiclass                                                   Krischan.Eberle 10/2016
 //---------------------------------------------------------------------------------------
 struct DebugCommand : public Command
     {

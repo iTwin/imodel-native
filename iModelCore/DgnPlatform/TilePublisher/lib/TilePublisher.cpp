@@ -247,11 +247,19 @@ template<typename T> void PublishTileData::AddBufferView(Utf8CP name, T const& b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    PublishTileData::AddBinaryData (void const* data, size_t size)
+void    PublishTileData::AddBinaryData (void const* data, size_t size) 
     {
-    size_t currentBufferSize = m_binaryData.size();
-    m_binaryData.resize(m_binaryData.size() + size);
-    memcpy(m_binaryData.data() + currentBufferSize, data, size);
+    m_binaryData.Append (static_cast<uint8_t const*> (data), size);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
+    {
+    uint8_t        zero = 0;
+    while (0 != (m_binaryData.size() % boundarySize))
+        m_binaryData.Append(&zero, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -374,10 +382,10 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    padTo8ByteBoundary(std::FILE* outputFile)
+static void    padTo4ByteBoundary(std::FILE* outputFile)
     {
     std::fseek(outputFile, 0, SEEK_END);
-    long        position = ftell(outputFile), padBytes = (8 - position % 8);
+    long        position = ftell(outputFile), padBytes = (4 - position % 4);
 
     if (0 != padBytes)
         {
@@ -392,16 +400,16 @@ static void    padTo8ByteBoundary(std::FILE* outputFile)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR publishableGeometry)
     {
-    DRange3d        publishedRange = DRange3d::NullRange();
-
-    for (auto& part: publishableGeometry.Parts())
-        WritePartInstances(outputFile, publishedRange, part);
+    DRange3d    publishedRange = DRange3d::NullRange();
 
     if (!publishableGeometry.Meshes().empty())
         {
         extendRange (publishedRange, publishableGeometry.Meshes(), nullptr);
         WriteBatched3dModel (outputFile, publishableGeometry.Meshes());
         }
+
+    for (auto& part: publishableGeometry.Parts())
+        WritePartInstances(outputFile, publishedRange, part);
 
     m_tile.SetPublishedRange (publishedRange);
     }
@@ -477,6 +485,8 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     featureTableData.m_json["POSITION_QUANTIZED"]["byteOffset"] = featureTableData.BinaryDataSize();
     featureTableData.AddBinaryData(quantizedPosition.data(), quantizedPosition.size()*sizeof(uint16_t));
+                  
+    featureTableData.PadBinaryDataToBoundary(4);
     if (rotationPresent)
         {
         featureTableData.m_json["NORMAL_UP"]["byteOffset"] = featureTableData.BinaryDataSize();
@@ -489,8 +499,8 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     Utf8String      batchTableStr = batchIds.ToJsonString (m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
     Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
 
-    // Pad the feature table string to insure that the binary is 8 byte aligned (range crash in cesium reading the data otherwise).
-    while (0 != featureTableStr.size() % 8)
+    // Pad the feature table string to insure that the binary is 4 byte aligned.
+    while (0 != featureTableStr.size() % 4)
         featureTableStr = featureTableStr + " ";
 
     uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
@@ -520,14 +530,12 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
 
     WriteGltf(outputFile, partData);
-    padTo8ByteBoundary (outputFile);
+    padTo4ByteBoundary (outputFile);
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
     std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
@@ -557,7 +565,7 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
 
     WriteGltf (outputFile, tileData);
 
-    padTo8ByteBoundary (outputFile);
+    padTo4ByteBoundary (outputFile);
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
     std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);

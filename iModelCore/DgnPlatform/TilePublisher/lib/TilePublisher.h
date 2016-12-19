@@ -59,6 +59,7 @@ struct  PublishTileData
     size_t BinaryDataSize() const { return m_binaryData.size(); }
     void const* BinaryData() const { return m_binaryData.data(); }
     void AddBinaryData(void const* data, size_t size);
+    void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
 
 };

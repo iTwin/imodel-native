@@ -23,13 +23,62 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 enum DgnDbSchemaValues : int32_t
 {
-    DGNDB_CURRENT_VERSION_Major = 6,
-    DGNDB_CURRENT_VERSION_Minor = 5,
+    DGNDB_CURRENT_VERSION_Major = 1,    // WIP: Increment to 2.0 just prior to Bim02 release
+    DGNDB_CURRENT_VERSION_Minor = 11,   // WIP: Increment this (1.x) for intermediate schema changes before Bim02 release
     DGNDB_CURRENT_VERSION_Sub1  = 0,
     DGNDB_CURRENT_VERSION_Sub2  = 0,
 
-    DGNDB_SUPPORTED_VERSION_Major = 6,  // oldest version of the schema supported by the current api
-    DGNDB_SUPPORTED_VERSION_Minor = 5,
+    DGNDB_SUPPORTED_VERSION_Major = 1,  // oldest version of the schema supported by the current api
+    DGNDB_SUPPORTED_VERSION_Minor = 11,
+};
+
+//=======================================================================================
+//! A 4-digit number that specifies a serializable version of something in a DgnDb.
+// @bsiclass
+//=======================================================================================
+struct DgnVersion : BeSQLite::SchemaVersion
+{
+    DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
+    DgnVersion(Utf8CP val) : SchemaVersion(val){}
+};
+
+//=======================================================================================
+//! Class designed for extracting the DgnDb schema version from a BeFileName
+//! @see DgnDbSchemaVersion::Extract
+// @bsiclass
+//=======================================================================================
+struct DgnDbSchemaVersion : DgnVersion
+{
+    DEFINE_T_SUPER(DgnVersion)
+    friend struct DgnDb;
+
+private:
+    DgnDbSchemaVersion() : T_Super(0, 0, 0, 0) {}
+    DgnDbSchemaVersion(uint16_t major, uint16_t minor) : T_Super(major, minor, 0, 0) {}
+    DgnDbSchemaVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : T_Super(major, minor, sub1, sub2) {}
+    explicit DgnDbSchemaVersion(Utf8CP json) : T_Super(json) {}
+
+    //! Map from legacy version range into current version range
+    static DgnDbSchemaVersion FromLegacy(Utf8CP versionJson);
+    //! Former PropertySpec values of DgnProjectProperty::SchemaVersion.  Used for inspecting legacy .dgndb, .idgndb files.
+    static BeSQLite::PropertySpec LegacyDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "dgn_Proj");}
+    //! Former PropertySpec values of DgnEmbeddedProjectProperty::SchemaVersion.  Used for inspecting legacy .imodel files.
+    static BeSQLite::PropertySpec LegacyEmbeddedDbSchemaVersionProperty() {return BeSQLite::PropertySpec("SchemaVersion", "pkge_dgnProj");}
+
+public:
+    bool IsValid() const {return !IsEmpty();}
+    bool IsCurrent() const {return *this == GetCurrent();}
+    bool IsPast() const {return *this < GetCurrent();}
+    bool IsFuture() const {return *this > GetCurrent();}
+    bool IsVersion_1_5() const {return *this == DgnDbSchemaVersion::Version_1_5();}
+    bool IsVersion_1_6() const {return *this == DgnDbSchemaVersion::Version_1_6();}
+
+    //! Extract the DgnDbSchemaVersion from the specfied file
+    DGNPLATFORM_EXPORT static DgnDbSchemaVersion Extract(BeFileNameCR fileName);
+    static DgnDbSchemaVersion GetCurrent() {return DgnDbSchemaVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);}
+    static DgnDbSchemaVersion Version_1_0() {return DgnDbSchemaVersion(1, 0);} // DgnV8
+    static DgnDbSchemaVersion Version_1_5() {return DgnDbSchemaVersion(1, 5);} // Graphite05
+    static DgnDbSchemaVersion Version_1_6() {return DgnDbSchemaVersion(1, 6);} // DgnDb0601
 };
 
 //=======================================================================================
@@ -90,16 +139,6 @@ public:
     //! Determine whether to overwrite an existing file in DgnDb::CreateDgnDb. The default is to fail if a file by the supplied name
     //! already exists.
     void SetOverwriteExisting(bool val) {m_overwriteExisting = val;}
-};
-
-//=======================================================================================
-//! A 4-digit number that specifies a serializable version of something in a DgnDb.
-// @bsiclass
-//=======================================================================================
-struct DgnVersion : BeSQLite::SchemaVersion
-{
-    DgnVersion(uint16_t major, uint16_t minor, uint16_t sub1, uint16_t sub2) : SchemaVersion(major, minor, sub1, sub2) {}
-    DgnVersion(Utf8CP val) : SchemaVersion(val){}
 };
 
 //=======================================================================================
@@ -166,7 +205,7 @@ protected:
     BeSQLite::DbResult CreateSessionModel(); //!< @private
     BeSQLite::DbResult CreateRealityDataSourcesModel(); //!< @private
     BeSQLite::DbResult InitializeDgnDb(CreateDgnDbParams const& params); //!< @private
-    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnVersion(DGNDB_CURRENT_VERSION_Major,DGNDB_CURRENT_VERSION_Minor,DGNDB_CURRENT_VERSION_Sub1,DGNDB_CURRENT_VERSION_Sub2)); //!< @private
+    BeSQLite::DbResult SaveDgnDbSchemaVersion(DgnVersion version=DgnDbSchemaVersion::GetCurrent()); //!< @private
     BeSQLite::DbResult DoOpenDgnDb(BeFileNameCR projectNameIn, OpenParams const&); //!< @private
 
 public:

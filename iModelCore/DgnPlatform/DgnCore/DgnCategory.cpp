@@ -358,7 +358,7 @@ DgnSubCategoryId DgnSubCategory::QuerySubCategoryId(DgnDbR db, DgnCodeCR code)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId parentId)
+DgnDbStatus DgnSubCategory::_SetParentId(DgnElementId, DgnClassId)
     {
     // a sub-category cannot be re-parented. Its parent must be a category. The parent category is set up when we create + insert the subcategory.
     return DgnDbStatus::InvalidParent;
@@ -372,7 +372,7 @@ DgnCategoryId DgnSubCategory::QueryCategoryId(DgnDbR db, DgnSubCategoryId subCat
     if (!subCatId.IsValid())
         return DgnCategoryId();
 
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT ParentId FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
+    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement("SELECT Parent.Id FROM " BIS_SCHEMA(BIS_CLASS_SubCategory) " WHERE ECInstanceId=? LIMIT 1");
     if (stmt.IsValid())
         {
         stmt->BindId(1, subCatId);
@@ -395,11 +395,11 @@ ElementIterator DgnSubCategory::MakeIterator(DgnDbR db, DgnCategoryId categoryId
     if (whereClause)
         {
         combinedWhere.append(whereClause);
-        combinedWhere.append(" AND [ParentId]=?");
+        combinedWhere.append(" AND Parent.Id=?");
         }
     else
         {
-        combinedWhere.append("WHERE [ParentId]=?");
+        combinedWhere.append("WHERE Parent.Id=?");
         }
 
     ElementIterator iterator = db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_SubCategory), combinedWhere.c_str(), orderByClause);
@@ -415,7 +415,7 @@ size_t DgnSubCategory::QueryCount(DgnDbR db, DgnCategoryId catId)
     size_t count = 0;
     Utf8String ecsql("SELECT count(*) FROM " BIS_SCHEMA(BIS_CLASS_SubCategory));
     if (catId.IsValid())
-        ecsql.append(" WHERE ParentId=?");
+        ecsql.append(" WHERE Parent.Id=?");
 
     CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
     if (stmt.IsValid())
@@ -783,7 +783,7 @@ DgnSubCategory::CreateParams DgnSubCategory::CreateParamsFromECInstance(DgnDbR d
             stat = DgnDbStatus::InvalidParent;
             return DgnSubCategory::CreateParams(db, DgnCategoryId(), "", Appearance());
             }
-        categoryId = DgnCategoryId((uint64_t) v.GetLong());
+        categoryId = v.GetNavigationInfo().GetId<DgnCategoryId>();
         if (!categoryId.IsValid())
             {
             stat = DgnDbStatus::InvalidParent;

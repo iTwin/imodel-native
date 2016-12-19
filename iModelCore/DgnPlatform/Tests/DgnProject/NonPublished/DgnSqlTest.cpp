@@ -342,14 +342,14 @@ TEST_F(SqlFunctionsTest, DGN_point_min_distance_to_bbox)
     ASSERT_TRUE( robot1.IsValid() );
         
     Statement stmt;
-    stmt.Prepare(*m_db,        // aspect.sc01 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId, aspect.sc01 FROM " BIS_TABLE(BIS_CLASS_Element) " e, " BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect," BIS_TABLE(BIS_CLASS_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
+    stmt.Prepare(*m_db,        // aspect.sc1 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId, aspect.sc1 FROM " BIS_TABLE(BIS_CLASS_Element) " e, " BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect," BIS_TABLE(BIS_CLASS_GeometricElement3d) " g, " DGN_VTABLE_SpatialIndex " rt WHERE"
              " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)" // FROM R-Tree
              " AND g.ElementId=rt.ElementId"
              " AND DGN_point_min_distance_to_bbox(:testPoint, " AABB_FROM_PLACEMENT ") <= :maxDistance"  // select geoms that are within some distance of a specified point
              " AND e.Id=g.ElementId"
              " AND e.ECClassId=:ecClass"       //  select only Obstacles
-             " AND aspect.ElementId=e.Id AND aspect.sc01=:propertyValue"       // ... with certain items
+             " AND aspect.ElementId=e.Id AND aspect.sc1=:propertyValue"       // ... with certain items
         );
 
     //  Initial placement
@@ -477,12 +477,12 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);
 
     ECSqlStatement stmt;
-    stmt.Prepare(*m_db, 
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, 
         "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle obstacle,DgnPlatformTest.DgnSqlTestUniqueAspect aspect"
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
             " AND obstacle.ECInstanceId=rt.ECInstanceId"
             " AND aspect.ElementId=rt.ECInstanceId AND aspect.TestUniqueAspectProperty = :propertyValue"
-        );
+        ));
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
     Utf8CP sql = stmt.GetNativeSql();
@@ -692,11 +692,11 @@ TEST_F(SqlFunctionsTest, spatialQuery)
     // This query uses DGN_spatial_overlap_aabb to find elements whose range overlaps the argument :bbox and are of class :ecClass and have
     // item property = :propertyValue.
     Statement stmt;
-    stmt.Prepare(*m_db,       // aspect.sc01 == aspect.TestUniqueAspectProperty
-        "SELECT aspect.ElementId,aspect.sc01 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(BIS_CLASS_Element) " e," BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect WHERE"
+    stmt.Prepare(*m_db,       // aspect.sc1 == aspect.TestUniqueAspectProperty
+        "SELECT aspect.ElementId,aspect.sc1 FROM " DGN_VTABLE_SpatialIndex " rt," BIS_TABLE(BIS_CLASS_Element) " e," BIS_TABLE(BIS_CLASS_ElementUniqueAspect) " aspect WHERE"
            " rt.ElementId MATCH DGN_spatial_overlap_aabb(:bbox)"      // select elements whose range overlaps box
            " AND e.Id=rt.ElementId AND e.ECClassId=:ecClass"        // and are of a specific ecClass 
-           " AND aspect.ElementId=e.Id AND aspect.sc01=:propertyValue"   // ... with certain item value
+           " AND aspect.ElementId=e.Id AND aspect.sc1=:propertyValue"   // ... with certain item value
         );
 
     RobotElementCPtr robot1 = m_db->Elements().Get<RobotElement>(r1);

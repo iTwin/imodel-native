@@ -193,6 +193,7 @@ TEST_F(TransactionManagerTests, CRUD)
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
     SetupSeedProject();
+    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
 
@@ -200,13 +201,13 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(el1.IsValid());
 
     TestElementPtr e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
-    e2->SetParentId(el1->GetElementId());
+    e2->SetParentId(el1->GetElementId(), parentRelClassId);
     DgnElementCPtr el2 = e2->Insert();
     ASSERT_TRUE(el2.IsValid());
     ASSERT_EQ(el2->GetParentId(), el1->GetElementId());
 
     e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
-    e2->SetParentId(el1->GetElementId());
+    e2->SetParentId(el1->GetElementId(), parentRelClassId);
     DgnElementCPtr el3 = e2->Insert(); // insert another element
     ASSERT_TRUE(el3.IsValid());
 
