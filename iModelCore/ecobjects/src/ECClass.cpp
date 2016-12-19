@@ -720,6 +720,15 @@ bool andAddProperty
         destStruct->SetType(sourceType);
         destProperty = destStruct;
         }
+    else if (sourceProperty->GetIsNavigation())
+        {
+        NavigationECPropertyP destNav;
+        NavigationECPropertyCP sourceNav = sourceProperty->GetAsNavigationProperty();
+        destNav = new NavigationECProperty(*this);
+        destNav->SetRelationshipClass(*sourceNav->GetRelationshipClass(), sourceNav->GetDirection());
+        destNav->SetType(sourceNav->GetType());
+        destProperty = destNav;
+        }
 
     destProperty->SetDescription(sourceProperty->GetInvariantDescription());
     if (sourceProperty->GetIsDisplayLabelDefined())
