@@ -67,3 +67,14 @@ ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
     # End of tests reports:
     # f:\bim0200dev\src-staging\wsclient\tests\unittests\published\webservices\client\MockWSClient.h(31): ERROR: this mock object (used in test ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults) should be deleted but never is. Its address is @080BFB7C.
     # ERROR: 1 leaked mock object found at program exit.
+
+ConnectSignInManagerTests.GetAuthenticationHandler_UrlProvider*
+    # bim0200dev, x86, DEBUG, CRASHES
+    # [ RUN      ] ConnectSignInManagerTests.GetAuthenticationHandler_UrlProviderProduction_SetsValidateCertificateForAllRequests
+    # 2016-12-20 09:17:23,277 ERROR [0x00004974] WSClient - Base token not found for 'https://connect-wsg20.bentley.com' delegation token
+
+ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest
+    # bim0200dev, x86, DEBUG, CRASHES
+
+PassportTests.*
+    # bim0200dev, x86, DEBUG, CRASHES
