@@ -73,4 +73,3 @@ InstanceSerializationTest.ExpectSuccessWithIGeometryProperty
 
 #Navigation properties are being reworked and only support long at the moment
 NavigationECPropertyTests.InstanceWithNavProp_String
-NavigationECPropertyTests.TestNullNavigationValue
