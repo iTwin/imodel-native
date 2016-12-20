@@ -11,9 +11,8 @@
 #define DGN_SQL_TEST_SCHEMA_NAMEW L"DgnPlatformTest"
 #define DGN_SQL_TEST_ROBOT_CLASS   "Robot"
 #define DGN_SQL_TEST_OBSTACLE_CLASS "Obstacle"
-#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME                  "TestUniqueAspect"
-#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty    L"TestUniqueAspectProperty"
-#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_TestUniqueAspectPropertyA   "TestUniqueAspectProperty"
+#define DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME                  "DgnSqlTestUniqueAspect"
+#define DGN_SQL_TEST_TEST_MULTI_ASPECT_CLASS_NAME                   "DgnSqlTestMultiAspect"
 
 namespace DgnSqlTestNamespace {
 
