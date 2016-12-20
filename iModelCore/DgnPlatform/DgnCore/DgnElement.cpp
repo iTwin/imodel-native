@@ -3789,7 +3789,7 @@ DgnDbStatus DgnElement::GenericUniqueAspect::SetAspect(DgnElementR el, ECN::IECI
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR el)
     {
-    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE ElementId=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
+    auto stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE Element.Id=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
     if (!stmt.IsValid())
         return DgnDbStatus::BadSchema;
     stmt->BindId(1, el.GetElementId());
@@ -3820,8 +3820,8 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR
     BeStringUtilities::FormatUInt64(ecinstidstr, m_instanceId.GetValue());
     m_instance->SetInstanceId(ecinstidstr);
 
-    // The the UniqueAspect's "ElementId" property. This is what links the aspect to its host element. The IDs are not the same.
-    m_instance->SetValue("ElementId", ECN::ECValue(el.GetElementId().GetValue()));
+    // Set the UniqueAspect's "Element" navigation property. This is what links the aspect to its host element. The IDs are not the same.
+    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetElementClassId().GetValue())));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }
@@ -3866,7 +3866,7 @@ DgnDbStatus DgnElement::GenericMultiAspect::_LoadProperties(Dgn::DgnElementCR el
     else
         {
         // *** WIP_GenericMultiAspect - if no instance is specified, load the first one...?
-        stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE ElementId=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
+        stmt = el.GetDgnDb().GetPreparedECSqlStatement(Utf8PrintfString("SELECT * FROM [%s].[%s] WHERE Element.Id=?", m_ecschemaName.c_str(), m_ecclassName.c_str()).c_str());
         if (!stmt.IsValid())
             return DgnDbStatus::BadSchema;
         stmt->BindId(1, el.GetElementId());
@@ -3902,8 +3902,8 @@ DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR 
         m_instance->SetInstanceId(ecinstidstr);
         }
 
-    // Set the MultiAspect's "ElementId" property. This is what links the aspect to its host element.
-    m_instance->SetValue("ElementId", ECN::ECValue(el.GetElementId().GetValue()));
+    // Set the MultiAspect's "Element" navigation property. This is what links the aspect to its host element.
+    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetElementClassId().GetValue())));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
     }

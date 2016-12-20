@@ -546,7 +546,7 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
         ASSERT_TRUE(editEl->Update().IsValid());
 
         ECSqlStatement findMa;
-        findMa.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspectNoHandler WHERE ElementId=?");    
+        findMa.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspectNoHandler WHERE Element.Id=?");    
         findMa.BindId(1, editEl->GetElementId());
         bvector<Utf8String> values;
         BeSQLite::EC::ECInstanceId id;
@@ -559,7 +559,7 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
                 id = aspectid;
             }
             
-        ASSERT_TRUE(2 == values.size());
+        ASSERT_EQ(2, values.size());
         ASSERT_TRUE(id.IsValid());
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar"));
@@ -583,7 +583,7 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
                 ASSERT_NE(id, aspectid);
             }
             
-        ASSERT_TRUE(2 == values.size());
+        ASSERT_EQ(2, values.size());
         ASSERT_TRUE(id.IsValid());
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar-changed"));
@@ -606,14 +606,14 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
                 ASSERT_NE(id, aspectid);
             }
             
-        ASSERT_TRUE(2 == values.size());
+        ASSERT_EQ(2, values.size());
         ASSERT_TRUE(id.IsValid());
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
         ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar-changed"));
 
         //      ... plus one instance of the second MA
         ECSqlStatement selectTmas;
-        selectTmas.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE ElementId=?");
+        selectTmas.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE Element.Id=?");
         selectTmas.BindId(1, editEl->GetElementId());
         int countTmas = 0;
         while (BE_SQLITE_ROW == selectTmas.Step())
