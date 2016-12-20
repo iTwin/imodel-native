@@ -242,6 +242,8 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
       return 0;
     }
     case CLOCK_PROCESS_CPUTIME_ID: {
+// BENTLEY_CHANGE
+#if !defined(BENTLEY_WINRT)
       if (!GetProcessTimes(
               GetCurrentProcess(),
               &createTime,
@@ -256,8 +258,16 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
           tp,
           filetimeToUnsignedNanos(kernalTime) +
               filetimeToUnsignedNanos(userTime));
+#else
+      // UWP doesn't provide GetSystemTimeAdjustment
+      // I can't find any real code calling this to determine what an equivalent needs to be, so just side-stepping.
+      errno = EINVAL;
+      return -1;
+#endif
     }
     case CLOCK_THREAD_CPUTIME_ID: {
+// BENTLEY_CHANGE
+#if !defined(BENTLEY_WINRT)
       if (!GetThreadTimes(
               GetCurrentThread(),
               &createTime,
@@ -272,6 +282,12 @@ extern "C" int clock_gettime(clockid_t clock_id, struct timespec* tp) {
           tp,
           filetimeToUnsignedNanos(kernalTime) +
               filetimeToUnsignedNanos(userTime));
+#else
+      // UWP doesn't provide GetSystemTimeAdjustment
+      // I can't find any real code calling this to determine what an equivalent needs to be, so just side-stepping.
+      errno = EINVAL;
+      return -1;
+#endif
     }
 
     default:

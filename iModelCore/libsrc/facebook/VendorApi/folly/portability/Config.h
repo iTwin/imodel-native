@@ -69,7 +69,7 @@ using pthread_t = std::thread::id;
 
 inline pthread_t pthread_self() {return std::this_thread::get_id();}
 inline void pthread_key_delete(pthread_key_t key) {BentleyApi::BeThreadLocalStorage::Delete(key);}
-inline int pthread_key_create(pthread_key_t* key, void (*destructor)(void*)) {*key = BentleyApi::BeThreadLocalStorage::Create(destructor); return 0;}
+inline int pthread_key_create(pthread_key_t* key, void (STDCALL_ATTRIBUTE *destructor)(void*)) {*key = BentleyApi::BeThreadLocalStorage::Create(destructor); return 0;}
 inline void* pthread_getspecific(pthread_key_t key) {return BentleyApi::BeThreadLocalStorage::GetValue(key);}
 inline int pthread_setspecific(pthread_key_t key, void* val) {BentleyApi::BeThreadLocalStorage::SetValue(key, val); return 0;}
 inline int sched_yield() {std::this_thread::yield(); return 0;}

@@ -281,7 +281,7 @@ struct StaticMetaBase {
     t->next = t->prev = t;
   }
 
-  static void onThreadExit(void* ptr);
+  static void STDCALL_ATTRIBUTE onThreadExit(void* ptr);
 
   BE_FOLLY_EXPORT uint32_t allocate(EntryID* ent);
 
