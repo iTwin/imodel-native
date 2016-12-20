@@ -1473,3 +1473,22 @@ TEST(WStringTest, VSprintf)
     VerifyVSPrintf(L"Test", L"Test");
     VerifyVSPrintf(L"Test no. 5", L"%ls no. %d", L"Test", 5);
     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                        12/16
+//---------------------------------------------------------------------------------------
+static void WPrintfStringArgs(WCharCP expectedStr, WCharCP fmt, ...)
+    {
+    va_list args;
+    va_start(args, fmt);
+    WPrintfString str(fmt, args);
+    va_end(args);
+    EXPECT_TRUE(str.Equals(expectedStr)) << "Expected: " << expectedStr << "\nActual: " << str.c_str();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                        12/16
+//---------------------------------------------------------------------------------------
+TEST(WStringTest, WPrintfStringTest)
+    {
+    WPrintfStringArgs(L"Test no. 5", L"%ls no. %d", L"Test", 5);
+    }
+
