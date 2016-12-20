@@ -161,9 +161,9 @@ struct IsLessThanComparable
 /* using override */ using traits_detail_IsLessThanComparable::
     IsLessThanComparable;
 
-#if defined (BENTLEY_CHANGE)
+
 namespace traits_detail_IsNothrowSwappable {
-#if defined(_MSC_VER) || defined(__cpp_lib_is_swappable)
+#if defined(__cpp_lib_is_swappable)
 // MSVC already implements the C++17 P0185R1 proposal which
 // adds std::is_nothrow_swappable, so use it instead.
 template <typename T>
@@ -174,14 +174,15 @@ using IsNothrowSwappable = std::is_nothrow_swappable<T>;
 template <class T>
 struct IsNothrowSwappable
     : std::integral_constant<bool,
-        std::is_nothrow_move_constructible<T>::value &&
-        noexcept(swap(std::declval<T&>(), std::declval<T&>()))
+        std::is_nothrow_move_constructible<T>::value 
+        /* && noexcept(swap(std::declval<T&>(), std::declval<T&>())) */
       > {};
 #endif
 }
 
 /* using override */ using traits_detail_IsNothrowSwappable::IsNothrowSwappable;
 
+#if defined (BENTLEY_CHANGE)
 template <class T> struct IsTriviallyCopyable
   : std::conditional<
       traits_detail::has_IsTriviallyCopyable<T>::value,
@@ -389,7 +390,7 @@ namespace folly {
 // STL commonly-used types
 template <class T, class U>
 struct IsRelocatable< std::pair<T, U> >
-    : ::std::integral_constant<bool,
+    : std::integral_constant<bool,
         IsRelocatable<T>::value &&
         IsRelocatable<U>::value> {};
 
@@ -591,9 +592,8 @@ constexpr initlist_construct_t initlist_construct{};
 
 } // namespace folly
 
-// Assume nothing when compiling with MSVC.
-#ifndef _MSC_VER
 // gcc-5.0 changed string's implementation in libgcc to be non-relocatable
+#if defined (BENTLEY_CHANGE)
 #if __GNUC__ < 5
 FOLLY_ASSUME_FBVECTOR_COMPATIBLE_3(std::basic_string)
 #endif

@@ -1223,6 +1223,7 @@ convertTo(const Src& value) noexcept {
   return static_cast<Tgt>(value);
 }
 
+#if defined (BENTLEY_CHANGE)
 /**
  * Checked conversion from floating to floating. The checks are only
  * performed when meaningful, e.g. conversion from float to double goes
@@ -1245,6 +1246,7 @@ convertTo(const Src& value) noexcept {
   }
   return boost::implicit_cast<Tgt>(value);
 }
+#endif
 
 /**
  * Check if a floating point value can safely be converted to an

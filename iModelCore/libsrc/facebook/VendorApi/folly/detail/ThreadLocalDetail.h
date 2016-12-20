@@ -264,6 +264,8 @@ struct StaticMetaBase {
 #if defined (BENTLEY_CHANGE)
     LOG(FATAL) << "StaticMeta lives forever!";
 #endif
+    assert(false);
+    std::abort();
   }
 
   void push_back(ThreadEntry* t) {
