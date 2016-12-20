@@ -1726,7 +1726,7 @@ BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
     if (nullptr == model)
         return ERROR;
 
-    m_root = ElementTileTree::Root::Create(*model, context.GetTargetR().GetSystem());
+    m_root = ElementTileTree::Root::Create(*model, context.GetTargetR().GetSystem(), *this);
     return m_root.IsValid() ? SUCCESS : ERROR;
     }
 

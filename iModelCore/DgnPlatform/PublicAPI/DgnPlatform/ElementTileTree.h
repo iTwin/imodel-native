@@ -40,6 +40,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(VertexKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(Filter);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
@@ -510,11 +511,28 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
+struct Filter
+{
+    DgnCategoryIdSet    m_categories;
+    DgnElementIdSet     m_alwaysDrawn;
+    DgnElementIdSet     m_neverDrawn;
+    bool                m_alwaysDrawnExclusive;
+
+    Filter(ViewControllerCR view);
+
+    bool AcceptElement(DgnElementId elemId, DgnCategoryId catId) const;
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
 struct Loader : TileTree::TileLoader
 {
     DEFINE_T_SUPER(TileTree::TileLoader);
 
 private:
+    Filter  m_filter;
+
     Loader(TileR tile, TileTree::TileLoadStatePtr loads);
 
     virtual folly::Future<BentleyStatus> _GetFromSource() override;
@@ -525,6 +543,8 @@ private:
     BentleyStatus DoGetFromSource();
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+
+    FilterCR GetFilter() const { return m_filter; }
 };
 
 //=======================================================================================
@@ -538,6 +558,7 @@ public:
     explicit LoadContext(LoaderCP loader) : m_loader(loader) { }
 
     bool WasAborted() const { return nullptr != m_loader && m_loader->IsCanceledOrAbandoned(); }
+    bool AcceptElement(DgnElementId elemId, DgnCategoryId catId) const { return nullptr == m_loader || m_loader->GetFilter().AcceptElement(elemId, catId); }
 };
 
 //=======================================================================================
@@ -546,6 +567,7 @@ public:
 struct Root : TileTree::OctTree::Root
 {
     DEFINE_T_SUPER(TileTree::OctTree::Root);
+
 private:
     typedef bmap<DgnGeometryPartId, GeomPartPtr> GeomPartMap;
 
@@ -553,20 +575,21 @@ private:
     Utf8String                  m_name;
     double                      m_leafTolerance;
     size_t                      m_maxPointsPerTile;
+    Filter                      m_filter;
     mutable BeMutex             m_mutex;
     mutable BeSQLite::BeDbMutex m_dbMutex;
     mutable GeomPartMap         m_geomParts;
     bool                        m_is3d;
     bool                        m_debugRanges;
 
-    Root(GeometricModelR model, TransformCR transform, Render::SystemR system);
+    Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
 
     virtual Utf8CP _GetName() const override { return m_name.c_str(); }
     virtual void _AdjustViewFlags(Render::ViewFlags&) const override { }
 
     bool LoadRootTile(DRange3dCR range, GeometricModelR model);
 public:
-    static RootPtr Create(GeometricModelR model, Render::SystemR system);
+    static RootPtr Create(GeometricModelR model, Render::SystemR system, ViewControllerCR view);
     virtual ~Root() { ClearAllTiles(); }
 
     DgnModelId GetModelId() const { return m_modelId; }
@@ -576,6 +599,7 @@ public:
     bool WantDebugRanges() const { return m_debugRanges; }
     double GetLeafTolerance() const { return m_leafTolerance; }
     size_t GetMaxPointsPerTile() const { return m_maxPointsPerTile; }
+    FilterCR GetFilter() const { return m_filter; }
 
     BeSQLite::BeDbMutex& GetDbMutex() const { return m_dbMutex; }
 

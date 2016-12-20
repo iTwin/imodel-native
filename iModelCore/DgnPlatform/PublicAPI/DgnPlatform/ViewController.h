@@ -437,11 +437,14 @@ public:
     SpecialElements const& GetSpecialElements() const {return m_special;}
 
     //! Get the list of elements that are always drawn
-    DgnElementIdSet const& GetAlwaysDrawn() {return GetSpecialElements().m_always;}
+    DgnElementIdSet const& GetAlwaysDrawn() const {return GetSpecialElements().m_always;}
 
     //! Establish a set of elements that are always drawn in the view.
     //! @param[in] exclusive If true, only these elements are drawn
     DGNPLATFORM_EXPORT void SetAlwaysDrawn(DgnElementIdSet const&, bool exclusive);
+
+    //! Returns true if the set of elements returned by GetAlwaysDrawn() are the *only* elements rendered by this view controller
+    bool IsAlwaysDrawnExclusive() const { return m_noQuery; }
 
     //! Empty the set of elements that are always drawn
     DGNPLATFORM_EXPORT void ClearAlwaysDrawn();
@@ -452,7 +455,7 @@ public:
     //! Get the list of elements that are never drawn.
     //! @remarks An element in the never-draw list is excluded regardless of whether or not it is
     //! in the always-draw list. That is, the never-draw list gets priority over the always-draw list.
-    DgnElementIdSet const& GetNeverDrawn() {return GetSpecialElements().m_never;}
+    DgnElementIdSet const& GetNeverDrawn() const {return GetSpecialElements().m_never;}
 
     //! Empty the set of elements that are never drawn
     DGNPLATFORM_EXPORT void ClearNeverDrawn();
