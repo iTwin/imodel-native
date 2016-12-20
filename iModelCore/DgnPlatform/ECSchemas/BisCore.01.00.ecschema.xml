@@ -133,16 +133,16 @@
         <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing">
+    <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="Authority issues codes for elements" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="issues codes for" polymorphic="true">
             <Class class="Authority"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element code is issued by Authority" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="code is issued by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
@@ -163,7 +163,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModeledElementId" relationshipName="ModelModelsElement" direction="Forward">
+        <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward">
         </ECNavigationProperty>
         <ECProperty propertyName="Properties" typeName="string">
             <ECCustomAttributes>
@@ -294,16 +294,16 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding">
+    <ECRelationshipClass typeName="ModelContainsElements" description="Associates elements with a model" strength="embedding" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="Model contains elements" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
             <Class class="Model"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element is contained by Model" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is contained by" polymorphic="true">
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
@@ -313,43 +313,43 @@
         <!-- Mutually exclusive with IParentElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
     </ECEntityClass>
-    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(0..1)" roleLabel="Model models Element" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
             <Class class="Model"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="Element is modeled by Model" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
             <Class class="Element" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <BaseClass>ModelModelsElement</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="PhysicalModel breaks down PhysicalElement" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
             <Class class="PhysicalModel"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="PhysicalElement is broken down by PhysicalModel" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is broken down by" polymorphic="true">
             <Class class="PhysicalElement" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="DrawingModelBreaksDownDrawing" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="DrawingModelBreaksDownDrawing" strength="embedding" strengthDirection="Backward" modifier="None">
         <BaseClass>ModelModelsElement</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="DrawingModel breaks down Drawing" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
             <Class class="DrawingModel"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="Drawing is broken down by DrawingModel" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is broken down by" polymorphic="true">
             <Class class="Drawing" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SheetModelBreaksDownSheet" strength="embedding" strengthDirection="Backward">
+    <ECRelationshipClass typeName="SheetModelBreaksDownSheet" strength="embedding" strengthDirection="Backward" modifier="None">
         <BaseClass>ModelModelsElement</BaseClass>
-        <Source multiplicity="(0..1)" roleLabel="SheetModel breaks down Sheet" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
             <Class class="SheetModel"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="Sheet is broken down by SheetModel" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is broken down by" polymorphic="true">
             <Class class="Sheet" />
         </Target>
     </ECRelationshipClass>
@@ -376,7 +376,7 @@
                         <Name>ix_bis_Element_Code</Name>
                         <IsUnique>True</IsUnique>
                         <Properties>
-                            <string>CodeAuthorityId</string>
+                            <string>CodeAuthority.Id</string>
                             <string>CodeNamespace</string>
                             <string>CodeValue</string>
                         </Properties>
@@ -408,7 +408,7 @@
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="CodeAuthorityId" relationshipName="AuthorityIssuesElementCode" direction="Backward">
+        <ECNavigationProperty propertyName="CodeAuthority" relationshipName="AuthorityIssuesElementCode" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -441,7 +441,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="ModelId" relationshipName="ModelContainsElements" direction="Backward">
+        <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -449,7 +449,7 @@
                 </CustomHandledProperty>
             </ECCustomAttributes>
         </ECNavigationProperty>
-        <ECNavigationProperty propertyName="ParentId" relationshipName="ElementOwnsChildElements" direction="Backward">
+        <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty>
@@ -522,11 +522,11 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="PhysicalElementIsOfType" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="PhysicalElement is of PhysicalType" polymorphic="true">
+    <ECRelationshipClass typeName="PhysicalElementIsOfType" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="PhysicalElement" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="PhysicalType defines PhysicalElements" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="PhysicalType"/>
         </Target>
     </ECRelationshipClass>
@@ -537,11 +537,11 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="GraphicalElement2d is of GraphicalType2d" polymorphic="true">
+    <ECRelationshipClass typeName="GraphicalElement2dIsOfType" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="is of" polymorphic="true">
             <Class class="GraphicalElement2d" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="GraphicalType2d defines GraphicalElement2ds" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="GraphicalType2d"/>
         </Target>
     </ECRelationshipClass>
@@ -765,29 +765,29 @@
         <ECNavigationProperty propertyName="SheetTemplate" relationshipName="SheetHasSheetTemplate" direction="Forward" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="Sheet has SheetTemplate" polymorphic="true">
+    <ECRelationshipClass typeName="SheetHasSheetTemplate" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="Sheet" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="SheetTemplate defines Sheets" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="SheetTemplate"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="SheetTemplate refers to SheetBorder" polymorphic="true">
+    <ECRelationshipClass typeName="SheetTemplateHasSheetBorder" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetTemplate" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="SheetBorder is referenced by SheetTemplates" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is referenced by" polymorphic="true">
             <Class class="SheetBorder"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="SheetBorder has SheetBorderTemplate" polymorphic="true">
+    <ECRelationshipClass typeName="SheetBorderHasSheetBorderTemplate" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="SheetBorder" />
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="SheetBorderTemplate defines SheetBorders" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="defines" polymorphic="true">
             <Class class="SheetBorderTemplate"/>
         </Target>
     </ECRelationshipClass>
@@ -828,7 +828,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
+        <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement3dIsInCategory" direction="Forward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03"/>
                 <CustomHandledProperty/>
@@ -924,7 +924,7 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="CategoryId" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
+        <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement2dIsInCategory" direction="Forward">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
@@ -997,7 +997,7 @@
         </ECCustomAttributes>
         <BaseClass>AnnotationElement2d</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation2dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true">
             <Class class="TextAnnotation2d"/>
@@ -1014,7 +1014,7 @@
         </ECCustomAttributes>
         <BaseClass>GraphicalElement3d</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding">
+    <ECRelationshipClass typeName="TextAnnotation3dOwnsTextAnnotationData" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true">
             <Class class="TextAnnotation3d"/>
@@ -1074,7 +1074,7 @@
         <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
         <ECProperty propertyName="TextSymbKey" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsUniqueAspect</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1091,7 +1091,7 @@
         <ECProperty propertyName="HeightLock" typeName="boolean"/>
         <ECProperty propertyName="Height" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1108,7 +1108,7 @@
         <ECProperty propertyName="WidthLock" typeName="boolean"/>
         <ECProperty propertyName="Width" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1140,7 +1140,7 @@
         <ECProperty propertyName="MarginLeft" typeName="double"/>
         <ECProperty propertyName="MarginRight" typeName="double"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1158,7 +1158,7 @@
         <ECProperty propertyName="ColumnSpan" typeName="int"/>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1179,7 +1179,7 @@
         <ECProperty propertyName="LineStyleScale" typeName="double"/>
         <ECProperty propertyName="FillColor" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1198,7 +1198,7 @@
         <ECProperty propertyName="Span" typeName="int"/>
         <ECProperty propertyName="SymbologyKey" typeName="int"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding">
+    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="false">
             <Class class="AnnotationTable"/>
@@ -1267,22 +1267,22 @@
             <ClassHasHandler xmlns="BisCore.01.00"/>
         </ECCustomAttributes>
         <BaseClass>GraphicalElement2d</BaseClass>
-        <ECNavigationProperty propertyName="ViewId" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
+        <ECNavigationProperty propertyName="View" relationshipName="ViewIsAttached" direction="Backward" description="The view that is to be attached" />
         <ECProperty propertyName="Details" typeName="string" />
         <ECProperty propertyName="DisplayPriority" typeName="int" />
         <ECProperty propertyName="Scale" typeName="double" />
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="ViewIsAttached" strength="embedding">
+    <ECRelationshipClass typeName="ViewIsAttached" strength="embedding" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="ViewDefinition owns ViewAttachment" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="ViewAttachment is owned by ViewDefinition" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="ViewAttachment" />
         </Target>
     </ECRelationshipClass>
@@ -1292,7 +1292,7 @@
         <!-- Mutually exclusive with IModellableElement -->
         <!-- WIP: Need to mark interface as only valid for Elements -->
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding">
+    <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <!-- WIP: Should be abstract? -->
         <!-- WIP: Rename to ElementCompositesElements? -->
         <ECCustomAttributes>
@@ -1301,14 +1301,14 @@
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(0..1)" roleLabel="Element owns child Elements" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element is owned by parent Element" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding">
+    <ECRelationshipClass typeName="ElementEncapsulatesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates that child elements are "hidden" -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true">
@@ -1318,7 +1318,7 @@
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalElementAssemblesElements" strength="embedding">
+    <ECRelationshipClass typeName="PhysicalElementAssemblesElements" strength="embedding" modifier="None">
         <!-- Relationship that indicates a physical assembly of child PhysicalElements -->
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true">
@@ -1329,7 +1329,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing">
+    <ECRelationshipClass typeName="ElementGroupsMembers" strength="referencing" modifier="None">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <ECInstanceIdColumn>Id</ECInstanceIdColumn>
@@ -1339,10 +1339,10 @@
                 <TargetECInstanceIdColumn>MemberId</TargetECInstanceIdColumn>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="Element groups member Elements" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="groups" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element is grouped by Elements" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is grouped by" polymorphic="true">
             <Class class="Element"/>
         </Target>
         <ECProperty propertyName="MemberPriority" typeName="int">
@@ -1372,17 +1372,17 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding">
-        <Source multiplicity="(1..1)" roleLabel="Element owns ElementUniqueAspect" polymorphic="true">
+    <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="ElementUniqueAspect is owned by Element" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <!-- Note: multiplicity=(0..*) is correct. While an Element can only have 1 unique apsect per aspect class, it can have N unique aspects total. -->
             <Class class="ElementUniqueAspect"/>
         </Target>
@@ -1401,17 +1401,17 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="ElementId" relationshipName="ElementOwnsMultiAspects" direction="Backward">
+        <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward">
             <ECCustomAttributes>
                 <HideProperty xmlns="EditorCustomAttributes.01.03" />
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding">
-        <Source multiplicity="(1..1)" roleLabel="Element owns ElementMultiAspects" polymorphic="true">
+    <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="ElementMultiAspect is owned by Element" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="ElementMultiAspect"/>
         </Target>
     </ECRelationshipClass>
@@ -1419,31 +1419,31 @@
     <ECEntityClass typeName="ElementExternalKey">
         <!-- The aspect that holds an identifier from an external system -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <DbIndexList xmlns="ECDbMap.02.00">
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
+        <!-- <ECCustomAttributes> -->
+            <!-- <DbIndexList xmlns="ECDbMap.02.00"> -->
+                <!-- <Indexes> -->
+                    <!-- <DbIndex> -->
+                        <!-- <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name> -->
+                        <!-- <IsUnique>True</IsUnique> -->
+                        <!-- <Properties> -->
                             <!-- Only one ExternalKey per Authority per Element -->
-                            <string>ElementId</string>
-                            <string>AuthorityId</string>
-                        </Properties>
-                    </DbIndex>
-                    <DbIndex>
+                            <!-- <string>Element.Id</string> -->
+                            <!-- <string>AuthorityId</string> -->
+                        <!-- </Properties> -->
+                    <!-- </DbIndex> -->
+                    <!-- <DbIndex> -->
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>AuthorityId</string>
-                            <string>ExternalKey</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </DbIndexList>
-        </ECCustomAttributes>
+                        <!-- <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name> -->
+                        <!-- <IsUnique>False</IsUnique> -->
+                        <!-- <Properties> -->
+                            <!-- <string>AuthorityId</string> -->
+                            <!-- <string>ExternalKey</string> -->
+                        <!-- </Properties> -->
+                    <!-- </DbIndex> -->
+                <!-- </Indexes> -->
+            <!-- </DbIndexList> -->
+        <!-- </ECCustomAttributes> -->
         <ECProperty propertyName="AuthorityId" typeName="long">
             <!-- WIP: Foreign key relationship to Authority that controls the ExternalKey -->
             <!-- IsNullable = False -->
@@ -1452,7 +1452,7 @@
             <!-- IsNullable = False -->
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding">
+    <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true">
             <Class class="Element"/>
@@ -1473,15 +1473,15 @@
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="Element refers to Elements" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element is referenced by Elements" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="Element"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing">
+    <ECRelationshipClass typeName="ElementDrivesElement" strength="referencing" modifier="None">
         <!-- WIP: Rename to ElementDriveElements? -->
         <!-- Relationship that indicates that an Element drives (controls the lifecyle or structure of) a dependent Element -->
         <ECCustomAttributes>
@@ -1500,10 +1500,10 @@
                 <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
             </LinkTableRelationshipMap>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="Element drives Elements" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="drives" polymorphic="true">
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Element is driven by Elements" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is driven by" polymorphic="true">
             <Class class="Element"/>
         </Target>
         <ECProperty propertyName="Status" typeName="int" description="Bits that indicate the status of the dependency. Satisfied=0, Failed=1, Deferred=128. Deferred and Failed bits can be OR'd together."/>
@@ -1559,29 +1559,29 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="GeometricElement2dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="GeometricElement2d is in DrawingCategory" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement2d" />
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="DrawingCategory categorizes 2D geometric elements" polymorphic="false">
+        <Target multiplicity="(1..1)" roleLabel="categorizes" polymorphic="false">
             <Class class="DrawingCategory"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward">
+    <ECRelationshipClass typeName="GeometricElement3dIsInCategory" description="Element is in Category" strength="referencing" strengthDirection="Backward" modifier="Sealed">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(0..*)" roleLabel="GeometricElement3d is in SpatialCategory" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement3d" />
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="SpatialCategory categorizes 3D geometric elements" polymorphic="false">
+        <Target multiplicity="(1..1)" roleLabel="categorizes" polymorphic="false">
             <Class class="SpatialCategory"/>
         </Target>
     </ECRelationshipClass>
@@ -1768,70 +1768,70 @@
         </ECProperty>
     </ECEntityClass>
 
-    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding">
+    <ECRelationshipClass typeName="BaseModelForView2d" strength="embedding" modifier="None">
         <ECCustomAttributes>
             <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                 <OnDeleteAction>NoAction</OnDeleteAction>
             </ForeignKeyConstraint>
         </ECCustomAttributes>
-        <Source multiplicity="(1..1)" roleLabel="GeometricModel2d is base model for 2D views" polymorphic="true">
+        <Source multiplicity="(1..1)" roleLabel="is base model for" polymorphic="true">
             <Class class="GeometricModel2d"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="ViewDefinition2d has base GeometricModel2d" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="has base" polymorphic="true">
             <Class class="ViewDefinition2d"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="ViewDefinition3d uses ModelSelector" polymorphic="true">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="ModelSelector is used by 3D views" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
             <Class class="ModelSelector"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="ViewDefinition3d uses ClipVolumeDefinition" polymorphic="true">
+    <ECRelationshipClass typeName="ViewDefinition3dUsesClipVolume" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition3d"/>
         </Source>
-        <Target multiplicity="(0..1)" roleLabel="ClipVolumeDefinition is used by 3D views" polymorphic="true">
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="true">
             <Class class="ClipVolumeDefinition"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" >
-        <Source multiplicity="(0..*)" roleLabel="ViewDefinition uses CategorySelector" polymorphic="true">
+    <ECRelationshipClass typeName="ViewDefinitionUsesCategorySelector" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="CategorySelector is used by views" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
             <Class class="CategorySelector"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="ViewDefinition uses DisplayStyle" polymorphic="true">
+    <ECRelationshipClass typeName="ViewDefinitionUsesDisplayStyle" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
             <Class class="ViewDefinition"/>
         </Source>
-        <Target multiplicity="(1..1)" roleLabel="DisplayStyle is used by views" polymorphic="true">
+        <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
             <Class class="DisplayStyle"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing">
+    <ECRelationshipClass typeName="CategorySelectorRefersToCategories" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
-        <Source multiplicity="(0..*)" roleLabel="CategorySelector refers to categories" polymorphic="true">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="CategorySelector"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Category is referred to by CategorySelector" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="Category"/>
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="ModelSelector refers to models" polymorphic="true">
+    <ECRelationshipClass typeName="ModelSelectorRefersToModels" strength="referencing" modifier="None">
+        <Source multiplicity="(0..*)" roleLabel="refers to" polymorphic="true">
             <Class class="ModelSelector"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="Model is referenced by ModelSelectors" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="Model"/>
         </Target>
     </ECRelationshipClass>
@@ -1964,13 +1964,13 @@
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.01.00"/></ECCustomAttributes>
     </ECEntityClass>
   
-    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing">
+    <ECRelationshipClass typeName="ElementHasLinks" description="Associates links to an element." strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
-        <Source multiplicity="(1..*)" roleLabel="Element refers to LinkElements" polymorphic="true">
+        <Source multiplicity="(1..*)" roleLabel="has" polymorphic="true">
             <!-- WIP: (0..*)? -->
             <Class class="Element"/>
         </Source>
-        <Target multiplicity="(0..*)" roleLabel="LinkElement is referenced by Elements" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel="is referenced by" polymorphic="true">
             <Class class="LinkElement"/>
         </Target>
     </ECRelationshipClass>
@@ -2022,7 +2022,7 @@
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing">
+    <ECRelationshipClass typeName="ElementUsesGeometryParts" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
         <!-- WIP: Remove? -->
         <!-- Used to indicate that an Element uses a GeometryPart.  This is useful for "garbage collecting" or finding Elements that would be affected by a change to a GeometryPart. -->
@@ -2034,7 +2034,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing">
+    <ECRelationshipClass typeName="GraphicDerivedFromElement" strength="referencing" modifier="None">
         <BaseClass>ElementRefersToElements</BaseClass>
         <Source multiplicity="(0..*)" polymorphic="true">
             <Class class="DrawingGraphic"/>

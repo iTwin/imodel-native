@@ -480,7 +480,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     EXPECT_EQ(DgnDbStatus::ParentBlockedChange, defaultSubCat1->Delete());
 
     // Cannot change parent category
-    EXPECT_EQ(DgnDbStatus::InvalidParent, defaultSubCat1Edit->SetParentId(cat2Id));
+    EXPECT_EQ(DgnDbStatus::InvalidParent, defaultSubCat1Edit->SetParentId(cat2Id, DgnClassId()));
 
     // require valid parent category
     DgnSubCategory noParent(DgnSubCategory::CreateParams(db, DgnCategoryId(), "NoParent", app, "Sub-category requires valid parent category"));
@@ -507,7 +507,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     EXPECT_EQ(DgnDbStatus::DuplicateCode, status);
 
     // Cannot change parent category
-    EXPECT_EQ(DgnDbStatus::InvalidParent, pSubcat2B->SetParentId(cat1Id));
+    EXPECT_EQ(DgnDbStatus::InvalidParent, pSubcat2B->SetParentId(cat1Id, DgnClassId()));
 
     // Code validation
     code = DgnSubCategory::CreateCode(db, cat1Id, "2B"); // wrong category

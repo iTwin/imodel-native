@@ -148,13 +148,13 @@ public:
 struct TileMeshInstance
 {
 private:
-    TileMeshPartCPtr    m_part;
+    DgnElementId        m_instanceId;
     Transform           m_transform;
 
 public:
-    TileMeshPartCP GetPart() const { return m_part.get(); }
+    DgnElementId GetId() const { return m_instanceId; }
     TransformCR GetTransform() const { return m_transform; }
-    TileMeshInstance (TileMeshPartCPtr part, TransformCR transform) : m_part(part), m_transform(transform) { }
+    TileMeshInstance (DgnElementId instanceId , TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
 
 };  // TileMeshInstance
 
@@ -165,7 +165,8 @@ public:
 struct TileMeshPart : RefCountedBase
 {
 private:
-    TileMeshList    m_meshes;
+    TileMeshList            m_meshes;
+    TileMeshInstanceList    m_instances;
 
     TileMeshPart (TileMeshList&& meshes) : m_meshes(meshes) { }
 
@@ -173,6 +174,8 @@ private:
 
 public:
     TileMeshList const& Meshes() const { return m_meshes; }
+    TileMeshInstanceList const& Instances() const { return m_instances; }
+    void AddInstance (TileMeshInstanceCR instance) { m_instances.push_back(instance); }
 
     static TileMeshPartPtr Create (TileMeshList&& meshes) { return new TileMeshPart(std::move(meshes)); }
 
@@ -471,34 +474,32 @@ public:
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
-typedef bmap<double, TileGeometry::T_TilePolyfaces> T_PolyfaceMap; 
-
 struct TileGeomPart : RefCountedBase
 {
 private:
-    DgnGeometryPartId       m_partId;
     DRange3d                m_range;
     TileGeometryList        m_geometries;
     size_t                  m_instanceCount;
     mutable size_t          m_facetCount;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} \
+    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} 
 
 protected:
-    TileGeomPart(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry);
+    TileGeomPart(DRange3dCR range, TileGeometryList const& geometry);
 
 public:
-    static TileGeomPartPtr Create(DgnGeometryPartId partId, DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(partId, range, geometry); }
+    static TileGeomPartPtr Create(DRange3dCR range, TileGeometryList const& geometry) { return new TileGeomPart(range, geometry); }
     TileGeometry::T_TilePolyfaces GetPolyfaces(IFacetOptionsR facetOptions, TileGeometryCR instance);
     TileGeometry::T_TileStrokes GetStrokes(IFacetOptionsR facetOptions, TileGeometryCR instance);
-    size_t GetFacetCount(FacetCounter& counter, TileGeometryCR instance) const;
+    size_t GetFacetCount(FacetCounter& counter) const;
     bool IsCurved() const;
     void IncrementInstanceCount() { m_instanceCount++; }
-    size_t GetInstanceCount() const { return m_instanceCount; }
+    size_t GetInstanceCount() const { return m_instanceCount; }
+
     TileGeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
-    DgnGeometryPartId GetPartId() const { return m_partId; }
-
+    bool IsWorthInstancing(double tolerance) const;
+    
 
 };  // TileGeomPart
 
@@ -622,14 +623,12 @@ struct PublishableTileGeometry
 {
 private:
     TileMeshList            m_meshes;
-    TileMeshInstanceList    m_instances;
     TileMeshPartList        m_parts;
 
 public:
     TileMeshList& Meshes()              { return m_meshes; }
-    TileMeshInstanceList& Instances()   { return m_instances; }
     TileMeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const                { return m_meshes.empty() && m_instances.empty(); }
+    bool IsEmpty() const                { return m_meshes.empty() && m_parts.empty(); }
 
 };  // PublishedTileGeometry
 
@@ -713,6 +712,9 @@ private:
     bool                    m_isLeaf;
     TileGeometryList        m_geometries;
     TileModelDeltaCP        m_modelDelta;
+
+    virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;} // A deep tree can trigger this assertion erroneously.
+
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool twoSidedTriangles, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
 
@@ -869,8 +871,7 @@ struct IGenerateMeshTiles
 struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
-    DGNPLATFORM_EXPORT static BentleyStatus
-ReadJsonFromFile (Json::Value& value, WCharCP fileName);
+    DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
 
 };  // TileUtil

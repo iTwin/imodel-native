@@ -112,7 +112,7 @@ public:
     DgnElementId GetTemplate() const {return GetPropertyValueId<DgnElementId>(str_Template());}
 
     //! Set the sheet template.
-    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v);}
+    DgnDbStatus SetTemplate(DgnElementId v) {return SetPropertyValue(str_Template(), v, ECN::ECClassId());}
 
     //! Get the sheet border, if any.
     //! @return an invalid ID if the sheet has no border.
@@ -120,7 +120,7 @@ public:
 
         //! Set the sheet border.
     //! @return DgnDbStatus::ReadOnly if the Border is controlled by a template
-    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v);}
+    DgnDbStatus SetBorder(DgnElementId v) {return SetPropertyValue(str_Border(), v, ECN::ECClassId());}
 };
 
 //=======================================================================================
@@ -133,29 +133,42 @@ struct EXPORT_VTABLE_ATTRIBUTE ViewAttachment : GraphicalElement2d
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_ViewAttachment, GraphicalElement2d);
 
 protected:
-    static Utf8CP str_ViewId() {return "ViewId";}
+    static Utf8CP str_View() {return "View";}
     static Utf8CP str_DisplayPriority() {return "DisplayPriority";}
     static Utf8CP str_Scale() {return "Scale";}
     DGNPLATFORM_EXPORT DgnDbStatus CheckValid() const;
     virtual DgnDbStatus _OnInsert() override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnInsert() : status;}
     virtual DgnDbStatus _OnUpdate(DgnElementCR original) override {auto status = CheckValid(); return DgnDbStatus::Success == status ? T_Super::_OnUpdate(original) : status;}
-    virtual DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
+    virtual DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
     virtual DgnDbStatus _OnChildInsert(DgnElementCR) const override {return DgnDbStatus::InvalidParent;}
     virtual DgnDbStatus _OnChildUpdate(DgnElementCR original, DgnElementCR updated) const override {return DgnDbStatus::InvalidParent;}
     
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewAttachment));}
+    static Placement2d ComputePlacement(DgnDbR db, DgnViewId viewId, DPoint2dCR origin, double scale);
+    static double ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedBox2dCR);
 
 public:
     explicit ViewAttachment(CreateParams const& params) : T_Super(params) {}
-    ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement) : T_Super(CreateParams(db, model, QueryClassId(db), cat, placement))
-        {
-        SetAttachedViewId(viewId);
-        SetCode(GenerateDefaultCode());
-        }
 
-    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_ViewId());} //!< Get the Id of the view definition to be drawn by this attachment
-    ClipVectorPtr GetClips() const;
-    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_ViewId(), viewId);} //!< Set the view definition to be drawn
+    //! Construct an attachment in the case where you know the size of the attachment. The view scale will be computed.
+    //! @param db   The DgnDb that will contain the attachment
+    //! @param model The model in the DgnDb that will contain the attachment
+    //! @param viewId   The view that is being attached
+    //! @param cat      The attachment's category
+    //! @param placement The attachment's origin and size on the sheet.
+    DGNPLATFORM_EXPORT ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, Placement2dCR placement);
+
+    //! Construct an attachment in the case where you know the view scale. The placement's size will be computed.
+    //! @param db   The DgnDb that will contain the attachment
+    //! @param model The model in the DgnDb that will contain the attachment
+    //! @param viewId   The view that is being attached
+    //! @param cat      The attachment's category
+    //! @param origin   The attachment's origin on the sheet
+    //! @param scale    The view scale
+    DGNPLATFORM_EXPORT ViewAttachment(DgnDbR db, DgnModelId model, DgnViewId viewId, DgnCategoryId cat, DPoint2dCR origin, double scale);
+
+    DgnViewId GetAttachedViewId() const {return GetPropertyValueId<DgnViewId>(str_View());} //!< Get the Id of the view definition to be drawn by this attachment
+    DgnDbStatus SetAttachedViewId(DgnViewId viewId) {return SetPropertyValue(str_View(), viewId, ECN::ECClassId());} //!< Set the view definition to be drawn
     int32_t GetDisplayPriority() const {return GetPropertyValueInt32(str_DisplayPriority());}
     DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(str_DisplayPriority(), v);}
     double GetScale() const {return GetPropertyValueDouble(str_Scale());}
@@ -194,7 +207,7 @@ namespace Attachment
 
         struct Loader : TileTree::TileLoader
         {
-            Render::Image m_image;
+            Render::TexturePtr m_texture;
 
             Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
             BentleyStatus _LoadTile() override;

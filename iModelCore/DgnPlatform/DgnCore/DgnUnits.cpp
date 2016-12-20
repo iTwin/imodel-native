@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <BeSQLite/RTreeMatch.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/13
@@ -32,6 +33,16 @@ DgnGCS* DgnUnits::GetDgnGCS() const
         m_hasCheckedForGCS = true;
         }
     return m_gcs;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      11/14
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnUnits::SetGlobalOrigin(DPoint3dCR origin)
+    {
+    m_globalOrigin=origin;
+    if (m_gcs)
+        m_gcs->SetGlobalOrigin(origin);
     }
 
 /*---------------------------------------------------------------------------------**//**

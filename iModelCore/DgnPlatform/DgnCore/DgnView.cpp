@@ -174,9 +174,9 @@ void ViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     BeAssert(GetDisplayStyleId().IsValid());
     BeAssert(GetCategorySelectorId().IsValid());
-    auto stat = stmt.BindId(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
+    auto stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_DisplayStyle()), GetDisplayStyleId());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindId(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_CategorySelector()), GetCategorySelectorId());
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindText(stmt.GetParameterIndex(str_Details()), ToDetailJson().c_str(), IECSqlBinder::MakeCopy::Yes);
     BeAssert(ECSqlStatus::Success == stat);
@@ -222,8 +222,8 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_displayStyleId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
-    m_categorySelectorId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
+    m_displayStyleId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_DisplayStyle()));
+    m_categorySelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_CategorySelector()));
 
     Json::Reader::Parse(stmt.GetValueText(params.GetSelectIndex(str_Details())), m_details);
     _Load();
@@ -294,7 +294,7 @@ static DgnDbStatus lockElement(DgnElementCR ele)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus ViewDefinition2d::OnModelDelete(DgnDbR db, DgnModelId mid)
     {
-    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModel=?");
+    auto findViewsStmt = db.GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("ViewDefinition2d") " WHERE BaseModel.Id=?");
     if (!findViewsStmt.IsValid())
         {
         BeAssert(false);
@@ -343,7 +343,7 @@ void ViewDefinition2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     BeAssert(ECSqlStatus::Success == stat);
     stat = stmt.BindDouble(stmt.GetParameterIndex(str_RotationAngle()), Angle::FromRadians(m_rotAngle).Degrees());
     BeAssert(ECSqlStatus::Success == stat);
-    stat = stmt.BindId(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId);
+    stat = stmt.BindNavigationValue(stmt.GetParameterIndex(str_BaseModel()), m_baseModelId);
     BeAssert(ECSqlStatus::Success == stat);
     }
 
@@ -355,7 +355,7 @@ DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     m_origin  = stmt.GetValuePoint2d(params.GetSelectIndex(str_Origin()));
     m_delta   = DVec2d::From(stmt.GetValuePoint2d(params.GetSelectIndex(str_Extents())));
     m_rotAngle = Angle::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(str_RotationAngle()))).Radians();
-    m_baseModelId = stmt.GetValueId<DgnModelId>(params.GetSelectIndex(str_BaseModel()));
+    m_baseModelId = stmt.GetValueNavigation<DgnModelId>(params.GetSelectIndex(str_BaseModel()));
 
     return T_Super::_ReadSelectParams(stmt, params);
     }
@@ -576,7 +576,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -685,7 +685,7 @@ DgnDbStatus ModelSelector::OnModelDelete(DgnDbR db, DgnModelId mid)
 DgnDbStatus ModelSelector::_OnDelete() const
     {
     // Delete all 3d views that are based on on this selector
-    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("SpatialViewDefinition") " WHERE ModelSelector=?");
+    auto statement = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA("SpatialViewDefinition") " WHERE ModelSelector.Id=?");
     statement->BindId(1, GetElementId());
     if (BE_SQLITE_ROW == statement->Step())
         {
@@ -728,7 +728,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE (SourceECInstanceId=?)", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -976,7 +976,7 @@ void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
     T_Super::_BindWriteParams(stmt, forInsert);
 
     BeAssert(GetModelSelectorId().IsValid());
-    stmt.BindId(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId());
+    stmt.BindNavigationValue(stmt.GetParameterIndex(str_ModelSelector()), GetModelSelectorId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -984,7 +984,7 @@ void SpatialViewDefinition::_BindWriteParams(ECSqlStatement& stmt, ForInsert for
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, ECSqlClassParamsCR params)
     {
-    m_modelSelectorId = stmt.GetValueId<DgnElementId>(params.GetSelectIndex(str_ModelSelector()));
+    m_modelSelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(str_ModelSelector()));
     return T_Super::_ReadSelectParams(stmt, params);
     }
 

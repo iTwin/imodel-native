@@ -1097,8 +1097,8 @@ struct OvrGraphicParams
     };
 
 private:
-    uint32_t        m_flags;
-    GraphicParams   m_matSymb;
+    uint32_t      m_flags;
+    GraphicParams m_matSymb;
 
 public:
     OvrGraphicParams() : m_flags(FLAGS_None) {}
@@ -1109,7 +1109,7 @@ public:
     //! Compare two OvrGraphicParams.
     bool operator==(OvrGraphicParamsCR rhs) const {if (this == &rhs) return true; if (rhs.m_flags != m_flags) return false; return rhs.m_matSymb == m_matSymb;}
 
-    uint32_t GetFlags() const{return m_flags;}
+    uint32_t GetFlags() const {return m_flags;}
     ColorDef GetLineColor() const {return m_matSymb.GetLineColor();}
     ColorDef GetFillColor() const {return m_matSymb.GetFillColor();}
     uint32_t GetWidth() const {return m_matSymb.GetWidth();}
@@ -1788,7 +1788,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
-    virtual BentleyStatus _RenderTile(StopWatch&,ImageR,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}

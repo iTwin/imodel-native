@@ -1647,6 +1647,32 @@ BentleyStatus BRepUtil::Create::BodyFromExtrusionToBody(IBRepEntityPtr& entityOu
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
+/*=================================================================================**//**
+* @bsiclass                                                     Brien.Bastings  12/2016
++===============+===============+===============+===============+===============+======*/
+struct BRepRollbackMark : RefCountedBase
+{
+PK_MARK_t m_markTag = PK_ENTITY_null;
+
+BRepRollbackMark::BRepRollbackMark() {PK_MARK_create(&m_markTag);}
+BRepRollbackMark::~BRepRollbackMark() {PK_MARK_goto(m_markTag); PK_MARK_delete(m_markTag);}
+
+}; // BRepRollbackMark
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<IRefCounted> BRepUtil::Modify::CreateRollbackMark()
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    return new BRepRollbackMark();
+#else
+    return nullptr;
+#endif
+    }
+
+#if defined (BENTLEYCONFIG_PARASOLID) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/

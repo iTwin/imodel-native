@@ -168,7 +168,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor&, PropertyArrayIndex const& arrayIdx) const override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(ElementECPropertyAccessor&, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
-    DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
     DGNPLATFORM_EXPORT DgnCode _GenerateDefaultCode() const override;
     virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !NullAuthority::IsNullAuthority(authority);}
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -273,7 +273,7 @@ protected:
     DGNPLATFORM_EXPORT void _OnInserted(DgnElementP copiedFrom) const override;
     DGNPLATFORM_EXPORT void _OnImported(DgnElementCR original, DgnImportContext& importer) const override;
     
-    DgnDbStatus _SetParentId(DgnElementId parentId) override {return DgnDbStatus::InvalidParent;}
+    DgnDbStatus _SetParentId(DgnElementId, DgnClassId) override {return DgnDbStatus::InvalidParent;}
     uint32_t _GetMemSize() const override {return T_Super::_GetMemSize() + static_cast<uint32_t>(sizeof(m_rank) + m_descr.length());}
 
     //! Construct a new DgnCategory with the specified parameters

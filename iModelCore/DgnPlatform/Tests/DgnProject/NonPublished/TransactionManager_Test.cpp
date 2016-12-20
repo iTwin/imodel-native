@@ -193,6 +193,7 @@ TEST_F(TransactionManagerTests, CRUD)
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
     SetupSeedProject();
+    DgnClassId parentRelClassId = m_db->Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
 
@@ -200,13 +201,13 @@ TEST_F(TransactionManagerTests, ElementAssembly)
     ASSERT_TRUE(el1.IsValid());
 
     TestElementPtr e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
-    e2->SetParentId(el1->GetElementId());
+    e2->SetParentId(el1->GetElementId(), parentRelClassId);
     DgnElementCPtr el2 = e2->Insert();
     ASSERT_TRUE(el2.IsValid());
     ASSERT_EQ(el2->GetParentId(), el1->GetElementId());
 
     e2 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
-    e2->SetParentId(el1->GetElementId());
+    e2->SetParentId(el1->GetElementId(), parentRelClassId);
     DgnElementCPtr el3 = e2->Insert(); // insert another element
     ASSERT_TRUE(el3.IsValid());
 
@@ -1459,23 +1460,10 @@ struct TestRelationshipLinkTableTrackingTxnMonitor : TxnMonitor
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      01/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECClassCR relcls, DgnElementId root, DgnElementId dependent)
+static BeSQLite::EC::ECInstanceId insertRelationship(DgnDbR db, ECN::ECRelationshipClassCR relcls, DgnElementId root, DgnElementId dependent)
     {
-    Utf8String ecsql("INSERT INTO ");
-    ecsql.append(relcls.GetECSqlName()).append("(SourceECInstanceId,TargetECInstanceId) VALUES(?,?)");
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-    if (stmt == nullptr)
-        return BeSQLite::EC::ECInstanceId();
-
-    if (ECSqlStatus::Success != stmt->BindId(1, root) || 
-        ECSqlStatus::Success != stmt->BindId(2, dependent))
-        return BeSQLite::EC::ECInstanceId();
-
     ECInstanceKey rkey;
-    if (BE_SQLITE_DONE != stmt->Step(rkey))
-        return BeSQLite::EC::ECInstanceId();
-
+    db.InsertECRelationship(rkey, relcls, root, dependent);
     return rkey.GetECInstanceId();
     }
 
@@ -1499,20 +1487,9 @@ struct ECDbIssueListener : BeSQLite::EC::ECDb::IIssueListener
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeSQLite::DbResult modifyRelationshipProperty(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid, Utf8CP propName, Utf8CP newValue)
     {
-    Utf8String ecsql("UPDATE ");
-    ecsql.append(relcls.GetECSqlName());
-    ecsql.append(" SET ").append(propName).append("=?");
-    ecsql.append(" WHERE ECInstanceId=?");
-
-    ECDbIssueListener issues;
-    db.AddIssueListener(issues);
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-    db.RemoveIssueListener();
-
-    stmt->BindText(1, newValue, IECSqlBinder::MakeCopy::No);
-    stmt->BindId(2, relid);
-
-    return stmt->Step();
+    auto inst = relcls.GetDefaultStandaloneEnabler()->CreateInstance();
+    inst->SetValue(propName, ECN::ECValue(newValue));
+    return db.UpdateECRelationshipProperties(EC::ECInstanceKey(relcls.GetId(), relid), *inst);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1546,14 +1523,7 @@ static BeSQLite::DbResult selectRelationshipProperty(Utf8StringR value, DgnDbR d
 +---------------+---------------+---------------+---------------+---------------+------*/
 static BeSQLite::DbResult deleteRelationship(DgnDbR db, ECN::ECClassCR relcls, BeSQLite::EC::ECInstanceId relid)
     {
-    Utf8String ecsql("DELETE FROM ");
-    ecsql.append(relcls.GetECSqlName()).append("WHERE ECInstanceId=?");
-
-    CachedECSqlStatementPtr stmt = db.GetPreparedECSqlStatement(ecsql.c_str());
-
-    stmt->BindId(1, relid);
-
-    return stmt->Step();
+    return db.DeleteECRelationship(EC::ECInstanceKey(relcls.GetId(), relid));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1589,7 +1559,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     // Verify that my relationship monitor is NOT called when I just change elements.
     ASSERT_FALSE(monitor.HasChanges());
 
-    auto relcls = m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement");
+    auto relcls = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement"));
     ASSERT_FALSE(nullptr == relcls);
 
     //  Insert a relationship.
@@ -1647,7 +1617,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
     Utf8String propvalue;
     ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, selectRelationshipProperty(propvalue, *m_db, *relcls, relid, "Property1"));
     ASSERT_TRUE(propvalue.empty());
-    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed"));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed"));
     ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
     ASSERT_EQ(BeSQLite::BE_SQLITE_ROW, selectRelationshipProperty(propvalue, *m_db, *relcls, relid, "Property1"));
     ASSERT_STREQ("Changed", propvalue.c_str());
@@ -1666,7 +1636,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
         }
 
     //  Start tracking a different relationship class, and insert an instance of that class
-    auto relcls2 = m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement2");
+    auto relcls2 = dynamic_cast<ECN::ECRelationshipClassCP>(m_db->Schemas().GetECClass("DgnPlatformTest", "TestElementIsRelatedToElement2"));
     ASSERT_FALSE(nullptr == relcls2);
     m_db->Txns().BeginTrackingRelationship(*relcls2);
 
@@ -1696,7 +1666,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
         }
 
     //  Now modify the first relationship, and make sure that I am still tracking it
-    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed again"));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed again"));
     ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());
     ASSERT_TRUE(monitor.HasChanges());
         {
@@ -1711,7 +1681,7 @@ TEST_F(TransactionManagerTests, TestRelationshipLinkTableTracking)
         }
 
     //  Finally, modify the first and insert an instance of the second, and verify that both were tracked
-    ASSERT_EQ(BeSQLite::BE_SQLITE_DONE, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed a third time"));
+    ASSERT_EQ(BeSQLite::BE_SQLITE_OK, modifyRelationshipProperty(*m_db, *relcls, relid, "Property1", "Changed a third time"));
     relid2 = insertRelationship(*m_db, *relcls2, eid1, eid2);
     ASSERT_TRUE(relid2.IsValid());
     ASSERT_EQ(BeSQLite::BE_SQLITE_OK, m_db->SaveChanges());

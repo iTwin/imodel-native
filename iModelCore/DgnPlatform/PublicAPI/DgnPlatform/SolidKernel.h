@@ -576,6 +576,9 @@ struct Modify
         AngleDistance           = 4, //!< Angle (radians) and left distance.
         };
 
+    //! Create a rollback mark that represents the current modeller state and that will return the modeller to this state when the mark is destroyed.
+    DGNPLATFORM_EXPORT static RefCountedPtr<IRefCounted> CreateRollbackMark();
+
     //! Perform the specified boolean operation between the target body and tool body.
     //! @param[in,out] target The target body to modify (may be consumed in boolean).
     //! @param[in,out] tool The tool body (consumed in boolean).

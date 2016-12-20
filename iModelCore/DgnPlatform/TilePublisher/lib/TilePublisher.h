@@ -43,7 +43,25 @@ public:
 
     uint16_t GetBatchId(BeInt64Id entityId);
     void ToJson(Json::Value& value, DgnDbR db, bool is2d) const;
+    Utf8String ToJsonString(DgnDbR db, bool is2d) const;
+
     uint16_t Count() const { return static_cast<uint16_t>(m_list.size()); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     12/2016
+//=======================================================================================
+struct  PublishTileData
+{
+    Json::Value         m_json;
+    ByteStream          m_binaryData;
+
+    size_t BinaryDataSize() const { return m_binaryData.size(); }
+    void const* BinaryData() const { return m_binaryData.data(); }
+    void AddBinaryData(void const* data, size_t size);
+    void PadBinaryDataToBoundary(size_t boundarySize);
+    template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
+
 };
 
 //=======================================================================================
@@ -162,7 +180,6 @@ private:
     BatchIdMap              m_batchIds;
     DPoint3d                m_centroid;
     TileNodeCR              m_tile;
-    ByteStream              m_binaryData;
     PublisherContext&       m_context;
     bmap<TileTextureImageCP, Utf8String>    m_textureImages;
 
@@ -174,27 +191,30 @@ private:
     static void AddShader(Json::Value&, Utf8CP name, int type, Utf8CP buffer);
     static Utf8String Concat(Utf8CP prefix, Utf8StringCR suffix) { Utf8String str(prefix); str.append(suffix); return str; }
 
-    void AddGeometry(Json::Value& value, PublishableTileGeometryR geometry);
-    void AddDefaultScene (Json::Value& value);
-    void AddExtensions(Json::Value& value);
-    void AddTextures(Json::Value& value, TextureIdToNameMap& texNames);
-    Utf8String AddMeshVertexAttribute  (Json::Value& rootNode, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
-    void AddBinaryData (void const* data, size_t size);
+    void WriteGeometryTiles (std::FILE* outputFile, PublishableTileGeometryR geometry);
+    void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
+    void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
+    void WriteGltf(std::FILE* outputFile, PublishTileData tileData);
+
+    void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
+    void AddDefaultScene (PublishTileData& tileData);
+    void AddExtensions(PublishTileData& tileData);
+    void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
+    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
-    Utf8String AddMeshIndices(Json::Value& rootNode, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
-    void AddMeshBatchIds (Json::Value& rootNode, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
-    Json::Value CreateMesh (TileMeshList const& tileMeshes, Json::Value& rootNode, size_t& primitiveIndex);
+    Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
+    void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
+    Json::Value CreateMesh (TileMeshList const& tileMeshes, PublishTileData& tileData, size_t& primitiveIndex);
     BeFileName  GetBinaryDataFileName() const;
-    Utf8String AddMeshShaderTechnique (Json::Value& rootNode, bool textured, bool transparent, bool ignoreLighting);
-    Utf8String AddUnlitShaderTechnique (Json::Value& rootNode);
-    void AddMeshPrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
-    void AddPolylinePrimitive(Json::Value& primitivesNode, Json::Value& value, TileMeshR mesh, size_t index);
+    Utf8String AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds);
+    Utf8String AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds);
+    void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
+    void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
 
-    Utf8String AddMeshMaterial (Json::Value& rootNode, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
-    Utf8String AddPolylineMaterial (Json::Value& rootNode, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix);
-    Utf8String AddTextureImage (Json::Value& rootNode, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
+    Utf8String AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
+    Utf8String AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
+    Utf8String AddTextureImage (PublishTileData& tileData, TileTextureImageCR textureImage, TileMeshCR mesh, Utf8CP suffix);
 
-    template<typename T> void AddBufferView(Json::Value& views, Utf8CP name, T const& bufferData);
 
     enum IncrementalStatus { UsePrevious, Regenerate, Success };
     IncrementalStatus IncrementalGenerate(TileModelDeltaCR modelDelta);
