@@ -37,7 +37,7 @@ typedef bset<DgnDbCodeTemplate> DgnDbCodeTemplateSet;
 
 typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallback;
 typedef std::shared_ptr<DgnDbServerEventCallback> DgnDbServerEventCallbackPtr;
-typedef bvector<bpair<DgnDbServerEventCallbackPtr, bvector<DgnDbServerEvent::DgnDbServerEventType>>> DgnDbServerEventMap;
+typedef bmap<DgnDbServerEventCallbackPtr, DgnDbServerEventTypeSet> DgnDbServerEventMap;
 typedef std::shared_ptr<struct DgnDbServerEventManagerContext> DgnDbServerEventManagerContextPtr;
 typedef std::shared_ptr<struct DgnDbServerEventManager> DgnDbServerEventManagerPtr;
 
@@ -147,13 +147,11 @@ struct DgnDbCodeTemplateSetResultInfo
 //! This class performs all of the operations related to a single repository on the server.
 //@bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbRepositoryConnection
+struct DgnDbRepositoryConnection : std::enable_shared_from_this<DgnDbRepositoryConnection>
 {
 //__PUBLISH_SECTION_END__
 private:
     RepositoryInfo             m_repositoryInfo;
-    ClientInfoPtr              m_clientInfo;
-    CredentialsCR              m_credentials;
 
     IWSRepositoryClientPtr     m_wsRepositoryClient;
     IAzureBlobStorageClientPtr m_azureClient;
@@ -173,13 +171,13 @@ private:
     void SetAzureClient(IAzureBlobStorageClientPtr azureClient);
 
     //! Sets EventServiceClient.
-    bool SetEventServiceClient(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+    bool SetEventServiceClient(DgnDbServerEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Sets the EventSASToken in the EventServiceClient
     bool SetEventSASToken(ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Sets the EventSubscription in the EventServiceClient
-    bool SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
+    bool SetEventSubscription(DgnDbServerEventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken = nullptr);
 
     //! Create a new briefcase instance for this repository.
     AsyncTaskPtr<WSCreateObjectResult> CreateBriefcaseInstance (ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -239,10 +237,10 @@ private:
 	AzureServiceBusSASDTOTaskPtr GetEventServiceSASToken(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get EventSubscription with the given Event Types
-    DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerEventSubscriptionTaskPtr GetEventServiceSubscriptionId(DgnDbServerEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Update the EventSubscription to the given EventTypes
-    DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DgnDbServerEventSubscriptionTaskPtr UpdateEventServiceSubscriptionId(DgnDbServerEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get Responses from the EventServiceClient
     DgnDbServerEventReponseTaskPtr GetEventServiceResponse(int numOfRetries, bool longpolling = true);
@@ -321,6 +319,19 @@ public:
     //! Sets RepositoryClient.
     //! @param[in] client
     DGNDBSERVERCLIENT_EXPORT void  SetRepositoryClient(IWSRepositoryClientPtr client);
+
+    //! Update the Event Subscription
+    //! @param[in] eventTypes
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr   SubscribeToEvents(DgnDbServerEventTypeSet* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Receive Events from EventService
+    //! @param[in] longPolling
+    //! @param[in] cancellationToken
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Cancel Events from EventService
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr    UnsubscribeToEvents();
 
 //__PUBLISH_SECTION_START__
 public:
@@ -486,26 +497,13 @@ public:
     //! @param[in] cancellationToken
     DGNDBSERVERCLIENT_EXPORT DgnDbServerCodeTemplateSetTaskPtr QueryCodeNextAvailable(DgnDbCodeTemplateSet codeTemplates, int startIndex=0, int incrementBy=1, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Update the Event Subscription
-    //! @param[in] eventTypes
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr   SubscribeToEvents(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes = nullptr, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Receive Events from EventService
-    //! @param[in] longPolling
-    //! @param[in] cancellationToken
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTaskPtr     GetEvent(bool longPolling = false, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Cancel Events from EventService
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr  UnsubscribeToEvents();
-
     //! Checks if RepositoryConnection is subscribed to EventService
     DGNDBSERVERCLIENT_EXPORT bool IsSubscribedToEvents() const;
 
     //! Subscribe callback for the events
     //! @param[in] eventTypes
     //! @param[in] callback
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback);
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr SubscribeEventsCallback(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback);
 
     //! Unsubscribe callback for events
     //! @param[in] callback
