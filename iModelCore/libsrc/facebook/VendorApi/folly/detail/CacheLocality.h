@@ -93,6 +93,7 @@ struct CacheLocality {
   template <template <typename> class Atom = std::atomic>
   static const CacheLocality& system();
 
+#if defined (BENTLEY_CHANGE)
   /// Reads CacheLocality information from a tree structured like
   /// the sysfs filesystem.  The provided function will be evaluated
   /// for each sysfs file that needs to be queried.  The function
@@ -107,7 +108,8 @@ struct CacheLocality {
   /// Reads CacheLocality information from the real sysfs filesystem.
   /// Throws an exception if no cache information can be loaded.
   static CacheLocality readFromSysfs();
-
+#endif
+  
   /// Returns a usable (but probably not reflective of reality)
   /// CacheLocality structure with the specified number of cpus and a
   /// single cache level that associates one cpu per cache.
