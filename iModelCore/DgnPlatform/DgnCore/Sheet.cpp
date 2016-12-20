@@ -238,7 +238,7 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
 
     Tile& tile = static_cast<Tile&>(*m_tile);
     Tree& root = tile.GetTree();
-    return root.m_viewport->_CreateTile(m_loads, m_image, tile, root.m_pixels);
+    return root.m_viewport->_CreateTile(m_loads, m_texture, tile, root.m_pixels);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,18 +247,19 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Attachment::Tile::Loader::_LoadTile()
     {
+    if (!m_texture.IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
     auto& tile = static_cast<Tile&>(*m_tile);
     Tree& tree = tile.GetTree();
     auto system = tree.GetRenderSystem();
-
     auto graphic = system->_CreateGraphic(Graphic::CreateParams(nullptr));
 
-    Texture::CreateParams textureParams;
-    textureParams.SetIsTileSection();
-    auto texture = system->_CreateTexture(m_image, textureParams);
-
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
-    graphic->AddTile(*texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
+    graphic->AddTile(*m_texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
 
 #if defined (DEBUG_TILES)
     graphic->SetSymbology(ColorDef::DarkOrange(), ColorDef::Green(), 0);
@@ -286,10 +287,10 @@ Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_
     double north = id.m_row * tileSize;
     double south = north + tileSize;
 
-    m_corners.m_pts[0].Init(east, north, 0.0);   //  | [0]     [1]
-    m_corners.m_pts[1].Init(west, north, 0.0);   //  y
-    m_corners.m_pts[2].Init(east, south, 0.0);   //  | [2]     [3]
-    m_corners.m_pts[3].Init(west, south, 0.0);   //  v
+    m_corners.m_pts[0].Init(east, south, 0.0); 
+    m_corners.m_pts[1].Init(west, south, 0.0); 
+    m_corners.m_pts[2].Init(east, north, 0.0); 
+    m_corners.m_pts[3].Init(west, north, 0.0); 
 
     m_range.InitFrom(m_corners.m_pts, 4);
     }
@@ -307,6 +308,10 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
     }
 
 //=======================================================================================
+// When we draw ViweAttachments on sheets, we first create the scene asynchronusly. While that's 
+// in process we create an instance of this class to trigger the creation of the tiles when the scene becomes
+// available. Note that there is one instance of this class per attachment, so there can be many of them
+// for the same sheet at any given time.
 // @bsiclass                                                    Keith.Bentley   12/16
 //=======================================================================================
 struct SceneReadyTask : ProgressiveTask
@@ -315,12 +320,13 @@ struct SceneReadyTask : ProgressiveTask
     SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
     ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
         {
+        // is the scene available yet?
         if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
-            return ProgressiveTask::Completion::Aborted;
+            return ProgressiveTask::Completion::Aborted; // no, keep waiting
 
-        m_tree.m_sceneReady = true;
+        m_tree.m_sceneReady = true; // yes, mark it as ready and draw its tiles
         m_tree.DrawInView(context);
-        return ProgressiveTask::Completion::Finished;
+        return ProgressiveTask::Completion::Finished; // we're done.
         }
 };
 
@@ -331,19 +337,21 @@ void Attachment::Tree::Draw(RenderContextR context)
     {
     Load(&context.GetTargetR().GetSystem());
 
+    // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
         m_viewport->m_rect.Init(0, 0, m_pixels.x, m_pixels.y);
-        m_viewport->_QueueScene();
-        m_sceneQueued = true;
+        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_sceneQueued = true; // remember that we've already queued it
         }
 
-    if (!m_sceneReady)
+    if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.
         {
         context.GetViewport()->ScheduleProgressiveTask(*new SceneReadyTask(*this));
         return;
         }
     
+    // the scene is available, draw its tiles
     DrawInView(context);
     }
 

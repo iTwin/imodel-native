@@ -102,12 +102,10 @@ TEST_F(EcutilsTests, ConvertECValueToJson)
     EcValue.Clear();
     ASSERT_EQ(BentleyStatus::ERROR, ECUtils::ConvertECValueToJson(obj, EcValue));
 
-    /* NEEDS WORK - This fails. Maybe ECUtils::ConvertECValueToJson should be changed to check for Null before primitive
-    ECN::ECValue EcValue2;
-    EcValue2.SetIsNull(TRUE);
-    ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue2));
+    EcValue.SetBoolean(TRUE);
+    EcValue.SetIsNull(TRUE);
+    ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue));
     ASSERT_EQ(obj.isNull(), true);
-    */
     }
 
 /*---------------------------------------------------------------------------------**//**
