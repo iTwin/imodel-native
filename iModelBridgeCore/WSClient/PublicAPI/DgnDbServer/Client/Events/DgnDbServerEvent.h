@@ -115,5 +115,6 @@ namespace DgnDbServerEvent
 
 typedef std::shared_ptr<struct DgnDbServerEvent::GenericEvent> DgnDbServerEventPtr;
 DEFINE_TASK_TYPEDEFS(DgnDbServerEventPtr, DgnDbServerEvent);
+typedef bset<DgnDbServerEvent::DgnDbServerEventType> DgnDbServerEventTypeSet;
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

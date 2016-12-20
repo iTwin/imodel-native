@@ -315,9 +315,9 @@ void DgnDbBriefcase::SubscribeForRevisionEvents()
     const Utf8String methodName = "DgnDbBriefcase::SubscribeForPullMergeAndPushEvents";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
-    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
-    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
-    eventTypes.push_back(DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent);
+    DgnDbServerEventTypeSet eventTypes;
+    eventTypes.insert(DgnDbServerEvent::DgnDbServerEventType::RevisionEvent);
+    eventTypes.insert(DgnDbServerEvent::DgnDbServerEventType::RevisionCreateEvent);
 
     m_pullMergeAndPushCallback = std::make_shared<DgnDbServerEventCallback>([=](DgnDbServerEventPtr event)
         {
@@ -521,7 +521,7 @@ DgnDbServerBoolTaskPtr DgnDbBriefcase::IsBriefcaseUpToDate(ICancellationTokenPtr
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback) const
+DgnDbServerStatusTaskPtr DgnDbBriefcase::SubscribeEventsCallback(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback) const
     {
     const Utf8String methodName = "DgnDbBriefcase::SubscribeEventsCallback";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");

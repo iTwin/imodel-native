@@ -127,7 +127,7 @@ RepositoryInfoCR           repository,
 WebServices::CredentialsCR credentials,
 WebServices::ClientInfoPtr clientInfo,
 IHttpHandlerPtr            customHandler
-) : m_repositoryInfo(repository), m_clientInfo(clientInfo), m_credentials(credentials)
+) : m_repositoryInfo(repository)
     {
 
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
@@ -2062,20 +2062,17 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            06/2016
 //---------------------------------------------------------------------------------------
-Json::Value GenerateEventSubscriptionWSChangeSetJson(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes)
+Json::Value GenerateEventSubscriptionWSChangeSetJson(DgnDbServerEventTypeSet* eventTypes)
     {
     Json::Value properties;
     properties[ServerSchema::Property::EventTypes] = Json::arrayValue;
     if (eventTypes != nullptr)
         {
-        bmap<DgnDbServerEvent::DgnDbServerEventType, Utf8CP> repetitiveMap;
-        for (int i = 0; i < (int) eventTypes->size(); i++)
+        int i = 0;
+        for (auto eventType : *eventTypes)
             {
-            //Check for repetition
-            if (repetitiveMap.end() != repetitiveMap.find(eventTypes->at(i)))
-                continue;
-            repetitiveMap.Insert(eventTypes->at(i), "");
-            properties[ServerSchema::Property::EventTypes][i] = DgnDbServerEvent::Helper::GetEventNameFromEventType(eventTypes->at(i));
+            properties[ServerSchema::Property::EventTypes][i] = DgnDbServerEvent::Helper::GetEventNameFromEventType(eventType);
+            i++;
             }
         }
     return properties;
@@ -2113,10 +2110,10 @@ DgnDbServerEventSubscriptionPtr CreateEventSubscription(Utf8String response)
         )
         return nullptr;
 
-    bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes;
+    DgnDbServerEventTypeSet eventTypes;
     for (Json::ValueIterator itr = instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].begin();
         itr != instance[ServerSchema::Properties][ServerSchema::Property::EventTypes].end(); ++itr)
-        eventTypes.push_back(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
+        eventTypes.insert(DgnDbServerEvent::Helper::GetEventTypeFromEventName((*itr).asString().c_str()));
 
     return DgnDbServerEventSubscription::Create(eventSubscriptionId, eventTypes);
     }
@@ -2167,41 +2164,31 @@ AzureServiceBusSASDTOPtr CreateEventSAS(JsonValueCR responseJson)
 //Returns true if same, else false
 bool CompareEventTypes
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* newEventTypes,
-bvector<DgnDbServerEvent::DgnDbServerEventType> oldEventTypes
+DgnDbServerEventTypeSet* newEventTypes,
+DgnDbServerEventTypeSet oldEventTypes
 )
     {
     if (
         (newEventTypes == nullptr || newEventTypes->size() == 0) &&
-        (oldEventTypes.size() == 0)
+        oldEventTypes.size() == 0
         )
         return true;
-    else if (
-        (newEventTypes != nullptr && newEventTypes->size() > 0) &&
-        (oldEventTypes.size() > 0) &&
-        (newEventTypes->size() == oldEventTypes.size())
+    
+    if (
+        oldEventTypes.size() > 0 &&
+        (newEventTypes == nullptr || newEventTypes->size() != oldEventTypes.size())
         )
-        {
-        bmap<DgnDbServerEvent::DgnDbServerEventType, Utf8CP> oldEventTypesMap;
-        for (int i = 0; i < (int) oldEventTypes.size(); i++)
-            {
-            oldEventTypesMap.Insert(oldEventTypes.at(i), "");
-            }
-        bool isSame = true;
-        for (int j = 0; j < (int) newEventTypes->size(); j++)
-            {
-            //Item in newEventTypes not found in map
-            if (oldEventTypesMap.end() == oldEventTypesMap.find(newEventTypes->at(j)))
-                {
-                isSame = false;
-                break;
-                }
-            }
-        return isSame;
-        }
-    else
         return false;
 
+    for (auto newEventType : *newEventTypes)
+        {
+        if (oldEventTypes.end() == oldEventTypes.find(newEventType))
+            {
+            return false;
+            }
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2220,7 +2207,7 @@ bool DgnDbRepositoryConnection::SetEventSASToken(ICancellationTokenPtr cancellat
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Arvind.Venkateswaran            07/2016
 //---------------------------------------------------------------------------------------
-bool DgnDbRepositoryConnection::SetEventSubscription(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, ICancellationTokenPtr cancellationToken)
+bool DgnDbRepositoryConnection::SetEventSubscription(DgnDbServerEventTypeSet* eventTypes, ICancellationTokenPtr cancellationToken)
     {
     DgnDbServerEventSubscriptionTaskPtr eventSubscription = nullptr;
 
@@ -2243,7 +2230,7 @@ bool DgnDbRepositoryConnection::SetEventSubscription(bvector<DgnDbServerEvent::D
 //---------------------------------------------------------------------------------------
 bool DgnDbRepositoryConnection::SetEventServiceClient
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 )
     {
@@ -2328,7 +2315,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 void SetEventSubscriptionJsonRequestToChangeSet
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+DgnDbServerEventTypeSet* eventTypes,
 Utf8String                                       eventSubscriptionId,
 WSChangeset&                                     changeset,
 const WSChangeset::ChangeState&                  changeState
@@ -2354,7 +2341,7 @@ const WSChangeset::ChangeState&                  changeState
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::GetEventServiceSubscriptionId
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -2368,7 +2355,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerEventSubscriptionTaskPtr DgnDbRepositoryConnection::UpdateEventServiceSubscriptionId
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 ) const
     {
@@ -2482,7 +2469,7 @@ ICancellationTokenPtr cancellationToken
 //---------------------------------------------------------------------------------------
 DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeToEvents
 (
-bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes,
+DgnDbServerEventTypeSet* eventTypes,
 ICancellationTokenPtr cancellationToken
 )
     {
@@ -2515,11 +2502,11 @@ DgnDbServerStatusTaskPtr  DgnDbRepositoryConnection::UnsubscribeToEvents()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas            12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback)
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback)
     {
     if (!m_eventManagerPtr)
         {
-        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(m_repositoryInfo, m_credentials, m_clientInfo);
+        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(shared_from_this());
         }
     return m_eventManagerPtr->Subscribe(eventTypes, callback);
     }
