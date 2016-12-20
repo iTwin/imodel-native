@@ -435,7 +435,7 @@ void Sheet::ViewController::_LoadState()
 
     bvector<TreePtr> attachments;
 
-    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     stmt->BindId(1, model->GetModelId());
 
     // If we're already loaded, look in existing list so we don't reload them

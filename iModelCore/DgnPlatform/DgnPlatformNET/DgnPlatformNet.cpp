@@ -40,7 +40,7 @@ ref struct      DgnElement;
 ref struct      ECSqlArrayValue;
 ref struct      ECSqlValue;
 ref struct      DgnModel;
-ref struct      DgnModelCollection;
+ref struct      DgnModels;
 ref struct      SchemaManager;
 ref struct      DgnElementCollection;
 ref struct      AuthorityIssuedCode;
@@ -141,7 +141,7 @@ static System::DateTime         DateTimeToManaged (BENTLEY_NAMESPACE_NAME::DateT
         return System::DateTime::Now;
     }
 
-static DgnModelCollection^      DgnModelCollectionToManaged (BDGN::DgnModels*, DgnDb^);
+static DgnModels^               DgnModelsToManaged (BDGN::DgnModels*, DgnDb^);
 
 static SchemaManager^           SchemaManagerToManaged (BeSQLite::EC::ECDbSchemaManager const*, DgnDb^);
 
@@ -1251,11 +1251,11 @@ internal:
 
 public:
     /** The collection of models in this DgnDb */
-    property DgnModelCollection^ Models
+    property DgnModels^ Models
         {
-        DgnModelCollection^ get ()
+        DgnModels^ get ()
             {
-            return Convert::DgnModelCollectionToManaged (&m_native->Models(), this);
+            return Convert::DgnModelsToManaged (&m_native->Models(), this);
             }
         }
 
@@ -1369,7 +1369,7 @@ private:
 
     T_idType        GetMember()
         {
-        if (nullptr == m_impl)
+        if ( (nullptr == m_nativeSet) || (nullptr == m_impl) )
             return T_idType();
 
         BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>::const_iterator theCurrent = m_impl->m_current;
@@ -1386,6 +1386,9 @@ private:
 
     bool MoveNextInternal ()
         {
+        if (nullptr == m_nativeSet)
+            return false;
+
         if (nullptr == m_impl)
             {
             m_impl = new IdSetEnumeratorImpl (*m_nativeSet);
@@ -1620,143 +1623,59 @@ public:
 
 
 
-struct DgnModelEnumeratorImpl
-    {
-    // we need this class only because a managed class can have only a pointer to a struct as a member, not a struct
-    BDGN::DgnModels::Iterator                   m_iterator;
-    BDGN::DgnModels::Iterator::const_iterator   m_current;
 
-    DgnModelEnumeratorImpl (BDGN::DgnModels* models) : m_iterator (models->MakeIterator()), m_current (m_iterator.begin())
+/*=================================================================================**//**
+* Specialization of IdSet for DgnModelIds.
+* @bsiclass                                                     Barry.Bentley   10/16
++===============+===============+===============+===============+===============+======*/
+public ref struct DgnModelIdSet : IdSet <DgnModelId^>
+    {
+internal:
+    DgnModelIdSet (BDGN::DgnModels* nativeModels, System::String^ className, System::String^ whereClause, System::String^ orderByClause)
         {
+        // return empty DgnModelIdSet
+        if (nullptr == className)
+            m_nativeSet = nullptr;
+        else
+            {
+            pin_ptr<wchar_t const> classNamePinned = PtrToStringChars(className);
+            Utf8String utf8ClassName (classNamePinned);
+
+            Utf8String  utf8WhereClause;
+            Utf8CP      utf8WhereClauseP = nullptr;
+            if (nullptr != whereClause)
+                {
+                pin_ptr<wchar_t const> whereClausePinned = PtrToStringChars(whereClause);
+                utf8WhereClause.Assign (whereClausePinned);
+                utf8WhereClauseP = utf8WhereClause.c_str();
+                }
+
+            Utf8String  utf8OrderByClause;
+            Utf8CP      utf8OrderByClauseP = nullptr;
+            if (nullptr != orderByClause)
+                {
+                pin_ptr<wchar_t const> orderByClausePinned = PtrToStringChars(orderByClause);
+                utf8OrderByClause.Assign (orderByClausePinned);
+                utf8OrderByClauseP = utf8OrderByClause.c_str();
+                }
+
+            BDGN::ModelIterator iterator = nativeModels->MakeIterator (utf8ClassName.c_str(), utf8WhereClauseP, utf8OrderByClauseP);
+
+            bvector<BDGN::DgnModelId>* idList = new bvector <BDGN::DgnModelId>();
+            iterator.BuildIdList (*idList);
+            m_nativeSet = reinterpret_cast <BeSQLite::IdSet <BENTLEY_NAMESPACE_NAME::BeInt64Id>*> (idList);
+            }
         }
     };
 
 
-/*=================================================================================**//**
-* DgnModelEnumerator - an enumerator over an DgnModelCollection - never instantiated directly.
-* @bsiclass                                                     Barry.Bentley   10/16
-+===============+===============+===============+===============+===============+======*/
-public ref struct DgnModelEnumerator : System::Collections::Generic::IEnumerator <DgnModel^>
-{
-private:
-    DgnModelEnumeratorImpl*         m_impl;
-    BDGN::DgnModels*                m_models;
-    DgnDb^                          m_dgnDb;
-
-    DgnModel^                       m_currentMember;
-
-    DgnModel^     GetMember()
-        {
-        if (NULL == m_impl)
-            return nullptr;
-
-        BDGN::DgnModels::Iterator::const_iterator   theCurrent = m_impl->m_current;
-        BDGN::DgnModels::Iterator::const_iterator   theEnd     = m_impl->m_iterator.end();
-        if (!(theCurrent != theEnd))
-            return nullptr;
-
-        // get the iterator entry.
-        BDGN::DgnModels::Iterator::Entry  entry = (*m_impl->m_current);
-
-        // create the model
-        BDGN::DgnModelPtr nativeModel = m_models->GetModel (entry.GetModelId());
-        return Convert::DgnModelToManaged (nativeModel.get(), m_dgnDb, true);
-        }
-
-    void            SetCurrentMember ()
-        {
-        m_currentMember = GetMember();
-        }
-
-    bool            MoveNextInternal ()
-        {
-        if (nullptr == m_impl)
-            {
-            // make default iterator.
-            m_impl = new DgnModelEnumeratorImpl (m_models);
-            return m_impl->m_current != m_impl->m_iterator.end();
-            }
-
-        BDGN::DgnModels::Iterator::const_iterator   endIterator = m_impl->m_iterator.end();
-        if (!(m_impl->m_current != endIterator))
-            return false;
-
-        ++m_impl->m_current;
-        return m_impl->m_current != endIterator;
-        }
-
-    void            FreeImpl()
-        {
-        if (nullptr == m_impl)
-            return;
-
-        delete m_impl;
-        m_impl = NULL;
-        }
-
-
-internal:
-    DgnModelEnumerator (BDGN::DgnModels* models, DgnDb^ dgnDb)
-        {
-        m_models        = models;
-        m_dgnDb         = dgnDb;
-        m_impl          = nullptr;
-        m_currentMember = nullptr;
-        }
-
-public:
-
-    /// <summary> Advances the enumerator to the next DgnModel in the collection. </summary>
-    virtual bool MoveNext ()
-        {
-        bool retval = MoveNextInternal ();
-        SetCurrentMember ();
-        return retval;
-        }
-
-    /// <summary> Sets the enumerator to its initial position, which is before the first DgnModel in the collection. </summary>
-    virtual void Reset ()
-        {
-        m_currentMember = nullptr;
-        FreeImpl();
-        }
-
-    property System::Object^ RawCurrent
-        {
-        virtual Object^ get() = System::Collections::IEnumerator::Current::get
-            {
-            return m_currentMember;
-            }
-        };
-
-    /// <summary> Gets the current DgnModel in the collection. </summary>
-    property DgnModel^ Current
-        {
-        virtual DgnModel^ get () = System::Collections::Generic::IEnumerator <DgnModel^>::Current::get
-            {
-            return m_currentMember;
-            }
-        };
-
-    ~DgnModelEnumerator ()
-        {
-        FreeImpl ();
-        }
-
-    !DgnModelEnumerator ()
-        {
-        FreeImpl ();
-        }
-
-};
 
 /*=================================================================================**//**
-*  DgnModelCollection - managed version of Dgn::DgnModels
+*  DgnModels - managed version of Dgn::DgnModels
 * @bsiclass                                                     Barry.Bentley   10/16
 +===============+===============+===============+===============+===============+======*/
-public ref struct DgnModelCollection : System::Collections::Generic::IEnumerable <DgnModel^>
+public ref struct DgnModels
 {
-    // NEEDSWORK_DgnPlatformNET_DgnModelCollection - make it implement IEnumerable <DgnModel^>
 private:
     // this is a member of the DgnDb, and is never deleted.
     BDGN::DgnModels*    m_native;
@@ -1765,7 +1684,7 @@ private:
     DgnDb^              m_dgnDb;
 
 internal:
-    DgnModelCollection (BDGN::DgnModels* models, DgnDb^ dgnDb)
+    DgnModels (BDGN::DgnModels* models, DgnDb^ dgnDb)
         {
         m_native = models;
         m_dgnDb  = dgnDb;
@@ -1779,15 +1698,22 @@ public:
         return Convert::DgnModelToManaged (nativeModel.get(), m_dgnDb, true);
         }
 
-    virtual System::Collections::IEnumerator^ RawGetEnumerator () = System::Collections::IEnumerable::GetEnumerator
+    //! Return a collection of models of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalModel)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    DgnModelIdSet^ GetModels (System::String^ className, System::String^ whereClause, System::String^ orderByClause)
         {
-        return GetEnumerator ();
+        return gcnew DgnModelIdSet (m_native, className, whereClause, orderByClause);
         }
 
-    virtual System::Collections::Generic::IEnumerator <DgnModel^>^ GetEnumerator ()
+    //! Return a collection of models of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalModel)
+    DgnModelIdSet^ GetModels (System::String^ className)
         {
-        return gcnew DgnModelEnumerator (m_native, m_dgnDb);
+        return GetModels (className, nullptr, nullptr);
         }
+
 
 
 };
@@ -5398,9 +5324,9 @@ DgnDb^                  Convert::DgnDbToManaged (BDGN::DgnDbP dgnDb)
     return gcnew DgnDb (dgnDb);
     }
 
-DgnModelCollection^     Convert::DgnModelCollectionToManaged (BDGN::DgnModels* models, DgnDb^ owner)
+DgnModels^              Convert::DgnModelsToManaged (BDGN::DgnModels* models, DgnDb^ owner)
     {
-    return gcnew DgnModelCollection (models, owner);
+    return gcnew DgnModels (models, owner);
     }
 
 SchemaManager^          Convert::SchemaManagerToManaged (BeSQLite::EC::ECDbSchemaManager const* schemaManager, DgnDb^ dgnDb)

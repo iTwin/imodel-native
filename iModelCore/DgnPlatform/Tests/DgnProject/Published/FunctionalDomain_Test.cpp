@@ -214,6 +214,9 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
     SetupSeedProject();
     SetupFunctionalTestDomain();
 
+    DgnClassId functionalTypeRelClassId = m_db->Schemas().GetECClassId(FUNCTIONAL_DOMAIN_NAME, FUNC_REL_FunctionalElementIsOfType);
+    ASSERT_TRUE(functionalTypeRelClassId.IsValid());
+
     DgnElementId functionalTypeId[3];
     DgnElementId testComponentId;
 
@@ -272,7 +275,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         ASSERT_TRUE(component->IsRoleElement());
         ASSERT_FALSE(component->GetFunctionalTypeId().IsValid());
         ASSERT_FALSE(component->GetFunctionalType().IsValid());
-        component->SetFunctionalType(functionalTypeId[0]);
+        component->SetFunctionalType(functionalTypeId[0], functionalTypeRelClassId);
         ASSERT_TRUE(component->GetFunctionalTypeId().IsValid());
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_TRUE(component->Insert().IsValid());
@@ -287,7 +290,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_EQ(component->GetFunctionalTypeId().GetValue(), functionalTypeId[0].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, component->SetFunctionalType(functionalTypeId[1]));
+        ASSERT_EQ(DgnDbStatus::Success, component->SetFunctionalType(functionalTypeId[1], functionalTypeRelClassId));
         ASSERT_TRUE(component->Update().IsValid());
         }
 
@@ -299,7 +302,7 @@ TEST_F(FunctionalDomainTests, FunctionalDomainCRUD)
         ASSERT_TRUE(component->GetFunctionalType().IsValid());
         ASSERT_EQ(component->GetFunctionalTypeId().GetValue(), functionalTypeId[1].GetValue());
 
-        ASSERT_EQ(DgnDbStatus::Success, component->SetFunctionalType(DgnElementId()));
+        ASSERT_EQ(DgnDbStatus::Success, component->SetFunctionalType(DgnElementId(), functionalTypeRelClassId));
         ASSERT_TRUE(component->Update().IsValid());
         }
 
