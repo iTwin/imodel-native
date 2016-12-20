@@ -870,7 +870,7 @@ public:
     struct EXPORT_VTABLE_ATTRIBUTE GenericMultiAspect : MultiAspect
         {
         DEFINE_T_SUPER(MultiAspect)
-        friend struct T_Super;
+        friend struct MultiAspect;
      protected:
         ECN::IECInstancePtr m_instance;
         Utf8String m_ecclassName;
