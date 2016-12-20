@@ -270,7 +270,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (GetClass().HasBaseClasses())
         return MapSubClass(relClassMappingInfo) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
 
-    //root class (no base class) mapping
+    //root class (no base class)
 
     ColumnLists columns;
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))

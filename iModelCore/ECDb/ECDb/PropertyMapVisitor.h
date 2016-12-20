@@ -123,7 +123,6 @@ struct ToSqlPropertyMapVisitor final : IPropertyMapVisitor
         bool m_wrapInParentheses;
         mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
         mutable std::vector<Result> m_resultSet;
-        // unused - bool m_isForAssignmentExpression;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override { return ToNativeSql(propertyMap); }
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
