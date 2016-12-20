@@ -11163,8 +11163,8 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     {//===================================================================
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.TestElement SET Mtx4x4 = ? WHERE Code = ?"));
-    auto& mtx = stmt.BindStruct(1);
-    for (int i = 0; i < mtx4x4Properties.size(); i++)
+    IECSqlStructBinder& mtx = stmt.BindStruct(1);
+    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
         ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesA[i]));
         }
@@ -11179,8 +11179,8 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, Mtx4x4) VALUES (?,?)"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
-    auto& mtx = stmt.BindStruct(2);
-    for (int i = 0; i < mtx4x4Properties.size(); i++)
+    IECSqlStructBinder& mtx = stmt.BindStruct(2);
+    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
         ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesB[i]));
         }
@@ -11194,11 +11194,11 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeA, IECSqlBinder::MakeCopy::No);
-    auto& mtx = stmt.GetValueStruct(0);
+    IECSqlStructValue const& mtx = stmt.GetValueStruct(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    for (int i = 0; i < mtx4x4Properties.size(); i++)
+    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
-        ASSERT_EQ(mtx4x4ValuesA[i], mtx.GetValue(i).GetDouble());
+        ASSERT_DOUBLE_EQ(mtx4x4ValuesA[i], mtx.GetValue((int) i).GetDouble());
         }
     }//===================================================================
 
@@ -11207,19 +11207,19 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Mtx4x4 FROM ts.TestElement WHERE Code = ?"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
-    auto& mtx = stmt.GetValueStruct(0);
+    IECSqlStructValue const& mtx = stmt.GetValueStruct(0);
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    for (int i = 0; i < mtx4x4Properties.size(); i++)
+    for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
-        ASSERT_EQ(mtx4x4ValuesB[i], mtx.GetValue(i).GetDouble());
+        ASSERT_DOUBLE_EQ(mtx4x4ValuesB[i], mtx.GetValue((int) i).GetDouble());
         }
     }//===================================================================
 
     }
 
-    //---------------------------------------------------------------------------------------
-    // @bsimethod                                   Krischan.Eberle                  02/16
-    //+---------------+---------------+---------------+---------------+---------------+------
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         02/16
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
     {
     SetupECDb("ambigousRelationshipProperty.ecdb",
