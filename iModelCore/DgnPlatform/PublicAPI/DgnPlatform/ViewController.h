@@ -870,6 +870,7 @@ protected:
     DGNPLATFORM_EXPORT AxisAlignedBox3d _GetViewedExtents(DgnViewportCR) const override;
     DGNPLATFORM_EXPORT CloseMe _OnModelsDeleted(bset<DgnModelId> const& deletedIds, DgnDbR db) override;
     DGNPLATFORM_EXPORT GeometricModelP _GetTargetModel() const override {return GetViewedModel();}
+    DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnable) override;
 
     ViewController2d(ViewDefinition2dCR def) : T_Super(def) {}
 

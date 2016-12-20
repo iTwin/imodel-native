@@ -213,9 +213,14 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
 
     RequestAbort(true);
     if (onOff)
+        {
         models.insert(modelId);
+        }
     else
+        {
         models.erase(modelId);
+        m_roots.erase(m_roots.find(modelId));
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -225,6 +230,10 @@ void SpatialViewController::_OnCategoryChange(bool singleEnabled)
     {
     T_Super::_OnCategoryChange(singleEnabled);
     RequestAbort(true);
+
+    // Category stuff is baked into the tiles (for now) - throw them away
+    // ###TODO_ELEMENT_TILES: If we were informed about the delta in the set of viewed categories, we could throw away only those tiles affected.
+    m_roots.clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
