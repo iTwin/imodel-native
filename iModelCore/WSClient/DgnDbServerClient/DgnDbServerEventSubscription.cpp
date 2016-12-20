@@ -16,7 +16,7 @@ USING_NAMESPACE_BENTLEY_DGNDBSERVER
 DgnDbServerEventSubscription::DgnDbServerEventSubscription
 (
 Utf8String subscriptionId,
-bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
+DgnDbServerEventTypeSet eventTypes
 )
     {
     m_subscriptionId = subscriptionId;
@@ -29,7 +29,7 @@ bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
 DgnDbServerEventSubscriptionPtr DgnDbServerEventSubscription::Create
 (
 Utf8String subscriptionId, 
-bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes
+DgnDbServerEventTypeSet eventTypes
 )
     {
     return DgnDbServerEventSubscriptionPtr(new DgnDbServerEventSubscription(subscriptionId, eventTypes));
@@ -46,7 +46,7 @@ Utf8String DgnDbServerEventSubscription::GetSubscriptionId()
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Arvind.Venkateswaran             06/2016
 //---------------------------------------------------------------------------------------
-bvector<DgnDbServerEvent::DgnDbServerEventType> DgnDbServerEventSubscription::GetEventTypes()
+DgnDbServerEventTypeSet DgnDbServerEventSubscription::GetEventTypes()
     {
     return m_eventTypes;
     }

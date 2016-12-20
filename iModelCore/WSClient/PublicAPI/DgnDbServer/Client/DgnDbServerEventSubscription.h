@@ -23,14 +23,14 @@ struct DgnDbServerEventSubscription
     //__PUBLISH_SECTION_END__
     private:
         Utf8String m_subscriptionId;
-        bvector<DgnDbServerEvent::DgnDbServerEventType> m_eventTypes;
+        DgnDbServerEventTypeSet m_eventTypes;
 
-        DgnDbServerEventSubscription(Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
+        DgnDbServerEventSubscription(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes);
         //__PUBLISH_SECTION_START__
     public:
-        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, bvector<DgnDbServerEvent::DgnDbServerEventType> eventTypes);
+        DGNDBSERVERCLIENT_EXPORT static DgnDbServerEventSubscriptionPtr Create(Utf8String subscriptionId, DgnDbServerEventTypeSet eventTypes);
         DGNDBSERVERCLIENT_EXPORT Utf8String GetSubscriptionId();
-        DGNDBSERVERCLIENT_EXPORT bvector<DgnDbServerEvent::DgnDbServerEventType> GetEventTypes();
+        DGNDBSERVERCLIENT_EXPORT DgnDbServerEventTypeSet GetEventTypes();
     };
 
 END_BENTLEY_DGNDBSERVER_NAMESPACE

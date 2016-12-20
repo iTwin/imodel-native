@@ -20,13 +20,14 @@ struct DgnDbServerEventManagerContext
     private:
         DgnDbRepositoryConnectionPtr m_repositoryConnectionPtr;
         DgnDbServerEventManagerPtr m_managerPtr;
+        SimpleCancellationTokenPtr m_cancellationTokenPtr;
         bool m_run = true;
 
     public:
-        DgnDbServerEventManagerContext(DgnDbRepositoryConnectionPtr repositoryConnectionPtr, DgnDbServerEventManagerPtr manager);
+        DgnDbServerEventManagerContext(DgnDbRepositoryConnectionPtr repositoryConnectionPtr, DgnDbServerEventManagerPtr manager, SimpleCancellationTokenPtr cancellationToken);
         DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr() const;
         DgnDbServerEventManagerPtr GetEventManagerPtr() const;
-        bool Run() const;
+        SimpleCancellationTokenPtr GetCancellationTokenPtr() const;
         void StopManager();
     };
 
@@ -42,12 +43,12 @@ struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventMa
         DgnDbServerEventCallbackPtr        m_pullMergeAndPushCallback;
 
         bool Start();
-        bvector<DgnDbServerEvent::DgnDbServerEventType>* GetAllSubscribedEvents();
+        DgnDbServerEventTypeSet* GetAllSubscribedEvents();
 
     public:
-        DgnDbServerEventManager(RepositoryInfoCR repository, WebServices::CredentialsCR credentials, WebServices::ClientInfoPtr clientInfo);
+        DgnDbServerEventManager(DgnDbRepositoryConnectionPtr repositoryConnectionPtr);
         DgnDbServerStatusTaskPtr Stop();
-        DgnDbServerStatusTaskPtr Subscribe(bvector<DgnDbServerEvent::DgnDbServerEventType>* eventTypes, DgnDbServerEventCallbackPtr callback);
+        DgnDbServerStatusTaskPtr Subscribe(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback);
         DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallbackPtr callback);
         DgnDbServerEventMap GetCallbacks() const;
         virtual ~DgnDbServerEventManager();
