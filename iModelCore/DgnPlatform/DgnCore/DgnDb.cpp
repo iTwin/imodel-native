@@ -44,9 +44,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
-    m_ecsqlWriteToken = nullptr;
-    //uncomment this (and remove line above) once API for modifying Aspects has been implemented
-    //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
+    m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
 
     m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
     }
@@ -56,6 +54,15 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
 ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteToken; }
+
+//--------------------------------------------------------------------------------------
+//Back door for converter
+// @bsimethod                                Krischan.Eberle                11/2016
+//---------------+---------------+---------------+---------------+---------------+------
+extern "C" __declspec(dllexport) void* dgnV8Converter_getToken(DgnDbR db)
+    {
+    return (void*)db.GetECSqlWriteToken();
+    }
 
 //--------------------------------------------------------------------------------------
 //not inlined as it must not be called externally
