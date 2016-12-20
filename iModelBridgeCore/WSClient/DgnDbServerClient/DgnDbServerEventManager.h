@@ -21,7 +21,7 @@ struct DgnDbServerEventManagerContext
         DgnDbRepositoryConnectionPtr m_repositoryConnectionPtr;
         DgnDbServerEventManagerPtr m_managerPtr;
         SimpleCancellationTokenPtr m_cancellationTokenPtr;
-        bool m_run = true;
+        // unused - bool m_run = true;
 
     public:
         DgnDbServerEventManagerContext(DgnDbRepositoryConnectionPtr repositoryConnectionPtr, DgnDbServerEventManagerPtr manager, SimpleCancellationTokenPtr cancellationToken);
