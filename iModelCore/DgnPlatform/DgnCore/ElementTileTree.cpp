@@ -1933,7 +1933,8 @@ Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
     m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_is3d(model.Is3dModel()), m_debugRanges(true)
     {
-    //
+    // ###TODO_ELEMENT_TILE: remove this low/hi-res bias stuff...not needed
+    m_loResBiasDistance = m_hiResBiasDistance = 0.0;
     }
 
 /*---------------------------------------------------------------------------------**//**
