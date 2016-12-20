@@ -102,9 +102,9 @@ TEST_F(EcutilsTests, ConvertECValueToJson)
     EcValue.Clear();
     ASSERT_EQ(BentleyStatus::ERROR, ECUtils::ConvertECValueToJson(obj, EcValue));
 
-    ECN::ECValue EcValue2;
-    EcValue2.SetIsNull(TRUE);
-    ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue2));
+    EcValue.SetBoolean(TRUE);
+    EcValue.SetIsNull(TRUE);
+    ASSERT_EQ(BentleyStatus::BSISUCCESS, ECUtils::ConvertECValueToJson(obj, EcValue));
     ASSERT_EQ(obj.isNull(), true);
     }
 
@@ -190,6 +190,9 @@ TEST_F(EcutilsTests, StoreECValueAsJson)
     ASSERT_EQ(DgnDbStatus::Success, ECUtils::StoreECValueAsJson(obj, EcValue));
     ASSERT_EQ(obj["Type"], "datetime");
     ASSERT_EQ(obj["Value"], "2016-12-16"); 
+
+    ECN::ECValue EcValue2;
+    ASSERT_EQ(DgnDbStatus::BadArg, ECUtils::StoreECValueAsJson(obj, EcValue2));
     }
 
 /*---------------------------------------------------------------------------------**//**

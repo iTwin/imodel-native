@@ -168,8 +168,8 @@ bool DgnElement::SetPropertyFilter::IsBootStrappingProperty(Utf8StringCR propNam
         s_ignoreList = new bset<Utf8String>();
         s_ignoreList->insert("Id");
         s_ignoreList->insert(BIS_ELEMENT_PROP_ECInstanceId);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_ModelId);
-        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeAuthorityId);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_Model);
+        s_ignoreList->insert(BIS_ELEMENT_PROP_CodeAuthority);
         s_ignoreList->insert(BIS_ELEMENT_PROP_CodeNamespace);
         s_ignoreList->insert(BIS_ELEMENT_PROP_CodeValue);
         });
@@ -399,10 +399,10 @@ void DgnElement::_Dump(Utf8StringR str, ComparePropertyFilter const& filter) con
         if (filter._ExcludeProperty(propertyValue))
             continue;
 
+        str.append(comma);
         str.append(propertyValue.GetValueAccessor().GetDebugAccessString().c_str());
         str.append("=");
         str.append(propertyValue.GetValue().ToString().c_str());
-        str.append(comma);
         comma = ", ";
         }
     str.append("}\n");
@@ -439,16 +439,16 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
     {
     DgnDbStatus ALLOW_NULL_OUTPUT(stat, inStat);
 
-    DgnModelId mid;
+    DgnModelId modelId;
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_ModelId) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_Model) || v.IsNull())
             {
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
             }
-        mid = DgnModelId((uint64_t)v.GetLong());
-        if (!mid.IsValid())
+        modelId = v.GetNavigationInfo().GetId<DgnModelId>();
+        if (!modelId.IsValid())
             {
             stat = DgnDbStatus::BadModel;
             return CreateParams(db, DgnModelId(), DgnClassId());
@@ -465,12 +465,12 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
         //! The value may not be an empty string.
         {
         ECN::ECValue v;
-        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthorityId) || v.IsNull())
+        if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeAuthority) || v.IsNull())
             {
             stat = DgnDbStatus::MissingId;
             return CreateParams(db, DgnModelId(), classId);
             }
-        DgnAuthorityId id((uint64_t) v.GetLong());
+        DgnAuthorityId authorityId = v.GetNavigationInfo().GetId<DgnAuthorityId>();
 
         if (ECN::ECObjectsStatus::Success != properties.GetValue(v, BIS_ELEMENT_PROP_CodeNamespace) || v.IsNull())
             {
@@ -486,10 +486,10 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code.From(id, v.GetUtf8CP(), codeName);
+        code.From(authorityId, v.GetUtf8CP(), codeName);
         }
 
-    DgnElement::CreateParams params(db, mid, classId, code);
+    DgnElement::CreateParams params(db, modelId, classId, code);
 
     auto ecinstanceid = properties.GetInstanceId();                 // Note that ECInstanceId is not a normal property and will not be returned by the property collection below
     if (!ecinstanceid.empty())
@@ -623,7 +623,9 @@ BentleyStatus ElementAutoHandledPropertiesECInstanceAdapter::LoadProperties()
         AllocateBuffer(CalculateInitialAllocation(_GetClassLayout()));
         }
 
-    auto stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
+    CachedECSqlStatementPtr stmt = m_element.GetDgnDb().GetPreparedECSqlStatement(classInfo.GetSelectEcPropsECSql().c_str());
+    if (stmt == nullptr)
+        return BSIERROR;
 
     stmt->BindId(1, m_element.GetElementId());
     if (BE_SQLITE_ROW != stmt->Step())
@@ -681,29 +683,71 @@ static bool isValidValue(ECN::ECPropertyCR prop, ECN::ECValueCR value)
 #endif
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceUpdaterCache::ECInstanceUpdaterCache()
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ECInstanceUpdaterCache::~ECInstanceUpdaterCache()
+    {
+    Clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECInstanceUpdaterCache::Clear()
+    {
+    for (auto& entry : m_updaters)
+        {
+        if (nullptr != entry.second)
+            delete entry.second;
+        }
+    m_updaters.clear();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+BeSQLite::EC::ECInstanceUpdater* ECInstanceUpdaterCache::GetUpdater(DgnDbR db, ECN::ECClassCR eclass)
+    {
+    DgnClassId eclassId(eclass.GetId().GetValue());
+  
+    auto iupdater = m_updaters.find(eclassId);
+    if (iupdater != m_updaters.end())
+        return iupdater->second;
+
+    bvector<ECN::ECPropertyCP> propertiesToBind;
+    _GetPropertiesToBind(propertiesToBind, db, eclass);
+
+    if (propertiesToBind.empty())
+        return m_updaters[eclassId] = nullptr;
+
+    return m_updaters[eclassId] = new EC::ECInstanceUpdater(db, eclass, db.GetECSqlWriteToken(), propertiesToBind);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::GetUpdater()
     {
     BeAssert(IsValid());
-
-    DgnClassId eclassid(m_eclass->GetId().GetValue());
-
-    auto& updaterCache = m_element.GetDgnDb().Elements().m_updaterCache;
-    auto iupdater = updaterCache.find(eclassid);
-    if (iupdater != updaterCache.end())
-        return iupdater->second;
-
-    bvector<ECN::ECPropertyCP> autoHandledProperties;
-    for (auto prop : AutoHandledPropertiesCollection(*m_eclass, m_element.GetDgnDb(), ECSqlClassParams::StatementType::InsertUpdate, false))
+    return m_element.GetDgnDb().Elements().m_updaterCache.GetUpdater(m_element.GetDgnDb(), *m_eclass);
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::AutoHandledPropertyUpdaterCache::_GetPropertiesToBind(bvector<ECN::ECPropertyCP>& autoHandledProperties, DgnDbR db, ECClassCR eclass)
+    {
+    for (auto prop : AutoHandledPropertiesCollection(eclass, db, ECSqlClassParams::StatementType::InsertUpdate, false))
         {
         autoHandledProperties.push_back(prop);
         }
-
-    if (autoHandledProperties.empty())
-        return updaterCache[eclassid] = nullptr;
-
-    return updaterCache[eclassid] = new EC::ECInstanceUpdater(m_element.GetDgnDb(), *m_eclass, m_element.GetDgnDb().GetECSqlWriteToken(), autoHandledProperties);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -711,12 +755,7 @@ BeSQLite::EC::ECInstanceUpdater* ElementAutoHandledPropertiesECInstanceAdapter::
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::ClearUpdaterCache()
     {
-    for (auto& upd : m_updaterCache)
-        {
-        if (upd.second)
-            delete upd.second;
-        }
-    m_updaterCache.clear();
+    m_updaterCache.Clear();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1173,6 +1212,18 @@ Utf8String DgnElement::GetPropertyValueString(Utf8CP propertyName, PropertyArray
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::NavigationPropertyInfo DgnElement::GetNavigationPropertyInfo(Utf8CP propertyName) const
+    {
+    ECN::ECValue value;
+    DgnDbStatus status = GetPropertyValue(value, propertyName);
+    BeAssert(DgnDbStatus::Success == status);
+    UNUSED_VARIABLE(status);
+    return value.IsNull() ? NavigationPropertyInfo() : NavigationPropertyInfo(value.GetNavigationInfo().GetId<BeInt64Id>(), value.GetNavigationInfo().GetRelationshipClassId());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, DateTimeCR value, PropertyArrayIndex const& arrayIdx)
@@ -1245,13 +1296,15 @@ DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, int64_t value, Pro
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Shaun.Sewall                    08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, PropertyArrayIndex const& arrayIdx)
+DgnDbStatus DgnElement::SetPropertyValue(Utf8CP propertyName, BeInt64Id id, ECClassId relClassId)
     {
-    ECValue value(id.GetValueUnchecked());
-    if (!id.IsValid())
+    ECValue value;
+    if (id.IsValid())
+        relClassId.IsValid() ? value.SetNavigationInfo(id, relClassId) : value.SetNavigationInfo(id);
+    else
         value.SetToNull();
 
-    DgnDbStatus status = SetPropertyValue(propertyName, value, arrayIdx);
+    DgnDbStatus status = SetPropertyValue(propertyName, value);
     BeAssert(DgnDbStatus::Success == status);
     return status;
     }

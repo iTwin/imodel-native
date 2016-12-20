@@ -82,9 +82,6 @@ void BimConsole::Setup()
 
     AddCommand(make_shared<SqliteCommand>());
     AddCommand(make_shared<DbSchemaCommand>());
-    auto classMappingCommand = make_shared<ClassMappingCommand>();
-    AddCommand(classMappingCommand);
-    AddCommand(".cm", classMappingCommand); //add same command with alternative command name
 
     AddCommand(make_shared<DebugCommand>());
 

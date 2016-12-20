@@ -56,8 +56,7 @@ TEST(ECDbInstances, DgnElement)
     while (statement.Step() == BE_SQLITE_ROW)
         {
         ECInstanceId id;
-        bool status = adapter.GetInstanceId(id);
-        ASSERT_TRUE(status);
+        ASSERT_EQ(SUCCESS, adapter.GetInstanceId(id));
         ElementRefP ref = project.Models().GetElementById(DgnElementId(id.GetValue())).get();
         ASSERT_TRUE(ref != NULL);
         elementInstances.insert(DgnElementId(id.GetValue()));

@@ -895,13 +895,7 @@ void DgnElements::Destroy()
     m_tree->Destroy();
     m_stmts.Empty();
     m_classInfos.clear();
-    for (bpair<const DgnClassId, ECInstanceUpdater*>& kvPair : m_updaterCache)
-        {
-        if (kvPair.second != nullptr)
-            delete kvPair.second;
-        }
-
-    m_updaterCache.clear();
+    ClearUpdaterCache();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1199,7 +1193,7 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,ModelId,ParentId,UserLabel,LastMod FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,Model.Id,Parent.Id,UserLabel,LastMod FROM ");
     sql.append(className);
 
     if (whereClause)

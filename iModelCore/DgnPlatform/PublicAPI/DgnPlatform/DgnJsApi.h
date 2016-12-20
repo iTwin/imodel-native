@@ -446,11 +446,11 @@ public:
         {
         DGNJSAPI_VALIDATE_ARGS_VOID(IsValid());
         if (nullptr == parent)
-            m_el->SetParentId(DgnElementId());
+            m_el->SetParentId(DgnElementId(), DgnClassId());
         else
             {
             DGNJSAPI_VALIDATE_ARGS_VOID(DGNJSAPI_IS_VALID_JSOBJ(parent));
-            m_el->SetParentId(parent->m_el->GetElementId());
+            m_el->SetParentId(parent->m_el->GetElementId(), DgnClassId()); // WIP: Set ParentRelECClassId!!!
             }
         }
     JsECValueP GetPropertyValue(Utf8StringCR);
@@ -598,6 +598,8 @@ struct JsHitDetail : RefCountedBaseWithCreate
     STUB_OUT_SET_METHOD(HitType, Utf8String)
     STUB_OUT_SET_METHOD(Element, JsGeometrySource3dP)
 };
+
+typedef JsHitDetail*  JsHitDetailP;
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      06/15

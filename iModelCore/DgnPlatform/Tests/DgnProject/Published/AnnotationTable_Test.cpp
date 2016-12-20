@@ -94,7 +94,7 @@ public:
         {
         Utf8String sqlString ("SELECT count(*) FROM ");
         sqlString.append (aspectDescr.m_className);
-        sqlString.append (" WHERE ElementId=?");
+        sqlString.append (" WHERE Element.Id=?");
         return sqlString;
         }
 
