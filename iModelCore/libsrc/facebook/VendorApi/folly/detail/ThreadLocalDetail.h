@@ -260,6 +260,8 @@ struct StaticMetaBase {
 
   BE_FOLLY_EXPORT StaticMetaBase(ThreadEntry* (*threadEntry)(), bool strict);
 
+// BENTLEY_CHANGE
+PUSH_MSVC_IGNORE(4722)
   [[noreturn]] ~StaticMetaBase() {
 #if defined (BENTLEY_CHANGE)
     LOG(FATAL) << "StaticMeta lives forever!";
@@ -267,6 +269,7 @@ struct StaticMetaBase {
     assert(false);
     std::abort();
   }
+POP_MSVC_IGNORE
 
   void push_back(ThreadEntry* t) {
     t->next = &head_;
