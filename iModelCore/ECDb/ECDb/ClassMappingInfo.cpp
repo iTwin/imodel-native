@@ -527,56 +527,54 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
     BeAssert(relClass != nullptr);
     BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
 
+    const bool requiresLinkTable = RequiresLinkTable();
     ECDbForeignKeyConstraint foreignKeyConstraintCA;
     const bool hasForeignKeyConstraintCA = ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(foreignKeyConstraintCA, *relClass);
-
     const bool useECInstanceIdAsFk = ECDbMapCustomAttributeHelper::HasUseECInstanceIdAsForeignKey(*relClass);
-
     ECDbLinkTableRelationshipMap linkTableRelationMap;
     const bool hasLinkTableRelMap = ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkTableRelationMap, *relClass);
 
-    if (relClass->HasBaseClasses() && (hasForeignKeyConstraintCA || hasLinkTableRelMap))
+    if (relClass->HasBaseClasses())
         {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must neither have the ForeignKeyConstraint nor the LinkTableRelationshipMap custom attribute. Only the root relationship class of a hierarchy can have these custom attributes.",
+        if (hasForeignKeyConstraintCA || useECInstanceIdAsFk || hasLinkTableRelMap)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has a base class and therefore must not have any of the 'ForeignKeyConstraint', 'UseECInstanceIdAsForeignKey', 'LinkTableRelationshipMap' custom attributes. Only the root relationship class of a hierarchy can have these custom attributes.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    //root rel class
+    BeAssert(m_isRootClass);
+
+    if (hasLinkTableRelMap && (hasForeignKeyConstraintCA || useECInstanceIdAsFk))
+        {
+        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyConstraint' and 'LinkTableRelationshipMap' or 'UseECInstanceIdAsForeignKey' and 'LinkTableRelationshipMap'.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if (hasForeignKeyConstraintCA && hasLinkTableRelMap)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'ForeignKeyConstraint' and 'LinkTableRelationshipMap'.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    if (hasLinkTableRelMap && useECInstanceIdAsFk)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the violating custom attributes 'UseECInstanceIdAsForeignKey' and 'LinkTableRelationshipMap'.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && RequiresLinkTable())
+    if ((hasForeignKeyConstraintCA || useECInstanceIdAsFk) && requiresLinkTable)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'ForeignKeyConstraint' or 'UseECInstanceIdAsForeignKey' custom attribute, but implies a link table mapping because of its cardinality or because it defines ECProperties.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
 
-    if (hasForeignKeyConstraintCA)
-        {
-        ECRelationshipEnd foreignKeyEnd = relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    const bool mapAsLinkTable = requiresLinkTable || hasLinkTableRelMap;
 
-        ECRelationshipConstraintCP foreignKeyConstraint = nullptr;
-        if (foreignKeyEnd == ECRelationshipEnd_Target)
+    if (!mapAsLinkTable)
+        {
+        ECRelationshipEnd foreignKeyEnd;
+        if (SUCCESS != TryDetermineFkEnd(foreignKeyEnd))
+            return ERROR;
+
+        if (!hasForeignKeyConstraintCA)
             {
-            foreignKeyConstraint = &relClass->GetTarget();
-            m_customMapType = RelationshipMappingInfo::CustomMapType::ForeignKeyOnTarget;
-            }
-        else
-            {
-            foreignKeyConstraint = &relClass->GetSource();
-            m_customMapType = RelationshipMappingInfo::CustomMapType::ForeignKeyOnSource;
+            m_fkMappingInfo = std::make_unique<FkMappingInfo>(foreignKeyEnd, useECInstanceIdAsFk);
+            return SUCCESS;
             }
 
         Utf8String onDeleteActionStr;
@@ -595,38 +593,29 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
             return ERROR;
             }
 
-
-        m_fkMappingInfo = std::make_unique<FkMappingInfo>(onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), useECInstanceIdAsFk);
+        m_fkMappingInfo = std::make_unique<FkMappingInfo>(foreignKeyEnd, onDeleteAction, ForeignKeyDbConstraint::ToActionType(onUpdateActionStr.c_str()), useECInstanceIdAsFk);
         return SUCCESS;
         }
 
-    if (hasLinkTableRelMap)
+    if (!hasLinkTableRelMap)
         {
-        Utf8String sourceIdColName;
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
-            return ERROR;
-
-        Utf8String targetIdColName;
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
-            return ERROR;
-
-        bool allowDuplicateRelationships = false;
-        if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
-            return ERROR;
-
-        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
-        m_customMapType = RelationshipMappingInfo::CustomMapType::LinkTable;
+        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
         return SUCCESS;
         }
 
-    if (!relClass->HasBaseClasses())
-        {
-        if (RequiresLinkTable())
-            m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>();
-        else
-            m_fkMappingInfo = std::make_unique<FkMappingInfo>(useECInstanceIdAsFk);
-        }
+    Utf8String sourceIdColName;
+    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetSourceECInstanceIdColumn(sourceIdColName))
+        return ERROR;
 
+    Utf8String targetIdColName;
+    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetTargetECInstanceIdColumn(targetIdColName))
+        return ERROR;
+
+    bool allowDuplicateRelationships = false;
+    if (ECObjectsStatus::Success != linkTableRelationMap.TryGetAllowDuplicateRelationships(allowDuplicateRelationships))
+        return ERROR;
+
+    m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(sourceIdColName, targetIdColName, allowDuplicateRelationships);
     return SUCCESS;
     }
 
@@ -738,29 +727,10 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
     {
-    BeAssert(baseClassMap != nullptr || m_linkTableMappingInfo != nullptr);
-
-    if (m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget)
-        {
-        BeAssert(baseClassMap != nullptr && "Should not call this method if baseClassMap == nullptr");
-        if (baseClassMap != nullptr)
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the ForeignKeyConstraint custom attribute but its base class %s is mapped to a link table. The mapping type must not change in an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
-
-        return ERROR;
-        }
-
     ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
     if (relClass->GetStrength() == StrengthType::Embedding)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship, and link table relationships with strength 'Embedding' is not supported. See API docs for details on the mapping rules.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    if (m_customMapType == CustomMapType::ForeignKeyOnSource || m_customMapType == CustomMapType::ForeignKeyOnTarget)
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. The mapping rules imply a link table relationship. Therefore it must not have a ForeignKeyConstraint custom attribute. See API docs for details on the mapping rules.",
                         m_ecClass.GetFullName());
         return ERROR;
         }
@@ -774,11 +744,13 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 
     if (baseClassMap != nullptr)
         {
+        BeAssert(m_linkTableMappingInfo == nullptr);
+
         BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
-        m_linkTableMappingInfo = std::make_unique<LinkTableMappingInfo>(DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClassMap->GetClass().GetRelationshipClassCP()));
         return EvaluateTablePerHierarchyMapStrategy(*baseClassMap, caCache);
         }
 
+    BeAssert(m_linkTableMappingInfo != nullptr);
 
     //*** root rel class
     //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
@@ -791,10 +763,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
                         m_ecClass.GetFullName());
         return ERROR;
-        //Keep that code in case we need to relax our rule again:
-        //LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
-        //m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-        //return SUCCESS;
         }
 
     const size_t sourceTableCount = m_sourceTables.size();
@@ -831,18 +799,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCACache const& caCache, ClassMap const* baseClassMap)
     {
-    BeAssert(baseClassMap!= nullptr || m_fkMappingInfo != nullptr);
-
-    if (m_customMapType == CustomMapType::LinkTable)
-        {
-        BeAssert(baseClassMap != nullptr && "Should not call this method if baseClassMap == nullptr");
-        if (baseClassMap != nullptr)
-            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the LinkTableRelationshipMap custom attribute but its base class %s has the ForeignKey type mapping. The mapping type must not change in an ECRelationshipClass hierarchy.", 
-                        m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
-
-        return ERROR;
-        }
-
     if (caCache.GetClassMap().IsValid())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It implies the ForeignKey type mapping, but also has the ClassMap custom attribute. ForeignKey type mappings can only have the ClassMap custom attribute when the MapStrategy is set to 'NotMapped'.",
@@ -850,75 +806,24 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
         return ERROR;
         }
 
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    const StrengthType strength = relClass->GetStrength();
-    const ECRelatedInstanceDirection strengthDirection = relClass->GetStrengthDirection();
-
-    MapStrategy resolvedStrategy = MapStrategy::NotMapped;
-    switch (m_cardinality)
+    if (baseClassMap != nullptr)
         {
-            case Cardinality::OneToOne:
-            {
-            if (m_customMapType == CustomMapType::ForeignKeyOnSource)
-                {
-                BeAssert(strengthDirection == ECRelatedInstanceDirection::Backward);
-                resolvedStrategy = MapStrategy::ForeignKeyRelationshipInSourceTable;
-                }
-            else if (m_customMapType == CustomMapType::ForeignKeyOnTarget)
-                {
-                BeAssert(strengthDirection == ECRelatedInstanceDirection::Forward);
-                resolvedStrategy = MapStrategy::ForeignKeyRelationshipInTargetTable;
-                }
-            else
-                {
-                BeAssert(m_customMapType == CustomMapType::None);
-                if (strengthDirection == ECRelatedInstanceDirection::Backward)
-                    resolvedStrategy = MapStrategy::ForeignKeyRelationshipInSourceTable;
-                else
-                    resolvedStrategy = MapStrategy::ForeignKeyRelationshipInTargetTable;
-                }
-
-            break;
-            }
-
-            case Cardinality::OneToMany:
-            {
-            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
-                                m_ecClass.GetFullName(), relClass->GetSource().GetMultiplicity().ToString().c_str(), relClass->GetTarget().GetMultiplicity().ToString().c_str());
-                return ERROR;
-                }
-
-            resolvedStrategy = MapStrategy::ForeignKeyRelationshipInTargetTable;
-            break;
-            }
-
-            case Cardinality::ManyToOne:
-            {
-            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
-                                m_ecClass.GetFullName(), relClass->GetSource().GetMultiplicity().ToString().c_str(), relClass->GetTarget().GetMultiplicity().ToString().c_str());
-                return ERROR;
-                }
-
-            resolvedStrategy = MapStrategy::ForeignKeyRelationshipInSourceTable;
-            break;
-            }
-
-            default:
-                BeAssert(false && "ManyToMany case should have been handled already.");
-                return ERROR;
+        BeAssert(m_fkMappingInfo == nullptr);
+        m_mapStrategyExtInfo = baseClassMap->GetMapStrategy();
+        return SUCCESS;
         }
 
-    BeAssert(resolvedStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable || resolvedStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
+    //root class
+    BeAssert(IsRootClass() && m_fkMappingInfo != nullptr);
+    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
+
+    MapStrategy resolvedStrategy = m_fkMappingInfo->GetFkEnd() == ECRelationshipEnd_Source ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
 
     //evaluate end tables
     const bool foreignKeyEndIsSource = resolvedStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable;
 
     //check that the referenced end tables (including joined tables) are 1 at most
-    std::set<DbTable const*> referencedTables = GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass->GetTarget() : relClass->GetSource(), false);
+    std::set<DbTable const*> referencedTables = GetTablesFromRelationshipEnd(foreignKeyEndIsSource ? relClass.GetTarget() : relClass.GetSource(), false);
     if (referencedTables.size() > 1)
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. Its foreign key end (%s) references more than one table (%s). See API docs for details on the mapping rules.",
@@ -930,18 +835,14 @@ BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(ClassMappingCA
     //For the referenced end we are just interested in the primary table and ignore joined tables.
     const bool ignoreJoinedTableOnSource = !foreignKeyEndIsSource;
     const bool ignoreJoinedTableOnTarget = foreignKeyEndIsSource;
-    m_sourceTables = GetTablesFromRelationshipEnd(relClass->GetSource(), ignoreJoinedTableOnSource);
-    m_targetTables = GetTablesFromRelationshipEnd(relClass->GetTarget(), ignoreJoinedTableOnTarget);
+    m_sourceTables = GetTablesFromRelationshipEnd(relClass.GetSource(), ignoreJoinedTableOnSource);
+    m_targetTables = GetTablesFromRelationshipEnd(relClass.GetTarget(), ignoreJoinedTableOnTarget);
     
     if (m_sourceTables.empty() || m_targetTables.empty())
         {
         Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'SharedTable' to the abstract constraint class.",
                         m_ecClass.GetFullName());
         return ERROR;
-        //Keep that code in case we need to relax our rule again:
-        //LogClassNotMapped(NativeLogging::LOG_WARNING, m_ecClass, "Source or target constraint classes are abstract without subclasses.");
-        //m_resolvedStrategy.Assign(ECDbMapStrategy::Strategy::NotMapped, true);
-        //return SUCCESS;
         }
 
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(resolvedStrategy);
@@ -962,6 +863,57 @@ bool RelationshipMappingInfo::ContainsClassWithNotMappedStrategy(std::vector<ECN
         }
 
     return false;
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipMappingInfo::TryDetermineFkEnd(ECN::ECRelationshipEnd& fkEnd) const
+    {
+    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
+    const StrengthType strength = relClass.GetStrength();
+    const ECRelatedInstanceDirection strengthDirection = relClass.GetStrengthDirection();
+
+    switch (m_cardinality)
+        {
+            case Cardinality::OneToMany:
+            {
+            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
+                                m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+                return ERROR;
+                }
+
+            fkEnd = ECRelationshipEnd_Target;
+            return SUCCESS;
+            }
+            case Cardinality::ManyToOne:
+            {
+            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
+                                m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+                return ERROR;
+                }
+
+            fkEnd = ECRelationshipEnd_Source;
+            return SUCCESS;
+            }
+            case Cardinality::OneToOne:
+            {
+            if (strengthDirection == ECRelatedInstanceDirection::Forward)
+                fkEnd = ECRelationshipEnd_Target;
+            else
+                fkEnd = ECRelationshipEnd_Source;
+
+            return SUCCESS;
+            }
+
+            default:
+                BeAssert(false && "Must not be called for M:N cardinalities");
+                return ERROR;
+        }
     }
 
 
@@ -997,29 +949,6 @@ bool RelationshipMappingInfo::HasKeyProperties(ECN::ECRelationshipConstraint con
 
     return false;
     }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                10/2015
-//+---------------+---------------+---------------+---------------+---------------+-
-//static
-bool RelationshipMappingInfo::DetermineAllowDuplicateRelationshipsFlagFromRoot(ECRelationshipClassCR baseRelClass)
-    {
-    ECDbLinkTableRelationshipMap linkRelMap;
-    if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
-        {
-        bool allowDuplicateRels = false;
-        linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRels);
-        if (allowDuplicateRels)
-            return true;
-        }
-
-    if (!baseRelClass.HasBaseClasses())
-        return false;
-
-    BeAssert(baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP() != nullptr);
-    return DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP());
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015

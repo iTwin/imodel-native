@@ -115,30 +115,32 @@ public:
         OneToOne
         };
 
-    enum class CustomMapType
-        {
-        None,
-        ForeignKeyOnTarget,
-        ForeignKeyOnSource,
-        LinkTable
-        };
-
     struct FkMappingInfo : NonCopyableClass
         {
         private:
+            ECN::ECRelationshipEnd m_fkEnd;
+            bool m_useECInstanceIdAsFk;
+            bool m_isPhysicalFk;
             ForeignKeyDbConstraint::ActionType m_onDeleteAction;
             ForeignKeyDbConstraint::ActionType m_onUpdateAction;
-            bool m_useECInstanceIdAsFk;
 
         public:
-            explicit FkMappingInfo(bool usePkAsFk) : FkMappingInfo(ForeignKeyDbConstraint::ActionType::NotSpecified, ForeignKeyDbConstraint::ActionType::NotSpecified, usePkAsFk) {}
-            FkMappingInfo(ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
-                : m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction), m_useECInstanceIdAsFk(usePkAsFk)
+            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, bool usePkAsFk)
+                : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(false), m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified)
+                {
+                //until it is implemented we always create a physical FK
+                m_isPhysicalFk = true;
+                }
+
+            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
+                : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(true), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
                 {}
 
-            ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
-            ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
+            ECN::ECRelationshipEnd GetFkEnd() const { return m_fkEnd; }
             bool UseECInstanceIdAsFk() const { return m_useECInstanceIdAsFk; }
+            bool IsPhysicalFk() const { return m_isPhysicalFk; }
+            ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsPhysicalFk()); return m_onDeleteAction; }
+            ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsPhysicalFk()); return m_onUpdateAction; }
         };
 
     struct LinkTableMappingInfo : NonCopyableClass
@@ -160,8 +162,8 @@ public:
         bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
         };
 private:
+    bool m_isRootClass;
     Cardinality m_cardinality;
-    CustomMapType m_customMapType;
     std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
     std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
     std::set<DbTable const*> m_sourceTables;
@@ -179,25 +181,28 @@ private:
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
     static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 
-    static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
-
     bool RequiresLinkTable() const { return m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0; }
 
+    BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&) const;
+
 public:
-    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) : ClassMappingInfo(ecdb, relationshipClass),
-        m_customMapType(CustomMapType::None), m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
+    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
+        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()),
+        m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
         {
         DetermineCardinality();
         }
 
     virtual ~RelationshipMappingInfo() {}
 
+    bool IsRootClass() const { return m_isRootClass; }
     Cardinality GetCardinality() const { return m_cardinality; }
-    CustomMapType GetCustomMapType() const { return m_customMapType; }
-    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
-    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
-    std::set<DbTable const*> const& GetSourceTables() const {return m_sourceTables;}
-    std::set<DbTable const*> const& GetTargetTables() const {return m_targetTables;}
+    //only available for root classes. Subclasses just inherit from their base class
+    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(IsRootClass() && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
+    //only available for root classes. Subclasses just inherit from their base class
+    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(IsRootClass() && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
+    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(IsRootClass()); return m_sourceTables; }
+    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(IsRootClass()); return m_targetTables;}
     };
 
 

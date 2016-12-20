@@ -510,15 +510,6 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             referencedTable->GetPersistenceType() == PersistenceType::Virtual)
             continue;
 
-        if (fkCol->IsShared())
-            {
-            Issues().Report(ECDbIssueSeverity::Warning, "The ECRelationshipClass '%s' implies a foreign key constraint. ECDb cannot create it though for the "
-                            "column '%s' in table '%s' because the column is used by other properties. Consider disabling column sharing "
-                            "(via ClassMap custom attribute) or redesigning the ECRelationshipClass without using a Key property.",
-                            relClass.GetFullName(), fkCol->GetName().c_str(), fkTable.GetName().c_str());
-            continue;
-            }
-
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
         }
 
@@ -1199,6 +1190,9 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
     RelationshipMappingInfo const& relationClassMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
+    if (GetRelationshipClass().HasBaseClasses())
+        return MapSubClass(ctx, relationClassMapInfo);
+
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
     ECRelationshipConstraintCR sourceConstraint = relationshipClass.GetSource();
     ECRelationshipConstraintCR targetConstraint = relationshipClass.GetTarget();
@@ -1237,7 +1231,64 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
         }
 
 
-    AddIndices(ctx);
+    AddIndices(ctx, relationClassMapInfo.GetLinkTableMappingInfo()->AllowDuplicateRelationships());
+    return ClassMappingStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                12 / 2016
+//+---------------+---------------+---------------+---------------+---------------+------
+ClassMappingStatus RelationshipClassLinkTableMap::MapSubClass(ClassMappingContext& ctx, RelationshipMappingInfo const& mappingInfo)
+    {
+    if (GetClass().GetBaseClasses().size() != 1)
+        {
+        BeAssert(false && "Multi-inheritance of ECRelationshipclasses should have been caught before already");
+        return ClassMappingStatus::Error;
+        }
+
+    ECClassCP baseClass = GetClass().GetBaseClasses()[0];
+    ClassMap const* baseClassMap = GetDbMap().GetClassMap(*baseClass);
+    if (baseClassMap == nullptr || baseClassMap->GetType() != ClassMap::Type::RelationshipLinkTable)
+        {
+        BeAssert(false && "Could not find class map of base ECRelationship class or is not of right type");
+        return ClassMappingStatus::Error;
+        }
+
+    RelationshipClassLinkTableMap const& baseRelClassMap = static_cast<RelationshipClassLinkTableMap const&>(*baseClassMap);
+
+    //SourceECInstanceId prop map
+    RefCountedPtr<SystemPropertyMap> clonedSourceECInstanceIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetSourceECInstanceIdPropMap(), *this);
+    if (GetPropertyMapsR().Insert(clonedSourceECInstanceIdPropMap) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    m_sourceConstraintMap.SetECInstanceIdPropMap(static_cast<ConstraintECInstanceIdPropertyMap const*>(clonedSourceECInstanceIdPropMap.get()));
+
+    //SourceECClassId prop map
+    RefCountedPtr<SystemPropertyMap> clonedSourceECClassIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetSourceECClassIdPropMap(), *this);
+    if (GetPropertyMapsR().Insert(clonedSourceECClassIdPropMap) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    m_sourceConstraintMap.SetECClassIdPropMap(static_cast<ConstraintECClassIdPropertyMap const*>(clonedSourceECClassIdPropMap.get()));
+
+    //TargetECInstanceId prop map
+    RefCountedPtr<SystemPropertyMap> clonedTargetECInstanceIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetTargetECInstanceIdPropMap(), *this);
+    if (GetPropertyMapsR().Insert(clonedTargetECInstanceIdPropMap) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    m_targetConstraintMap.SetECInstanceIdPropMap(static_cast<ConstraintECInstanceIdPropertyMap const*>(clonedTargetECInstanceIdPropMap.get()));
+
+    //TargetECClassId prop map
+    RefCountedPtr<SystemPropertyMap> clonedTargetECClassIdPropMap = PropertyMapCopier::CreateCopy(*baseRelClassMap.GetTargetECClassIdPropMap(), *this);
+    if (GetPropertyMapsR().Insert(clonedTargetECClassIdPropMap) != SUCCESS)
+        return ClassMappingStatus::Error;
+
+    m_targetConstraintMap.SetECClassIdPropMap(static_cast<ConstraintECClassIdPropertyMap const*>(clonedTargetECClassIdPropMap.get()));
+
+    ClassMappingStatus stat = DoMapPart2(ctx);
+    if (stat != ClassMappingStatus::Success)
+        return stat;
+
+    AddIndices(ctx, DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseClass->GetRelationshipClassCP()));
     return ClassMappingStatus::Success;
     }
 
@@ -1383,7 +1434,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Affan.Khan                            09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx)
+void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx, bool allowDuplicateRelationships)
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
         return;
@@ -1392,11 +1443,10 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx)
     RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
 
     RelationshipMappingInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
-    const bool enforceUniqueness = !relationshipClassMapInfo.GetLinkTableMappingInfo()->AllowDuplicateRelationships();
 
     // Add indices on the source and target based on cardinality
-    bool sourceIsUnique = enforceUniqueness;
-    bool targetIsUnique = enforceUniqueness;
+    bool sourceIsUnique = !allowDuplicateRelationships;
+    bool targetIsUnique = !allowDuplicateRelationships;
 
     switch (cardinality)
         {
@@ -1419,7 +1469,7 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx)
     AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Source, sourceIsUnique);
     AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Target, targetIsUnique);
 
-    if (enforceUniqueness)
+    if (!allowDuplicateRelationships)
         AddIndex(ctx.GetImportCtx(), RelationshipClassLinkTableMap::RelationshipIndexSpec::SourceAndTarget, true);
     }
 
@@ -1589,6 +1639,28 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
 
     BeAssert(!colName.empty());
     return colName;
+    }
+
+//----------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                10/2015
+//+---------------+---------------+---------------+---------------+---------------+-
+//static
+bool RelationshipClassLinkTableMap::DetermineAllowDuplicateRelationshipsFlagFromRoot(ECRelationshipClassCR baseRelClass)
+    {
+    ECDbLinkTableRelationshipMap linkRelMap;
+    if (ECDbMapCustomAttributeHelper::TryGetLinkTableRelationshipMap(linkRelMap, baseRelClass))
+        {
+        bool allowDuplicateRels = false;
+        linkRelMap.TryGetAllowDuplicateRelationships(allowDuplicateRels);
+        if (allowDuplicateRels)
+            return true;
+        }
+
+    if (!baseRelClass.HasBaseClasses())
+        return false;
+
+    BeAssert(baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP() != nullptr);
+    return DetermineAllowDuplicateRelationshipsFlagFromRoot(*baseRelClass.GetBaseClasses()[0]->GetRelationshipClassCP());
     }
 
 /*---------------------------------------------------------------------------------**//**
