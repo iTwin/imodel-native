@@ -377,8 +377,11 @@ void SceneQueue::Terminate()
     DgnDb::VerifyClientThread();
 
     BeMutexHolder lock(m_cv.GetMutex());
+
     if (State::Active != m_state)
         return;
+
+    m_pending.clear();
 
     if (m_active.IsValid())
         m_active->RequestAbort();  // if we're working on a query tell it to stop
