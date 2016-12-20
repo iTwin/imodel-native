@@ -18,9 +18,9 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                    Affan.Khan                      05/2016
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static 
-BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECDb const& ecdb, ClassMap const& classMap, bool isPolymorphicQuery, ECSqlPrepareContext const& prepareContext)
+BentleyStatus ViewGenerator::GenerateSelectFromViewSql(NativeSqlBuilder& viewSql, ECSqlPrepareContext const& prepareContext, ClassMap const& classMap, bool isPolymorphicQuery)
     {
-    SelectFromViewContext ctx(ecdb, prepareContext, isPolymorphicQuery);
+    SelectFromViewContext ctx(prepareContext, isPolymorphicQuery);
     return GenerateViewSql(viewSql, ctx, classMap);
     }
 
@@ -1235,7 +1235,14 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
 //*********************************ViewGenerator::SelectFromViewContext*****************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                          11/2016
+// @bsimethod                                 Krischan.Eberle                     12/2016
+//---------------------------------------------------------------------------------------
+ViewGenerator::SelectFromViewContext::SelectFromViewContext(ECSqlPrepareContext const& prepareCtx, bool isPolymorphicQuery) 
+    : Context(ViewType::SelectFromView, prepareCtx.GetECDb()), m_prepareCtx(prepareCtx), m_isPolymorphicQuery(isPolymorphicQuery)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                     12/2016
 //---------------------------------------------------------------------------------------
 bool ViewGenerator::SelectFromViewContext::IsECClassIdFilterEnabled() const
     {

@@ -115,15 +115,15 @@ struct ClassMap : RefCountedBase
             };
 
     private:
-        ECDb const& m_ecdb;
         Type m_type;
+        ECDb const& m_ecdb;
+        ECN::ECClassCR m_ecClass;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
-        bool m_isDirty;
-        ECN::ECClassCR m_ecClass;
-        mutable DbColumnFactory::Ptr m_columnFactory;
+        mutable std::unique_ptr<DbColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
+        bool m_isDirty;
 
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
 
@@ -181,7 +181,6 @@ struct ClassMap : RefCountedBase
         bool IsRelationshipClassMap() const { return m_type == Type::RelationshipEndTable || m_type == Type::RelationshipLinkTable; }
         ECDbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         Utf8String GetUpdatableViewName() const;
-        BentleyStatus GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const&) const;
         DbTable const* ExpectingSingleTable() const;
 
         //! Rules:

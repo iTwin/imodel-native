@@ -493,7 +493,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareClassNameExp(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Select)
         {
         NativeSqlBuilder classViewSql;
-        if (classMap.GenerateSelectViewSql(classViewSql, exp.IsPolymorphic(), ctx) != SUCCESS)
+        if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(classViewSql, ctx, classMap, exp.IsPolymorphic()))
             {
             BeAssert(false && "SELECT view generation failed during preparation of class name expression.");
             return ECSqlStatus::Error;
@@ -1207,8 +1207,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
 
     //Generate view for relationship
     NativeSqlBuilder relationshipView;
-
-    if (relationshipClassNameExp.GetInfo().GetMap().GenerateSelectViewSql(relationshipView, true, ctx) != SUCCESS)
+    if (SUCCESS != ViewGenerator::GenerateSelectFromViewSql(relationshipView, ctx, relationshipClassNameExp.GetInfo().GetMap(), true))
         {
         BeAssert(false && "Generating class view during preparation of relationship class name expression failed.");
         return ECSqlStatus::Error;
