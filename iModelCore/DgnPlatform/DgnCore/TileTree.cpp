@@ -614,7 +614,12 @@ void Tile::Draw(DrawArgsR args, int depth) const
     _DrawGraphics(args, depth);
 
     if (!_HasChildren()) // this is a leaf node - we're done
+        {
+        // This node may have initially had children, and then determined that it should be a leaf instead
+        // - if so, make sure its children have been unloaded
+        _UnloadChildren(std::chrono::steady_clock::now());
         return;
+        }
 
     if (!tooCoarse)
         {
