@@ -61,7 +61,7 @@ ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteTo
 //Back door for converter
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-extern "C" __declspec(dllexport) void* dgnV8Converter_getToken(DgnDbR db)
+extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
     {
     return (void*)db.GetECSqlWriteToken();
     }
