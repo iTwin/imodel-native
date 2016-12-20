@@ -123,6 +123,27 @@ bool Pose::IsEqual(PoseCR rhs) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+YawPitchRollAngles Pose::GetYawPitchRoll() const
+    {
+    //NEEDSWORK: I know this is not "technically" correct. We will need to find the real conversion
+    YawPitchRollAngles angles(GetKappa(),GetOmega(),GetPhi());
+    return angles;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetYawPitchRoll(YawPitchRollAnglesCR angles)
+    {
+    //NEEDSWORK: I know this is not "technically" correct. We will need to find the real conversion
+    SetOmega(Angle::FromDegrees(angles.GetPitch().Degrees()));
+    SetPhi(Angle::FromDegrees(angles.GetRoll().Degrees()));
+    SetKappa(Angle::FromDegrees(angles.GetYaw().Degrees()));
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PoseElementId Pose::GetId() const 

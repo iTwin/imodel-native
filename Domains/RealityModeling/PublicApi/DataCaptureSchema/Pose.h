@@ -102,6 +102,10 @@ public:
     DATACAPTURE_EXPORT void                     SetPhi(AngleCR phi);
     DATACAPTURE_EXPORT void                     SetKappa(AngleCR kappa);
 
+    DATACAPTURE_EXPORT YawPitchRollAngles       GetYawPitchRoll() const;
+    DATACAPTURE_EXPORT void                     SetYawPitchRoll(YawPitchRollAnglesCR angles);
+
+
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;
     };
