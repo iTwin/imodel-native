@@ -478,3 +478,164 @@ TEST_F(ElementAspectTests, ImportElementsWithAspect)
             EXPECT_TRUE(aspect->GetTestUniqueAspectProperty().Equals("Initial Value"));
         }
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson      06/15
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementAspectTests, GenericAspect_CRUD)
+    {
+    // Open Source Db
+    SetupSeedProject();
+    DgnAuthorityId auth1Id;
+
+    auto maspectclassNoHandler = m_db->Schemas().GetECClass("DgnPlatformTest", "TestMultiAspectNoHandler");
+    ASSERT_TRUE(nullptr != maspectclassNoHandler);
+
+    auto maspectclassWithHandler = TestMultiAspect::GetECClass(*m_db);
+    ASSERT_TRUE(nullptr != maspectclassWithHandler);
+
+    DgnElementCPtr persistEl;
+    if (true)
+        {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+        auto maspect1 = maspectclassNoHandler->GetDefaultStandaloneEnabler()->CreateInstance();
+        maspect1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));
+
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*tempEl, *maspect1));
+
+        // Check that we can find the aspect that we just added to the non-persistent element
+        auto foundProps = DgnElement::GenericMultiAspect::GetAspectP(*tempEl, *maspectclassNoHandler, BeSQLite::EC::ECInstanceId());
+        ASSERT_TRUE(foundProps != nullptr);
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestMultiAspectProperty"));
+        ASSERT_STREQ("foo", value.ToString().c_str());
+
+        // Check that we can find the same aspect again. Aspects are cached in memory, so the second request may be handled differently from the first.
+        foundProps = DgnElement::GenericMultiAspect::GetAspectP(*tempEl, *maspectclassNoHandler, BeSQLite::EC::ECInstanceId());
+        ASSERT_TRUE(foundProps != nullptr);
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestMultiAspectProperty"));
+        ASSERT_STREQ("foo", value.ToString().c_str());
+
+        persistEl = tempEl->Insert();
+        }
+
+    ASSERT_TRUE(persistEl.IsValid());
+
+    if (true)
+        {
+        // Check that we can find the same aspect from the persistent element
+        auto editEl = persistEl->CopyForEdit();
+
+        auto foundProps = DgnElement::GenericMultiAspect::GetAspectP(*editEl, *maspectclassNoHandler, BeSQLite::EC::ECInstanceId());
+        ASSERT_TRUE(foundProps != nullptr);
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestMultiAspectProperty"));
+        ASSERT_STREQ("foo", value.ToString().c_str());
+
+        // Check that we can find the same aspect again. Aspects are cached in memory, so the second request may be handled differently from the first.
+        foundProps = DgnElement::GenericMultiAspect::GetAspectP(*editEl, *maspectclassNoHandler, BeSQLite::EC::ECInstanceId());
+        ASSERT_TRUE(foundProps != nullptr);
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestMultiAspectProperty"));
+        ASSERT_STREQ("foo", value.ToString().c_str());
+
+        // Add another instance of the same multi aspect -- should now have 2
+        auto maspect1 = maspectclassNoHandler->GetDefaultStandaloneEnabler()->CreateInstance();
+        maspect1->SetValue("TestMultiAspectProperty", ECN::ECValue("bar"));
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspect1));
+        ASSERT_TRUE(editEl->Update().IsValid());
+
+        ECSqlStatement findMa;
+        findMa.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspectNoHandler WHERE Element.Id=?");    
+        findMa.BindId(1, editEl->GetElementId());
+        bvector<Utf8String> values;
+        BeSQLite::EC::ECInstanceId id;
+        while (BE_SQLITE_ROW == findMa.Step())
+            {
+            auto value = findMa.GetValueText(1);
+            auto aspectid = findMa.GetValueId<BeSQLite::EC::ECInstanceId>(0);
+            values.push_back(value);
+            if (0==strcmp("bar", value))
+                id = aspectid;
+            }
+            
+        ASSERT_EQ(2, values.size());
+        ASSERT_TRUE(id.IsValid());
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar"));
+
+        //  Modify a property on one of the aspects
+        maspect1->SetValue("TestMultiAspectProperty", ECN::ECValue("bar-changed"));
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericMultiAspect::SetAspect(*editEl, *maspect1, id));
+        ASSERT_TRUE(editEl->Update().IsValid());
+
+        //      ... we should still only have 2, but one should have a modified value
+        findMa.Reset();
+        values.clear();
+        while (BE_SQLITE_ROW == findMa.Step())
+            {
+            auto value = findMa.GetValueText(1);
+            auto aspectid = findMa.GetValueId<BeSQLite::EC::ECInstanceId>(0);
+            values.push_back(value);
+            if (0==strcmp("bar-changed", value))
+                ASSERT_EQ(id, aspectid);
+            else
+                ASSERT_NE(id, aspectid);
+            }
+            
+        ASSERT_EQ(2, values.size());
+        ASSERT_TRUE(id.IsValid());
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar-changed"));
+
+        //  Add an instance of a different multiaspect class
+        TestMultiAspect::AddAspect(*editEl, *TestMultiAspect::Create("has handler"));
+        ASSERT_TRUE(editEl->Update().IsValid());
+
+        //      ... we should still only have 2 instances of the first MA, 
+        findMa.Reset();
+        values.clear();
+        while (BE_SQLITE_ROW == findMa.Step())
+            {
+            auto value = findMa.GetValueText(1);
+            auto aspectid = findMa.GetValueId<BeSQLite::EC::ECInstanceId>(0);
+            values.push_back(value);
+            if (0==strcmp("bar-changed", value))
+                ASSERT_EQ(id, aspectid);
+            else
+                ASSERT_NE(id, aspectid);
+            }
+            
+        ASSERT_EQ(2, values.size());
+        ASSERT_TRUE(id.IsValid());
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "foo"));
+        ASSERT_TRUE(values.end() != std::find(values.begin(), values.end(), "bar-changed"));
+
+        //      ... plus one instance of the second MA
+        ECSqlStatement selectTmas;
+        selectTmas.Prepare(*m_db, "SELECT ECInstanceId, TestMultiAspectProperty TestMultiAspectProperty FROM DgnPlatformTest.TestMultiAspect WHERE Element.Id=?");
+        selectTmas.BindId(1, editEl->GetElementId());
+        int countTmas = 0;
+        while (BE_SQLITE_ROW == selectTmas.Step())
+            {
+            auto aspectid = selectTmas.GetValueId<BeSQLite::EC::ECInstanceId>(0);
+            auto value = selectTmas.GetValueText(1);
+
+            ASSERT_EQ(0, countTmas);
+            ++countTmas;
+            ASSERT_STREQ("has handler", value);
+            }
+
+        ASSERT_EQ(1, countTmas);
+        }
+
+    if (true)
+        {
+        // If an aspect is supposed to have a handler, then we are not allowed to write such aspects using the generic handler
+        auto editEl = persistEl->CopyForEdit();
+        ASSERT_TRUE(nullptr != maspectclassWithHandler);
+        auto maspectWithHandler1 = maspectclassWithHandler->GetDefaultStandaloneEnabler()->CreateInstance();
+        maspectWithHandler1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));  
+        ASSERT_NE(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspectWithHandler1));
+        }
+    }
