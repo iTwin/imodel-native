@@ -11,6 +11,11 @@ BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 HANDLER_DEFINE_MEMBERS(PoseHandler)
 
+#define POSE_PROPNAME_Center            "Center"
+#define POSE_PROPNAME_Omega             "Omega"
+#define POSE_PROPNAME_Phi               "Phi"
+#define POSE_PROPNAME_Kappa             "Kappa"
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
@@ -18,6 +23,10 @@ HANDLER_DEFINE_MEMBERS(PoseHandler)
 void PoseHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     {
     T_Super::_GetClassParams(params);
+    params.Add(POSE_PROPNAME_Center);
+    params.Add(POSE_PROPNAME_Omega);
+    params.Add(POSE_PROPNAME_Phi);
+    params.Add(POSE_PROPNAME_Kappa);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -30,6 +39,46 @@ PosePtr Pose::Create(Dgn::SpatialModelR model)
 
     PosePtr cp = new Pose(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
     return cp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+RotMatrix Pose::GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa)
+    {
+    RotMatrix rotation(RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity(), omega.Radians(), phi.Radians(), kappa.Radians()));
+    //Not sure we need this - it was in MS Connect mdlApps\RMUtilImage.cpp on MS Connect on vancouver stream
+    rotation.Transpose();
+    return rotation;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Pose::GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation)
+    {
+    //From: http://danceswithcode.net/engineeringnotes/rotations_in_3d/rotations_in_3d_part1.html
+    double OmegaRadian = 0; //arbitrary
+    double KappaRadian = 0;
+    double PhiRadian   = -asin(rotation.GetComponentByRowAndColumn(2, 0));
+    phi = Angle::FromRadians(PhiRadian);
+    //Check for Gimbal Lock
+    if (phi.Degrees() == 90)
+        {
+        KappaRadian = atan2(-rotation.GetComponentByRowAndColumn(0, 1), -rotation.GetComponentByRowAndColumn(0, 2));
+        }
+    else if (phi.Degrees() == -90)
+        {
+        KappaRadian = atan2(-rotation.GetComponentByRowAndColumn(0, 1), -rotation.GetComponentByRowAndColumn(0, 2));
+        }
+    else
+        {
+        OmegaRadian = atan2(rotation.GetComponentByRowAndColumn(1, 0), rotation.GetComponentByRowAndColumn(0, 0));
+        KappaRadian = atan2(rotation.GetComponentByRowAndColumn(2, 1), rotation.GetComponentByRowAndColumn(2, 2));
+        }
+    omega =  Angle::FromRadians(OmegaRadian);
+    kappa =  Angle::FromRadians(KappaRadian);
+    return true;
     }
 
 
@@ -65,9 +114,10 @@ Pose::Pose(CreateParams const& params): T_Super(params)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Pose::IsEqual(PoseCR rhs) const
     {
-    RotMatrix lhsRotMatrix(GetRotMatrix());
-    RotMatrix rhsRotMatrix(rhs.GetRotMatrix());
-    if (lhsRotMatrix.IsEqual(rhsRotMatrix) && GetCenter().IsEqual(rhs.GetCenter()))
+    if ((GetCenter()   == rhs.GetCenter())                        &&
+        (GetOmega().Radians()    == rhs.GetOmega().Radians())     && 
+        (GetPhi().Radians()      == rhs.GetPhi().Radians())       &&
+        (GetKappa().Radians()    == rhs.GetKappa().Radians())       )
         return true;
     return false;
     }
@@ -76,55 +126,78 @@ bool Pose::IsEqual(PoseCR rhs) const
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PoseElementId Pose::GetId() const 
-    { return PoseElementId(GetElementId().GetValueUnchecked()); }
+    {
+    return PoseElementId(GetElementId().GetValueUnchecked()); 
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DPoint3dCR Pose::GetCenter() const 
     {
-    return GetPlacement().GetOrigin();
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RotMatrix  Pose::GetRotMatrix() const 
-    {
-    return GetPlacement().GetAngles().ToRotMatrix();
+    return m_center;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Pose::SetCenter(DPoint3dCR val) 
     {
-    Placement3d placement(GetPlacement());
-    //Tricky: We must initialize placement bounding box otherwise IsValid will failed on the element
-    //        placement and it will never be saved.
-    placement.GetElementBoxR().InitFrom(val);
-    placement.GetOriginR() = val;
-    SetPlacement(placement);
+    m_center = val;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Pose::SetRotMatrix(RotMatrixCR val) 
+AngleCR Pose::GetOmega() const 
     {
-    Placement3d placement(GetPlacement());
-    YawPitchRollAngles newPlacementAngles;
-    if (YawPitchRollAngles::TryFromRotMatrix(placement.GetAnglesR(), val))
-        {
-        SetPlacement(placement);
-        return true;
-        }
-    BeAssert(!"Cannot transform rotMatrix into YawPitchRollAngles");
-    return false;
+    return m_omega;
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AngleCR Pose::GetPhi() const
+    {
+    return m_phi;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+AngleCR Pose::GetKappa() const
+    {
+    return m_kappa;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetOmega(AngleCR omega) 
+    {
+    m_omega = omega;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetPhi(AngleCR phi) 
+    {
+    m_phi = phi;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Pose::SetKappa(AngleCR kappa) 
+    {
+    m_kappa = kappa;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Pose::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
+    if (ECSqlStatus::Success != statement.BindPoint3D(statement.GetParameterIndex(POSE_PROPNAME_Center), GetCenter()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Omega), GetOmega().Radians()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Phi),   GetPhi().Radians()) ||
+        ECSqlStatus::Success != statement.BindDouble(statement.GetParameterIndex(POSE_PROPNAME_Kappa), GetKappa().Radians()))
+        {
+        return DgnDbStatus::BadArg;
+        }
     return DgnDbStatus::Success;
     }
 
@@ -155,7 +228,17 @@ DgnDbStatus Pose::_BindUpdateParams(BeSQLite::EC::ECSqlStatement& statement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Pose::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
     {
-    return T_Super::_ReadSelectParams(stmt, params);
+    auto status = T_Super::_ReadSelectParams(stmt, params);
+    if (DgnDbStatus::Success == status)
+        {
+        //read cameraDevice properties
+        SetCenter(stmt.GetValuePoint3D(params.GetSelectIndex(POSE_PROPNAME_Center)));
+        SetOmega(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Omega))));
+        SetPhi(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Phi))));
+        SetKappa(Angle::FromRadians(stmt.GetValueDouble(params.GetSelectIndex(POSE_PROPNAME_Kappa))));
+        }
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -194,6 +277,14 @@ void Pose::_OnDeleted() const
 void Pose::_CopyFrom(DgnElementCR el)
     {
     T_Super::_CopyFrom(el);
+    auto other = dynamic_cast<PoseCP>(&el);
+    BeAssert(nullptr != other);
+    if (nullptr == other)
+        return;
+    SetCenter(other->GetCenter());
+    SetOmega(other->GetOmega());
+    SetPhi(other->GetPhi());
+    SetKappa(other->GetKappa());
     }
 
 

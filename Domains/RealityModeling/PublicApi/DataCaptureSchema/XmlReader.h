@@ -34,7 +34,7 @@ private:
     BeXmlStatus ReadPhotoGroupNode(BeXmlNodeR photoGroupNode);
     BeXmlStatus ReadCameraDeviceInfo(BeXmlNodeR sourceNodeRef, CameraDeviceR cameraDeviceInfo, long photoGroupNumber);
     BeXmlStatus ReadPhotoNode(BeXmlNodeR sourceNodeRef,  ShotR shot, PoseR pose);
-    BeXmlStatus ReadRotationFromCameraDevicePose(BeXmlNodeR photoNode, RotMatrixR rotation);
+    BeXmlStatus ReadRotationFromCameraDevicePose(BeXmlNodeR photoNode, AngleR omegaAngle, AngleR phiAngle, AngleR kappaAngle);
 
 
 public:

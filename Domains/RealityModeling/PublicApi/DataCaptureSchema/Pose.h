@@ -27,6 +27,10 @@ private:
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
+    DPoint3d m_center;
+    Angle m_omega;
+    Angle m_phi;
+    Angle m_kappa;
 
     explicit Pose(CreateParams const& params);
 
@@ -83,10 +87,20 @@ public:
     //! Validates 
     DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
 
+
+    //Rotation can be express in omega/phi/kappa or by a rotation matrix 
+    //Use utility methods below to do your convertion 
+    DATACAPTURE_EXPORT static RotMatrix         GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
+    DATACAPTURE_EXPORT static bool              GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
+
     DATACAPTURE_EXPORT DPoint3dCR               GetCenter() const;
-    DATACAPTURE_EXPORT RotMatrix                GetRotMatrix() const;
-    DATACAPTURE_EXPORT void SetCenter(DPoint3dCR val);
-    DATACAPTURE_EXPORT bool SetRotMatrix(RotMatrixCR val);
+    DATACAPTURE_EXPORT void                     SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT AngleCR                  GetOmega() const;
+    DATACAPTURE_EXPORT AngleCR                  GetPhi() const;
+    DATACAPTURE_EXPORT AngleCR                  GetKappa() const;
+    DATACAPTURE_EXPORT void                     SetOmega(AngleCR omega);
+    DATACAPTURE_EXPORT void                     SetPhi(AngleCR phi);
+    DATACAPTURE_EXPORT void                     SetKappa(AngleCR kappa);
 
     //! Get the id of this Shot element
     DATACAPTURE_EXPORT PoseElementId GetId() const;

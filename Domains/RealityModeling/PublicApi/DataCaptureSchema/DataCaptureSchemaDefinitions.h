@@ -73,9 +73,10 @@ END_BENTLEY_DATACAPTURE_NAMESPACE
 #define BDCP_CLASS_CameraDeviceModel                             "CameraDeviceModel"
 #define BDCP_CLASS_CameraDevice                                  "CameraDevice"
 #define BDCP_CLASS_Shot                                          "Shot"
-#define BDCP_CLASS_Pose                                          "Pose"
+#define BDCP_CLASS_Pose                                          "Pose"                                    
 #define BDCP_CLASS_RadialDistortion                              "RadialDistortion"
 #define BDCP_CLASS_TangentialDistortion                          "TangentialDistortion"
+
 
 // Relationships
 #define BDCP_REL_CameraDeviceIsDefinedByCameraDeviceModel            "CameraDeviceIsDefinedByCameraDeviceModel"

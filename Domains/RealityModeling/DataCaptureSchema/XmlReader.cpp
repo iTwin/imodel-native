@@ -149,7 +149,7 @@ BeXmlStatus XmlReader::ReadCameraDeviceInfo (BeXmlNodeR sourceNodeRef, CameraDev
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, RotMatrixR rotation)
+BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, AngleR omegaAngle, AngleR phiAngle, AngleR kappaAngle)
     {
     BeXmlStatus status(BEXML_Success);
 
@@ -158,9 +158,10 @@ BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef
         BEXML_Success == (status =  sourceNodeRef.GetContentDoubleValue(phi,   "Pose/Rotation/Phi")) &&
         BEXML_Success == (status =  sourceNodeRef.GetContentDoubleValue(kappa, "Pose/Rotation/Kappa")))
         {
-        const double ratio = msGeomConst_pi/180.0;
-        rotation = RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity(), ratio * omega, ratio * phi, ratio * kappa);
-        rotation.Transpose();
+        omegaAngle =  Angle::FromDegrees(omega);
+        phiAngle = Angle::FromDegrees(phi);
+        kappaAngle = Angle::FromDegrees(kappa);
+        
         return BEXML_Success;
         }
 
@@ -175,7 +176,9 @@ BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(M_21, "Pose/Rotation/M_21")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(M_22, "Pose/Rotation/M_22")))
         {
-        rotation = RotMatrix::FromRowValues(M_00, M_01, M_02, M_10, M_11, M_12, M_20, M_21, M_22);
+        RotMatrix rotation = RotMatrix::FromRowValues(M_00, M_01, M_02, M_10, M_11, M_12, M_20, M_21, M_22);
+        Pose::GetRotationFromRotMatrix(omegaAngle,phiAngle,kappaAngle,rotation);
+
         return BEXML_Success;
         }
 
@@ -206,15 +209,19 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot, Pose
         }
 
     DPoint3d  poseCenter;
-    RotMatrix rotation;
+    Angle Omega;
+    Angle Phi;
+    Angle Kappa;
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")) &&
-        BEXML_Success == (status = ReadRotationFromCameraDevicePose(sourceNodeRef, rotation)))
+        BEXML_Success == (status = ReadRotationFromCameraDevicePose(sourceNodeRef, Omega, Phi, Kappa)))
         {
         //set pose in photo
         pose.SetCenter(poseCenter);
-        pose.SetRotMatrix(rotation);
+        pose.SetOmega(Omega);
+        pose.SetPhi(Omega);
+        pose.SetKappa(Omega);
         }                                                                                                           
 
     return BEXML_Success;

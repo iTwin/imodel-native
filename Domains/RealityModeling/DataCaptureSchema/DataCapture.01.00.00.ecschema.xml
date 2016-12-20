@@ -75,6 +75,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
+        <ECProperty propertyName="Center" typeName="point3d" />
+        <ECProperty propertyName="Omega" typeName="double" />
+        <ECProperty propertyName="Phi"   typeName="double" />
+        <ECProperty propertyName="Kappa"  typeName="double" />
     </ECEntityClass>
 
     <ECEntityClass typeName="Shot" description="Shot taken by a cameraDevice at a position and orientation.">
