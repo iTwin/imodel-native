@@ -53,7 +53,9 @@ private:
     void*  m_key;
 
 public:
-    BENTLEYDLL_EXPORT static void* Create();
+    typedef void(*Destructor)(void*);
+
+    BENTLEYDLL_EXPORT static void* Create(Destructor=nullptr);
     BENTLEYDLL_EXPORT static void Delete(void*);
     BENTLEYDLL_EXPORT static void SetValue(void* key, void* val);
     BENTLEYDLL_EXPORT static void* GetValue(void* key);
