@@ -53,7 +53,7 @@ private:
     void*  m_key;
 
 public:
-    typedef void(*Destructor)(void*);
+    typedef void(STDCALL_ATTRIBUTE *Destructor)(void*);
 
     BENTLEYDLL_EXPORT static void* Create(Destructor=nullptr);
     BENTLEYDLL_EXPORT static void Delete(void*);
