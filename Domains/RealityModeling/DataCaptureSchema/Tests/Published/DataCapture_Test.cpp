@@ -28,6 +28,7 @@ TEST_F(DataCaptureTests, CreateCameraDevice)
     // Create CameraDevice
     auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
     cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
 
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
     auto cameraDevicePtr = CameraDevice::Create(*spatialModelP,cameraDeviceModelPtr->GetId());
@@ -259,19 +260,30 @@ TEST_F(DataCaptureTests, CreateShot)
     CameraDeviceElementId cameraDeviceId = cameraDeviceInsertedPtr->GetId();
     ASSERT_TRUE(cameraDeviceId.IsValid());
 
+    //Create a pose
+    PosePtr pPose(Pose::Create(*spatialModelP));
+    ASSERT_TRUE(pPose.IsValid());
+    DPoint3d center = { 1.0,2.0,3.0 };
+    pPose->SetCenter(center);
+    Angle omega(Angle::FromDegrees(0));
+    Angle phi(Angle::FromDegrees(0));
+    Angle kappa(Angle::FromDegrees(0));
+    pPose->SetOmega(omega);
+    pPose->SetPhi(phi);
+    pPose->SetKappa(kappa);
+    auto poseInserted = pPose->Insert();
+    ASSERT_TRUE(poseInserted.IsValid());
+    PoseElementId poseId(pPose->GetId());
 
     // Create Photo for the cameraDevice
-    auto ShotPtr = Shot::Create(*spatialModelP,cameraDeviceId);
+    auto ShotPtr = Shot::Create(*spatialModelP,cameraDeviceId, poseId);
     ASSERT_TRUE(ShotPtr.IsValid());
 
     //Change Photo properties
     ShotPtr->SetLabel("BasicPhoto1");
-    RotationMatrixType rotation(RotationMatrixType::FromIdentity());
-    DPoint3d center = {1.0,2.0,3.0};
-    Pose pose(center,rotation);
-    ShotPtr->SetPose(pose);
-    DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDeviceInsertedPtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
-    ShotPtr->SetCode(shotCode);
+    //Don't set code - will test generate default code
+//     DgnCode shotCode = Shot::CreateCode(*projectPtr, cameraDeviceInsertedPtr->GetCode().GetValue(), Utf8PrintfString("%d", 42));
+//     ShotPtr->SetCode(shotCode);
 
     //Insert Shot element
     auto ShotInsertedPtr = ShotPtr->Insert();
@@ -287,7 +299,10 @@ TEST_F(DataCaptureTests, CreateShot)
     EXPECT_EQ(BE_SQLITE_OK, result) << "Save Photo failed";
 
     //Close project to flush memory
-    ShotPtr=nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
+    //release our element before closing project, otherwise we get an assert in closeDb.
+    poseInserted=nullptr;
+    pPose=nullptr;
+    ShotPtr=nullptr;
     ShotInsertedPtr=nullptr;
     cameraDevicePtr=nullptr;
     cameraDeviceModelPtr = nullptr;
@@ -303,9 +318,12 @@ TEST_F(DataCaptureTests, CreateShot)
     ASSERT_TRUE(myShotPtr.IsValid());
     ASSERT_EQ(ShotElementId, myShotPtr->GetElementId());
 
-    DgnCode myShotCode = myShotPtr->GetCode();
-    ASSERT_TRUE(myShotCode == shotCode);
-    ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
+    //Don't set code - will test generate default code
+//     DgnCode myShotCode = myShotPtr->GetCode();
+//     ASSERT_TRUE(myShotCode == shotCode);
+    PoseCPtr myPosePtr = Pose::Get(*projectReopenedPtr, myShotPtr->GetPoseId());
+    ASSERT_TRUE(myPosePtr.IsValid());
+    ASSERT_EQ(poseId, myPosePtr->GetId());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -333,10 +351,19 @@ TEST_F(DataCaptureTests, ModifyShot)
     ASSERT_TRUE(shotPtr.IsValid());
 
     //Change Shot properties
-    RotationMatrixType rotation(RotationMatrixType::FromRowValues(1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0));
     DPoint3d center = { 10.0,11.0,12.0 };
-    Pose pose(center, rotation);
-    shotPtr->SetPose(pose);
+    PosePtr posePtr = Pose::GetForEdit(*projectPtr, shotPtr->GetPoseId());
+    ASSERT_TRUE(posePtr.IsValid());
+
+    posePtr->SetCenter(center);
+    Angle omega(Angle::FromDegrees(10.0));
+    Angle phi(Angle::FromDegrees(45.0));
+    Angle kappa(Angle::FromDegrees(-20.0));
+    posePtr->SetOmega(omega);
+    posePtr->SetPhi(phi);
+    posePtr->SetKappa(kappa);
+    auto poseUpdatedPtr = posePtr->Update();
+    ASSERT_TRUE(poseUpdatedPtr.IsValid());
 
     CameraDeviceElementId cameraDeviceId = shotPtr->GetCameraDeviceId();
     ASSERT_TRUE(cameraDeviceId.IsValid());
@@ -363,6 +390,9 @@ TEST_F(DataCaptureTests, ModifyShot)
     //Close project to flush memory
     shotPtr = nullptr;//release our element before closing project, otherwise we get an assert in closeDb.
     ShotUpdatedPtr= nullptr;
+    cameraDevicePtr=nullptr;
+    poseUpdatedPtr=nullptr;
+    posePtr=nullptr;
     CloseProject();
 
     //Reopen project
@@ -377,11 +407,18 @@ TEST_F(DataCaptureTests, ModifyShot)
     ASSERT_TRUE(cameraDeviceIdRead.IsValid());
     ASSERT_EQ(cameraDeviceIdRead, cameraDeviceId);
 
+    PoseCPtr myPosePtr = Pose::Get(*projectReopenedPtr, myShotPtr->GetPoseId());
+    ASSERT_TRUE(myPosePtr.IsValid());
+
+
 
     //read back Shot properties and check if equal
     DgnCode myShotCode = myShotPtr->GetCode();
     ASSERT_TRUE(myShotCode == shotCode);
-    ASSERT_TRUE(pose.IsEqual(myShotPtr->GetPose()));
+    ASSERT_TRUE(omega.Radians() == myPosePtr->GetOmega().Radians());
+    ASSERT_TRUE(phi.Radians()== myPosePtr->GetPhi().Radians());
+    ASSERT_TRUE(kappa.Radians() == myPosePtr->GetKappa().Radians());
+    ASSERT_TRUE(myPosePtr->GetCenter() == center);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
