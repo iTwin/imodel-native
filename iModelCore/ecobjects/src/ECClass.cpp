@@ -3290,13 +3290,6 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateBaseConstraint(ECRelationship
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
         ECClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
-        if (nullptr == GetAbstractConstraint())
-            {
-            // *** WIP_AVOID_CRASH
-            BeDataAssert(false);
-            return ECObjectsStatus::BaseClassUnacceptable;
-            }
-
         if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
             {
             LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
@@ -4583,7 +4576,7 @@ ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool ins
         return ECObjectsStatus::BaseClassUnacceptable;
         }
 
-    if (validate)
+    if (validate && ECVersion::V3_1 <= GetSchema().GetECVersion())
         {
         // Get the relationship base class and compare its strength and direction
         ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
