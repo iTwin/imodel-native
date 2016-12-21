@@ -133,9 +133,6 @@ public:
     //! 4 corners of tile, in world coordinates
     Dgn::Render::IGraphicBuilder::TileCorners const& GetCorners() const {return m_corners;}
 
-    bool TryLowerRes(Dgn::TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(Dgn::TileTree::DrawArgsR args) const;
-
     bool HasGraphics() const { return IsReady() && m_graphic.IsValid(); }
 
     bool _HasChildren() const override { return m_id.resolution > 0; }

@@ -70,45 +70,6 @@ Utf8String RasterTile::_GetTileName() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-bool RasterTile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
-    {
-    RasterTile* parent = (RasterTile*) m_parent;
-    if (depth <= 0 || nullptr == parent)
-        {
-        // DEBUG_PRINTF("no lower res");
-        return false;
-        }
-
-    if (parent->HasGraphics())
-        {
-        //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_loResSubstitutes.Add(*parent->m_graphic);
-        return true;
-        }
-
-    return parent->TryLowerRes(args, depth - 1); // recursion
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-void RasterTile::TryHigherRes(TileTree::DrawArgsR args) const
-    {
-    for (auto const& child : m_children)
-        {
-        RasterTile* mapChild = (RasterTile*) child.get();
-
-        if (mapChild->HasGraphics())
-            {
-            //DEBUG_PRINTF("using higher res");
-            args.m_hiResSubstitutes.Add(*mapChild->m_graphic);
-            }
-        }
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
 void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     {
     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
@@ -118,9 +79,6 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         {
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
-
-        TryLowerRes(args, DRAW_COARSER_DELTA);
-        TryHigherRes(args);
 
         return;
         }
