@@ -143,7 +143,10 @@ IHttpHandlerPtr            customHandler
 DgnDbRepositoryConnection::~DgnDbRepositoryConnection()
     {
     if (m_eventManagerPtr)
+        {
         m_eventManagerPtr->Stop();
+        m_eventManagerPtr.reset();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2522,7 +2525,12 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnsubscribeEventsCallback(Dg
     if (!callback)
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventCallbackNotSpecified));
 
-    return m_eventManagerPtr->Unsubscribe(callback);
+    bool dispose = false;
+    auto result = m_eventManagerPtr->Unsubscribe(callback, &dispose);
+    if (dispose)
+        m_eventManagerPtr.reset();
+
+    return result;
     }
 
 /* Public methods end */

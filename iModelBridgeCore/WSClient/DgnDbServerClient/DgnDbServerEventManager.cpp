@@ -197,8 +197,9 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Subscribe(DgnDbServerEventType
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCallbackPtr callback)
+DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCallbackPtr callback, bool* dispose)
     {
+    *dispose = false;
     if (callback)
         {
         auto it = m_eventCallbacks.find(callback);
@@ -212,6 +213,7 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCa
 
     if (!callback || 0 == m_eventCallbacks.size())
         {
+        *dispose = true;
         return Stop();
         }
     
