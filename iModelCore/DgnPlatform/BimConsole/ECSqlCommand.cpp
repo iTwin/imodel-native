@@ -239,8 +239,8 @@ Utf8String ECSqlCommand::PrimitiveToString(IECSqlValue const& value, ECN::Primit
             case ECN::PRIMITIVETYPE_Binary:
             {
             int blobSize = -1;
-            value.GetBinary(&blobSize);
-            out.Sprintf("BINARY[%d bytes]", blobSize);
+            value.GetBlob(&blobSize);
+            out.Sprintf("BLOB[%d bytes]", blobSize);
             break;
             }
             case ECN::PRIMITIVETYPE_Boolean:

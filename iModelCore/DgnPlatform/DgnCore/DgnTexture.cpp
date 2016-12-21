@@ -30,7 +30,7 @@ void DgnTexture::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
 
     BeAssert(0 < m_data.GetByteStream().GetSize());
     stmt.BindText(stmt.GetParameterIndex(PROP_Descr), m_descr.c_str(), IECSqlBinder::MakeCopy::No);
-    stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No);
+    stmt.BindBlob(stmt.GetParameterIndex(PROP_Data), m_data.GetByteStream().GetData(), static_cast<int>(m_data.GetByteStream().GetSize()), IECSqlBinder::MakeCopy::No);
     stmt.BindInt(stmt.GetParameterIndex(PROP_Format), static_cast<int>(m_data.GetFormat()));
     stmt.BindInt(stmt.GetParameterIndex(PROP_Width), static_cast<int>(m_width));
     stmt.BindInt(stmt.GetParameterIndex(PROP_Height), static_cast<int>(m_height));
@@ -51,7 +51,7 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
     auto dataIdx = params.GetSelectIndex(PROP_Data);
     int dataSize = 0;
     m_data.GetByteStreamR().Clear();
-    Byte const* data = static_cast<Byte const*>(stmt.GetValueBinary(dataIdx, &dataSize));
+    Byte const* data = static_cast<Byte const*>(stmt.GetValueBlob(dataIdx, &dataSize));
     BeAssert(dataSize > 0);
     m_data.GetByteStreamR().SaveData(data, dataSize);
 
