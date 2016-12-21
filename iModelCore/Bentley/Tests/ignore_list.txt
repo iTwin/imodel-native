@@ -21,9 +21,6 @@ DirectoryObserverTests.ModificationInObservedDirectory_UIThread
     # WinX64, DgnDb0601, NDEBUG, PRG
     # <crash, no output provided>
 
-Utf8PrintfStringTests.Ctor_FormatAndArgumentPassed_FormattedString
-    # Crashes, probably a bug
-
 #TFS 633328: randomly Crash on iosArm64
 DirectoryObserverTests.*
 
