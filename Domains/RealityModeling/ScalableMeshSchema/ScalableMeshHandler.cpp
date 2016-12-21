@@ -1189,13 +1189,15 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
 
     bvector<IMeshSpatialModelP> allScalableMeshes;
     ScalableMeshModel::GetAllScalableMeshes(dgnProject, allScalableMeshes);
-    size_t nOfModels = allScalableMeshes.size();
+    size_t nOfOtherModels = 0;
+    for (auto& sm : allScalableMeshes)
+        if (sm != this) nOfOtherModels++;
     allScalableMeshes.clear();
 
     BeFileName clipFileBase = BeFileName(ScalableMeshModel::GetTerrainModelPath(dgnProject)).GetDirectoryName();
     clipFileBase.AppendString(smFilename.GetFileNameWithoutExtension().c_str());
     clipFileBase.AppendUtf8("_");
-    clipFileBase.AppendUtf8(std::to_string(nOfModels-1).c_str());
+    clipFileBase.AppendUtf8(std::to_string(nOfOtherModels).c_str());
     m_smPtr = IScalableMesh::GetFor(smFilename.GetWCharCP(), Utf8String(clipFileBase.c_str()), false, true);
     assert(m_smPtr != 0);
 
