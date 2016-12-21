@@ -202,9 +202,6 @@ protected:
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;
-    double m_biasDistance = 0.0;  // for 2d display priority
-    double m_hiResBiasDistance = -0.5; // for moving higer resolution substitute tiles behind real tiles.
-    double m_loResBiasDistance = -1.0; // for moving lower resolution substitute tiles behind real tiles.
     TilePtr m_rootTile;
     Utf8String m_rootUrl;
     Utf8String m_rootDir;
@@ -394,14 +391,12 @@ struct DrawArgs
     Transform m_location;
     double m_scale;
     Render::GraphicBranch m_graphics;
-    Render::GraphicBranch m_hiResSubstitutes;
-    Render::GraphicBranch m_loResSubstitutes;
     MissingNodes m_missing;
     TimePoint m_now;
     TimePoint m_purgeOlderThan;
     ClipVectorCP m_clip;
 
-    void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch, double offset, Utf8CP title);
+    void DrawBranch(Render::ViewFlags, Render::GraphicBranch& branch);
     DPoint3d GetTileCenter(TileCR tile) const {return DPoint3d::FromProduct(GetLocation(), tile.GetCenter());}
     double GetTileRadius(TileCR tile) const {return m_scale * tile.GetRadius();}
     void SetClip(ClipVectorCP clip) {m_clip = clip;}
@@ -482,8 +477,6 @@ struct Tile : TileTree::Tile
 
     TileId GetTileId() const {return m_id;}
     virtual TilePtr _CreateChild(TileId) const = 0;
-    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawArgsR args) const;
     bool _HasChildren() const override {return !m_isLeaf;}
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
@@ -566,9 +559,6 @@ public:
 
     void SetIsLeaf() { m_isLeaf = true; m_children.clear(); }
     void AddGraphic(Render::GraphicR graphic) { m_graphics.push_back(&graphic); }
-
-    bool TryLowerRes(TileTree::DrawArgsR args, int depth) const;
-    void TryHigherRes(TileTree::DrawArgsR args) const;
 };
 
 } // end OctTree

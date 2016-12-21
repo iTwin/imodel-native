@@ -1123,7 +1123,7 @@ ColorDef DgnViewport::GetBackgroundColor() const
 void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
     {
     DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.push_back(&task);
+    //m_progressiveTasks.push_back(&task);
     }
 
 /*---------------------------------------------------------------------------------**//**

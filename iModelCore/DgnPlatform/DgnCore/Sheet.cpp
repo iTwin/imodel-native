@@ -409,9 +409,6 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
-    m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
-    m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
-    m_loResBiasDistance = m_hiResBiasDistance * 2.0;
     m_viewport->ChangeViewController(*view);
     }
 

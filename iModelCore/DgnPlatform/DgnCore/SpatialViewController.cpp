@@ -311,12 +311,6 @@ void SpatialViewController::_CreateTerrain(TerrainContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-#if defined(ELEMENT_TILE_CREATE_SCENE)
-#endif
-#if defined(ELEMENT_TILE_CREATE_SCENE)
-#endif
-#if defined(ELEMENT_TILE_CREATE_SCENE)
-#endif
 * Visit all of the elements in a SpatialViewController. This is used for picking, etc.
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/

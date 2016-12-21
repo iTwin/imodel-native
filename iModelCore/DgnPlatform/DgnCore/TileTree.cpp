@@ -681,7 +681,7 @@ void Root::DrawInView(RenderContextR context)
         // yes, request them and schedule a progressive task to draw them as they arrive.
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
+        //context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
         }
     }
 
@@ -780,16 +780,14 @@ TileLoadState::~TileLoadState()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch, double branchOffset, Utf8CP title)
+void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
     {
     if (branch.m_entries.empty())
         return;
 
-    DPoint3d offset = {0.0, 0.0, m_root.m_biasDistance + branchOffset};
-    Transform location = Transform::FromProduct(GetLocation(), Transform::From(offset));
-    DEBUG_PRINTF("drawing %d %s Tiles", branch.m_entries.size(), title);
+    DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
     branch.SetViewFlags(flags);
-    auto drawBranch = m_context.CreateBranch(branch, &location, m_clip);
+    auto drawBranch = m_context.CreateBranch(branch, &GetLocation(), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
     m_context.OutputGraphic(*drawBranch, nullptr);
     }
@@ -816,9 +814,7 @@ void DrawArgs::DrawGraphics(ViewContextR context)
     ViewFlags flags = context.GetViewFlags();
     m_root._AdjustViewFlags(flags);
 
-    DrawBranch(flags, m_graphics, 0.0, "Main");
-    DrawBranch(flags, m_hiResSubstitutes, m_root.m_hiResBiasDistance, "hiRes");
-    DrawBranch(flags, m_loResSubstitutes, m_root.m_loResBiasDistance, "loRes");
+    DrawBranch(flags, m_graphics);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -864,47 +860,6 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* we do not have any graphics for this tile, try its (lower resolution) parent, recursively.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool QuadTree::Tile::TryLowerRes(DrawArgsR args, int depth) const
-    {
-    Tile* parent = (Tile*) m_parent;
-    if (depth <= 0 || nullptr == parent)
-        {
-        // DEBUG_PRINTF("no lower res");
-        return false;
-        }
-
-    if (parent->HasGraphics())
-        {
-        //DEBUG_PRINTF("using lower res %d", depth);
-        args.m_loResSubstitutes.Add(*parent->m_graphic);
-        return true;
-        }
-
-    return parent->TryLowerRes(args, depth-1); // recursion
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* We do not have any graphics for this tile, try its immediate children. Not recursive.
-* @bsimethod                                    Keith.Bentley                   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::TryHigherRes(DrawArgsR args) const
-    {
-    for (auto const& child : m_children)
-        {
-        Tile* quadChild = (Tile*) child.get();
-
-        if (quadChild->HasGraphics())
-            {
-            //DEBUG_PRINTF("using higher res");
-            args.m_hiResSubstitutes.Add(*quadChild->m_graphic);
-            }
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
@@ -913,9 +868,6 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
         {
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
-
-        TryLowerRes(args, 10);
-        TryHigherRes(args);
 
         return;
         }
@@ -981,52 +933,11 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
         if (!IsNotFound())
             args.m_missing.Insert(depth, this);
 
-        TryLowerRes(args, 10);
-        TryHigherRes(args);
-
         return;
         }
 
     if (HasGraphics())
         args.m_graphics.Add(m_graphics);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool OctTree::Tile::TryLowerRes(TileTree::DrawArgsR args, int depth) const
-    {
-    auto parent = static_cast<Tile const*>(m_parent);
-    if (depth <= 0 || nullptr == parent)
-        return false;
-
-    if (parent->HasGraphics())
-        {
-        // ###TODO_ELEMENT_TILE: A better way to avoid adding the parent more than once
-        // (same issue in QuadTree)
-        // (shouldn't Root::Draw() handle this?)
-        bvector<GraphicPtr>& loRes = args.m_loResSubstitutes.m_entries;
-        GraphicP firstParentGraphic = parent->GetGraphics().front().get();
-        if (loRes.end() == std::find_if(loRes.begin(), loRes.end(), [&](Render::GraphicPtr const& arg) { return arg.get() == firstParentGraphic; }))
-            args.m_loResSubstitutes.Add(parent->GetGraphics());
-
-        return true;
-        }
-
-    return parent->TryLowerRes(args, depth-1);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void OctTree::Tile::TryHigherRes(TileTree::DrawArgsR args) const
-    {
-    for (auto const& child : m_children)
-        {
-        auto octChild = static_cast<Tile const*>(child.get());
-        if (octChild->HasGraphics())
-            args.m_hiResSubstitutes.Add(octChild->GetGraphics());
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
