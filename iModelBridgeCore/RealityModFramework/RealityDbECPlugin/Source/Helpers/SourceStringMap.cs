@@ -16,6 +16,23 @@ namespace IndexECPlugin.Source.Helpers
     {
     internal static class SourceStringMap
         {
+
+        public static bool IsValidId (DataSource source, string id)
+            {
+            switch ( source )
+                {
+                case DataSource.Index:
+                    int num;
+                    return int.TryParse(id, out num);
+                case DataSource.USGS:
+                    return (id.Length == IndexConstants.USGSIdLenght);
+                case DataSource.All:
+                    return true;
+                default:
+                    throw new NotImplementedException("This source is not implemented yet");
+                }
+            }
+
         public static string SourceToString (DataSource source)
             {
             switch ( source )

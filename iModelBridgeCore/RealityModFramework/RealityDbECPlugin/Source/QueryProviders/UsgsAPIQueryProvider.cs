@@ -47,7 +47,6 @@ namespace IndexECPlugin.Source.QueryProviders
         Tuple<string, JObject> jsonCache;
 
         Dictionary<IECClass, List<IECInstance>> m_storageForCaching;
-        Dictionary<string, IECInstance> m_storedParents;
 
         const string termsOfUse = "https://www2.usgs.gov/laws/info_policies.html";
         const string legalString = " courtesy of the U.S. Geological Survey";
@@ -177,12 +176,10 @@ namespace IndexECPlugin.Source.QueryProviders
 
         private List<IECInstance> CreateInstancesFromInstanceIdList(IEnumerable<string> instanceIdSet, IECClass ecClass, SelectCriteria selectClause)
             {
-            List<IECInstance> instancesRequestingParent = null;
             List<IECInstance> instanceList = new List<IECInstance>();
             List<IECInstance> cachedInstances = m_instanceCacheManager.QueryInstancesFromCache(instanceIdSet, ecClass, GetCacheBaseClass(ecClass), selectClause);
             CompleteInstances(cachedInstances, ecClass);
             CreateCacheRelatedInstances(cachedInstances, selectClause.SelectedRelatedInstances);
-            RelatedInstanceSelectCriteria parentCrit = null;
                     //We create the requested instances that were not in the cache
                     foreach ( string sourceID in instanceIdSet )
                         {
@@ -202,40 +199,13 @@ namespace IndexECPlugin.Source.QueryProviders
                                     }
                                 }
                             }
-                        InstanceCritTuple parentRequestingBundle = CreateRelatedInstance(instance, selectClause.SelectedRelatedInstances);
-                        if(parentRequestingBundle != null)
-                            {
-                            if(instancesRequestingParent == null)
-                                {
-                                instancesRequestingParent = new List<IECInstance>();
-                                }
-                            instancesRequestingParent.Add(parentRequestingBundle.Instance);
-
-                            if(parentCrit == null)
-                                {
-                                parentCrit = parentRequestingBundle.ParentRelatedCriteria;
-                                }
-                            else
-                                {
-                                if(parentCrit != parentRequestingBundle.ParentRelatedCriteria)
-                                    {
-                                    throw new UserFriendlyException();
-                                    }
-                                }
-                            }
+                        CreateRelatedInstance(instance, selectClause.SelectedRelatedInstances);
 
                         if ( instance != null )
                             {
                             instanceList.Add(instance);
                             }
 
-                        }
-                    //var parentCrit = selectClause.SelectedRelatedInstances.FirstOrDefault(crit => (crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren" ||
-                    //                                                                                       crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase")
-                    //                 && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
-                    if(parentCrit != null)
-                        {
-                        CreateParentRelationship(instancesRequestingParent, parentCrit, parentCrit.RelatedClassSpecifier.RelatedClass);
                         }
                     return instanceList;
             }
@@ -272,13 +242,7 @@ namespace IndexECPlugin.Source.QueryProviders
             //Parallel.ForEach(m_storageForCaching, (instancesGroup) =>
             foreach ( var instancesGroup in m_storageForCaching )
                 {
-                List<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = null;
-                if ( instancesGroup.Key.Name == "SpatialEntityBase" )
-                    {
-                    additionalColumns = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
-                    additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("ParentDatasetIdStr", Bentley.ECObjects.ECObjects.StringType, inst => ((string) inst.ExtendedData["ParentDatasetIdStr"])));
-                    }
-                m_instanceCacheManager.PrepareCacheInsertStatement(instancesGroup.Value, instancesGroup.Key, additionalColumns);
+                m_instanceCacheManager.PrepareCacheInsertStatement(instancesGroup.Value, instancesGroup.Key, null);
                 //});
                 }
             }
@@ -299,63 +263,26 @@ namespace IndexECPlugin.Source.QueryProviders
                 IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
 
                 IECRelationshipClass relationshipClass = crit.RelatedClassSpecifier.RelationshipClass;
-                bool useParentId = false;
-
-                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data. DetailsViewToChildren is done in QuerySpatialEntitiesWithDetailsViewByPolygon
-                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") || 
-                    (relationshipClass.Name == "DetailsViewToChildren") ||
-                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase") )
-                    {
-                    continue;
-                    }
 
                 List<string> relInstIDs = new List<string>();
-                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
-                //    {
-                    foreach ( IECInstance instance in cachedInstances )
-                        {
-                        if ( !relInstIDs.Contains(instance.InstanceId) )
-                            {
-                            relInstIDs.Add(instance.InstanceId);
-                            }
-                        }
-                    //}
-                //else
-                //    {
 
-                //    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                //        {
-                //        //TODO : See if it is possible and useful to go in the direction parent->children
-                //        continue;
-                //        }
-                //    else
-                //        {
-                //        useParentId = true;
-                //        foreach ( IECInstance instance in cachedInstances )
-                //            {
-                //            string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
-                //            if ( !relInstIDs.Contains(parentId) )
-                //                {
-                //                relInstIDs.Add(parentId);
-                //                }
-                //            }
-                //        }
-                //    }
+                foreach ( IECInstance instance in cachedInstances )
+                    {
+                    if ( !relInstIDs.Contains(instance.InstanceId) )
+                        {
+                        relInstIDs.Add(instance.InstanceId);
+                        }
+                    }
 
                 List<IECInstance> relInstances = m_instanceCacheManager.QueryInstancesFromCache(relInstIDs, relatedClass, GetCacheBaseClass(relatedClass), crit);
                 CompleteInstances(relInstances, relatedClass);
                 CreateCacheRelatedInstances(relInstances, crit.SelectedRelatedInstances);
-                foreach(IECInstance relInstance in relInstances)
+                foreach ( IECInstance relInstance in relInstances )
                     {
                     IEnumerable<IECInstance> instances;
-                    if ( useParentId )
-                        {
-                        instances = cachedInstances.Where(i => (string) i.ExtendedData["ParentDatasetIdStr"] == relInstance.InstanceId);
-                        }
-                    else
-                        {
-                        instances = cachedInstances.Where(i => i.InstanceId == relInstance.InstanceId);
-                        }
+
+                    instances = cachedInstances.Where(i => i.InstanceId == relInstance.InstanceId);
+
                     foreach ( IECInstance instance in instances )
                         {
                         IECRelationshipInstance relationshipInst;
@@ -370,9 +297,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         //relationshipInst.InstanceId = "test";
                         //instance.GetRelationshipInstances().Add(relationshipInst);
                         }
-                    
+
                     }
-                
+
                 }
 
             }
@@ -381,16 +308,12 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             switch ( ecClass.Name )
                 {
-                case "SpatialEntityBase":
+                case "SpatialEntity":
                 case "SpatialEntityWithDetailsView":
-                case "Thumbnail":
                 case "Metadata":
                 case "SpatialDataSource":
                 case "Server":
                     return ecClass;
-                case "SpatialEntity":
-                case "SpatialEntityDataset":
-                    return ecClass.BaseClasses.First(c => c.Name == "SpatialEntityBase");
                 case "OtherSource":
                     return ecClass.BaseClasses.First(c => c.Name == "SpatialDataSource");
                 
@@ -401,17 +324,13 @@ namespace IndexECPlugin.Source.QueryProviders
 
         /// <summary>
         /// Creates the instances related to an instance, according to the RelatedInstanceSelectCriteria list. This method is recursive,
-        /// meaning that this method is called on the related instances created before returning. The request for parent instances is
-        /// not accomplished by this method for optimisation reasons. To help deferring this task, this method returns the instance for which
-        /// a parent has been queried. A optimal request should not request the same instance's parent twice in a recursion. If this happens, this method will return an error.
+        /// meaning that this method is called on the related instances created before returning.
         /// </summary>
         /// <param name="instance">The instance for which we want the related instances ()</param>
         /// <param name="relatedCriteriaList"></param>
-        /// <returns>If a parent instance was requested in the SelectCriteria (directly or in the recursive criteria), 
-        /// returns the instance for which we want to create the parent. Otherwise, null</returns>
-        private InstanceCritTuple CreateRelatedInstance (IECInstance instance, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
+        /// <returns>null</returns>
+        private void CreateRelatedInstance (IECInstance instance, List<RelatedInstanceSelectCriteria> relatedCriteriaList)
             {
-            InstanceCritTuple childWithParentRequest = null;
             foreach ( RelatedInstanceSelectCriteria crit in relatedCriteriaList )
                 {
                 IECClass relatedClass = crit.RelatedClassSpecifier.RelatedClass;
@@ -420,50 +339,7 @@ namespace IndexECPlugin.Source.QueryProviders
 
                 Tuple<string, JObject> oldJsonCache = jsonCache;
 
-                //We do not use SpatialEntityDatasetToAlternateDataset for USGS data.
-                if ( (relationshipClass.Name == "SpatialEntityDatasetToAlternateDataset") /*|| 
-                    (relationshipClass.Name == "DetailsViewToChildren") || 
-                    (relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" )*/)
-                    {
-                    continue;
-                    }
-                if ( (relationshipClass.Name == "DetailsViewToChildren" || relationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" || relationshipClass.Name == "SpatialEntityDatasetToView") && 
-                   (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward))
-                    {
-                    if ( childWithParentRequest == null )
-                        {
-                        childWithParentRequest = new InstanceCritTuple(instance, crit);
-                        }
-                    else
-                        {
-                        throw new UserFriendlyException("This request contains redundant related select criterias. Please simplify your request.");
-                        }
-                    continue;
-                    }
-
                 string relInstID = instance.InstanceId;
-                //if (/*(relationshipClass.Name != "DetailsViewToChildren") && */(relationshipClass.Name != "SpatialEntityDatasetToSpatialEntityBase") )
-                //    {
-                //    relInstID = instance.InstanceId;
-                //    }
-                //else
-                //    {
-
-                //    if ( crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Forward )
-                //        {
-                //        //TODO : See if it is possible and useful to go in the direction parent->children
-                //        continue;
-                //        }
-                //    else
-                //        {
-                //        //Here, we are sure to be in a SpatialEntityBase, which should contain a ParentDatasetIdStr attribute 
-
-                //        //relInstID = instance["ParentDatasetIdStr"].StringValue;
-                //        relInstID = instance.ExtendedData["ParentDatasetIdStr"] as string;
-                //        //instance.ExtendedData.Remove("ParentDatasetIdStr");
-                //        }
-
-                //    }
 
                 IECInstance relInst = null;
                 bool mustAddRelation = false;
@@ -501,23 +377,10 @@ namespace IndexECPlugin.Source.QueryProviders
                         {
                         relationshipInst = relationshipClass.CreateRelationship(relInst, instance);
                         }
-                    //relationshipInst.InstanceId = "test";
-                    //instance.GetRelationshipInstances().Add(relationshipInst);
                     }
-                InstanceCritTuple tempTuple = CreateRelatedInstance(relInst, crit.SelectedRelatedInstances);
-                if(tempTuple != null)
-                    {
-                    if ( childWithParentRequest != null )
-                        {
-                        throw new UserFriendlyException("This request contains redundant related select criterias. Please simplify your request.");
-                        }
-                    else
-                        {
-                        childWithParentRequest = tempTuple;
-                        }
-                    }
+                CreateRelatedInstance(relInst, crit.SelectedRelatedInstances);
+
                 }
-            return childWithParentRequest;
             }
 
         private IECInstance CreateInstanceFromID (IECClass ecClass, string sourceID/*, bool allowSEWDV = false*/)
@@ -530,9 +393,8 @@ namespace IndexECPlugin.Source.QueryProviders
             IECInstance instance;
             switch ( ecClass.Name )
                 {
-                case "SpatialEntityBase":
                 case "SpatialEntity":
-                    instance = QuerySingleSpatialEntityBase(sourceID, ecClass);
+                    instance = QuerySingleSpatialEntity(sourceID, ecClass);
                     break;
                 case "SpatialEntityWithDetailsView":
                     //if ( allowSEWDV )
@@ -543,17 +405,10 @@ namespace IndexECPlugin.Source.QueryProviders
                     //    {
                     //    throw new UserFriendlyException("It is impossible to query instances of the class \"" + ecClass.Name + "\" in a USGS request by ID.");
                     //    }
-                case "SpatialEntityDataset":
-                    instance = QuerySingleSpatialEntityDataset(sourceID, ecClass);
-                    break;
-                case "Thumbnail":
-                    instance = QuerySingleThumbnail(sourceID, ecClass);
-                    break;
                 case "Metadata":
                     instance = QuerySingleMetadata(sourceID, ecClass);
                     break;
                 case "SpatialDataSource":
-                case "OtherSource":
                     instance = QuerySingleSpatialDataSource(sourceID, ecClass);
                     break;
                 case "Server":
@@ -587,7 +442,7 @@ namespace IndexECPlugin.Source.QueryProviders
             JObject json = GetJsonWithCache(sourceID);
 
             IECInstance instance = ecClass.CreateInstance();
-            IECInstance instanceSEB = QuerySingleSpatialEntityBase(sourceID, m_schema.GetClass("SpatialEntityBase"));
+            IECInstance instanceSEB = QuerySingleSpatialEntity(sourceID, m_schema.GetClass("SpatialEntity"));
             PrepareInstanceForCaching(instanceSEB);
 
             IECInstance instanceMetadata = QuerySingleMetadata(sourceID, m_schema.GetClass("Metadata"));
@@ -612,35 +467,14 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["Footprint"].NativeValue = instanceSEB["Footprint"].NativeValue;
                 }
 
+            instance["ApproximateFootprint"].NativeValue = false;
+
             if ( instanceSDS["DataSourceType"] != null && !instanceSDS["DataSourceType"].IsNull )
                 {
                 instance["DataSourceType"].StringValue = instanceSDS["DataSourceType"].StringValue;
                 }
 
-            instance["ThumbnailURL"].SetToNull();
-
-            JObject previewImage = json["previewImage"] as JObject;
-
-            if ( previewImage != null )
-                {
-                if ( previewImage["thumbnail"] != null )
-                    {
-                    instance["ThumbnailURL"].StringValue = previewImage["thumbnail"].TryToGetString("uri");
-                    }
-                else
-                    {
-                    //In case the thumbnail object is not there, we take the first url we find. 
-                    //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
-                    foreach ( var imageObject in previewImage )
-                        {
-                        if ( imageObject.Value["uri"] != null )
-                            {
-                            instance["ThumbnailURL"].StringValue = imageObject.Value["uri"].Value<string>();
-                            break;
-                            }
-                        }
-                    }
-                }
+            instance["ThumbnailURL"].StringValue = instanceSEB["ThumbnailURL"].StringValue;
 
             if ( instanceMetadata["Legal"] != null && !instanceMetadata["Legal"].IsNull)
                 {
@@ -668,18 +502,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["Dataset"].StringValue = instanceSEB["Dataset"].StringValue;
                 }
 
-            //instance["ParentDatasetIdStr"].StringValue = json["parentId"].Value<string>();
-            return instance;
-
-            }
-
-        private IECInstance QuerySingleSpatialEntityDataset (string sourceID, IECClass ecClass)
-            {
-            IECInstance instance = QuerySingleSpatialEntityBase(sourceID, ecClass);
-
-            instance["Processable"].SetToNull();
+            instance["Streamed"].NativeValue = false;
 
             return instance;
+
             }
 
         private IECInstance QuerySingleServer (string sourceID, IECClass ecClass)
@@ -722,6 +548,8 @@ namespace IndexECPlugin.Source.QueryProviders
                         }
                     }
                 }
+
+            instance["Streamed"].NativeValue = false;
 
             //Name
 
@@ -902,6 +730,9 @@ namespace IndexECPlugin.Source.QueryProviders
                         }
                     }
                 }
+
+            instance["Streamed"].NativeValue = false;
+
             instance.ExtendedDataValueSetter.Add("Complete", true);
 
             return instance;
@@ -923,14 +754,6 @@ namespace IndexECPlugin.Source.QueryProviders
             instance.InstanceId = sourceID;
 
             instance["Id"].StringValue = sourceID;
-
-            //RawMetadata
-
-            instance["RawMetadata"].SetToNull();
-
-            //RawMetadataFormat
-
-            instance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
 
             //DisplayStyle
 
@@ -986,100 +809,100 @@ namespace IndexECPlugin.Source.QueryProviders
             return instance;
             }
 
-        private IECInstance QuerySingleThumbnail (string sourceID, IECClass ecClass)
-            {
-            if ( sourceID.Length != IndexConstants.USGSIdLenght )
-                {
-                return null;
-                }
+        //private IECInstance QuerySingleThumbnail (string sourceID, IECClass ecClass)
+        //    {
+        //    if ( sourceID.Length != IndexConstants.USGSIdLenght )
+        //        {
+        //        return null;
+        //        }
 
-            JObject json = GetJsonWithCache(sourceID);
+        //    JObject json = GetJsonWithCache(sourceID);
 
-            IECInstance instance = ecClass.CreateInstance();
+        //    IECInstance instance = ecClass.CreateInstance();
 
-            InitializePropertiesToNull(instance, ecClass);
+        //    InitializePropertiesToNull(instance, ecClass);
 
-            instance.InstanceId = sourceID;
+        //    instance.InstanceId = sourceID;
 
-            instance["Id"].StringValue = sourceID;
+        //    instance["Id"].StringValue = sourceID;
 
-            //previewImage is not always there, we have to check that it is not null
-            JObject previewImage = json["previewImage"] as JObject;
+        //    //previewImage is not always there, we have to check that it is not null
+        //    JObject previewImage = json["previewImage"] as JObject;
 
-            if ( previewImage == null )
-                {
-                return null;
-                }
+        //    if ( previewImage == null )
+        //        {
+        //        return null;
+        //        }
 
-            //ThumbnailProvenance
-            instance["ThumbnailProvenance"].SetToNull();
+        //    //ThumbnailProvenance
+        //    instance["ThumbnailProvenance"].SetToNull();
 
-            //ThumbnailURI
+        //    //ThumbnailURI
 
-            string thumbnailURI = null;
+        //    string thumbnailURI = null;
 
-            if ( previewImage["thumbnail"] != null )
-                {
-                thumbnailURI = previewImage["thumbnail"].TryToGetString("uri");
-                }
-            else
-                {
-                //In case the thumbnail object is not there, we take the first uri we find. 
-                //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
-                foreach ( var imageObject in previewImage )
-                    {
-                    if ( imageObject.Value["uri"] != null )
-                        {
-                        thumbnailURI = imageObject.Value["uri"].Value<string>();
-                        break;
-                        }
-                    }
-                }
+        //    if ( previewImage["thumbnail"] != null )
+        //        {
+        //        thumbnailURI = previewImage["thumbnail"].TryToGetString("uri");
+        //        }
+        //    else
+        //        {
+        //        //In case the thumbnail object is not there, we take the first uri we find. 
+        //        //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
+        //        foreach ( var imageObject in previewImage )
+        //            {
+        //            if ( imageObject.Value["uri"] != null )
+        //                {
+        //                thumbnailURI = imageObject.Value["uri"].Value<string>();
+        //                break;
+        //                }
+        //            }
+        //        }
 
 
-            if ( thumbnailURI == null )
-                {
-                throw new OperationFailedException("We have encountered a problem processing the order for a thumbnail.");
-                }
+        //    if ( thumbnailURI == null )
+        //        {
+        //        throw new OperationFailedException("We have encountered a problem processing the order for a thumbnail.");
+        //        }
 
-            //The next part enables downloading the thumbnail
+        //    //The next part enables downloading the thumbnail
 
-            if ( (m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None )
-                {
-                MemoryStream thumbnailStream = DownloadThumbnail(thumbnailURI);
+        //    if ( (m_querySettings.LoadModifiers & LoadModifiers.IncludeStreamDescriptor) != LoadModifiers.None )
+        //        {
+        //        MemoryStream thumbnailStream = DownloadThumbnail(thumbnailURI);
 
-                StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.UtcNow);
-                StreamBackedDescriptorAccessor.SetIn(instance, streamDescriptor);
-                instance.ExtendedDataValueSetter.Add("Complete", true);
-                }
-            else
-                {
-                instance.ExtendedDataValueSetter.Add("Complete", false);
-                }
-            instance["ThumbnailURL"].StringValue = thumbnailURI;
+        //        StreamBackedDescriptor streamDescriptor = new StreamBackedDescriptor(thumbnailStream, ExtractNameFromURI(thumbnailURI), thumbnailStream.Length, DateTime.UtcNow);
+        //        StreamBackedDescriptorAccessor.SetIn(instance, streamDescriptor);
+        //        instance.ExtendedDataValueSetter.Add("Complete", true);
+        //        }
+        //    else
+        //        {
+        //        instance.ExtendedDataValueSetter.Add("Complete", false);
+        //        }
+        //    instance["ThumbnailURL"].StringValue = thumbnailURI;
 
-            //ThumbnailFormat
+        //    //ThumbnailFormat
 
-            instance["ThumbnailFormat"].StringValue = ExtractFormatFromURI(thumbnailURI);
+        //    instance["ThumbnailFormat"].StringValue = ExtractFormatFromURI(thumbnailURI);
 
-            //ThumbnailWidth
+        //    //ThumbnailWidth
 
-            instance["ThumbnailWidth"].SetToNull();
+        //    instance["ThumbnailWidth"].SetToNull();
 
-            //ThumbnailHeight
+        //    //ThumbnailHeight
 
-            instance["ThumbnailHeight"].SetToNull();
+        //    instance["ThumbnailHeight"].SetToNull();
 
-            //ThumbnailStamp
+        //    //ThumbnailStamp
 
-            instance["ThumbnailStamp"].SetToNull();
+        //    instance["ThumbnailStamp"].SetToNull();
 
-            //ThumbnailGenerationDetails
+        //    //ThumbnailGenerationDetails
 
-            instance["ThumbnailGenerationDetails"].SetToNull();
+        //    instance["ThumbnailGenerationDetails"].SetToNull();
 
-            return instance;
-            }
+        //    return instance;
+        //    }
 
         private string ExtractFormatFromURI (string uri)
             {
@@ -1106,7 +929,7 @@ namespace IndexECPlugin.Source.QueryProviders
             return splitURI[splitURI.Length - 1];
             }
 
-        private IECInstance QuerySingleSpatialEntityBase (string sourceID, IECClass ecClass)
+        private IECInstance QuerySingleSpatialEntity (string sourceID, IECClass ecClass)
             {
             if ( sourceID.Length != IndexConstants.USGSIdLenght )
                 {
@@ -1133,6 +956,9 @@ namespace IndexECPlugin.Source.QueryProviders
                     instance["Footprint"].StringValue = String.Format(@"{{ ""points"" : [[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]], ""coordinate_system"" : ""4326"" }}", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY"));
                     }
                 }
+
+            instance["ApproximateFootprint"].NativeValue = false;
+
             //Name
 
             instance["Name"].StringValue = json.TryToGetString("title");
@@ -1170,7 +996,6 @@ namespace IndexECPlugin.Source.QueryProviders
                                     instance["Date"].NativeValue = date.Value;
                                     }
 
-                                instance["AccuracyResolutionDensity"].StringValue = res;
                                 instance["ResolutionInMeters"].StringValue = resMeter;
 
                                 }
@@ -1180,15 +1005,7 @@ namespace IndexECPlugin.Source.QueryProviders
                 keywords = keywords.TrimEnd(' ', ',');
                 }
 
-            instance["Keywords"].StringValue = keywords;
-
-            //AssociateFile
-
-            instance["AssociateFile"].SetToNull();
-
-            //ProcessingDescription
-
-            instance["ProcessingDescription"].SetToNull();
+            instance["AccuracyInMeters"].SetToNull();
 
             //DataSourceTypesAvailable
 
@@ -1209,14 +1026,30 @@ namespace IndexECPlugin.Source.QueryProviders
             instance["DataProvider"].StringValue = dataProviderString;
             instance["DataProviderName"].StringValue = dataProviderNameString;
 
-            //instance["ParentDatasetIdStr"].StringValue = json.TryToGetString("parentId");
+            instance["ThumbnailURL"].SetToNull();
 
-            //This happens when we request the parent of the SpatialEntityBase
-            //if ( m_query.SelectClause.SelectedRelatedInstances.Any(relCrit => relCrit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToSpatialEntityBase" &&
-            //                                                                  relCrit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward) )
-            //    {
-            instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", json.TryToGetString("parentId"));
-            //}
+            JObject previewImage = json["previewImage"] as JObject;
+
+            if ( previewImage != null )
+                {
+                if ( previewImage["thumbnail"] != null )
+                    {
+                    instance["ThumbnailURL"].StringValue = previewImage["thumbnail"].TryToGetString("uri");
+                    }
+                else
+                    {
+                    //In case the thumbnail object is not there, we take the first url we find. 
+                    //I don't know if it is possible for the thumbnail object to not be there, but let's not take any risk.
+                    foreach ( var imageObject in previewImage )
+                        {
+                        if ( imageObject.Value["uri"] != null )
+                            {
+                            instance["ThumbnailURL"].StringValue = imageObject.Value["uri"].Value<string>();
+                            break;
+                            }
+                        }
+                    }
+                }
 
             instance.ExtendedDataValueSetter.Add("Complete", true);
 
@@ -1311,14 +1144,6 @@ namespace IndexECPlugin.Source.QueryProviders
             {
             List<IECInstance> instanceList;
 
-            //This part is an optimization only for queries of SpatialEntitiesWithDetailsView and their parents
-            var relCrit = m_query.SelectClause.SelectedRelatedInstances.FirstOrDefault(crit => ((crit.RelatedClassSpecifier.RelationshipClass.Name == "DetailsViewToChildren") || (crit.RelatedClassSpecifier.RelationshipClass.Name == "SpatialEntityDatasetToView"))
-                                                                                       && (crit.RelatedClassSpecifier.RelatedDirection == RelatedInstanceDirection.Backward));
-            if ( relCrit != null )
-                {
-                m_storedParents = new Dictionary<string, IECInstance>();
-                }
-
             IECClass ecClass = m_query.SearchClasses.First().Class;
 
             var criteriaList = ExtractPropertyWhereClauses();
@@ -1392,6 +1217,8 @@ namespace IndexECPlugin.Source.QueryProviders
                             instance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                             }
 
+                        instance["ApproximateFootprint"].NativeValue = false;
+
                         instance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
 
                         var urls = jtoken["urls"];
@@ -1412,11 +1239,10 @@ namespace IndexECPlugin.Source.QueryProviders
                             {
                             instance["Date"].NativeValue = item.Date.Value;
                             }
-                        instance["AccuracyResolutionDensity"].StringValue = item.Resolution;
+                        instance["AccuracyInMeters"].SetToNull();
                         instance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
                         instance["Classification"].StringValue = bundle.Classification;
-                        instance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", bundle.DatasetId);
 
                         if ( jtoken["sizeInBytes"] != null )
                             {
@@ -1426,6 +1252,8 @@ namespace IndexECPlugin.Source.QueryProviders
                                 instance["FileSize"].NativeValue = (long) (size / 1024);
                                 }
                             }
+
+                        instance["Streamed"].NativeValue = false;
 
                         instanceList.Add(instance);
                         }
@@ -1457,55 +1285,16 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
-            if ( relCrit != null )
-                {
-                CreateParentRelationship(instanceList, relCrit, relCrit.RelatedClassSpecifier.RelatedClass);
-                }
-
             return instanceList;
-            }
-
-        private void CreateParentRelationship (List<IECInstance> instanceList, RelatedInstanceSelectCriteria relCrit, IECClass ecClass)
-            {
-
-            List<string> parentIdList = new List<string>();
-            foreach ( IECInstance instance in instanceList )
-                {
-                string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
-
-                if ( !parentIdList.Any(id => id == parentId) && parentId != null )
-                    {
-                    parentIdList.Add(parentId);
-                    }
-                }
-
-            List<IECInstance> parentList = CreateInstancesFromInstanceIdList(parentIdList, ecClass, relCrit);
-            foreach ( IECInstance instance in instanceList )
-                {
-                string parentId = (string) instance.ExtendedData["ParentDatasetIdStr"];
-                if (parentId == null)
-                    {
-                    continue;
-                    }
-                IECInstance parentInst = parentList.FirstOrDefault(inst => inst.InstanceId == parentId);
-                if ( parentInst == null )
-                    {
-                    throw new ProgrammerException("There should be a parent!");
-                    }
-
-                    var relationshipInst = relCrit.RelatedClassSpecifier.RelationshipClass.CreateRelationship(parentInst, instance);
-
-                }
-                
             }
 
         private void CreateIncompleteCacheInstances (USGSExtractedResult item, string classification, string parentId, string parentName)
             {
-            IECInstance SEBInstance = m_schema.GetClass("SpatialEntityBase").CreateInstance();
+            IECInstance SEInstance = m_schema.GetClass("SpatialEntity").CreateInstance();
             IECInstance metadataInstance = m_schema.GetClass("Metadata").CreateInstance();
             IECInstance SDSInstance = m_schema.GetClass("SpatialDataSource").CreateInstance();
 
-            SEBInstance.ExtendedDataValueSetter.Add("Complete", false);
+            SEInstance.ExtendedDataValueSetter.Add("Complete", false);
             metadataInstance.ExtendedDataValueSetter.Add("Complete", false);
             SDSInstance.ExtendedDataValueSetter.Add("Complete", false);
 
@@ -1513,22 +1302,24 @@ namespace IndexECPlugin.Source.QueryProviders
 
             string instanceId = jtoken.TryToGetString("sourceId");
 
-            SEBInstance.InstanceId = instanceId;
+            SEInstance.InstanceId = instanceId;
             metadataInstance.InstanceId = instanceId;
             SDSInstance.InstanceId = instanceId;
 
-            SEBInstance["Id"].StringValue = instanceId;
+            SEInstance["Id"].StringValue = instanceId;
             metadataInstance["Id"].StringValue = instanceId;
             SDSInstance["Id"].StringValue = instanceId;
 
-            SEBInstance["Name"].StringValue = item.Title;
+            SEInstance["Name"].StringValue = item.Title;
 
             var bbox = jtoken["boundingBox"];
 
             if ( bbox != null )
                 {
-                SEBInstance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
+                SEInstance["Footprint"].StringValue = "{ \"points\" : " + String.Format("[[{0},{1}],[{2},{1}],[{2},{3}],[{0},{3}],[{0},{1}]]", bbox.TryToGetString("minX"), bbox.TryToGetString("minY"), bbox.TryToGetString("maxX"), bbox.TryToGetString("maxY")) + ", \"coordinate_system\" : \"4326\" }";
                 }
+
+            SEInstance["ApproximateFootprint"].NativeValue = false;
 
             SDSInstance["DataSourceType"].StringValue = jtoken.TryToGetString("format");
             //SDSInstance["LocationInCompound"].StringValue = null;
@@ -1536,29 +1327,28 @@ namespace IndexECPlugin.Source.QueryProviders
             if ( urls != null)
                 {
                 SDSInstance["MainURL"].StringValue = urls.TryToGetString("downloadURL");
+                SEInstance["ThumbnailURL"].StringValue = urls.TryToGetString("previewGraphicURL");
                 }
 
-            SEBInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
+            SEInstance["DataSourceTypesAvailable"].StringValue = jtoken.TryToGetString("format");
 
             metadataInstance["Legal"].StringValue = item.Title + legalString;
 
             metadataInstance["TermsOfUse"].StringValue = termsOfUse;
 
-            metadataInstance["RawMetadataFormat"].StringValue = rawMetadataFormatString;
-
             if ( item.Date.HasValue )
                 {
-                SEBInstance["Date"].NativeValue = item.Date.Value;
+                SEInstance["Date"].NativeValue = item.Date.Value;
                 }
-            SEBInstance["AccuracyResolutionDensity"].StringValue = item.Resolution;
-            SEBInstance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
+            SEInstance["AccuracyInMeters"].SetToNull();
+            SEInstance["ResolutionInMeters"].StringValue = item.ResolutionInMeters;
 
-            SEBInstance["DataProvider"].StringValue = dataProviderString;
-            SEBInstance["DataProviderName"].StringValue = dataProviderNameString;
+            SEInstance["DataProvider"].StringValue = dataProviderString;
+            SEInstance["DataProviderName"].StringValue = dataProviderNameString;
 
-            SEBInstance["Dataset"].StringValue = parentName;
+            SEInstance["Dataset"].StringValue = parentName;
 
-            SEBInstance["Classification"].StringValue = classification;
+            SEInstance["Classification"].StringValue = classification;
 
             if ( jtoken["sizeInBytes"] != null )
                 {
@@ -1569,9 +1359,7 @@ namespace IndexECPlugin.Source.QueryProviders
                     }
                 }
 
-            SEBInstance.ExtendedDataValueSetter.Add("ParentDatasetIdStr", parentId);
-
-            PrepareInstanceForCaching(SEBInstance);
+            PrepareInstanceForCaching(SEInstance);
             PrepareInstanceForCaching(metadataInstance);
             PrepareInstanceForCaching(SDSInstance);
 
@@ -1793,25 +1581,5 @@ namespace IndexECPlugin.Source.QueryProviders
             return singleWhereCriteriaList;
             }
 
-        }
-
-    internal class InstanceCritTuple
-        {
-        public IECInstance Instance
-            {
-            get;
-            set;
-            }
-        public RelatedInstanceSelectCriteria ParentRelatedCriteria
-            {
-            get;
-            set;
-            }
-
-        public InstanceCritTuple (IECInstance instance, RelatedInstanceSelectCriteria parentRelatedCriteria)
-            {
-            Instance = instance;
-            ParentRelatedCriteria = parentRelatedCriteria;
-            }
         }
     }

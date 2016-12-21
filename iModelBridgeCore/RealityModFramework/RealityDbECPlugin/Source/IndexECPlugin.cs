@@ -38,12 +38,14 @@ using System.Reflection;
 using Bentley.ECSystem.Configuration;
 using System.Data.Common;
 using System.Data;
+using System.Security.Claims;
 using System.Threading;
 
 #if !IMSOFF
-using Microsoft.IdentityModel.Configuration;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.IdentityModel.Web;
+using System.IdentityModel.Configuration;
+using System.IdentityModel.Services;
+using System.IdentityModel.Services.Configuration;
+using System.IdentityModel.Tokens;
 #endif
 
 namespace IndexECPlugin.Source
@@ -250,7 +252,7 @@ namespace IndexECPlugin.Source
                                     {
                                     //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                                     //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                                    IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
                                     IEnumerable<IECInstance> instances = helper.CreateInstanceList();
                                     //instanceOverrider.Modify(instances, DataSource.USGS, ConnectionString);
                                     //instanceComplement.Modify(instances, DataSource.USGS, ConnectionString);
@@ -341,7 +343,7 @@ namespace IndexECPlugin.Source
                     {
                     //InstanceOverrider instanceOverrider = new InstanceOverrider(new DbQuerier());
                     //InstanceComplement instanceComplement = new InstanceComplement(new DbQuerier());
-                    IECQueryProvider helper = new UsgsAPIQueryProvider(query, querySettings, ConnectionString, schema);
+                    IECQueryProvider helper = new UsgsSubAPIQueryProvider(query, querySettings, ConnectionString, schema);
                     usgsInstances = helper.CreateInstanceList();
                     //instanceOverrider.Modify(usgsInstances, DataSource.USGS, ConnectionString);
                     //instanceComplement.Modify(usgsInstances, DataSource.USGS, ConnectionString);
@@ -574,13 +576,28 @@ namespace IndexECPlugin.Source
                 {
                 //new ConnectionFormatFieldInfo() {ID = "User", DisplayName = "username", IsRequired = true },    
                 //new ConnectionFormatFieldInfo() {ID = "Password", DisplayName = "Password", IsRequired = true, Masked = true },
-#if !IMSOFF
+//#if !IMSOFF
                 new ConnectionFormatFieldInfo() {ID = "Token", DisplayName = "Token", IsRequired = true, IsAdvanced = true, IsCredential = true }
-#endif
+//#endif
                 }.ToArray();
             }
 
 #if !IMSOFF
+
+        private readonly Lazy<FederationConfiguration> m_federationConfiguration =
+    new Lazy<FederationConfiguration>(() => FederatedAuthentication.FederationConfiguration);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private FederationConfiguration FederationConfiguration
+            {
+            get
+                {
+                return m_federationConfiguration.Value;
+                }
+            }
+
         private void OpenConnection (ConnectionModule sender,
                                     RepositoryConnection connection,
                                     IExtendedParameters extendedParameters)
@@ -594,10 +611,15 @@ namespace IndexECPlugin.Source
 
                 using ( var reader = XmlReader.Create(new StringReader(serializedToken)) )
                     {
-                    var bootstrapToken = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers.ReadToken(reader);
-                    SecurityTokenHandler handler = FederatedAuthentication.ServiceConfiguration.SecurityTokenHandlers[bootstrapToken];
+                    var bootstrapToken = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers.ReadToken(reader);
+                    SecurityTokenHandler handler = FederationConfiguration.IdentityConfiguration.SecurityTokenHandlers[bootstrapToken];
 
                     var cic = handler.ValidateToken(bootstrapToken);
+                    var cp = new ClaimsPrincipal(cic);
+                    System.Web.HttpContext.Current.User = cp;
+                    System.Threading.Thread.CurrentPrincipal = cp;
+
+                    Log.Logger.debug("TokenAuthenticator: authenticated with user: {0}, ", cp.Identity == null ? "null" : cp.Identity.Name);
                     }
                 }
             catch ( Exception )
@@ -614,6 +636,48 @@ namespace IndexECPlugin.Source
             {
             }
 #endif
+
+        /// <summary>
+        /// Get email address of the caller from the connection
+        /// </summary>
+        /// <param name="connection"></param>
+        /// <returns></returns>
+        public static string GetEmailFromConnection
+        (
+            RepositoryConnection connection
+        )
+            {
+            try
+                {
+                //var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                var isAuth = System.Web.HttpContext.Current.User.Identity.IsAuthenticated;
+                if ( !isAuth )
+                    {
+                    throw (new Exception());
+                    }
+                else
+                    {
+                    //IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+
+                    IEnumerable<Claim> claims = ((ClaimsIdentity) System.Web.HttpContext.Current.User.Identity).Claims;
+                    Claim organizationClaim = claims.Where(c => c.Type == "http://schemas.bentley.com/ws/2011/03/identity/claims/organizationid").FirstOrDefault();
+                    Claim emailClaim = claims.Where(c => c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress").FirstOrDefault();
+                    return emailClaim.Value.ToLower();
+                    }
+                }
+            catch
+                {
+                //if on connect environment use this
+                string token = connection.ConnectionInfo.GetField("Token").Value;
+                string serializedToken = Encoding.UTF8.GetString(Convert.FromBase64String(token.Trim()));
+                var xml = new XmlDocument();
+                xml.LoadXml(serializedToken);
+                var nsmgr = new XmlNamespaceManager(xml.NameTable);
+                nsmgr.AddNamespace("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
+
+                return xml.SelectSingleNode("//saml:AttributeStatement//saml:Attribute[@AttributeName='emailaddress']", nsmgr).InnerText.ToLower();
+                }
+            }
 
         }
 

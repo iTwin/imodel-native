@@ -75,22 +75,22 @@ namespace IndexECPlugin.Tests
             }
 
         [Test]
-        public void CreateMimicSEBTest()
+        public void CreateMimicSETest()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
 
-            IECInstance spatialEntityBase = GetInstanceFilledWithTestData(sebClass);
+            IECInstance spatialEntity = GetInstanceFilledWithTestData(seClass);
 
-            List<IECInstance> instanceList = new List<IECInstance>() { spatialEntityBase };
+            List<IECInstance> instanceList = new List<IECInstance>() { spatialEntity };
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
 
             string onStatement = "conditional statement 1";
             string whenMatchedString = "conditional statement 2";
             ISQLMergeUpsertStatementBuilder builder = new SQLServerMergeUpsertStatementBuilder();
-            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, builder, out paramNameValueMap, onStatement, whenMatchedString);
+            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, seClass, builder, out paramNameValueMap, onStatement, whenMatchedString);
             SqlServerParamNameValueMap sqlServerMap = paramNameValueMap as SqlServerParamNameValueMap;
 
             Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");
@@ -109,7 +109,7 @@ namespace IndexECPlugin.Tests
             Regex reg = new Regex(stringBuilder.ToString());
             Assert.IsTrue(reg.IsMatch(sqlQuery), "The statement does not have the required form.");
             int count = 0;
-            foreach(IECProperty prop in sebClass)
+            foreach(IECProperty prop in seClass)
                 {
                 if(prop.GetCustomAttributes("MimicDBColumn") != null && prop.GetCustomAttributes("MimicDBColumn")["CacheColumnName"] != null)
                     {
@@ -138,20 +138,20 @@ namespace IndexECPlugin.Tests
         public void CreateMimicSEBTestWithAddedColumn ()
             {
 
-            IECClass sebClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass seClass = m_schema.GetClass("SpatialEntity");
 
-            IECInstance spatialEntityBase = GetInstanceFilledWithTestData(sebClass);
+            IECInstance spatialEntity = GetInstanceFilledWithTestData(seClass);
 
-            List<IECInstance> instanceList = new List<IECInstance>() { spatialEntityBase };
+            List<IECInstance> instanceList = new List<IECInstance>() { spatialEntity };
             IParamNameValueMap paramNameValueMap;
 
-            string tableString = sebClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
+            string tableString = seClass.GetCustomAttributes("SQLEntity").GetString("CacheTableName");
 
             List<Tuple<string, IECType, Func<IECInstance, string>>> additionalColumns = new List<Tuple<string, IECType, Func<IECInstance, string>>>();
             additionalColumns.Add(new Tuple<string, IECType, Func<IECInstance, string>>("TestColumn1234", Bentley.ECObjects.ECObjects.StringType, inst => "TestColVal1234"));
 
             // BEGIN TRY INSERT INTO dbo.CacheSpatialEntityBases (IdStr,Footprint,Name,Keywords,AssociateFile,ProcessingDescription,DataSourceTypesAvailable,AccuracyResolutionDensity,Date,Classification) VALUES (@p1,geometry::STGeomFromText('POLYGON((-90 34, -89 34, -89 35, -90 35, -90 34))',4326),@p3,@p4,@p5,@p6,@p7,@p8,@p9,@p10); END TRY BEGIN CATCH IF ERROR_NUMBER() <> 2627 THROW END CATCH;
-            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, sebClass, new SQLServerMergeUpsertStatementBuilder(), out paramNameValueMap, "on statement", null, additionalColumns);
+            string sqlQuery = m_mimicTableWriter.CreateMimicSQLInsert(instanceList, seClass, new SQLServerMergeUpsertStatementBuilder(), out paramNameValueMap, "on statement", null, additionalColumns);
             SqlServerParamNameValueMap sqlServerMap = paramNameValueMap as SqlServerParamNameValueMap;
 
             Assert.IsNotNull(sqlServerMap, "The ParamNameValueMap was not a SqlServerParamNameValueMap.");

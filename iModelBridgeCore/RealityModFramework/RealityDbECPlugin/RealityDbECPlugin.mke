@@ -51,8 +51,6 @@ ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Bentley.logging.log4net-2.0.
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Newtonsoft.Json.dll
 %include csrefapnd.mki
-ASSEMBLY_REFERENCE = $(ContextSubPartsAssembliesDir)Microsoft.IdentityModel.dll
-%include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.DataAnnotations.dll
@@ -60,6 +58,8 @@ ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.ComponentModel.Da
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.Core.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.dll
+%include csrefapnd.mki
+ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IdentityModel.services.dll
 %include csrefapnd.mki
 ASSEMBLY_REFERENCE = $(FrameworkDir)$(FrameworkVersion)\System.IO.Compression.dll
 %include csrefapnd.mki
@@ -148,7 +148,9 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/FileRetrievalControllers/USGSThumbnailRetrievalController.cs \
             $(baseDir)Source/QueryProviders/IECQueryProvider.cs \
             $(baseDir)Source/QueryProviders/SqlQueryProvider.cs \
+			$(baseDir)Source/QueryProviders/SubAPIQueryProvider.cs \
             $(baseDir)Source/QueryProviders/UsgsAPIQueryProvider.cs \
+			$(baseDir)Source/QueryProviders/UsgsSubAPIQueryProvider.cs \
             $(baseDir)Source/SQLQueryBuilder/IParamNameValueMap.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLInsertStatementBuilder.cs \
             $(baseDir)Source/SQLQueryBuilder/ISQLMergeUpsertStatementBuilder.cs \

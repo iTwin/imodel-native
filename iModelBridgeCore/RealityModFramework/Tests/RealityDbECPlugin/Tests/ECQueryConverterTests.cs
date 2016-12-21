@@ -35,12 +35,12 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SimpleQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             ECQuerySettings querySettings = new ECQuerySettings();
 
@@ -64,10 +64,10 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  ;
+            //SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0  ;
 
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string tableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             //Assert.IsTrue(sqlCommand.Contains(idColumnString));
             //Assert.IsTrue(sqlCommand.Contains(tableString));
@@ -80,14 +80,14 @@ namespace IndexECPlugin.Tests
         [Test]
         public void PropertyExpressionCriteriaQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
-            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, spatialEntityBaseClass["Name"], "Test"));
+            query.WhereClause = new WhereCriteria(new PropertyExpression(RelationalOperator.EQ, SpatialEntityClass["Name"], "Test"));
 
             ECQuerySettings querySettings = new ECQuerySettings();
 
@@ -112,11 +112,11 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE  ( tab0.Name =@param0  )  ;
+            //SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0  WHERE  ( tab0.Name =@param0  )  ;
 
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string nameColumnString = spatialEntityBaseClass["Name"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string nameColumnString = SpatialEntityClass["Name"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string tableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
             Assert.AreEqual(1, genericParamNameValueMap.Count(), "Invalid number of parameters in the map.");
@@ -130,12 +130,12 @@ namespace IndexECPlugin.Tests
         [Test]
         public void ECInstanceIdExpressionCriteriaQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             query.WhereClause = new WhereCriteria(new ECInstanceIdExpression("1"));
 
@@ -161,10 +161,10 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE  (  ( tab0.IdStr =@param0  )  )  ORDER BY tab0.IdStr ASC ;
+            //SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0  WHERE  (  ( tab0.IdStr =@param0  )  )  ORDER BY tab0.IdStr ASC ;
 
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string tableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
             Assert.AreEqual(1, genericParamNameValueMap.Count(), "Invalid number of parameters in the map.");
@@ -178,12 +178,12 @@ namespace IndexECPlugin.Tests
         [Test]
         public void ComplexCriteriaQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             // The where criteria will be equivalent to (Id == 1 || Id == 2) && (Id == 1) 
             WhereCriteria internalCriteria = new WhereCriteria(new ECInstanceIdExpression("1"));
@@ -216,10 +216,10 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE  (  (  ( tab0.IdStr =@param0  ) OR  ( tab0.IdStr =@param1  )  ) AND  ( tab0.IdStr =@param2  )  )  ORDER BY tab0.IdStr ASC ;
+            //SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0  WHERE  (  (  ( tab0.IdStr =@param0  ) OR  ( tab0.IdStr =@param1  )  ) AND  ( tab0.IdStr =@param2  )  )  ORDER BY tab0.IdStr ASC ;
 
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string tableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string tableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             Assert.IsNotNull(genericParamNameValueMap, "The ParamNameValueMap was not a GenericParamNameValueMap.");
             Assert.IsTrue(sqlCommand.Contains(idColumnString), "The query does not contain the name of the Id Column.");
@@ -235,14 +235,14 @@ namespace IndexECPlugin.Tests
         [Test]
         public void RelatedQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
             IECClass metadataClass = m_schema.GetClass("Metadata");
-            IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityToMetadata") as IECRelationshipClass;
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             WhereCriteria relatedCriteria = new WhereCriteria(new RelatedCriterion(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, metadataClass), new WhereCriteria(new ECInstanceIdExpression("1"))));
             query.WhereClause = relatedCriteria;
@@ -255,9 +255,9 @@ namespace IndexECPlugin.Tests
 
             string sqlCommand;
             string sqlCount;
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string metadataIdColumnString = metadataClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string fromTableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
             string joinedTableString = metadataClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             string firstKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainerKey");
@@ -277,7 +277,7 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            // SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
+            // SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
 
 
             Regex reg = new Regex(@".*SELECT .*" + Regex.Escape(idColumnString) + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
@@ -288,17 +288,17 @@ namespace IndexECPlugin.Tests
         [Test]
         public void RelatedQueryTestWithRelatedID ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
             IECClass metadataClass = m_schema.GetClass("Metadata");
-            IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityBaseToMetadata") as IECRelationshipClass;
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECRelationshipClass SEBToMetadataClass = m_schema.GetClass("SpatialEntityToMetadata") as IECRelationshipClass;
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             var criteria = new RelatedCriterion(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, metadataClass), new WhereCriteria(new ECInstanceIdExpression("1")));
             criteria.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("RequestRelatedId", true));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             WhereCriteria relatedCriteria = new WhereCriteria(criteria);
             query.WhereClause = relatedCriteria;
@@ -311,9 +311,9 @@ namespace IndexECPlugin.Tests
 
             string sqlCommand;
             string sqlCount;
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
             string metadataIdColumnString = metadataClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string fromTableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
             string joinedTableString = metadataClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
             string firstKey = SEBToMetadataClass.GetCustomAttributes("RelationshipKeys").GetString("ContainerKey");
@@ -335,7 +335,7 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            //SELECT tab0.IdStr, tab1.IdStr FROM dbo.SpatialEntityBases tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
+            //SELECT tab0.IdStr, tab1.IdStr FROM dbo.SpatialEntitys tab0 LEFT JOIN dbo.Metadatas tab1 ON tab0.Metadata_Id = tab1.Id  WHERE  (  (  ( tab1.IdStr =@param0  )  )  )  ORDER BY tab1.IdStr ASC ;
 
 
             Regex reg = new Regex(@".*SELECT .*" + firstOrSecondIdColumn + @".* FROM .*" + Regex.Escape(fromTableString) + ".*LEFT JOIN.*" + Regex.Escape(joinedTableString) + ".*ON.*" + firstOrSecond + @".* WHERE .*" + Regex.Escape(metadataIdColumnString) + @".*");
@@ -346,12 +346,12 @@ namespace IndexECPlugin.Tests
         [Test]
         public void SpatialQueryTest ()
             {
-            IECClass spatialEntityBaseClass = m_schema.GetClass("SpatialEntityBase");
-            ECQuery query = new ECQuery(spatialEntityBaseClass);
+            IECClass SpatialEntityClass = m_schema.GetClass("SpatialEntity");
+            ECQuery query = new ECQuery(SpatialEntityClass);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityBaseClass["Id"]);
+            query.SelectClause.SelectedProperties.Add(SpatialEntityClass["Id"]);
 
             PolygonDescriptor polygonDescriptor = new PolygonDescriptor();
             polygonDescriptor.WKT = "POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))";
@@ -379,10 +379,10 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            string idColumnString = spatialEntityBaseClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string fromTableString = spatialEntityBaseClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = SpatialEntityClass["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string fromTableString = SpatialEntityClass.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            //SELECT tab0.IdStr FROM dbo.SpatialEntityBases tab0  WHERE tab0.Footprint.STIntersects(geometry::STGeomFromText('POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))',4326)) = 'true' ;
+            //SELECT tab0.IdStr FROM dbo.SpatialEntitys tab0  WHERE tab0.Footprint.STIntersects(geometry::STGeomFromText('POLYGON ((30 10, 40 40, 20 40, 10 20, 30 10))',4326)) = 'true' ;
 #if (BBOXQUERY)
             Regex reg = new Regex(@".*SELECT.*" + Regex.Escape(idColumnString) + @".*FROM.*" + Regex.Escape(fromTableString) + @".*WHERE(.*(MinX|MaxX|MinY|MaxY)){4}.*");
 #else
@@ -394,14 +394,14 @@ namespace IndexECPlugin.Tests
         [Test]
         public void PolymorphicClassQueryTest ()
             {
-            IECClass spatialEntityDataset = m_schema.GetClass("SpatialEntityDataset");
-            ECQuery query = new ECQuery(spatialEntityDataset);
+            IECClass multibandSource = m_schema.GetClass("MultibandSource");
+            ECQuery query = new ECQuery(multibandSource);
             query.ExtendedDataValueSetter.Add(new KeyValuePair<string, object>("source", "index"));
 
             query.SelectClause.SelectAllProperties = false;
-            query.SelectClause.SelectedProperties.Add(spatialEntityDataset["Id"]);
-            query.SelectClause.SelectedProperties.Add(spatialEntityDataset["Name"]);
-            query.SelectClause.SelectedProperties.Add(spatialEntityDataset["Processable"]);
+            query.SelectClause.SelectedProperties.Add(multibandSource["Id"]);
+            query.SelectClause.SelectedProperties.Add(multibandSource["MainURL"]);
+            query.SelectClause.SelectedProperties.Add(multibandSource["RedBandURL"]);
 
             //WhereCriteria internalCriteria = new WhereCriteria(new RelatedCriterion(new QueryRelatedClassSpecifier(SEBToMetadataClass, RelatedInstanceDirection.Forward, metadataClass), new WhereCriteria(new ECInstanceIdExpression())));
 
@@ -427,18 +427,18 @@ namespace IndexECPlugin.Tests
             ////This verifies that the sql query is valid
             //Assert.IsTrue(errors.Count == 0);
 
-            string idColumnString = spatialEntityDataset["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string nameColumnString = spatialEntityDataset["Name"].GetCustomAttributes("DBColumn").GetString("ColumnName");
-            string fromTableString = spatialEntityDataset.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string idColumnString = multibandSource["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string redBandUrlColumnString = multibandSource["RedBandURL"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            string fromTableString = multibandSource.GetCustomAttributes("SQLEntity").GetString("FromTableName");
 
-            IECClass spatialEntityBase = m_schema.GetClass("SpatialEntityBase");
-            string leftJoinTableString = spatialEntityBase.GetCustomAttributes("SQLEntity").GetString("FromTableName");
-            string baseIdColumnString = spatialEntityBase["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
+            IECClass SpatialDataSource = m_schema.GetClass("SpatialDataSource");
+            string leftJoinTableString = SpatialDataSource.GetCustomAttributes("SQLEntity").GetString("FromTableName");
+            string baseIdColumnString = SpatialDataSource["Id"].GetCustomAttributes("DBColumn").GetString("ColumnName");
 
-            string idOrName = "(" + idColumnString + @".*" + nameColumnString + "|" + nameColumnString + @".*" + idColumnString + ")";
+            string idOrRedBandUrl = "(" + idColumnString + @".*" + redBandUrlColumnString + "|" + redBandUrlColumnString + @".*" + idColumnString + ")";
             string idOrBaseId = "(" + idColumnString + @".*=.*" + baseIdColumnString + "|" + baseIdColumnString + @".*=.*" + idColumnString + ")";
 
-            Regex reg = new Regex(@".*SELECT.*" + idOrName + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
+            Regex reg = new Regex(@".*SELECT.*" + idOrRedBandUrl + @".* FROM .*" + Regex.Escape(fromTableString) + @".*LEFT JOIN.*" + leftJoinTableString + ".*ON.*" + idOrBaseId + ".*");
             Assert.IsTrue(reg.IsMatch(sqlCommand), "The query does not have the required form.");
             //SELECT tab0.IdStr, tab1.Name, tab0.Processable FROM dbo.SpatialEntityDatasets tab0 LEFT JOIN dbo.SpatialEntityBases tab1 ON tab0.IdStr = tab1.IdStr  ;     
             Assert.IsTrue(query.SelectClause.SelectedProperties.All(p => propList.Exists(p2 => p == p2)));
