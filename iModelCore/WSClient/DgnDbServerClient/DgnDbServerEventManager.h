@@ -49,7 +49,7 @@ struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventMa
         DgnDbServerEventManager(DgnDbRepositoryConnectionPtr repositoryConnectionPtr);
         DgnDbServerStatusTaskPtr Stop();
         DgnDbServerStatusTaskPtr Subscribe(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback);
-        DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallbackPtr callback);
+        DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallbackPtr callback, bool* dispose);
         DgnDbServerEventMap GetCallbacks() const;
         virtual ~DgnDbServerEventManager();
     };
