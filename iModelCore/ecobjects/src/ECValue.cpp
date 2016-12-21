@@ -434,7 +434,7 @@ void ECValue::NavigationInfo::Clear()
     {
     m_relClass = nullptr;
     m_id = BeInt64Id();
-    m_isPointer = false;
+    m_isPointer = true;
     }
 
 //*********************** ECValue ***************************************
