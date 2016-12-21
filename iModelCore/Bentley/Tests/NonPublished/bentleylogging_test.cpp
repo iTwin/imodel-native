@@ -139,7 +139,9 @@ TEST_F(BentleyLoggingTests, LogggerCheck)
     NativeLogging::ILogger* ilooger = NativeLogging::LoggingManager::CreateUncachedLogger(L"bentleyloging_test4");
     ilooger->message(NativeLogging::LOG_ERROR, "Error message from looger2 call 1");
     EXPECT_TRUE(0 == NativeLogging::LoggingManager::DestroyUncachedLogger(ilooger));
+#ifdef COMMENT_OUT // You just freed "ilooger". You must not try to use it.
     ilooger->message(NativeLogging::LOG_ERROR, "Error message from looger2 call 3");
+#endif
 
     EXPECT_TRUE(NativeLogging::LoggingConfig::IsProviderActive());
     EXPECT_TRUE(0 == NativeLogging::LoggingConfig::DeactivateProvider());
