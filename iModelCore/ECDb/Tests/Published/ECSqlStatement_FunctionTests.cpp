@@ -264,7 +264,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
     {
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.P(Bi, S) VALUES(:blobparam,BlobToBase64(:blobparam))"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(stmt.GetParameterIndex("blobparam"), expectedBlob, sizeof(BeGuid), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(stmt.GetParameterIndex("blobparam"), expectedBlob, sizeof(BeGuid), IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key));
     }
 
@@ -281,7 +281,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     //select clause item 1
     int actualBlobSize = -1;
-    void const* actualBlob = stmt.GetValueBinary(1, &actualBlobSize);
+    void const* actualBlob = stmt.GetValueBlob(1, &actualBlobSize);
     ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Second select clause item in ECSQL " << stmt.GetECSql();
     ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Second select clause item in ECSQL " << stmt.GetECSql();
 
@@ -290,7 +290,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     //select clause item 3
     actualBlobSize = -1;
-    actualBlob = stmt.GetValueBinary(3, &actualBlobSize);
+    actualBlob = stmt.GetValueBlob(3, &actualBlobSize);
     ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
     ASSERT_EQ(0, memcmp(expectedBlob, actualBlob, sizeof(BeGuid))) << "Fourth select clause item in ECSQL " << stmt.GetECSql();
     }
@@ -306,7 +306,7 @@ TEST_F(ECSqlStatementTestFixture, Base64Functions)
 
     //select clause item 3
     int actualBlobSize = -1;
-    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBinary(0, &actualBlobSize), sizeof(BeGuid))) << stmt.GetECSql();
+    ASSERT_EQ(0, memcmp(expectedBlob, stmt.GetValueBlob(0, &actualBlobSize), sizeof(BeGuid))) << stmt.GetECSql();
     ASSERT_EQ(sizeof(BeGuid), (size_t) actualBlobSize) << stmt.GetECSql();
     }
 

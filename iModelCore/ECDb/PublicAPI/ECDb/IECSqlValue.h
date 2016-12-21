@@ -50,10 +50,10 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! @return true if column value is %NULL, false otherwise
         ECDB_EXPORT bool IsNull() const;
 
-        //! Gets value as a binary / blob
-        //! @param[out] binarySize the size of the blob in bytes.
-        //! @return The binary value
-        ECDB_EXPORT void const* GetBinary(int* binarySize = nullptr) const;
+        //! Gets value as a BLOB
+        //! @param[out] blobSize the size of the blob in bytes.
+        //! @return The BLOB value
+        ECDB_EXPORT void const* GetBlob(int* blobSize = nullptr) const;
 
         //! Gets the value as a boolean value.
         //! @return Value as boolean

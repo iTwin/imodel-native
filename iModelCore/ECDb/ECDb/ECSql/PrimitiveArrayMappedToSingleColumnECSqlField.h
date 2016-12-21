@@ -33,7 +33,7 @@ private:
             virtual IECSqlArrayValue const& _GetArray() const override;
 
             //IECSqlPrimitiveValue
-            virtual void const* _GetBinary(int* binarySize) const override;
+            virtual void const* _GetBlob(int* blobSize) const override;
             virtual bool _GetBoolean() const override;
             virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const override;
             virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const override;

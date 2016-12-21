@@ -32,9 +32,9 @@ bool IECSqlValue::IsNull() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* IECSqlValue::GetBinary(int* binarySize) const
+void const* IECSqlValue::GetBlob(int* binarySize) const
     {
-    return _GetPrimitive()._GetBinary(binarySize);
+    return _GetPrimitive()._GetBlob(binarySize);
     }
 
 //--------------------------------------------------------------------------------------
@@ -151,13 +151,13 @@ BeGuid IECSqlValue::GetGuid() const
     if (IsNull())
         return BeGuid();
 
-    int binarySize = 0;
-    void const* binaryValue = GetBinary(&binarySize);
-    if (binarySize != sizeof(BeGuid))
+    int blobSize = 0;
+    void const* blobValue = GetBlob(&blobSize);
+    if (blobSize != sizeof(BeGuid))
         return BeGuid();
 
     BeGuid guid;
-    memcpy(&guid, binaryValue, sizeof(guid));
+    memcpy(&guid, blobValue, sizeof(guid));
     return guid;
     }
 

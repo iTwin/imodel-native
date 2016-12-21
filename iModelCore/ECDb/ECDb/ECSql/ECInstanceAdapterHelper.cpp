@@ -282,7 +282,7 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
 
             //if blob owner is IECInstance which will be alive until ECInstance adapter is done executing,
             //we don't need to copy
-            stat = binder.BindBinary(static_cast<const void* const> (blob), (int) blobSize, DetermineMakeCopy(value));
+            stat = binder.BindBlob(static_cast<const void* const> (blob), (int) blobSize, DetermineMakeCopy(value));
             break;
             }
             case ECN::PRIMITIVETYPE_Boolean:

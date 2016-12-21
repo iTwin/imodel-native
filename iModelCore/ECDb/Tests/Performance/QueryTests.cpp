@@ -371,7 +371,7 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_With
                     case ECN::PRIMITIVETYPE_Binary:
                     {
                     int size = 0;
-                    ecsqlValue.GetBinary(&size);
+                    ecsqlValue.GetBlob(&size);
                     break;
                     }
                     case ECN::PRIMITIVETYPE_Boolean:

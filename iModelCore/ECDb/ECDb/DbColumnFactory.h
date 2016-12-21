@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct DbColumnFactory  final: NonCopyableClass
+struct DbColumnFactory final : NonCopyableClass
     {
     private:
         ClassMap const& m_classMap;
@@ -38,12 +38,12 @@ struct DbColumnFactory  final: NonCopyableClass
         bool IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& param) const;
 
         void AddColumnToCache(DbColumn const&, Utf8StringCR) const;
+        BentleyStatus ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const;
 
         ClassMap const& GetClassMap() const { return m_classMap; }
         DbTable& GetTable() const;
         ECDbCR GetECDb() const;
 
-		static BentleyStatus ComputeReleventClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph, ClassMap const& classMap);
     public:
         explicit DbColumnFactory(ClassMap const& classMap);
 

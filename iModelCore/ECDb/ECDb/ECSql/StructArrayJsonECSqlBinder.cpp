@@ -140,7 +140,7 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBinary(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBlob(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Binary)
         {
@@ -152,6 +152,14 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBinary(void const* value, int bina
     return SUCCESS == ECJsonUtilities::BinaryToJson(m_value, blob, binarySize) ? ECSqlStatus::Success : ECSqlStatus::Error;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      03/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveJsonECSqlBindValue::_BindZeroBlob(int blobSize)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob values to elements of a struct array parameter.");
+    return ECSqlStatus::Error;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016

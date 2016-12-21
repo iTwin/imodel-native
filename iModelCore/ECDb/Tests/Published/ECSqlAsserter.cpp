@@ -174,7 +174,7 @@ ECSqlStatus ECSqlAsserter::BindParameters(ECSqlStatement& statement, vector<ECSq
                 {
                 size_t blobSize;
                 auto blob = value.GetBinary(blobSize);
-                stat = statement.BindBinary(parameterIndex, static_cast<const void* const> (blob), (int) blobSize, IECSqlBinder::MakeCopy::No);
+                stat = statement.BindBlob(parameterIndex, static_cast<const void* const> (blob), (int) blobSize, IECSqlBinder::MakeCopy::No);
                 break;
                 }
                 case ECN::PRIMITIVETYPE_Boolean:
@@ -476,7 +476,7 @@ ECSqlSelectAsserter::GetValueCallList ECSqlSelectAsserter::CreateGetValueCallLis
                                 [&value] ()
         {
         int blobSize = -1;
-        value.GetBinary(&blobSize);
+        value.GetBlob(&blobSize);
         }));
     list.push_back(GetValueCall(ECTypeDescriptor::CreatePrimitiveTypeDescriptor(PRIMITIVETYPE_Boolean),
                                 [&value] () { value.GetBoolean(); }));

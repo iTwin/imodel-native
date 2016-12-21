@@ -594,7 +594,7 @@ bool JsonECSqlSelectAdapter::FormattedJsonFromECValue(JsonValueR jsonValue, ECVa
 bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
     {
     int size;
-    const Byte* data = (const Byte *) ecsqlValue.GetBinary(&size);
+    const Byte* data = (const Byte *) ecsqlValue.GetBlob(&size);
     ECValue ecValue;
     ecValue.SetBinary(data, (size_t) size, false);
 

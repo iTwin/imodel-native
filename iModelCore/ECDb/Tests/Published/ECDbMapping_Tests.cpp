@@ -2712,7 +2712,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(idx++, pB));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(idx++, pP2D));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
 
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -2757,7 +2757,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
         i++;
         }
     ASSERT_EQ(3, i);
-    ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
+    ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBlob(idx++), bin.size()));  //Bin
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
@@ -2845,7 +2845,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(idx++, pB));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(idx++, pP2D));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
 
     IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
     ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
@@ -2928,7 +2928,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         i++;
         }
     ASSERT_EQ(3, i);
-    ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
+    ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBlob(idx++), bin.size()));  //Bin
     }
 
     //---------------------------------------------------------------------------------------
@@ -3020,7 +3020,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindBoolean(idx++, pB));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(idx++, pP2D));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
-        ASSERT_EQ(ECSqlStatus::Success, stmt.BindBinary(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
 
         IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
         ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
@@ -3103,7 +3103,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
             }
         ASSERT_EQ(3, i);
 
-        ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBinary(idx++), bin.size()));  //Bin
+        ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBlob(idx++), bin.size()));  //Bin
         }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   02/16

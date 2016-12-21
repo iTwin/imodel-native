@@ -131,18 +131,18 @@ PrimitiveJsonECSqlValue::PrimitiveJsonECSqlValue(ECDbCR ecdb, Json::Value const&
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* PrimitiveJsonECSqlValue::_GetBinary(int* binarySize) const
+void const* PrimitiveJsonECSqlValue::_GetBlob(int* blobSize) const
     {
     if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_Binary))
-        return NoopECSqlValue::GetSingleton().GetBinary(binarySize);
+        return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
 
     if (SUCCESS != ECJsonUtilities::JsonToBinary(m_blobCache, GetJson()))
         {
         Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetBinary failed for '%s'. Invalid JSON format for Blob.",
+        msg.Sprintf("IECSqlValue::GetBlob failed for '%s'. Invalid JSON format for Blob.",
                     GetColumnInfo().GetPropertyPath().ToString().c_str());
         ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetBinary(binarySize);
+        return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
         }
 
     return m_blobCache.data();

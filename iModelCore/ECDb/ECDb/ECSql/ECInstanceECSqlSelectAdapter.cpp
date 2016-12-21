@@ -340,7 +340,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             case ECN::PRIMITIVETYPE_Binary:
             {
             int size = 0;
-            const Byte* b = (const Byte *) value.GetBinary(&size);
+            const Byte* b = (const Byte *) value.GetBlob(&size);
             val.SetBinary(b, size, false);
             break;
             }

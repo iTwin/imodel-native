@@ -20,149 +20,26 @@ DbColumnFactory::DbColumnFactory(ClassMap const& classMap)
     Initialize();
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       01 / 2015
-//------------------------------------------------------------------------------------------
-//static 
-BentleyStatus DbColumnFactory::ComputeReleventClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph, ClassMap const& classMap)
-    {
-    contextGraph.clear();
-    if (!classMap.GetMapStrategy().GetTphInfo().IsValid())
-        {
-        return SUCCESS;
-        }
-
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    DbTable const& contextTable = classMap.GetJoinedTable();
-    if (!contextTable.HasExclusiveRootECClass())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    ECClassCP exclusiveRootClass = ecdb.Schemas().GetECClass(contextTable.GetExclusiveRootECClassId());
-    if (exclusiveRootClass == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    bset<ClassMap const*> mixins;
-    bset<ECN::ECClassId> doneList;
-    bset<ECN::ECClassId> primaryHierarchyClassIds;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId = ?1 AND ClassId != ?1 UNION ALL "
-                            "SELECT BaseClassId FROM " TABLE_ClassHierarchyCache " WHERE ClassId = ?1 ");
-    stmt->BindId(1, classMap.GetClass().GetId());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        primaryHierarchyClassIds.insert(stmt->GetValueId<ECClassId>(0));
-
-    std::function<ClassMapCP(ECClassCR)> findFirstImplementationOfMixin = [&] (ECN::ECClassCR mixInClass)
-        {
-        if (mixInClass.GetId() != classMap.GetClass().GetId())
-            {
-            auto itor = contextGraph.find(&mixInClass);
-            if (itor != contextGraph.end())
-                return itor->second;
-
-            if (ClassMap const* mixInClassMap = classMap.GetDbMap().GetClassMap(mixInClass))
-                {
-                if (mixInClassMap->GetJoinedTable().GetId() == contextTable.GetId())
-                    return mixInClassMap;
-                }
-            }
-
-        for (ECClassCP derivedClass : ecdb.Schemas().GetDerivedECClasses(mixInClass))
-            {
-            if (ClassMapCP foundImpl = findFirstImplementationOfMixin(*derivedClass))
-                {
-                if (foundImpl->GetJoinedTable().GetId() == contextTable.GetId())
-                    return foundImpl;
-                }
-            }
-
-        return (ClassMapCP)nullptr;
-        };
-
-    std::function<void(ECClassCR)> traverseDerivedClasses = [&] (ECN::ECClassCR contextClass)
-        {
-        if (doneList.find(contextClass.GetId()) != doneList.end())
-            return;
-
-        const bool isPartOfPrimaryHierarchy = (primaryHierarchyClassIds.find(contextClass.GetId()) != primaryHierarchyClassIds.end());
-        doneList.insert(contextClass.GetId());
-        if (isPartOfPrimaryHierarchy)
-            {
-            ClassMap const* contextClassMap = classMap.GetDbMap().GetClassMap(contextClass);
-            if (contextClassMap != nullptr)
-                {
-                if (contextClassMap->GetJoinedTable().GetId() == contextTable.GetId())
-                    contextGraph.insert(bpair<ECClassCP,ClassMap const*>(&contextClass, contextClassMap));
-                else
-                    {
-                    //If a class is in another table then we do not care and also do not care about its derived classes or its interfaces
-                    return;
-                    }
-                }
-            }
-
-        //! Find mixins if any
-        for (ECClassCP baseClass : contextClass.GetBaseClasses())
-            if (ClassMap const* mixInClassMap = classMap.GetDbMap().GetClassMap(*baseClass))
-                if (mixInClassMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Virtual)
-                    if (mixins.find(mixInClassMap) != mixins.end())
-                        {
-                        mixins.insert(mixInClassMap);
-                        if (contextGraph.find(&mixInClassMap->GetClass()) == contextGraph.end())
-                            {
-                            if (ClassMapCP impl = findFirstImplementationOfMixin(mixInClassMap->GetClass()))
-                                {
-                                if (contextGraph.find(&impl->GetClass()) == contextGraph.end())
-                                    contextGraph[&mixInClassMap->GetClass()] = impl;
-                                }
-                            }
-                        }
-
-        //! traver derive hiearchy as long as possiable while stayingin same table
-        const ssize_t n = contextGraph.size();
-        for (ECClassCP derivedClass : ecdb.Schemas().GetDerivedECClasses(contextClass))
-            traverseDerivedClasses(*derivedClass);
-
-        //! record only deepest class in primary hiearchy
-        if (isPartOfPrimaryHierarchy)
-            if (contextGraph.size() > n)
-                {
-                auto contextItemItor = contextGraph.find(&contextClass);
-                if (contextItemItor != contextGraph.end())
-                    contextGraph.erase(contextItemItor);
-                }
-        };
-
-
-    traverseDerivedClasses(*exclusiveRootClass);
-    return SUCCESS;
-    }
-
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-
 void DbColumnFactory::Initialize()
     {
-    bmap<ECN::ECClassCP, ClassMap const*> releventClassMaps;
-    if (ComputeReleventClassMaps(releventClassMaps, m_classMap) != SUCCESS)
-        return ;
+    bmap<ECN::ECClassCP, ClassMap const*> relevantClassMaps;
+    if (ComputeRelevantClassMaps(relevantClassMaps) != SUCCESS)
+        return;
 
-    for (const auto &kp : releventClassMaps)
+    for (bpair<ECClassCP, ClassMap const*> const& kp : relevantClassMaps)
         {
         ECClassCP interfaceClass = kp.first;
         ClassMapCP implClassMap = kp.second;
-        std::set<Utf8CP, CompareIUtf8Ascii> releventProperties;
+        std::set<Utf8CP, CompareIUtf8Ascii> relevantProperties;
         const bool isMixIn = interfaceClass->GetId() != implClassMap->GetClass().GetId();
         if (isMixIn)
             {
             for (ECPropertyCP property : interfaceClass->GetProperties(true))
-                releventProperties.insert(property->GetName().c_str());
+                relevantProperties.insert(property->GetName().c_str());
             }
 
         SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
@@ -179,7 +56,7 @@ void DbColumnFactory::Initialize()
                     cur = cur->GetParent();
 
                 //ignore other properties in case of mixin
-                if (releventProperties.find(cur->GetName().c_str()) == releventProperties.end())
+                if (relevantProperties.find(cur->GetName().c_str()) == relevantProperties.end())
                     continue;
                 }
 
@@ -478,12 +355,131 @@ bool DbColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColumn::Ty
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
+BentleyStatus DbColumnFactory::ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const
+    {
+    contextGraph.clear();
+    if (!m_classMap.GetMapStrategy().GetTphInfo().IsValid())
+        return SUCCESS;
+
+    if (!GetTable().HasExclusiveRootECClass())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ECClassCP exclusiveRootClass = GetECDb().Schemas().GetECClass(GetTable().GetExclusiveRootECClassId());
+    if (exclusiveRootClass == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    bset<ClassMap const*> mixins;
+    bset<ECN::ECClassId> doneList;
+    bset<ECN::ECClassId> primaryHierarchyClassIds;
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId = ?1 AND ClassId != ?1 UNION ALL "
+                                                      "SELECT BaseClassId FROM " TABLE_ClassHierarchyCache " WHERE ClassId = ?1 ");
+    stmt->BindId(1, m_classMap.GetClass().GetId());
+    while (stmt->Step() == BE_SQLITE_ROW)
+        primaryHierarchyClassIds.insert(stmt->GetValueId<ECClassId>(0));
+
+    std::function<ClassMapCP(ECClassCR)> findFirstImplementationOfMixin = [&] (ECN::ECClassCR mixInClass)
+        {
+        if (mixInClass.GetId() != m_classMap.GetClass().GetId())
+            {
+            auto itor = contextGraph.find(&mixInClass);
+            if (itor != contextGraph.end())
+                return itor->second;
+
+            if (ClassMap const* mixInClassMap = m_classMap.GetDbMap().GetClassMap(mixInClass))
+                {
+                if (mixInClassMap->GetJoinedTable().GetId() == GetTable().GetId())
+                    return mixInClassMap;
+                }
+            }
+
+        for (ECClassCP derivedClass : GetECDb().Schemas().GetDerivedECClasses(mixInClass))
+            {
+            if (ClassMapCP foundImpl = findFirstImplementationOfMixin(*derivedClass))
+                {
+                if (foundImpl->GetJoinedTable().GetId() == GetTable().GetId())
+                    return foundImpl;
+                }
+            }
+
+        return (ClassMapCP) nullptr;
+        };
+
+    std::function<void(ECClassCR)> traverseDerivedClasses = [&] (ECN::ECClassCR contextClass)
+        {
+        if (doneList.find(contextClass.GetId()) != doneList.end())
+            return;
+
+        const bool isPartOfPrimaryHierarchy = (primaryHierarchyClassIds.find(contextClass.GetId()) != primaryHierarchyClassIds.end());
+        doneList.insert(contextClass.GetId());
+        if (isPartOfPrimaryHierarchy)
+            {
+            ClassMap const* contextClassMap = m_classMap.GetDbMap().GetClassMap(contextClass);
+            if (contextClassMap != nullptr)
+                {
+                if (contextClassMap->GetJoinedTable().GetId() == GetTable().GetId())
+                    contextGraph.insert(bpair<ECClassCP, ClassMap const*>(&contextClass, contextClassMap));
+                else
+                    {
+                    //If a class is in another table then we do not care and also do not care about its derived classes or its interfaces
+                    return;
+                    }
+                }
+            }
+
+        //! Find mixins if any
+        for (ECClassCP baseClass : contextClass.GetBaseClasses())
+            {
+            ClassMap const* mixInClassMap = m_classMap.GetDbMap().GetClassMap(*baseClass);
+            if (mixInClassMap == nullptr)
+                continue;
+
+            if (mixInClassMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Virtual &&
+                mixins.find(mixInClassMap) != mixins.end())
+                {
+                mixins.insert(mixInClassMap);
+                if (contextGraph.find(&mixInClassMap->GetClass()) == contextGraph.end())
+                    {
+                    ClassMapCP impl = findFirstImplementationOfMixin(mixInClassMap->GetClass());
+                    if (impl != nullptr && contextGraph.find(&impl->GetClass()) == contextGraph.end())
+                        contextGraph[&mixInClassMap->GetClass()] = impl;
+                    }
+                }
+            }
+
+        //! traverse derive hierarchy as long as possible while staying in same table
+        const ssize_t n = contextGraph.size();
+        for (ECClassCP derivedClass : GetECDb().Schemas().GetDerivedECClasses(contextClass))
+            traverseDerivedClasses(*derivedClass);
+
+        //! record only deepest class in primary hierarchy
+        if (isPartOfPrimaryHierarchy && contextGraph.size() > n)
+            {
+            auto contextItemItor = contextGraph.find(&contextClass);
+            if (contextItemItor != contextGraph.end())
+                contextGraph.erase(contextItemItor);
+            }
+        };
+
+
+    traverseDerivedClasses(*exclusiveRootClass);
+    return SUCCESS;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
 DbTable& DbColumnFactory::GetTable() const  { return m_classMap.GetJoinedTable();  }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbCR DbColumnFactory::GetECDb() const { return GetClassMap().GetDbMap().GetECDb(); }
+ECDbCR DbColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015

@@ -73,7 +73,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
@@ -84,7 +84,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, i
         {
         for (IECSqlBinder* eh : *ehs)
             {
-            ECSqlStatus es = eh->BindBinary(value, binarySize, makeCopy);
+            ECSqlStatus es = eh->BindBlob(value, binarySize, makeCopy);
             if (es != ECSqlStatus::Success)
                 return es;
             }
@@ -92,7 +92,34 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBinary(const void* value, i
 
     const auto sqliteStat = GetSqliteStatementR ().BindBlob(m_sqliteIndex, value, binarySize, ToBeSQliteBindMakeCopy(makeCopy));
     if (sqliteStat != BE_SQLITE_OK)
-        return ReportError(sqliteStat, "ECSqlStatement::BindBinary");
+        return ReportError(sqliteStat, "ECSqlStatement::BindBlob");
+
+    return ECSqlStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindZeroBlob(int blobSize)
+    {
+    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
+    if (!stat.IsSuccess())
+        return stat;
+
+    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
+    if (ehs != nullptr)
+        {
+        for (IECSqlBinder* eh : *ehs)
+            {
+            ECSqlStatus es = eh->BindZeroBlob(blobSize);
+            if (es != ECSqlStatus::Success)
+                return es;
+            }
+        }
+
+    const DbResult sqliteStat = GetSqliteStatementR().BindZeroBlob(m_sqliteIndex, blobSize);
+    if (sqliteStat != BE_SQLITE_OK)
+        return ReportError(sqliteStat, "ECSqlStatement::BindZeroBlob");
 
     return ECSqlStatus::Success;
     }

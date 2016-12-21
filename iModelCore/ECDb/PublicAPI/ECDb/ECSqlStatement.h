@@ -98,15 +98,24 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @return ECSqlStatus::Success or error codes
         ECSqlStatus BindBoolean(int parameterIndex, bool value) { return GetBinder(parameterIndex).BindBoolean(value); }
 
-        //! Binds a binary / BLOB value to the parameter
+        //! Binds a BLOB value to the parameter
         //! @param[in] parameterIndex Parameter index
         //! @param[in] value Value to bind
-        //! @param[in] binarySize Size of the BLOB in bytes
+        //! @param[in] blobSize Size of the BLOB in bytes
         //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. Only pass 
         //! IECSqlBinder::MakeCopy::No if @p value remains valid until
         //!            the statement's bindings are cleared.
         //! @return ECSqlStatus::Success or error codes
-        ECSqlStatus BindBinary(int parameterIndex, const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) { return GetBinder(parameterIndex).BindBinary(value, binarySize, makeCopy); }
+        ECSqlStatus BindBlob(int parameterIndex, const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) { return GetBinder(parameterIndex).BindBlob(value, blobSize, makeCopy); }
+
+        //! Binds a zeroblob of the specified size to a parameter.
+        //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00. 
+        //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that 
+        //! is later written using incremental BLOB I/O. 
+        //! @param[in] parameterIndex Parameter index
+        //! @param[in] blobSize The number of bytes for the zeroblob.
+        //! @return ECSqlStatus::Success or error codes
+        ECSqlStatus BindZeroBlob(int parameterIndex, int blobSize) { return GetBinder(parameterIndex).BindZeroBlob(blobSize); }
 
         //! Binds a DateTime value to the parameter
         //! @param[in] parameterIndex Parameter index
@@ -281,14 +290,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! - @p columnIndex is out of bounds
         bool IsValueNull(int columnIndex) const { return GetValue(columnIndex).IsNull(); }
 
-        //! Gets the binary / blob value of the specific column.
+        //! Gets the BLOB value of the specific column.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)
-        //! @param[out] binarySize the size of the blob in bytes.
-        //! @return The binary value
+        //! @param[out] blobSize the size of the BLOB in bytes.
+        //! @return The BLOB value
         //! @note Possible errors:
-        //! - column data type is not binary
         //! - @p columnIndex is out of bounds
-        void const* GetValueBinary(int columnIndex, int* binarySize = nullptr) const { return GetValue(columnIndex).GetBinary(binarySize); }
+        void const* GetValueBlob(int columnIndex, int* blobSize = nullptr) const { return GetValue(columnIndex).GetBlob(blobSize); }
 
         //! Gets the value of the specific column as a boolean value.
         //! @param[in] columnIndex Index of ECSQL column in result set (0-based)

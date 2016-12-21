@@ -141,9 +141,18 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PointToColumnsECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to Point2d / Point3d parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus PointToColumnsECSqlBinder::_BindZeroBlob(int blobSize)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob value to Point2d / Point3d parameter.");
     return ECSqlStatus::Error;
     }
 

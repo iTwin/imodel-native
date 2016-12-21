@@ -102,7 +102,7 @@ Utf8CP ECSqlField::GetPrimitiveGetMethodName(ECN::PrimitiveType getMethodType)
     switch (getMethodType)
         {
             case PRIMITIVETYPE_Binary:
-                return "GetBinary";
+                return "GetBlob";
             case PRIMITIVETYPE_Boolean:
                 return "GetBoolean";
             case PRIMITIVETYPE_DateTime:

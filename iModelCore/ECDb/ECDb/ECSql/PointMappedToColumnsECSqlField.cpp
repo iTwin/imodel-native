@@ -83,11 +83,11 @@ DPoint3d PointMappedToColumnsECSqlField::_GetPoint3d () const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void const* PointMappedToColumnsECSqlField::_GetBinary (int* binarySize) const
+void const* PointMappedToColumnsECSqlField::_GetBlob(int* blobSize) const
     {
-    ReportError (ECSqlStatus::Error, "GetBinary cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
-    BeAssert (false && "GetBinary cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
-    return NoopECSqlValue::GetSingleton ().GetBinary (binarySize);
+    ReportError (ECSqlStatus::Error, "GetBlob cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
+    BeAssert (false && "GetBlob cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
+    return NoopECSqlValue::GetSingleton ().GetBlob(blobSize);
     }
 
 //-----------------------------------------------------------------------------------------

@@ -31,7 +31,8 @@ private:
 
     virtual ECSqlStatus _BindNull() override;
     virtual ECSqlStatus _BindBoolean(bool value) override;
-    virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
+    virtual ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy) override;
+    virtual ECSqlStatus _BindZeroBlob(int blobSize) override;
     virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
     virtual ECSqlStatus _BindDouble(double value) override;

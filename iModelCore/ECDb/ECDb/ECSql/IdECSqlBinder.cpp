@@ -84,9 +84,18 @@ ECSqlStatus IdECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus IdECSqlBinder::_BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to Id parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus IdECSqlBinder::_BindZeroBlob(int blobSize)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob value to Id parameter.");
     return ECSqlStatus::Error;
     }
 

@@ -23,7 +23,8 @@ public:
     virtual ~IECSqlPrimitiveBinder() {}
 
     virtual ECSqlStatus _BindBoolean(bool) = 0;
-    virtual ECSqlStatus _BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy) = 0;
+    virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) = 0;
+    virtual ECSqlStatus _BindZeroBlob(int blobSize) = 0;
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) = 0;
     virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) = 0;
     virtual ECSqlStatus _BindDouble(double) = 0;

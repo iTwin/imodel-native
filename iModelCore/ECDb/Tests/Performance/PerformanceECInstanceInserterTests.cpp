@@ -231,7 +231,7 @@ private:
             {
                 size_t size;
                 auto ecBlob = v.GetBinary(size);
-                ecsqlStat = stmt.BindBinary(parameterIndex, ecBlob, (int)size, DetermineMakeCopy(v));
+                ecsqlStat = stmt.BindBlob(parameterIndex, ecBlob, (int)size, DetermineMakeCopy(v));
                 break;
             }
 

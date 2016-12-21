@@ -46,10 +46,10 @@ bool PrimitiveMappedToSingleColumnECSqlField::_IsNull() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* PrimitiveMappedToSingleColumnECSqlField::_GetBinary(int* binarySize) const
+void const* PrimitiveMappedToSingleColumnECSqlField::_GetBlob(int* blobSize) const
     {
-    if (binarySize != nullptr)
-        *binarySize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
+    if (blobSize != nullptr)
+        *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
     return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     }

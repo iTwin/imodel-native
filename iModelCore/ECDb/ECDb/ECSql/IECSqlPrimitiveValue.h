@@ -23,7 +23,7 @@ struct IECSqlPrimitiveValue
     public:
         virtual ~IECSqlPrimitiveValue() {}
 
-        virtual void const* _GetBinary(int* binarySize) const = 0;
+        virtual void const* _GetBlob(int* blobSize) const = 0;
         virtual bool _GetBoolean() const = 0;
         virtual double _GetDateTimeJulianDays(DateTime::Info& metadata) const = 0;
         virtual uint64_t _GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const = 0;

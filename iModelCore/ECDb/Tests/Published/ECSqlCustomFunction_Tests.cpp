@@ -317,7 +317,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
             rowCount++;
             int64_t expectedInt = stmt.GetValueInt64(0);
             int blobSize = -1;
-            void const* actualBlob = stmt.GetValueBinary(1, &blobSize);
+            void const* actualBlob = stmt.GetValueBlob(1, &blobSize);
 
             ASSERT_EQ(sizeof(expectedInt), blobSize);
             int64_t actualInt = -1LL;
@@ -337,7 +337,7 @@ TEST_F(ECSqlStatementTestFixture, BlobSqlFunction)
             {
             rowCount++;
             int blobSize = -1;
-            void const* actualBlob = stmt.GetValueBinary(1, &blobSize);
+            void const* actualBlob = stmt.GetValueBlob(1, &blobSize);
 
             ASSERT_EQ(0, blobSize);
             ASSERT_TRUE(actualBlob == nullptr);

@@ -50,10 +50,10 @@ NoopECSqlValue const& NoopECSqlValue::GetSingleton()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2013
 //---------------------------------------------------------------------------------------
-void const* NoopECSqlValue::_GetBinary(int* binarySize) const
+void const* NoopECSqlValue::_GetBlob(int* blobSize) const
     {
-    if (binarySize != nullptr)
-        *binarySize = -1;
+    if (blobSize != nullptr)
+        *blobSize = -1;
 
     return nullptr;
     }

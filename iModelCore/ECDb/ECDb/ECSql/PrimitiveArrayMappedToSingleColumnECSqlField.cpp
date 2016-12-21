@@ -244,15 +244,15 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_IsNull() 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-void const* PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBinary(int* binarySize) const
+void const* PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBlob(int* blobSize) const
     {
     if (!CanRead(PRIMITIVETYPE_Binary))
-        return NoopECSqlValue::GetSingleton().GetBinary(binarySize);
+        return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
 
     size_t size;
     auto data = m_value.GetBinary(size);
-    if (binarySize)
-        *binarySize = (int) size;
+    if (blobSize)
+        *blobSize = (int) size;
     return data;
     }
 

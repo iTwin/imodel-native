@@ -58,14 +58,22 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindBoolean(bool value);
 
-    //! Binds a binary / BLOB value to the parameter
+    //! Binds a BLOB value to the parameter
     //! @param[in] value Value to bind
-    //! @param[in] binarySize Size of the BLOB in bytes
+    //! @param[in] blobSize Size of the BLOB in bytes
     //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. 
     //!            Only pass IECSqlBinder::MakeCopy::No if @p value remains valid until
     //!            the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT ECSqlStatus BindBinary(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy);
+    ECDB_EXPORT ECSqlStatus BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
+
+    //! Binds a zeroblob of the specified size to a parameter.
+    //! @remarks A zeroblob is a BLOB consisting of @p blobSize bytes of 0x00. 
+    //! SQLite manages these zeroblobs very efficiently. Zeroblobs can be used to reserve space for a BLOB that 
+    //! is later written using incremental BLOB I/O. 
+    //! @param[in] blobSize The number of bytes for the zeroblob.
+    //! @return ECSqlStatus::Success or error codes
+    ECDB_EXPORT ECSqlStatus BindZeroBlob(int blobSize);
 
     //! Binds a DateTime value to the parameter
     //! @param[in] value Value to bind
@@ -150,7 +158,7 @@ public:
     //! @param[in] makeCopy indicates whether ECSqlStatement should make a private copy of @p guid or not.
     //!             Only pass IECSqlBinder::MakeCopy::No if @p guid will remain valid until the statement's bindings are cleared.
     //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindGuid(BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy) { return guid.IsValid() ? BindBinary(&guid, sizeof(guid), makeCopy) : BindNull(); }
+    ECSqlStatus BindGuid(BeGuidCR guid, IECSqlBinder::MakeCopy makeCopy) { return guid.IsValid() ? BindBlob(&guid, sizeof(guid), makeCopy) : BindNull(); }
 
     //! Binds to a NavigationECProperty parameter.
     //! @param[in] relatedInstanceId ECInstanceId of the related object. The id must be valid.

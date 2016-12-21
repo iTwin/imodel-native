@@ -61,7 +61,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean(int Parameterindex, bool
 //+---------------+---------------+---------------+---------------+---------------+------
 ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary(int Parameterindex, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    return m_parent.stmt.BindBinary(Parameterindex, binaryVal, binarySize, makeCopy);
+    return m_parent.stmt.BindBlob(Parameterindex, binaryVal, binarySize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindBoolean(Utf8CP ParameterName, bo
 ECSqlStatus ECSqlStatementHelper::Bindings::bindBinary(Utf8CP ParameterName, const void* binaryVal, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     int index = m_parent.stmt.GetParameterIndex(ParameterName);
-    return m_parent.stmt.BindBinary(index, binaryVal, binarySize, makeCopy);
+    return m_parent.stmt.BindBlob(index, binaryVal, binarySize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
@@ -431,7 +431,7 @@ DPoint3d ECSqlStatementHelper::assertPoint3D(int columnIndex, double X, double Y
 //+---------------+---------------+---------------+---------------+---------------+------
 void const* ECSqlStatementHelper::assertBinary(int columnIndex, int* binarySize)
     {
-    return stmt.GetValueBinary(columnIndex, binarySize);
+    return stmt.GetValueBlob(columnIndex, binarySize);
     }
 
 //---------------------------------------------------------------------------------------
