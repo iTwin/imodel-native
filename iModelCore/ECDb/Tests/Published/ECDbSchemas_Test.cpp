@@ -209,7 +209,7 @@ TEST_F(ECDbSchemaTests, VerifyDatabaseSchemaAfterImport)
     //baseClass
     Utf8CP tblAsset = "sc_Asset";
     EXPECT_TRUE(db.TableExists(tblAsset));
-    EXPECT_EQ(34, GetColumnCount(db, tblAsset));
+    EXPECT_EQ(35, GetColumnCount(db, tblAsset));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECInstanceId"));
     EXPECT_TRUE(db.ColumnExists(tblAsset, "ECClassId"));
 
