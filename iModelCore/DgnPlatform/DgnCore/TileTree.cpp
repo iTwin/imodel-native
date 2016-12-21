@@ -570,6 +570,9 @@ void Tile::ExtendRange(DRange3dCR childRange) const
         m_parent->ExtendRange(childRange);
     }
 
+#if !defined(NDEBUG)
+static int s_forcedDepth = -1;   // change this to a non-negative value in debugger in order to freeze the LOD of all tile trees.
+#endif
 /*---------------------------------------------------------------------------------**//**
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
@@ -593,10 +596,19 @@ void Tile::Draw(DrawArgsR args, int depth) const
             return;
             }
 
-        double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
-        DPoint3d center = args.GetTileCenter(*this);
-        double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
-        tooCoarse = pixelSize > _GetMaximumSize();
+#if !defined(NDEBUG)
+        if (s_forcedDepth >= 0)
+            {
+            tooCoarse = (depth != s_forcedDepth);
+            }
+        else
+#endif
+            {
+            double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
+            DPoint3d center = args.GetTileCenter(*this);
+            double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+            tooCoarse = pixelSize > _GetMaximumSize();
+            }
         }
 
     auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
