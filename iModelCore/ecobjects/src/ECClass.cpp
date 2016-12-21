@@ -4570,31 +4570,49 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    if (baseClass.IsRelationshipClass() && GetSchema().IsECVersion(ECVersion::V3_1))
+    if (!baseClass.IsRelationshipClass())
         {
-        if (validate)
+        LOG.errorv("Cannot add class '%s' as a base class to '%s' because they are of differing class types", baseClass.GetFullName(), GetFullName());
+        return ECObjectsStatus::BaseClassUnacceptable;
+        }
+
+    if (validate)
+        {
+        // Get the relationship base class and compare its strength and direction
+        ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
+        if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
+            !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
             {
-            // Get the relationship base class and compare its strength and direction
-            ECRelationshipClassCP relationshipBaseClass = baseClass.GetRelationshipClassCP();
-            if (!ValidateStrengthConstraint(relationshipBaseClass->GetStrength()) ||
-                !ValidateStrengthDirectionConstraint(relationshipBaseClass->GetStrengthDirection()))
-                {
-                return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-                }
-            
-            m_verified = false;
+            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
+            }
 
-            if (m_verify)
-                {
-                ECObjectsStatus status;
-                if (ECObjectsStatus::Success != (status = GetSource()._ValidateBaseConstraint(relationshipBaseClass->GetSource())) ||
-                    ECObjectsStatus::Success != (status = GetTarget()._ValidateBaseConstraint(relationshipBaseClass->GetTarget())))
-                    return status;
+        m_verified = false;
 
-                m_verified = true;
-                }
+        if (m_verify)
+            {
+            ECObjectsStatus status;
+            if (ECObjectsStatus::Success != (status = GetSource()._ValidateBaseConstraint(relationshipBaseClass->GetSource())) ||
+                ECObjectsStatus::Success != (status = GetTarget()._ValidateBaseConstraint(relationshipBaseClass->GetTarget())))
+                return status;
+
+            m_verified = true;
             }
         }
+    
+    if (GetSchema().GetOriginalECXmlVersionMajor() == 2 ||
+        (GetSchema().GetOriginalECXmlVersionMajor() == 3 && GetSchema().GetOriginalECXmlVersionMinor() == 0))
+        {
+        if (HasBaseClasses())
+            {
+            ECClassP originalBase = *GetBaseClasses().begin();
+            LOG.warningv("Multiple base classes for relationship classes are not supported.  Replacing base class '%s' with '%s' for RelationshipClass '%s'",
+                          originalBase->GetFullName(), baseClass.GetFullName(), GetFullName());
+            RemoveBaseClass(*originalBase);
+            }
+        }
+
+    if (HasBaseClasses())
+        return ECObjectsStatus::RelationshipAlreadyHasBaseClass;
 
     return ECClass::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }

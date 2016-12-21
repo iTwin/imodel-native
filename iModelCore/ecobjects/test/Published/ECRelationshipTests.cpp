@@ -691,21 +691,15 @@ TEST_F(ECRelationshipTests, TestBaseClassRules)
 
     EXPECT_EQ(ECObjectsStatus::Success, relationClass2->AddBaseClass(*relationClass)) << "Relationship Class ARelB should now be a valid base class for ARelC";
 
-    ECEntityClassP entityClassD;
-    ECEntityClassP entityClassE;
-    ecSchema->CreateEntityClass(entityClassD, "D");
-    ecSchema->CreateEntityClass(entityClassE, "E");
-    entityClassD->AddBaseClass(*entityClassA);
-    entityClassE->AddBaseClass(*entityClassB);
     ECRelationshipClassP baseRelationClass;
     ecSchema->CreateRelationshipClass(baseRelationClass, "BaseClass");
     baseRelationClass->SetStrength(StrengthType::Referencing);
     baseRelationClass->SetStrengthDirection(ECRelatedInstanceDirection::Forward);
     baseRelationClass->SetClassModifier(ECClassModifier::Abstract);
-    baseRelationClass->GetSource().AddClass(*entityClassD);
-    baseRelationClass->GetTarget().AddClass(*entityClassE);
+    baseRelationClass->GetSource().AddClass(*entityClassA);
+    baseRelationClass->GetTarget().AddClass(*entityClassB);
 
-    EXPECT_NE(ECObjectsStatus::Success, relationClass2->AddBaseClass(*baseRelationClass)) << "An ECRelationshipClass can only have one base class";
+    EXPECT_EQ(ECObjectsStatus::RelationshipAlreadyHasBaseClass, relationClass2->AddBaseClass(*baseRelationClass)) << "An ECRelationshipClass can only have one base class";
     }
 
 //---------------------------------------------------------------------------------------

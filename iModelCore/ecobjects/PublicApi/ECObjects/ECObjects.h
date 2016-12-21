@@ -177,7 +177,8 @@ enum class ECObjectsStatus
     CustomAttributeContainerTypesNotCompatible,
     InvalidECVersion,
     InterfaceUnacceptable,
-    PropertyNotSupported
+    PropertyNotSupported,
+    RelationshipAlreadyHasBaseClass
     };
 
 //! Result status for deserializing an ECSchema from Xml

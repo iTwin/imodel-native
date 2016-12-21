@@ -652,4 +652,104 @@ TEST_F(SchemaDeserializationConversionTest, TestEmptyConstraints)
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_0)) << "The schema should validate as an 3.0 schema because there are no constraint classes.";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, TestDroppingRelationshipBaseClasses)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='A' isDomainClass='true'/>"
+        "   <ECClass typeName='B' isDomainClass='true'/>"
+        "   <ECRelationshipClass typeName='BaseRel1' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='BaseRel2' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='TestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
+        "       <BaseClass>BaseRel1</BaseClass>"
+        "       <BaseClass>BaseRel2</BaseClass>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The ECSchema should deserialize even though the relationship has multiple base classes.";
+    ASSERT_TRUE(schema.IsValid()) << "The schema is invalid even though success was returned";
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema should validate because the last base class defined should be the only one kept.";
+
+    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts2' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A' />"
+        "   <ECEntityClass typeName='B' />"
+        "   <ECRelationshipClass typeName='BaseRel1' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='BaseRel2' strength='referencing' strengthDirection='forward'>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='TestRel' strength='referencing' strengthDirection='forward'>"
+        "       <BaseClass>BaseRel1</BaseClass>"
+        "       <BaseClass>BaseRel2</BaseClass>"
+        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='Source'>"
+        "           <Class class='A' />"
+        "       </Source>"
+        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='Target'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema2;
+    status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The ECSchema should deserialize even though the relationship has multiple base classes.";
+    ASSERT_TRUE(schema2.IsValid()) << "The schema is invalid even though success was returned";
+    ASSERT_TRUE(schema2->IsECVersion(ECVersion::Latest)) << "The schema should validate because the last base class defined should be the only one kept.";
+
+    bvector<ECSchemaPtr> schemas;
+    schemas.push_back(schema);
+    schemas.push_back(schema2);
+
+    for (ECSchemaPtr ecSchema : schemas)
+        {
+        ECClassCP ecClass = ecSchema->GetClassCP("TestRel");
+        ASSERT_TRUE(nullptr != ecClass) << "The class TestRel is missing from the schema " << ecSchema->GetName().c_str() << ".";
+        ECRelationshipClassCP relClass = ecClass->GetRelationshipClassCP();
+        ASSERT_TRUE(nullptr != relClass) << "The class " << ecClass->GetFullName() << " is not a valid relationship class";
+
+        ASSERT_EQ(1, relClass->GetBaseClasses().size()) << "The relationship " << ecClass->GetFullName() << " should only have one base class";
+        ECClassP baseClass = *relClass->GetBaseClasses().begin();
+        ASSERT_TRUE(nullptr != baseClass) << "There are no base classes on " << ecClass->GetFullName() << " when the size was 1.";
+        EXPECT_STREQ("BaseRel2", baseClass->GetName().c_str()) << "The base class was not the expected base class on relationship " << ecClass->GetFullName() << ".";
+        }
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
