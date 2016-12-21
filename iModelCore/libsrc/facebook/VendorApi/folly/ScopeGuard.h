@@ -77,7 +77,7 @@ class ScopeGuardImplBase {
   }
 
   template <typename T>
-  FOLLY_ALWAYS_INLINE static void runAndWarnAboutToCrashOnException(
+  /*BENTLEY_CHANGE - MSVC optimizer refuses to inline... FOLLY_ALWAYS_INLINE*/ static void runAndWarnAboutToCrashOnException(
       T& function) noexcept {
     try {
       function();

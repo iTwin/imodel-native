@@ -41,12 +41,14 @@ namespace detail {
 
 /// Returns the best real CacheLocality information available
 static CacheLocality getSystemLocalityInfo() {
+#if defined (BENTLEY_CHANGE)
 #ifdef __linux__
   try {
     return CacheLocality::readFromSysfs();
   } catch (...) {
     // keep trying
   }
+#endif
 #endif
 
 #if defined (BENTLEY_CHANGE)
