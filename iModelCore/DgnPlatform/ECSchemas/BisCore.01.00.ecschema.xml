@@ -1419,31 +1419,31 @@
     <ECEntityClass typeName="ElementExternalKey">
         <!-- The aspect that holds an identifier from an external system -->
         <BaseClass>ElementMultiAspect</BaseClass>
-        <!-- <ECCustomAttributes> -->
-            <!-- <DbIndexList xmlns="ECDbMap.02.00"> -->
-                <!-- <Indexes> -->
-                    <!-- <DbIndex> -->
-                        <!-- <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name> -->
-                        <!-- <IsUnique>True</IsUnique> -->
-                        <!-- <Properties> -->
-                            <!-- Only one ExternalKey per Authority per Element -->
-                            <!-- <string>Element.Id</string> -->
-                            <!-- <string>AuthorityId</string> -->
-                        <!-- </Properties> -->
-                    <!-- </DbIndex> -->
-                    <!-- <DbIndex> -->
+        <ECCustomAttributes>
+            <DbIndexList xmlns="ECDbMap.02.00">
+                <Indexes>
+                    <DbIndex>
+                        <Name>ix_bis_ElementExternalKey_ElementId_AuthorityId</Name>
+                        <IsUnique>True</IsUnique>
+                        <Properties>
+                            Only one ExternalKey per Authority per Element
+                            <string>Element.Id</string>
+                            <string>AuthorityId</string>
+                        </Properties>
+                    </DbIndex>
+                    <DbIndex>
                         <!-- Index for looking up Element by ExternalKey -->
                         <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <!-- <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name> -->
-                        <!-- <IsUnique>False</IsUnique> -->
-                        <!-- <Properties> -->
-                            <!-- <string>AuthorityId</string> -->
-                            <!-- <string>ExternalKey</string> -->
-                        <!-- </Properties> -->
-                    <!-- </DbIndex> -->
-                <!-- </Indexes> -->
-            <!-- </DbIndexList> -->
-        <!-- </ECCustomAttributes> -->
+                        <Name>ix_bis_ElementExternalKey_AuthorityId_ExternalKey</Name>
+                        <IsUnique>False</IsUnique>
+                        <Properties>
+                            <string>AuthorityId</string>
+                            <string>ExternalKey</string>
+                        </Properties>
+                    </DbIndex>
+                </Indexes>
+            </DbIndexList>
+        </ECCustomAttributes>
         <ECProperty propertyName="AuthorityId" typeName="long">
             <!-- WIP: Foreign key relationship to Authority that controls the ExternalKey -->
             <!-- IsNullable = False -->
