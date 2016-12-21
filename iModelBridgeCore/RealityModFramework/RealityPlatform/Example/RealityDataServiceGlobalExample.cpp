@@ -12,13 +12,6 @@
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
 using namespace std;
 
-
-
-
-
-
-
-
 ///*---------------------------------------------------------------------------------**//**
 //* @bsimethod                                                                 12/2016
 //* Simple example function that can be used as a callback from the upload module.
