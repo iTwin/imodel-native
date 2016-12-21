@@ -12,6 +12,7 @@
 USING_NAMESPACE_TILETREE
 
 #define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
+#define TILETREE_RERENDER_ROOT
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -604,10 +605,30 @@ void Tile::Draw(DrawArgsR args, int depth) const
         // this node is too coarse for current view, don't draw it and instead draw its children
         m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
 
+#if defined(TILETREE_RERENDER_ROOT)
+        bool allChildrenReady = true;
+        for (auto const& child : *children)
+            {
+            if (!child->IsReady())
+                {
+                allChildrenReady = false;
+                args.m_missing.Insert(depth+1, child);
+                }
+            }
+
+        if (allChildrenReady)
+            {
+            for (auto const& child : *children)
+                child->Draw(args, depth+1);
+
+            return;
+            }
+#else
         for (auto const& child : *children)
             child->Draw(args, depth+1);
 
         return;
+#endif
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
@@ -628,10 +649,12 @@ void Tile::Draw(DrawArgsR args, int depth) const
         return;
         }
 
+#if !defined(TILETREE_RERENDER_ROOT)
     // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
     // NOTE: add all missing tiles, even if they're already queued.
     if (!IsNotFound())
         args.m_missing.Insert(depth, this); 
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -673,6 +696,10 @@ Dgn::ProgressiveTask::Completion TileTree::ProgressiveTask::_DoProgressive(Progr
 
     DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
 
+#if defined(TILETREE_RERENDER_ROOT)
+    // Root::Draw() knows how to update for newly-loaded tiles and to request new tiles...let it do its thing
+    m_root.Draw(args);
+#else
     for (auto const& node: m_missing)
         {
         auto stat = node.second->GetLoadStatus();
@@ -681,6 +708,7 @@ Dgn::ProgressiveTask::Completion TileTree::ProgressiveTask::_DoProgressive(Progr
         else if (stat != Tile::LoadStatus::NotFound)
             args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
         }
+#endif
 
     args.RequestMissingTiles(m_root, m_loads);
     args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
