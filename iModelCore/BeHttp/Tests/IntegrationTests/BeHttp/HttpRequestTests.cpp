@@ -23,7 +23,9 @@
 #include <Bentley/Tasks/AsyncTask.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
+USING_NAMESPACE_BENTLEY_HTTP
 USING_NAMESPACE_BENTLEY_TASKS
+using namespace folly;
 
 void HttpRequestTests::SetUpTestCase()
     {
@@ -32,96 +34,130 @@ void HttpRequestTests::SetUpTestCase()
     HttpClient::Initialize(path);
     }
 
-//TEST_F (HttpRequestTests, PerformAsync_FiddlerProxySet_ExecutesSuccessfully)
+TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSuccessfully)
+    {
+    Request request("http://httpbin.org/ip");
+
+    Response response = request.PerformAsync()->GetResult();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
+TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
+    {
+    Response response;
+    Request request("http://httpbin.org/ip");
+
+    auto task = request.PerformAsync()->Then([&] (Response& finishedResponse)
+        {
+        response = finishedResponse;
+        });
+
+    task->Wait();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
+TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
+    {
+    Response response;
+    Request request("http://httpbin.org/ip");
+
+    auto future = request.Perform().then([&] (Response finishedResponse)
+        {
+        response = finishedResponse;
+        });
+
+    future.wait();
+
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+    }
+
+//TEST_F(HttpRequestTests, Perform_FiddlerProxySet_ExecutesSuccessfully)
 //    {
-//    HttpRequest request ("http://httpbin.org/ip");
-//    request.SetProxy ("http://127.0.0.1:8888"); // Fiddler proxy
+//    HttpRequest request("http://httpbin.org/ip");
+//    request.SetProxy("http://127.0.0.1:8888"); // Fiddler proxy
 //
-//    HttpResponse response = request.PerformAsync ()->GetResult ();
+//    HttpResponse response = request.Perform().get();
 //
-//    EXPECT_EQ (HttpStatus::OK, response.GetHttpStatus ());
+//    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 //    }
 
-TEST_F(HttpRequestTests, PerformAsync_CertValidationSetAndSiteHasValidCert_Success)
+TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
     {
-    Http::Request request("https://google.com/");
+    Request request("https://google.com/");
     request.SetValidateCertificate(true);
 
-    Http::Response response = request.Perform();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_CertValidationNotSetAndSiteHasValidCert_Success)
+TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success)
     {
-    Http::Request request("https://google.com/");
+    Request request("https://google.com/");
     request.SetValidateCertificate(false);
 
-    Http::Response response = request.Perform();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_CertValidationSetAndSiteHasInvalidCert_Fails)
+TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasInvalidCert_Fails)
     {
-    Http::Request request("https://viltest2-8.bentley.com/");
+    Request request("https://viltest2-8.bentley.com/");
     request.SetValidateCertificate(true);
 
-    Http::Response response = request.Perform();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::ConnectionStatus::CertificateError, response.GetConnectionStatus());
-    EXPECT_EQ(Http::HttpStatus::None, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::CertificateError, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_CertValidationNotSetAndSiteHasInvalidCert_Succeeds)
+TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasInvalidCert_Succeeds)
     {
-    Http::Request request("https://viltest2-8.bentley.com/");
+    Request request("https://viltest2-8.bentley.com/");
     request.SetValidateCertificate(false);
 
-    Http::Response response = request.Perform();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
 TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     {
     // Simple test for deprecated method
 
-    Http::Request request("http://httpbin.org/ip");
+    Request request("http://httpbin.org/ip");
 
-    Http::Response response = request.Perform();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
+TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     {
-    Http::Request request("http://httpbin.org/ip");
+    Request request(std::move(Request("http://httpbin.org/ip")));
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
-    //EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
-    }
-
-TEST_F(HttpRequestTests, PerformAsync_MovedRequest_ExecutesSuccessfully)
-    {
-    Http::Request request(std::move(Http::Request("http://httpbin.org/ip")));
-
-    Http::Response response = request.PerformAsync()->GetResult();
-
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_UnsafeCharactersInUrl_EncodesUnsafeCharactersAndExecutesSuccessfully)
+TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAndExecutesSuccessfully)
     {
     //2014. Folowing urls with special symbols tested on browsers (# and % not tested )
     //  query: http://httpbin.org/ip?<>"{}|\^~[]`
@@ -140,163 +176,184 @@ TEST_F(HttpRequestTests, PerformAsync_UnsafeCharactersInUrl_EncodesUnsafeCharact
     //CURL:
     //  Removes everything after #, does not encode anything. Some have special meaning - [], {} for using multiple urls in command line
 
-    Http::Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
+    Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", response.GetEffectiveUrl().c_str());
     }
 
 TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersInUrl)
     {
-    Http::Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
+    Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
 
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", request.GetUrl().c_str());
     }
 
 TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
     {
-    Http::Request request("test url");
+    Request request("test url");
 
     EXPECT_STREQ("test url", request.GetUrl().c_str());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_MalformedUrl_Fails)
+TEST_F(HttpRequestTests, Perform_MalformedUrl_Fails)
     {
     BeTest::SetFailOnAssert(false);
-    Http::Request request("this is not url");
+    Request request("this is not url");
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::None, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(HttpRequestTests, PerformAsync_NonexistingUrl_ExecutesWithError)
+TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
     {
-    Http::Request request("http://aaaaaa.bentley.com");
+    Request request("http://aaaaaa.bentley.com");
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::None, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::CouldNotConnect, response.GetConnectionStatus());
     EXPECT_STREQ("", response.GetBody().AsString().c_str());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_BasicAuthorizationCorrectCredentials_Success)
+TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
     {
-    Http::Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request("https://httpbin.org/basic-auth/user/pass");
     request.SetCredentials({"user", "pass"});
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     EXPECT_TRUE(Json::Reader::DoParse(response.GetBody().AsString()).isObject());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_BasicAuthorizationNoCredentials_Fails)
+TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
     {
-    Http::Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request("https://httpbin.org/basic-auth/user/pass");
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::Unauthorized, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::Unauthorized, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_BasicAuthorizationIncorrectCredentials_Fails)
+TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
     {
-    Http::Request request("https://httpbin.org/basic-auth/user/pass");
+    Request request("https://httpbin.org/basic-auth/user/pass");
     request.SetCredentials({"not", "correct"});
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::Unauthorized, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+    EXPECT_EQ(HttpStatus::Unauthorized, response.GetHttpStatus());
+    EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_FollowRedirectsTrue_RedirectsSuccessfully)
+TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
     {
-    Http::Request request("http://httpbin.org/redirect/1");
+    Request request("http://httpbin.org/redirect/1");
     request.SetFollowRedirects(true);
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
+    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_FolowRedirectsFalse_ReturnsWithFound)
+TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     {
-    Http::Request request("http://httpbin.org/redirect/1");
+    Request request("http://httpbin.org/redirect/1");
     request.SetFollowRedirects(false);
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::Found, response.GetHttpStatus());
+    EXPECT_EQ(HttpStatus::Found, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChainedTask)
+TEST_F(HttpRequestTests, Perform_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
     {
-    Http::Response response;
-    Http::Request request("http://httpbin.org/ip");
-
-    auto task = request.PerformAsync()->Then(
-        [&] (Http::Response& finishedResponse)
-        {
-        response = finishedResponse;
-        });
-
-    task->Wait();
-
-    EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-    EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
-    EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
-    }
-
-TEST_F(HttpRequestTests, PerformAsync_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
-    {
-    auto responseBody = Http::HttpStringBody::Create("SomeData");
+    auto responseBody = HttpStringBody::Create("SomeData");
     responseBody->SetPosition(3);
 
-    Http::Request request("http://httpbin.org/bytes/2?seed=7");
+    Request request("http://httpbin.org/bytes/2?seed=7");
     request.SetResponseBody(responseBody);
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(2, responseBody->GetLength());
     EXPECT_EQ("R&", responseBody->AsString());
 
-    request = Http::Request("http://httpbin.org/bytes/1?seed=13");
+    request = Request("http://httpbin.org/bytes/1?seed=13");
     request.SetResponseBody(responseBody);
 
-    response = request.PerformAsync()->GetResult();
+    response = request.Perform().get();
     EXPECT_EQ(responseBody.get(), &response.GetBody());
     EXPECT_EQ(1, responseBody->GetLength());
     EXPECT_EQ("B", responseBody->AsString());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_ReusingSameRequestBody_KeepsSameBody)
+TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
     {
-    Http::Request request("http://httpbin.org/post", "POST");
+    Request request("http://httpbin.org/post", "POST");
 
-    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
-    Http::Response response = request.PerformAsync()->GetResult();
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
+    Response response = request.Perform().get();
     EXPECT_EQ(Json::Reader::DoParse(response.GetBody().AsString())["data"].asString(), "TestBody");
 
-    response = request.PerformAsync()->GetResult();
+    response = request.Perform().get();
     EXPECT_EQ(Json::Reader::DoParse(response.GetBody().AsString())["data"].asString(), "TestBody");
     }
 
+TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
+    {
+    int testRequestCount = 10;
+
+    std::vector<Future<Response>> futures;
+    uint64_t start = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+    // Setup & Test
+    for (int i = 0; i < testRequestCount; i++)
+        {
+        Request request("http://httpbin.org/ip");
+        Future<Response> future = request.Perform().then([i] (Response response)
+            {
+            BeDebugLog(Utf8PrintfString("Finished running: %d", i).c_str());
+            return response;
+            });
+        futures.push_back(std::move(future));
+        }
+
+    // Wait
+    BeDebugLog("Waiting for all requests to finish");
+    uint64_t mid = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    // Could not get collectAll() compiling
+    for (auto& future : futures)
+        future.wait();
+    uint64_t end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+
+    // Assert
+    for (auto& future : futures)
+        {
+        Response response = future.get();
+        EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+        EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
+        EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
+        }
+
+    BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
+    }
+    
 TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
     {
     int testRequestCount = 10;
 
     BeMutex resultCS;
-    std::vector<Http::Response> responses;
+    std::vector<Response> responses;
     bset<std::shared_ptr<AsyncTask>> tasks;
 
     uint64_t start = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
@@ -304,11 +361,11 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
     // Setup & Test
     for (int i = 0; i < testRequestCount; i++)
         {
-        Http::Request request("http://httpbin.org/ip");
-        auto task = request.PerformAsync()->Then([&, i] (Http::Response& finishedResponse)
+        Request request("http://httpbin.org/ip");
+        auto task = request.PerformAsync()->Then([&, i] (Response& response)
             {
             BeMutexHolder holder(resultCS);
-            responses.push_back(finishedResponse);
+            responses.push_back(response);
             BeDebugLog(Utf8PrintfString("Finished running: %d", i).c_str());
             });
         tasks.insert(task->Then([]
@@ -317,74 +374,71 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
 
     // Wait
     BeDebugLog("Waiting for all requests to finish");
-
     uint64_t mid = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
-
     AsyncTask::WhenAll(tasks)->Wait();
-
     uint64_t end = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
 
     // Assert
     EXPECT_EQ(testRequestCount, responses.size());
-    for (Http::Response& response : responses)
+    for (Response response : responses)
         {
-        EXPECT_EQ(Http::HttpStatus::OK, response.GetHttpStatus());
-        EXPECT_EQ(Http::ConnectionStatus::OK, response.GetConnectionStatus());
+        EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
+        EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
         EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
         }
 
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
-
-TEST_F(HttpRequestTests, PerformAsync_DeclareCompressedEncodingWithoutEnablingRequestCompression_BadRequestError)
+    
+TEST_F(HttpRequestTests, Perform_DeclareCompressedEncodingWithoutEnablingRequestCompression_BadRequestError)
     {
-    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
-    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
 
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
-    EXPECT_EQ(Http::HttpStatus::BadRequest, response.GetHttpStatus());
+    EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompression_Success)
+TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     {
-    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
-    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
     options.EnableRequestCompression(true, 0);
     request.SetCompressionOptions(options);
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
 
     //Request was sucesfull but POST method is not allowed
-    EXPECT_EQ(Http::HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
+TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
     {
-    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
-    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
     options.EnableRequestCompression(true, 10);
     request.SetCompressionOptions(options);
 
-    Http::Response response = request.PerformAsync()->GetResult();
+    Response response = request.Perform().get();
     //Request was sucesfull but POST method is not allowed
-    EXPECT_EQ(Http::HttpStatus::MethodNotAllowed, response.GetHttpStatus());
+    EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
-TEST_F(HttpRequestTests, PerformAsync_EnableRequestCompressionWithMinimalSizeLargerThanContentSizeWithCompressedContentEncodingEnabled_BadRequestError)
+TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSizeWithCompressedContentEncodingEnabled_BadRequestError)
     {
-    Http::Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
-    request.SetRequestBody(Http::HttpStringBody::Create("TestBody"));
+    Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
+    request.SetRequestBody(HttpStringBody::Create("TestBody"));
     CompressionOptions options;
     options.EnableRequestCompression(true, 10);
     request.SetCompressionOptions(options);
 
     request.GetHeaders().AddValue("Content-Encoding", "gzip");
 
-    Http::Response response = request.PerformAsync()->GetResult();
-    EXPECT_EQ(Http::HttpStatus::BadRequest, response.GetHttpStatus());
+    Response response = request.Perform().get();
+    EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
