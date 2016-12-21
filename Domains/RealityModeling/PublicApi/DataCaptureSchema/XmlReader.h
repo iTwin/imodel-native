@@ -22,23 +22,24 @@ struct XmlReader
 {
 
 private:
-    Dgn::SpatialModelR m_model;  //Data capture information can be store on any spatial model
-    Dgn::DgnDbR        m_dgndb;
-    long               m_photoGroupNumber;
+    Dgn::SpatialModelR      m_spatialModel;     //Data capture information can be store on any spatial model
+    Dgn::DefinitionModelR   m_definitionModel;  //Data capture definition can be store on any definition model
+    Dgn::DgnDbR             m_dgndb;
+    long                    m_photoGroupNumber;
 
 
 
     BeXmlStatus ReadBlocks(BeXmlNodeR parentNode);
     BeXmlStatus ReadPhotoGroups(BeXmlNodeR photoGroups);
     BeXmlStatus ReadPhotoGroupNode(BeXmlNodeR photoGroupNode);
-    BeXmlStatus ReadCameraInfo(BeXmlNodeR sourceNodeRef, CameraR cameraInfo, long photoGroupNumber);
-    BeXmlStatus ReadPhotoNode(BeXmlNodeR sourceNodeRef, PhotoR photo);
-    BeXmlStatus ReadRotationFromCameraPose(BeXmlNodeR photoNode, RotationMatrixTypeR rotation);
+    BeXmlStatus ReadCameraDeviceInfo(BeXmlNodeR sourceNodeRef, CameraDeviceR cameraDeviceInfo, long photoGroupNumber);
+    BeXmlStatus ReadPhotoNode(BeXmlNodeR sourceNodeRef,  ShotR shot, PoseR pose);
+    BeXmlStatus ReadRotationFromCameraDevicePose(BeXmlNodeR photoNode, AngleR omegaAngle, AngleR phiAngle, AngleR kappaAngle);
 
 
 public:
     //! Constructor
-    DATACAPTURE_EXPORT XmlReader(Dgn::SpatialModelR model) : m_model(model), m_dgndb(model.GetDgnDb()),m_photoGroupNumber(0) {}
+    DATACAPTURE_EXPORT XmlReader(Dgn::SpatialModelR spatialModel, Dgn::DefinitionModelR definitionModel);
     
     //! Read an XML file containing the  Data Capture Model
     DATACAPTURE_EXPORT BentleyStatus ReadXml(BeFileNameCR xmlPathname);

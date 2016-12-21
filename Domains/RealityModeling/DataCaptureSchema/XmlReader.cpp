@@ -12,6 +12,14 @@
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Marc.Bedard                     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+XmlReader::XmlReader(Dgn::SpatialModelR spatialModel, Dgn::DefinitionModelR definitionModel)
+:m_spatialModel(spatialModel), m_definitionModel(definitionModel), m_dgndb(spatialModel.GetDgnDb()), m_photoGroupNumber(0) 
+    {}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Marc.Bedard                          11/2016
 //---------------------------------------------------------------------------------------
@@ -64,7 +72,7 @@ BeXmlStatus XmlReader::ReadPhotoGroups(BeXmlNodeR photoGroups)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraInfo, long photoGroupNumber)
+BeXmlStatus XmlReader::ReadCameraDeviceInfo (BeXmlNodeR sourceNodeRef, CameraDeviceR cameraDeviceInfo, long photoGroupNumber)
     {
 
     // Photo group name is optional - make up one if not specified
@@ -75,17 +83,17 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         photoGroupName = Utf8PrintfString("Unnamed photo group %d", photoGroupNumber);
         }
 
-    BeXmlStatus status(BEXML_Success);
-    Utf8String              cameraModelType;
-    if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraModelType, "CameraModelType")))
+    BeXmlStatus status(BEXML_Success);                          
+    Utf8String              cameraDeviceModelType;
+    if (BEXML_Success == (status = sourceNodeRef.GetContent(cameraDeviceModelType, "CameraDeviceModelType")))
         {
         //NEEDSWORK: Not Yet
-        //cameraInfo.SetCameraModel(focalLengthPixels);
+        //cameraDeviceInfo.SetCameraDeviceModel(cameraDeviceModelType);
         }
-    double                  focalLengthPixels;
-    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLengthPixels, "FocalLengthPixels")))
+    double                  focalLength;
+    if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(focalLength, "FocalLength")))
         {
-        cameraInfo.SetFocalLenghtPixels(focalLengthPixels);
+        cameraDeviceInfo.SetFocalLength(focalLength);
         }
 
     int                     ImgDimWidth(0);
@@ -93,8 +101,8 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
     if (BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimWidth,           "ImageDimensions/Width")) &&
         BEXML_Success == (status =sourceNodeRef.GetContentInt32Value(ImgDimHeight,          "ImageDimensions/Height")))
         {
-        ImageDimensionType ImgDim(ImgDimWidth, ImgDimHeight);
-        cameraInfo.SetImageDimension(ImgDim);
+        cameraDeviceInfo.SetImageWidth(ImgDimWidth);
+        cameraDeviceInfo.SetImageHeight(ImgDimHeight);
         }
 
     // if Principal Point not specified, use center of pixel array
@@ -105,7 +113,7 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         principalPoint.x = (double)ImgDimWidth  / 2.0; 
         principalPoint.y = (double)ImgDimHeight / 2.0; 
         }
-    cameraInfo.SetPrincipalPoint(principalPoint);
+    cameraDeviceInfo.SetPrincipalPoint(principalPoint);
 
 
     // if distortion not specified, set parameters to zero     
@@ -127,8 +135,13 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
         p1 = 0.0;
         p2 = 0.0;
         }
-    CameraDistortionType distortion(k1,k2,k3,p1,p2);
-    cameraInfo.SetDistortion(distortion);
+    else
+        {
+        RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(k1, k2, k3);
+        TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(p1, p2);
+        cameraDeviceInfo.SetRadialDistortion(pRadialDistortion.get());
+        cameraDeviceInfo.SetTangentialDistortion(pTangentialDistortion.get());
+        }
 
     return BEXML_Success;
     }
@@ -136,7 +149,7 @@ BeXmlStatus XmlReader::ReadCameraInfo (BeXmlNodeR sourceNodeRef, CameraR cameraI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadRotationFromCameraPose(BeXmlNodeR sourceNodeRef, RotationMatrixTypeR rotation)
+BeXmlStatus XmlReader::ReadRotationFromCameraDevicePose(BeXmlNodeR sourceNodeRef, AngleR omegaAngle, AngleR phiAngle, AngleR kappaAngle)
     {
     BeXmlStatus status(BEXML_Success);
 
@@ -145,9 +158,10 @@ BeXmlStatus XmlReader::ReadRotationFromCameraPose(BeXmlNodeR sourceNodeRef, Rota
         BEXML_Success == (status =  sourceNodeRef.GetContentDoubleValue(phi,   "Pose/Rotation/Phi")) &&
         BEXML_Success == (status =  sourceNodeRef.GetContentDoubleValue(kappa, "Pose/Rotation/Kappa")))
         {
-        const double ratio = msGeomConst_pi/180.0;
-        rotation = RotMatrix::FromPrincipleAxisRotations(RotMatrix::FromIdentity(), ratio * omega, ratio * phi, ratio * kappa);
-        rotation.Transpose();
+        omegaAngle =  Angle::FromDegrees(omega);
+        phiAngle = Angle::FromDegrees(phi);
+        kappaAngle = Angle::FromDegrees(kappa);
+        
         return BEXML_Success;
         }
 
@@ -162,7 +176,9 @@ BeXmlStatus XmlReader::ReadRotationFromCameraPose(BeXmlNodeR sourceNodeRef, Rota
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(M_21, "Pose/Rotation/M_21")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(M_22, "Pose/Rotation/M_22")))
         {
-        rotation = RotMatrix::FromRowValues(M_00, M_01, M_02, M_10, M_11, M_12, M_20, M_21, M_22);
+        RotMatrix rotation = RotMatrix::FromRowValues(M_00, M_01, M_02, M_10, M_11, M_12, M_20, M_21, M_22);
+        Pose::GetRotationFromRotMatrix(omegaAngle,phiAngle,kappaAngle,rotation);
+
         return BEXML_Success;
         }
 
@@ -172,13 +188,19 @@ BeXmlStatus XmlReader::ReadRotationFromCameraPose(BeXmlNodeR sourceNodeRef, Rota
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, PhotoR photo)
+BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, ShotR shot, PoseR pose)
     {
     BeXmlStatus status(BEXML_Success);
 
     int id;
-    if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id,"Id")))
-        photo.SetPhotoId(id);
+    if (BEXML_Success == (status = sourceNodeRef.GetContentInt32Value(id, "Id")))
+        {
+        CameraDeviceElementId cameraDeviceId = shot.GetCameraDeviceId();
+        BeAssert(cameraDeviceId.IsValid());
+        CameraDeviceCPtr cameraDevicePtr = CameraDevice::Get(shot.GetDgnDb(), cameraDeviceId);
+        DgnCode shotCode = Shot::CreateCode(shot.GetDgnDb(), cameraDevicePtr->GetCode().GetValue(), Utf8PrintfString("%d", id));
+        shot.SetCode(shotCode);
+        }
 
     Utf8String imagePath;
     if (BEXML_Success == (status = sourceNodeRef.GetContent(imagePath,"ImagePath")))
@@ -187,15 +209,19 @@ BeXmlStatus XmlReader::ReadPhotoNode (BeXmlNodeR sourceNodeRef, PhotoR photo)
         }
 
     DPoint3d  poseCenter;
-    RotationMatrixType rotation;
+    Angle Omega;
+    Angle Phi;
+    Angle Kappa;
     if (BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.x, "Pose/Center/x")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.y, "Pose/Center/y")) &&
         BEXML_Success == (status = sourceNodeRef.GetContentDoubleValue(poseCenter.z, "Pose/Center/z")) &&
-        BEXML_Success == (status = ReadRotationFromCameraPose(sourceNodeRef, rotation)))
+        BEXML_Success == (status = ReadRotationFromCameraDevicePose(sourceNodeRef, Omega, Phi, Kappa)))
         {
         //set pose in photo
-        PoseType pose(poseCenter, rotation);
-        photo.SetPose(pose);
+        pose.SetCenter(poseCenter);
+        pose.SetOmega(Omega);
+        pose.SetPhi(Omega);
+        pose.SetKappa(Omega);
         }                                                                                                           
 
     return BEXML_Success;
@@ -216,26 +242,45 @@ BeXmlStatus XmlReader::ReadPhotoGroupNode(BeXmlNodeR photoGroupNode)
         photoGroupName = Utf8PrintfString("Unnamed photo group %d", m_photoGroupNumber);
         }
 
-    CameraPtr pCameraInfo(Camera::Create(m_model));
-    if (BEXML_Success != (status = ReadCameraInfo(photoGroupNode, *pCameraInfo, m_photoGroupNumber)))
+    
+    //Assume one cameraDevice type by photo group
+    CameraDeviceModelPtr pCameraDeviceModelInfo(CameraDeviceModel::Create(m_definitionModel));
+    //Insert into the database
+    Dgn::DgnDbStatus dbStatus;
+    pCameraDeviceModelInfo->Insert(&dbStatus);
+
+
+    CameraDevicePtr pCameraDeviceInfo(CameraDevice::Create(m_spatialModel,pCameraDeviceModelInfo->GetId()));
+    if (BEXML_Success != (status = ReadCameraDeviceInfo(photoGroupNode, *pCameraDeviceInfo, m_photoGroupNumber)))
         {
         return status;
         }
 
     //Insert into the database
-    Dgn::DgnDbStatus dbStatus;
-    pCameraInfo->Insert(&dbStatus);
+    pCameraDeviceInfo->Insert(&dbStatus);
 
     BeXmlDom::IterableNodeSet photoList;
     photoGroupNode.SelectChildNodes(photoList, "Photo");
 
     for (BeXmlNodeP const& photoNode : photoList)
         {
-        PhotoPtr pPhoto(Photo::Create(m_model,pCameraInfo->GetId()));
-        BeXmlStatus status = ReadPhotoNode(*photoNode,*pPhoto);
+        //Insert into the database
+        Dgn::DgnDbStatus dbStatus;
+        PosePtr pPose = Pose::Create(m_spatialModel);
+        pPose->Insert(&dbStatus);
+        ShotPtr pShot(Shot::Create(m_spatialModel, pCameraDeviceInfo->GetId(), pPose->GetId()));
+        pShot->Insert(&dbStatus);
+
+        if (pPose.IsValid() && pShot.IsValid())
+            status = ReadPhotoNode(*photoNode, *pShot, *pPose);
         if (BEXML_Success != status)
+            {
+            //Delete newly inserted element and return error
+            pPose->Delete();
+            pShot->Delete();
             return status;
-        pPhoto->Insert(&dbStatus);
+            }
+
         }
 
     return BEXML_Success;
