@@ -654,6 +654,93 @@ TEST_F(ECSqlStatementTestFixture, PredicateFunctionsInNestedSelectStatement)
     ASSERT_TRUE(stmt.Step() == BE_SQLITE_DONE);
     }
 
+//-------------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle                        12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, ParametersInNestedSelectStatement)
+    {
+    const int rowCountPerClass = 3;
+    ECDbR ecdb = SetupECDb("parametersinnestedselect.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"), rowCountPerClass);
+
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=123456789 AND I IN (SELECT I FROM ecsql.P WHERE I=123)"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(rowCountPerClass, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ecsql.PSA WHERE L=? AND I IN (SELECT I FROM ecsql.P WHERE I=?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 123456789)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(2, 123)) << stmt.GetECSql();
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(rowCountPerClass, stmt.GetValueInt(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+
+    //Case of Paul Daymond who reported this issue
+
+    ECInstanceKey psaKey1, psaKey2, pKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(L,S) VALUES(314,'Test PSA 1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey1)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    Utf8String ecsql;
+    ecsql.Sprintf("INSERT INTO ecsql.P(MyPSA.Id,S) VALUES(%s,'Test P')", psaKey1.GetECInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(pKey)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecsql.Sprintf("INSERT INTO ecsql.PSA(L,I,S) VALUES(314,%s,'Test PSA 2')", pKey.GetECInstanceId().ToString().c_str());
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(psaKey2)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ecdb.SaveChanges();
+    }
+
+    {
+    Utf8String ecsqlWithoutParams;
+    ecsqlWithoutParams.Sprintf("SELECT ECInstanceId FROM ecsql.PSA WHERE L=314 AND I IN (SELECT ECInstanceId FROM ecsql.P WHERE MyPSA.Id=%s)", psaKey1.GetECInstanceId().ToString().c_str());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsqlWithoutParams.c_str())) << ecsqlWithoutParams.c_str();
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(psaKey2.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId FROM ecsql.PSA WHERE L=? AND I IN (SELECT ECInstanceId FROM ecsql.P WHERE MyPSA.Id=?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 314)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, psaKey1.GetECInstanceId())) << stmt.GetECSql();
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(psaKey2.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT PSA.ECInstanceId FROM ecsql.PSA, ecsql.P WHERE PSA.L=? AND PSA.I=P.ECInstanceId AND P.MyPSA.Id=?"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(1, 314)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, psaKey1.GetECInstanceId())) << stmt.GetECSql();
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+    ASSERT_EQ(psaKey2.GetECInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << stmt.GetECSql();
+    }
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad Hassan                         06/15
 +---------------+---------------+---------------+---------------+---------------+------*/

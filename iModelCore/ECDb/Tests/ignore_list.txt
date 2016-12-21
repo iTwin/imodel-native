@@ -26,4 +26,8 @@ ECSchemaUpdateTests.RemoveKindOfQuantityFromECArrayProperty
 
 ECDbMappingTestFixture.DiamondProblem_Case1
 ECDbMappingTestFixture.DiamondProblem_Case2
+
 ECDbSchemaTests.VerifyDatabaseSchemaAfterImport
+
+#TFS 639378
+ECSqlStatementTestFixture.ParametersInNestedSelectStatement
