@@ -353,6 +353,29 @@ void Attachment::Tree::Draw(RenderContextR context)
     
     // the scene is available, draw its tiles
     DrawInView(context);
+
+
+#define DEBUG_ATTACHMENT_RANGE
+#ifdef DEBUG_ATTACHMENT_RANGE
+    auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(m_attachmentId);
+    if (attachment.IsValid())
+        {
+        auto const& placement = attachment->GetPlacement();
+        AxisAlignedBox3d range;
+        placement.GetTransform().Multiply(range, DRange3d::From(&placement.GetElementBox().low, 2, 0.0));
+
+        Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
+        graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
+        graphicBbox->AddRangeBox(range);
+        context.OutputGraphic(*graphicBbox, nullptr);
+
+        Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
+        DPoint3d org = DPoint3d::From(placement.GetOrigin());
+        graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
+        graphicOrigin->AddPointString(1, &org);
+        context.OutputGraphic(*graphicOrigin, nullptr);
+        }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -485,30 +508,4 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
-
-#ifdef DEBUG_ATTACHMENT_RANGE
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
-    attachments->BindId(1, model->GetModelId());
-    while (BE_SQLITE_ROW == attachments->Step())
-        {
-        auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachments->GetValueId<DgnElementId>(0));
-        if (!attachment.IsValid())
-            continue;
-
-        auto const& placement = attachment->GetPlacement();
-        AxisAlignedBox3d range;
-        placement.GetTransform().Multiply(range, DRange3d::From(&placement.GetElementBox().low, 2, 0.0));
-
-        Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
-        graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
-        graphicBbox->AddRangeBox(range);
-        context.OutputGraphic(*graphicBbox, nullptr);
-
-        Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
-        DPoint3d org = DPoint3d::From(placement.GetOrigin());
-        graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
-        graphicOrigin->AddPointString(1, &org);
-        context.OutputGraphic(*graphicOrigin, nullptr);
-        }
-#endif
     }
