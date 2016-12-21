@@ -974,7 +974,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_Parent), GetParentId(), GetParentRelClassId());
 
     if (m_federationGuid.IsValid())
-        statement.BindBinary(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
+        statement.BindBlob(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid), &m_federationGuid, sizeof(m_federationGuid), IECSqlBinder::MakeCopy::No);
     else
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_FederationGuid));
 
@@ -3345,7 +3345,7 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
         return DgnDbStatus::Success;    // no geometry...
 
     int blobSize;
-    void const* blob = stmt.GetValueBinary(geomIndex, &blobSize);
+    void const* blob = stmt.GetValueBlob(geomIndex, &blobSize);
     return m_geom.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     }
 
@@ -3385,7 +3385,7 @@ DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, S
             {
             // Common case - only one chunk in geom stream. Bind it directly.
             // NB: This requires that no other code uses DgnElements::SnappyToBlob() until our ECSqlStatement is executed...
-            stmt.BindBinary(geomIndex, snappyTo.GetChunkData(0), zipSize, IECSqlBinder::MakeCopy::No);
+            stmt.BindBlob(geomIndex, snappyTo.GetChunkData(0), zipSize, IECSqlBinder::MakeCopy::No);
             }
         else
             {
