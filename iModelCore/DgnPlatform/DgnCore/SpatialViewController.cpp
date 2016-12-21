@@ -150,7 +150,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
         if (m_roots.end() == iter)
             {
             auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
-            ElementTileTree::RootPtr modelRoot = model.IsValid() ? ElementTileTree::Root::Create(*model, context.GetTargetR().GetSystem(), *this) : nullptr;
+            TileTree::RootPtr modelRoot = model.IsValid() ? model->CreateTileTree(context, *this) : nullptr;
             iter = m_roots.Insert(modelId, modelRoot).first;
             }
 

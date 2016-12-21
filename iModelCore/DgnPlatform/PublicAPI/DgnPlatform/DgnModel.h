@@ -29,6 +29,7 @@ DGNPLATFORM_REF_COUNTED_PTR(GeometricModel)
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 namespace RangeIndex {struct Tree;}
+namespace TileTree {struct Root;}
 namespace dgn_ModelHandler {struct DocumentList; struct Drawing; struct GroupInformation; struct Information; struct Physical; struct Repository; struct Role; struct Spatial; struct SpatialLocation;}
 
 //=======================================================================================
@@ -813,6 +814,11 @@ protected:
     //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
     virtual void _AddTerrainGraphics(TerrainContextR) const { }
 
+    //! Produce a TileTree::RootPtr representing the graphics for this GeometricModel. The returned tree will be cached and re-rendered on each render frame.
+    //! Its graphics will be updated as new tiles are loaded in the background. When the tree becomes invalid due to changes to the viewing parameters, a new
+    //! tree will be requested.
+    DGNPLATFORM_EXPORT virtual RefCountedPtr<TileTree::Root> _CreateTileTree(RenderContextR context, ViewControllerCR view);
+
     virtual void _OnFitView(FitContextR) {}
 
     virtual DgnDbStatus _FillRangeIndex() = 0;//!< @private
@@ -844,6 +850,8 @@ public:
 
     //! Get the Properties for this model.
     DisplayInfo const& GetDisplayInfo() const {return m_displayInfo;}
+
+    RefCountedPtr<TileTree::Root> CreateTileTree(RenderContextR context, ViewControllerCR view) { return _CreateTileTree(context, view); }
 };
 
 //=======================================================================================

@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
+#include <DgnPlatform/ElementTileTree.h>
 
 #define MODEL_PROP_ECInstanceId "ECInstanceId"
 #define MODEL_PROP_ModeledElement "ModeledElement"
@@ -1421,6 +1422,14 @@ AxisAlignedBox3d GeometricModel2d::_QueryModelRange() const
 
     int resultSize = stmt.GetColumnBytes(0); // can be 0 if no elements in model
     return (sizeof(AxisAlignedBox3d) == resultSize) ? *(AxisAlignedBox3d*) stmt.GetValueBlob(0) : AxisAlignedBox3d(); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr GeometricModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
+    {
+    return ElementTileTree::Root::Create(*this, context.GetTargetR().GetSystem(), view);
     }
 
 /*---------------------------------------------------------------------------------**//**
