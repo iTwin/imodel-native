@@ -3854,7 +3854,11 @@ template<class POINT, class EXTENT> bool SMPointIndexNode<POINT, EXTENT>::Discar
                 }
 
             //NEEDS_WORK_SM : END
-
+            if (IsLeaf())
+                {
+                m_nodeHeader.m_apSubNodeID.clear();
+                m_nodeHeader.m_numberOfSubNodesOnSplit = 0;
+                }
             GetDataStore()->StoreNodeHeader(&m_nodeHeader, GetBlockID());                 
             }            
                     
@@ -8791,7 +8795,13 @@ bool SMPointIndex<POINT, EXTENT>::IsTextured() const
     {
     HINVARIANTS;
 
-    return(m_indexHeader.m_textured);
+    return(m_indexHeader.m_textured != IndexTexture::None);
+    }
+
+template<class POINT, class EXTENT>
+void SMPointIndex<POINT, EXTENT>::SetTextured(IndexTexture textureState)
+    {
+    m_indexHeader.m_textured = textureState;
     }
 
 template<class POINT, class EXTENT>

@@ -197,6 +197,7 @@ struct IScalableMeshCreator::Impl
 
         StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
         StatusInt  SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
+        StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
 
         StatusInt                           Filter                         ();
 

@@ -442,7 +442,7 @@ bool SMSQLiteFile::SetMasterHeader(const SQLiteIndexHeader& newHeader)
     stmt->BindInt(4, (int)newHeader.m_SplitTreshold);
     stmt->BindInt64(5, newHeader.m_depth);
     stmt->BindInt64(6, newHeader.m_terrainDepth);
-    stmt->BindInt(7, newHeader.m_textured ? 1 : 0);
+    stmt->BindInt(7, (int)newHeader.m_textured);
     stmt->BindInt(8, newHeader.m_isTerrain ? 1 : 0);
     stmt->BindDouble(9, (double)newHeader.m_resolution);
     if (nRows != 0)
@@ -512,7 +512,7 @@ bool SMSQLiteFile::GetMasterHeader(SQLiteIndexHeader& header)
     header.m_rootNodeBlockID = stmt->GetValueInt(1);
     header.m_SplitTreshold = stmt->GetValueInt(2);
     header.m_depth = (size_t)stmt->GetValueInt(3);
-    header.m_textured = stmt->GetValueInt(4) ? true : false;
+    header.m_textured = (IndexTexture) stmt->GetValueInt(4);
     header.m_singleFile = stmt->GetValueInt(5) ? true : false;
     header.m_terrainDepth = stmt->GetValueInt64(6);
     header.m_isTerrain = stmt->GetValueInt(7) ? true : false;

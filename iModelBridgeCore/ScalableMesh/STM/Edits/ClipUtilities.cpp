@@ -13,7 +13,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 #define SM_TRACE_CLIPS_GETMESH 0
 #define SM_TRACE_CLIPS_FULL 0
-const wchar_t* s_path = L"E:\\output\\scmesh\\2016-11-02\\";
+const wchar_t* s_path = L"E:\\output\\scmesh\\2016-12-14\\";
 
 void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
     {

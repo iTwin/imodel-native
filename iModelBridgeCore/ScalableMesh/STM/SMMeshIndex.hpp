@@ -3554,6 +3554,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             SplitNodeBasedOnImageRes();
         if (!tex.empty())
         PushTexture(tex.data(), tex.size());     
+
+        m_nodeHeader.m_isTextured = true;
     
     UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
@@ -4901,7 +4903,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::SetClipRe
 template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POINT, EXTENT>::CloneIndex(ISMDataStoreTypePtr<EXTENT> associatedStore)
     {
     SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter->Clone(),
-                                                                       m_indexHeader.m_balanced, m_indexHeader.m_textured,
+                                                                       m_indexHeader.m_balanced, m_indexHeader.m_textured != IndexTexture::None,
                                                                        m_propagatesDataDown, m_mesher2_5d, m_mesher3d);
     auto node = GetRootNode();
     if (node == nullptr) return index;

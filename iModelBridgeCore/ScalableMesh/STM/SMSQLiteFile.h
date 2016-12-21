@@ -65,6 +65,12 @@ struct SQLiteNodeHeader
         }
     };
 
+enum class IndexTexture
+    {
+    None =0,
+    Embedded,
+    Streaming
+    };
 
 struct SQLiteIndexHeader
     {
@@ -73,7 +79,7 @@ struct SQLiteIndexHeader
     bool                    m_HasMaxExtent;                 // indicated if the index is extent limited.
 
     bool                    m_balanced;                     // Control variable that indicates if the tree must be balanced
-    bool                    m_textured;
+    IndexTexture                    m_textured;
     bool                    m_singleFile;
     size_t                  m_numberOfSubNodesOnSplit;      // Control value that hold either 4 or 8 to indicate if a quadtree or octtree is used.
     size_t                  m_depth;                        // Cached (maximum) number of levels in the tree.

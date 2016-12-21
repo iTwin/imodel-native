@@ -8,6 +8,7 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
     {        
     private:
         SMSQLiteFilePtr m_smSQLiteFile;
+        DRange3d m_totalExtent;
 
     public : 
     

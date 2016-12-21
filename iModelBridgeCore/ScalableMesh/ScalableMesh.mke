@@ -304,7 +304,13 @@ $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeade
 
 $(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
+$(o)MapboxTextureProvider$(oext) : $(stmDir)MapboxTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
 $(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h ${MultiCompileDepends}
+
+$(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores

@@ -994,6 +994,21 @@
     <ClInclude Include="GeneratorTextureProvider.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="stm\Stores\SMStreamedSourceStore.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\Stores\SMStreamedSourceStore.hpp">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\RasterUtilities.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\MapBoxTextureProvider.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="stm\ReprojectionModel.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1439,6 +1454,15 @@
     <ClCompile Include="STM\MosaicTextureProvider.cpp" />
     <ClCompile Include="STM\TextureProvider.cpp" />
     <ClCompile Include="GeneratorTextureProvider.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="stm\RasterUtilities.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="stm\MapboxTextureProvider.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="stm\ReprojectionModel.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1371,6 +1371,8 @@ public:
 
     bool                IsTextured() const;
 
+    void              SetTextured(IndexTexture textureState);
+
     bool IsSingleFile() const;
     void SetSingleFile(bool singleFile);
 

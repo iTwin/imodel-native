@@ -1,7 +1,7 @@
 #pragma once
 
 #include "SMSQLiteStore.h"
-
+#include "SMStreamedSourceStore.h"
 
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
@@ -67,6 +67,7 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     if (!m_smSQLiteFile->GetNodeHeader(nodeHeader)) return 1;
     //nodeHeader.m_nbPoints = GetBlockDataCount(blockID);
     *header = nodeHeader;
+    if (nodeHeader.m_parentNodeID == -1)  m_totalExtent = header->m_contentExtentDefined ? header->m_contentExtent : header->m_nodeExtent;
     header->m_IsLeaf = header->m_apSubNodeID.size() == 0 || (!header->m_apSubNodeID[0].IsValid());
     header->m_IsBranched = !header->m_IsLeaf && (header->m_apSubNodeID.size() > 1 && header->m_apSubNodeID[1].IsValid());
     if (!header->m_IsLeaf && !header->m_IsBranched)
@@ -163,6 +164,16 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMMTGGraph
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)
     {                        
+    SMIndexMasterHeader<EXTENT> indexHeader;
+    if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
+        {
+        if (indexHeader.m_textured == IndexTexture::Streaming)
+            {
+            dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent);
+            return true;
+            }
+        }
+
     dataStore = new SMSQLiteNodeDataStore<Byte, EXTENT>(dataType, nodeHeader, m_smSQLiteFile);
                     
     return true;    

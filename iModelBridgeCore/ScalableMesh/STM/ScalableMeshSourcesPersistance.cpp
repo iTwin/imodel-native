@@ -297,7 +297,7 @@ bool SourcesSaver::Save(const IDTMSourceCollection&     sources,
         ++sourceIt)
     {
         const IDTMSource& dataSource = *sourceIt;
-        if (dataSource.GetSourceType() == DTM_SOURCE_DATA_IMAGE) continue;
+        //if (dataSource.GetSourceType() == DTM_SOURCE_DATA_IMAGE) continue;
         if (0 != dynamic_cast<const IDTMSourceGroup*>(&dataSource))
         {
             const IDTMSourceGroup& rSubCollection = dynamic_cast<const IDTMSourceGroup&>(dataSource);
