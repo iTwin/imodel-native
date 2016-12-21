@@ -1160,33 +1160,29 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             nodeIter++;
             }
 
+        ClipVectorPtr clipVector;
 
-        ConvexClipPlaneSet clipPlaneSet;
-        DPlane3d planes[4] = { DPlane3d::From3Points(DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.high.z), DPoint3d::From(extentToCover.low.x, extentToCover.high.y, extentToCover.low.z), DPoint3d::From(extentToCover.high.x, extentToCover.high.y, extentToCover.low.z)),
-            DPlane3d::From3Points(DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.high.z),DPoint3d::From(extentToCover.high.x, extentToCover.low.y, extentToCover.low.z),DPoint3d::From(extentToCover.low.x, extentToCover.low.y, extentToCover.low.z))
-            };
-        for (size_t i = 0; i < 4; ++i)
+        if (!extentToCover.IsEmpty())
             {
-            clipPlaneSet.push_back(ClipPlane(planes[i].normal.ValidatedNormalize(), planes[i].origin));
+            CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
+            ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
+            clipPrimitive->SetIsMask(false);
+            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
             }
-
-
-        CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
-        ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
-        clipPrimitive->SetIsMask(false);
-        ClipVectorPtr clipVector(ClipVector::CreateFromPrimitive(clipPrimitive));
         
         if (nodeIter == lowerResOverviewNodes.end())
-            {                      
-            meshNodePtr->AddClipVector(clipVector);            
+            {                    
+            if (clipVector.IsValid())
+                meshNodePtr->AddClipVector(clipVector);    
+
             lowerResOverviewNodes.push_back(meshNodePtr);             
             }        
         else
             {          
             ScalableMeshCachedDisplayNode<DPoint3d>* displayNode(dynamic_cast<ScalableMeshCachedDisplayNode<DPoint3d>*>((*nodeIter).get()));
-            displayNode->AddClipVector(clipVector);            
+
+            if (clipVector.IsValid())
+                displayNode->AddClipVector(clipVector);            
             }
         }
     }
@@ -1250,17 +1246,26 @@ class NewQueryStartingNodeProcessor
             for (size_t nodeInd = m_nodeToSearchCurrentInd + 1; nodeInd < m_nodesToSearch->GetNodes().size(); nodeInd++)        
                 {                              
                 if (nodeInd % m_numWorkingThreads != threadId) continue;
-                
-                ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr.get()));
-              
-                if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
-                    {            
-                    FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
+
+                if (!m_nodesToSearch->GetNodes()[nodeInd]->IsLoaded())
+                    {
+                    DRange3d range3d(DRange3d::NullRange());
+
+                    FindOverview(m_lowerResOverviewNodes[threadId], range3d, m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
                     }
                 else
-                    {
-                    m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
-                    }            
+                    {                
+                    ScalableMeshCachedDisplayNode<DPoint3d>::Ptr meshNodePtr(ScalableMeshCachedDisplayNode<DPoint3d>::Create(m_nodesToSearch->GetNodes()[nodeInd], scalableMeshPtr.get()));
+              
+                    if (!meshNodePtr->IsLoadedInVRAM(s_displayCacheManagerPtr.get()) || ((!meshNodePtr->IsClippingUpToDate() || !meshNodePtr->HasCorrectClipping(*m_activeClips)) && !s_keepSomeInvalidate))
+                        {            
+                        FindOverview(m_lowerResOverviewNodes[threadId], meshNodePtr->GetNodeExtent(), m_nodesToSearch->GetNodes()[nodeInd], m_newQuery->m_loadTexture, *m_activeClips, scalableMeshPtr);
+                        }
+                    else
+                        {
+                        m_lowerResOverviewNodes[threadId].push_back(meshNodePtr);
+                        }
+                    }
                 }                    
         
             for (size_t nodeInd = 0; nodeInd < m_foundNodes->GetNodes().size(); nodeInd++)        
@@ -1420,6 +1425,10 @@ void ScalableMeshProgressiveQueryEngine::StartNewQuery(RequestedQuery& newQuery,
      
     while (currentInd < nodesToSearch.GetNodes().size())
         {
+        //Increase display responsiveness, especially for streaming.
+        if (!nodesToSearch.GetNodes()[currentInd]->IsLoaded())
+            break;
+
         nodesToSearch.GetNodes()[currentInd]->QueryVisibleNode (queryObjectP, s_maxLevel, overviewNodes, foundNodes, nodesToSearch, nullptr);
         
         if ((clock() - startTime) > s_firstNodeSearchingDelay)
