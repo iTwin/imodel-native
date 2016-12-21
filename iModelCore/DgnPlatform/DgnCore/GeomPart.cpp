@@ -25,7 +25,7 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
         return DgnDbStatus::BadElement;
 
     int blobSize;
-    void const* blob = statement.GetValueBinary(geometryStreamIndex, &blobSize);
+    void const* blob = statement.GetValueBlob(geometryStreamIndex, &blobSize);
     status = m_geometry.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     if (DgnDbStatus::Success != status)
         return status;
