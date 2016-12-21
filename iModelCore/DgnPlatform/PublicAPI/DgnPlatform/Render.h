@@ -1788,6 +1788,7 @@ public:
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
+    virtual void _SetTileRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}

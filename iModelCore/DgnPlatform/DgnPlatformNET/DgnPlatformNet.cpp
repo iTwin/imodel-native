@@ -2002,14 +2002,16 @@ public:
         return 0;
         }
 
+#if defined (NEEDSWORK_DesktopPlatform_DgnClassId)
     /** Set the Parent of this Element. @param parent The parent element. */
-    void SetParent(DgnElement^ parent)
+    void SetParent(DgnElement^ parent, )
         {
         if (nullptr == parent)
             m_native->SetParentId (BDGN::DgnElementId());
         else
             m_native->SetParentId (parent->m_native->GetElementId());
         }
+#endif
 
     /**
      * Get the value of a property that is defined by the element's class.
