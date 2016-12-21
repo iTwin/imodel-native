@@ -478,10 +478,10 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, 
-        "SELECT aspect.ElementId,aspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle obstacle,DgnPlatformTest.DgnSqlTestUniqueAspect aspect"
+        "SELECT aspect.Element.Id,aspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle obstacle,DgnPlatformTest.DgnSqlTestUniqueAspect aspect"
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
             " AND obstacle.ECInstanceId=rt.ECInstanceId"
-            " AND aspect.ElementId=rt.ECInstanceId AND aspect.TestUniqueAspectProperty = :propertyValue"
+            " AND aspect.Element.Id=rt.ECInstanceId AND aspect.TestUniqueAspectProperty = :propertyValue"
         ));
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
