@@ -487,7 +487,7 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
     context.VisitDgnModel(*model);
 
 #ifdef DEBUG_ATTACHMENT_RANGE
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[ViewId] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
+    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE Model.Id=?");
     attachments->BindId(1, model->GetModelId());
     while (BE_SQLITE_ROW == attachments->Step())
         {
