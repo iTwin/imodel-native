@@ -202,10 +202,11 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
         RelationshipClassLinkTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
         virtual ClassMappingStatus _Map(ClassMappingContext&) override;
+        ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);
 
         ClassMappingStatus CreateConstraintPropMaps(RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, ECN::ECClassId defaultSourceECClassid, bool addTargetECClassIdColumnToTable, ECN::ECClassId defaultTargetECClassId);
 
-        void AddIndices(ClassMappingContext&);
+        void AddIndices(ClassMappingContext&, bool allowDuplicateRelationship);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
 
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
@@ -215,6 +216,8 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
 
         static Utf8String DetermineConstraintECInstanceIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
+
+        static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
     public:
         ~RelationshipClassLinkTableMap() {}

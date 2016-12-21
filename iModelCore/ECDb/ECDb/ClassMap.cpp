@@ -19,20 +19,13 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Ramanujam.Raman                06/2012
 //---------------------------------------------------------------------------------------
 ClassMap::ClassMap(ECDb const& ecdb, Type type, ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty)
-    : m_ecdb(ecdb), m_type(type), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
-    m_isDirty(setIsDirty), m_tphHelper(nullptr), m_propertyMaps(*this)
+    : m_type(type), m_ecdb(ecdb), m_ecClass(ecClass), m_mapStrategyExtInfo(mapStrategy),
+    m_isDirty(setIsDirty), m_tphHelper(nullptr), m_propertyMaps(*this), m_columnFactory(nullptr)
     {
     if (m_mapStrategyExtInfo.IsTablePerHierarchy())
         m_tphHelper = std::unique_ptr<TablePerHierarchyHelper>(new TablePerHierarchyHelper(*this));
     }
 
-DbColumnFactory const& ClassMap::GetColumnFactory() const
-    {
-    if (m_columnFactory == nullptr)
-        m_columnFactory = DbColumnFactory::Create(*this);
-
-    return *m_columnFactory;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
@@ -860,11 +853,14 @@ Utf8String ClassMap::GetUpdatableViewName() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                   03/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::GenerateSelectViewSql(NativeSqlBuilder& viewSql, bool isPolymorphic, ECSqlPrepareContext const& prepareContext) const
+// @bsimethod                                Affan.Khan                      12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+DbColumnFactory const& ClassMap::GetColumnFactory() const
     {
-    return ViewGenerator::GenerateSelectFromViewSql(viewSql, m_ecdb, *this, isPolymorphic, prepareContext);
+    if (m_columnFactory == nullptr)
+        m_columnFactory = std::make_unique<DbColumnFactory>(*this);
+
+    return *m_columnFactory;
     }
 
 //---------------------------------------------------------------------------------------
