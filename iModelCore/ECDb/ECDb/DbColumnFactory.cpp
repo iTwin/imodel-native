@@ -42,6 +42,128 @@ std::set<ECN::ECClassCP> DbColumnFactory::GetRootClasses(ECN::ECClassCR ecClass)
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
 //static 
+BentleyStatus DbColumnFactory::ComputeReleventClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph, ClassMap const& classMap)
+    {
+    contextGraph.clear();
+    if (!classMap.GetMapStrategy().GetTphInfo().IsValid())
+        {
+        return SUCCESS;
+        }
+
+    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
+    DbTable const& contextTable = classMap.GetJoinedTable();
+    if (!contextTable.HasExclusiveRootECClass())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    ECClassCP exclusiveRootClass = ecdb.Schemas().GetECClass(contextTable.GetExclusiveRootECClassId());
+    if (exclusiveRootClass == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    bset<ClassMap const*> mixins;
+    bset<ECN::ECClassId> doneList;
+    bset<ECN::ECClassId> primaryHierarchyClassIds;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId = ?1 AND ClassId != ?1 UNION ALL "
+                            "SELECT BaseClassId FROM " TABLE_ClassHierarchyCache " WHERE ClassId = ?1 ");
+    stmt->BindId(1, classMap.GetClass().GetId());
+    while (stmt->Step() == BE_SQLITE_ROW)
+        primaryHierarchyClassIds.insert(stmt->GetValueId<ECClassId>(0));
+
+    std::function<ClassMapCP(ECClassCR)> findFirstImplementationOfMixin = [&] (ECN::ECClassCR mixInClass)
+        {
+        if (mixInClass.GetId() != classMap.GetClass().GetId())
+            {
+            auto itor = contextGraph.find(&mixInClass);
+            if (itor != contextGraph.end())
+                return itor->second;
+
+            if (ClassMap const* mixInClassMap = classMap.GetDbMap().GetClassMap(mixInClass))
+                {
+                if (mixInClassMap->GetJoinedTable().GetId() == contextTable.GetId())
+                    return mixInClassMap;
+                }
+            }
+
+        for (ECClassCP derivedClass : ecdb.Schemas().GetDerivedECClasses(mixInClass))
+            {
+            if (ClassMapCP foundImpl = findFirstImplementationOfMixin(*derivedClass))
+                {
+                if (foundImpl->GetJoinedTable().GetId() == contextTable.GetId())
+                    return foundImpl;
+                }
+            }
+
+        return (ClassMapCP)nullptr;
+        };
+
+    std::function<void(ECClassCR)> traverseDerivedClasses = [&] (ECN::ECClassCR contextClass)
+        {
+        if (doneList.find(contextClass.GetId()) != doneList.end())
+            return;
+
+        const bool isPartOfPrimaryHierarchy = (primaryHierarchyClassIds.find(contextClass.GetId()) != primaryHierarchyClassIds.end());
+        doneList.insert(contextClass.GetId());
+        if (isPartOfPrimaryHierarchy)
+            {
+            ClassMap const* contextClassMap = classMap.GetDbMap().GetClassMap(contextClass);
+            if (contextClassMap != nullptr)
+                {
+                if (contextClassMap->GetJoinedTable().GetId() == contextTable.GetId())
+                    contextGraph.insert(bpair<ECClassCP,ClassMap const*>(&contextClass, contextClassMap));
+                else
+                    {
+                    //If a class is in another table then we do not care and also do not care about its derived classes or its interfaces
+                    return;
+                    }
+                }
+            }
+
+        //! Find mixins if any
+        for (ECClassCP baseClass : contextClass.GetBaseClasses())
+            if (ClassMap const* mixInClassMap = classMap.GetDbMap().GetClassMap(*baseClass))
+                if (mixInClassMap->GetJoinedTable().GetPersistenceType() == PersistenceType::Virtual)
+                    if (mixins.find(mixInClassMap) != mixins.end())
+                        {
+                        mixins.insert(mixInClassMap);
+                        if (contextGraph.find(&mixInClassMap->GetClass()) == contextGraph.end())
+                            {
+                            if (ClassMapCP impl = findFirstImplementationOfMixin(mixInClassMap->GetClass()))
+                                {
+                                if (contextGraph.find(&impl->GetClass()) == contextGraph.end())
+                                    contextGraph[&mixInClassMap->GetClass()] = impl;
+                                }
+                            }
+                        }
+
+        //! traver derive hiearchy as long as possiable while stayingin same table
+        const ssize_t n = contextGraph.size();
+        for (ECClassCP derivedClass : ecdb.Schemas().GetDerivedECClasses(contextClass))
+            traverseDerivedClasses(*derivedClass);
+
+        //! record only deepest class in primary hiearchy
+        if (isPartOfPrimaryHierarchy)
+            if (contextGraph.size() > n)
+                {
+                auto contextItemItor = contextGraph.find(&contextClass);
+                if (contextItemItor != contextGraph.end())
+                    contextGraph.erase(contextItemItor);
+                }
+        };
+
+
+    traverseDerivedClasses(*exclusiveRootClass);
+    return SUCCESS;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       01 / 2015
+//------------------------------------------------------------------------------------------
+//static 
 std::set<ClassMap const*> DbColumnFactory::GetDeepestClassMapsInTph(ClassMap const& classMap)
     {
     if (!classMap.GetMapStrategy().GetTphInfo().IsValid())
@@ -53,6 +175,10 @@ std::set<ClassMap const*> DbColumnFactory::GetDeepestClassMapsInTph(ClassMap con
     std::set<ECClassCP> doneList;
     std::set<ClassMap const*> deepestMappedClassSet;
     std::set<RelationshipClassEndTableMap const*> relationshipMapSet;
+    std::set<ECClassCP> scopeClasses;
+
+
+
     std::function<void(ECClassCP)> findDeepestMappedClass = [&] (ECClassCP contextClass)
         {
         if (doneList.find(contextClass) != doneList.end())
@@ -127,13 +253,27 @@ Utf8String DbColumnFactory::QualifiedAccessString(PropertyMap const& propertyMap
 //static 
 DbColumnFactory::UsedColumnMap DbColumnFactory::BuildUsedColumnMap(ClassMap const& contextClassMap)
     {
-    const std::set<ClassMap const*> deepestClassMapsInTph = GetDeepestClassMapsInTph(contextClassMap);
+
     UsedColumnMap columnsMap;
-    for (ClassMap const* classMap : deepestClassMapsInTph)
+    bmap<ECN::ECClassCP, ClassMap const*> releventClassMaps;
+    if (ComputeReleventClassMaps(releventClassMaps, contextClassMap) != SUCCESS)
+        return columnsMap;
+
+    for (const auto &kp : releventClassMaps)
         {
-        if (classMap->GetType() == ClassMap::Type::RelationshipEndTable)
+        ECClassCP interfaceClass = kp.first;
+        ClassMapCP implClassMap = kp.second;
+        std::set<Utf8CP, CompareIUtf8Ascii> releventProperties;
+        const bool isMixIn = interfaceClass->GetId() != implClassMap->GetClass().GetId();
+        if (isMixIn)
             {
-            RelationshipClassEndTableMap const* relationshipEndTableMap = static_cast<RelationshipClassEndTableMap const*>(classMap);
+            for (ECPropertyCP property : interfaceClass->GetProperties(true))
+                releventProperties.insert(property->GetName().c_str());
+            }
+
+        if (implClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
+            {
+            RelationshipClassEndTableMap const* relationshipEndTableMap = static_cast<RelationshipClassEndTableMap const*>(implClassMap);
             SystemPropertyMap::PerTablePrimitivePropertyMap const* ecInstanceIdPropMap = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
             SystemPropertyMap::PerTablePrimitivePropertyMap const* ecClassIdPropMap = relationshipEndTableMap->GetForeignEndECInstanceIdPropMap()->FindDataPropertyMap(contextClassMap.GetJoinedTable());
             BeAssert(ecInstanceIdPropMap != nullptr && ecClassIdPropMap != nullptr);
@@ -143,11 +283,22 @@ DbColumnFactory::UsedColumnMap DbColumnFactory::BuildUsedColumnMap(ClassMap cons
         else
             {
             SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
-            classMap->GetPropertyMaps().AcceptVisitor(visitor);
+            implClassMap->GetPropertyMaps().AcceptVisitor(visitor);
             for (PropertyMap const* propertyMap : visitor.Results())
                 {
                 if (!propertyMap->IsMappedToTable(contextClassMap.GetJoinedTable()))
                     continue;
+
+                if (isMixIn)
+                    {
+                    PropertyMap const* cur = propertyMap;
+                    while (cur->GetParent())
+                        cur = cur->GetParent();
+
+                    //ignore other properties in case of mixin
+                    if (releventProperties.find(cur->GetName().c_str()) == releventProperties.end())
+                        continue;
+                    }
 
                 SingleColumnDataPropertyMap const* dataPropertyMap = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
                 auto columnItor = columnsMap.find(propertyMap->GetAccessString().c_str());

@@ -2426,6 +2426,83 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertExplicitNullsUsingECSql)
     ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         11/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, OverflowColumns_SharedColumns)
+    {
+    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?> "
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'>"
+        "              <SharedColumnCount>4</SharedColumnCount>"
+        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
+        "            </ShareColumns>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D0' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D0_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D1' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D1_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D2' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D2_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D3' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D3_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D4' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D4_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D5' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D5_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D6' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D6_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D7' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D7_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D8' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D8_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='D9' modifier='None'>"
+        "        <BaseClass>Element</BaseClass>"
+        "        <ECProperty propertyName='D9_I' typeName='int'/>"
+        "        <ECProperty propertyName='Id' typeName='long'/>"
+        "    </ECEntityClass>"
+        "</ECSchema>"));
+
+    ecdb.Schemas().CreateECClassViewsInDb();
+    ecdb.SaveChanges();
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
 //+---------------+---------------+---------------+---------------+---------------+------

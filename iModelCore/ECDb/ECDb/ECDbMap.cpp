@@ -389,64 +389,66 @@ BentleyStatus ECDbMap::DoMapSchemas() const
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                   Ramanujam.Raman                   06/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassMappingStatus ECDbMap::MapClass(ECClassCR ecClass) const
-    {
-    if (AssertIfIsNotImportingSchema())
-        return ClassMappingStatus::Error;
+ ClassMappingStatus ECDbMap::MapClass(ECClassCR ecClass) const
+     {
+     if (AssertIfIsNotImportingSchema())
+         return ClassMappingStatus::Error;
 
-    ClassMapPtr existingClassMap = nullptr;
-    if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
-        return ClassMappingStatus::Error;
+     ClassMapPtr existingClassMap = nullptr;
+     if (SUCCESS != TryGetClassMap(existingClassMap, m_schemaImportContext->GetClassMapLoadContext(), ecClass))
+         return ClassMappingStatus::Error;
 
-    if (existingClassMap == nullptr)
-        {
-        ClassMappingStatus status = ClassMappingStatus::Success;
-        std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, m_ecdb, ecClass);
-        if ((status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error))
-            return status;
+     if (existingClassMap == nullptr)
+         {
+         ClassMappingStatus status = ClassMappingStatus::Success;
+         std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, m_ecdb, ecClass);
+         if ((status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error))
+             return status;
 
-        BeAssert(classMapInfo != nullptr);
+         BeAssert(classMapInfo != nullptr);
 
-        MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
+         MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
 
-        ClassMapPtr classMap = nullptr;
-        if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-            classMap = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
-        else
-            {
-            auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
-            if (ecRelationshipClass != nullptr)
-                {
-                if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                    classMap = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
-                else
-                    classMap = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
-                }
-            else
-                classMap = ClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
-            }
+         ClassMapPtr classMap = nullptr;
+         if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
+             classMap = NotMappedClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
+         else
+             {
+             auto ecRelationshipClass = ecClass.GetRelationshipClassCP();
+             if (ecRelationshipClass != nullptr)
+                 {
+                 if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
+                     classMap = RelationshipClassEndTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
+                 else
+                     classMap = RelationshipClassLinkTableMap::Create(m_ecdb, *ecRelationshipClass, mapStrategy, true);
+                 }
+             else
+                 classMap = ClassMap::Create(m_ecdb, ecClass, mapStrategy, true);
+             }
 
-        status = AddClassMap(classMap);
-        if (status == ClassMappingStatus::Error)
-            return status;
+         status = AddClassMap(classMap);
+         if (status == ClassMappingStatus::Error)
+             return status;
 
-        status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
-        GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
+         status = classMap->Map(*GetSchemaImportContext(), *classMapInfo);
+         GetSchemaImportContext()->CacheClassMapInfo(*classMap, classMapInfo);
 
-        //error
-        if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
-            return status;
-        }
+         //error
+         if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
+             return status;
 
-    for (ECClassP childClass : ecClass.GetDerivedClasses())
-        {
-        ClassMappingStatus status = MapClass(*childClass);
-        if (status == ClassMappingStatus::Error)
-            return status;
-        }
+         }
 
-    return ClassMappingStatus::Success;
-    }
+
+     for (ECClassP childClass : ecClass.GetDerivedClasses())
+         {
+         ClassMappingStatus status = MapClass(*childClass);
+         if (status == ClassMappingStatus::Error)
+             return status;
+         }
+
+     return ClassMappingStatus::Success;
+     }
 
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    casey.mullen      11/2011

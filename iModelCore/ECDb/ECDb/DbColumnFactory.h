@@ -31,7 +31,7 @@ struct DbColumnFactory  final: NonCopyableClass
         static std::set<ClassMap const*> GetDeepestClassMapsInTph(ClassMap const& classMap);
         static Utf8String QualifiedAccessString(PropertyMap const& propertyMap);
         static UsedColumnMap BuildUsedColumnMap(ClassMap const& contextClassMap);
-
+        static BentleyStatus ComputeReleventClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph, ClassMap const& classMap);
         void CacheUsedColumn(DbColumn const&, Utf8StringCR) const;
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
