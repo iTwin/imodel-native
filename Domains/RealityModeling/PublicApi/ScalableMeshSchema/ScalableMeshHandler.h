@@ -106,7 +106,8 @@ struct ScalableMeshModel : IMeshSpatialModel
         bset<uint64_t>                          m_activeClips;
 
         BeFileName                              m_path;
-        bool                                    m_isProgressiveDisplayOn;        
+        bool                                    m_isProgressiveDisplayOn;     
+        bool                                    m_isInsertingClips;
         
         IScalableMeshProgressiveQueryEnginePtr GetProgressiveQueryEngine();
 

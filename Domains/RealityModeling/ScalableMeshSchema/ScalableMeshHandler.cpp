@@ -99,6 +99,7 @@ BentleyStatus ScalableMeshModel::_StartClipMaskBulkInsert()
         return SUCCESS;
 
     if (nullptr == m_smPtr.get()) return ERROR;
+    m_isInsertingClips = true;
     m_smPtr->SetIsInsertingClips(true);
     return SUCCESS;
     }
@@ -112,6 +113,7 @@ BentleyStatus ScalableMeshModel::_StopClipMaskBulkInsert()
         return SUCCESS;
 
     if (nullptr == m_smPtr.get()) return ERROR;
+    m_isInsertingClips = false;
     m_smPtr->SetIsInsertingClips(false);
     bvector<uint64_t> currentlyShown;
     bset<uint64_t> ids;
@@ -1155,6 +1157,7 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_tryOpen = false;               
     m_forceRedraw = false;
     m_isProgressiveDisplayOn = true;
+    m_isInsertingClips = false;
 
    // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
    // appData->m_smTerrainPhysicalModelP = this;
@@ -1406,6 +1409,8 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     {
     if (!IsTerrain())
         return;
+
+    if (m_isInsertingClips) return;
 
     m_activeClips = activeClips;
     bvector<uint64_t> clipIds;
