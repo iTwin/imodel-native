@@ -2113,7 +2113,7 @@ void    AnnotationTableCell::_BindProperties(ECSqlStatement& statement)
     AnnotationTableCellIndex::BindCellIndex (statement, CELL_PARAM_Index, m_index);
 
     if (nullptr != m_rawTextBlock)
-        statement.BindBinary(statement.GetParameterIndex(CELL_PARAM_TextBlock), m_rawTextBlock, static_cast<int>(m_rawTextBlockBytes), IECSqlBinder::MakeCopy::Yes);
+        statement.BindBlob(statement.GetParameterIndex(CELL_PARAM_TextBlock), m_rawTextBlock, static_cast<int>(m_rawTextBlockBytes), IECSqlBinder::MakeCopy::Yes);
     else
         statement.BindNull(statement.GetParameterIndex(CELL_PARAM_TextBlock));
 
@@ -2138,7 +2138,7 @@ void  AnnotationTableCell::_AssignValue (int index, IECSqlValue const& value)
         case PropIndex::TextBlock:
             {
             int         size;
-            void const* data = value.GetBinary (&size);
+            void const* data = value.GetBlob(&size);
             AssignBinaryTextBlock (data, size);
             break;
             }

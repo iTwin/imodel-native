@@ -207,7 +207,7 @@ namespace Attachment
 
         struct Loader : TileTree::TileLoader
         {
-            Render::Image m_image;
+            Render::TexturePtr m_texture;
 
             Loader(Utf8StringCR url, Tile& tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
             BentleyStatus _LoadTile() override;

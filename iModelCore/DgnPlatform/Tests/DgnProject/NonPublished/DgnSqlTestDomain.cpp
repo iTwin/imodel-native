@@ -94,7 +94,7 @@ void ObstacleElement::SetTestUniqueAspect(Utf8CP value)
     auto eclass = GetDgnDb().Schemas().GetECClass(DGN_SQL_TEST_SCHEMA_NAME, DGN_SQL_TEST_TEST_UNIQUE_ASPECT_CLASS_NAME);
     auto instance = eclass->GetDefaultStandaloneEnabler()->CreateInstance();
     instance->SetValue("TestUniqueAspectProperty", ECN::ECValue(value));
-    DgnElement::GenericUniqueAspect::SetAspect(*this, *instance);
+    ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*this, *instance));
     ASSERT_TRUE(Update().IsValid());
     }
 
