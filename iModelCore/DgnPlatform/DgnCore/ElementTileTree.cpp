@@ -16,6 +16,12 @@
 #define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
 #define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
+#if defined(NDEBUG)
+#define ELEMENT_TILE_DEBUG_RANGE false
+#else
+#define ELEMENT_TILE_DEBUG_RANGE true
+#endif
+
 USING_NAMESPACE_ELEMENT_TILETREE
 
 BEGIN_UNNAMED_NAMESPACE
@@ -1917,7 +1923,7 @@ BentleyStatus Loader::_LoadTile()
 Root::Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view)
     : T_Super(model.GetDgnDb(), transform, "", &system), m_modelId(model.GetModelId()), m_name(model.GetName()),
     m_leafTolerance(s_minLeafTolerance), m_maxPointsPerTile(s_maxPointsPerTile), m_filter(view), m_is3d(model.Is3dModel()),
-    m_debugRanges(true)
+    m_debugRanges(ELEMENT_TILE_DEBUG_RANGE)
     {
     //
     }

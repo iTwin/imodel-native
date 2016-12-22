@@ -159,9 +159,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
             root->DrawInView(context);
         }
 
-    Utf8PrintfString message("CreateScene: %f", timer.GetCurrentSeconds());
-    NotifyMessageDetails details(OutputMessagePriority::Info, message.c_str());
-    T_HOST.GetNotificationAdmin()._OutputMessage(details);
+    DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 
     return SUCCESS;
     }
