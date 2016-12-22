@@ -2505,7 +2505,6 @@ public:
 
     //! Set the given multiplicity of the constraint in the relationship
     //! @param[in] multiplicity The multiplicity to be set on this relationship constraint
-    //! @return ECObjectsStatus::Error if the multiplicity does not st
     ECOBJECTS_EXPORT ECObjectsStatus            SetMultiplicity(RelationshipMultiplicityCR multiplicity);
 
     //! Set the multiplicity of the constraint using the string format of @ref ECN::RelationshipMultiplicity. Multiplicity is not set if input string cannot be parsed.
