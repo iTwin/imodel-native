@@ -78,7 +78,7 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     if (!IsReady())
         {
         if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
+            args.InsertMissing(*this);
 
         return;
         }
@@ -88,62 +88,4 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     }
 
 
-//---------------------------------------------------------------------------------------------
-//-------------------------------- RasterProgressive ------------------------------------------
-//---------------------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  9/2016
-//----------------------------------------------------------------------------------------
-RasterProgressive::~RasterProgressive()
-    {
-    if (nullptr != m_loads) 
-        m_loads->SetCanceled();
-
-    DEBUG_PRINTF("Raster progressive destroyed");
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Mathieu.Marchand                9/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ProgressiveTask::Completion RasterProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    TileTree::DrawArgs args(context, Transform::FromProduct(m_depthTrans, m_root.GetLocation()), m_root, now, now - m_root.GetExpirationTime());
-    args.SetClip(m_root.GetModel().GetClip().GetClipVector());
-
-    DEBUG_PRINTF("Raster progressive %d missing", m_missing.size());
-
-    for (auto const& node : m_missing)
-        {
-        auto stat = node.second->GetLoadStatus();
-        if (stat == TileTree::Tile::LoadStatus::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != TileTree::Tile::LoadStatus::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-
-    BeAssert(args.m_missing.size() < 200);  // More than 200 hundred tiles is suspicious.
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("Raster after progressive still %d missing", m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        //m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
-    }
 

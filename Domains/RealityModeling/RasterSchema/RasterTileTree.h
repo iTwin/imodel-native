@@ -148,20 +148,4 @@ public:
         }
 };
 
-//=======================================================================================
-// @bsiclass                                                   Mathieu.Marchand  9/2016
-//=======================================================================================
-struct RasterProgressive : Dgn::ProgressiveTask
-{
-    RasterRootR m_root;
-    Dgn::TileTree::DrawArgs::MissingNodes m_missing;
-    Dgn::TileTree::TimePoint m_nextShow;
-    Dgn::TileTree::TileLoadStatePtr m_loads;
-    Transform m_depthTrans;
-
-    Completion _DoProgressive(Dgn::ProgressiveContext& context, WantShow&) override;
-    RasterProgressive(RasterRootR root, Dgn::TileTree::DrawArgs::MissingNodes& nodes, Dgn::TileTree::TileLoadStatePtr loads, TransformCR depthTrans) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_depthTrans(depthTrans) {}
-    ~RasterProgressive();
-};
-
 END_BENTLEY_RASTER_NAMESPACE

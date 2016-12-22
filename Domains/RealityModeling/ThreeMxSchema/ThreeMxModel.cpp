@@ -127,63 +127,6 @@ ThreeMxDomain::ThreeMxDomain() : DgnDomain(THREEMX_SCHEMA_NAME, "3MX Domain", 1)
     RegisterHandler(ModelHandler::GetHandler());
     }
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/16
-//=======================================================================================
-struct ThreeMxProgressive : Dgn::ProgressiveTask
-{
-    SceneR m_scene;
-    DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
-    TileLoadStatePtr m_loads;
-    ClipVectorCPtr m_clip;
-
-    ThreeMxProgressive(SceneR scene, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
-    ~ThreeMxProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-};
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ProgressiveTask::Completion ThreeMxProgressive::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_scene.GetLocation(), m_scene, now, now-m_scene.GetExpirationTime(), m_clip.get());
-
-    DEBUG_PRINTF("3MX progressive %d missing, ", m_missing.size());
-
-    for (auto const& node: m_missing)
-        {
-        auto stat = node.second->GetLoadStatus();
-        if (stat == Tile::LoadStatus::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadStatus::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-
-    args.RequestMissingTiles(m_scene, m_loads);
-    args.DrawGraphics(context);     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("3MX after progressive still %d missing", m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -267,7 +210,6 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
         {
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*m_scene, loads);
-        context.GetViewport()->ScheduleProgressiveTask(*new ThreeMxProgressive(*m_scene, args.m_missing, loads, m_clip.get()));
         }
     }
 
