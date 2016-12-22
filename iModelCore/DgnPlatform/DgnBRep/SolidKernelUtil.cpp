@@ -446,10 +446,134 @@ BentleyStatus BRepUtil::GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, 
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID)
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     02/2014
+* @bsimethod                                                    Brien.Bastings  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, ISubEntityCR face, bool includeVertex, bool smoothOnly)
+bool facesAreRedundant(PK_FACE_t faceTag1, PK_FACE_t faceTag2)
+    {
+    PK_FACE_t facePair[2];
+
+    facePair[0] = faceTag1;
+    facePair[1] = faceTag2;
+
+    int nTopols = 0;
+    PK_TOPOL_identify_redundant_o_t options;
+
+    PK_TOPOL_identify_redundant_o_m(options);
+    options.want_redundant_topols = PK_LOGICAL_false;
+
+    return (SUCCESS == PK_TOPOL_identify_redundant(2, facePair, &options, &nTopols, nullptr) && 0 != nTopols);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool facesAreSmooth(PK_FACE_t faceTag1, PK_FACE_t faceTag2, bool checkCommonVertex)
+    {
+    int         nEdges = 0;
+    PK_EDGE_t*  edgesP = nullptr;
+
+    if (SUCCESS != PK_FACE_find_edges_common(faceTag1, faceTag2, &nEdges, &edgesP))
+        return false;
+
+    bvector<PK_EDGE_t> edges;
+
+    if (0 == nEdges) // Find common vertex for faces that aren't edge adjacent...
+        {
+        if (!checkCommonVertex)
+            return false;
+
+        bvector<PK_VERTEX_t> vertices;
+
+        if (SUCCESS != PSolidTopo::GetFaceVertices(vertices, faceTag1))
+            return false;
+
+        bvector<PK_VERTEX_t> adjacentVertices;
+
+        if (SUCCESS != PSolidTopo::GetFaceVertices(adjacentVertices, faceTag2))
+            return false;
+
+        for (PK_VERTEX_t vertexTag : adjacentVertices)
+            {
+            if (vertices.end() == std::find(vertices.begin(), vertices.end(), vertexTag))
+                continue;
+
+            PSolidTopo::GetVertexEdges(edges, vertexTag);
+            break;
+            }
+
+        if (0 == edges.size())
+            return false;
+        }
+    else
+        {
+        edges.resize(nEdges);
+
+        for (int iEdge=0; iEdge < nEdges; iEdge++)
+            edges[iEdge] = edgesP[iEdge];
+
+        PK_MEMORY_free(edgesP);
+        }
+
+    for (PK_EDGE_t edgeTag : edges)
+        {
+        if (!PSolidUtil::IsSmoothEdge(edgeTag))
+            return false;
+        }
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus getAdjacentFaces(bset<PK_FACE_t>& adjacentFaceTags, PK_FACE_t faceTag, bool includeVertex, bool includeRedundant, bool includeSmoothOnly, bool oneLevel)
+    {
+    int         nFaces = 0;
+    PK_FACE_t*  facesP = nullptr;
+    PK_FACE_ask_faces_adjacent_o_t options;
+
+    PK_FACE_ask_faces_adjacent_o_m(options);
+    options.include_vertex_connected = (includeSmoothOnly && !oneLevel) ? false : includeVertex; // Only need edge connected when not stopping at one level for smoothly connected faces...
+
+    if (SUCCESS != PK_FACE_ask_faces_adjacent(1, &faceTag, &options, &nFaces, &facesP) || 0 == nFaces)
+        return ERROR;
+
+    for (int iFace=0; iFace < nFaces; iFace++)
+        {
+        if (!includeRedundant && facesAreRedundant(faceTag, facesP[iFace]))
+            continue;
+
+        if (includeSmoothOnly && !facesAreSmooth(faceTag, facesP[iFace], PK_LOGICAL_true == options.include_vertex_connected))
+            continue;
+
+        if (!oneLevel && includeSmoothOnly)
+            {
+            if (adjacentFaceTags.end() != std::find(adjacentFaceTags.begin(), adjacentFaceTags.end(), facesP[iFace]))
+                continue;
+
+            adjacentFaceTags.insert(facesP[iFace]);
+
+            if (SUCCESS != getAdjacentFaces(adjacentFaceTags, facesP[iFace], includeVertex, includeRedundant, includeSmoothOnly, oneLevel))
+                continue;
+            }
+        else
+            {
+            adjacentFaceTags.insert(facesP[iFace]);
+            }
+        }
+
+    PK_MEMORY_free(facesP);
+
+    return SUCCESS;
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, ISubEntityCR face, bool includeVertex, bool includeRedundant, bool includeSmoothOnly, bool oneLevel)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     PK_EDGE_t   faceTag;
@@ -457,84 +581,20 @@ BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, 
     if (0 == (faceTag = PSolidSubEntity::GetSubEntityTag(face)))
         return ERROR;
 
-    int         nFaces = 0;
-    PK_FACE_t*  facesP = nullptr;
-    PK_FACE_ask_faces_adjacent_o_t options;
+    bset<PK_FACE_t> adjacentFaceTags;
 
-    PK_FACE_ask_faces_adjacent_o_m(options);
-    options.include_vertex_connected = includeVertex;
-
-    if (SUCCESS != PK_FACE_ask_faces_adjacent(1, &faceTag, &options, &nFaces, &facesP) || 0 == nFaces)
+    if (SUCCESS != getAdjacentFaces(adjacentFaceTags, faceTag, includeVertex, includeRedundant, includeSmoothOnly, oneLevel))
         return ERROR;
 
     Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
 
-    for (int iFace=0; iFace < nFaces; iFace++)
+    for (PK_FACE_t adjFaceTag : adjacentFaceTags)
         {
-        bool faceIsValid = true;
+        if (faceTag == adjFaceTag)
+            continue;
 
-        if (smoothOnly)
-            {
-            int         nEdges = 0;
-            PK_EDGE_t*  edgesP = nullptr;
-
-            if (SUCCESS != PK_FACE_find_edges_common(faceTag, facesP[iFace], &nEdges, &edgesP))
-                continue;
-
-            bvector<PK_EDGE_t> edges;
-
-            if (0 == nEdges)
-                {
-                if (!includeVertex)
-                    continue; // Can't be vertex adjacent if we didn't ask for those faces...
-
-                bvector<PK_VERTEX_t> vertices;
-
-                if (SUCCESS != PSolidTopo::GetFaceVertices(vertices, faceTag))
-                    continue;
-
-                bvector<PK_VERTEX_t> adjacentVertices;
-
-                if (SUCCESS != PSolidTopo::GetFaceVertices(adjacentVertices, facesP[iFace]))
-                    continue;
-
-                for (PK_VERTEX_t vertexTag : adjacentVertices)
-                    {
-                    if (vertices.end() == std::find(vertices.begin(), vertices.end(), vertexTag))
-                        continue;
-
-                    PSolidTopo::GetVertexEdges(edges, vertexTag);
-                    break;
-                    }
-
-                if (0 == edges.size())
-                    continue;
-                }
-            else
-                {
-                edges.resize(nEdges);
-
-                for (int iEdge=0; iEdge < nEdges; iEdge++)
-                    edges[iEdge] = edgesP[iEdge];
-
-                PK_MEMORY_free(edgesP);
-                }
-
-            for (PK_EDGE_t edgeTag : edges)
-                {
-                if (PSolidUtil::IsSmoothEdge(edgeTag))
-                    continue;
-
-                faceIsValid = false;
-                break;
-                }
-            }
-
-        if (faceIsValid)
-            adjacentFaces.push_back(PSolidSubEntity::CreateSubEntity(facesP[iFace], entityTransform));
+        adjacentFaces.push_back(PSolidSubEntity::CreateSubEntity(adjFaceTag, entityTransform));
         }
-
-    PK_MEMORY_free(facesP);
 
     return SUCCESS;
 #else
