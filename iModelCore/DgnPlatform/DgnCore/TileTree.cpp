@@ -55,7 +55,7 @@ folly::Future<BentleyStatus> TileLoader::Perform()
     m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
-    auto loadFlag = std::make_shared<LoadFlag>(*m_tile);  // Keep track of running requests so we can exit gracefully.
+    auto loadFlag = std::make_shared<LoadFlag>(m_loads);  // Keep track of running requests so we can exit gracefully.
 
     return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
@@ -192,8 +192,8 @@ BentleyStatus TileLoader::DoReadFromDb()
             }
         }
 
-    if (m_loads != nullptr)
-        m_loads = nullptr;
+    // ###TODO: Why? if (m_loads != nullptr)
+    // ###TODO: Why?     m_loads = nullptr;
 
     return SUCCESS;
     }
@@ -265,7 +265,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, CancellationTokenPtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)
@@ -277,7 +277,7 @@ HttpDataQuery::HttpDataQuery(Utf8StringCR url, CancellationTokenPtr loads) : m_r
 //----------------------------------------------------------------------------------------
 folly::Future<Http::Response> HttpDataQuery::Perform()
     {
-    CancellationTokenPtr loads = m_loads;
+    TileLoadStatePtr loads = m_loads;
 
     return GetRequest().Perform().then([loads] (Http::Response response)
         {
@@ -338,7 +338,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 folly::Future<ByteStream> FileDataQuery::Perform()
     {
     auto filename = m_fileName;
-    CancellationTokenPtr loads = m_loads;
+    TileLoadStatePtr loads = m_loads;
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [filename, loads] ()
         {
         ByteStream data;
@@ -467,7 +467,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, CancellationTokenPtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -502,23 +502,23 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP syst
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::StartTileLoad(TileR tile)
+void Root::StartTileLoad(TileLoadStatePtr state) const
     {
-    TilePtr tilePtr(&tile);
+    BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
-    BeAssert(m_activeLoads.end() == m_activeLoads.find(tilePtr));
-    m_activeLoads.insert(tilePtr);
+    BeAssert(m_activeLoads.end() == m_activeLoads.find(state));
+    m_activeLoads.insert(state);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::DoneTileLoad(TileR tile)
+void Root::DoneTileLoad(TileLoadStatePtr state) const
     {
-    TilePtr tilePtr(&tile);
+    BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
-    BeAssert(m_activeLoads.end() != m_activeLoads.find(tilePtr));
-    m_activeLoads.erase(tilePtr);
+    BeAssert(m_activeLoads.end() != m_activeLoads.find(state));
+    m_activeLoads.erase(state);
     m_cv.notify_all();
     }
 
@@ -743,7 +743,7 @@ int Tile::CountTiles() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-CancellationToken::~CancellationToken()
+TileLoadState::~TileLoadState()
     {
     if (m_canceled.load())
         {
@@ -797,15 +797,34 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DrawArgs::RequestMissingTiles(RootR root)
     {
+    root.RequestTiles(m_missing);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* We want to draw these missing tiles, but they are not yet ready. They may already be
+* queued for loading, or actively loading.
+* If they are in the "not loaded" state, add them to the load queue.
+* Any tiles which are currently loading/queued but are *not* in this missing set should
+* be cancelled - we have determined we do not need them to draw the current frame.
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::RequestTiles(MissingNodesCR missingNodes)
+    {
     // This requests tiles ordered first by distance to camera, then by depth.
-    for (auto const& missing : m_missing)
+    for (auto const& missing : missingNodes)
         {
         if (missing.GetTile().IsNotLoaded())
             {
-            CancellationTokenPtr loads = std::make_shared<CancellationToken>();
-            root._RequestTile(const_cast<TileR>(missing.GetTile()), loads);
+            TileLoadStatePtr loads = std::make_shared<TileLoadState>(missing.GetTile());
+            _RequestTile(const_cast<TileR>(missing.GetTile()), loads);
             }
         }
+
+    // Now cancel any loading/queued tiles which are no longer needed
+    BeMutexHolder lock(m_cv.GetMutex());
+    for (auto& load : m_activeLoads)
+        if (!missingNodes.Contains(load->GetTile()))
+            load->SetCanceled();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -952,6 +971,15 @@ void MissingNodes::Insert(TileCR tile, double distance)
         m_set.erase(inserted.first);
         m_set.insert(toInsert);
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool MissingNodes::Contains(TileCR tile) const
+    {
+    // ###TODO: Make this more efficient...
+    return m_set.end() != std::find_if(m_set.begin(), m_set.end(), [&](MissingNodeCR arg) { return &arg.GetTile() == &tile; });
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -557,7 +557,7 @@ struct TileViewport : DgnViewport
     BSIRect m_rect;
     Render::GraphicListPtr m_terrain;
     virtual void _QueueScene() = 0;
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::CancellationTokenPtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetTileRect(rect);}
     TileViewport();

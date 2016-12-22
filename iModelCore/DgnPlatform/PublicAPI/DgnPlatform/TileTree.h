@@ -84,7 +84,7 @@ DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 
 typedef std::chrono::steady_clock::time_point TimePoint;
-typedef std::shared_ptr<struct CancellationToken> CancellationTokenPtr;
+typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
 
 //=======================================================================================
 //! A ByteStream with a "current position". Used for reading tiles
@@ -103,13 +103,18 @@ struct StreamBuffer : ByteStream
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/16
 //=======================================================================================
-struct CancellationToken : Tasks::ICancellationToken, NonCopyableClass
+struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
 {
-    BeAtomic<bool> m_canceled;
-    DGNPLATFORM_EXPORT ~CancellationToken();
+private:
+    TileCPtr        m_tile;
+    BeAtomic<bool>  m_canceled;
+public:
+    explicit TileLoadState(TileCR tile) : m_tile(&tile) { }
+    DGNPLATFORM_EXPORT ~TileLoadState();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
+    TileCR GetTile() const { return *m_tile; }
 };
 
 //=======================================================================================
@@ -176,7 +181,7 @@ public:
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(CancellationTokenPtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
 
     //! Get the name of this Tile.
     virtual Utf8String _GetTileName() const = 0;
@@ -195,14 +200,9 @@ struct Root : RefCountedBase, NonCopyableClass
     friend struct DrawArgs;
 
 protected:
-    struct CompareTilePtrs
-    {
-        bool operator()(TilePtr const& lhs, TilePtr const& rhs) const { return lhs.get() < rhs.get(); }
-    };
-
     bool m_isHttp = false;
     bool m_pickable = false;
-    bset<TilePtr, CompareTilePtrs> m_activeLoads;
+    mutable bset<TileLoadStatePtr> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;
@@ -212,7 +212,7 @@ protected:
     std::chrono::seconds m_expirationTime = std::chrono::seconds(20); // save unused tiles for 20 seconds
     Dgn::Render::SystemP m_renderSystem = nullptr;
     RealityData::CachePtr m_cache;
-    BeConditionVariable m_cv;
+    mutable BeConditionVariable m_cv;
 
     //! Clear the current tiles and wait for all pending download requests to complete/abort.
     //! All subclasses of Root must call this method in their destructor. This is necessary, since it must be called while the subclass vtable is 
@@ -220,11 +220,12 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, CancellationTokenPtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
+    void RequestTiles(MissingNodesCR);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
-    void StartTileLoad(TileR);
-    void DoneTileLoad(TileR);
+    void StartTileLoad(TileLoadStatePtr) const;
+    void DoneTileLoad(TileLoadStatePtr) const;
     void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}
@@ -295,7 +296,7 @@ struct TileLoader : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_fileName;      // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
-    CancellationTokenPtr m_loads;
+    TileLoadStatePtr m_loads;
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -309,7 +310,7 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR fileName, TileR tile, CancellationTokenPtr& loads, Utf8StringCR cacheKey)
+    TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
     BentleyStatus LoadTile();
@@ -330,9 +331,9 @@ public:
 
     struct LoadFlag
         {
-        TileR m_tile;
-        LoadFlag(TileR tile) : m_tile(tile) {tile.GetRootR().StartTileLoad(tile);}
-        ~LoadFlag() {m_tile.GetRootR().DoneTileLoad(m_tile);}
+        TileLoadStatePtr m_state;
+        LoadFlag(TileLoadStatePtr state) : m_state(state) {state->GetTile().GetRoot().StartTileLoad(state);}
+        ~LoadFlag() {m_state->GetTile().GetRoot().DoneTileLoad(m_state);}
         };
 
     //! Perform the load asynchronously.
@@ -346,9 +347,9 @@ struct HttpDataQuery
 {
     Http::HttpByteStreamBodyPtr m_responseBody;
     Http::Request m_request;
-    CancellationTokenPtr m_loads;
+    TileLoadStatePtr m_loads;
 
-    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, CancellationTokenPtr loads);
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads);
 
     Http::Request& GetRequest() {return m_request;}
 
@@ -368,9 +369,9 @@ struct HttpDataQuery
 struct FileDataQuery
 {
     Utf8String m_fileName;
-    CancellationTokenPtr m_loads;
+    TileLoadStatePtr m_loads;
 
-    FileDataQuery(Utf8StringCR fileName, CancellationTokenPtr loads) : m_fileName(fileName), m_loads(loads) {}
+    FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
 
     //! Read the entire file in a single chunk of memory.
     DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
@@ -419,6 +420,7 @@ private:
     Set m_set;
 public:
     void Insert(TileCR tile, double distance);
+    bool Contains(TileCR tile) const;
 
     bool empty() const { return m_set.empty(); }
     size_t size() const { return m_set.size(); }

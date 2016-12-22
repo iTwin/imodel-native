@@ -1815,7 +1815,7 @@ GeometryPtr Geometry::Create(GeomPartR part, TransformCR transform, DRange3dCR r
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Loader::Loader(TileR tile, TileTree::CancellationTokenPtr loads)
+Loader::Loader(TileR tile, TileTree::TileLoadStatePtr loads)
     : T_Super("", tile, loads, ""), m_filter(tile.GetElementRoot().GetFilter())
     {
     // NB: We must copy the filter, here on the main thread, because it may change while we're processing it...
@@ -2095,7 +2095,7 @@ bool Tile::IsElementCountLessThan(uint32_t threshold, double tolerance) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::CancellationTokenPtr loads)
+TileTree::TileLoaderPtr Tile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
     {
     return Loader::Create(*this, loads);
     }
