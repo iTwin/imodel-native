@@ -238,7 +238,7 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
 
     Tile& tile = static_cast<Tile&>(*m_tile);
     Tree& root = tile.GetTree();
-    return root.m_viewport->_CreateTile(m_loads, m_texture, tile, root.m_pixels);
+    return root.m_viewport->_CreateTile(m_loads, m_texture, tile, Point2d::From(root.m_pixels, root.m_pixels));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,11 +281,13 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
     {
-    double tileSize = 1.0 / (1 << id.m_level); // the size of a tile for this level, in NPC
-    double east  = id.m_column * tileSize;
-    double west  = east + tileSize;
-    double north = id.m_row * tileSize;
-    double south = north + tileSize;
+    double tileSizeX = root.m_sizeNPC.x / (1 << id.m_level); // the x size of a tile for this level, in NPC
+    double tileSizeY = root.m_sizeNPC.y / (1 << id.m_level); // the y size of a tile for this level, in NPC
+
+    double east  = id.m_column * tileSizeX;
+    double west  = east + tileSizeX;
+    double north = id.m_row * tileSizeY;
+    double south = north + tileSizeY;
 
     m_corners.m_pts[0].Init(east, south, 0.0); 
     m_corners.m_pts[1].Init(west, south, 0.0); 
@@ -340,7 +342,7 @@ void Attachment::Tree::Draw(RenderContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->m_rect.Init(0, 0, m_pixels.x, m_pixels.y);
+        m_viewport->m_rect.Init(0, 0, m_pixels, m_pixels);
         m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         }
@@ -381,7 +383,7 @@ void Attachment::Tree::Draw(RenderContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)
+Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -399,15 +401,12 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     if (!view.IsValid())
         return;
 
+    // we use square tiles. If the view's aspect ratio isn't square, expand the short side in tile (NPC) space. We'll clip out the extra area below.
     double aspect = view->GetViewDefinition().GetAspectRatio();
-
     if (aspect<1.0)
-        m_pixels.Init(tileSize*aspect, tileSize);
+        m_sizeNPC.Init(1.0/aspect, 1.0);
     else
-        m_pixels.Init(tileSize, tileSize/aspect);
-
-    BeAssert(m_pixels.x>0);
-    BeAssert(m_pixels.y>0);
+        m_sizeNPC.Init(1.0, aspect);
 
     auto& def=view->GetViewDefinition();
 
@@ -420,15 +419,20 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
         }
 
     // max pixel size is half the length of the diagonal.
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
-    auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
-
+    auto range = attach->GetPlacement().CalculateRange();
     range.low.z = 0.0; // make sure we're exactly on the sheet.
     Transform location = Transform::From(range.low);
     location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
     SetLocation(location);
+
+    // set a clip volume around view, in tile (NPC) coorindates. 0.0 -> 1.0 on both axes
+    DPoint2d clipPts[5];
+    memset(clipPts, 0, sizeof(clipPts)); 
+    clipPts[1].x = clipPts[2].x = clipPts[2].y = clipPts[3].y = 1.0;
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
