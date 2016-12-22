@@ -139,7 +139,6 @@ protected:
     mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
-
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;

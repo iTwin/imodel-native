@@ -8,11 +8,11 @@
 #include "DgnPlatformInternal.h"
 #include <folly/BeFolly.h>
 #include <BeHttp/HttpClient.h>
+#include <numeric>
 
 USING_NAMESPACE_TILETREE
 
 #define TABLE_NAME_TileTree "TileTree2"   // Added 'ContentType' and 'Expires'.
-#define TILETREE_RERENDER_ROOT
 
 BEGIN_UNNAMED_NAMESPACE
 
@@ -625,7 +625,6 @@ void Tile::Draw(DrawArgsR args, int depth) const
         // this node is too coarse for current view, don't draw it and instead draw its children
         m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
 
-#if defined(TILETREE_RERENDER_ROOT)
         bool allChildrenReady = true;
         for (auto const& child : *children)
             {
@@ -643,16 +642,20 @@ void Tile::Draw(DrawArgsR args, int depth) const
 
             return;
             }
-#else
-        for (auto const& child : *children)
-            child->Draw(args, depth+1);
-
-        return;
-#endif
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
     _DrawGraphics(args, depth);
+
+    // This node is not ready to be drawn. If all of its children are, draw them in its place.
+    // ###TODO: This is a little awkward...the call to _DrawGraphics() above will have inserted a request to load this tile...these decisions should be centralized...
+    if (!IsReady() && nullptr != children)
+        {
+        bool allChildrenReady = std::accumulate(children->begin(), children->end(), true, [](bool init, TilePtr const& arg) { return init && arg->IsReady(); });
+        if (allChildrenReady)
+            for (auto const& child : *children)
+                child->Draw(args, depth+1);
+        }
 
     if (!_HasChildren()) // this is a leaf node - we're done
         {
@@ -668,13 +671,6 @@ void Tile::Draw(DrawArgsR args, int depth) const
         _UnloadChildren(args.m_purgeOlderThan);
         return;
         }
-
-#if !defined(TILETREE_RERENDER_ROOT)
-    // this node is too coarse (even though we already drew it) but has unloaded children. Put it into the list of "missing tiles" so we'll draw its children when they're loaded.
-    // NOTE: add all missing tiles, even if they're already queued.
-    if (!IsNotFound())
-        args.m_missing.Insert(depth, this); 
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
