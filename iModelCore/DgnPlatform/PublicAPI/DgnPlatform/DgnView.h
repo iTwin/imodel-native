@@ -642,7 +642,7 @@ public:
         double m_right;
         double m_bottom;
 
-        double LimitMargin(double val) {return (val<0.0) ? 0.0 :(val>.25) ? .25 : val;}
+        double LimitMargin(double val) {return (val<0.0) ? 0.0 : (val>.25) ? .25 : val;}
 
     public:
         MarginPercent(double left, double top, double right, double bottom) {Init(left, top, right, bottom);}
@@ -690,7 +690,6 @@ public:
     //! @param[in] timeout time, in seconds, to wait for thumbnails to generate.
     //! @return BE_SQLITE_OK if the thumbnail was successfully created and saved.
     DGNVIEW_EXPORT BeSQLite::DbResult RenderAndSaveThumbnail(Point2d size, Render::RenderMode const* modeOverride, double timeout) const;
-
 
     //! Create a thumbnail for this ViewDefinition.
     //! @param[out] image The thumbnail image.
