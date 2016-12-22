@@ -91,7 +91,7 @@ protected:
         Http::Credentials m_credentials;
         Http::Credentials m_proxyCredentials;
 
-        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::CancellationTokenPtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
+        WmsTileLoader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileLoader(url, tile, loads, tile._GetTileName()) {}
         virtual ~WmsTileLoader() {}
 
         folly::Future<BentleyStatus> _GetFromSource() override;
@@ -100,7 +100,7 @@ protected:
         WmsTile& GetWmsTile() { return static_cast<WmsTile&>(*m_tile); }
         };
 
-    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::CancellationTokenPtr) override;
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
 
     root_type const& GetSource() const { return static_cast<root_type const&>(m_root); }
     root_type& GetSourceR() { return static_cast<root_type&>(m_root); }

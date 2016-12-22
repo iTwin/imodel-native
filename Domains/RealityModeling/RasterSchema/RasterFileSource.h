@@ -49,7 +49,7 @@ public:
 
         BentleyStatus DoGetFromSource();
 
-        RasterTileLoader(TileTree::TileR tile, TileTree::CancellationTokenPtr loads, Utf8StringCR cacheKey) : TileTree::TileLoader("", tile, loads, cacheKey) {}
+        RasterTileLoader(TileTree::TileR tile, TileTree::TileLoadStatePtr loads, Utf8StringCR cacheKey) : TileTree::TileLoader("", tile, loads, cacheKey) {}
             
         virtual ~RasterTileLoader(){}
         
@@ -67,7 +67,7 @@ public:
 
     TileTree::Tile::ChildTiles const* _GetChildren(bool load) const override;
 
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::CancellationTokenPtr loads) override { return new RasterTileLoader(*this, loads, ""); }
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override { return new RasterTileLoader(*this, loads, ""); }
 };
 
 END_BENTLEY_RASTER_NAMESPACE
