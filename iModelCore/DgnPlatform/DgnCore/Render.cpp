@@ -144,17 +144,17 @@ bool Render::Queue::HasPending(Task::Operation op) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool Render::Queue::HasActiveOrPending(Task::Operation op) const
+bool Render::Queue::HasActiveOrPending(Task::Operation op, Target* target) const
     {
     DgnDb::VerifyClientThread();
 
     BeMutexHolder holder(m_cv.GetMutex());
-    if (m_currTask.IsValid() && m_currTask->GetOperation()==op)
+    if (m_currTask.IsValid() && m_currTask->GetOperation()==op && (nullptr == target || m_currTask->GetTarget()==target))
         return true;
 
     for (auto entry : m_tasks)
         {
-        if (entry->GetOperation() == op)
+        if (entry->GetOperation() == op && (nullptr == target || entry->GetTarget()==target))
             return true;
         }
 

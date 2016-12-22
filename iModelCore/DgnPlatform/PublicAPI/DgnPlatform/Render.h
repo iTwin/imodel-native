@@ -264,6 +264,7 @@ private:
     void Process();
     THREAD_MAIN_DECL Main(void*);
 
+    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op, Target* target) const;
 public:
     //! Add a Render::Task to the render queue. The Task will replace any existing pending entries in the Queue
     //! for the same Render::Target for which task._CanReplace(existing) returns true.
@@ -287,7 +288,9 @@ public:
     DGNPLATFORM_EXPORT bool IsIdle() const;
 
     DGNPLATFORM_EXPORT bool HasPending(Task::Operation op) const;
-    DGNPLATFORM_EXPORT bool HasActiveOrPending(Task::Operation op) const;
+    bool HasActiveOrPending(Task::Operation op) const { return HasActiveOrPending(op, nullptr); }
+
+    bool HasActiveOrPending(Task::Operation op, Target& target) const { return HasActiveOrPending(op, &target); }
 };
 
 //=======================================================================================
