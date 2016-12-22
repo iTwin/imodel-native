@@ -447,6 +447,102 @@ BentleyStatus BRepUtil::GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, ISubEntityCR face, bool includeVertex, bool smoothOnly)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    PK_EDGE_t   faceTag;
+
+    if (0 == (faceTag = PSolidSubEntity::GetSubEntityTag(face)))
+        return ERROR;
+
+    int         nFaces = 0;
+    PK_FACE_t*  facesP = nullptr;
+    PK_FACE_ask_faces_adjacent_o_t options;
+
+    PK_FACE_ask_faces_adjacent_o_m(options);
+    options.include_vertex_connected = includeVertex;
+
+    if (SUCCESS != PK_FACE_ask_faces_adjacent(1, &faceTag, &options, &nFaces, &facesP) || 0 == nFaces)
+        return ERROR;
+
+    Transform   entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
+
+    for (int iFace=0; iFace < nFaces; iFace++)
+        {
+        bool faceIsValid = true;
+
+        if (smoothOnly)
+            {
+            int         nEdges = 0;
+            PK_EDGE_t*  edgesP = nullptr;
+
+            if (SUCCESS != PK_FACE_find_edges_common(faceTag, facesP[iFace], &nEdges, &edgesP))
+                continue;
+
+            bvector<PK_EDGE_t> edges;
+
+            if (0 == nEdges)
+                {
+                if (!includeVertex)
+                    continue; // Can't be vertex adjacent if we didn't ask for those faces...
+
+                bvector<PK_VERTEX_t> vertices;
+
+                if (SUCCESS != PSolidTopo::GetFaceVertices(vertices, faceTag))
+                    continue;
+
+                bvector<PK_VERTEX_t> adjacentVertices;
+
+                if (SUCCESS != PSolidTopo::GetFaceVertices(adjacentVertices, facesP[iFace]))
+                    continue;
+
+                for (PK_VERTEX_t vertexTag : adjacentVertices)
+                    {
+                    if (vertices.end() == std::find(vertices.begin(), vertices.end(), vertexTag))
+                        continue;
+
+                    PSolidTopo::GetVertexEdges(edges, vertexTag);
+                    break;
+                    }
+
+                if (0 == edges.size())
+                    continue;
+                }
+            else
+                {
+                edges.resize(nEdges);
+
+                for (int iEdge=0; iEdge < nEdges; iEdge++)
+                    edges[iEdge] = edgesP[iEdge];
+
+                PK_MEMORY_free(edgesP);
+                }
+
+            for (PK_EDGE_t edgeTag : edges)
+                {
+                if (PSolidUtil::IsSmoothEdge(edgeTag))
+                    continue;
+
+                faceIsValid = false;
+                break;
+                }
+            }
+
+        if (faceIsValid)
+            adjacentFaces.push_back(PSolidSubEntity::CreateSubEntity(facesP[iFace], entityTransform));
+        }
+
+    PK_MEMORY_free(facesP);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::GetFaceParameterRange(ISubEntityCR subEntity, DRange1dR uRange, DRange1dR vRange)
@@ -2765,6 +2861,8 @@ BentleyStatus BRepUtil::Modify::OffsetFaces(IBRepEntityR targetEntity, bvector<I
     PK_FACE_offset_o_t options;
 
     PK_FACE_offset_o_m(options);
+    options.grow = PK_FACE_grow_auto_c;
+    options.allow_disjoint = PK_LOGICAL_true;
 
     switch (addStep)
         {
@@ -2851,6 +2949,7 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
     PK_FACE_transform_o_t options;
 
     PK_FACE_transform_o_m(options);
+    options.grow = PK_FACE_grow_auto_c;
 
     switch (addStep)
         {

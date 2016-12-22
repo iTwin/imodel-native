@@ -214,7 +214,7 @@ TEST_F(ViewAttachmentTest, CRUD)
     auto& db = GetDgnDb();
 
     Placement2d placement = MakePlacement();
-
+    DPoint2d p2d = DPoint2d::From(0, 9);
     // Test some invalid CreateParams
     // Invalid view id
     {
@@ -232,7 +232,7 @@ TEST_F(ViewAttachmentTest, CRUD)
     EXPECT_INVALID(attachment.Insert());
     }
 
-    // Create a valid attachment 
+    // Create a valid attachment with placment2d as an argument
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);
     auto cpAttach = GetDgnDb().Elements().Insert(attachment);
     ASSERT_TRUE(cpAttach.IsValid());
@@ -249,6 +249,26 @@ TEST_F(ViewAttachmentTest, CRUD)
 
     // Deleting the attachment definition deletes attachments which reference it
     DgnElementId attachId = cpAttach->GetElementId();
+    EXPECT_TRUE(db.Elements().GetElement(attachId).IsValid());
+
+    // Create a valid attachment with DPoint2d as an argument
+    Sheet::ViewAttachment attachment2(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, p2d,2.0);
+    auto cpAttach2 = GetDgnDb().Elements().Insert(attachment2);
+    ASSERT_TRUE(cpAttach2.IsValid());
+
+    // Confirm data as expected
+    EXPECT_EQ(m_viewId, cpAttach2->GetAttachedViewId());
+    EXPECT_TRUE(p2d.IsEqual(cpAttach2->GetPlacement().GetOrigin()));
+
+    // Modify
+    p2d.y = 5;
+    placement.GetOriginR() = p2d;
+    attachment2.SetPlacement(placement);
+    cpAttach2 = GetDgnDb().Elements().Update(attachment2);
+    EXPECT_TRUE(p2d.IsEqual(cpAttach2->GetPlacement().GetOrigin()));
+
+    // Deleting the attachment definition deletes attachments which reference it
+    attachId = cpAttach2->GetElementId();
     EXPECT_TRUE(db.Elements().GetElement(attachId).IsValid());
 
 #ifdef WIP_ATTACHMENTS // *** NavigationProperty currently prevents me from doing this

@@ -478,10 +478,10 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
 
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(*m_db, 
-        "SELECT TestUniqueAspect.Element.Id,TestUniqueAspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle,DgnPlatformTest.TestUniqueAspect"
+        "SELECT aspect.Element.Id,aspect.TestUniqueAspectProperty FROM " BIS_SCHEMA(BIS_CLASS_SpatialIndex) " rt,DgnPlatformTest.Obstacle obstacle,DgnPlatformTest.DgnSqlTestUniqueAspect aspect"
             " WHERE rt.ECInstanceId MATCH DGN_spatial_overlap_aabb(:bbox)"
-            " AND Obstacle.ECInstanceId=rt.ECInstanceId"
-            " AND TestUniqueAspect.Element.Id=rt.ECInstanceId AND TestUniqueAspect.TestUniqueAspectProperty = :propertyValue"
+            " AND obstacle.ECInstanceId=rt.ECInstanceId"
+            " AND aspect.Element.Id=rt.ECInstanceId AND aspect.TestUniqueAspectProperty = :propertyValue"
         ));
 
     //  Make sure that the range tree index is used (first) and that other tables are indexed (after)
@@ -511,7 +511,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "\r\nTranslated SQL: " << sql;
@@ -539,7 +539,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
@@ -554,7 +554,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeOtherKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
@@ -569,7 +569,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "no kind of obstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
 
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -597,7 +597,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         ASSERT_EQ(BE_SQLITE_ROW, stmt.Step() );
 
@@ -629,7 +629,7 @@ TEST_F(SqlFunctionsTest, spatialQueryECSql)
         stmt.Reset();
         stmt.ClearBindings();
         AxisAlignedBox3d r1aabb = robot1->GetPlacement().CalculateRange();      // bind to new range
-        stmt.BindBinary(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
+        stmt.BindBlob(stmt.GetParameterIndex("bbox"), &r1aabb, sizeof(r1aabb), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         stmt.BindText(stmt.GetParameterIndex("propertyValue"), "SomeKindOfObstacle", BeSQLite::EC::IECSqlBinder::MakeCopy::No);
         while (BE_SQLITE_ROW == stmt.Step())
             {
