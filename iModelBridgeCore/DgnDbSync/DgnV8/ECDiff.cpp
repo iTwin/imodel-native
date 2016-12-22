@@ -1164,19 +1164,18 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraintClasses (ECDiffNodeR par
         if (ecRelationshipConstraint == NULL)
             continue;
 
-        for (const auto constraintClassItor : ecRelationshipConstraint->GetConstraintClasses())
+        for (ECClassCP baseClass : ecRelationshipConstraint->GetConstraintClasses())
             {
-            ECClassCR baseClass = constraintClassItor->GetClass();
-            if (constraintClassMap.find (baseClass.GetFullName())== constraintClassMap.end())
-                constraintClassOrderedList.push_back (baseClass.GetFullName());
-            AlignedClasses& baseClasses = constraintClassMap [baseClass.GetFullName()];
+            if (constraintClassMap.find (baseClass->GetFullName())== constraintClassMap.end())
+                constraintClassOrderedList.push_back (baseClass->GetFullName());
+            AlignedClasses& baseClasses = constraintClassMap [baseClass->GetFullName()];
             size_t nNullEntriesRequired = i - baseClasses.size();
             if (nNullEntriesRequired > 0)
                 do
                     {
                     baseClasses.push_back (NULL);
                     } while (--nNullEntriesRequired);
-                baseClasses.push_back (&baseClass);
+                baseClasses.push_back (baseClass);
             }
         }
     for (bvector<Utf8CP>::iterator itor = constraintClassOrderedList.begin(); itor != constraintClassOrderedList.end(); ++itor)
@@ -1230,8 +1229,8 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
         {
         ECDiffNodeP constraintClasses = diff->Add (DiffNodeId::ConstraintClasses);
         int index = 0;
-        for (const auto itor : relationshipConstraint.GetConstraintClasses())
-            constraintClasses->AddWithIndex (index++, DiffNodeId::ConstraintClass)->GetValue(direction).SetValue (itor->GetClass().GetFullName());
+        for (ECClassCP constraintClass : relationshipConstraint.GetConstraintClasses())
+            constraintClasses->AddWithIndex (index++, DiffNodeId::ConstraintClass)->GetValue(direction).SetValue (constraintClass->GetFullName());
         }
     return diff;
     }
@@ -2206,10 +2205,10 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
             mergedConstraint.SetMultiplicity(defaultContraint->GetMultiplicity());
 
     if ((v = GetMergeValue (diff, DiffNodeId::RoleLabel)) != NULL)
-        mergedConstraint.SetRoleLabel (v->GetValueString()); 
+        mergedConstraint.SetRoleLabel (v->GetValueString().c_str()); 
     else
         if (defaultContraint)
-            mergedConstraint.SetRoleLabel (defaultContraint->GetRoleLabel());
+            mergedConstraint.SetRoleLabel (defaultContraint->GetRoleLabel().c_str());
 
     if ((v = GetMergeValue (diff, DiffNodeId::IsPolymorphic)) != NULL)
         mergedConstraint.SetIsPolymorphic (v->GetValueBool()); 
@@ -2218,7 +2217,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
             mergedConstraint.SetIsPolymorphic (defaultContraint->GetIsPolymorphic());
 
     if ((v = GetMergeValue(diff, DiffNodeId::AbstractConstraint)) != NULL)
-        mergedConstraint.SetAbstractConstraint(v->GetValueString());
+        mergedConstraint.SetAbstractConstraint(v->GetValueString().c_str());
     else
         if (defaultContraint)
             {
@@ -2230,7 +2229,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
     set<Utf8String> constraintClasses;
     if (defaultContraint)
         for(const auto constraintClass: defaultContraint->GetConstraintClasses())
-        constraintClasses.insert(constraintClass->GetClass().GetFullName());
+            constraintClasses.insert(constraintClass->GetFullName());
 
     ECDiffNodeP constraintClassDiffNode = diff.ImplGetChildById (DiffNodeId::ConstraintClasses);
     if (constraintClassDiffNode)
@@ -2812,7 +2811,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
     MergeStatus status;
     mergedRelationshipClassConstraint.SetMultiplicity (defaultRelationshipClassConstraint.GetMultiplicity());
     mergedRelationshipClassConstraint.SetIsPolymorphic (defaultRelationshipClassConstraint.GetIsPolymorphic());
-    mergedRelationshipClassConstraint.SetRoleLabel (defaultRelationshipClassConstraint.GetRoleLabel());
+    mergedRelationshipClassConstraint.SetRoleLabel (defaultRelationshipClassConstraint.GetRoleLabel().c_str());
     status = AppendCustomAttributesToMerge (mergedRelationshipClassConstraint, defaultRelationshipClassConstraint);
     if (status != MergeStatus::Success)
         return status;
@@ -2831,7 +2830,7 @@ MergeStatus ECSchemaMergeTool::AppendRelationshipConstraintToMerge(ECRelationshi
 
     for(auto constraintClass: defaultRelationshipClassConstraint.GetConstraintClasses())
         {
-        ECClassCP resolvedClass = ResolveClass (constraintClass->GetClass().GetFullName());
+        ECClassCP resolvedClass = ResolveClass (constraintClass->GetFullName());
         BeAssert (resolvedClass != NULL);
         if (resolvedClass == NULL)
             return MergeStatus::ErrorClassNotFound;
