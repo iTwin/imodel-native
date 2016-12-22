@@ -7,13 +7,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Cache\RepositorySchemaUpgradeTests.cpp" />
+    <ClCompile Include="Cache\ArgumentParser.cpp" />
+    <ClCompile Include="Cache\ArgumentParserTests.cpp" />
+    <ClCompile Include="Cache\RepositoryCompatibilityTests.cpp" />
+    <ClCompile Include="Cache\TestData.cpp" />
     <ClCompile Include="TestUtils\TestMain.cpp" />
     <ClCompile Include="TestUtils\TestsHelper.cpp" />
     <ClCompile Include="TestUtils\TestsHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Cache\RepositorySchemaUpgradeTests.h" />
+    <ClInclude Include="Cache\ArgumentParser.h" />
+    <ClInclude Include="Cache\RepositoryCompatibilityTests.h" />
+    <ClInclude Include="Cache\TestData.h" />
     <ClInclude Include="TestUtils\TestsHelper.h" />
     <ClInclude Include="TestUtils\TestsHost.h" />
   </ItemGroup>
@@ -44,7 +49,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeOutput>$(OutRoot)Winx64\build\WSClientCompatibilityTests\WSClientCompatibilityTests.exe</NMakeOutput>
-    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32;DEBUG</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests re  WSClientCompatibilityTests WebServices*</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests re  WSClientCompatibilityTests WebServices* -c</NMakeCleanCommandLine>

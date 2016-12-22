@@ -23,22 +23,26 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 std::shared_ptr<TestAppPathProvider> s_pathProvider;
 
-TestsHost::TestsHost(const char* programPath)
+TestsHost::TestsHost(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel)
     {
-    m_programDir = BeFileName(BeFileName::DevAndDir, BeFileName(programPath));
-    m_programDir.BeGetFullPathName();
+    m_programDir = programPath.GetDirectoryName();
 
-    m_outputDir = m_programDir;
-    m_outputDir.AppendToPath(L"TestsOutput").AppendSeparator();
+    m_outputDir = workDir;
+    if (workDir.empty())
+        m_outputDir = m_programDir;
+
+    m_outputDir.AppendToPath(L"WSCTWorkDir").AppendSeparator();
 
     s_pathProvider = std::make_shared<TestAppPathProvider>(m_programDir, m_outputDir);
 
     SetupTestEnvironment();
+    InitLibraries();
+    InitLogging(logLevel);
     }
 
-RefCountedPtr<TestsHost> TestsHost::Create(const char* programPath)
+RefCountedPtr<TestsHost> TestsHost::Create(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel)
     {
-    return new TestsHost(programPath);
+    return new TestsHost(programPath, workDir, logLevel);
     }
 
 void TestsHost::SetupTestEnvironment()
@@ -49,9 +53,6 @@ void TestsHost::SetupTestEnvironment()
     BeFileName tempDir = s_pathProvider->GetTemporaryDirectory();
     BeFileName::EmptyAndRemoveDirectory(tempDir);
     BeFileName::CreateNewDirectory(tempDir);
-
-    InitLibraries();
-    InitLogging();
     }
 
 void TestsHost::InitLibraries()
@@ -65,7 +66,7 @@ void TestsHost::InitLibraries()
     MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
     }
 
-void TestsHost::InitLogging()
+void TestsHost::InitLogging(int logLevel)
     {
     if (NativeLogging::LoggingConfig::IsProviderActive())
         NativeLogging::LoggingConfig::DeactivateProvider();
@@ -79,6 +80,9 @@ void TestsHost::InitLogging()
         return;
         }
 
+    if (logLevel == 0)
+        return;
+
     NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
     NativeLogging::LoggingConfig::SetMaxMessageSize(100000);
 
@@ -91,7 +95,7 @@ void TestsHost::InitLogging()
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, Bentley::NativeLogging::LOG_INFO);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_THREADING, Bentley::NativeLogging::LOG_WARNING);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_INFO);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
     }
 

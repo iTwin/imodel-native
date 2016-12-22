@@ -10,9 +10,6 @@
 
 #include <WebServices/Client/ClientInfo.h>
 
-#include <prg.h>
-static Utf8CP BUILD_VERSION = REL_V "." MAJ_V "." MIN_V "." SUBMIN_V;
-
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 ClientInfoPtr StubValidClientInfo();
