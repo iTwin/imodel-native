@@ -328,7 +328,8 @@ void DgnDbBriefcase::SubscribeForRevisionEvents()
             m_lastPullMergeAndPushEvent = eventType;
             }
         });
-    SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
+    auto subscribeResult = SubscribeEventsCallback(&eventTypes, m_pullMergeAndPushCallback);
+    m_eventsAvailable = subscribeResult->GetResult().IsSuccess();
     }
 
 //---------------------------------------------------------------------------------------
@@ -385,9 +386,17 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushRepeated(Utf8CP 
     if (attempt == 1)
         {
         SubscribeForRevisionEvents();
+        srand(time(0) / GetBriefcaseId().GetValue());
         }
 
-    WaitForRevisionEvent();
+    if (m_eventsAvailable)
+        WaitForRevisionEvent();
+    else
+        {
+        int sleepTime = rand() % 5000;
+        BeThreadUtilities::BeSleep(sleepTime);
+        }
+
     m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
     return PullMergeAndPushRepeated(description, relinquishCodesLocks, downloadCallback, uploadCallback, cancellationToken, attemptsCount, attempt + 1, 0);
     }
@@ -444,12 +453,11 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPushInternal(Utf8CP 
             }
         
         // This sleep waits for events from other clients who just started a push
-        srand(time(0) / GetBriefcaseId().GetValue());
         int sleepTime = rand() % 200;
         DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, sleepTime, "Sleeping.");
         BeThreadUtilities::BeSleep(sleepTime);
 
-        if (DgnDbServerEvent::DgnDbServerEventType::UnknownEventType != m_lastPullMergeAndPushEvent)
+        if (m_eventsAvailable && DgnDbServerEvent::DgnDbServerEventType::UnknownEventType != m_lastPullMergeAndPushEvent)
             {
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Other user pushed. Waiting again.");
             finalResult->SetError(DgnDbServerError::Id::PullIsRequired);

@@ -35,6 +35,7 @@ private:
      
     DgnDbServerEventCallbackPtr            m_pullMergeAndPushCallback;
     DgnDbServerEvent::DgnDbServerEventType m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
+    bool                                   m_eventsAvailable;
 
     DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
 
