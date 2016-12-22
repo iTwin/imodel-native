@@ -90,7 +90,7 @@ Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECEnumeratorCR e
     {
     Utf8String enumeratorName;
     if (ecEnumerator.IsInteger())
-        enumeratorName.Sprintf("%d", ecEnumerator.GetInteger());
+        enumeratorName.Sprintf("%" PRId32, ecEnumerator.GetInteger());
     else
         enumeratorName = ecEnumerator.GetString();
 

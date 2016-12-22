@@ -4240,7 +4240,7 @@ Utf8String ScopedDataAccessor::DumpData (uint8_t breakAt) const
     Utf8String str;
     uint32_t size = m_buffer->_GetBytesAllocated();
     Byte const* data = m_buffer->_GetData();
-    str.Sprintf ("%u bytes\n", size);
+    str.Sprintf ("%" PRIu32 " bytes\n", size);
     static const char hexits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
     for (uint32_t i = 0; i < size; i++)
         {

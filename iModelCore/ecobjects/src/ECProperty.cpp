@@ -383,7 +383,7 @@ ECObjectsStatus ECProperty::SetIsReadOnly (Utf8CP isReadOnly)
     bool bReadOnly;
     ECObjectsStatus status = ECXml::ParseBooleanString (bReadOnly, isReadOnly);
     if (ECObjectsStatus::Success != status)
-        LOG.errorv (L"Failed to parse the isReadOnly string '%ls' for ECProperty '%ls'.", isReadOnly, this->GetName().c_str());
+        LOG.errorv (L"Failed to parse the isReadOnly string '%s' for ECProperty '%s'.", isReadOnly, this->GetName().c_str());
     else
         SetIsReadOnly (bReadOnly);
         

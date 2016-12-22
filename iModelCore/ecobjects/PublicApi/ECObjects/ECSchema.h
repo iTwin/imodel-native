@@ -2455,7 +2455,7 @@ private:
     ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
     ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
-    ECRelationshipConstraint::ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
         : m_constraintClasses(relationshipClass), m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
             m_isPolymorphic(true), m_abstractConstraint(nullptr) {}
 

@@ -1157,7 +1157,7 @@ StatusInt     JsonEcInstanceWriter::WriteInstanceToJson(Json::Value& valueToPopu
     Utf8String  fullSchemaName;
 
     valueToPopulate[ECINSTANCE_CLASS_ATTRIBUTE] = className.c_str();
-    fullSchemaName.Sprintf("%s.%02d.%02d", ecSchema.GetName().c_str(), ecSchema.GetVersionRead(), ecSchema.GetVersionMinor());
+    fullSchemaName.Sprintf("%s.%02" PRIu32 ".%02" PRIu32, ecSchema.GetName().c_str(), ecSchema.GetVersionRead(), ecSchema.GetVersionMinor());
     valueToPopulate[ECINSTANCE_SCHEMA_ATTRIBUTE] = fullSchemaName.c_str();
 
     if (writeInstanceId)

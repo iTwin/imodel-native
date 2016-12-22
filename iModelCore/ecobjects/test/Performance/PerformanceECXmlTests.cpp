@@ -45,15 +45,15 @@ struct PerformanceTestsECXml : PerformanceTestFixture
 
         bmap<Utf8String, double> results;
         Utf8String deserializingString;
-        deserializingString.Sprintf ("De-serializing schema: %s (%d references)", schema->GetFullSchemaName ().c_str (), references.size ());
+        deserializingString.Sprintf ("De-serializing schema: %s (%" PRIx64 " references)", schema->GetFullSchemaName ().c_str (), (uint64_t)references.size ());
         results[deserializingString] = deserializationTimer.GetElapsedSeconds ();
 
         Utf8String serializingString;
-        serializingString.Sprintf ("Serializing schema: %s (%d bytes)", schema->GetFullSchemaName ().c_str (), stringLength);
+        serializingString.Sprintf ("Serializing schema: %s (%" PRIx64 " bytes)", schema->GetFullSchemaName ().c_str (), (uint64_t) stringLength);
         results[serializingString] = serializationTimer.GetElapsedSeconds ();
 
-        PERFORMANCELOG.infov ("%s, De-serializing schema: %s (%d references), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), references.size (), deserializationTimer.GetElapsedSeconds ());
-        PERFORMANCELOG.infov ("%s, Serializing schema: %s (%d bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), stringLength, serializationTimer.GetElapsedSeconds ());
+        PERFORMANCELOG.infov ("%s, De-serializing schema: %s (%" PRIx64 " references), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), (uint64_t) references.size (), deserializationTimer.GetElapsedSeconds ());
+        PERFORMANCELOG.infov ("%s, Serializing schema: %s (%" PRIx64 " bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), (uint64_t) stringLength, serializationTimer.GetElapsedSeconds ());
 
         LOGTODB(testcaseName, testName, deserializationTimer.GetElapsedSeconds(), Utf8PrintfString("De-serializing sheme: %s", schema->GetFullSchemaName().c_str()));
         LOGTODB(testcaseName, testName, serializationTimer.GetElapsedSeconds(), Utf8PrintfString("Serializing sheme: %s", schema->GetFullSchemaName().c_str()));
@@ -92,7 +92,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         size_t stringLength = ecInstanceXml.length ();
 
         PERFORMANCELOG.infov ("%s, Reading instance from class: %s:%s, %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), readingTimer.GetElapsedSeconds ());
-        PERFORMANCELOG.infov ("%s, Writing instance from class: %s:%s (%d bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), stringLength, writingTimer.GetElapsedSeconds ());
+        PERFORMANCELOG.infov ("%s, Writing instance from class: %s:%s (%" PRIx64 " bytes), %.4f\n", dateTime.c_str (), schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), (uint64_t) stringLength, writingTimer.GetElapsedSeconds ());
 
         LOGTODB(testcaseName, testName, readingTimer.GetElapsedSeconds(), Utf8PrintfString("Reading instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()));
         LOGTODB(testcaseName, testName, writingTimer.GetElapsedSeconds(), Utf8PrintfString("Writing instance from class: %s:%s", schema->GetFullSchemaName().c_str(), testInstance->GetClass().GetName().c_str()));
@@ -103,7 +103,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
         results[readingString] = readingTimer.GetElapsedSeconds ();
 
         Utf8String writingString;
-        writingString.Sprintf ("Writing instance from class: %s:%s (%d bytes)", schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), stringLength);
+        writingString.Sprintf ("Writing instance from class: %s:%s (%" PRIx64 " bytes)", schema->GetFullSchemaName ().c_str (), testInstance->GetClass ().GetName ().c_str (), (uint64_t) stringLength);
         results[writingString] = writingTimer.GetElapsedSeconds ();
 
         LogResultsToFile (results);

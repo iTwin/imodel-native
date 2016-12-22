@@ -1898,18 +1898,18 @@ ECSchemaReadContextCR schemaContext
         }
     else if (matchType == SchemaMatchType::LatestWriteCompatible)
         {
-        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionRead);
-        threeVersionSuffix.Sprintf(".%02d.%02d.*.ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionWrite);
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead);
+        threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionWrite);
         }
     else if (matchType == SchemaMatchType::LatestReadCompatible)
         {
-        twoVersionSuffix.Sprintf(".%02d.*.ecschema.xml", desiredSchemaKey.m_versionRead);
-        threeVersionSuffix.Sprintf(".%02d.*.*.ecschema.xml", desiredSchemaKey.m_versionRead);
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".*.ecschema.xml", desiredSchemaKey.m_versionRead);
+        threeVersionSuffix.Sprintf(".%02" PRIu32 ".*.*.ecschema.xml", desiredSchemaKey.m_versionRead);
         }
     else //MatchType_Exact
         {
-        twoVersionSuffix.Sprintf(".%02d.%02d.ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionMinor);
-        threeVersionSuffix.Sprintf(".%02d.%02d.%02d.ecschema.xml",
+        twoVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml", desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionMinor);
+        threeVersionSuffix.Sprintf(".%02" PRIu32 ".%02" PRIu32 ".%02" PRIu32 ".ecschema.xml",
                                    desiredSchemaKey.m_versionRead, desiredSchemaKey.m_versionWrite, desiredSchemaKey.m_versionMinor);
         }
 
@@ -2198,7 +2198,7 @@ SchemaReadStatus ECSchema::ReadFromXmlFile (ECSchemaPtr& schemaOut, WCharCP ecSc
         {
         //We have serialized a schema and its valid. Add its checksum
         timer.Stop();
-        LOG.infov (L"Read (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(), schemaOut->m_classMap.size(), ecSchemaXmlFile);
+        LOG.infov (L"Read (in %.4f seconds) [%3" PRIx64 " ECClasses] %ls", timer.GetElapsedSeconds(), (uint64_t) schemaOut->m_classMap.size(), ecSchemaXmlFile);
         }
 
     return status;
@@ -2253,8 +2253,8 @@ ECSchemaReadContextR schemaContext
     else
         {
         timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(),
-            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
+        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
+            (uint64_t) schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
         }
 
     return status;
@@ -2307,8 +2307,8 @@ ECSchemaReadContextR schemaContext
     else
         {
         timer.Stop();
-        LOG.infov (L"Read from string (in %.4f seconds) [%3d ECClasses] %ls", timer.GetElapsedSeconds(),
-            schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
+        LOG.infov (L"Read from string (in %.4f seconds) [%3" PRIx64 " ECClasses] %s", timer.GetElapsedSeconds(),
+            (uint64_t) schemaOut->m_classMap.size(), schemaOut->GetFullSchemaName().c_str());
         }
 
     return status;
@@ -3029,7 +3029,7 @@ Utf8String SchemaKey::FormatFullSchemaName(Utf8CP schemaName, uint32_t versionRe
 Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionRead, uint32_t versionWrite, uint32_t versionMinor)
     {
     Utf8String versionString;
-    versionString.Sprintf("%02d.%02d.%02d", versionRead, versionWrite, versionMinor);
+    versionString.Sprintf("%02" PRIu32 ".%02" PRIu32 ".%02" PRIu32, versionRead, versionWrite, versionMinor);
     return versionString;
     }
 
@@ -3039,7 +3039,7 @@ Utf8String SchemaKey::FormatSchemaVersion (uint32_t versionRead, uint32_t versio
 Utf8String SchemaKey::FormatLegacySchemaVersion (uint32_t versionRead, uint32_t versionMinor)
     {
     Utf8String versionString;
-    versionString.Sprintf("%02d.%02d", versionRead, versionMinor);
+    versionString.Sprintf("%02" PRIu32 ".%02" PRIu32, versionRead, versionMinor);
     return versionString;
     }
 

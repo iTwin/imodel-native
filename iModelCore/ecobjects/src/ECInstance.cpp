@@ -3369,7 +3369,7 @@ struct NamedAttributeDeserializer : ICustomAttributeDeserializer
             ECClassCP structClass = schema->GetClassCP(existingStructClassName.c_str());
             if (!structClass)
                 {
-                LOG.errorv("Failed to inject customattribute class: \"%s\" to schema by copying struct class: \"%s\" which doesnot exist", m_newClassName.c_str(), existingStructClassName.c_str());
+                LOG.errorv("Failed to inject customattribute class: \"%s\" to schema by copying struct class: \"%s\" which does not exist", m_newClassName.c_str(), existingStructClassName.c_str());
                 BeAssert(false);
                 return false;
                 }

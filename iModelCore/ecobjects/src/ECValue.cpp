@@ -1599,16 +1599,16 @@ bool    ECValue::ConvertPrimitiveToString(Utf8StringR str) const
                 str = GetBoolean() ? "True" : "False";
                 break;
             case PRIMITIVETYPE_DateTime:
-                str.Sprintf("%lld", GetDateTimeTicks());
+                str.Sprintf("%" PRId64, GetDateTimeTicks());
                 break;
             case PRIMITIVETYPE_Double:
                 str.Sprintf("%.17g", GetDouble());
                 break;
             case PRIMITIVETYPE_Integer:
-                str.Sprintf("%d", GetInteger());
+                str.Sprintf("%" PRId32, GetInteger());
                 break;
             case PRIMITIVETYPE_Long:
-                str.Sprintf("%lld", GetLong());
+                str.Sprintf("%" PRId64, GetLong());
                 break;
             case PRIMITIVETYPE_Point2d:
             {
@@ -1674,10 +1674,10 @@ bool ECValue::ConvertPrimitiveToECExpressionLiteral(Utf8StringR expr) const
     switch (GetPrimitiveType())
         {
             case PRIMITIVETYPE_Boolean:     expr = GetBoolean() ? "True" : "False"; return true;
-            case PRIMITIVETYPE_DateTime:    expr.Sprintf("@%lld", GetDateTimeTicks()); return true;
+            case PRIMITIVETYPE_DateTime:    expr.Sprintf("@%" PRId64, GetDateTimeTicks()); return true;
             case PRIMITIVETYPE_Double:      expr = formatDouble(GetDouble()); return true;
-            case PRIMITIVETYPE_Integer:     expr.Sprintf("%d", GetInteger()); return true;
-            case PRIMITIVETYPE_Long:        expr.Sprintf("%lld", GetLong()); return true;
+            case PRIMITIVETYPE_Integer:     expr.Sprintf("%" PRId32, GetInteger()); return true;
+            case PRIMITIVETYPE_Long:        expr.Sprintf("%" PRId64, GetLong()); return true;
             case PRIMITIVETYPE_Point2d:     expr.Sprintf("{%s,%s}", formatDouble(GetPoint2d().x).c_str(), formatDouble(GetPoint2d().y).c_str()); return true;
             case PRIMITIVETYPE_Point3d:
             {
@@ -1815,7 +1815,7 @@ Utf8String    ECValue::ToString() const
     if (IsArray())
         {
         ArrayInfo arrayInfo = GetArrayInfo();
-        str.Sprintf("Count: %d IsFixedSize: %d", arrayInfo.GetCount(), arrayInfo.IsFixedCount());
+        str.Sprintf("Count: %" PRIu32 " IsFixedSize: %d", arrayInfo.GetCount(), arrayInfo.IsFixedCount());
         }
     else if (IsStruct())
         {

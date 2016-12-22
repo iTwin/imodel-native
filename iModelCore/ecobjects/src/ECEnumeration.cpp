@@ -288,7 +288,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
             
             if (this->CreateEnumerator(enumerator, intValue) != ECObjectsStatus::Success)
                 {
-                LOG.warningv("Failed to add value '%d' to ECEnumeration '%s'. Duplicate or invalid entry?", intValue, this->GetName().c_str());
+                LOG.warningv("Failed to add value '%" PRId32 "' to ECEnumeration '%s'. Duplicate or invalid entry?", intValue, this->GetName().c_str());
                 continue;
                 }
             }
@@ -461,7 +461,7 @@ Utf8StringCR ECEnumerator::GetInvariantDisplayLabel() const
         return m_displayLabel;
 
     if (IsInteger())
-        m_displayLabel.Sprintf("%d", m_intValue);
+        m_displayLabel.Sprintf("%" PRId32, m_intValue);
     else
         m_displayLabel = m_stringValue;
 

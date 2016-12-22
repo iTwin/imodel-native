@@ -166,7 +166,7 @@ IECInstancePtr CalculatedPropertyTests::CreateTestCase (Utf8CP propName, Utf8CP 
     // Create the schema
     static ECSchemaPtr schema;
     Utf8String schemaName;
-    schemaName.Sprintf ("TestSchema_%d", s_schemaNumber++);
+    schemaName.Sprintf ("TestSchema_%" PRId32, s_schemaNumber++);
     EXPECT_EQ (ECObjectsStatus::Success, ECSchema::CreateSchema (schema, schemaName, "testAlias", 1, 0, 0));
     EXPECT_EQ (ECObjectsStatus::Success, schema->AddReferencedSchema (*customAttrSchema, "besc"));
 
