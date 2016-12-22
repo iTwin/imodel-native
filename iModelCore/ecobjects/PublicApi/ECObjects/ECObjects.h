@@ -56,7 +56,6 @@ EC_TYPEDEFS(ECEntityClass);
 EC_TYPEDEFS(ECCustomAttributeClass);
 EC_TYPEDEFS(ECInterfaceClass);
 EC_TYPEDEFS(ECStructClass);
-EC_TYPEDEFS(ECRelationshipConstraintClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipMultiplicity);

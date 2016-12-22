@@ -1612,7 +1612,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 {
                 for (auto target : relClass->GetTarget().GetConstraintClasses())
                     {
-                    if ((ECSchemaP) &(target->GetClass().GetSchema()) == foundSchema.get())
+                    if ((ECSchemaP) &(target->GetSchema()) == foundSchema.get())
                         {
                         return ECObjectsStatus::SchemaInUse;
                         }
@@ -1636,7 +1636,7 @@ ECObjectsStatus ECSchema::RemoveReferencedSchema (ECSchemaR refSchema)
                 {
                 for (auto source : relClass->GetSource().GetConstraintClasses())
                     {
-                    if ((ECSchemaP) &(source->GetClass().GetSchema()) == foundSchema.get())
+                    if ((ECSchemaP) &(source->GetSchema()) == foundSchema.get())
                         {
                         return ECObjectsStatus::SchemaInUse;
                         }

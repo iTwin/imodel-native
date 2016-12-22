@@ -1278,114 +1278,6 @@ TEST_F(SchemaDeserializationTest, TestMultipleConstraintClasses)
     ASSERT_STREQ("Class2", relClass->GetTarget().GetClasses()[1]->GetName().c_str());
     }
 
-//---------------------------------------------------------------------------------
-// @bsimethod                                                    Paul.Connelly   11/12
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, TestRelationshipKeys)
-    {
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr ecSchema;
-    Utf8String schemaString("<?xml version='1.0' encoding='UTF-8'?>"
-                            "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-                            "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
-                            "      <ECProperty propertyName = 'Property' typeName = 'string' />"
-                            "  </ECClass>"
-                            "  <ECClass typeName = 'Class1' isDomainClass = 'True'>"
-                            "      <ECProperty propertyName = 'Property1' typeName = 'string' />"
-                            "      <ECProperty propertyName = 'Property2' typeName = 'string' />"
-                            "  </ECClass>"
-                            "  <ECRelationshipClass typeName = 'RelationshipClass' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'>"
-                            "      <Source cardinality = '(0, 1)' polymorphic = 'True'>"
-                            "          <Class class = 'Class'>"
-                            "              <Key>"
-                            "                  <Property name = 'Property' />"
-                            "              </Key>"
-                            "          </Class>"
-                            "      </Source>"
-                            "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
-                            "          <Class class = 'Class1'>"
-                            "              <Key>"
-                            "                  <Property name = 'Property1' />"
-                            "                  <Property name = 'Property2' />"
-                            "              </Key>"
-                            "          </Class>"
-                            "      </Target>"
-                            "  </ECRelationshipClass>"
-                            "</ECSchema>");
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaString.c_str(), *schemaContext));
-    ECRelationshipClassP relClass = ecSchema->GetClassP("RelationshipClass")->GetRelationshipClassP();
-    for (auto constrainClass : relClass->GetSource().GetConstraintClasses())
-        {
-        Utf8String key = constrainClass->GetKeys().at(0);
-        ASSERT_TRUE(key.Equals("Property"));
-        }
-
-    for (auto constrainClass : relClass->GetTarget().GetConstraintClasses())
-        {
-        auto keys = constrainClass->GetKeys();
-        ASSERT_EQ(2, keys.size());
-        ASSERT_TRUE(((Utf8String) keys[0]).Equals("Property1"));
-        ASSERT_TRUE(((Utf8String) keys[1]).Equals("Property2"));
-        }
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   06/15
-//---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaDeserializationTest, TestMultipleConstraintClassesWithKeyProperties)
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0' schemaName='ReferencedSchema' nameSpacePrefix='ref' version='01.00' description='Description' displayLabel='Display Label' xmlns:ec='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "  <ECClass typeName = 'Class' isDomainClass = 'True'>"
-        "      <ECProperty propertyName = 'Property' typeName = 'string' />"
-        "  </ECClass>"
-        "  <ECClass typeName = 'Class1' isDomainClass = 'True'>"
-        "      <ECProperty propertyName = 'Property1' typeName = 'string' />"
-        "      <ECProperty propertyName = 'Property2' typeName = 'string' />"
-        "  </ECClass>"
-        "  <ECClass typeName = 'Class2' isDomainClass = 'True'>"
-        "      <ECProperty propertyName = 'Property3' typeName = 'string' />"
-        "      <ECProperty propertyName = 'Property4' typeName = 'string' />"
-        "  </ECClass>"
-        "  <ECRelationshipClass typeName = 'ClassHasClass1Or2' isDomainClass = 'True' strength = 'referencing' strengthDirection = 'forward'>"
-        "      <Source cardinality = '(0, 1)' polymorphic = 'True'>"
-        "          <Class class = 'Class' />"
-        "      </Source>"
-        "      <Target cardinality = '(0, 1)' polymorphic = 'True'>"
-        "          <Class class = 'Class1'>"
-        "              <Key>"
-        "                  <Property name = 'Property1' />"
-        "                  <Property name = 'Property2' />"
-        "              </Key>"
-        "          </Class>"
-        "          <Class class = 'Class2' />"
-        "      </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    ECSchemaPtr ecSchema = nullptr;
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXml, *schemaContext));
-    ECRelationshipClassCP relClass = ecSchema->GetClassCP("ClassHasClass1Or2")->GetRelationshipClassCP();
-    ASSERT_TRUE(relClass != nullptr);
-    ASSERT_EQ(1, relClass->GetSource().GetConstraintClasses().size());
-    ASSERT_STREQ("Class", relClass->GetSource().GetClasses()[0]->GetName().c_str());
-
-    ASSERT_EQ(2, relClass->GetTarget().GetConstraintClasses().size());
-    ECRelationshipConstraintClassCP constraintClass1 = relClass->GetTarget().GetConstraintClasses()[0];
-    ASSERT_STREQ("Class1", constraintClass1->GetClass().GetName().c_str());
-
-    ASSERT_EQ(2, constraintClass1->GetKeys().size());
-    ASSERT_STREQ("Property1", constraintClass1->GetKeys()[0].c_str());
-    ASSERT_STREQ("Property2", constraintClass1->GetKeys()[1].c_str());
-
-    ECRelationshipConstraintClassCP constraintClass2 = relClass->GetTarget().GetConstraintClasses()[1];
-    ASSERT_STREQ("Class2", constraintClass2->GetClass().GetName().c_str());
-    ASSERT_EQ(0, constraintClass2->GetKeys().size());
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Basanta.Kharel   12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -2527,6 +2419,119 @@ TEST_F(SchemaDeserializationTest, TestFailureWhenRelationshipClassModifierNotFou
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
     ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the relationship class modifier attribute is empty.";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestFailureWithRelationshipKeys)
+    {
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A'/>"
+        "   <ECEntityClass typeName='B'/>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A'>"
+        "               <Key>"
+        "                   <Property name='Property' />"
+        "               </Key>"
+        "           </Class>"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the source constraint of the relationship class has a key property.";
+    }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "   <ECEntityClass typeName='A'/>"
+        "   <ECEntityClass typeName='B'/>"
+        "   <ECRelationshipClass typeName='ARelB' modifier='Sealed'>"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A'/>"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' >"
+        "               <Key>"
+        "                   <Property name='Property' />"
+        "               </Key>"
+        "           </Class>"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, status) << "The schema did not fail to deserialize even though the target constraint of the relationship class has a key property.";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationTest, TestSuccessWithRelationshipKeysFromEC2)
+    {
+    // This test is only to make sure de-serialization does not fail when 2.0/3.0 schemas have key properties.
+    // Even though they are allowed to have them they are dropped and there is no way to access
+    // them via the API
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "   <ECEntityClass typeName='A'/>"
+        "   <ECEntityClass typeName='B'/>"
+        "   <ECRelationshipClass typeName='ARelB' >"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A'>"
+        "               <Key>"
+        "                   <Property name='Property' />"
+        "               </Key>"
+        "           </Class>"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The 3.0 schema failed even though relationship classes can have key properties.";
+    }
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='A' isDomainClass='True' />"
+        "   <ECClass typeName='B' isDomainClass='True' />"
+        "   <ECRelationshipClass typeName='ARelB' isDomainClass='True' >"
+        "       <Source multiplicity='(1..1)' polymorphic='True' roleLabel='testSource'>"
+        "           <Class class='A'>"
+        "               <Key>"
+        "                   <Property name='Property' />"
+        "               </Key>"
+        "           </Class>"
+        "       </Source>"
+        "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='testTarget'>"
+        "           <Class class='B' />"
+        "       </Target>"
+        "   </ECRelationshipClass>"
+        "</ECSchema>";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The 2.0 schema failed even though relationship classes can have key properties.";
     }
     }
 

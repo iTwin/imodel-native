@@ -1099,10 +1099,10 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
         if (NULL != relClass)
             {
             for (auto source : relClass->GetSource().GetConstraintClasses())
-                WriteClass(source->GetClass());
+                WriteClass(*source);
 
             for (auto target : relClass->GetTarget().GetConstraintClasses())
-                WriteClass(target->GetClass());
+                WriteClass(*target);
             }
         }
 

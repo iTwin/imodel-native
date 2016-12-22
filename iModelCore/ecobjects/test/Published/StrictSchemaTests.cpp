@@ -469,13 +469,13 @@ TEST_F(RelationshipClassTests, RelationshipClassIsStruct)
 
     for (auto constraintClass : relClass->GetSource().GetConstraintClasses())
         {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass()) 
+        ASSERT_FALSE(constraintClass->IsStructClass()) 
                   << "RelationshipConstraint may not have StructClasses";
         }
 
     for (auto constraintClass : relClass->GetTarget().GetConstraintClasses())
         {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass())
+        ASSERT_FALSE(constraintClass->IsStructClass())
                   << "RelationshipConstraint may not have StructClasses";
         }
     }
@@ -522,13 +522,13 @@ TEST_F(RelationshipClassTests, RelationshipClassIsCustomAttribute)
 
     for (auto constraintClass : relClass->GetSource().GetConstraintClasses())
         {
-        ASSERT_FALSE(constraintClass->GetClass().IsCustomAttributeClass())
+        ASSERT_FALSE(constraintClass->IsCustomAttributeClass())
                   << "RelationshipConstraint may not have a CustomAttribute Class";
         }
 
     for (auto constraintClass : relClass->GetTarget().GetConstraintClasses())
         {
-        ASSERT_FALSE(constraintClass->GetClass().IsStructClass())
+        ASSERT_FALSE(constraintClass->IsStructClass())
                   << "RelationshipConstraint may not have a CustomAttribute Class";
         }
     }
@@ -693,256 +693,6 @@ TEST_F(RelationshipClassTests, CyclicRelationships)
 
     ASSERT_NE(ECObjectsStatus::Success, relClass2->SetStrength(StrengthType::Holding))
            << "Cyclic Holding relationship encountered";
-    }
-
-struct RelationshipConstraintTests : ECTestFixture
-    {
-    ECSchemaPtr m_schema;
-
-    //---------------------------------------------------------------------------------------//
-    // Stores the format of the test schema xml as a string
-    // @bsimethod                             Prasanna.Prakash                       01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------//
-    static Utf8CP   TestSchemaXMLString()
-        {
-        Utf8CP format= "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-            "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
-            "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-            "    </ECClass>"
-            "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
-            "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-            "        <ECProperty propertyName=\"Property2\" typeName=\"int\" isStruct=\"True\" />"
-            "    </ECClass>"
-            "    <ECRelationshipClass typeName=\"Relationship\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-            "        <Source roleLabel=\"contains\" polymorphic=\"False\">"
-            "            <Class class=\"SourceClass\">"
-            "                <Key>"
-            "                    <Property name = \"Property1\" />"
-            "                </Key>"
-            "            </Class>"        
-            "        </Source>"
-            "        <Target cardinality=\"(1,N)\" roleLabel=\"is contained by\" >"
-            "            <Class class=\"TargetClass\">"
-            "                <Key>"
-            "                    <Property name = \"Property1\" />"
-            "                </Key>"
-            "            </Class>"
-            "        </Target>"
-            "    </ECRelationshipClass>"
-            "</ECSchema>";
-
-        return format;
-        }
-
-    //---------------------------------------------------------------------------------------//
-    // Creates the test schema using the TestSchemaXml string
-    // @bsimethod                             Prasanna.Prakash                       01/2016
-    //+---------------+---------------+---------------+---------------+---------------+------//
-    void CreateTestSchema()
-        {
-        ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
-
-        ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(m_schema, TestSchemaXMLString(), *schemaContext))
-               << "Failed to read the test schema from xml string";
-        ASSERT_TRUE(m_schema.IsValid()) << "Test Schema is not valid";
-        }
-    };
-
-//---------------------------------------------------------------------------------------//
-// Test to check that Struct property can’t be a key property in a relationship class
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipConstraintTests, StructKeyPropertiesNotSupported)
-    {
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" isStruct=\"True\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"Relationship\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-        "        <Source cardinality=\"(0,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property1\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Source>"
-        "        <Target cardinality=\"(1,N)\" roleLabel=\"is contained by\" polymorphic=\"True\" >"
-        "            <Class class=\"TargetClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property1\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_NE(SchemaReadStatus::Success, status) 
-           << "Schema cannot have struct property as a key property in a relationship class";
-
-    CreateTestSchema();
-
-    ECRelationshipClassP relClass = m_schema->GetClassP("Relationship")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass) << "Cannot find 'Relationship' in test schema";
-
-    ECClassCP sourceTestClass = m_schema->GetClassCP(relClass->GetSource().GetConstraintClasses()[0]->GetClass().GetName().c_str());
-    ASSERT_FALSE(sourceTestClass->GetPropertyP(relClass->GetSource().GetConstraintClasses()[0]->GetKeys()[0])->GetIsStruct())
-              << "Struct Property cannot be a key property in a Relationship Class";
-
-    ECClassCP targetTestClass = m_schema->GetClassCP(relClass->GetTarget().GetConstraintClasses()[0]->GetClass().GetName().c_str());
-    ASSERT_FALSE(targetTestClass->GetPropertyP(relClass->GetTarget().GetConstraintClasses()[0]->GetKeys()[0])->GetIsStruct())
-              << "Struct Property cannot be a key property in a Relationship Class";
-
-    ECRelationshipConstraintClassList *constraintClasses = nullptr;
-    ECEntityClassP entity = m_schema->GetClassP("TargetClass")->GetEntityClassP();
-    ECRelationshipConstraintClassP constraint;
-    constraintClasses->Add(constraint, *entity);
-    constraint->AddKey("Property2");
-
-    ASSERT_TRUE(constraint->GetKeys()[0].Equals("Property2")) << "Key not added to the constraint";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that Property OR property.path must exist to be added as key property
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipConstraintTests, KeyPropertiesPathDefined)
-    {
-    CreateTestSchema();
-
-    ECRelationshipClassP relClass = m_schema->GetClassP("Relationship")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass);
-
-    ECClassCP sourceTestClass = m_schema->GetClassCP(relClass->GetSource().GetConstraintClasses()[0]->GetClass().GetName().c_str());
-    ASSERT_NE(nullptr, sourceTestClass->GetPropertyP(relClass->GetSource().GetConstraintClasses()[0]->GetKeys()[0]));
-
-    ECClassCP targetTestClass = m_schema->GetClassCP(relClass->GetTarget().GetConstraintClasses()[0]->GetClass().GetName().c_str());
-    ASSERT_NE(nullptr, targetTestClass->GetPropertyP(relClass->GetTarget().GetConstraintClasses()[0]->GetKeys()[0]));
-
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"Relationship\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-        "        <Source cardinality=\"(0,1)\" roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property1\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Source>"
-        "        <Target cardinality=\"(1,N)\" roleLabel=\"is contained by\" polymorphic=\"True\" >"
-        "            <Class class=\"TargetClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property2\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_NE(SchemaReadStatus::Success, status);
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that Multiple key properties are not supported
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipConstraintTests, MultipleKeyPropertiesNotSupported)
-    {
-    CreateTestSchema();
-
-    ECRelationshipClassP relClass = m_schema->GetClassP("Relationship")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass) << "Cannot find 'Relationship' in thest schema";
-    
-    ASSERT_TRUE(relClass->GetSource().GetConstraintClasses()[0]->GetKeys().size() < 1)
-           << "Multiple key properties are not supported";
-
-    ASSERT_TRUE(relClass->GetTarget().GetConstraintClasses()[0]->GetKeys().size() < 1)
-           << "Multiple key properties are not supported";
-    
-    Utf8CP schemaXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-        "<ECSchema schemaName=\"TestStrictSchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-        "    <ECClass typeName=\"SourceClass\" displayLabel=\"Source Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "    </ECClass>"
-        "    <ECClass typeName=\"TargetClass\" displayLabel=\"Target Class\" isDomainClass=\"True\">"
-        "        <ECProperty propertyName=\"Property1\" typeName=\"int\" />"
-        "        <ECProperty propertyName=\"Property2\" typeName=\"int\" isStruct=\"True\" />"
-        "    </ECClass>"
-        "    <ECRelationshipClass typeName=\"Relationship\" displayLabel=\"Source contains Target\" strength=\"referencing\">"
-        "        <Source roleLabel=\"contains\" polymorphic=\"False\">"
-        "            <Class class=\"SourceClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property1\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Source>"
-        "        <Target cardinality=\"(1,N)\" roleLabel=\"is contained by\" >"
-        "            <Class class=\"TargetClass\">"
-        "                <Key>"
-        "                    <Property name = \"Property1\" />"
-        "                    <Property name = \"Property2\" />"
-        "                </Key>"
-        "            </Class>"
-        "        </Target>"
-        "    </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *context);
-    ASSERT_NE(SchemaReadStatus::Success, status) << "Schema cannot have multiple key properties for a RelationshipClass";
-    }
-
-//---------------------------------------------------------------------------------------//
-// Test to check that If constraint has key property, multiple classes should not be 
-// in constraint
-// @bsimethod                             Prasanna.Prakash                       01/2016
-//+---------------+---------------+---------------+---------------+---------------+------//
-TEST_F(RelationshipConstraintTests, MultipleConstraintClassesWithKeyPropertyNotSupported)
-    {
-    CreateTestSchema();
-
-    ECRelationshipClassP relClass = m_schema->GetClassP("Relationship")->GetRelationshipClassP();
-    ASSERT_NE(nullptr, relClass) << "Cannot find 'Relationship' in the test schema";
-
-    ASSERT_NE(0, relClass->GetSource().GetConstraintClasses()[0]->GetKeys().size())
-           << "There are no primary keys in RelationshipClass";
-    ASSERT_EQ(1, relClass->GetSource().GetConstraintClasses().size())
-           << "If constraint has key property, multiple classes should not be in constraint";
-
-    ASSERT_NE(0, relClass->GetTarget().GetConstraintClasses()[0]->GetKeys().size())
-           << "There are no primary keys in RelationshipClass";
-    ASSERT_EQ(1, relClass->GetTarget().GetConstraintClasses().size())
-           << "If constraint has key property, multiple classes should not be in constraint";
-
-    ECRelationshipConstraintClassP constraintClass;
-    ECEntityClassP regularClass;
-    ASSERT_EQ(ECObjectsStatus::Success, m_schema->CreateEntityClass(regularClass, "RegularClass"))
-           << "Cannot create a DomainClass in the test schema";
-
-    ASSERT_NE(ECObjectsStatus::Success, relClass->GetSource().GetConstraintClassesR().Add(constraintClass, *regularClass))
-           << "If constraint has key property, multiple classes should not be in constraint";
-    ASSERT_NE(ECObjectsStatus::Success, relClass->GetTarget().GetConstraintClassesR().Add(constraintClass, *regularClass))
-           << "If constraint has key property, multiple classes should not be in constraint";
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
