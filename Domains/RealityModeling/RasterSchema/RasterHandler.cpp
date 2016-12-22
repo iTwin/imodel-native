@@ -517,7 +517,7 @@ void RasterModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& stmt, ForInsert
     if(clipData.empty())
         stmt.BindNull(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip));
     else
-        stmt.BindBinary(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        stmt.BindBlob(stmt.GetParameterIndex(RASTER_MODEL_PROP_Clip), clipData.data(), (int) clipData.size(), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
     }
 
 //----------------------------------------------------------------------------------------
@@ -533,7 +533,7 @@ DgnDbStatus RasterModel::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stateme
     BeAssert(params.GetSelectIndex(RASTER_MODEL_PROP_Clip) != -1);
 
     int blobSize = 0;
-    void const* pBlob = statement.GetValueBinary(params.GetSelectIndex(RASTER_MODEL_PROP_Clip), &blobSize);
+    void const* pBlob = statement.GetValueBlob(params.GetSelectIndex(RASTER_MODEL_PROP_Clip), &blobSize);
 
     m_clips.FromBlob(pBlob, blobSize, GetDgnDb());
 
