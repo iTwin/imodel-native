@@ -189,9 +189,10 @@ namespace Attachment
         DEFINE_T_SUPER(TileTree::QuadTree::Root)
         DgnElementId m_attachmentId;
         RefCountedPtr<Dgn::TileViewport> m_viewport;
+        DPoint2d m_sizeNPC; // size of the root tile, in NPC space
+        uint32_t m_pixels;
         bool m_sceneQueued = false;
         bool m_sceneReady = false;
-        Point2d m_pixels;
 
         void Draw(RenderContextR context);
         void Load(Render::SystemP renderSys);

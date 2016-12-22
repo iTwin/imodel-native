@@ -559,6 +559,7 @@ struct TileViewport : DgnViewport
     virtual void _QueueScene() = 0;
     virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}
+    void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetTileRect(rect);}
     TileViewport();
 };
