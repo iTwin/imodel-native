@@ -398,8 +398,7 @@ void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
 
     if (!args.m_missing.empty())
         {
-        TileTree::TileLoadStatePtr loads = std::make_shared<TileTree::TileLoadState>();
-        args.RequestMissingTiles(*m_root, loads);
+        args.RequestMissingTiles(*m_root);
         }
     }
 

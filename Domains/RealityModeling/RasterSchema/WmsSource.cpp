@@ -489,7 +489,7 @@ BentleyStatus WmsTile::WmsTileLoader::_LoadTile()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::TileLoadStatePtr loads)
+TileTree::TileLoaderPtr WmsTile::_CreateTileLoader(TileTree::CancellationTokenPtr loads)
     {
     auto status = GetSource().GetLastHttpError();
     if (Http::HttpStatus::Unauthorized == status || Http::HttpStatus::ProxyAuthenticationRequired == status)

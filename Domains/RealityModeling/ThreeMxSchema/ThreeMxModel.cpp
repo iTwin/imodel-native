@@ -207,10 +207,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     args.DrawGraphics(context);
 
     if (!args.m_missing.empty())
-        {
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*m_scene, loads);
-        }
+        args.RequestMissingTiles(*m_scene);
     }
 
 /*---------------------------------------------------------------------------------**//**
