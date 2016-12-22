@@ -179,7 +179,6 @@ private:
 
     std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
-    static bool HasKeyProperties(ECN::ECRelationshipConstraint const&);
 
     bool RequiresLinkTable() const { return m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0; }
 

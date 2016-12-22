@@ -68,9 +68,9 @@ DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColu
 //static
 bool RelationshipClassMap::ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const& constraintClasses)
     {
-    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+    for (ECClassCP constraintClass : constraintClasses)
         {
-        if (IsAnyClass(constraintClass->GetClass()))
+        if (IsAnyClass(*constraintClass))
             return true;
         }
 
@@ -99,9 +99,9 @@ void RelationshipClassMap::DetermineConstraintClassIdColumnHandling(bool& addCon
     if (!addConstraintClassIdColumnNeeded)
         {
         BeAssert(constraintClasses.size() == 1);
-        ECRelationshipConstraintClassCP constraintClass = constraintClasses[0];
-        BeAssert(constraintClass->GetClass().HasId());
-        defaultConstraintClassId = constraintClass->GetClass().GetId();
+        ECClassCP constraintClass = constraintClasses[0];
+        BeAssert(constraintClass->HasId());
+        defaultConstraintClassId = constraintClass->GetId();
         }
     else
         defaultConstraintClassId = ECClassId();
@@ -559,10 +559,10 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
 
     //needed to determine NOT NULL of FK and RelClassId cols
     bset<ECClassId> foreignEndConstraintClassIds;
-    for (ECRelationshipConstraintClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
+    for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
         {
-        BeAssert(constraintClass->GetClass().HasId());
-        foreignEndConstraintClassIds.insert(constraintClass->GetClass().GetId());
+        BeAssert(constraintClass->HasId());
+        foreignEndConstraintClassIds.insert(constraintClass->GetId());
         }
 
     for (DbTable const* foreignEndTable : foreignEndTables)
@@ -1037,9 +1037,9 @@ BentleyStatus RelationshipClassEndTableMap::TryGetForeignKeyColumnInfoFromNaviga
 
     const ECRelatedInstanceDirection expectedDirection = constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? ECRelatedInstanceDirection::Forward : ECRelatedInstanceDirection::Backward;
     NavigationECPropertyCP singleNavProperty = nullptr;
-    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+    for (ECClassCP constraintClass : constraintClasses)
         {
-        for (ECPropertyCP prop : constraintClass->GetClass().GetProperties())
+        for (ECPropertyCP prop : constraintClass->GetProperties())
             {
             NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
             if (navProp != nullptr && navProp->GetRelationshipClass() == &relClass && navProp->GetDirection() == expectedDirection)

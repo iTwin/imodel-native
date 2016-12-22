@@ -462,13 +462,14 @@ void ECDbRelationshipsIntegrityTests::AddRelationShipClass(Multiplicity SourceCl
     //Set Relstionship Source Class and Cardinality
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().AddClass(*GetEntityClass(sourceClass)));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetIsPolymorphic(true));
-    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetRoleLabel(testRelationshipClass->GetName()));
+    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetRoleLabel(testRelationshipClass->GetName().c_str()));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetSource().SetMultiplicity(GetClassMultiplicity(SourceClassMultiplicity)));
 
     //Set Relstionship Target Class and Cardinality
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().AddClass(*GetEntityClass(targetClass)));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetIsPolymorphic(true));
-    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetRoleLabel(testRelationshipClass->GetName() + " (Reversed)"));
+    Utf8String reversedRoleLabel = testRelationshipClass->GetName() + " (Reversed)";
+    EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetRoleLabel(reversedRoleLabel.c_str()));
     EXPECT_EQ(ECObjectsStatus::Success, testRelationshipClass->GetTarget().SetMultiplicity(GetClassMultiplicity(targetClassMultiplicity)));
     }
 

@@ -1261,8 +1261,7 @@ BentleyStatus ECDbSchemaReader::LoadECRelationshipConstraintClassesFromDb(ECRela
             return ERROR;
             }
 
-        ECRelationshipConstraintClassP constraintClassObj = nullptr;
-        if (ECObjectsStatus::Success != constraint.AddConstraintClass(constraintClassObj, *constraintAsEntity))
+        if (ECObjectsStatus::Success != constraint.AddClass(*constraintAsEntity))
             return ERROR;
         }
 

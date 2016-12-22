@@ -301,25 +301,18 @@ bool ValidRelationshipRule::ValidateConstraint(ECN::ECRelationshipClassCR relCla
         }
 
     bool valid = true;
-    for (ECRelationshipConstraintClassCP constraintClass : constraintClasses)
+    for (ECClassCP constraintClass : constraintClasses)
         {
-        ECClassCR constraintECClass = constraintClass->GetClass();
-        if (ClassMap::IsAnyClass(constraintECClass))
+        if (ClassMap::IsAnyClass(*constraintClass))
             {
             m_error->AddInconsistency(relClass, Error::Kind::HasAnyClassConstraint);
             valid = false;
             }
 
-        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetClass().GetRelationshipClassCP();
+        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
         if (relClassAsConstraint != nullptr)
             {
             m_error->AddInconsistency(relClass, Error::Kind::HasRelationshipClassAsConstraint, relClassAsConstraint);
-            valid = false;
-            }
-
-        if (!constraintClass->GetKeys().empty())
-            {
-            m_error->AddInconsistency(relClass, Error::Kind::HasKeyProperties);
             valid = false;
             }
         }
@@ -379,9 +372,6 @@ Utf8String ValidRelationshipRule::Error::_ToString() const
 
         if (Enum::Contains(kind, Kind::HasIncompleteConstraintDefinition))
             str.append(" The relationship class is not abstract and therefore constraints must be defined.");
-
-        if (Enum::Contains(kind, Kind::HasKeyProperties))
-            str.append(" At least one constraint defines Key properties. Key properties are not supported in EC3 ECSchemas.");
 
         isFirstItem = false;
         }

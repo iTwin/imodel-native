@@ -735,13 +735,6 @@ BentleyStatus RelationshipMappingInfo::EvaluateLinkTableStrategy(ClassMappingCAC
         return ERROR;
         }
 
-    if (HasKeyProperties(relClass->GetSource()) || HasKeyProperties(relClass->GetTarget()))
-        {
-        Issues().Report(ECDbIssueSeverity::Error, "The ECRelationshipClass '%s' is mapped to a link table. One of its constraints has Key properties which is only supported for foreign key type relationships.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
     if (baseClassMap != nullptr)
         {
         BeAssert(m_linkTableMappingInfo == nullptr);
@@ -933,21 +926,6 @@ void RelationshipMappingInfo::DetermineCardinality()
         m_cardinality = Cardinality::ManyToOne;
     else
         m_cardinality = Cardinality::OneToOne;
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                10/2015
-//+---------------+---------------+---------------+---------------+---------------+-
-//static
-bool RelationshipMappingInfo::HasKeyProperties(ECN::ECRelationshipConstraint const& constraint)
-    {
-    for (ECRelationshipConstraintClassCP constraintClass : constraint.GetConstraintClasses())
-        {
-        if (!constraintClass->GetKeys().empty())
-            return true;
-        }
-
-    return false;
     }
 
 //---------------------------------------------------------------------------------------

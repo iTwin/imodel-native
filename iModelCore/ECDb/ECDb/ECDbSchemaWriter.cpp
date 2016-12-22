@@ -429,18 +429,17 @@ BentleyStatus ECDbSchemaWriter::ImportECRelationshipConstraint(ECClassId relClas
     if (stmt == nullptr)
         return ERROR;
 
-    for (ECRelationshipConstraintClassCP constraintClassObj : relationshipConstraint.GetConstraintClasses())
+    for (ECClassCP constraintClass : relationshipConstraint.GetConstraintClasses())
         {
-        ECClassCR constraintClass = constraintClassObj->GetClass();
-        if (SUCCESS != ImportECClass(constraintClass))
+        if (SUCCESS != ImportECClass(*constraintClass))
             return ERROR;
 
-        BeAssert(constraintClass.GetId().IsValid());
+        BeAssert(constraintClass->GetId().IsValid());
 
         if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
             return ERROR;
 
-        if (BE_SQLITE_OK != stmt->BindId(2, constraintClass.GetId()))
+        if (BE_SQLITE_OK != stmt->BindId(2, constraintClass->GetId()))
             return ERROR;
 
         if (BE_SQLITE_DONE != stmt->Step())

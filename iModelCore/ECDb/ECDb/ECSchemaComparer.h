@@ -1204,7 +1204,6 @@ private :
     BentleyStatus CompareECBaseClasses(BaseClassChanges&, ECN::ECBaseClassesList const&, ECN::ECBaseClassesList const&);
     BentleyStatus CompareECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ECN::ECRelationshipClassCR);
     BentleyStatus CompareECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR, ECN::ECRelationshipConstraintCR);
-    BentleyStatus CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange&, ECN::ECRelationshipConstraintClassCR, ECN::ECRelationshipConstraintClassCR);
     BentleyStatus CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const&, ECN::ECRelationshipConstraintClassList const&);
     BentleyStatus CompareECProperty(ECPropertyChange&, ECN::ECPropertyCR, ECN::ECPropertyCR);
     BentleyStatus CompareECProperties(ECPropertyChanges&, ECN::ECPropertyIterableCR, ECN::ECPropertyIterableCR);
@@ -1222,7 +1221,7 @@ private :
     BentleyStatus AppendECRelationshipClass(ECRelationshipChange&, ECN::ECRelationshipClassCR, ValueId appendType);
     BentleyStatus AppendECRelationshipConstraint(ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR v, ValueId appendType);
     BentleyStatus AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges&, ECN::ECRelationshipConstraintClassList const& v, ValueId appendType);
-    BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange&, ECN::ECRelationshipConstraintClassCR v, ValueId appendType);
+    BentleyStatus AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange&, ECN::ECClassCR v, ValueId appendType);
     BentleyStatus AppendECEnumeration(ECEnumerationChanges&, ECN::ECEnumerationCR, ValueId appendType);
     BentleyStatus AppendECProperty(ECPropertyChanges&, ECN::ECPropertyCR, ValueId appendType);
     BentleyStatus AppendCustomAttributes(ECInstanceChanges& changes, ECN::IECCustomAttributeContainerCR, ValueId appendType);

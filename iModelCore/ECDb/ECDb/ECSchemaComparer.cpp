@@ -379,55 +379,14 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraint(ECRelationshipCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClassKeys(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR a, ECRelationshipConstraintClassCR b)
-    {
-    std::set<Utf8CP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (Utf8StringCR keyProperty : a.GetKeys())
-        aMap.insert(keyProperty.c_str());
-
-    for (Utf8StringCR keyProperty : b.GetKeys())
-        bMap.insert(keyProperty.c_str());
-
-    cMap.insert(aMap.cbegin(), aMap.cend());
-    cMap.insert(bMap.cbegin(), bMap.cend());
-
-    for (Utf8CP u : cMap)
-        {
-        auto itorA = aMap.find(u);
-        auto itorB = bMap.find(u);
-
-        bool existInA = itorA != aMap.end();
-        bool existInB = itorB != bMap.end();
-        if (existInA && existInB)
-            {
-            //Same
-            }
-        else if (existInA && !existInB)
-            {
-            if (change.KeyProperties().Add(ChangeState::Deleted).SetValue(ValueId::Deleted, u) == ERROR)
-                return ERROR;
-            }
-        else if (!existInA && existInB)
-            {
-            if (change.KeyProperties().Add(ChangeState::New).SetValue(ValueId::New, u) == ERROR)
-                return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan  03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& change, ECRelationshipConstraintClassList const& a, ECRelationshipConstraintClassList const& b)
     {
-    std::map<Utf8CP, ECRelationshipConstraintClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
-    for (ECRelationshipConstraintClassCP constraintClassCP : a)
-        aMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
+    std::map<Utf8CP, ECClassCP, CompareIUtf8Ascii> aMap, bMap, cMap;
+    for (ECClassCP constraintClassCP : a)
+        aMap[constraintClassCP->GetFullName()] = constraintClassCP;
 
-    for (ECRelationshipConstraintClassCP constraintClassCP : b)
-        bMap[constraintClassCP->GetClass().GetFullName()] = constraintClassCP;
+    for (ECClassCP constraintClassCP : b)
+        bMap[constraintClassCP->GetFullName()] = constraintClassCP;
 
     cMap.insert(aMap.cbegin(), aMap.cend());
     cMap.insert(bMap.cbegin(), bMap.cend());
@@ -441,9 +400,7 @@ BentleyStatus ECSchemaComparer::CompareECRelationshipConstraintClasses(ECRelatio
         bool existInB = itorB != bMap.end();
         if (existInA && existInB)
             {
-            auto& constraintClass = change.Add(ChangeState::Modified);
-            if (CompareECRelationshipConstraintClassKeys(constraintClass, *itorA->second, *itorB->second) == ERROR)
-                return ERROR;
+            change.Add(ChangeState::Modified);
             }
         else if (existInA && !existInB)
             {
@@ -1253,7 +1210,7 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraint(ECRelationshipCon
 BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelationshipConstraintClassChanges& changes, ECRelationshipConstraintClassList const& v, ValueId appendType)
     {
     ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    for (ECRelationshipConstraintClassCP constraintClass : v)
+    for (ECClassCP constraintClass : v)
         {
         ECRelationshipConstraintClassChange & constraintClassChange = changes.Add(state);
         if (AppendECRelationshipConstraintClass(constraintClassChange, *constraintClass, appendType) == ERROR)
@@ -1265,15 +1222,9 @@ BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClasses(ECRelation
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECRelationshipConstraintClassCR v, ValueId appendType)
+BentleyStatus ECSchemaComparer::AppendECRelationshipConstraintClass(ECRelationshipConstraintClassChange& change, ECClassCR v, ValueId appendType)
     {
-    ChangeState state = appendType == ValueId::New ? ChangeState::New : ChangeState::Deleted;
-    change.GetClassName().SetValue(appendType, v.GetClass().GetFullName());
-    for (Utf8StringCR relationshipKeyProperty : v.GetKeys())
-        {
-        if (!relationshipKeyProperty.empty())
-            change.KeyProperties().Add(state).SetValue(appendType, relationshipKeyProperty);
-        }
+    change.GetClassName().SetValue(appendType, v.GetFullName());
     return SUCCESS;
     }
 

@@ -169,7 +169,6 @@ struct ValidRelationshipRule : ECSchemaValidationRule
                 HasAnyClassConstraint = 2,
                 HasRelationshipClassAsConstraint = 4,
                 HasIncompleteConstraintDefinition = 8,
-                HasKeyProperties = 16,
                 HasAdditionalProperties = 32
                 };
 

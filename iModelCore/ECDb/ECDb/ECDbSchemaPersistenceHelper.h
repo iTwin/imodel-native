@@ -63,8 +63,6 @@ public:
     static bool TryGetECSchemaKey(ECN::SchemaKey&, ECDbCR, Utf8CP schemaName);
     static bool TryGetECSchemaKeyAndId(ECN::SchemaKey&, ECN::ECSchemaId&, ECDbCR, Utf8CP schemaName);
 
-    static BentleyStatus SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames);
-    static BentleyStatus DeserializeRelationshipKeyProperties(ECN::ECRelationshipConstraintClassR, Utf8CP jsonStr);
     static BentleyStatus SerializeECEnumerationValues(Utf8StringR jsonStr, ECN::ECEnumerationCR);
     static BentleyStatus DeserializeECEnumerationValues(ECN::ECEnumerationR, Utf8CP jsonStr);
 

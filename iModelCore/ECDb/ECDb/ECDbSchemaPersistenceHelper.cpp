@@ -218,56 +218,6 @@ ECPropertyId ECDbSchemaPersistenceHelper::GetECPropertyId(ECDbCR db, Utf8CP sche
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  01/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::SerializeRelationshipKeyProperties(Utf8StringR jsonStr, bvector<Utf8String> const& keyPropNames)
-    {
-    if (keyPropNames.empty())
-        return SUCCESS;
-
-    rapidjson::Document keyPropJson;
-    auto& allocator = keyPropJson.GetAllocator();
-    keyPropJson.SetArray();
-    keyPropJson.Reserve((rapidjson::SizeType) keyPropNames.size(), allocator);
-
-    for (Utf8StringCR keyPropertyName : keyPropNames)
-        {
-        keyPropJson.PushBack(rapidjson::StringRef(keyPropertyName.c_str()), allocator);
-        }
-
-    rapidjson::StringBuffer buf;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buf);
-    keyPropJson.Accept(writer);
-
-    jsonStr.assign(buf.GetString());
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2016
-//---------------------------------------------------------------------------------------
-BentleyStatus ECDbSchemaPersistenceHelper::DeserializeRelationshipKeyProperties(ECRelationshipConstraintClassR constraintClass, Utf8CP jsonStr)
-    {
-    rapidjson::Document d;
-    if (d.Parse<0>(jsonStr).HasParseError())
-        {
-        BeAssert(false && "Could not parse KeyProperty JSON string.");
-        return ERROR;
-        }
-
-    BeAssert(d.IsArray());
-    const rapidjson::SizeType count = d.Size();
-    for (rapidjson::SizeType i = 0; i < count; i++)
-        {
-        BeAssert(d[i].IsString());
-        constraintClass.AddKey(d[i].GetString());
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  01/2016
-//---------------------------------------------------------------------------------------
 BentleyStatus ECDbSchemaPersistenceHelper::SerializeECEnumerationValues(Utf8StringR jsonStr, ECEnumerationCR ecEnum)
     {
     Json::Value enumValuesJson(Json::arrayValue);

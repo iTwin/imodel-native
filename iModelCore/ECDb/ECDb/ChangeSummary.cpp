@@ -1489,7 +1489,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassIdFromRelClass(ECN::ECRelationship
         return ECClassId();
         }
 
-    ECClassId classId = endClasses[0]->GetClass().GetId();
+    ECClassId classId = endClasses[0]->GetId();
     BeAssert(classId.IsValid());
     return classId;
     }
