@@ -337,6 +337,7 @@
     <Part Name="IntegrationTests-Published" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi" OnlyPlatforms="x64">
         <SubPart PartName="BeHttp" />
         <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
 
 </BuildContext>
