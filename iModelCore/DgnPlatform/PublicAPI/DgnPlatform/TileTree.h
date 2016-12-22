@@ -84,7 +84,7 @@ DEFINE_REF_COUNTED_PTR(Root)
 DEFINE_REF_COUNTED_PTR(TileLoader)
 
 typedef std::chrono::steady_clock::time_point TimePoint;
-typedef std::shared_ptr<struct TileLoadState> TileLoadStatePtr;
+typedef std::shared_ptr<struct CancellationToken> CancellationTokenPtr;
 
 //=======================================================================================
 //! A ByteStream with a "current position". Used for reading tiles
@@ -103,18 +103,13 @@ struct StreamBuffer : ByteStream
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   09/16
 //=======================================================================================
-struct TileLoadState : Tasks::ICancellationToken, NonCopyableClass
+struct CancellationToken : Tasks::ICancellationToken, NonCopyableClass
 {
     BeAtomic<bool> m_canceled;
-    BeAtomic<int> m_requested;
-    BeAtomic<int> m_fromHttp;
-    BeAtomic<int> m_fromFile;
-    BeAtomic<int> m_fromDb;
-    DGNPLATFORM_EXPORT ~TileLoadState();
+    DGNPLATFORM_EXPORT ~CancellationToken();
     bool IsCanceled() override {return m_canceled.load();}
     void SetCanceled() {m_canceled.store(true);}
     void Register(std::weak_ptr<Tasks::ICancellationListener> listener) override {}
-    void Reset() {m_fromDb.store(0); m_fromHttp.store(0); m_fromFile.store(0);}
 };
 
 //=======================================================================================
@@ -181,7 +176,7 @@ public:
     virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
 
     //! Called when tile data is required.
-    virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
+    virtual TileLoaderPtr _CreateTileLoader(CancellationTokenPtr) = 0;
 
     //! Get the name of this Tile.
     virtual Utf8String _GetTileName() const = 0;
@@ -200,9 +195,14 @@ struct Root : RefCountedBase, NonCopyableClass
     friend struct DrawArgs;
 
 protected:
+    struct CompareTilePtrs
+    {
+        bool operator()(TilePtr const& lhs, TilePtr const& rhs) const { return lhs.get() < rhs.get(); }
+    };
+
     bool m_isHttp = false;
     bool m_pickable = false;
-    int m_activeLoads = 0;
+    bset<TilePtr, CompareTilePtrs> m_activeLoads;
     DgnDbR m_db;
     BeFileName m_localCacheName;
     Transform m_location;
@@ -220,12 +220,12 @@ protected:
     DGNPLATFORM_EXPORT void ClearAllTiles(); 
 
 public:
-    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, CancellationTokenPtr loads);
 
     ~Root() {BeAssert(!m_rootTile.IsValid());} // NOTE: Subclasses MUST call ClearAllTiles in their destructor!
-    void StartTileLoad() {BeMutexHolder holder(m_cv.GetMutex()); ++m_activeLoads;}
-    void DoneTileLoad() {{BeMutexHolder holder(m_cv.GetMutex()); --m_activeLoads; BeAssert(m_activeLoads>=0);} m_cv.notify_all();}
-    void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads>0) m_cv.InfiniteWait(holder);}
+    void StartTileLoad(TileR);
+    void DoneTileLoad(TileR);
+    void WaitForAllLoads() {BeMutexHolder holder(m_cv.GetMutex()); while (m_activeLoads.size()>0) m_cv.InfiniteWait(holder);}
     bool IsHttp() const {return m_isHttp;}
     bool IsPickable() const {return m_pickable;}
     void SetPickable(bool pickable) {m_pickable = pickable;}
@@ -295,7 +295,7 @@ struct TileLoader : RefCountedBase, NonCopyableClass
 protected:
     Utf8String m_fileName;      // full file or URL name
     TilePtr m_tile;             // tile to load, cannot be null.
-    TileLoadStatePtr m_loads;
+    CancellationTokenPtr m_loads;
 
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
@@ -309,7 +309,7 @@ protected:
     //! @param[in] tile The tile that we are loading.
     //! @param[in] loads The cancellation token.
     //! @param[in] cacheKey The tile unique name use for caching. Might be empty if caching is not required.
-    TileLoader(Utf8StringCR fileName, TileR tile, TileLoadStatePtr& loads, Utf8StringCR cacheKey)
+    TileLoader(Utf8StringCR fileName, TileR tile, CancellationTokenPtr& loads, Utf8StringCR cacheKey)
         : m_fileName(fileName), m_tile(&tile), m_loads(loads), m_cacheKey(cacheKey), m_expirationDate(0) {}
 
     BentleyStatus LoadTile();
@@ -330,9 +330,9 @@ public:
 
     struct LoadFlag
         {
-        Root& m_root;
-        LoadFlag(Root& root) : m_root(root) {root.StartTileLoad();}
-        ~LoadFlag() {m_root.DoneTileLoad();}
+        TileR m_tile;
+        LoadFlag(TileR tile) : m_tile(tile) {tile.GetRootR().StartTileLoad(tile);}
+        ~LoadFlag() {m_tile.GetRootR().DoneTileLoad(m_tile);}
         };
 
     //! Perform the load asynchronously.
@@ -346,9 +346,9 @@ struct HttpDataQuery
 {
     Http::HttpByteStreamBodyPtr m_responseBody;
     Http::Request m_request;
-    TileLoadStatePtr m_loads;
+    CancellationTokenPtr m_loads;
 
-    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads);
+    DGNPLATFORM_EXPORT HttpDataQuery(Utf8StringCR url, CancellationTokenPtr loads);
 
     Http::Request& GetRequest() {return m_request;}
 
@@ -368,9 +368,9 @@ struct HttpDataQuery
 struct FileDataQuery
 {
     Utf8String m_fileName;
-    TileLoadStatePtr m_loads;
+    CancellationTokenPtr m_loads;
 
-    FileDataQuery(Utf8StringCR fileName, TileLoadStatePtr loads) : m_fileName(fileName), m_loads(loads) {}
+    FileDataQuery(Utf8StringCR fileName, CancellationTokenPtr loads) : m_fileName(fileName), m_loads(loads) {}
 
     //! Read the entire file in a single chunk of memory.
     DGNPLATFORM_EXPORT folly::Future<ByteStream> Perform();
@@ -460,7 +460,7 @@ struct DrawArgs
     DrawArgs(RenderContextR context, TransformCR location, RootR root, TimePoint now, TimePoint purgeOlderThan, ClipVectorCP clip = nullptr) 
             : m_context(context), m_location(location), m_root(root), m_now(now), m_purgeOlderThan(purgeOlderThan), m_clip(clip) {m_scale = root.m_location.ColumnXMagnitude();}
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
-    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
+    DGNPLATFORM_EXPORT void RequestMissingTiles(RootR);
     TransformCR GetLocation() const {return m_location;}
     DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
     double ComputeTileDistance(TileCR tile) const;

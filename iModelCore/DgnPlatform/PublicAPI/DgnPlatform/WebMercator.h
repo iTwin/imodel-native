@@ -57,7 +57,7 @@ struct MapTile : TileTree::QuadTree::Tile
 
     struct Loader : TileTree::TileLoader
     {
-        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::TileLoadStatePtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
+        Loader(Utf8StringCR url, TileTree::TileR tile, TileTree::CancellationTokenPtr loads) : TileTree::TileLoader(url, tile, loads, tile._GetTileName()) {}
         BentleyStatus _LoadTile() override;
     };
 
@@ -67,7 +67,7 @@ struct MapTile : TileTree::QuadTree::Tile
     void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
-    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
+    TileTree::TileLoaderPtr _CreateTileLoader(TileTree::CancellationTokenPtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
 };
 
 //=======================================================================================

@@ -533,7 +533,7 @@ struct Loader : TileTree::TileLoader
 private:
     Filter  m_filter;
 
-    Loader(TileR tile, TileTree::TileLoadStatePtr loads);
+    Loader(TileR tile, TileTree::CancellationTokenPtr loads);
 
     virtual folly::Future<BentleyStatus> _GetFromSource() override;
     virtual BentleyStatus _LoadTile() override;
@@ -542,7 +542,7 @@ private:
 
     BentleyStatus DoGetFromSource();
 public:
-    static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads) { return new Loader(tile, loads); }
+    static LoaderPtr Create(TileR tile, TileTree::CancellationTokenPtr loads) { return new Loader(tile, loads); }
 
     FilterCR GetFilter() const { return m_filter; }
 };
@@ -618,7 +618,7 @@ private:
 
     Tile(Root& root, TileTree::OctTree::TileId id, Tile const* parent, DRange3dCP range);
 
-    virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr) override;
+    virtual TileTree::TileLoaderPtr _CreateTileLoader(TileTree::CancellationTokenPtr) override;
     virtual TileTree::TilePtr _CreateChild(TileTree::OctTree::TileId) const override;
     virtual double _GetMaximumSize() const override;
 

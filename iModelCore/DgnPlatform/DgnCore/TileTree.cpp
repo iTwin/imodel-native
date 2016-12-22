@@ -52,13 +52,10 @@ folly::Future<BentleyStatus> TileLoader::Perform()
     {
     DgnDb::VerifyClientThread();
 
-    if (m_loads)
-        m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
-
     m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
-    auto loadFlag = std::make_shared<LoadFlag>(m_tile->GetRootR());  // Keep track of running requests so we can exit gracefully.
+    auto loadFlag = std::make_shared<LoadFlag>(*m_tile);  // Keep track of running requests so we can exit gracefully.
 
     return _ReadFromDb().then([me, loadFlag] (BentleyStatus status)
         {
@@ -196,10 +193,7 @@ BentleyStatus TileLoader::DoReadFromDb()
         }
 
     if (m_loads != nullptr)
-        {
-        m_loads->m_fromDb.IncrementAtomicPre(std::memory_order_relaxed);
         m_loads = nullptr;
-        }
 
     return SUCCESS;
     }
@@ -271,7 +265,7 @@ BentleyStatus TileLoader::DoSaveToDb()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
-HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
+HttpDataQuery::HttpDataQuery(Utf8StringCR url, CancellationTokenPtr loads) : m_request(url), m_loads(loads), m_responseBody(Http::HttpByteStreamBody::Create())
     {
     m_request.SetResponseBody(m_responseBody);
     if (nullptr != loads)
@@ -283,16 +277,10 @@ HttpDataQuery::HttpDataQuery(Utf8StringCR url, TileLoadStatePtr loads) : m_reque
 //----------------------------------------------------------------------------------------
 folly::Future<Http::Response> HttpDataQuery::Perform()
     {
-    TileLoadStatePtr loads = m_loads;
+    CancellationTokenPtr loads = m_loads;
 
     return GetRequest().Perform().then([loads] (Http::Response response)
         {
-        if (Http::ConnectionStatus::OK == response.GetConnectionStatus() && Http::HttpStatus::OK == response.GetHttpStatus() &&
-            loads != nullptr)
-            {
-            loads->m_fromHttp.IncrementAtomicPre(std::memory_order_relaxed);
-            }
-
         return response;
         });
     }
@@ -350,7 +338,7 @@ bool HttpDataQuery::GetCacheContolExpirationDate(uint64_t& expirationDate, Http:
 folly::Future<ByteStream> FileDataQuery::Perform()
     {
     auto filename = m_fileName;
-    TileLoadStatePtr loads = m_loads;
+    CancellationTokenPtr loads = m_loads;
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [filename, loads] ()
         {
         ByteStream data;
@@ -361,9 +349,6 @@ folly::Future<ByteStream> FileDataQuery::Perform()
         if (BeFileStatus::Success != dataFile.ReadEntireFile(data))
             return data;
 
-        if (loads != nullptr)
-            loads->m_fromFile.IncrementAtomicPre(std::memory_order_relaxed);
-            
         return data;
         });
     }
@@ -482,7 +467,7 @@ void Root::CreateCache(Utf8CP realityCacheName, uint64_t maxSize)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loads)
+folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, CancellationTokenPtr loads)
     {
     if (!tile.IsNotLoaded()) // this should only be called when the tile is in the "not loaded" state.
         {
@@ -512,6 +497,29 @@ Root::Root(DgnDbR db, TransformCR location, Utf8CP rootUrl, Render::SystemP syst
         BeFileName::FixPathName(rootUrl, rootUrl, false);
         m_rootDir = rootUrl.GetNameUtf8();
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::StartTileLoad(TileR tile)
+    {
+    TilePtr tilePtr(&tile);
+    BeMutexHolder lock(m_cv.GetMutex());
+    BeAssert(m_activeLoads.end() == m_activeLoads.find(tilePtr));
+    m_activeLoads.insert(tilePtr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Root::DoneTileLoad(TileR tile)
+    {
+    TilePtr tilePtr(&tile);
+    BeMutexHolder lock(m_cv.GetMutex());
+    BeAssert(m_activeLoads.end() != m_activeLoads.find(tilePtr));
+    m_activeLoads.erase(tilePtr);
+    m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -690,9 +698,8 @@ void Root::DrawInView(RenderContextR context)
     // Do we still have missing tiles?
     if (!args.m_missing.empty())
         {
-        // yes, request them and schedule a progressive task to draw them as they arrive.
-        TileLoadStatePtr loads = std::make_shared<TileLoadState>();
-        args.RequestMissingTiles(*this, loads);
+        // yes, request them - we'll draw them in the frame following their arrival
+        args.RequestMissingTiles(*this);
         }
     }
 
@@ -736,9 +743,12 @@ int Tile::CountTiles() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileLoadState::~TileLoadState()
+CancellationToken::~CancellationToken()
     {
-    DEBUG_PRINTF("Load: canceled=%d, request=%d, nFile=%d, nHttp=%d, nDb=%d", m_canceled.load(), m_requested.load(), m_fromFile.load() , m_fromHttp.load(), m_fromDb.load());
+    if (m_canceled.load())
+        {
+        DEBUG_PRINTF("Tile load canceled", m_canceled.load());
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -785,13 +795,16 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 * Add all missing tiles that are in the "not loaded" state to the download queue.
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DrawArgs::RequestMissingTiles(RootR root, TileLoadStatePtr loads)
+void DrawArgs::RequestMissingTiles(RootR root)
     {
-    // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
+    // This requests tiles ordered first by distance to camera, then by depth.
     for (auto const& missing : m_missing)
         {
         if (missing.GetTile().IsNotLoaded())
+            {
+            CancellationTokenPtr loads = std::make_shared<CancellationToken>();
             root._RequestTile(const_cast<TileR>(missing.GetTile()), loads);
+            }
         }
     }
 
