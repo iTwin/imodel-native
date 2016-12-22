@@ -624,7 +624,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
             if (!child->IsReady())
                 {
                 allChildrenReady = false;
-                args.m_missing.Insert(depth+1, child);
+                args.InsertMissing(*child);
                 }
             }
 
@@ -693,55 +693,7 @@ void Root::DrawInView(RenderContextR context)
         // yes, request them and schedule a progressive task to draw them as they arrive.
         TileLoadStatePtr loads = std::make_shared<TileLoadState>();
         args.RequestMissingTiles(*this, loads);
-        //context.GetViewport()->ScheduleProgressiveTask(*new ProgressiveTask(*this, args.m_missing, loads));
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Called periodically (on a timer) on the client thread to check for arrival of missing tiles.
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Dgn::ProgressiveTask::Completion TileTree::ProgressiveTask::_DoProgressive(ProgressiveContext& context, WantShow& wantShow)
-    {
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_root.GetLocation(), m_root, now, now-m_root.GetExpirationTime());
-
-    DEBUG_PRINTF("%s progressive %d missing", m_name.c_str(), m_missing.size());
-
-#if defined(TILETREE_RERENDER_ROOT)
-    // Root::Draw() knows how to update for newly-loaded tiles and to request new tiles...let it do its thing
-    m_root.Draw(args);
-#else
-    for (auto const& node: m_missing)
-        {
-        auto stat = node.second->GetLoadStatus();
-        if (stat == Tile::LoadStatus::Ready)
-            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
-        else if (stat != Tile::LoadStatus::NotFound)
-            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
-        }
-#endif
-
-    args.RequestMissingTiles(m_root, m_loads);
-    args.DrawGraphics(context);  // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
-
-    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
-
-    DEBUG_PRINTF("%s after progressive still %d missing", m_name.c_str(), m_missing.size());
-    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
-        {
-        m_loads = nullptr; // for debugging
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }
-
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + std::chrono::seconds(1); // once per second
-        wantShow = WantShow::Yes;
-        }
-
-    return Completion::Aborted;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -836,10 +788,10 @@ void DrawArgs::DrawGraphics(ViewContextR context)
 void DrawArgs::RequestMissingTiles(RootR root, TileLoadStatePtr loads)
     {
     // This requests tiles in depth first order (the key for m_missing is the tile's depth). Could also include distance to frontplane sort too.
-    for (auto const& tile : m_missing)
+    for (auto const& missing : m_missing)
         {
-        if (tile.second->IsNotLoaded())
-            root._RequestTile(const_cast<TileR>(*tile.second), loads);
+        if (missing.GetTile().IsNotLoaded())
+            root._RequestTile(const_cast<TileR>(missing.GetTile()), loads);
         }
     }
 
@@ -879,7 +831,7 @@ void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
     if (!IsReady())
         {
         if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
+            args.InsertMissing(*this);
 
         return;
         }
@@ -943,7 +895,7 @@ void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
     if (!IsReady())
         {
         if (!IsNotFound())
-            args.m_missing.Insert(depth, this);
+            args.InsertMissing(*this);
 
         return;
         }
@@ -972,5 +924,39 @@ OctTree::TileId OctTree::Tile::GetRelativeTileId() const
         tileId = tileId.GetRelativeId(parent->GetTileId());
 
     return tileId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void MissingNodes::Insert(TileCR tile, double distance)
+    {
+    MissingNode toInsert(tile, distance);
+    auto inserted = m_set.insert(toInsert);
+    if (!inserted.second && distance < inserted.first->GetDistance())
+        {
+        // replace with closer distance
+        m_set.erase(inserted.first);
+        m_set.insert(toInsert);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DrawArgs::InsertMissing(TileCR tile)
+    {
+    m_missing.Insert(tile, ComputeTileDistance(tile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::ComputeTileDistance(TileCR tile) const
+    {
+    // Actually, distance squared...
+    DPoint3d centroid = DPoint3d::FromInterpolate(tile.GetRange().low, 0.5, tile.GetRange().high);
+    m_root.GetLocation().Multiply(centroid);
+    return centroid.DistanceSquared(m_context.GetViewportR().GetCamera().GetEyePoint());
     }
 

@@ -73,6 +73,8 @@ HTTP request caching:
 */
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(DrawArgs)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNode)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(MissingNodes)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Tile)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Root)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileLoader)
@@ -130,7 +132,8 @@ struct Tile : RefCountedBase, NonCopyableClass
 protected:
     RootR   m_root;
     mutable ElementAlignedBox3d m_range;
-    TileCP m_parent;
+    TileCP  m_parent;
+    int     m_depth;
     mutable BeAtomic<LoadStatus> m_loadStatus;
     mutable ChildTiles m_children;
     mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
@@ -138,9 +141,10 @@ protected:
     void SetAbandoned() const;
 
 public:
-    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_loadStatus(LoadStatus::NotLoaded) {}
+    Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
+    int GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
@@ -373,6 +377,60 @@ struct FileDataQuery
 };
 
 //=======================================================================================
+//! Describes a missing tile and its distance from the camera.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MissingNode
+{
+private:
+    TileCPtr    m_tile;
+    double      m_distance;
+public:
+    MissingNode(TileCR tile, double distance) : m_tile(&tile), m_distance(distance) {}
+    MissingNode() {} // for bset use only...
+
+    TileCR GetTile() const { return *m_tile; }
+    double GetDistance() const { return m_distance; }
+    int GetDepth() const { return GetTile().GetDepth(); }
+
+    bool operator<(MissingNodeCR rhs) const
+        {
+        if (m_tile.get() == rhs.m_tile.get())
+            return false;
+        else if (GetDistance() != rhs.GetDistance())
+            return GetDistance() < rhs.GetDistance();
+        else
+            return GetDepth() < rhs.GetDepth();
+        }
+};
+
+//=======================================================================================
+//! A set of missing tiles intended to be queued for loading.
+//! Sorted according to priority for loading - tiles nearer the root or closer to the camera
+//! are loaded with priority.
+//! A given tile can only appear in the set once.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct MissingNodes
+{
+private:
+    typedef bset<MissingNode> Set;
+
+    Set m_set;
+public:
+    void Insert(TileCR tile, double distance);
+
+    bool empty() const { return m_set.empty(); }
+    size_t size() const { return m_set.size(); }
+    void clear() { m_set.clear(); }
+
+    typedef Set::const_iterator const_iterator;
+
+    const_iterator begin() const { return m_set.begin(); }
+    const_iterator end() const { return m_set.end(); }
+};
+
+//=======================================================================================
 //! Arguments for drawing a tile. As tiles are drawn, their Render::Graphics go into the GraphicBranch member of this object. After all
 //! in-view tiles are drawn, the accumulated list of Render::Graphics are placed in a GraphicBranch with the location
 //! transform for the scene (that is, the tile graphics are always in the local coordinate system of the TileTree.)
@@ -385,7 +443,6 @@ struct FileDataQuery
 //=======================================================================================
 struct DrawArgs
 {
-    typedef bmultimap<int, TileCPtr> MissingNodes;
     RenderContextR m_context;
     RootR m_root;
     Transform m_location;
@@ -405,25 +462,10 @@ struct DrawArgs
     DGNPLATFORM_EXPORT void DrawGraphics(ViewContextR); // place all entries into a GraphicBranch and send it to the ViewContext.
     DGNPLATFORM_EXPORT void RequestMissingTiles(RootR, TileLoadStatePtr);
     TransformCR GetLocation() const {return m_location;}
+    DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
+    double ComputeTileDistance(TileCR tile) const;
 };
 
-//=======================================================================================
-// The ProgressiveTask for drawing tiles as they arrive asynchronously.
-// @bsiclass                                                    Keith.Bentley   05/16
-//=======================================================================================
-struct ProgressiveTask : Dgn::ProgressiveTask
-{
-    Root& m_root;
-    DrawArgs::MissingNodes m_missing;
-    TimePoint m_nextShow;
-    TileLoadStatePtr m_loads;
-    Utf8String m_name;
-
-    Completion _DoProgressive(ProgressiveContext& context, WantShow&) override;
-    ProgressiveTask(Root& root, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads) : m_root(root), m_missing(std::move(nodes)), m_loads(loads), m_name(root._GetName()) {}
-    ~ProgressiveTask() {if (nullptr != m_loads) m_loads->SetCanceled();}
-};
-    
 //=======================================================================================
 //! A QuadTree is a 2d TileTree that subdivides each tile into 4 child equal-sized tiles, each with one corner at the center of its parent.
 //! A tile in a QuadTree can be addressed by a TileId comprised of a level (depth) and a row/column numbers. 
