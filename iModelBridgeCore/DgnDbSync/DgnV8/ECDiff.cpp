@@ -311,9 +311,9 @@ Utf8String ECDiffValue::ToString() const
         case VALUETYPE_Double:
             out.Sprintf ("%f", m_valueDouble); break;
         case VALUETYPE_Int32:
-            out.Sprintf ("%d", m_valueInt32); break;
+            out.Sprintf ("%" PRId32, m_valueInt32); break;
         case VALUETYPE_Int64:
-            out.Sprintf ("%lld", m_valueInt64); break;
+            out.Sprintf ("%" PRId64, m_valueInt64); break;
         case VALUETYPE_String:
             out.Sprintf ("\"%s\"", m_valueString.c_str()); break;
         case VALUETYPE_Nil:
