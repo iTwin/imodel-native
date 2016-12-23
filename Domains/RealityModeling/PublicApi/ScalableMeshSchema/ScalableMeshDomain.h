@@ -15,6 +15,19 @@
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 
 //=======================================================================================
+//! Domain concrete class for Conceptual data-stores
+//=======================================================================================
+struct SchemaUpdateScalableMeshDgnDbParams
+{
+public:
+    BeFileName  m_assetsRootDir;
+    Dgn::DgnDbPtr m_dgnDb;
+
+    SchemaUpdateScalableMeshDgnDbParams(Dgn::DgnDbR dgnDb, BeFileNameCR assetsRootDir) : m_assetsRootDir(assetsRootDir), m_dgnDb(&dgnDb) {}
+
+}; // SchemaUpdateScalableMeshDgnDbParams
+
+//=======================================================================================
 //! The DgnDomain for the point cloud schema.
 // @bsiclass                                                    Mathieu.St-Pierre   02/16
 //=======================================================================================
@@ -26,7 +39,14 @@ protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
 
 public:
+
     ScalableMeshDomain();
+
+    SCALABLEMESH_SCHEMA_EXPORT Dgn::DgnDbStatus UpdateSchema(SchemaUpdateScalableMeshDgnDbParams& params) const;
+
+    static uint32_t GetExpectedSchemaVersionDigit1() { return 1; }
+    static uint32_t GetExpectedSchemaVersionDigit2() { return 0; }
+    static uint32_t GetExpectedSchemaVersionDigit3() { return 0; } // "01.00"
 };
 
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
