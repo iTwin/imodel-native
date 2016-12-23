@@ -356,8 +356,6 @@ void Attachment::Tree::Draw(RenderContextR context)
     // the scene is available, draw its tiles
     DrawInView(context);
 
-
-#define DEBUG_ATTACHMENT_RANGE
 #ifdef DEBUG_ATTACHMENT_RANGE
     auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(m_attachmentId);
     if (attachment.IsValid())
@@ -383,7 +381,7 @@ void Attachment::Tree::Draw(RenderContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -410,11 +408,14 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
 
     auto& def=view->GetViewDefinition();
 
+    // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
+    def.GetDisplayStyle().SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
         {
         auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
-//        env.m_groundPlane.m_enabled = false;
+        env.m_groundPlane.m_enabled = false;
         env.m_skybox.m_enabled = false;
         }
 
@@ -480,7 +481,7 @@ void Sheet::ViewController::_LoadState()
         auto tree = FindAttachment(attachId);
 
         if (!tree.IsValid())
-            tree = new Tree(GetDgnDb(), attachId, 512);
+            tree = new Tree(GetDgnDb(), *this, attachId, 512);
 
         attachments.push_back(tree);
         }

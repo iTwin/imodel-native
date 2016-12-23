@@ -197,7 +197,7 @@ namespace Attachment
         void Draw(RenderContextR context);
         void Load(Render::SystemP renderSys);
         Utf8CP _GetName() const override {return "SheetTile";}
-        Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize);
+        Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
         ~Tree(){ClearAllTiles();}
         DgnElementId GetAttachmentId() const {return m_attachmentId;}
     };
