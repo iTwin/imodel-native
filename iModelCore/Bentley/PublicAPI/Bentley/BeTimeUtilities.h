@@ -169,6 +169,10 @@ public:
 
     //! Get the elapsed seconds between Start() and Stop() on this timer.
     double GetElapsedSeconds() {return (m_stop - m_start) / (double)m_frequency;}
+
+    //! Queries the resolution of this timer. On Windows this is the frequency of the high-resolution performance counter.
+    //! On Unix it is 1000 (milliseconds).
+    uint64_t GetFrequency() const { return m_frequency; }
     };
 
 END_BENTLEY_NAMESPACE
