@@ -1726,7 +1726,7 @@ BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
             return ERROR;
 
         m_root = model->CreateTileTree(context, *this);
-        BeAssert(m_root.IsValid());
+        //BeAssert(m_root.IsValid());
         if (m_root.IsNull())
             return ERROR;
         }
