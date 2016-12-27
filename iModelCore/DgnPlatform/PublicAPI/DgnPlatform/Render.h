@@ -164,6 +164,7 @@ struct Task : RefCounted<NonCopyableClass>
         ReadImage,
         DestroyTarget,
         RenderTile,
+        RenderFrame,
     };
 
     //! The outcome of the processing of a Task.
