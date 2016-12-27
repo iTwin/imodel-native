@@ -155,7 +155,6 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
-        DrawProgressive,
         DrawFrame,
         Redraw,
         BeginHeal,
@@ -1769,7 +1768,6 @@ public:
     {
         static void SaveGPS(int, double);
         DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
-        DGNPLATFORM_EXPORT static void SaveProgressiveTarget(int);
         static void Show();
     };
     virtual void _OnDestroy() {}
@@ -1786,7 +1784,6 @@ public:
     virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
     virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
-    virtual void _DrawProgressive(GraphicListR progressiveList, StopWatch&) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
@@ -1795,7 +1792,7 @@ public:
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
-    void AbortProgressive() {m_abort=true;}
+    void SetAbortFlag() {m_abort=true;}
     Point2d GetScreenOrigin() const {return _GetScreenOrigin();}
     BSIRect GetViewRect() const {return _GetViewRect();}
     DVec2d GetDpiScale() const {return _GetDpiScale();}

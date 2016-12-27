@@ -9,19 +9,6 @@
 #include <Bentley/BeSystemInfo.h>
 #include <DgnPlatform/ElementTileTree.h>
 
-#ifdef DEBUG_HEAL
-#   define HEAL_PRINTF DEBUG_PRINTF
-#else
-#   define HEAL_PRINTF(fmt, ...)
-#endif
-
-#define DEBUG_PROGRESSIVE
-#ifdef DEBUG_PROGRESSIVE
-#   define PROGRESSIVE_PRINTF DEBUG_PRINTF
-#else
-#   define PROGRESSIVE_PRINTF(fmt, ...)
-#endif
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/

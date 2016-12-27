@@ -279,7 +279,6 @@ DGNPLATFORM_REF_COUNTED_PTR(PhysicalModel)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalPartition)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalTemplate)
 DGNPLATFORM_REF_COUNTED_PTR(PhysicalType)
-DGNPLATFORM_REF_COUNTED_PTR(ProgressiveTask)
 DGNPLATFORM_REF_COUNTED_PTR(Redline)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewDefinition)
 DGNPLATFORM_REF_COUNTED_PTR(RedlineViewController)
@@ -808,7 +807,6 @@ enum class DrawPurpose
     NotSpecified = 0,
     CreateTerrain,
     CreateScene,
-    Progressive,
     Plot,
     Pick,
     CaptureGeometry,
