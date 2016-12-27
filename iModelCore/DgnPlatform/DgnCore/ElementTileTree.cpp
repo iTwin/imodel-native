@@ -361,6 +361,7 @@ struct TilePolylineArgs
         }
 };
 
+#define ELEMENT_TILE_EXPAND_2D_RANGE
 #if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
 constexpr double s_half2dDepthRange = 10.0;
 #endif

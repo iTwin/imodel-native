@@ -157,6 +157,12 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
         auto root = iter->second;
         if (root.IsValid())
             root->DrawInView(context);
+
+        if (context.CheckStop())
+            {
+            DEBUG_PRINTF("CreateScene aborted");
+            break;
+            }
         }
 
     DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());

@@ -1719,15 +1719,20 @@ ViewController::CloseMe ViewController2d::_OnModelsDeleted(bset<DgnModelId> cons
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ViewController2d::_CreateScene(RenderContextR context)
     {
-    if (m_root.IsValid())
-        return SUCCESS;
+    if (m_root.IsNull())
+        {
+        auto model = GetViewedModel();
+        if (nullptr == model)
+            return ERROR;
 
-    auto model = GetViewedModel();
-    if (nullptr == model)
-        return ERROR;
+        m_root = model->CreateTileTree(context, *this);
+        BeAssert(m_root.IsValid());
+        if (m_root.IsNull())
+            return ERROR;
+        }
 
-    m_root = model->CreateTileTree(context, *this);
-    return m_root.IsValid() ? SUCCESS : ERROR;
+    m_root->DrawInView(context);
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
