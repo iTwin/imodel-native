@@ -316,10 +316,25 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         ptr = 0 != src.size() ? src.data() : nullptr;
         }
 
-    TileMeshArgs(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
+    void Clear()
         {
+        m_indices.clear();
+        m_numIndices = 0;
+        m_vertIndex = nullptr;
+        m_numPoints = 0;
+        m_points = nullptr;
+        m_normals = nullptr;
+        m_textureUV = nullptr;
+        m_texture = nullptr;
+        m_flags = 0;
+        }
+
+    bool Init(ElementTileTree::MeshCR mesh, Render::System const& system, DgnDbR db)
+        {
+        Clear();
+
         if (mesh.Triangles().empty())
-            return;
+            return false;
 
         for (auto const& triangle : mesh.Triangles())
             {
@@ -337,6 +352,8 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
         displayParams.ResolveTextureImage(db);
         if (nullptr != displayParams.GetTextureImage())
             m_texture = system._CreateTexture(displayParams.GetTextureImage()->GetImageSource(), Render::Image::Format::Rgba, Render::Image::BottomUp::No);
+
+        return true;
         }
 };
 
@@ -1863,8 +1880,9 @@ BentleyStatus Loader::_LoadTile()
         return ERROR;
 
     // ###TODO: instanced geometry
-    Render::GraphicBuilderPtr graphic;
     TilePolylineArgs polylineArgs;
+    TileMeshArgs meshArgs;
+    Render::GraphicBuilderPtr graphic;
     for (auto const& mesh : geometry.Meshes())
         {
         bool haveMesh = !mesh->Triangles().empty();
@@ -1880,8 +1898,8 @@ BentleyStatus Loader::_LoadTile()
 
         if (haveMesh)
             {
-            TileMeshArgs meshArgs(*mesh, system, root.GetDgnDb());
-            subGraphic->AddTriMesh(meshArgs);
+            if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
+                subGraphic->AddTriMesh(meshArgs);
             }
         else
             {
