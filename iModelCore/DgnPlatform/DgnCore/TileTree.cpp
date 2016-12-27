@@ -475,6 +475,9 @@ folly::Future<BentleyStatus> Root::_RequestTile(TileR tile, TileLoadStatePtr loa
         return ERROR;
         }
 
+    if (nullptr == loads)
+        loads = std::make_shared<TileLoadState>(tile);
+
     TileLoaderPtr loader = tile._CreateTileLoader(loads);
     if (!loader.IsValid())
         return ERROR;   

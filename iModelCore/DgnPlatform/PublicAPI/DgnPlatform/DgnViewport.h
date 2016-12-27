@@ -69,7 +69,6 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
 {
     friend struct ViewManager;
     typedef std::deque<ViewDefinitionPtr> ViewUndoStack;
-    typedef bvector<ProgressiveTaskPtr> ProgressiveTasks;
 
     struct SyncFlags
     {
@@ -133,7 +132,6 @@ protected:
     double m_frustFraction;
     Utf8String m_viewTitle;
     ViewControllerPtr m_viewController;
-    ProgressiveTasks m_progressiveTasks;
     DPoint3d m_viewCmdTargetCenter;
     ViewDefinitionPtr m_currentBaseline;
     ViewUndoStack m_forwardStack;
@@ -161,7 +159,6 @@ protected:
     void CreateTerrain(UpdatePlan const& plan);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
-    ProgressiveTask::Completion ProcessProgressiveTaskList(ProgressiveTask::WantShow& showFrame, ProgressiveContext& context);
 
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
@@ -179,12 +176,10 @@ public:
     Render::Plan::AntiAliasPref WantAntiAliasLines() const {return _WantAntiAliasLines();}
     Render::Plan::AntiAliasPref WantAntiAliasText() const {return _WantAntiAliasText();}
     void AlignWithRootZ();
-    ProgressiveTask::Completion DoProgressiveTasks(Render::Task::Priority priority);
-    DGNPLATFORM_EXPORT void ClearProgressiveTasks();
+    bool RenderFrame(Render::Task::Priority priority);
     uint32_t GetMinimumTargetFrameRate() const {return m_minimumFrameRate;}
     DGNPLATFORM_EXPORT uint32_t SetMinimumTargetFrameRate(uint32_t frameRate);
     DGNPLATFORM_EXPORT void InvalidateScene() const;
-    DGNPLATFORM_EXPORT void ScheduleProgressiveTask(ProgressiveTask& pd);
     DGNPLATFORM_EXPORT double GetFocusPlaneNpc();
     DGNPLATFORM_EXPORT StatusInt RootToNpcFromViewDef(DMap4d&, double&, CameraViewDefinition::Camera const*, DPoint3dCR, DPoint3dCR, RotMatrixCR) const;
     DGNPLATFORM_EXPORT static void FixFrustumOrder(Frustum&);

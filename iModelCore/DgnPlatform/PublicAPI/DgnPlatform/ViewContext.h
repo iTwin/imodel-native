@@ -395,17 +395,6 @@ public:
 //! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   10/15
 //=======================================================================================
-struct ProgressiveContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-public:
-    ProgressiveContext(DgnViewportR vp, Render::GraphicListR scene, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::Progressive, &scene, plan) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   10/15
-//=======================================================================================
 struct HealContext : RenderListContext
 {
     DEFINE_T_SUPER(RenderListContext);

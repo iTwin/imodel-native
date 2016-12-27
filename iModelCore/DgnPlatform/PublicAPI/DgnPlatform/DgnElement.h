@@ -2978,7 +2978,6 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     friend struct DgnGeometryPart;
     friend struct ElementHandler;
     friend struct TxnManager;
-    friend struct ProgressiveViewFilter;
     friend struct dgn_TxnTable::Element;
     friend struct GeometricElement;
     friend struct ElementAutoHandledPropertiesECInstanceAdapter;

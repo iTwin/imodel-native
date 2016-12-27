@@ -1963,6 +1963,7 @@ RootPtr Root::Create(GeometricModelR model, Render::SystemR system, ViewControll
         }
     else
         {
+        // ###TODO_ELEMENT_TILE: What happens if user later adds geometry outside initial range?
         RangeAccumulator accum(range, model.Is2dModel());
         if (!accum.Accumulate(*model.GetRangeIndex()))
             return nullptr;

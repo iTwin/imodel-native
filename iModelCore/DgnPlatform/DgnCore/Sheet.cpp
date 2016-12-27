@@ -307,29 +307,6 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
     m_rootTile = new Tile(*this, QuadTree::TileId(0,0,0), nullptr);
     }
 
-//=======================================================================================
-// When we draw ViweAttachments on sheets, we first create the scene asynchronusly. While that's 
-// in process we create an instance of this class to trigger the creation of the tiles when the scene becomes
-// available. Note that there is one instance of this class per attachment, so there can be many of them
-// for the same sheet at any given time.
-// @bsiclass                                                    Keith.Bentley   12/16
-//=======================================================================================
-struct SceneReadyTask : Dgn::ProgressiveTask
-{
-    Attachment::Tree& m_tree;
-    SceneReadyTask(Attachment::Tree& tree) : m_tree(tree) {}
-    ProgressiveTask::Completion _DoProgressive(ProgressiveContext& context, WantShow& showFrame) override
-        {
-        // is the scene available yet?
-        if (!m_tree.m_viewport->GetViewControllerR().UseReadyScene().IsValid())
-            return ProgressiveTask::Completion::Aborted; // no, keep waiting
-
-        m_tree.m_sceneReady = true; // yes, mark it as ready and draw its tiles
-        m_tree.DrawInView(context);
-        return ProgressiveTask::Completion::Finished; // we're done.
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -341,16 +318,10 @@ void Attachment::Tree::Draw(RenderContextR context)
     if (!m_sceneQueued)
         {
         m_viewport->m_rect.Init(0, 0, m_pixels.x, m_pixels.y);
-        m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
+        m_viewport->_QueueScene(); // this queues the scene request on the ClientThread and returns after scene is ready
         m_sceneQueued = true; // remember that we've already queued it
         }
 
-    if (!m_sceneReady) // if the scene isn't ready yet, we need to wait for it to finish.
-        {
-        context.GetViewport()->ScheduleProgressiveTask(*new SceneReadyTask(*this));
-        return;
-        }
-    
     // the scene is available, draw its tiles
     DrawInView(context);
     }

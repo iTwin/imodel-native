@@ -59,16 +59,6 @@ enum class UpdateAbort : int
     Unknown       = 15
 };
 
-//=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/14
-//=======================================================================================
-struct ProgressiveTask : RefCounted<NonCopyableClass>
-{
-    enum class Completion {Finished=0, Aborted=1, Failed=2};
-    enum class WantShow : bool {No=0, Yes=1};
-    virtual Completion _DoProgressive(struct ProgressiveContext& context, WantShow& showFrame) = 0;  // if this returns Finished, it is removed from the viewport
-};
-
 /*=================================================================================**//**
 * The types of events that cause ViewContext operations to abort early.
 * @bsiclass                                                     Keith.Bentley   02/04

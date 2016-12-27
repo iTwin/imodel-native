@@ -599,7 +599,6 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
         switch(viewContext.GetDrawPurpose())
             {
             case DrawPurpose::CreateScene:
-            case DrawPurpose::Progressive:
             case DrawPurpose::Plot:
             case DrawPurpose::Dynamics:
             case DrawPurpose::Redraw:

@@ -12,7 +12,6 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
-    ClearProgressiveTasks();
     if (m_renderTarget.IsValid())
         RenderQueue().WaitForIdle();
 
@@ -32,7 +31,6 @@ void DgnViewport::DestroyViewport()
 //---------------------------------------------------------------------------------------
 void DgnViewport::SuspendViewport()
     {
-    ClearProgressiveTasks();
     SetRenderTarget(nullptr);
     }
 
@@ -1115,26 +1113,6 @@ ColorDef DgnViewport::GetBackgroundColor() const
         bgColor = ColorDef::White();
 
     return bgColor;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   03/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ScheduleProgressiveTask(ProgressiveTask& task)
-    {
-    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    //m_progressiveTasks.push_back(&task);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnViewport::ClearProgressiveTasks()
-    {
-    DgnDb::VerifyClientThread(); // this may only be called from the client thread.
-    m_progressiveTasks.clear();
-    if (!m_viewController.IsValid())
-        return;
     }
 
 /*---------------------------------------------------------------------------------**//**

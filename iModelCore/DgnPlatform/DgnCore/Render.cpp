@@ -11,7 +11,6 @@ BEGIN_UNNAMED_NAMESPACE
     static Render::Queue* s_renderQueue = nullptr;
     static int s_gps;
     static int s_sceneTarget;
-    static int s_progressiveTarget;
     static double s_frameRateGoal;
 END_UNNAMED_NAMESPACE
 
@@ -21,11 +20,10 @@ END_UNNAMED_NAMESPACE
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
 void Render::Target::Debug::SaveGPS(int gps, double fr) {s_gps=gps; s_frameRateGoal=fr; Show();}
 void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
-void Render::Target::Debug::SaveProgressiveTarget(int val) {s_progressiveTarget=val; Show();}
 void Render::Target::Debug::Show()
     {
 #if defined (DEBUG_LOGGING) 
-    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, PD=%d, FR=%lf", s_gps, s_sceneTarget, s_progressiveTarget, s_frameRateGoal);
+    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, FR=%lf", s_gps, s_sceneTarget, s_frameRateGoal);
 #endif
     }
 
