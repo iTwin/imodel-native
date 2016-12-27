@@ -370,36 +370,14 @@ void RasterModel::_DrawModel(Dgn::ViewContextR context)
     }
 #endif
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2016
-//----------------------------------------------------------------------------------------
-void RasterModel::_AddTerrainGraphics(TerrainContextR context) const
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr RasterModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
     {
     _Load(&context.GetTargetR().GetSystem());
-
-    if (!m_root.IsValid() || !m_root->GetRootTile().IsValid())
-        {
-        BeAssert(false);
-        return;
-        }
-
-    Transform depthTransfo;
-    ComputeDepthTransformation(depthTransfo, context);
-
-    auto now = std::chrono::steady_clock::now();
-    TileTree::DrawArgs args(context, Transform::FromProduct(depthTransfo, m_root->GetLocation()), *m_root, now, now - m_root->GetExpirationTime());
-    args.SetClip(GetClip().GetClipVector());
-
-    m_root->Draw(args);
-
-    DEBUG_PRINTF("Map draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_root->GetRootTile()->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    if (!args.m_missing.empty())
-        {
-        args.RequestMissingTiles(*m_root);
-        }
+    BeAssert(m_root.IsValid() && m_root->GetRootTile().IsValid());
+    return m_root;
     }
 
 //----------------------------------------------------------------------------------------

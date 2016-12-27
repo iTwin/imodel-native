@@ -45,6 +45,24 @@ void RasterRoot::GenerateResolution(bvector<Resolution>& resolution, uint32_t wi
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+Transform RasterRoot::_GetTransform(RenderContextR context) const
+    {
+    Transform depthTransfo;
+    m_model.ComputeDepthTransformation(depthTransfo, context);
+    return depthTransfo;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorCP RasterRoot::_GetClipVector() const
+    {
+    return m_model.GetClip().GetClipVector();
+    }
+
 
 //---------------------------------------------------------------------------------------------
 //-------------------------------- RasterTile -------------------------------------------------

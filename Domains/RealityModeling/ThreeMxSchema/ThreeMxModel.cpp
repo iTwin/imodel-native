@@ -189,25 +189,25 @@ AxisAlignedBox3d ThreeMxModel::_QueryModelRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Called whenever the camera moves. Must be fast.
-* @bsimethod                                    Keith.Bentley                   04/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
+void ThreeMxModel::SetClip(Dgn::ClipVectorCP clip)
+    {
+    m_clip = clip;
+    if (m_scene.IsValid())
+        m_scene->SetClip(clip);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::RootPtr ThreeMxModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
     {
     Load(&context.GetTargetR().GetSystem());
+    if (m_scene.IsValid())
+        m_scene->SetClip(m_clip.get());
 
-    if (!m_scene.IsValid())
-        return;
-
-    auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, m_scene->GetLocation(), *m_scene, now, now-m_scene->GetExpirationTime(), m_clip.get());
-    m_scene->Draw(args);
-    DEBUG_PRINTF("3MX draw %d graphics, %d total, %d missing ", args.m_graphics.m_entries.size(), m_scene->m_rootTile->CountTiles(), args.m_missing.size());
-
-    args.DrawGraphics(context);
-
-    if (!args.m_missing.empty())
-        args.RequestMissingTiles(*m_scene);
+    return m_scene;
     }
 
 /*---------------------------------------------------------------------------------**//**

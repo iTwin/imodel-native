@@ -85,9 +85,7 @@ protected:
     
     //! Destruct a RasterModel object.
     ~RasterModel();
-    // We now use _AddTerrainGraphics which will be called for every frame. This is required when zooming out otherwise we get flickering.
-    //virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
-    virtual void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
+    virtual Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
     virtual BentleyStatus _Load(Dgn::Render::SystemP renderSys) const { return BSIERROR; }
 
     virtual void _OnFitView(Dgn::FitContextR) override;
@@ -103,8 +101,6 @@ protected:
 
     void _WriteJsonProperties(Json::Value& v) const override;
     void _ReadJsonProperties(Json::Value const& v) override;
-
-    void ComputeDepthTransformation(TransformR transfo, Dgn::ViewContextR context) const;
 
     virtual bool _IsParallelToGround() const {return false;}
 
@@ -124,7 +120,7 @@ public:
 
     void SetDepthBias(double val) { BeAssert(IsParallelToGround()); m_depthBias = val; }
     double GetDepthBias() const { return m_depthBias; }
-
+    void ComputeDepthTransformation(TransformR transfo, Dgn::ViewContextR context) const;
     };
 
 //=======================================================================================

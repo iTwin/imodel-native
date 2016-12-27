@@ -152,11 +152,12 @@ struct Scene : Dgn::TileTree::Root
 
 private:
     SceneInfo m_sceneInfo;
+    Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args) {return new Geometry(args, *this);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
     virtual Utf8CP _GetName() const override { return m_rootUrl.c_str(); }
-
+    virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 public:
     using Root::Root;
     ~Scene() {ClearAllTiles();}
@@ -164,6 +165,7 @@ public:
     SceneInfo const& GetSceneInfo() const {return m_sceneInfo;}
     BentleyStatus LoadNodeSynchronous(NodeR);
     BentleyStatus LoadScene(); // synchronous
+    void SetClip(Dgn::ClipVectorCP clip) { m_clip = clip; }
     
     THREEMX_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
 };
@@ -205,7 +207,7 @@ public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
 
-    THREEMX_EXPORT void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
+    THREEMX_EXPORT Dgn::TileTree::RootPtr _CreateTileTree(Dgn::RenderContextR context, Dgn::ViewControllerCR view) override;
     THREEMX_EXPORT void _WriteJsonProperties(Json::Value&) const override;
     THREEMX_EXPORT void _ReadJsonProperties(Json::Value const&) override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
@@ -223,7 +225,7 @@ public:
 
     //! Set or clear a clipping volume for this model.
     //! @note To save this value for future sessions, you must call this model's Update method.
-    void SetClip(Dgn::ClipVectorCP clip) {m_clip = clip;}
+    THREEMX_EXPORT void SetClip(Dgn::ClipVectorCP clip);
 
     //! Set the location for this ThreeMxModel from the Spatial Reference System (SRS) data in the scene (.3mx) file.
     //! Generally, this should be called once when the model is first created. On success, the location transformation of the model
