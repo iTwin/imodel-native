@@ -207,9 +207,9 @@ public:
     GeomDetailCR GetGeomDetail() const {return m_geomDetail;}
     GeomDetailR GetGeomDetailW() {return m_geomDetail;}
 
-    DGNPLATFORM_EXPORT IElemTopologyCP GetElemTopology() const;
-    DGNPLATFORM_EXPORT void SetElemTopology(IElemTopologyP topo);
-}; // HitDetail
+    IElemTopologyCP GetElemTopology() const {return m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr;}
+    void SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
+};
 
 typedef RefCountedPtr<HitDetail> HitDetailPtr;
 typedef RefCountedCPtr<HitDetail> HitDetailCPtr;

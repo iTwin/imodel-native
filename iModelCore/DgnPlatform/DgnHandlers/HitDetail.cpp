@@ -408,12 +408,6 @@ HitDetail::~HitDetail() {}
 void HitDetail::_Draw(ViewContextR context) const {context.VisitHit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IElemTopologyCP HitDetail::GetElemTopology() const {return (m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
-void HitDetail::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbR HitDetail::GetDgnDb() const

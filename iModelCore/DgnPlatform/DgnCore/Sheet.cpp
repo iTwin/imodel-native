@@ -313,7 +313,7 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 // When we draw ViweAttachments on sheets, we first create the scene asynchronusly. While that's 
 // in process we create an instance of this class to trigger the creation of the tiles when the scene becomes
 // available. Note that there is one instance of this class per attachment, so there can be many of them
-// for the same sheet at any given time.
+// for the same sheet (and of course many sheets) at any given time.
 // @bsiclass                                                    Keith.Bentley   12/16
 //=======================================================================================
 struct SceneReadyTask : ProgressiveTask
@@ -504,7 +504,7 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      11/16
+* @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawView(ViewContextR context)
     {
