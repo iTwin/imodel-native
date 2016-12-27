@@ -290,7 +290,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::DrawSkyBox(TerrainContextR context)
+void SpatialViewController::DrawSkyBox(RenderContextR context)
     {
     auto& style3d = GetSpatialViewDefinition().GetDisplayStyle3d();
     if (!style3d.IsSkyBoxEnabled())

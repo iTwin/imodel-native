@@ -406,17 +406,6 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   02/16
-//=======================================================================================
-struct TerrainContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-public:
-    TerrainContext(DgnViewportR vp, Render::GraphicListR terrain, UpdatePlan const& plan) : RenderListContext(vp, DrawPurpose::CreateTerrain, &terrain, plan) {}
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext

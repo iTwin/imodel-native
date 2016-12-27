@@ -156,7 +156,6 @@ protected:
     void QueueDrawFrame(Render::Task::Priority);
     void ShowChanges(ViewManagerCR, Render::Task::Priority);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
-    void CreateTerrain(UpdatePlan const& plan);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
 

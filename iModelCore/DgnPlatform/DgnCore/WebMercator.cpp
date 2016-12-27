@@ -255,14 +255,12 @@ MapRoot::MapRoot(DgnDbR db, TransformCR trans, Utf8CP realityCacheName, Utf8Stri
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      10/14
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WebMercatorModel::_AddTerrainGraphics(TerrainContextR context) const
+TileTree::RootPtr WebMercatorModel::_CreateTileTree(RenderContextR context, ViewControllerCR view)
     {
     Load(&context.GetTargetR().GetSystem());
-
-    if (m_root.IsValid())
-        m_root->DrawInView(context);
+    return m_root;
     }
 
 /*---------------------------------------------------------------------------------**//**

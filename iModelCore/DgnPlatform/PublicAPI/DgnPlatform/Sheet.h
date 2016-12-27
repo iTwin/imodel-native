@@ -238,8 +238,8 @@ protected:
 
     ViewControllerCP _ToSheetView() const override {return this;}
     void _DrawView(ViewContextR) override;
-    void _CreateTerrain(TerrainContextR context) override;
     void _LoadState() override;
+    BentleyStatus _CreateScene(RenderContextR) override;
     Attachment::TreePtr FindAttachment(DgnElementId attachId) const;
 
     //! Construct a new SheetViewController.

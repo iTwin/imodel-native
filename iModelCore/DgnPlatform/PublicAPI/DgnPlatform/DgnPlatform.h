@@ -209,7 +209,6 @@ DGNPLATFORM_TYPEDEFS(SpatialRedlineViewController)
 DGNPLATFORM_TYPEDEFS(SpatialViewController)
 DGNPLATFORM_TYPEDEFS(SpatialViewDefinition)
 DGNPLATFORM_TYPEDEFS(Subject)
-DGNPLATFORM_TYPEDEFS(TerrainContext)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
@@ -805,7 +804,6 @@ enum class ClipVolumePass
 enum class DrawPurpose
 {
     NotSpecified = 0,
-    CreateTerrain,
     CreateScene,
     Plot,
     Pick,

@@ -431,16 +431,15 @@ void Sheet::ViewController::_LoadState()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   11/16
+* @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
+BentleyStatus Sheet::ViewController::_CreateScene(RenderContextR context)
     {
-    DgnDb::VerifyClientThread();
-
-    T_Super::_CreateTerrain(context);
-
+    auto status = T_Super::_CreateScene(context);
     for (auto& attach : m_attachments)
         attach->Draw(context);
+
+    return status;
     }
 
 /*---------------------------------------------------------------------------------**//**

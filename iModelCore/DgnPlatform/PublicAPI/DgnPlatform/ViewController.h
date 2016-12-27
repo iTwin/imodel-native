@@ -239,7 +239,6 @@ public:
     void DrawView(ViewContextR context) {return _DrawView(context);}
     void VisitAllElements(ViewContextR context) {return _VisitAllElements(context);}
     void OnViewOpened(DgnViewportR vp) {_OnViewOpened(vp);}
-    virtual void _CreateTerrain(TerrainContextR context) {}
 
     //! Get the DgnDb of this view.
     DgnDbR GetDgnDb() const {return m_dgndb;}
@@ -589,7 +588,6 @@ protected:
     void QueryModelExtents(FitContextR);
 
     DGNPLATFORM_EXPORT bool _IsInSet(int nVal, BeSQLite::DbValue const*) const override;
-    DGNPLATFORM_EXPORT void _CreateTerrain(TerrainContextR context) override;
     DGNPLATFORM_EXPORT void _VisitAllElements(ViewContextR) override;
     DGNPLATFORM_EXPORT void _DrawView(ViewContextR context) override;
     DGNPLATFORM_EXPORT void _OnCategoryChange(bool singleEnabled) override;
@@ -613,7 +611,7 @@ protected:
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);
-    DGNPLATFORM_EXPORT void DrawSkyBox(TerrainContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(RenderContextR);
 
 public:
     SpatialViewDefinitionR GetSpatialViewDefinition() const {return static_cast<SpatialViewDefinitionR>(*m_definition);}

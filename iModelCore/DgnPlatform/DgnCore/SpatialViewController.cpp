@@ -131,13 +131,24 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     DgnDb::VerifyClientThread();
 
     StopWatch timer(true);
+
+    DrawSkyBox(context);
+
     for (auto modelId : GetViewedModels())
         {
         auto iter = m_roots.find(modelId);
         if (m_roots.end() == iter)
             {
-            auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
-            TileTree::RootPtr modelRoot = model.IsValid() ? model->CreateTileTree(context, *this) : nullptr;
+            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+            TileTree::RootPtr modelRoot;
+            if (model.IsValid())
+                {
+                modelRoot = model->CreateTileTree(context, *this);
+                Utf8CP message = model->GetCopyrightMessage();
+                if (!Utf8String::IsNullOrEmpty(message))
+                    m_copyrightMsgs.insert(message);
+                }
+
             iter = m_roots.Insert(modelId, modelRoot).first;
             }
 
@@ -274,33 +285,6 @@ void SpatialViewController::_DrawView(ViewContextR context)
         context.SetActiveVolume(*m_activeVolume);
 
     _VisitAllElements(context);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   02/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::_CreateTerrain(TerrainContextR context) 
-    {
-    T_Super::_CreateTerrain(context);
-
-    DrawSkyBox(context);
-
-    m_copyrightMsgs.clear();
-    auto& models = GetDgnDb().Models();
-    for (DgnModelId modelId : GetViewedModels())
-        {
-        DgnModelPtr model = models.GetModel(modelId);
-        if (!model.IsValid())
-            continue;
-
-        auto geomModel = model->ToGeometricModel3d();
-        if (nullptr != geomModel)
-            geomModel->_AddTerrainGraphics(context);
-
-        Utf8CP message = model->GetCopyrightMessage();
-        if (!Utf8String::IsNullOrEmpty(message)) // skip empty strings.
-            m_copyrightMsgs.insert(message);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**

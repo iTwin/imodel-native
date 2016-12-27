@@ -151,7 +151,6 @@ struct Task : RefCounted<NonCopyableClass>
     {
         Initialize,
         ChangeScene,
-        ChangeTerrain,
         ChangeRenderPlan,
         ChangeDynamics,
         ChangeDecorations,
@@ -1744,7 +1743,6 @@ protected:
     DevicePtr m_device;
     ClipPrimitiveCPtr m_activeVolume;
     GraphicListPtr m_currentScene;
-    GraphicListPtr m_terrain;
     GraphicListPtr m_dynamics;
     Decorations m_decorations;
     double m_frameRateGoal; // frames per second
@@ -1772,7 +1770,6 @@ public:
     };
     virtual void _OnDestroy() {}
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
-    virtual void _ChangeTerrain(GraphicListR terrain) {VerifyRenderThread(); m_terrain = !terrain.IsEmpty() ? &terrain : nullptr;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
@@ -1789,7 +1786,7 @@ public:
     virtual double _GetCameraFrustumNearScaleLimit() const = 0;
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetTileRect(BSIRect rect) {}
-    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
 
     int GetId() const {return m_id;}
     void SetAbortFlag() {m_abort=true;}

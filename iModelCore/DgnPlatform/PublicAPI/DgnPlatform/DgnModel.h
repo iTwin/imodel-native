@@ -794,25 +794,6 @@ protected:
     DGNPLATFORM_EXPORT void AddToRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void RemoveFromRangeIndex(DgnElementCR);
     DGNPLATFORM_EXPORT void UpdateRangeIndex(DgnElementCR modified, DgnElementCR original);
-    
-    //! Add non-element graphics for this DgnModel to the scene.
-    //! A subclass can override this method to add non-element-based graphics to the scene. Or, a subclass
-    //! can override this method to do add elements that QueryView would normally exclude.
-    //! <h2>Coordinate Systems</h2>
-    //! A DgnDb defines the physical coordinate system. 
-    //! That physical coordinate system can be associated with a single Geographic Coordinate System (GCS). See DgnUnits::GetDgnGCS.
-    //! The implementation must transform external data into the coordinate system of the DgnDb as necessary before adding graphics to the scene.
-    //! <h2>Displaying external data using progressive display</h2>
-    //! An implementation of _AddGraphicsToScene is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
-    //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
-    virtual void _AddSceneGraphics(SceneContextR) const { }
-
-    //! Add "terrain" graphics for this DgnModel. Terrain graphics are drawn with the scene graphics every time the camera moves. The difference between terrain and element graphics
-    //! is that this method is called every frame whereas _AddGraphicsToSceen is only called when the query thread completes. Terrain graphics must 
-    //! be re-added every time this method is called or they will disappear.
-    //! An implementation of _AddTerrain is required to be very fast to keep the client thread responsive. If data is not immediately available, you should
-    //! a) make arrangements to obtain the data in the background and b) schedule a ProgressiveTask to display it when available.
-    virtual void _AddTerrainGraphics(TerrainContextR) const { }
 
     //! Produce a TileTree::RootPtr representing the graphics for this GeometricModel. The returned tree will be cached and re-rendered on each render frame.
     //! Its graphics will be updated as new tiles are loaded in the background. When the tree becomes invalid due to changes to the viewing parameters, a new

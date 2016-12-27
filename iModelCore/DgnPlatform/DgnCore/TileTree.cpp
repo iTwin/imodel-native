@@ -688,7 +688,7 @@ void Root::DrawInView(RenderContextR context)
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
+    DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
     Draw(args);
     DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
