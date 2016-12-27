@@ -250,6 +250,7 @@ AxisAlignedBox3d PointCloudModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
     {
+#if defined (NEEDS_WORK_POINT_CLOUD)
     if (GetPointCloudSceneP() == nullptr || NULL == context.GetViewport() ||
         !PointCloudProgressiveDisplay::ShouldDrawInContext(context))
         return;
@@ -263,6 +264,7 @@ void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
 
     RefCountedPtr<PointCloudProgressiveDisplay> display = new PointCloudProgressiveDisplay(*this, *ptViewport);
     display->DrawView(context);
+#endif
     }
 
 

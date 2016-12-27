@@ -11,6 +11,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 USING_NAMESPACE_BENTLEY_POINTCLOUD
 USING_NAMESPACE_BENTLEY_BEPOINTCLOUD
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     5/2015
 //----------------------------------------------------------------------------------------
@@ -402,4 +403,5 @@ bool PointCloudProgressiveDisplay::ShouldDrawInContext(Dgn::RenderContextR conte
 
     return true;
     }
+#endif
 

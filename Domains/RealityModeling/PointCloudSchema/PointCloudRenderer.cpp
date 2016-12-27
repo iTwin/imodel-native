@@ -59,6 +59,7 @@ PointCloudRenderer::~PointCloudRenderer()
     {
     }
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     2/2015
 //----------------------------------------------------------------------------------------
@@ -128,6 +129,7 @@ ProgressiveTask::Completion PointCloudRenderer::DrawPointCloud(ViewContextR cont
 
         return 0 == ptsToLoad ? ProgressiveTask::Completion::Finished : ProgressiveTask::Completion::Aborted;
     }
+#endif
 
 #ifdef NEEDS_WORK_CONTINUOUS_RENDER
 //----------------------------------------------------------------------------------------

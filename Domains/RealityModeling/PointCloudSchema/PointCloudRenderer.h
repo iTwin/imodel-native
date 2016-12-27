@@ -31,7 +31,9 @@ struct PointCloudRenderer
         PointCloudRenderer (uint32_t outputCapacity);
         virtual ~PointCloudRenderer();
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
         Dgn::ProgressiveTask::Completion DrawPointCloud(Dgn::ViewContextR context, PointCloudClassificationSettings const* pClassifInfo, BePointCloud::PointCloudSceneCR pointCloudScene);
+#endif
     };  //  PointCloudRenderer
 
 END_BENTLEY_POINTCLOUD_NAMESPACE

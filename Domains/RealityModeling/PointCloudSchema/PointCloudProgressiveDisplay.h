@@ -15,6 +15,7 @@ BEGIN_BENTLEY_POINTCLOUD_NAMESPACE
 
 struct PtViewport;
 
+#if defined (NEEDS_WORK_POINT_CLOUD)
 //========================================================================================
 // @bsiclass                                                        Eric.Paquet     5/2015
 //========================================================================================
@@ -51,5 +52,6 @@ protected:
     PointCloudProgressiveDisplay(PointCloudModel const& model, PtViewport&);
     virtual ~PointCloudProgressiveDisplay();
     };
+#endif
 
 END_BENTLEY_POINTCLOUD_NAMESPACE
