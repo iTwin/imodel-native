@@ -179,9 +179,10 @@ struct CallbackQueue
 
         Http::Request::ProgressCallbackCR NewCallback();
     };
-
+bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 bool GetLockFromServerJson (RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddLockInfoToList (DgnLockInfoSet& lockInfos, const DgnLock& dgnLock, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR repositoryId);
+bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId);
 bool GetCodeFromServerJson (RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId);
 void AddCodeInfoToList (DgnCodeInfoSet& codeInfos, const DgnCode& dgnCode, DgnCodeState codeState, const BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR revisionId);
 bool GetCodeTemplateFromServerJson(RapidJsonValueCR serverJson, DgnDbCodeTemplate& codeTemplate);
