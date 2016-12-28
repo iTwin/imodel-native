@@ -153,8 +153,6 @@ protected:
     DGNPLATFORM_EXPORT virtual int _GetIndexedLineWidth(int index) const;
     DGNPLATFORM_EXPORT static void StartRenderThread();
     DMap4d CalcNpcToView();
-    void QueueDrawFrame(Render::Task::Priority);
-    void ShowChanges(ViewManagerCR, Render::Task::Priority);
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
@@ -212,7 +210,6 @@ public:
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
     void ApplyViewState(ViewDefinitionCR val, int animationTime);
-    DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
     DGNVIEW_EXPORT void ApplyNext(int animationTime);
     DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
@@ -527,9 +524,6 @@ public:
     void DropTracker(Tracker* tracker) {m_trackers.DropHandler(tracker);}
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
-
-    DGNVIEW_EXPORT void UpdateView(UpdatePlan const& info = UpdatePlan());
-    void UpdateViewDynamic(UpdatePlan const& info = DynamicUpdatePlan()) {UpdateView(info);}
 
     //! Read the current image from this viewport from the Rendering system. 
     //! @param[in] viewRect The area of the view to read. The origin of \a viewRect must specify the upper left corner. It is an error to specfy a view rectangle that lies outside the actual view. If not specified, the entire view is captured.

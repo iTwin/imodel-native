@@ -471,29 +471,23 @@ public:
 struct GeomPart : RefCountedBase
 {
 private:
-    DgnGeometryPartId       m_partId;
     DRange3d                m_range;
     GeometryList            m_geometries;
-    size_t                  m_instanceCount;
     mutable size_t          m_facetCount;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const  override {return 100000;}
 
 protected:
-    GeomPart(DgnGeometryPartId partId, DRange3dCR range, GeometryList const& geometry);
+    GeomPart(DRange3dCR range, GeometryList const& geometry);
 
 public:
-    static GeomPartPtr Create(DgnGeometryPartId partId, DRange3dCR range, GeometryList const& geometry) { return new GeomPart(partId, range, geometry); }
+    static GeomPartPtr Create(DRange3dCR range, GeometryList const& geometry) { return new GeomPart(range, geometry); }
     PolyfaceList GetPolyfaces(IFacetOptionsR facetOptions, GeometryCR instance);
     StrokesList GetStrokes(IFacetOptionsR facetOptions, GeometryCR instance);
     size_t GetFacetCount(FacetCounter& counter, GeometryCR instance) const;
     bool IsCurved() const;
-    void IncrementInstanceCount() { m_instanceCount++; }
-    size_t GetInstanceCount() const { return m_instanceCount; }
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
-    DgnGeometryPartId GetPartId() const { return m_partId; }
-    bool IsWorthInstancing(double chordTolerance) const;
 };
 
 //=======================================================================================
@@ -571,18 +565,41 @@ struct Root : TileTree::OctTree::Root
     DEFINE_T_SUPER(TileTree::OctTree::Root);
 
 private:
+    struct SolidPrimitivePartMap
+    {
+        struct Key
+        {
+            ISolidPrimitivePtr  m_solidPrimitive;
+            DRange3d            m_range;
+            DisplayParamsPtr    m_displayParams;
+
+            Key() { }
+            Key(ISolidPrimitiveR solidPrimitive, DRange3dCR range, DisplayParamsR displayParams) : m_solidPrimitive(&solidPrimitive), m_range(range), m_displayParams(&displayParams) { }
+
+            bool operator<(Key const& rhs) const;
+            bool IsEqual(Key const& rhs) const;
+        };
+
+        typedef bmultimap<Key, GeomPartPtr> Map;
+
+        Map m_map;
+
+        GeomPartPtr FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId, DgnDbR db);
+    };
+
     typedef bmap<DgnGeometryPartId, GeomPartPtr> GeomPartMap;
 
-    DgnModelId                  m_modelId;
-    Utf8String                  m_name;
-    double                      m_leafTolerance;
-    size_t                      m_maxPointsPerTile;
-    Filter                      m_filter;
-    mutable BeMutex             m_mutex;
-    mutable BeSQLite::BeDbMutex m_dbMutex;
-    mutable GeomPartMap         m_geomParts;
-    bool                        m_is3d;
-    bool                        m_debugRanges;
+    DgnModelId                      m_modelId;
+    Utf8String                      m_name;
+    double                          m_leafTolerance;
+    size_t                          m_maxPointsPerTile;
+    Filter                          m_filter;
+    mutable BeMutex                 m_mutex;
+    mutable BeSQLite::BeDbMutex     m_dbMutex;
+    mutable GeomPartMap             m_geomParts;
+    mutable SolidPrimitivePartMap   m_solidPrimitiveParts;
+    bool                            m_is3d;
+    bool                            m_debugRanges;
 
     Root(GeometricModelR model, TransformCR transform, Render::SystemR system, ViewControllerCR view);
 
@@ -607,6 +624,7 @@ public:
 
     GeomPartPtr GetGeomPart(DgnGeometryPartId partId) const;
     void AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const;
+    GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId) const;
 };
 
 //=======================================================================================

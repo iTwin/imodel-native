@@ -387,6 +387,8 @@ constexpr double s_minToleranceRatio = 1000.0;
 constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
 constexpr size_t s_minLeafTolerance = 0.001;
+constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
+static bool s_doInstances = false;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1522,7 +1524,7 @@ uint32_t MeshBuilder::AddClusteredVertex(VertexKey const& vertex)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeomPart::GeomPart(DgnGeometryPartId partId, DRange3dCR range, GeometryList const& geometries) : m_partId(partId), m_range (range), m_instanceCount(0), m_facetCount(0), m_geometries(geometries)
+GeomPart::GeomPart(DRange3dCR range, GeometryList const& geometries) : m_range (range), m_facetCount(0), m_geometries(geometries)
     { 
     }                
 
@@ -2055,6 +2057,68 @@ GeomPartPtr Root::GetGeomPart(DgnGeometryPartId partId) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr Root::FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId) const
+    {
+    BeMutexHolder lock(m_mutex);
+    return m_solidPrimitiveParts.FindOrInsert(prim, range, displayParams, elemId, GetDgnDb());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+GeomPartPtr Root::SolidPrimitivePartMap::FindOrInsert(ISolidPrimitiveR prim, DRange3dCR range, DisplayParamsR displayParams, DgnElementId elemId, DgnDbR db)
+    {
+    Key key(prim, range, displayParams);
+
+    auto findRange = m_map.equal_range(key);
+    for (auto curr = findRange.first; curr != findRange.second; ++curr)
+        {
+        if (curr->first.IsEqual(key))
+            return curr->second;
+        }
+
+    IGeometryPtr geom = IGeometry::Create(&prim);
+    GeometryList geomList;
+    geomList.push_back(Geometry::Create(*geom, Transform::FromIdentity(), range, elemId, displayParams, true, db));
+    auto part = GeomPart::Create(range, geomList);
+    m_map.Insert(key, part);
+
+    return part;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::SolidPrimitivePartMap::Key::operator<(Key const& rhs) const
+    {
+    double const* a1 = &m_range.low.x,
+                * a2 = &rhs.m_range.low.x;
+
+    double tolerance = s_solidPrimitivePartCompareTolerance;
+    for (size_t i = 0; i < 6; i++)
+        {
+        if (*a1 < *a2 - tolerance)
+            return true;
+        else if (*a1 > *a2 + tolerance)
+            return false;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Root::SolidPrimitivePartMap::Key::IsEqual(Key const& rhs) const
+    {
+    return !(*m_displayParams < *rhs.m_displayParams)
+        && !(*rhs.m_displayParams < *m_displayParams)
+        && m_solidPrimitive->IsSameStructureAndGeometry(*rhs.m_solidPrimitive, s_solidPrimitivePartCompareTolerance);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void Root::AddGeomPart(DgnGeometryPartId partId, GeomPartR geomPart) const
     {
     BeMutexHolder lock(m_mutex);
@@ -2355,14 +2419,6 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeomPart::IsWorthInstancing (double chordTolerance) const
-    {
-    return true;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
@@ -2370,7 +2426,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
     ElementTileTree::GeometryCollection collection;
     
     GeometryList                        uninstancedGeometry;
-    bmap<DgnGeometryPartId,MeshPartPtr> partMap;
+    bmap<GeomPartCP,MeshPartPtr> partMap;
 
     // Extract instances first...
     for (auto const& geom : geometries)
@@ -2379,10 +2435,10 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
             return collection;
 
         auto const& part = geom->GetPart();
-        if (part.IsValid() && part->IsWorthInstancing(GetTolerance()))
+        if (part.IsValid())
             {
             MeshPartPtr meshPart;
-            auto found = partMap.find(part->GetPartId());
+            auto found = partMap.find(part.get());
 
             if (partMap.end() == found)
                 {
@@ -2391,7 +2447,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
                     continue;
 
                 collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
-                partMap.Insert(part->GetPartId(), meshPart);
+                partMap.Insert(part.get(), meshPart);
                 }
             else
                 {
@@ -2555,12 +2611,28 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
 bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
     bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
+#ifdef NOTNOW
     if (!hasCurvedFaceOrEdge)
         return false;   // Process as facets.
+#endif
 
     ISolidPrimitivePtr clone = prim.Clone();
-    IGeometryPtr geom = IGeometry::Create(clone);
-    return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+    Transform tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
+    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
+
+    DRange3d range, thisTileRange;
+    clone->GetRange(range);
+    tf.Multiply(thisTileRange, range);
+
+    if (!s_doInstances || !thisTileRange.IsContained(m_tileRange))
+        {
+        IGeometryPtr geom = IGeometry::Create(clone);
+        return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+        }
+
+    GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, *displayParams, m_curElemId);
+    AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, m_curElemId, *displayParams, GetDgnDb()));
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2700,11 +2772,9 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
         m_curElemGeometries.clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
 
-        m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(partId, geomPart->GetBoundingBox(), m_curElemGeometries)));
+        m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(geomPart->GetBoundingBox(), m_curElemGeometries)));
         m_curElemGeometries = saveCurrGeometries;
         }
-
-    tileGeomPart->IncrementInstanceCount();
 
     Transform   tf = Transform::FromProduct(m_transformFromDgn, partToWorld);
     
@@ -2749,8 +2819,6 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
-    static bool s_doInstances = false;
-
     if (s_doInstances)
         {
         GraphicParams graphicParams;
