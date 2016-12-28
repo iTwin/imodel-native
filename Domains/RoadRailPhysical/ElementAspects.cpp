@@ -47,7 +47,7 @@ void StatusAspect::Set(Dgn::PhysicalElementR el, StatusAspectR aspect)
 DgnDbStatus StatusAspect::_LoadProperties(DgnElementCR el)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT " BRRP_PROP_StatusAspect_Status " FROM " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " WHERE ElementId = ?;");
+        "SELECT " BRRP_PROP_StatusAspect_Status " FROM " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, el.GetElementId());
@@ -66,7 +66,7 @@ DgnDbStatus StatusAspect::_LoadProperties(DgnElementCR el)
 DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
-        "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE ElementId = ?;");
+        "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE Element.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindInt(1, static_cast<int>(m_status));
