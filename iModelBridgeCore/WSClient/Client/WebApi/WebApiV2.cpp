@@ -492,7 +492,7 @@ IWSRepositoryClient::RequestOptionsPtr options
     Utf8String url = GetUrl("$changeset");
     Http::Request request = m_configuration->GetHttpClient().CreatePostRequest(url);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
-    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Upload);
+    request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::Default);
 
     if (nullptr != options)
         {
