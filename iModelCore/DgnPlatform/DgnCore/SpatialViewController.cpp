@@ -134,7 +134,14 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
 
     DrawSkyBox(context);
 
-    for (auto modelId : GetViewedModels())
+    // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
+    // ###TODO_ELEMENT_TILE: UpdatePlan is on RenderListContext...
+    auto const& plan = static_cast<RenderListContext&>(context).GetUpdatePlan().GetQuery();
+    uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
+
+    // Create as many tile trees as we can within the allotted time...
+    DgnModelIdSet const& viewedModels = GetViewedModels();
+    for (auto modelId : viewedModels)
         {
         auto iter = m_roots.find(modelId);
         if (m_roots.end() == iter)
@@ -149,17 +156,25 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
                     m_copyrightMsgs.insert(message);
                 }
 
-            iter = m_roots.Insert(modelId, modelRoot).first;
+            m_roots.Insert(modelId, modelRoot).first;
+
+            if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+                {
+                DEBUG_PRINTF("CreateScene aborted");
+                break;
+                }
             }
+        }
 
-        auto root = iter->second;
-        if (root.IsValid())
-            root->DrawInView(context);
-
-        if (context.CheckStop())
+    // Always draw all the tile trees we currently have...
+    for (auto modelId : viewedModels)
+        {
+        auto iter = m_roots.find(modelId);
+        if (m_roots.end() != iter)
             {
-            DEBUG_PRINTF("CreateScene aborted");
-            break;
+            auto root = iter->second;
+            if (root.IsValid())
+                root->DrawInView(context);
             }
         }
 
