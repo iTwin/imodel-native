@@ -1568,8 +1568,6 @@ ICancellationTokenPtr cancellationToken
     const Utf8String methodName = "DgnDbRepositoryConnection::QueryCodesLocksInternal";
 
     std::set<Utf8String> classes;
-    classes.insert(ServerSchema::Class::Lock);
-    classes.insert(ServerSchema::Class::Code);
 
     bset<DgnDbServerCodeLockSetTaskPtr> tasks;
 
@@ -1591,6 +1589,8 @@ ICancellationTokenPtr cancellationToken
         {
         Utf8String filter;
         filter.Sprintf("(%s+eq+%u)", ServerSchema::Property::BriefcaseId, briefcaseId->GetValue());
+        classes.insert(ServerSchema::Class::MultiLock);
+        classes.insert(ServerSchema::Class::MultiCode);
 
         WSQuery query(ServerSchema::Schema::Repository, classes);
         query.SetFilter(filter);
@@ -1598,6 +1598,10 @@ ICancellationTokenPtr cancellationToken
 
         tasks.insert(task);
         }
+
+    classes.clear();
+    classes.insert(ServerSchema::Class::Lock);
+    classes.insert(ServerSchema::Class::Code);
 
     auto finalValue = std::make_shared<DgnDbCodeLockSetResultInfo>();
     int index = 0;
@@ -1646,9 +1650,7 @@ ICancellationTokenPtr cancellationToken
     return ExecutionManager::ExecuteWithRetry<DgnDbCodeLockSetResultInfo>([=]()
         {
         //Execute query
-        auto smth = "0";
-        
-        return m_wsRepositoryClient->SendQueryRequest(query, "", smth, cancellationToken)->Then<DgnDbServerCodeLockSetResult>
+        return m_wsRepositoryClient->SendQueryRequest(query, "", "", cancellationToken)->Then<DgnDbServerCodeLockSetResult>
             ([=] (const WSObjectsResult& result)
             {
             if (result.IsSuccess())
@@ -1671,6 +1673,24 @@ ICancellationTokenPtr cancellationToken
                         else if (GetCodeFromServerJson(value.GetProperties(), code, codeState, briefcaseId, repositoryId))
                             {
                             codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
+                            }
+
+                        DgnLockSet lockSet;
+                        if (GetMultiLockFromServerJson(value.GetProperties(), lockSet, briefcaseId, repositoryId))
+                            {
+                            for (auto const& lock : lockSet)
+                                {
+                                codesLocks.AddLock(lock, briefcaseId, repositoryId);
+                                }
+                            }
+
+                        DgnCodeSet codeSet;
+                        if (GetMultiCodeFromServerJson(value.GetProperties(), codeSet, codeState, briefcaseId, repositoryId))
+                            {
+                            for (auto const& code : codeSet)
+                                {
+                                codesLocks.AddCode(code, codeState, briefcaseId, repositoryId);
+                                }
                             }
                         }
                     //NEEDSWORK: log an error
@@ -2807,7 +2827,7 @@ ICancellationTokenPtr           cancellationToken
     auto requestOptions = std::make_shared<WSRepositoryClient::RequestOptions>();
     requestOptions->SetTransferTimeOut(WSRepositoryClient::Timeout::Transfer::LongUpload);
 
-    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, nullptr)
+    return SendChangesetRequestInternal(changeset, IBriefcaseManager::ResponseOptions::None, cancellationToken, requestOptions)
         ->Then([=] (const DgnDbServerStatusResult& initializeRevisionResult)
         {
         if (initializeRevisionResult.IsSuccess())

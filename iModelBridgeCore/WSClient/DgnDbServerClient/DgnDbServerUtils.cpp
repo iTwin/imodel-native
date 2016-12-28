@@ -142,6 +142,37 @@ bool BriefcaseIdFromJson(BeBriefcaseId& bcId, RapidJsonValueCR value)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                12/2016
+//---------------------------------------------------------------------------------------
+bool GetMultiLockFromServerJson(RapidJsonValueCR serverJson, DgnLockSet& lockSet, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
+    {
+    LockLevel               level;
+    LockableType            type;
+
+    if (!serverJson.HasMember(ServerSchema::Property::ObjectIds) || !serverJson.HasMember(ServerSchema::Property::LockLevel) ||
+        !serverJson.HasMember(ServerSchema::Property::LockType) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId))
+        return false;
+
+    if (!LockLevelFromJson(level, serverJson[ServerSchema::Property::LockLevel]) ||
+        !LockableTypeFromJson(type, serverJson[ServerSchema::Property::LockType]) ||
+        !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]))
+        return false;
+
+    auto values = serverJson[ServerSchema::Property::ObjectIds].GetArray();
+    if (0 == values.Size())
+        return false;
+
+    for (auto it = values.begin(); it != values.end(); ++it)
+        {
+        BeInt64Id id;
+        BeInt64IdFromJson(id, *it);
+        lockSet.insert(DgnLock(LockableId(type, id), level));
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas              01/2016
 //---------------------------------------------------------------------------------------
 bool GetLockFromServerJson(RapidJsonValueCR serverJson, DgnLockR lock, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR repositoryId)
@@ -238,6 +269,43 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR reservedValue, 
         }
 
     return false;
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     julius.cepukenas                12/2016
+//---------------------------------------------------------------------------------------
+bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId, Utf8StringR revisionId)
+    {
+    BeInt64Id               authorityId;
+    Utf8String              nameSpace = "";
+
+    if (!serverJson.HasMember(ServerSchema::Property::AuthorityId) || !serverJson.HasMember(ServerSchema::Property::Namespace) ||
+        !serverJson.HasMember(ServerSchema::Property::Values) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
+        !serverJson.HasMember(ServerSchema::Property::Reserved) || !serverJson.HasMember(ServerSchema::Property::Used))
+        return false;
+
+    if (!BeInt64IdFromJson(authorityId, serverJson[ServerSchema::Property::AuthorityId]) ||
+        !StringFromJson(nameSpace, serverJson[ServerSchema::Property::Namespace]) ||
+        !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
+        !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::Reserved], serverJson[ServerSchema::Property::Used], briefcaseId, revisionId))
+        return false;
+
+    // State revision is optional
+    if (serverJson.HasMember(ServerSchema::Property::StateRevision))
+        StringFromJson(revisionId, serverJson[ServerSchema::Property::StateRevision]);
+
+    auto values = serverJson[ServerSchema::Property::Values].GetArray();
+    if (0 == values.Size())
+        return false;
+
+    for (auto it = values.begin(); it != values.end(); ++it)
+        {
+        Utf8String value = "";
+        StringFromJson(value, *it);
+        codeSet.insert(DgnCode(DgnAuthorityId(authorityId.GetValue()), value, nameSpace));
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
