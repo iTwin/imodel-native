@@ -155,12 +155,12 @@ public:
 struct MeshInstance
 {
 private:
-    MeshPartCPtr        m_part;
+    DgnElementId        m_instanceId;
     Transform           m_transform;
 public:
-    MeshInstance(MeshPartCP part, TransformCR transform) : m_part(part), m_transform(transform) { }
+    MeshInstance(DgnElementId instanceId, TransformCR transform) : m_instanceId(instanceId), m_transform(transform) { }
 
-    MeshPartCP GetPart() const { return m_part.get(); }
+    DgnElementId GetId() const { return m_instanceId; }
     TransformCR GetTransform() const { return m_transform; }
 };
 
@@ -170,7 +170,8 @@ public:
 struct MeshPart : RefCountedBase
 {
 private:
-    MeshList    m_meshes;
+    MeshList            m_meshes;
+    MeshInstanceList    m_instances;
 
     MeshPart(MeshList&& meshes) : m_meshes(std::move(meshes)) { }
 
@@ -179,6 +180,8 @@ public:
     static MeshPartPtr Create(MeshList&& meshes) { return new MeshPart(std::move(meshes)); }
 
     MeshList const& Meshes() const { return m_meshes; }
+    MeshInstanceList const& Instances() const { return m_instances; }
+    void AddInstance(MeshInstanceCR instance) { m_instances.push_back(instance); }
 };
 
 //=======================================================================================
@@ -490,6 +493,7 @@ public:
     GeometryList const& GetGeometries() const { return m_geometries; }
     DRange3d GetRange() const { return m_range; };
     DgnGeometryPartId GetPartId() const { return m_partId; }
+    bool IsWorthInstancing(double chordTolerance) const;
 };
 
 //=======================================================================================
@@ -499,13 +503,11 @@ struct GeometryCollection
 {
 private:
     MeshList            m_meshes;
-    MeshInstanceList    m_instances;
     MeshPartList        m_parts;
 public:
     MeshList& Meshes()              { return m_meshes; }
-    MeshInstanceList& Instances()   { return m_instances; }
     MeshPartList& Parts()           { return m_parts; }
-    bool IsEmpty() const            { return m_meshes.empty() && m_instances.empty(); }
+    bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
 };
 
 //=======================================================================================

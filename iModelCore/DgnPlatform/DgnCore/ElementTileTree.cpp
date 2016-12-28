@@ -1879,10 +1879,51 @@ BentleyStatus Loader::_LoadTile()
     if (loadContext.WasAborted())
         return ERROR;
 
-    // ###TODO: instanced geometry
     TilePolylineArgs polylineArgs;
     TileMeshArgs meshArgs;
     Render::GraphicBuilderPtr graphic;
+
+    for (auto const& part : geometry.Parts())
+        {
+        if (part->Instances().empty() || part->Meshes().empty())
+            continue;
+
+        for (auto const& mesh : part->Meshes())
+            {
+            bool haveMesh = !mesh->Triangles().empty();
+            bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+            if (!haveMesh && !havePolyline)
+                continue;
+
+            if (graphic.IsNull())
+                graphic = system._CreateGraphic(Graphic::CreateParams());
+
+            auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+            subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+
+            if (haveMesh)
+                {
+                if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
+                    subGraphic->AddTriMesh(meshArgs);
+                }
+            else
+                {
+                for (auto const& polyline : mesh->Polylines())
+                    {
+                    if (polylineArgs.Init(mesh->Points(), polyline.GetIndices()))
+                        subGraphic->AddLineString(static_cast<int>(polylineArgs.m_vertices.size()), &polylineArgs.m_vertices[0]);
+                    }
+                }
+
+            subGraphic->Close();
+
+            for (auto const& instance : part->Instances())
+                {
+                graphic->AddSubGraphic(*subGraphic, instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
+                }
+            }
+        }
+
     for (auto const& mesh : geometry.Meshes())
         {
         bool haveMesh = !mesh->Triangles().empty();
@@ -2314,12 +2355,18 @@ ElementTileTree::GeometryCollection Tile::GenerateGeometry(GeometryOptionsCR opt
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeomPart::IsWorthInstancing (double chordTolerance) const
+    {
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList const& geometries, GeometryOptionsCR options, LoadContextCR context) const
     {
-    static size_t s_minInstanceCount = 10;
-
     ElementTileTree::GeometryCollection collection;
     
     GeometryList                        uninstancedGeometry;
@@ -2332,7 +2379,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
             return collection;
 
         auto const& part = geom->GetPart();
-        if (part.IsValid() && part->GetInstanceCount() > s_minInstanceCount)
+        if (part.IsValid() && part->IsWorthInstancing(GetTolerance()))
             {
             MeshPartPtr meshPart;
             auto found = partMap.find(part->GetPartId());
@@ -2341,10 +2388,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
                 {
                 MeshList partMeshes = GenerateMeshes(options, part->GetGeometries(), false, context);
                 if (partMeshes.empty())
-                    {
-                    BeAssert(false && "Part did not generate meshes");
                     continue;
-                    }
 
                 collection.Parts().push_back(meshPart = MeshPart::Create(std::move(partMeshes)));
                 partMap.Insert(part->GetPartId(), meshPart);
@@ -2354,7 +2398,7 @@ ElementTileTree::GeometryCollection Tile::CreateGeometryCollection(GeometryList 
                 meshPart = found->second;
                 }
 
-            collection.Instances().push_back(MeshInstance(meshPart.get(), geom->GetTransform()));
+            meshPart->AddInstance(MeshInstance(geom->GetEntityId(), geom->GetTransform()));
             }
         else
             {
@@ -2705,7 +2749,7 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
-    static bool s_doInstances;
+    static bool s_doInstances = false;
 
     if (s_doInstances)
         {
