@@ -357,25 +357,42 @@ void Attachment::Tree::Draw(RenderContextR context)
     DrawInView(context);
 
 #ifdef DEBUG_ATTACHMENT_RANGE
-    auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(m_attachmentId);
-    if (attachment.IsValid())
-        {
-        auto const& placement = attachment->GetPlacement();
-        AxisAlignedBox3d range;
-        placement.GetTransform().Multiply(range, DRange3d::From(&placement.GetElementBox().low, 2, 0.0));
+    ElementAlignedBox3d range(0,0,0, 1.0,1.0,1.0);
+    GetLocation().Multiply(&range.low, &range.low, 2);
 
-        Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
-        graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
-        graphicBbox->AddRangeBox(range);
-        context.OutputGraphic(*graphicBbox, nullptr);
+    Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
+    graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
+    graphicBbox->AddRangeBox(range);
+    context.OutputGraphic(*graphicBbox, nullptr);
 
-        Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
-        DPoint3d org = DPoint3d::From(placement.GetOrigin());
-        graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
-        graphicOrigin->AddPointString(1, &org);
-        context.OutputGraphic(*graphicOrigin, nullptr);
-        }
+    Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
+    graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
+    graphicOrigin->AddPointString(1, &range.low);
+    context.OutputGraphic(*graphicOrigin, nullptr);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Attachment::Tree::Pick(PickContext& context)
+    {
+    if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
+        return false;
+
+    Transform sheetToTile;
+    sheetToTile.InverseOf(GetLocation());
+    Frustum box = context.GetFrustum().TransformBy(sheetToTile);
+
+    if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
+        return false;
+
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(GetLocation());
+    context.WorldToView(frust.m_pts, frust.m_pts, 8);
+    Transform attachViewToSheetView = Transform::FromPlaneOf3Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear]);
+    attachViewToSheetView.ScaleMatrixColumns(m_sizeNPC.x/m_pixels, m_sizeNPC.y/m_pixels, 1.0);
+
+    return context._ProcessSheetAttachment(*m_viewport, attachViewToSheetView);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -513,4 +530,13 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
+
+    if (DrawPurpose::Pick != context.GetDrawPurpose())
+        return;
+
+    for (auto& attach : m_attachments)
+        {
+        if (attach->Pick((PickContext&)context))
+            return;
+        }
     }

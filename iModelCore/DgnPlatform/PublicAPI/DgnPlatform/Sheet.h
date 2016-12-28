@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnView.h>
+#include <DgnPlatform/PickContext.h>
 #include <DgnPlatform/TileTree.h>
 
 #define USING_NAMESPACE_SHEET using namespace BentleyApi::Dgn::Sheet;
@@ -194,8 +195,9 @@ namespace Attachment
         bool m_sceneQueued = false;
         bool m_sceneReady = false;
 
-        void Draw(RenderContextR context);
-        void Load(Render::SystemP renderSys);
+        bool Pick(PickContext&);
+        void Draw(RenderContextR);
+        void Load(Render::SystemP);
         Utf8CP _GetName() const override {return "SheetTile";}
         Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize);
         ~Tree(){ClearAllTiles();}

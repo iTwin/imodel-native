@@ -105,44 +105,44 @@ private:
 public:
     DGNPLATFORM_EXPORT void Init();
 
-    DPoint3dCR              GetClosestPoint() const     {return m_closePoint;}
-    DVec3dCR                GetSurfaceNormal() const    {return m_normal;}
-    HitGeomType             GetGeomType() const         {return m_geomType;}
-    HitDetailSource         GetDetailSource() const     {return m_detailSource;}
-    HitPriority             GetLocatePriority() const   {return m_hitPriority;}
-    bool                    IsSnappable() const         {return !m_nonSnappable;}
-    double                  GetScreenDist() const       {return m_viewDist;}
-    double                  GetZValue() const           {return m_viewZ;}
+    DPoint3dCR GetClosestPoint() const {return m_closePoint;}
+    DVec3dCR GetSurfaceNormal() const {return m_normal;}
+    HitGeomType GetGeomType() const {return m_geomType;}
+    HitDetailSource GetDetailSource() const {return m_detailSource;}
+    HitPriority GetLocatePriority() const {return m_hitPriority;}
+    bool IsSnappable() const {return !m_nonSnappable;}
+    double GetScreenDist() const {return m_viewDist;}
+    double GetZValue() const {return m_viewZ;}
 
-    void                    SetClosestPoint(DPoint3dCR pt)         {m_closePoint = pt;}
-    void                    SetSurfaceNormal(DVec3dCR value)       {m_normal = value;}
-    void                    SetGeomType(HitGeomType value)         {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
-    void                    SetDetailSource(HitDetailSource value) {m_detailSource = value;}
-    void                    SetLocatePriority(HitPriority value)   {m_hitPriority = value;}
-    void                    SetNonSnappable(bool yesNo)            {m_nonSnappable = yesNo;}
-    void                    SetScreenDist(double value)            {m_viewDist = value;}
-    void                    SetZValue(double value)                {m_viewZ = value;}
+    void SetClosestPoint(DPoint3dCR pt) {m_closePoint = pt;}
+    void SetSurfaceNormal(DVec3dCR value) {m_normal = value;}
+    void SetGeomType(HitGeomType value) {m_geomType = value; m_primitive = nullptr;} // NOTE: Use SetCurvePrimitive for HitGeomType::Segment/Arc/Curve.
+    void SetDetailSource(HitDetailSource value) {m_detailSource = value;}
+    void SetLocatePriority(HitPriority value) {m_hitPriority = value;}
+    void SetNonSnappable(bool yesNo) {m_nonSnappable = yesNo;}
+    void SetScreenDist(double value) {m_viewDist = value;}
+    void SetZValue(double value) {m_viewZ = value;}
 
     //! @private
     GeometryStreamEntryId GetGeometryStreamEntryId(bool wantPartIndex=false) const {if (wantPartIndex) return m_geomId; GeometryStreamEntryId tmpId = m_geomId; tmpId.SetPartIndex(0); return tmpId;}
     //! @private
     void SetGeometryStreamEntryId(GeometryStreamEntryId geomId) {m_geomId = geomId;}
 
-    DGNPLATFORM_EXPORT bool     FillGPA (GPArrayR, bool singleSegment = true) const;
-    DGNPLATFORM_EXPORT bool     GetArc(DEllipse3dR) const;
-    DGNPLATFORM_EXPORT bool     GetSegment(DSegment3dR) const;
-    DGNPLATFORM_EXPORT size_t   GetSegmentNumber() const;
-    DGNPLATFORM_EXPORT double   GetSegmentParam() const;
-    DGNPLATFORM_EXPORT double   GetCloseParam() const;
-    DGNPLATFORM_EXPORT size_t   GetCloseVertex() const;
-    DGNPLATFORM_EXPORT size_t   GetPointCount() const;
-    DGNPLATFORM_EXPORT bool     IsValidSurfaceHit() const;  // Test for HitGeomType::Surface with valid normal (i.e. not a QVElem wireframe edge hit)...
-    DGNPLATFORM_EXPORT bool     IsValidEdgeHit() const;     // Check hit types, HitGeomType::Segment/HitGeomType::Curve/HitGeomType::Arc (is GetCloseParam, etc. meaningful?)...
+    DGNPLATFORM_EXPORT bool FillGPA (GPArrayR, bool singleSegment = true) const;
+    DGNPLATFORM_EXPORT bool GetArc(DEllipse3dR) const;
+    DGNPLATFORM_EXPORT bool GetSegment(DSegment3dR) const;
+    DGNPLATFORM_EXPORT size_t GetSegmentNumber() const;
+    DGNPLATFORM_EXPORT double GetSegmentParam() const;
+    DGNPLATFORM_EXPORT double GetCloseParam() const;
+    DGNPLATFORM_EXPORT size_t GetCloseVertex() const;
+    DGNPLATFORM_EXPORT size_t GetPointCount() const;
+    DGNPLATFORM_EXPORT bool IsValidSurfaceHit() const; // Test for HitGeomType::Surface with valid normal (i.e. not a QVElem wireframe edge hit)...
+    DGNPLATFORM_EXPORT bool IsValidEdgeHit() const; // Check hit types, HitGeomType::Segment/HitGeomType::Curve/HitGeomType::Arc (is GetCloseParam, etc. meaningful?)...
 
-    DGNPLATFORM_EXPORT ICurvePrimitiveCP   GetCurvePrimitive() const;
-    DGNPLATFORM_EXPORT CurvePrimitiveIdCP  GetCurvePrimitiveId() const;
-    DGNPLATFORM_EXPORT HitGeomType         GetCurvePrimitiveType() const;
-    DGNPLATFORM_EXPORT HitGeomType         GetEffectiveHitGeomType() const; // Return GetGeomType or GetCurvePrimitiveType for HitGeomType::Surface. 
+    DGNPLATFORM_EXPORT ICurvePrimitiveCP GetCurvePrimitive() const;
+    DGNPLATFORM_EXPORT CurvePrimitiveIdCP GetCurvePrimitiveId() const;
+    DGNPLATFORM_EXPORT HitGeomType GetCurvePrimitiveType() const;
+    DGNPLATFORM_EXPORT HitGeomType GetEffectiveHitGeomType() const; // Return GetGeomType or GetCurvePrimitiveType for HitGeomType::Surface. 
 
     //! Sets ICurvePrimitive hit geometry and appropriate HitGeomType for the supplied primitive.
     //! @note Optional geomType can be explicity specified to override the default HitGeomType.

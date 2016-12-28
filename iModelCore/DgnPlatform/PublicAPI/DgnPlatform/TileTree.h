@@ -142,7 +142,7 @@ public:
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
     double GetRadius() const {return 0.5 * m_range.low.Distance(m_range.high);}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
-    ElementAlignedBox3d GetRange() const {return m_range;}
+    ElementAlignedBox3d const& GetRange() const {return m_range;}
     DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
@@ -201,7 +201,7 @@ protected:
     int m_activeLoads = 0;
     DgnDbR m_db;
     BeFileName m_localCacheName;
-    Transform m_location;
+    Transform m_location;         // transform from tile coordinates to world coordinates  
     double m_biasDistance = 0.0;  // for 2d display priority
     double m_hiResBiasDistance = -0.5; // for moving higer resolution substitute tiles behind real tiles.
     double m_loResBiasDistance = -1.0; // for moving lower resolution substitute tiles behind real tiles.
