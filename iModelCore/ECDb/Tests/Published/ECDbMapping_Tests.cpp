@@ -4187,6 +4187,153 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintForRelationshipClassId)
     ASSERT_EQ(0, sqlstmt.GetValueInt(0));
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Maha Nasir                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbMappingTestFixture, ConstraintCheckOnProperties)
+    {
+            {
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "<ECEntityClass typeName='Foo' modifier='None' >"
+                "           <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                "            </ClassMap>"
+                "           </ECCustomAttributes>"
+                "  <ECProperty propertyName='P1' typeName='int'>"
+                "           <ECCustomAttributes>"
+                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                "               <IsUnique>true</IsUnique>"
+                "            </PropertyMap>"
+                "           </ECCustomAttributes>"
+                "  </ECProperty>"
+                "  <ECProperty propertyName='P2' typeName='int'>"
+                "           <ECCustomAttributes>"
+                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                "               <IsNullable>false</IsNullable>"
+                "            </PropertyMap>"
+                "           </ECCustomAttributes>"
+                "  </ECProperty>"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Goo' modifier='None' >"
+                "<BaseClass>Foo</BaseClass>"
+                "   <ECProperty propertyName='GooProp' typeName='string' />"
+                "</ECEntityClass>"
+                "</ECSchema>", true, "NotNull and IsUnique constraints on a subclass are expected to succeed.");
+
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "ConstraintCheckOnProperties.ecdb");
+            ASSERT_FALSE(asserted);
+
+            //Verifying IsUnique constraint.
+            ECSqlStatement stmt;
+
+            //On the class itself
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Foo(P1, P2) VALUES (1, 11)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Foo(P1, P2) VALUES (1, 12)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step());
+            stmt.Finalize();
+
+            //On subclass
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P1, P2, GooProp) VALUES (2, 12, 'val1')"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P1, P2, GooProp) VALUES (2, 13, 'val2')"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()); // As P1 has CA IsUnique applied to it.
+            stmt.Finalize();
+
+            //Verifying IsNullable constraint
+
+            //On the class itself
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Foo(P1) VALUES (3)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step()); // As P2 has CA IsNullable applied to it.
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Foo(P2) VALUES (null)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
+            stmt.Finalize();
+
+            //On subclass
+            //Implicitly inserting null for P2
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(GooProp) VALUES (11)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
+            stmt.Finalize();
+
+            //Explicitly inserting null for P2
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P2, GooProp) VALUES (null, 11)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step());
+            stmt.Finalize();
+            }
+
+            //Verification of IsUnique/IsNullable properties on Shared Columns
+            {
+            SchemaItem testItem(
+                "<?xml version='1.0' encoding='utf-8'?>"
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "<ECEntityClass typeName='Foo' modifier='None' >"
+                "           <ECCustomAttributes>"
+                "            <ClassMap xmlns='ECDbMap.02.00'>"
+                "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                "            </ClassMap>"
+                "            <ShareColumns xmlns='ECDbMap.02.00'>"
+                "            </ShareColumns>"
+                "           </ECCustomAttributes>"
+                "  <ECProperty propertyName='P1' typeName='int'>"
+                "           <ECCustomAttributes>"
+                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                "               <IsUnique>true</IsUnique>"
+                "            </PropertyMap>"
+                "           </ECCustomAttributes>"
+                "  </ECProperty>"
+                "  <ECProperty propertyName='P2' typeName='int'>"
+                "           <ECCustomAttributes>"
+                "            <PropertyMap xmlns='ECDbMap.02.00'>"
+                "               <IsNullable>false</IsNullable>"
+                "            </PropertyMap>"
+                "           </ECCustomAttributes>"
+                "  </ECProperty>"
+                "</ECEntityClass>"
+                "<ECEntityClass typeName='Goo' modifier='None' >"
+                "<BaseClass>Foo</BaseClass>"
+                "   <ECProperty propertyName='GooProp' typeName='string' />"
+                "</ECEntityClass>"
+                "</ECSchema>", true, "NotNull and IsUnique constraints on a subclass are expected to succeed.");
+
+            ECDb db;
+            bool asserted = false;
+            AssertSchemaImport(db, asserted, testItem, "ConstraintCheckOnProperties.ecdb");
+            ASSERT_FALSE(asserted);
+
+            //IsUnique/IsNull constraints are ignored as the properties are mapped to SharedColumn, so insertion should be successfull
+            ECSqlStatement stmt;
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P1, P2, GooProp) VALUES (2, 12, 'val1')"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P1, P2, GooProp) VALUES (2, 13, 'val2')"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(GooProp) VALUES (11)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+
+            //Explicitly inserting null for P2
+            ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(db, "INSERT INTO ts.Goo(P2, GooProp) VALUES (null, 11)"));
+            ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+            stmt.Finalize();
+            }
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/16
