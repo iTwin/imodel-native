@@ -130,6 +130,55 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
     {
     DgnDb::VerifyClientThread();
 
+#if defined(ELEMENT_TILE_PROFILE_RANGE_INDEX)
+    static bool s_filledRangeIndices = false;
+    if (!s_filledRangeIndices)
+        {
+        StopWatch profileTimer(true);
+        uint32_t numFilled = 0;
+        for (auto modelId : GetViewedModels())
+            {
+            auto model = GetDgnDb().Models().Get<GeometricModel>(modelId);
+            if (model.IsValid())
+                {
+                model->FillRangeIndex();
+                ++numFilled;
+                }
+            }
+
+        double rangeIndexTime = profileTimer.GetCurrentSeconds();
+        s_filledRangeIndices = true;
+        Utf8PrintfString msg("Filled %u range indices in %f seconds", numFilled, rangeIndexTime);
+        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
+        T_HOST.GetNotificationAdmin()._OutputMessage(details);
+        }
+#endif
+
+#if defined(ELEMENT_TILE_PROFILE_CREATE_ROOT)
+    if (!m_allRootsLoaded)
+        {
+        StopWatch rootsTimer(true);
+        uint32_t numCreated = 0;
+        for (auto modelId : GetViewedModels())
+            {
+            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+            TileTree::RootPtr modelRoot;
+            if (model.IsValid())
+                {
+                modelRoot = model->CreateTileTree(context, *this);
+                ++numCreated;
+                }
+
+            m_roots.Insert(modelId, modelRoot);
+            }
+
+        Utf8PrintfString msg("Loaded %u roots in %f seconds", numCreated, rootsTimer.GetCurrentSeconds());
+        NotifyMessageDetails details(OutputMessagePriority::Info, msg.c_str());
+        T_HOST.GetNotificationAdmin()._OutputMessage(details);
+        m_allRootsLoaded = true;
+        }
+#endif
+
     StopWatch timer(true);
 
     DrawSkyBox(context);
@@ -158,7 +207,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
                         m_copyrightMsgs.insert(message);
                     }
 
-                m_roots.Insert(modelId, modelRoot).first;
+                m_roots.Insert(modelId, modelRoot);
 
                 if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
                     {
