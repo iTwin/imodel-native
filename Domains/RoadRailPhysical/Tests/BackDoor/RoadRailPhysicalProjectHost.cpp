@@ -144,7 +144,7 @@ DgnDbPtr RoadRailPhysicalProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
-    createDgnDbParams.SetRootSubjectLabel("RoadRailPhysicalProject");
+    createDgnDbParams.SetRootSubjectName("RoadRailPhysicalProject");
     createDgnDbParams.SetRootSubjectDescription("Created by RoadRailPhysicalProjectHost");
     createDgnDbParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 

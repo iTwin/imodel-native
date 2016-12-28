@@ -33,7 +33,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadSegment)
 
     Dgn::DgnElementId GetRoadCrossSectionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadCrossSection"); }
-    void SetRoadCrossSection(RoadCrossSectionCR crossSection) { SetPropertyValue("RoadCrossSection", crossSection.GetElementId()); }
+    ROADRAILPHYSICAL_EXPORT void SetRoadCrossSection(RoadCrossSectionCR crossSection);
 
     ROADRAILPHYSICAL_EXPORT static RoadSegmentPtr Create(RoadRangeCR roadRange, double fromDistanceAlong, double toDistanceAlong, RoadCrossSectionCR crossSection);
 }; // RoadSegment

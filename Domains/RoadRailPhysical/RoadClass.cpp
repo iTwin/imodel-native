@@ -163,9 +163,19 @@ RoadClassPtr RoadClass::Create(RoadRangeCR roadRange, RoadClassDefinitionCR Clas
         return nullptr;
 
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()));
-    params.SetParentId(roadRange.GetElementId());
+    params.SetParentId(roadRange.GetElementId(),
+        DgnClassId(roadRange.GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasRoadClasses)));
 
     auto retVal = new RoadClass(params, ClassDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoadClass::SetClassDefinition(RoadClassDefinitionCR ClassDef) 
+    { 
+    SetPropertyValue("RoadClassDefinition", ClassDef.GetElementId(),
+        GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadClassRefersToDefinition));
     }

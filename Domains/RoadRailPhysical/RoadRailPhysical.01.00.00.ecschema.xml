@@ -476,15 +476,16 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="RoadRangeHasDesignSpeeds" strength="embedding">
-        <BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
+    <ECRelationshipClass typeName="RoadRangeHasDesignSpeeds" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <!--BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass-->
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 RoadRange">
             <Class class="RoadRange"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N design speeds">
             <Class class="RoadDesignSpeed"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
     <!-- END Road Design-Speed classes -->
 
     <!-- BEGIN RoadClass classes -->
@@ -536,15 +537,16 @@
             <Class class="RoadClassDefinition"/>
         </Target>
     </ECRelationshipClass>
-    <!--ECRelationshipClass typeName="RoadRangeHasRoadClasses" strength="embedding">
-        <BaseClass>lr:ILinearEntityHasILinearlyLocatedProperties</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="false">
-            <Class class="roadrail:RoadRange"/>
+    <ECRelationshipClass typeName="RoadRangeHasRoadClasses" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <!--BaseClass>lr:ILinearEntityHasILinearlyLocatedProperties</BaseClass-->
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 RoadRange">
+            <Class class="RoadRange"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="false">
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N roadClasses">
             <Class class="RoadClass"/>
         </Target>
-    </ECRelationshipClass-->
+    </ECRelationshipClass>
     <!-- END RoadClass classes -->
 
     <!-- BEGIN CrossSection Element classes -->

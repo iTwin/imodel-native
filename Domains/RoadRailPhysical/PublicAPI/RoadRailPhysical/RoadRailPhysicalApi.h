@@ -110,6 +110,12 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Relationships
 #define BRRP_REL_SegmentRangeOwnsSegments                           "SegmentRangeOwnsSegments"
 #define BRRP_REL_SegmentRangeRefersToAlignment                      "SegmentRangeRefersToAlignment"
+#define BRRP_REL_RoadClassRefersToDefinition                        "RoadClassRefersToDefinition"
+#define BRRP_REL_RoadDesignSpeedRefersToDefinition                  "RoadDesignSpeedRefersToDefinition"
+#define BRRP_REL_RoadSegmentRefersToCrossSection                    "RoadSegmentRefersToCrossSection"
+#define BRRP_REL_RoadRangeHasDesignSpeeds                           "RoadRangeHasDesignSpeeds"
+#define BRRP_REL_RoadRangeHasRoadClasses                            "RoadRangeHasRoadClasses"
+#define BRRP_REL_SegmentRangeAssemblesSegments                      "SegmentRangeAssemblesSegments"
 
 
 // Properties

@@ -174,7 +174,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadDesignSpeed)
 
     Dgn::DgnElementId GetDesignSpeedDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadDesignSpeedDefinition"); }
-    void SetDesignSpeedDefinition(RoadDesignSpeedDefinitionCR designSpeedDef) { SetPropertyValue("RoadDesignSpeedDefinition", designSpeedDef.GetElementId()); }
+    ROADRAILPHYSICAL_EXPORT void SetDesignSpeedDefinition(RoadDesignSpeedDefinitionCR designSpeedDef);
 
     ROADRAILPHYSICAL_EXPORT static RoadDesignSpeedPtr Create(RoadRangeCR roadRange, RoadDesignSpeedDefinitionCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadDesignSpeed

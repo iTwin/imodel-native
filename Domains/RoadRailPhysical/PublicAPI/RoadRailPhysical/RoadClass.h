@@ -133,7 +133,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(RoadClass)
 
     Dgn::DgnElementId GetClassDefinitionId() const { return GetPropertyValueId<Dgn::DgnElementId>("RoadClassDefinition"); }
-    void SetClassDefinition(RoadClassDefinitionCR ClassDef) { SetPropertyValue("RoadClassDefinition", ClassDef.GetElementId()); }
+    ROADRAILPHYSICAL_EXPORT void SetClassDefinition(RoadClassDefinitionCR ClassDef);
 
     ROADRAILPHYSICAL_EXPORT static RoadClassPtr Create(RoadRangeCR roadRange, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadClass

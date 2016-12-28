@@ -210,9 +210,19 @@ RoadDesignSpeedPtr RoadDesignSpeed::Create(RoadRangeCR roadRange, RoadDesignSpee
         return nullptr;
 
     CreateParams params(roadRange.GetDgnDb(), roadRange.GetModelId(), QueryClassId(roadRange.GetDgnDb()));
-    params.SetParentId(roadRange.GetElementId());
+    params.SetParentId(roadRange.GetElementId(),
+        DgnClassId(roadRange.GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadRangeHasDesignSpeeds)));
 
     auto retVal = new RoadDesignSpeed(params, designSpeedDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElementId(alignmentId);
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoadDesignSpeed::SetDesignSpeedDefinition(RoadDesignSpeedDefinitionCR designSpeedDef)
+    { 
+    SetPropertyValue("RoadDesignSpeedDefinition", designSpeedDef.GetElementId(),
+        GetDgnDb().Schemas().GetECClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadDesignSpeedRefersToDefinition));
     }
