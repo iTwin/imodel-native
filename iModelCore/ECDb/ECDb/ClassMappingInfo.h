@@ -107,14 +107,6 @@ public:
 struct RelationshipMappingInfo : public ClassMappingInfo
     {
 public:
-    enum class Cardinality
-        {
-        ManyToMany,
-        OneToMany,
-        ManyToOne,
-        OneToOne
-        };
-
     struct FkMappingInfo : NonCopyableClass
         {
         private:
@@ -163,7 +155,6 @@ public:
         };
 private:
     bool m_isRootClass;
-    Cardinality m_cardinality;
     std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
     std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
     std::set<DbTable const*> m_sourceTables;
@@ -175,27 +166,22 @@ private:
     BentleyStatus EvaluateLinkTableStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
     BentleyStatus EvaluateForeignKeyStrategy(ClassMappingCACache const&, ClassMap const* baseClassMap);
 
-    void DetermineCardinality();
-
-    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
     bool ContainsClassWithNotMappedStrategy(std::vector<ECN::ECClassCP> const& classes) const;
 
-    bool RequiresLinkTable() const { return m_cardinality == Cardinality::ManyToMany || m_ecClass.GetPropertyCount() > 0; }
-
+    bool RequiresLinkTable() const;
     BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&) const;
+
+    std::set<DbTable const*> GetTablesFromRelationshipEnd(ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
         : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()),
         m_fkMappingInfo(nullptr), m_linkTableMappingInfo(nullptr) 
-        {
-        DetermineCardinality();
-        }
+        {}
 
     virtual ~RelationshipMappingInfo() {}
 
     bool IsRootClass() const { return m_isRootClass; }
-    Cardinality GetCardinality() const { return m_cardinality; }
     //only available for root classes. Subclasses just inherit from their base class
     FkMappingInfo const* GetFkMappingInfo() const { BeAssert(IsRootClass() && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
     //only available for root classes. Subclasses just inherit from their base class

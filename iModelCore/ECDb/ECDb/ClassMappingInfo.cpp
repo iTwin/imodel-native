@@ -571,6 +571,17 @@ BentleyStatus RelationshipMappingInfo::_InitializeFromSchema()
         if (SUCCESS != TryDetermineFkEnd(foreignKeyEnd))
             return ERROR;
 
+        if (useECInstanceIdAsFk)
+            {
+            RelationshipMultiplicityCR referencedEndMult = foreignKeyEnd == ECRelationshipEnd_Source ? relClass->GetTarget().GetMultiplicity() : relClass->GetSource().GetMultiplicity();
+            if (referencedEndMult.GetLowerLimit() == 0)
+                {
+                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. It has the 'UseECInstanceIdAsForeignKey' custom attribute, which requires the %s multiplicity's lower bound to not be 0 because the ECInstanceId can never be NULL.",
+                                m_ecClass.GetFullName(), foreignKeyEnd == ECRelationshipEnd_Source ? "target" : "source");
+                return ERROR;
+                }
+            }
+
         if (!hasForeignKeyConstraintCA)
             {
             m_fkMappingInfo = std::make_unique<FkMappingInfo>(foreignKeyEnd, useECInstanceIdAsFk);
@@ -867,66 +878,60 @@ BentleyStatus RelationshipMappingInfo::TryDetermineFkEnd(ECN::ECRelationshipEnd&
     const StrengthType strength = relClass.GetStrength();
     const ECRelatedInstanceDirection strengthDirection = relClass.GetStrengthDirection();
 
-    switch (m_cardinality)
+    const bool sourceIsM = relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1;
+    const bool targetIsM = relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1;
+    if (sourceIsM && targetIsM)
         {
-            case Cardinality::OneToMany:
-            {
-            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
-                                m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
-                return ERROR;
-                }
-
-            fkEnd = ECRelationshipEnd_Target;
-            return SUCCESS;
-            }
-            case Cardinality::ManyToOne:
-            {
-            if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
-                {
-                Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
-                                m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
-                return ERROR;
-                }
-
-            fkEnd = ECRelationshipEnd_Source;
-            return SUCCESS;
-            }
-            case Cardinality::OneToOne:
-            {
-            if (strengthDirection == ECRelatedInstanceDirection::Forward)
-                fkEnd = ECRelationshipEnd_Target;
-            else
-                fkEnd = ECRelationshipEnd_Source;
-
-            return SUCCESS;
-            }
-
-            default:
-                BeAssert(false && "Must not be called for M:N cardinalities");
-                return ERROR;
+        BeAssert(false && "Must not be called for M:N cardinalities");
+        return ERROR;
         }
+
+    if (!sourceIsM && targetIsM)
+        {
+        if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Backward)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Forward'.",
+                            m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+            return ERROR;
+            }
+
+        fkEnd = ECRelationshipEnd_Target;
+        return SUCCESS;
+        }
+
+    if (sourceIsM && !targetIsM)
+        {
+        if (strength == StrengthType::Embedding && strengthDirection == ECRelatedInstanceDirection::Forward)
+            {
+            Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass %s. For strength 'Embedding', the cardinality '%s:%s' requires the strength direction to be 'Backward'.",
+                            m_ecClass.GetFullName(), relClass.GetSource().GetMultiplicity().ToString().c_str(), relClass.GetTarget().GetMultiplicity().ToString().c_str());
+            return ERROR;
+            }
+
+        fkEnd = ECRelationshipEnd_Source;
+        return SUCCESS;
+        }
+
+    BeAssert(!sourceIsM && !targetIsM);
+    if (strengthDirection == ECRelatedInstanceDirection::Forward)
+        fkEnd = ECRelationshipEnd_Target;
+    else
+        fkEnd = ECRelationshipEnd_Source;
+
+    return SUCCESS;
     }
 
 
 //---------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                06/2014
+// @bsimethod                                 Krischan.Eberle          12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void RelationshipMappingInfo::DetermineCardinality()
+bool RelationshipMappingInfo::RequiresLinkTable() const
     {
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-    const bool sourceIsM = relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1;
-    const bool targetIsM = relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1;
-    if (sourceIsM && targetIsM)
-        m_cardinality = Cardinality::ManyToMany;
-    else if (!sourceIsM && targetIsM)
-        m_cardinality = Cardinality::OneToMany;
-    else if (sourceIsM && !targetIsM)
-        m_cardinality = Cardinality::ManyToOne;
-    else
-        m_cardinality = Cardinality::OneToOne;
+    ECRelationshipClassCR relClass = *m_ecClass.GetRelationshipClassCP();
+    return (relClass.GetSource().GetMultiplicity().GetUpperLimit() > 1 && relClass.GetTarget().GetMultiplicity().GetUpperLimit() > 1) || 
+        relClass.GetPropertyCount() > 0;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015

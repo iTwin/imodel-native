@@ -57,6 +57,8 @@ protected:
     ECDb& GetECDb() const { return m_ecdb; }
     BentleyStatus GetInstances (bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
 
+    static Utf8String RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType = "table");
+
 public:
     ECDbTestFixture() : ::testing::Test() {}
     virtual ~ECDbTestFixture () {};

@@ -280,4 +280,25 @@ void ECDbTestFixture::Initialize()
         }
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+//static
+Utf8String ECDbTestFixture::RetrieveDdl(ECDbCR ecdb, Utf8CP entityName, Utf8CP entityType)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE AND type=? COLLATE NOCASE");
+    if (stmt == nullptr)
+        return Utf8String();
+
+    if (BE_SQLITE_OK != stmt->BindText(1, entityName, Statement::MakeCopy::No))
+        return Utf8String();
+
+    if (BE_SQLITE_OK != stmt->BindText(2, entityType, Statement::MakeCopy::No))
+        return Utf8String();
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return Utf8String();
+
+    return Utf8String(stmt->GetValueText(0));
+    }
 END_ECDBUNITTESTS_NAMESPACE

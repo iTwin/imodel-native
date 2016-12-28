@@ -150,7 +150,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 
         RelationshipClassEndTableMap(ECDb const&, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
 
-        void AddIndexToRelationshipEnd(ClassMappingContext&);
+        void AddIndexToRelationshipEnd();
 
         virtual ClassMappingStatus _Map(ClassMappingContext&) override;
         DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8StringCR colName, bool makeNotNull) const;

@@ -1786,13 +1786,11 @@ TEST_F(ECDbMappingTestFixture, ShareColumnsCAAndPerColumnConstraints)
     AssertSchemaImport(ecdb, asserted, testSchema, "sharecolumnsandcolumnconstraints.ecdb");
     ASSERT_FALSE(asserted);
 
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name='ts_TestClass'"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table ts_TestClass";
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_TestClass");
+    ASSERT_FALSE(ddl.empty());
 
     bvector<Utf8String> columnDdlList;
-    BeStringUtilities::Split(stmt.GetValueText(0), ",", columnDdlList);
-    stmt.Finalize();
+    BeStringUtilities::Split(ddl.c_str(), ",", columnDdlList);
 
     for (Utf8StringR columnDdl : columnDdlList)
         {
@@ -6762,16 +6760,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
                                 "</ECSchema>"));
     ASSERT_TRUE(ecdb.IsDbOpen());
 
-    auto getDdl = [] (Utf8StringR ddl, ECDbCR ecdb, Utf8CP tableName)
-        {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE");
-        ASSERT_TRUE(stmt != nullptr);
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No)) << stmt->GetSql();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step()) << stmt->GetSql();
-        ddl.assign(stmt->GetValueText(0));
-        };
-
 
     bvector<Utf8String> actualColNames;
     ASSERT_TRUE(ecdb.GetColumns(actualColNames, "ts3_Base"));
@@ -6782,9 +6770,9 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
     ASSERT_STRCASEEQ("c_sub1", actualColNames[3].c_str()) << "ts3_Base";
     ASSERT_STRCASEEQ("c_sub2", actualColNames[4].c_str()) << "ts3_Base";
 
+    Utf8String tsBaseDdl = RetrieveDdl(ecdb, "ts3_Base");
+    ASSERT_FALSE(tsBaseDdl.empty());
 
-    Utf8String tsBaseDdl;
-    getDdl(tsBaseDdl, ecdb, "ts3_Base");
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_base] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub1] INTEGER UNIQUE COLLATE NOCASE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub2] INTEGER UNIQUE COLLATE NOCASE")) << tsBaseDdl.c_str();
@@ -6797,8 +6785,9 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
     ASSERT_STRCASEEQ("ECClassId", actualColNames[1].c_str()) << "ts3_Sub2Sub";
     ASSERT_STRCASEEQ("c_sub2sub", actualColNames[2].c_str()) << "ts3_Sub2Sub";
 
-    Utf8String tsSub2SubDdl;
-    getDdl(tsSub2SubDdl, ecdb, "ts3_Sub2Sub");
+    Utf8String tsSub2SubDdl = RetrieveDdl(ecdb, "ts3_Sub2Sub");
+    ASSERT_FALSE(tsSub2SubDdl.empty());
+
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_Sub2Sub] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2SubDdl.c_str();
 
     actualColNames.clear();
@@ -6810,8 +6799,9 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
     ASSERT_STRCASEEQ("sc1", actualColNames[3].c_str()) << "ts3_Sub2Sub2";
     ASSERT_STRCASEEQ("scoverflow", actualColNames[4].c_str()) << "ts3_Sub2Sub2";
 
-    Utf8String tsSub2Sub2Ddl;
-    getDdl(tsSub2Sub2Ddl, ecdb, "ts3_Sub2Sub2");
+    Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts3_Sub2Sub2");
+    ASSERT_FALSE(tsSub2Sub2Ddl.empty());
+
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[c_sub2sub2] INTEGER UNIQUE COLLATE NOCASE,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[scoverflow] TEXT,")) << tsSub2Sub2Ddl.c_str();
@@ -6822,15 +6812,6 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAColumnNameCollation)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     {
-    auto getDdl = [] (Utf8StringR ddl, ECDbCR ecdb, Utf8CP tableName)
-        {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE");
-        ASSERT_TRUE(stmt != nullptr);
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No)) << stmt->GetSql();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step()) << stmt->GetSql();
-        ddl.assign(stmt->GetValueText(0));
-        };
 
     ECDbCR ecdb = SetupECDb("propertymapcatests.ecdb",
                             SchemaItem(
@@ -6954,8 +6935,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("c_sub2", actualColNames[4].c_str()) << "ts_Base";
 
 
-    Utf8String tsBaseDdl;
-    getDdl(tsBaseDdl, ecdb, "ts_Base");
+    Utf8String tsBaseDdl = RetrieveDdl(ecdb, "ts_Base");
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_base] INTEGER NOT NULL UNIQUE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub1] INTEGER UNIQUE,")) << tsBaseDdl.c_str();
     ASSERT_TRUE(tsBaseDdl.ContainsI("[c_sub2] INTEGER UNIQUE")) << tsBaseDdl.c_str();
@@ -6969,8 +6949,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("c_sub2sub", actualColNames[2].c_str()) << "ts_Sub2Sub";
     ASSERT_STRCASEEQ("c_sub2subsub", actualColNames[3].c_str()) << "ts_Sub2Sub";
 
-    Utf8String tsSub2SubDdl;
-    getDdl(tsSub2SubDdl, ecdb, "ts_Sub2Sub");
+    Utf8String tsSub2SubDdl = RetrieveDdl(ecdb, "ts_Sub2Sub");
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2sub] INTEGER NOT NULL UNIQUE,")) << tsSub2SubDdl.c_str();
     ASSERT_TRUE(tsSub2SubDdl.ContainsI("[c_sub2subsub] INTEGER UNIQUE,")) << tsSub2SubDdl.c_str();
 
@@ -6982,8 +6961,7 @@ TEST_F(ECDbMappingTestFixture, PropertyMapCAIsNullableIsUnique)
     ASSERT_STRCASEEQ("sc1", actualColNames[2].c_str()) << "ts_Sub2Sub2";
     ASSERT_STRCASEEQ("scoverflow", actualColNames[3].c_str()) << "ts_Sub2Sub2";
 
-    Utf8String tsSub2Sub2Ddl;
-    getDdl(tsSub2Sub2Ddl, ecdb, "ts_Sub2Sub2");
+    Utf8String tsSub2Sub2Ddl = RetrieveDdl(ecdb, "ts_Sub2Sub2");
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[sc1] BLOB,")) << tsSub2Sub2Ddl.c_str();
     ASSERT_TRUE(tsSub2Sub2Ddl.ContainsI("[scoverflow] TEXT,")) << tsSub2Sub2Ddl.c_str();
     }
@@ -7655,16 +7633,6 @@ TEST_F(ECDbMappingTestFixture, IndexCreationForRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     {
-    auto getDdl = [] (Utf8StringR ddl, ECDbCR ecdb, Utf8CP tableName)
-        {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=?");
-        ASSERT_TRUE(stmt != nullptr);
-
-        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No)) << stmt->GetSql();
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step()) << stmt->GetSql();
-        ddl.assign(stmt->GetValueText(0));
-        };
-
     {
     SchemaItem testItem("Plain relationship classes",
                         "<?xml version='1.0' encoding='utf-8'?>"
@@ -7714,8 +7682,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkcolumns.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_B");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel0N] INTEGER,"));
@@ -7777,8 +7744,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkcolumns.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_B");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,"));
@@ -7853,8 +7819,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkcolumns.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_B");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[ForeignECInstanceId_ts_Rel0N] INTEGER,"));
@@ -7899,8 +7864,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfkcolumns.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_B");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,"));
@@ -7945,8 +7909,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_Base");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_Base");
     ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
     }
@@ -7990,8 +7953,7 @@ TEST_F(ECDbMappingTestFixture, NotNullConstraintsOnFkColumns)
     AssertSchemaImport(ecdb, asserted, testItem, "notnullconstraintsonfk.ecdb");
     ASSERT_FALSE(asserted);
 
-    Utf8String ddl;
-    getDdl(ddl, ecdb, "ts_Base");
+    Utf8String ddl = RetrieveDdl(ecdb, "ts_Base");
     ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Actual DDL: " << ddl.c_str();
     }
@@ -8912,7 +8874,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                                  <ECCustomAttributes>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
@@ -8941,7 +8903,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                                     </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
@@ -8971,7 +8933,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                                     </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
                                  </ECCustomAttributes>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
@@ -9011,7 +8973,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                                     </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
@@ -9050,7 +9012,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                                     </ForeignKeyConstraint>
                                     <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
                                  </ECCustomAttributes>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
@@ -9059,7 +9021,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                               </ECRelationshipClass>
                               <ECRelationshipClass typeName="ParentHasSubChildren_2" strength="referencing" modifier="Sealed">
                                 <BaseClass>ParentHasSubChildren</BaseClass>
-                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="is parent of">
                                   <Class class="Parent" />
                                 </Source>
                                 <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is subchild of">
@@ -9073,9 +9035,73 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
     ASSERT_TRUE(GetECDb().ColumnExists("ts5_SubChild", "ChildECInstanceRelECClassId"));
     GetECDb().CloseDb();
 
+
+    SetupECDb("useecinstanceidasfk6.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts6" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Model">
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                        <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                                    </ClassMap>                               
+                                 </ECCustomAttributes>
+                                 <ECProperty propertyName="Name" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="PhysicalModel">
+                                <BaseClass>Model</BaseClass>
+                                <ECProperty propertyName="Bla" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="Element" >
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                        <ECInstanceIdColumn>Id</ECInstanceIdColumn>
+                                    </ClassMap>
+                                    <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00" />
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="Code" typeName="string" />
+                              </ECEntityClass>
+                              <ECEntityClass typeName="PhysicalElement" >
+                                <BaseClass>Element</BaseClass>
+                                <ECProperty propertyName="Geomstream" typeName="binary" />
+                              </ECEntityClass>
+                              <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
+                                 <ECCustomAttributes>
+                                    <ForeignKeyConstraint xmlns="ECDbMap.02.00">
+                                        <OnDeleteAction>NoAction</OnDeleteAction>
+                                    </ForeignKeyConstraint>
+                                    <UseECInstanceIdAsForeignKey xmlns="ECDbMap.02.00"/>
+                                 </ECCustomAttributes>
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="models">
+                                  <Class class="Model" />
+                                </Source>
+                                <Target multiplicity="(1..1)" polymorphic="True" roleLabel="is modeled by">
+                                  <Class class="Element" />
+                                </Target>
+                              </ECRelationshipClass>
+                              <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward" modifier="None">
+                                <BaseClass>ModelModelsElement</BaseClass>
+                                <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
+                                    <Class class="PhysicalModel"/>
+                                </Source>
+                                <Target multiplicity="(1..1)" roleLabel="is broken down by" polymorphic="true">
+                                    <Class class="PhysicalElement" />
+                                </Target>
+                              </ECRelationshipClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    AssertForeignKeyDdl(GetECDb(), "ts6_Model", "FOREIGN KEY([Id]) REFERENCES [ts6_Element]([Id]) ON DELETE NO ACTION)");
+    Utf8String modelDdl = RetrieveDdl(GetECDb(), "ts6_Model");
+    ASSERT_FALSE(modelDdl.empty());
+    ASSERT_TRUE(modelDdl.ContainsI("[RelECClassId] INTEGER NOT NULL,")) << modelDdl.c_str();
+    GetECDb().CloseDb();
+
+
     std::vector<SchemaItem> invalidSchemas;
     invalidSchemas.push_back(SchemaItem(R"xml(
-        <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="TestSchema" alias="ts_invalid" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Parent">
                <ECProperty propertyName="Name" typeName="string" />
@@ -9098,7 +9124,7 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
         </ECSchema>)xml", false, "UseECInstanceIdAsForeignKey on link table is not supported"));
 
     invalidSchemas.push_back(SchemaItem(R"xml(
-        <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchema schemaName="TestSchema" alias="ts_invalid" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Parent">
                <ECProperty propertyName="Name" typeName="string" />
@@ -9120,6 +9146,29 @@ TEST_F(ECDbMappingTestFixture, UseECInstanceIdAsForeignKey)
                 </Target>
             </ECRelationshipClass>
         </ECSchema>)xml", false, "UseECInstanceIdAsForeignKey if LinkTableRelationshipMap CA is present is not supported"));
+
+    invalidSchemas.push_back(SchemaItem(R"xml(
+        <ECSchema schemaName="TestSchema" alias="ts_invalid" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent">
+               <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" >
+               <ECProperty propertyName="ChildName" typeName="string" />
+               <NavigationECProperty propertyName="Parent" relationshipName="ParentHasChildren" direction="Backward" />                 
+            </ECEntityClass>
+            <ECRelationshipClass typeName="ParentHasChildren" strength="referencing" modifier="Sealed">
+                <ECCustomAttributes>
+                    <UseECInstanceIdAsForeignKey xmlns='ECDbMap.02.00'/>
+                </ECCustomAttributes>
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="is parent of">
+                    <Class class="Parent" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is child of">
+                    <Class class="Child"/>
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml", false, "UseECInstanceIdAsForeignKey implies multiplicity of 1..1 on end side"));
 
     AssertSchemaImport(invalidSchemas, "UseECInstanceIdAsForeignKey_invalidcases.ecdb");
 

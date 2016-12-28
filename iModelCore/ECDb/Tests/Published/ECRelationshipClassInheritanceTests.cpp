@@ -878,14 +878,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull)
         {
         const int relClassIdColumnKind = 256;
-        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT sql FROM sqlite_master WHERE name=? AND type='table'");
-        ASSERT_TRUE(stmt != nullptr);
-        ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));
-        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
-        Utf8String ddl(stmt->GetValueText(0));
-        stmt = nullptr;
+        Utf8String ddl = RetrieveDdl(ecdb, tableName);
+        ASSERT_FALSE(ddl.empty());
 
-        stmt = ecdb.GetCachedStatement("SELECT c.ColumnKind, c.IsVirtual, c.NotNullConstraint FROM ec_Column c, ec_Table t WHERE c.TableId=t.Id AND t.Name=? and c.Name=?");
+        CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT c.ColumnKind, c.IsVirtual, c.NotNullConstraint FROM ec_Column c, ec_Table t WHERE c.TableId=t.Id AND t.Name=? and c.Name=?");
         ASSERT_TRUE(stmt != nullptr);
         ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(1, tableName, Statement::MakeCopy::No));
         ASSERT_EQ(BE_SQLITE_OK, stmt->BindText(2, relClassIdColumnName, Statement::MakeCopy::No));

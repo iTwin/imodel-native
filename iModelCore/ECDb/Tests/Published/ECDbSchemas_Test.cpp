@@ -518,22 +518,9 @@ TEST_F(ECDbSchemaTests, ImportMultipleSchemasInSameECDb)
 TEST_F(ECDbSchemaTests, IntegrityCheck)
     {
     ECDbCR ecdb = SetupECDb("IntegrityCheck.ecdb", BeFileName(L"IntegrityCheck.01.00.ecschema.xml"));
-    Statement stmt;
-    std::map<Utf8String, Utf8String> expected;
-    expected["ic_TargetBase"] = "CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [ForeignECInstanceId_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([ForeignECInstanceId_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)";
-    stmt.Prepare(ecdb, "select name, sql from sqlite_master Where type='table' AND tbl_name = 'ic_TargetBase'");
-    int nRows = 0;
-    while (stmt.Step() == BE_SQLITE_ROW)
-        {
-        nRows = nRows + 1;
-        Utf8String name = stmt.GetValueText(0);
-        Utf8CP sql = stmt.GetValueText(1);
-        auto itor = expected.find(name);
-        ASSERT_TRUE(itor != expected.end()) << "Failed to find expected value [name=" << name << "]";
-        ASSERT_STRCASEEQ(itor->second.c_str(), sql) << "SQL def for  [name=" << name << "] has changed";
-        }
-
-    ASSERT_EQ(nRows, expected.size()) << "Number of SQL definitions are not same";
+    Utf8String actualDdl = RetrieveDdl(ecdb, "ic_TargetBase");
+    ASSERT_FALSE(actualDdl.empty());
+    ASSERT_STRCASEEQ("CREATE TABLE [ic_TargetBase]([ECInstanceId] INTEGER PRIMARY KEY, [ECClassId] INTEGER NOT NULL, [I] INTEGER, [S] TEXT, [ForeignECInstanceId_ic_SourceToTarget_Embedding] INTEGER NOT NULL, FOREIGN KEY([ForeignECInstanceId_ic_SourceToTarget_Embedding]) REFERENCES [ic_SourceBase]([ECInstanceId]) ON DELETE CASCADE ON UPDATE NO ACTION)", actualDdl.c_str());
     }
 
 //-------------------------------------------------------------------------------------

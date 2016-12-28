@@ -130,13 +130,10 @@ void SchemaImportTestFixture::AssertIndex(ECDbCR ecdb, Utf8CP indexName, bool is
     expectedDdl.append(")");
     if (!Utf8String::IsNullOrEmpty (whereClause))
         expectedDdl.append(" WHERE ").append(whereClause);
-
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=?"));
-    ASSERT_EQ(BE_SQLITE_OK, stmt.BindText(1, indexName, Statement::MakeCopy::No));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Index " << indexName << " does not exist unexpectedly";
-
-    ASSERT_STRCASEEQ(expectedDdl.c_str(), stmt.GetValueText(0));
+    
+    Utf8String actualDdl = RetrieveDdl(ecdb, indexName, "index");
+    ASSERT_FALSE(actualDdl.empty());
+    ASSERT_STRCASEEQ(expectedDdl.c_str(), actualDdl.c_str());
     }
 
 //---------------------------------------------------------------------------------------
@@ -173,16 +170,8 @@ std::vector<SchemaImportTestFixture::IndexInfo> SchemaImportTestFixture::Retriev
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyColumnName)
     {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE"));
-
-    stmt.BindText(1, tableName, Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table " << tableName;
-
-    Utf8String ddl(stmt.GetValueText(0));
-
-    //only one row expected
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    Utf8String ddl = RetrieveDdl(ecdb, tableName);
+    ASSERT_FALSE(ddl.empty());
 
     Utf8String fkSearchString;
     if (Utf8String::IsNullOrEmpty(foreignKeyColumnName))
@@ -198,16 +187,8 @@ void SchemaImportTestFixture::AssertForeignKey(bool expectedToHaveForeignKey, EC
 //+---------------+---------------+---------------+---------------+---------------+------
 void SchemaImportTestFixture::AssertForeignKeyDdl(ECDbCR ecdb, Utf8CP tableName, Utf8CP foreignKeyDdl)
     {
-    Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(ecdb, "SELECT sql FROM sqlite_master WHERE name=? COLLATE NOCASE"));
-
-    stmt.BindText(1, tableName, Statement::MakeCopy::No);
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Did not find table " << tableName;
-
-    Utf8String ddl(stmt.GetValueText(0));
-
-    //only one row expected
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+    Utf8String ddl = RetrieveDdl(ecdb, tableName);
+    ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.find(foreignKeyDdl) != ddl.npos) << "Table: " << tableName << " Expected FK DDL: " << foreignKeyDdl << " Actual complete DDL: " << ddl.c_str();
     }
 
@@ -240,6 +221,9 @@ bool ECDbMappingTestFixture::TryGetMapStrategyInfo(MapStrategyInfo& stratInfo, E
 
     return false;
     }
+
+
+
 
 END_ECDBUNITTESTS_NAMESPACE
 

@@ -363,7 +363,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (ClassMappingStatus::Error == MapProperties(ctx))
         return ClassMappingStatus::Error;
 
-    AddIndexToRelationshipEnd(ctx);
+    AddIndexToRelationshipEnd();
     return ClassMappingStatus::Success;
     }
 
@@ -414,7 +414,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
     for (DbColumn const* fkCol : columns.m_fkColumnsPerFkTable)
         {
         DbTable& fkTable = fkCol->GetTableR();
-        const bool makeRelClassIdColNotNull = fkCol->GetConstraints().HasNotNullConstraint();
+        const bool makeRelClassIdColNotNull = fkCol->DoNotAllowDbNull();
         DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull);
         if (relClassIdCol == nullptr)
             {
@@ -951,11 +951,11 @@ BentleyStatus RelationshipClassEndTableMap::ValidateForeignKeyColumn(DbColumn co
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RelationshipClassEndTableMap::AddIndexToRelationshipEnd(ClassMappingContext& ctx)
+void RelationshipClassEndTableMap::AddIndexToRelationshipEnd()
     {
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
-    RelationshipMappingInfo const& relMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
-    const bool isUniqueIndex = relMapInfo.GetCardinality() == RelationshipMappingInfo::Cardinality::OneToOne;
+    //0:0 or 1:1 cardinalities imply unique index
+    const bool isUniqueIndex = GetRelationshipClass().GetSource().GetMultiplicity().GetUpperLimit() <= 1 &&
+                               GetRelationshipClass().GetTarget().GetMultiplicity().GetUpperLimit() <= 1;
 
     BeAssert(GetReferencedEndECInstanceIdPropMap() != nullptr);
     std::vector<DbColumn const*> referencedEndIdColumns;
@@ -1439,32 +1439,10 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx, bool al
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing)
         return;
 
-    BeAssert(dynamic_cast<RelationshipMappingInfo const*> (&ctx.GetClassMappingInfo()) != nullptr);
-    RelationshipMappingInfo const& relationshipClassMapInfo = static_cast<RelationshipMappingInfo const&> (ctx.GetClassMappingInfo());
-
-    RelationshipMappingInfo::Cardinality cardinality = relationshipClassMapInfo.GetCardinality();
-
     // Add indices on the source and target based on cardinality
-    bool sourceIsUnique = !allowDuplicateRelationships;
-    bool targetIsUnique = !allowDuplicateRelationships;
-
-    switch (cardinality)
-        {
-        //the many side can be unique, but the one side must never be unique
-            case RelationshipMappingInfo::Cardinality::OneToMany:
-                sourceIsUnique = false;
-                break;
-            case RelationshipMappingInfo::Cardinality::ManyToOne:
-                targetIsUnique = false;
-                break;
-
-            case RelationshipMappingInfo::Cardinality::ManyToMany:
-                sourceIsUnique = false;
-                targetIsUnique = false;
-                break;
-            default:
-                break;
-        }
+    //(the many side can be unique, but the one side must never be unique)
+    const bool sourceIsUnique = !allowDuplicateRelationships && (GetRelationshipClass().GetTarget().GetMultiplicity().GetUpperLimit() <= 1);
+    const bool targetIsUnique = !allowDuplicateRelationships && (GetRelationshipClass().GetSource().GetMultiplicity().GetUpperLimit() <= 1);
 
     AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Source, sourceIsUnique);
     AddIndex(ctx.GetImportCtx(), RelationshipIndexSpec::Target, targetIsUnique);
