@@ -128,6 +128,7 @@ protected:
     Render::GraphicListPtr m_currentScene;
     Render::GraphicListPtr m_readyScene;
     bmap<DgnModelId, TileTree::RootPtr> m_roots;
+    bool m_allRootsLoaded = false;
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 

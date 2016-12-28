@@ -134,49 +134,49 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
 
     DrawSkyBox(context);
 
-    // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
-    // ###TODO_ELEMENT_TILE: UpdatePlan is on RenderListContext...
-    auto const& plan = static_cast<RenderListContext&>(context).GetUpdatePlan().GetQuery();
-    uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
-
-    // Create as many tile trees as we can within the allotted time...
-    DgnModelIdSet const& viewedModels = GetViewedModels();
-    for (auto modelId : viewedModels)
+    if (!m_allRootsLoaded)
         {
-        auto iter = m_roots.find(modelId);
-        if (m_roots.end() == iter)
+        // NB: The UpdatePlan's 'timeout' exists for scene creation...is not handled by context.CheckStop()...
+        // ###TODO_ELEMENT_TILE: UpdatePlan is on RenderListContext...
+        auto const& plan = static_cast<RenderListContext&>(context).GetUpdatePlan().GetQuery();
+        uint64_t endTime = plan.GetTimeout() ? (BeTimeUtilities::QueryMillisecondsCounter() + plan.GetTimeout()) : 0;
+
+        // Create as many tile trees as we can within the allotted time...
+        bool timedOut = false;
+        for (auto modelId : GetViewedModels())
             {
-            auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
-            TileTree::RootPtr modelRoot;
-            if (model.IsValid())
+            auto iter = m_roots.find(modelId);
+            if (m_roots.end() == iter)
                 {
-                modelRoot = model->CreateTileTree(context, *this);
-                Utf8CP message = model->GetCopyrightMessage();
-                if (!Utf8String::IsNullOrEmpty(message))
-                    m_copyrightMsgs.insert(message);
-                }
+                auto model = GetDgnDb().Models().Get<GeometricModel3d>(modelId);
+                TileTree::RootPtr modelRoot;
+                if (model.IsValid())
+                    {
+                    modelRoot = model->CreateTileTree(context, *this);
+                    Utf8CP message = model->GetCopyrightMessage();
+                    if (!Utf8String::IsNullOrEmpty(message))
+                        m_copyrightMsgs.insert(message);
+                    }
 
-            m_roots.Insert(modelId, modelRoot).first;
+                m_roots.Insert(modelId, modelRoot).first;
 
-            if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
-                {
-                DEBUG_PRINTF("CreateScene aborted");
-                break;
+                if (endTime && (BeTimeUtilities::QueryMillisecondsCounter() > endTime))
+                    {
+                    DEBUG_PRINTF("CreateScene aborted");
+                    timedOut = true;
+                    break;
+                    }
                 }
             }
+
+        m_allRootsLoaded = !timedOut;
         }
 
     // Always draw all the tile trees we currently have...
-    for (auto modelId : viewedModels)
-        {
-        auto iter = m_roots.find(modelId);
-        if (m_roots.end() != iter)
-            {
-            auto root = iter->second;
-            if (root.IsValid())
-                root->DrawInView(context);
-            }
-        }
+    // NB: We assert that m_roots will contain ONLY models that are in our viewed models list (it may not yet contain ALL of them though)
+    for (auto pair : m_roots)
+        if (pair.second.IsValid())
+            pair.second->DrawInView(context);
 
     DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 
@@ -240,6 +240,8 @@ void SpatialViewController::_ChangeModelDisplay(DgnModelId modelId, bool onOff)
         models.erase(modelId);
         m_roots.erase(m_roots.find(modelId));
         }
+
+    m_allRootsLoaded = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,6 +255,7 @@ void SpatialViewController::_OnCategoryChange(bool singleEnabled)
     // Category stuff is baked into the tiles (for now) - throw them away
     // ###TODO_ELEMENT_TILES: If we were informed about the delta in the set of viewed categories, we could throw away only those tiles affected.
     m_roots.clear();
+    m_allRootsLoaded = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
