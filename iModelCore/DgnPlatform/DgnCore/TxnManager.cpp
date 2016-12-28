@@ -199,13 +199,14 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     if (!relClass.IsRelationshipClass())
         return DgnDbStatus::BadArg;
 
-    ChangeSummary::TableMapPtr tinfo = ChangeSummary::GetPrimaryTableMap(m_dgndb, relClass);
-    if (!tinfo.IsValid())
+    Utf8String tableName;
+    bool isTablePerHierarchy;
+    if (SUCCESS != ChangeSummary::GetMappedPrimaryTable(tableName, isTablePerHierarchy, relClass, m_dgndb))
         return DgnDbStatus::BadArg;
 
     dgn_TxnTable::RelationshipLinkTable* rlt;
 
-    auto handler = FindTxnTable(tinfo->GetTableName().c_str());
+    auto handler = FindTxnTable(tableName.c_str());
     if (handler != nullptr)
         {
         //  Somebody is already tracking this table
@@ -235,7 +236,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
 
     // Nobody is tracking this table.
     // *** TBD: 
-    // if (tinfo.m_tablePerHierarchy)
+    // if (isTablePerHierarchy)
     //  {
     //  auto multi = new dgn_TxnTable::MultiRelationshipLinkTable(*this);
     //  multi->m_ecclasses.insert(&relClass);
@@ -249,7 +250,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         }
 
     m_tables.push_back(handler);
-    m_tablesByName.Insert(tinfo->GetTableName().c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
+    m_tablesByName.Insert(tableName.c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
 
     return DgnDbStatus::Success;
     }

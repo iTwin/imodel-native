@@ -9,7 +9,6 @@
 #include <Bentley/SHA1.h>
 #include <BeSqlite/BeLzma.h>
 #include <DgnPlatform/DgnChangeSummary.h>
-#include "DgnChangeIterator.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
@@ -475,6 +474,53 @@ RevisionStatus DgnRevision::Validate(DgnDbCR dgndb) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+static DbDupValue GetValueFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Utf8CP propertyAccessString, Changes::Change::Stage stage)
+    {
+    ChangeIterator::ColumnEntry column = columnIter.GetColumn(propertyAccessString);
+    DbDupValue value = column.GetValue(stage);
+
+    if (!value.IsValid() && columnIter.GetRowEntry().GetDbOpcode() == DbOpcode::Update)
+        value = column.QueryValueFromDb();
+
+    return value;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+template<typename T> static T GetIdFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Utf8CP propertyAccessString, Changes::Change::Stage stage)
+    {
+    DbDupValue value = GetValueFromChangeOrDb(columnIter, propertyAccessString, stage);
+    return value.IsValid() ? value.GetValueId<T>() : T();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
+    {
+    return GetIdFromChangeOrDb<DgnModelId>(columnIter, "Model.Id", stage);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Ramanujam.Raman                    12/2017
+//---------------------------------------------------------------------------------------
+static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
+    {
+    DbDupValue authorityId = GetValueFromChangeOrDb(columnIter, "CodeAuthority.Id", stage);
+    DbDupValue nameSpace = GetValueFromChangeOrDb(columnIter, "CodeNamespace", stage);
+    DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
+
+    DgnCode code;
+    if (authorityId.IsValid() && nameSpace.IsValid() && value.IsValid())
+        code.From(authorityId.GetValueId<DgnAuthorityId>(), value.GetValueText(), nameSpace.GetValueText());
+
+    return code;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Paul.Connelly   12/15
 //---------------------------------------------------------------------------------------
 static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
@@ -497,34 +543,37 @@ static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotI
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Paul.Connelly   12/15
-//---------------------------------------------------------------------------------------
-template<typename T> static void collectCodes(DgnCodeSet& assigned, DgnCodeSet& discarded, T& collection)
-    {
-    for (auto const& entry : collection)
-        {
-        auto oldCode = entry.GetOldCode(),
-             newCode = entry.GetNewCode();
-
-        if (oldCode == newCode)
-            continue;
-
-        insertCode(discarded, oldCode, assigned);
-        insertCode(assigned, newCode, discarded);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016
 //---------------------------------------------------------------------------------------
 void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedCodes, DgnDbCR dgndb) const
     {
+    ECClassCP elemClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    BeAssert(elemClass != nullptr);
+
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
-    auto elems = DgnChangeIterator::MakeElementChangeIterator(dgndb, changeStream);
+    ChangeIterator changeIter(dgndb, changeStream);
 
     assignedCodes.clear();
     discardedCodes.clear();
-    collectCodes(assignedCodes, discardedCodes, elems);
+
+    for (ChangeIterator::RowEntry const& entry : changeIter)
+        {
+        ECClassCR primaryClass = entry.GetPrimaryClass();
+        if (entry.IsJoinedTable() || !primaryClass.Is(elemClass))
+            continue;
+
+        DbOpcode dbOpcode = entry.GetDbOpcode();
+        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(primaryClass); // Note: ColumnIterator needs to be in the stack to access column
+
+        DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
+        DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::New);
+
+        if (oldCode == newCode)
+            continue;
+
+        insertCode(discardedCodes, oldCode, assignedCodes);
+        insertCode(assignedCodes, newCode, discardedCodes);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -532,21 +581,33 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 //---------------------------------------------------------------------------------------
 void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     {
-    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
-
     LockRequest lockRequest;
 
-    for (ElementChangeEntry entry : DgnChangeIterator::MakeElementChangeIterator(dgndb, changeStream))
+    ECClassCP elemClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Element);
+    BeAssert(elemClass != nullptr);
+    ECClassCP modelClass = dgndb.Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
+    BeAssert(modelClass != nullptr);
+
+    RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
+    ChangeIterator changeIter(dgndb, changeStream);
+
+    for (ChangeIterator::RowEntry const& entry : changeIter)
         {
+        ECClassCR primaryClass = entry.GetPrimaryClass();
+        if (entry.IsJoinedTable() || !primaryClass.Is(elemClass))
+            continue;
+
+        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(primaryClass); // Note: ColumnIterator needs to be in the stack to access column
+
         DgnModelId modelId;
         switch (entry.GetDbOpcode())
             {
-                case DbOpcode::Insert:  modelId = entry.GetNewModelId(); break;
-                case DbOpcode::Delete:  modelId = entry.GetOldModelId(); break;
+                case DbOpcode::Insert:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New); break;
+                case DbOpcode::Delete:  modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old); break;
                 case DbOpcode::Update:
                     {
-                    modelId = entry.GetNewModelId();
-                    auto oldModelId = entry.GetOldModelId();
+                    modelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::New);
+                    auto oldModelId = GetModelIdFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
                     if (oldModelId != modelId)
                         lockRequest.InsertLock(LockableId(oldModelId), LockLevel::Shared);
 
@@ -556,13 +617,17 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
         BeAssert(modelId.IsValid());
         lockRequest.InsertLock(LockableId(modelId), LockLevel::Shared);
-        lockRequest.InsertLock(LockableId(entry.GetElementId()), LockLevel::Exclusive);
+        lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Any models directly changed?
-    for (ModelChangeEntry entry : DgnChangeIterator::MakeModelChangeIterator(dgndb, changeStream))
+    for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        lockRequest.InsertLock(LockableId(LockableType::Model, entry.GetModelId()), LockLevel::Exclusive);
+        ECClassCR primaryClass = entry.GetPrimaryClass();
+        if (entry.IsJoinedTable() || !primaryClass.Is(modelClass))
+            continue;
+
+        lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
     // Anything changed at all?

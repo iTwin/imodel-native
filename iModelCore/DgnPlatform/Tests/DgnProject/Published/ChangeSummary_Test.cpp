@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 // The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
 // Turn this on for debugging.
-// #define DUMP_CHANGE_SUMMARY 1
+#define DUMP_CHANGE_SUMMARY 1
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
@@ -918,14 +918,13 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(childElementId.GetValueUnchecked(), value.GetValueUInt64());
     ASSERT_EQ(childElementId.GetValueUnchecked(), relInstance.GetNewValue("TargetECInstanceId").GetValueUInt64());
 
-    // WIP: Determine if skipping NavigationProperties is the right thing to do
-    //value = instance.GetNewValue("Parent.Id");
-    //ASSERT_TRUE(value.IsValid());
-    //ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
-    //ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("Parent.Id").GetValueUInt64());
+    value = instance.GetNewValue("Parent.Id");
+    ASSERT_TRUE(value.IsValid());
+    ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
+    ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("Parent.Id").GetValueUInt64());
 
-    EXPECT_EQ(4, relInstance.MakeValueIterator(changeSummary).QueryCount());
-    EXPECT_EQ(1, instance.MakeValueIterator(changeSummary).QueryCount());
+    EXPECT_EQ(4, relInstance.MakeValueIterator().QueryCount());
+    EXPECT_EQ(3, instance.MakeValueIterator().QueryCount());
     }
 
 //---------------------------------------------------------------------------------------
@@ -1016,29 +1015,3 @@ TEST_F(ChangeSummaryTestFixture, QueryMultipleSessions)
     EXPECT_EQ(expectedChangeCount, GetChangeSummaryInstanceCount(changeSummary, BIS_SCHEMA(BIS_CLASS_Element)));
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    07/2015
-//---------------------------------------------------------------------------------------
-TEST_F(ChangeSummaryTestFixture, ValidateTableMap)
-    {
-    CreateDgnDb();
-    m_testDb->SaveChanges();
-
-    ECClassCP ecClass = m_testDb->Schemas().GetECClass(GENERIC_DOMAIN_NAME, GENERIC_CLASS_PhysicalObject);
-    ASSERT_TRUE(ecClass != nullptr);
-
-    ChangeSummary::TableMapPtr tableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecClass);
-
-    ASSERT_TRUE(tableMap.IsValid());
-    ASSERT_EQ(true, tableMap->ContainsECClassIdColumn());
-    ASSERT_TRUE(tableMap->GetECClassIdColumn().GetIndex() >= 0);
-    ASSERT_TRUE(tableMap->GetECInstanceIdColumn().GetIndex() >= 0);
-
-    ECClassCP ecRelClass = m_testDb->Schemas().GetECClass(BIS_ECSCHEMA_NAME, BIS_REL_ElementHasLinks);
-    ASSERT_TRUE(ecRelClass != nullptr);
-
-    ChangeSummary::TableMapPtr relTableMap = ChangeSummary::GetPrimaryTableMap(*m_testDb, *ecRelClass);
-
-    ASSERT_TRUE(relTableMap.IsValid());
-    ASSERT_TRUE(relTableMap->ContainsECClassIdColumn());
-    }
