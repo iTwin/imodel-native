@@ -71,7 +71,7 @@ bvector<LinearlyReferencedLocationId> ILinearlyLocated::QueryLinearlyReferencedL
     bvector<LinearlyReferencedLocationId> retVal;
 
     auto stmtPtr = ToElement().GetDgnDb().GetPreparedECSqlStatement(
-        "SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedLocation) " WHERE ElementId = ? ORDER BY ECInstanceId;");
+        "SELECT ECInstanceId FROM " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedLocation) " WHERE Element.Id = ? ORDER BY ECInstanceId;");
 
     stmtPtr->BindId(1, ToElement().GetElementId());
 

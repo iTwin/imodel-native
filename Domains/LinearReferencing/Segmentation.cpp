@@ -114,7 +114,7 @@ void GetAtLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Ut
 
     ecSql.append(") LinearlyLocated, "
         BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation "
-        "WHERE (LinearlyLocated.ECInstanceId = AtLocation.ElementId ");
+        "WHERE (LinearlyLocated.ECInstanceId = AtLocation.Element.Id ");
 
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
         {
@@ -152,7 +152,7 @@ void GetFromToLocationOnlyECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds
 
     ecSql.append(") LinearlyLocated, "
         BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation "
-        "WHERE (LinearlyLocated.ECInstanceId = FromToLocation.ElementId ");
+        "WHERE (LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
 
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
         {
@@ -193,8 +193,8 @@ void GetAnyLocationECSQL(bset<DgnClassId> const& iLinearlyLocatedClassIds, Utf8S
     AppendILinearlyLocatedClassIdsECSQL(iLinearlyLocatedClassIds, ecSql);
 
     ecSql.append(") LinearlyLocated "
-        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation ON LinearlyLocated.ECInstanceId = AtLocation.ElementId) "
-        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation ON LinearlyLocated.ECInstanceId = FromToLocation.ElementId ");
+        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " AtLocation ON LinearlyLocated.ECInstanceId = AtLocation.Element.Id) "
+        "LEFT JOIN " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " FromToLocation ON LinearlyLocated.ECInstanceId = FromToLocation.Element.Id ");
 
     if (fromDistanceAlong.IsValid() && toDistanceAlong.IsValid())
         {
