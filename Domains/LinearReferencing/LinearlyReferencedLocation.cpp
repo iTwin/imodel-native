@@ -51,7 +51,7 @@ bool LinearlyReferencedAtLocation::_HasChanges() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el)
+DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
@@ -153,7 +153,7 @@ bool LinearlyReferencedFromToLocation::_HasChanges() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el)
+DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
