@@ -71,6 +71,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 
 
 // Relationships
+#define BRRA_REL_AlignmentOwnsHorizontal                            "AlignmentOwnsHorizontal"
+#define BRRA_REL_AlignmentOwnsStations                              "AlignmentOwnsStations"
 #define BRRA_REL_AlignmentOwnsVerticals                             "AlignmentOwnsVerticals"
 #define BRRA_REL_AlignmentRefersToMainVertical                      "AlignmentRefersToMainVertical"
 #define BRRA_REL_SpatialElementRefersToAlignment                    "SpatialElementRefersToAlignment"

@@ -81,4 +81,13 @@
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
     </ECEntityClass>
+    <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 alignment">
+            <Class class="Alignment"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="has N stations">
+            <Class class="AlignmentStation"/>
+        </Target>
+    </ECRelationshipClass>
 </ECSchema>
