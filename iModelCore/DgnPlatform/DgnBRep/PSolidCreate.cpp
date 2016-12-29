@@ -2609,7 +2609,7 @@ BentleyStatus PSolidGeom::BodyFromSolidPrimitive (IBRepEntityPtr& entityOut, ISo
 
                                 if (0 != unsewn.size())
                                     {
-                                    if (SUCCESS != PSolidUtil::DoBoolean(*entityOut, &unsewn.front(), unsewn.size(), PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint))
+                                    if (SUCCESS != PSolidUtil::DoBoolean(entityOut, &unsewn.front(), unsewn.size(), PK_boolean_unite, PKI_BOOLEAN_OPTION_AllowDisjoint))
                                         return ERROR;
                                     }
                                 }
