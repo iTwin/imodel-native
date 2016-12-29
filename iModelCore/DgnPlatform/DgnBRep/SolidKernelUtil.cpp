@@ -3093,7 +3093,7 @@ BentleyStatus BRepUtil::Modify::SweepFaces(IBRepEntityR targetEntity, bvector<IS
     invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
     invTargetTransform.MultiplyMatrixOnly((DVec3dR) pathVec, path);
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_sweep((int) faceTags.size(), &faceTags.front(), pathVec, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) ? SUCCESS : ERROR);
+    BentleyStatus   status = (SUCCESS == PK_FACE_sweep((int) faceTags.size(), &faceTags.front(), pathVec, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) && PK_local_check_ok_c == checkResult) ? SUCCESS : ERROR;
 
     if (SUCCESS != status)
         PK_MARK_goto(markTag);
@@ -3144,7 +3144,7 @@ BentleyStatus BRepUtil::Modify::SpinFaces(IBRepEntityR targetEntity, bvector<ISu
     invTargetTransform.MultiplyMatrixOnly(*((DVec3dP) &axisSf.axis.coord[0]), axis.direction);
     ((DVec3dR) (axisSf.axis)).Normalize();
 
-    BentleyStatus   status = (SUCCESS == PK_FACE_spin((int) faceTags.size(), &faceTags.front(), &axisSf, angle, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) ? SUCCESS : ERROR);
+    BentleyStatus   status = (SUCCESS == PK_FACE_spin((int) faceTags.size(), &faceTags.front(), &axisSf, angle, PK_LOGICAL_true, &nLaterals, NULL, NULL, &checkResult) && PK_local_check_ok_c == checkResult) ? SUCCESS : ERROR;
 
     if (SUCCESS != status)
         PK_MARK_goto(markTag);
