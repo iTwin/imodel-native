@@ -168,7 +168,7 @@ public:
     ECDB_EXPORT void AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnClearCache) const;
     using Db::AddAppData;
 
-    //! Open a Blob for incremental I/O for the specified ECProperty.
+    //! Opens a Blob for incremental I/O for the specified ECProperty.
     //! @remarks The caller is responsible for closing/releasing the @p blobIO handle again.
     //! @param[in,out] blobIO The handle to open
     //! @param[in] ecClass The ECClass holding the Blob ECProperty
@@ -179,7 +179,7 @@ public:
     //!     - @p blobIO is already opened
     //!     - @p ecClass is not mapped to a table
     //!     - No ECProperty found in @p ecClass for @p propertyAccessString
-    //!     - ECProperty is not primitive and not of type ECN::PrimitiveType::PRIMITIVETYPE_Binary or ECN::PrimitiveType::PRIMITIVETYPE_IGeometry
+    //!     - ECProperty is not primitive and not of type ECN::PRIMITIVETYPE_Binary or ECN::PRIMITIVETYPE_IGeometry
     //!     - ECProperty is mapped to an overflow column or not mapped to a column at all
     //! @see BeSQLite::BlobIO
     ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable) const;

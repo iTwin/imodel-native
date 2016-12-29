@@ -360,7 +360,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
     {
     //For DateTimes and Geometry column type and BindXXX type must match. All other types are implicitly
     //converted to each other by SQLite.
-    const auto fieldDataType = GetTypeInfo().GetPrimitiveType();
+    const PrimitiveType fieldDataType = GetTypeInfo().GetPrimitiveType();
     switch (fieldDataType)
         {
             case PRIMITIVETYPE_DateTime:
