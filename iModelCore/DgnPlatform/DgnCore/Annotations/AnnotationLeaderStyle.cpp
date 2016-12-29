@@ -71,7 +71,7 @@ DgnDbStatus AnnotationLeaderStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
         return status;
 
     int dataSize = 0;
-    ByteCP data = static_cast<ByteCP>(select.GetValueBinary(params.GetSelectIndex(PROP_Data), &dataSize));
+    ByteCP data = static_cast<ByteCP>(select.GetValueBlob(params.GetSelectIndex(PROP_Data), &dataSize));
     if (SUCCESS != AnnotationLeaderStylePersistence::DecodeFromFlatBuf(*this, data, static_cast<size_t>(dataSize)))
         return DgnDbStatus::BadArg;
 
@@ -92,7 +92,7 @@ static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationLead
     if (ECSqlStatus::Success != stmt.BindText(stmt.GetParameterIndex(PROP_Description), style.GetDescription().c_str(), IECSqlBinder::MakeCopy::No))
         return DgnDbStatus::BadArg;
 
-    if (ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex(PROP_Data), &data[0], static_cast<int>(data.size()), IECSqlBinder::MakeCopy::Yes))
+    if (ECSqlStatus::Success != stmt.BindBlob(stmt.GetParameterIndex(PROP_Data), &data[0], static_cast<int>(data.size()), IECSqlBinder::MakeCopy::Yes))
         return DgnDbStatus::BadArg;
 
     return DgnDbStatus::Success;

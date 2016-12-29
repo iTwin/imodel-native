@@ -408,12 +408,6 @@ HitDetail::~HitDetail() {}
 void HitDetail::_Draw(ViewContextR context) const {context.VisitHit(*this);}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IElemTopologyCP HitDetail::GetElemTopology() const {return (m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
-void HitDetail::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbR HitDetail::GetDgnDb() const
@@ -1018,9 +1012,9 @@ static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
         // NOTE: QV wireframe hits are only needed to locate silhouettes, make sure they always lose to a real edge hit since a robust z compare isn't possible...
         if (isQvWireHit1 && !isQvWireHit2)
             return 1;
-        else if (isQvWireHit2 && !isQvWireHit1)
+        if (isQvWireHit2 && !isQvWireHit1)
             return -1;
-        else if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
+        if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
             return 0; // Both QV or real edge hits...if close let other criteria determine order...
         }
 

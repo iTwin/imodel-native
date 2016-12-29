@@ -262,6 +262,7 @@ void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
         m_binaryData.Append(&zero, 1);
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -270,9 +271,33 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
     WString rootName;
     BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
 
-    return BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), s_binaryDataExtension).c_str(), nullptr);
+    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_context.GetBinaryDataFileExtension()).c_str(), nullptr);
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                   Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP transform)
+    {
+    for (auto& mesh : meshes)
+        {
+        if (nullptr == transform)
+            {
+            range.Extend(mesh->GetRange());
+            }
+        else
+            {
+            for (auto& point : mesh->Points())
+                {
+                DPoint3d    transformedPoint;
+
+                transform->Multiply(transformedPoint, point);
+                range.Extend(transformedPoint);
+                }
+            }
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -303,7 +328,9 @@ PublisherContext::Status TilePublisher::Publish()
         }
 
     if (publishableGeometry.IsEmpty())
-        return PublisherContext::Status::NoGeometry;       // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+        return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
+
+    m_context.SetIsComposite (!publishableGeometry.Parts().empty());              // file will be single batched 3d model or composite (if instanced parts are present).
 
     std::FILE*  outputFile = _wfopen(GetBinaryDataFileName().c_str(), L"wb");
 
@@ -313,22 +340,29 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
-    // Composite header.
-    uint32_t        tileCount = (publishableGeometry.Meshes().empty() ? 0 : 1) + publishableGeometry.Parts().size(), zero = 0;
+    if (publishableGeometry.Parts().empty())
+        {
+        WriteGeometryTiles(outputFile, publishableGeometry);
+        }
+    else
+        {
+        // Composite header.
+        uint32_t        tileCount = (publishableGeometry.Meshes().empty() ? 0 : 1) + publishableGeometry.Parts().size(), zero = 0;
 
-    std::fwrite(s_compositeTileMagic, 1, 4, outputFile);
-    std::fwrite(&s_compositeTileVersion, 1, 4, outputFile);
-    long    compositeSizeLocation = ftell (outputFile);
-    std::fwrite(&zero, 1, 4, outputFile);                   // Filled in below...
-    std::fwrite(&tileCount, 1, 4, outputFile);
+        std::fwrite(s_compositeTileMagic, 1, 4, outputFile);
+        std::fwrite(&s_compositeTileVersion, 1, 4, outputFile);
+        long    compositeSizeLocation = ftell (outputFile);
+        std::fwrite(&zero, 1, 4, outputFile);                   // Filled in below...
+        std::fwrite(&tileCount, 1, 4, outputFile);
 
-    WriteGeometryTiles(outputFile, publishableGeometry);
+        WriteGeometryTiles(outputFile, publishableGeometry);
 
-    uint32_t    compositeSize = std::ftell(outputFile);
-    std::fseek (outputFile, compositeSizeLocation, SEEK_SET);
-    std::fwrite (&compositeSize, 1, 4, outputFile);
-
+        uint32_t    compositeSize = std::ftell(outputFile);
+        std::fseek (outputFile, compositeSizeLocation, SEEK_SET);
+        std::fwrite (&compositeSize, 1, 4, outputFile);
+        }
     std::fclose(outputFile);
+
 
     return PublisherContext::Status::Success;
     }
@@ -355,29 +389,6 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
     }
 
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP transform)
-    {
-    for (auto& mesh : meshes)
-        {
-        if (nullptr == transform)
-            {
-            range.Extend(mesh->GetRange());
-            }
-        else
-            {
-            for (auto& point : mesh->Points())
-                {
-                DPoint3d    transformedPoint;
-
-                transform->Multiply(transformedPoint, point);
-                range.Extend(transformedPoint);
-                }
-            }
-        }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -543,15 +554,16 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList const& meshes)
     {
     PublishTileData     tileData;
+    bool                validIdsPresent = meshes.front()->ValidIdsPresent();
 
     AddExtensions(tileData);
     AddDefaultScene(tileData);
     AddMeshes(tileData, meshes);
 
-    Utf8String batchTableStr = m_batchIds.ToJsonString(m_context.GetDgnDb(), m_tile.GetModel().Is2dModel());
+    Utf8String batchTableStr = validIdsPresent ? m_batchIds.ToJsonString(m_context.GetDgnDb(), m_tile.GetModel().Is2dModel()) : Utf8String();
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t zero = 0;
-    uint32_t b3dmNumBatches = m_batchIds.Count();
+    uint32_t b3dmNumBatches = validIdsPresent ? m_batchIds.Count() : 0;
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_b3dmMagic, 1, 4, outputFile);
@@ -869,7 +881,7 @@ Utf8String     TilePublisher::AddMeshShaderTechnique (PublishTileData& tileData,
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     if (!ignoreLighting)
         {
-        AddTechniqueParameter(technique, "n", GLTF_FLOAT_VEC3, "NORMAL");
+        AddTechniqueParameter(technique, "n", GLTF_INT_VEC2, "NORMAL");
         AddTechniqueParameter(technique, "nmx", GLTF_FLOAT_MAT3, "MODELVIEWINVERSETRANSPOSE");
         }
     if (doBatchIds)
@@ -1147,67 +1159,118 @@ Utf8String TilePublisher::AddPolylineMaterial (PublishTileData& tileData, TileDi
     return materialName;
     }      
 
+static double   clamp(double value, double min, double max)  { return value < min ? min : (value > max ? max : value);  }
+static double   signNotZero(double value) { return value < 0.0 ? -1.0 : 1.0; }
+static uint16_t toSNorm(double value) { return static_cast <uint16_t> (.5 + (clamp(value, -1.0, 1.0) * 0.5 + 0.5) * 255.0); }
+
+
+ /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static uint16_t octEncodeNormal (DVec3dCR vector)
+    {
+    DPoint2d    result;
+    double      denom = fabs(vector.x) + fabs(vector.y) + fabs(vector.z);
+
+    result.x = vector.x / denom;
+    result.y = vector.y / denom;
+
+    if (vector.z < 0) 
+        {
+        double x = result.x;
+        double y = result.y;
+        result.x = (1.0 - fabs(y)) * signNotZero(x);
+        result.y = (1.0 - fabs(x)) * signNotZero(y);
+        }
+    return toSNorm(result.y) << 8 | toSNorm(result.x);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String TilePublisher::AddMeshVertexAttribute (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max)
+Utf8String TilePublisher::AddMeshVertexAttribute (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max)
     {
     Utf8String          nameId =  Concat(name, id),
                         accessorId = Concat ("acc", nameId),
                         bufferViewId = Concat ("bv", nameId);
     size_t              nValues = nComponents * nAttributes;
-    size_t              dataSize;
+    size_t              dataSize = 0;
     size_t              byteOffset = tileData.BinaryDataSize();
     Json::Value         bufferViews = Json::objectValue;
     Json::Value         accessor   = Json::objectValue;
 
-    if (quantize)
+    switch (encoding)
         {
-        double      range = (double) (0xffff);
+        case VertexEncoding::StandardQuantization:
+            {
+            double      range = (double) (0xffff);
         
-        accessor["componentType"] = GLTF_UNSIGNED_SHORT;
-            
-        auto&       quantizeExtension = accessor["extensions"]["WEB3D_quantized_attributes"];
-        auto&       decodeMatrix = quantizeExtension["decodeMatrix"] = Json::arrayValue;
-         
-        for (size_t i=0; i<nComponents; i++)
-            {
-            for (size_t j=0; j<nComponents; j++)
-                decodeMatrix.append ((i==j) ? ((max[i] - min[i]) / range) : 0.0);
+            accessor["componentType"] = GLTF_UNSIGNED_SHORT;
+                
+            auto&       quantizeExtension = accessor["extensions"]["WEB3D_quantized_attributes"];
+            auto&       decodeMatrix = quantizeExtension["decodeMatrix"] = Json::arrayValue;
+             
+            for (size_t i=0; i<nComponents; i++)
+                {
+                for (size_t j=0; j<nComponents; j++)
+                    decodeMatrix.append ((i==j) ? ((max[i] - min[i]) / range) : 0.0);
 
-            decodeMatrix.append (0.0);
-            }
-        for (size_t i=0; i<nComponents; i++)
-            decodeMatrix.append (min[i]);
+                decodeMatrix.append (0.0);
+                }
+            for (size_t i=0; i<nComponents; i++)
+                decodeMatrix.append (min[i]);
 
-        decodeMatrix.append (1.0);
+            decodeMatrix.append (1.0);
         
-        for (size_t i=0; i<nComponents; i++)
+            for (size_t i=0; i<nComponents; i++)
+                {
+                quantizeExtension["decodedMin"].append (min[i]);
+                quantizeExtension["decodedMax"].append (max[i]);
+                }
+
+            bvector <unsigned short>    quantizedValues;
+
+            for (size_t i=0; i<nValues; i++)
+                {
+                size_t  componentIndex = i % nComponents;
+                quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
+                }
+            tileData.AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
+            break;
+            }
+    
+        case VertexEncoding::UnquantizedDoubles:
             {
-            quantizeExtension["decodedMin"].append (min[i]);
-            quantizeExtension["decodedMax"].append (max[i]);
+            bvector <float>     floatValues;
+
+            accessor["componentType"] = GLTF_FLOAT;
+
+            for (size_t i=0; i<nValues; i++)
+                floatValues.push_back ((float) values[i]);
+
+            tileData.AddBinaryData (floatValues.data(), dataSize = nValues * sizeof (float));
+            break;
             }
 
-        bvector <unsigned short>    quantizedValues;
-
-        for (size_t i=0; i<nValues; i++)
+        case VertexEncoding::OctEncodedNormals:
             {
-            size_t  componentIndex = i % nComponents;
-            quantizedValues.push_back ((unsigned short) (.5 + (values[i] - min[componentIndex]) * range / (max[componentIndex] - min[componentIndex])));
+            bvector<uint16_t>   octEncodedNormals;
+            DVec3dCP            normals = reinterpret_cast<DVec3dCP> (values);
+
+            for (size_t i=0; i<nAttributes; i++)
+                octEncodedNormals.push_back(octEncodeNormal(normals[i]));
+
+            accessor["componentType"] = GLTF_UNSIGNED_BYTE;
+            for (size_t i=0; i<3; i++)
+                {
+                accessor["min"].append (0);
+                accessor["max"].append (255);
+                }
+
+            tileData.AddBinaryData (octEncodedNormals.data(), dataSize = nAttributes * sizeof (uint16_t));
+            break;
             }
-        tileData.AddBinaryData (quantizedValues.data(), dataSize = nValues * sizeof (unsigned short));
-        }
-    else
-        {
-        bvector <float>     floatValues;
-
-        accessor["componentType"] = GLTF_FLOAT;
-
-        for (size_t i=0; i<nValues; i++)
-            floatValues.push_back ((float) values[i]);
-
-        tileData.AddBinaryData (floatValues.data(), dataSize = nValues * sizeof (float));
         }
 
     bufferViews["buffer"] = "binary_glTF";
@@ -1349,29 +1412,26 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
         AddMeshBatchIds(tileData, primitive, mesh.EntityIds(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
-    static bool     s_doQuantize = true;
-    bool            quantizePositions = s_doQuantize, quantizeParams = s_doQuantize, quantizeNormals = s_doQuantize, isTextured = false;
+    bool            isTextured = false;
 
     primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
     primitive["mode"] = GLTF_TRIANGLES;
 
-    Utf8String      accPositionId =  AddMeshVertexAttribute (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", quantizePositions, &pointRange.low.x, &pointRange.high.x);
+    Utf8String      accPositionId =  AddMeshVertexAttribute (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"] = accPositionId;
 
     BeAssert (isTextured == !mesh.Params().empty());
     if (!mesh.Params().empty() && isTextured)
         {
         DRange3d        paramRange = DRange3d::From(mesh.Params(), 0.0);
-        primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttribute (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", quantizeParams, &paramRange.low.x, &paramRange.high.x);
+        primitive["attributes"]["TEXCOORD_0"] = AddMeshVertexAttribute (tileData, &mesh.Params().front().x, "Param", idStr.c_str(), 2, mesh.Params().size(), "VEC2", VertexEncoding::StandardQuantization, &paramRange.low.x, &paramRange.high.x);
         }
 
 
     if (!mesh.Normals().empty() &&
         nullptr != mesh.GetDisplayParams() && !mesh.GetDisplayParams()->GetIgnoreLighting())        // No normals if ignoring lighting (reality meshes).
         {
-        DRange3d        normalRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0); 
-
-        primitive["attributes"]["NORMAL"] = AddMeshVertexAttribute (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC3", quantizeNormals, &normalRange.low.x, &normalRange.high.x);
+        primitive["attributes"]["NORMAL"] = AddMeshVertexAttribute (tileData, &mesh.Normals().front().x, "Normal", idStr.c_str(), 3, mesh.Normals().size(), "VEC2", VertexEncoding::OctEncodedNormals, nullptr, nullptr);
         }
 
     primitive["indices"] = AddMeshIndices (tileData, "Indices", indices, idStr);
@@ -1463,15 +1523,13 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     DRange3d        pointRange = DRange3d::From(points), directionRange = DRange3d::From(directions);
     DRange3d        vertexDeltaRange = DRange3d::From (-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
 
-    static bool     s_doQuantize = false;
-
     primitive["material"] = AddPolylineMaterial (tileData, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
     primitive["mode"] = GLTF_TRIANGLES;
 
-    Utf8String  accPositionId = AddMeshVertexAttribute (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", s_doQuantize, &pointRange.low.x, &pointRange.high.x);
+    Utf8String  accPositionId = AddMeshVertexAttribute (tileData, &points.front().x, "Position", idStr.c_str(), 3, points.size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
     primitive["attributes"]["POSITION"]  = accPositionId;
-    primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (tileData, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", s_doQuantize, &directionRange.low.x, &directionRange.high.x);
-    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", s_doQuantize, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
+    primitive["attributes"]["DIRECTION"] = AddMeshVertexAttribute (tileData, &directions.front().x, "Direction", idStr.c_str(), 3, directions.size(), "VEC3", VertexEncoding::StandardQuantization, &directionRange.low.x, &directionRange.high.x);
+    primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", VertexEncoding::StandardQuantization, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
 
     if (mesh.ValidIdsPresent())
@@ -1521,7 +1579,7 @@ bool PublisherContext::IsGeolocated () const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental), m_isComposite(false)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1725,7 +1783,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
     if (!contentRange.IsNull())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, s_binaryDataExtension));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetBinaryDataFileExtension()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }

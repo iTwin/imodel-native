@@ -318,6 +318,14 @@ DGNPLATFORM_EXPORT static BentleyStatus GetTangentBlendEdges(bvector<ISubEntityP
 //! @return SUCCESS if the output vector was populated.
 DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, ISubEntityCR edge, ISubEntityCR face);
 
+//! Query the set of faces that are adjacent to the given face sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Face.
+//! @param[in] subEntity The face sub-entity to query adjacent faces for.
+//! @param[in] includeVertex Whether to include vertex connected adjacent faces or just edge connected faces.
+//! @param[in] smoothOnly Whether to restrict the adjacent faces returned to those that are smoothly connected.
+//! @return SUCCESS if the output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetAdjacentFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity, bool includeVertex = true, bool smoothOnly = true);
+
 //! Get uv face parameter range for the given face sub-entity.
 //! @param[in] subEntity The face sub-entity to query.
 //! @param[out] uRange The u parameter range of the face.

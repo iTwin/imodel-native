@@ -1665,7 +1665,6 @@ struct GraphicBranch
 //=======================================================================================
 struct System
 {
-
     Target* m_nowPainting = nullptr;
     bool CheckPainting(Target* target) {return target==m_nowPainting;}
     bool IsPainting() {return !CheckPainting(nullptr);}

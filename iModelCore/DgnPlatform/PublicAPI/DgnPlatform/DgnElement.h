@@ -3025,7 +3025,7 @@ private:
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
-    mutable BeSQLite::BeDbMutex m_mutex;
+    mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
@@ -3058,6 +3058,8 @@ private:
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
+    BeMutex& GetMutex() {return m_mutex;}
+
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     DGNPLATFORM_EXPORT void ClearUpdaterCache();
