@@ -588,7 +588,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
             ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
             {
             if (_HasChildren())
-                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
+                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum or clip. Unload any loaded children if they're expired.
 
             return;
             }

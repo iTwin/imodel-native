@@ -67,17 +67,24 @@ BEGIN_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<class T> static RefCountedPtr<T> getAndCopy(DgnDbR db, DgnElementId id)
+template<class T> T& getThreadSafe(DgnDbR db, DgnElementId id, RefCountedPtr<T>& var)
     {
-    BeAssert(id.IsValid());
-    auto el = db.Elements().Get<T>(id);
-    if (!el.IsValid())
+    if (!var.IsValid()) // first try without mutex
         {
-        BeAssert(false);
-        return nullptr;
+        BeMutexHolder (db.Elements().GetMutex());
+        if (!var.IsValid()) // test again after acquiring mutex
+            {
+            BeAssert(id.IsValid());
+            auto el = db.Elements().Get<T>(id);
+            if (!el.IsValid())
+                {
+                BeAssert(false);
+                }
+            var = el->template MakeCopy<T>();
+            }
         }
 
-    return el->template MakeCopy<T>();
+    return *var;
     }
 END_UNNAMED_NAMESPACE
 
@@ -196,10 +203,7 @@ Utf8String ViewDefinition::ToDetailJson()
 +---------------+---------------+---------------+---------------+---------------+------*/
 CategorySelectorR ViewDefinition::GetCategorySelector()
     {
-    if (!m_categorySelector.IsValid())
-        m_categorySelector = getAndCopy<CategorySelector>(m_dgndb, GetCategorySelectorId());
-
-    return *m_categorySelector;
+    return getThreadSafe<CategorySelector>(m_dgndb, GetCategorySelectorId(), m_categorySelector);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -207,10 +211,15 @@ CategorySelectorR ViewDefinition::GetCategorySelector()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DisplayStyleR ViewDefinition::GetDisplayStyle()
     {
-    if (!m_displayStyle.IsValid())
-        m_displayStyle = getAndCopy<DisplayStyle>(m_dgndb, GetDisplayStyleId());
+    return getThreadSafe<DisplayStyle>(m_dgndb, GetDisplayStyleId(), m_displayStyle);
+    }
 
-    return *m_displayStyle;
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   10/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ModelSelectorR SpatialViewDefinition::GetModelSelector()
+    {
+    return getThreadSafe<ModelSelector>(m_dgndb, GetModelSelectorId(), m_modelSelector);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -928,17 +937,6 @@ DgnDbStatus SpatialViewDefinition::_OnInsert()
         }
 
     return T_Super::_OnInsert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ModelSelectorR SpatialViewDefinition::GetModelSelector()
-    {
-    if (!m_modelSelector.IsValid())
-        m_modelSelector = getAndCopy<ModelSelector>(m_dgndb, GetModelSelectorId());
-
-    return *m_modelSelector;
     }
 
 /*---------------------------------------------------------------------------------**//**

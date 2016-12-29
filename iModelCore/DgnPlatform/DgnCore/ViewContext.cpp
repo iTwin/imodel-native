@@ -302,7 +302,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
 
     _OutputGraphic(*graphic, &source);
 
-    static int s_drawRange = 1; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
+    static int s_drawRange; // 0 - Host Setting (Bounding Box Debug), 1 - Bounding Box, 2 - Element Range
     if (!s_drawRange)
         return SUCCESS;
 

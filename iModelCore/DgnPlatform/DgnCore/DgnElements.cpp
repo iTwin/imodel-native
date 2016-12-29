@@ -891,7 +891,7 @@ DgnElements::~DgnElements()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::Destroy()
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_tree->Destroy();
     m_stmts.Empty();
     m_classInfos.clear();
@@ -906,7 +906,7 @@ void DgnElements::ChangeMemoryUsed(int32_t delta) const
     if (0==delta) // nothing happened, don't bother to get mutex
         return;
 
-    BeDbMutexHolder _v(m_mutex);
+    BeMutexHolder _v(m_mutex);
     m_tree->m_totals.m_allocedBytes += delta;
     BeAssert(m_tree->m_totals.m_allocedBytes >= 0);
     }
@@ -917,7 +917,7 @@ void DgnElements::ChangeMemoryUsed(int32_t delta) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnReclaimed(DgnElementCR el)
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     BeAssert(0 != m_tree->m_totals.m_unreferenced);
     BeAssert(m_tree->m_totals.m_entries >= m_tree->m_totals.m_unreferenced);
     --m_tree->m_totals.m_unreferenced;
@@ -930,7 +930,7 @@ void DgnElements::OnReclaimed(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::OnUnreferenced(DgnElementCR el)
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_tree->FindElement(el.GetElementId(), true);   // mark this entry as having purgable elements
     ++m_tree->m_totals.m_unreferenced;
     ++m_tree->m_stats.m_unReferenced;
@@ -942,7 +942,7 @@ void DgnElements::OnUnreferenced(DgnElementCR el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElements::AddToPool(DgnElementCR element) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     BeAssert(!element.IsPersistent());
     element.SetPersistent(true);
 
@@ -963,7 +963,7 @@ void DgnElements::DropFromPool(DgnElementCR element) const
         return;
         }
 
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_tree->DropElement(element);
     }
 
@@ -972,7 +972,7 @@ void DgnElements::DropFromPool(DgnElementCR element) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint64_t DgnElements::_Purge(uint64_t memTarget)
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_tree->Purge(memTarget);
     return GetTotalAllocated();
     }
@@ -982,7 +982,7 @@ uint64_t DgnElements::_Purge(uint64_t memTarget)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCP DgnElements::FindLoadedElement(DgnElementId id) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     return m_tree->FindElement(id, false);
     }
 
@@ -1031,7 +1031,7 @@ void DgnElements::ResetStatistics() {m_tree->m_stats.Reset();}
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_mutex(BeDbMutex::MutexType::Recursive), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
+DgnElements::DgnElements(DgnDbR dgndb) : DgnDbTable(dgndb), m_stmts(20), m_snappyFrom(m_snappyFromBuffer, _countof(m_snappyFromBuffer))
     {
     m_tree.reset(new ElemIdTree(dgndb));
     }
@@ -1162,16 +1162,17 @@ DgnElementCPtr DgnElements::GetElement(DgnElementId elementId) const
 
     // since we can load elements on more than one thread, we need to check that the element doesn't already exist
     // *with the lock held* before we load it. This avoids a race condition where an element is loaded on more than one thread.
-    BeDbMutexHolder _v(m_mutex);
+    BeMutexHolder _v(m_mutex);
     DgnElementCP element = FindLoadedElement(elementId);
     return (nullptr != element) ? element : LoadElement(elementId, true);
     }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::LoadGeometryStream(GeometryStreamR geom, void const* blob, int blobSize)
     {
-    BeDbMutexHolder _v(m_mutex);
+    BeMutexHolder _v(m_mutex);
     return geom.ReadGeometryStream(GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     }
 
@@ -1588,7 +1589,7 @@ ECSqlClassInfo& DgnElements::FindClassInfo(DgnElementCR el) const
     {
     DgnClassId classId = el.GetElementClassId();
 
-    BeDbMutexHolder _v(m_mutex);
+    BeMutexHolder _v(m_mutex);
     auto found = m_classInfos.find(classId);
     if (m_classInfos.end() != found)
         return found->second;

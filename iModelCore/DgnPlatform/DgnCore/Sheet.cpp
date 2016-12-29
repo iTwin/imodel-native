@@ -313,7 +313,7 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 // When we draw ViweAttachments on sheets, we first create the scene asynchronusly. While that's 
 // in process we create an instance of this class to trigger the creation of the tiles when the scene becomes
 // available. Note that there is one instance of this class per attachment, so there can be many of them
-// for the same sheet at any given time.
+// for the same sheet (and of course many sheets) at any given time.
 // @bsiclass                                                    Keith.Bentley   12/16
 //=======================================================================================
 struct SceneReadyTask : ProgressiveTask
@@ -356,34 +356,50 @@ void Attachment::Tree::Draw(RenderContextR context)
     // the scene is available, draw its tiles
     DrawInView(context);
 
-
 #define DEBUG_ATTACHMENT_RANGE
 #ifdef DEBUG_ATTACHMENT_RANGE
-    auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(m_attachmentId);
-    if (attachment.IsValid())
-        {
-        auto const& placement = attachment->GetPlacement();
-        AxisAlignedBox3d range;
-        placement.GetTransform().Multiply(range, DRange3d::From(&placement.GetElementBox().low, 2, 0.0));
+    ElementAlignedBox3d range(0,0,0, 1.0,1.0,1.0);
+    GetLocation().Multiply(&range.low, &range.low, 2);
 
-        Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
-        graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
-        graphicBbox->AddRangeBox(range);
-        context.OutputGraphic(*graphicBbox, nullptr);
+    Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
+    graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
+    graphicBbox->AddRangeBox(range);
+    context.OutputGraphic(*graphicBbox, nullptr);
 
-        Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
-        DPoint3d org = DPoint3d::From(placement.GetOrigin());
-        graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
-        graphicOrigin->AddPointString(1, &org);
-        context.OutputGraphic(*graphicOrigin, nullptr);
-        }
+    Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
+    graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
+    graphicOrigin->AddPointString(1, &range.low);
+    context.OutputGraphic(*graphicOrigin, nullptr);
 #endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Attachment::Tree::Pick(PickContext& context)
+    {
+    if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
+        return false;
+
+    Transform sheetToTile;
+    sheetToTile.InverseOf(GetLocation());
+    Frustum box = context.GetFrustum().TransformBy(sheetToTile);
+
+    if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
+        return false;
+
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(GetLocation());
+    context.WorldToView(frust.m_pts, frust.m_pts, 8);
+    Transform attachViewToSheetView = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
+    attachViewToSheetView.ScaleMatrixColumns(m_sizeNPC.x/m_pixels, m_sizeNPC.y/m_pixels, 1.0/frust.m_pts[NPC_LeftTopFront].z);
+
+    return context._ProcessSheetAttachment(*m_viewport, attachViewToSheetView);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -410,11 +426,14 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
 
     auto& def=view->GetViewDefinition();
 
+    // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
+    def.GetDisplayStyle().SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
+
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
         {
         auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
-//        env.m_groundPlane.m_enabled = false;
+        env.m_groundPlane.m_enabled = false;
         env.m_skybox.m_enabled = false;
         }
 
@@ -480,7 +499,7 @@ void Sheet::ViewController::_LoadState()
         auto tree = FindAttachment(attachId);
 
         if (!tree.IsValid())
-            tree = new Tree(GetDgnDb(), attachId, 512);
+            tree = new Tree(GetDgnDb(), *this, attachId, 512);
 
         attachments.push_back(tree);
         }
@@ -503,7 +522,7 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      11/16
+* @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawView(ViewContextR context)
     {
@@ -512,4 +531,13 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
         return;
 
     context.VisitDgnModel(*model);
+
+    if (DrawPurpose::Pick != context.GetDrawPurpose())
+        return;
+
+    for (auto& attach : m_attachments)
+        {
+        if (attach->Pick((PickContext&)context))
+            return;
+        }
     }
