@@ -2725,7 +2725,7 @@ public:
 
     //! Save this compressed value as a blob in a Db.
     //! @remarks Opening and destroying the BlobIO handle must be done by the caller.
-    //! @param[in] blobIO the BlobIO handle used to write the BLOB to the SQLite database.
+    //! @param[in] blobIO the BlobIO handle used to write the BLOB to the SQLite database. It must already be opened in read-write mode.
     //! @note The cell in the db to which @p blobIO points to must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close

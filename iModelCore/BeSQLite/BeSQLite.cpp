@@ -3133,6 +3133,9 @@ BentleyStatus SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, i
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SnappyToBlob::SaveToRow(BlobIO& io)
     {
+    if (!io.IsValid())
+        return ERROR;
+
     Finish();
 
     int offset = 0;
