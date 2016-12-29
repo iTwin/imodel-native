@@ -107,17 +107,6 @@ public:
     //! @return ECSqlStatus::Success or error codes
     ECDB_EXPORT ECSqlStatus BindGeometry(IGeometryCR value);
 
-#if !defined (DOCUMENTATION_GENERATOR)
-    //! Binds a Bentley Geometry FlatBuffer blob to the parameter
-    //! @param[in] value Value to bind
-    //! @param[in] blobSize Size of the BLOB in bytes
-    //! @param[in] makeCopy Flag that indicates whether a private copy of the blob is done or not. 
-    //!            Only pass IECSqlBinder::MakeCopy::No if @p value remains valid until
-    //!            the statement's bindings are cleared.
-    //! @return ECSqlStatus::Success or error codes
-    ECSqlStatus BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy);
-#endif
-
     //! Binds a 32-bit integer value to the parameter
     //! @param[in] value Value to bind
     //! @return ECSqlStatus::Success or error codes

@@ -40,7 +40,6 @@ struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStruc
         virtual ECSqlStatus _BindDateTime(uint64_t julianDayTicksHns, DateTime::Info const&) override { return m_errorStatus; }
         virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override { return m_errorStatus; }
         virtual ECSqlStatus _BindDouble(double value) override { return m_errorStatus; }
-        virtual ECSqlStatus _BindGeometryBlob(void const* value, int blobSize, IECSqlBinder::MakeCopy) override { return m_errorStatus; }
         virtual ECSqlStatus _BindInt(int value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindInt64(int64_t value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindPoint2d(DPoint2dCR value) override { return m_errorStatus; }

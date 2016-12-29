@@ -36,7 +36,6 @@ private:
     virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
     virtual ECSqlStatus _BindDouble(double value) override;
-    virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
     virtual ECSqlStatus _BindInt(int value) override;
     virtual ECSqlStatus _BindInt64(int64_t value) override;
     virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) override;

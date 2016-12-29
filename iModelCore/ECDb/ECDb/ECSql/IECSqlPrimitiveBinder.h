@@ -28,7 +28,6 @@ public:
     virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) = 0;
     virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) = 0;
     virtual ECSqlStatus _BindDouble(double) = 0;
-    virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) = 0;
     virtual ECSqlStatus _BindInt(int ) = 0;
     virtual ECSqlStatus _BindInt64(int64_t) = 0;
     virtual ECSqlStatus _BindPoint2d (DPoint2dCR) = 0;

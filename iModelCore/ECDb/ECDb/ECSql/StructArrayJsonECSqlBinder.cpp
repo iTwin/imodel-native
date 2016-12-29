@@ -142,9 +142,9 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveJsonECSqlBindValue::_BindBlob(void const* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
-    if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Binary)
+    if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_Binary && GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_IGeometry)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Blob values can only be bound to Blob parameter values.");
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Blob values can only be bound to Blob or IGeometry parameter values.");
         return ECSqlStatus::Error;
         }
 
@@ -213,45 +213,6 @@ ECSqlStatus PrimitiveJsonECSqlBindValue::_BindDouble(double value)
     return ECSqlStatus::Success;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2016
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveJsonECSqlBindValue::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    if (GetTypeInfo().GetPrimitiveType() != PRIMITIVETYPE_IGeometry)
-        {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. IGeometry values can only be bound to IGeometry parameter values.");
-        return ECSqlStatus::Error;
-        }
-
-    Byte const* blob = static_cast<Byte const*> (value);
-    BeAssert(blobSize > 0);
-    const size_t blobSizeU = (size_t) blobSize;
-    bvector<Byte> byteVec;
-    byteVec.reserve(blobSizeU);
-    byteVec.assign(blob, blob + blobSizeU);
-    if (!BentleyGeometryFlatBuffer::IsFlatBufferFormat(byteVec))
-        {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindGeometry");
-        return ECSqlStatus::Error;
-        }
-
-    IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
-    if (geom == nullptr)
-        {
-        BeAssert(geom != nullptr);
-        return ECSqlStatus::Error;
-        }
-
-    if (!BentleyGeometryJson::TryGeometryToJsonValue(m_value, *geom, false))
-        {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "BindGeometry");
-        return ECSqlStatus::Error;
-        }
-
-    return ECSqlStatus::Success;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
