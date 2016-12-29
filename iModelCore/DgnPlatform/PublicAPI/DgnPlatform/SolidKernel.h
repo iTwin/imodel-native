@@ -606,29 +606,31 @@ struct Modify
     DGNPLATFORM_EXPORT static RefCountedPtr<IRefCounted> CreateRollbackMark();
 
     //! Perform the specified boolean operation between the target body and tool body.
-    //! @param[in,out] target The target body to modify (may be consumed in boolean).
+    //! @param[in,out] target The target body to modify (may be consumed by subtract operation).
     //! @param[in,out] tool The tool body (consumed in boolean).
     //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    //! @note: A successful boolean can produce no geometry, check IBRepEntity::EntityType::Invalid != target.GetEntityType().
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, IBRepEntityR tool, BooleanMode mode);
+    //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityPtr& target, IBRepEntityPtr& tool, BooleanMode mode);
 
     //! Perform the specified boolean operation between the target body and one or more tool bodies.
-    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] target The target body to modify (may be consumed by subtract operation).
     //! @param[in,out] tools A vector of one or more tool bodies (consumed in boolean).
     //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, bvector<IBRepEntityPtr>& tools, BooleanMode mode);
+    //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityPtr& target, bvector<IBRepEntityPtr>& tools, BooleanMode mode);
 
     //! Modify the target body by subtracting a cut body produced from sweeping the sheet tool body according to the specified cut direction and depth.
-    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] target The target body to modify (may be consumed by cut operation).
     //! @param[in] planarTool The planar sheet body for the cut profile.
     //! @param[in] directionMode The sweep direction relative to the sheet body normal of the cut profile.
     //! @param[in] depthMode To specify if the cut should extended through the entire body or only create a pocket of fixed depth.
     //! @param[in] distance To specify the cut depth for CutDepthMode::Blind.
     //! @param[in] inside Whether to remove material inside profile or outside profile.
     //! @return SUCCESS if cut operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityR target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
+    //! @note: A successful boolean cut can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityPtr& target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
 
     //! Sew the given set of sheet bodies together by joining those that share edges in common.
     //! @param[out] sewn The new bodies produced by sewing.

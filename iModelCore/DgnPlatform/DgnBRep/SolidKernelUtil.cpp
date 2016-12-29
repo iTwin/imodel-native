@@ -1542,7 +1542,7 @@ BentleyStatus BRepUtil::Create::CutProfileBodyFromOpenCurveVector(IBRepEntityPtr
         if (SUCCESS != BRepUtil::Create::SweptBodyFromOpenCurveVector(planeEntity, *planeCurve, expandedRange, &rayE.direction, true, 0L))
             return ERROR;
 
-        if (SUCCESS != PSolidUtil::DoBoolean(*planeEntity, &entityOut, 1, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint))
+        if (SUCCESS != PSolidUtil::DoBoolean(planeEntity, &entityOut, 1, PK_boolean_subtract, PKI_BOOLEAN_OPTION_AllowDisjoint))
             return ERROR;
 
         if (nodeId)
@@ -1854,12 +1854,10 @@ static PK_boolean_function_t getBooleanFunction(BRepUtil::Modify::BooleanMode op
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityR targetEntity, IBRepEntityR toolEntity, BooleanMode op)
+BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityPtr& targetEntity, IBRepEntityPtr& toolEntity, BooleanMode op)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
-    IBRepEntityPtr tmpToolEntityPtr = &toolEntity;
-
-    return PSolidUtil::DoBoolean(targetEntity, &tmpToolEntityPtr, 1, getBooleanFunction(op), PKI_BOOLEAN_OPTION_AllowDisjoint);
+    return PSolidUtil::DoBoolean(targetEntity, &toolEntity, 1, getBooleanFunction(op), PKI_BOOLEAN_OPTION_AllowDisjoint);
 #else
     return ERROR;
 #endif
@@ -1868,7 +1866,7 @@ BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityR targetEntity, IBRe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityR targetEntity, bvector<IBRepEntityPtr>& toolEntities, BooleanMode op)
+BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityPtr& targetEntity, bvector<IBRepEntityPtr>& toolEntities, BooleanMode op)
     {
 #if defined (BENTLEYCONFIG_PARASOLID) 
     return PSolidUtil::DoBoolean(targetEntity, &toolEntities.front(), toolEntities.size(), getBooleanFunction(op), PKI_BOOLEAN_OPTION_AllowDisjoint);
@@ -1880,7 +1878,7 @@ BentleyStatus BRepUtil::Modify::BooleanOperation(IBRepEntityR targetEntity, bvec
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityR target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double depth, bool inside)
+BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityPtr& target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double depth, bool inside)
     {
     // NOTE: The MicroStation Connect version of this method specifies the profile as a CurveVector instead of a sheet body.
     //       There are some issues with that implementation worth mentioning in case anyone believes it's a good idea to bring that code over.
@@ -1892,6 +1890,9 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityR target, IBRepEntityCR pl
     //       See BRepUtil::Create::CutProfileBodyFromOpenCurveVector and BRepUtil::Create::SweptBodyFromOpenCurveVector.
     //       The Connect result can be achieved using BRepUtil::Create::SweptBodyFromOpenCurveVector and a solid/surface boolean subtract.
 #if defined (BENTLEYCONFIG_PARASOLID)
+    if (!target.IsValid())
+        return ERROR;
+
     PK_ENTITY_t planarToolTag = PSolidUtil::GetEntityTag(planarTool);
 
     if (PK_ENTITY_null == planarToolTag)
@@ -1917,7 +1918,7 @@ BentleyStatus BRepUtil::Modify::BooleanCut(IBRepEntityR target, IBRepEntityCR pl
         }
     else
         {
-        DRange3d targetRange = target.GetEntityRange();
+        DRange3d targetRange = target->GetEntityRange();
 
         if (targetRange.IsNull())
             return ERROR;
@@ -2047,7 +2048,7 @@ BentleyStatus BRepUtil::Modify::SewBodies(bvector<IBRepEntityPtr>& sewnEntities,
 
         // Invalidate tool entities that are now reflected in sewn and unsewn lists...
         for (IBRepEntityPtr& toolEntity : toolEntities)
-            PSolidUtil::ExtractEntityTag(*toolEntity);
+            toolEntity = nullptr;
         }
     else
         {

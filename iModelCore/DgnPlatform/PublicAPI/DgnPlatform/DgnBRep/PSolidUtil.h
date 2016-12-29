@@ -288,7 +288,7 @@ DGNPLATFORM_EXPORT static bool ClosestPoint(PK_ENTITY_t bodyTag, TransformCR bod
 DGNPLATFORM_EXPORT static bool ClosestPointToFace(PK_FACE_t faceTag, TransformCR bodyTransform, DPoint3dR point, DPoint2dR uvParam, double& distance, DPoint3dCR testPt);
 DGNPLATFORM_EXPORT static bool ClosestPointToEdge(PK_EDGE_t edgeTag, TransformCR bodyTransform, DPoint3dR point, double& uParam, double& distance, DPoint3dCR testPt);
 
-DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
+DGNPLATFORM_EXPORT static BentleyStatus DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options = PKI_BOOLEAN_OPTION_AllowDisjoint, bool resolveNodeIdConflicts = true);
 
 }; // PSolidUtil
 
