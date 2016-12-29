@@ -3391,7 +3391,7 @@ DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, S
             {
             // More than one chunk in geom stream. Avoid expensive alloc+copy by deferring writing geom stream until ECSqlStatement executes.
             multiChunkGeometryStream = true;
-            stmt.BindNull(geomIndex);
+            stmt.BindZeroBlob(geomIndex, snappyTo.GetCompressedSize());
             }
         }
     else
@@ -3656,13 +3656,13 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 
     m_multiChunkGeomStream = false;
     DgnDbR db = GetDgnDb();
-    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnTableName(), GEOM_GeometryStream);
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnClassName(), GEOM_GeometryStream);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR db, DgnElementId elementId, Utf8CP tableName, Utf8CP columnName)
+DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR db, DgnElementId elementId, Utf8CP className, Utf8CP propertyName)
     {
     if (1 >= snappyTo.GetCurrChunk())
         {
@@ -3670,22 +3670,19 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
         return DgnDbStatus::WriteError;
         }
 
-    // SaveToRow() requires a blob of the required size has already been allocated in the blob column.
-    // Ideally we would do this in BindTo(), but ECSql does not support binding a zero blob.
-    Utf8String sql("UPDATE ");
-    sql.append(tableName);
-    sql.append(" SET ");
-    sql.append(columnName);
-    sql.append("=? WHERE ElementId=?");
+    ECClassCP ecClass = db.Schemas().GetECClass(BIS_ECSCHEMA_NAME, className);
+    BeAssert(nullptr != ecClass);
+    if (nullptr == ecClass)
+        return DgnDbStatus::BadArg;
 
-    CachedStatementPtr stmt = db.Elements().GetStatement(sql.c_str());
-    stmt->BindId(2, elementId);
-    stmt->BindZeroBlob(1, snappyTo.GetCompressedSize());
-    if (BE_SQLITE_DONE != stmt->Step())
+    BlobIO blobIO;
+    if (SUCCESS != db.OpenBlobIO(blobIO, *ecClass, propertyName, elementId, true))
         return DgnDbStatus::WriteError;
 
-    StatusInt status = snappyTo.SaveToRow(db, tableName, columnName, elementId.GetValue());
-    return SUCCESS == status ? DgnDbStatus::Success : DgnDbStatus::WriteError;
+    if (SUCCESS != snappyTo.SaveToRow(blobIO))
+        return DgnDbStatus::WriteError;
+
+    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
