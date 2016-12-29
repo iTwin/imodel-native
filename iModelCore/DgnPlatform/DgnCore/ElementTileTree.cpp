@@ -364,6 +364,8 @@ struct TilePolylineArgs
 {
     bvector<DPoint3d>   m_vertices;
 
+    bool IsValid() const { return !m_vertices.empty(); }
+
     bool Init(bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
         {
         m_vertices.clear();
@@ -374,7 +376,51 @@ struct TilePolylineArgs
             m_vertices.push_back(dpt);
             }
 
-        return !m_vertices.empty();
+        return IsValid();
+        }
+
+    void Apply(Render::GraphicBuilderR gf)
+        {
+        if (IsValid())
+            gf.AddLineString(static_cast<int>(m_vertices.size()), &m_vertices[0]);
+        }
+
+    bool InitAndApply(Render::GraphicBuilderR gf, bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
+        {
+        if (Init(vertices, indices))
+            {
+            Apply(gf);
+            return true;
+            }
+
+        return false;
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TilePolylineArgsList
+{
+    bvector<TilePolylineArgs>   m_args;
+
+    bool Init(ElementTileTree::MeshCR mesh)
+        {
+        m_args.clear();
+        for (auto const& polyline : mesh.Polylines())
+            {
+            TilePolylineArgs theseArgs;
+            if (theseArgs.Init(mesh.Points(), polyline.GetIndices()))
+                m_args.push_back(std::move(theseArgs));
+            }
+
+        return !m_args.empty();
+        }
+
+    void Apply(Render::GraphicBuilderR gf)
+        {
+        for (auto& args : m_args)
+            args.Apply(gf);
         }
 };
 
@@ -388,7 +434,13 @@ constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
 constexpr size_t s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
-static bool s_doInstances = false;
+
+// avoid re-facetting repeated geometry - cache and reuse
+// Improves tile generation time
+static bool s_cacheInstances = true;
+// Reuse the same Graphic as a SubGraphic for instanced geometry
+// Results in significant worse framerate due to surprisingly poor performance of qv_defineTransclip()
+static bool s_instancesAsSubgraphics = false;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1885,43 +1937,77 @@ BentleyStatus Loader::_LoadTile()
     TileMeshArgs meshArgs;
     Render::GraphicBuilderPtr graphic;
 
-    for (auto const& part : geometry.Parts())
+    if (s_instancesAsSubgraphics)
         {
-        if (part->Instances().empty() || part->Meshes().empty())
-            continue;
-
-        for (auto const& mesh : part->Meshes())
+        for (auto const& part : geometry.Parts())
             {
-            bool haveMesh = !mesh->Triangles().empty();
-            bool havePolyline = !haveMesh && !mesh->Polylines().empty();
-            if (!haveMesh && !havePolyline)
+            if (part->Instances().empty() || part->Meshes().empty())
                 continue;
 
-            if (graphic.IsNull())
-                graphic = system._CreateGraphic(Graphic::CreateParams());
-
-            auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-            subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
-
-            if (haveMesh)
+            for (auto const& mesh : part->Meshes())
                 {
-                if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
-                    subGraphic->AddTriMesh(meshArgs);
-                }
-            else
-                {
-                for (auto const& polyline : mesh->Polylines())
+                bool haveMesh = !mesh->Triangles().empty();
+                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+                if (!haveMesh && !havePolyline)
+                    continue;
+
+                if (graphic.IsNull())
+                    graphic = system._CreateGraphic(Graphic::CreateParams());
+
+                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+
+                if (haveMesh)
                     {
-                    if (polylineArgs.Init(mesh->Points(), polyline.GetIndices()))
-                        subGraphic->AddLineString(static_cast<int>(polylineArgs.m_vertices.size()), &polylineArgs.m_vertices[0]);
+                    if (meshArgs.Init(*mesh, system, root.GetDgnDb()))
+                        subGraphic->AddTriMesh(meshArgs);
+                    }
+                else
+                    {
+                    for (auto const& polyline : mesh->Polylines())
+                        polylineArgs.InitAndApply(*subGraphic, mesh->Points(), polyline.GetIndices());
+                    }
+
+                subGraphic->Close();
+
+                for (auto const& instance : part->Instances())
+                    {
+                    graphic->AddSubGraphic(*subGraphic, instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
                     }
                 }
+            }
+        }
+    else
+        {
+        TilePolylineArgsList polylineArgsList;
+        for (auto const& part : geometry.Parts())
+            {
+            if (part->Instances().empty() || part->Meshes().empty())
+                continue;
 
-            subGraphic->Close();
-
-            for (auto const& instance : part->Instances())
+            for (auto const& mesh : part->Meshes())
                 {
-                graphic->AddSubGraphic(*subGraphic, instance.GetTransform(), mesh->GetDisplayParams().GetGraphicParams());
+                bool haveMesh = !mesh->Triangles().empty();
+                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+                if (!haveMesh && !havePolyline)
+                    continue;
+                else if ((haveMesh && !meshArgs.Init(*mesh, system, root.GetDgnDb())))
+                    continue;
+                else if ((havePolyline && !polylineArgsList.Init(*mesh)))
+                    continue;
+
+                for (auto const& instance : part->Instances())
+                    {
+                    auto instanceGraphic = system._CreateGraphic(Graphic::CreateParams(nullptr, instance.GetTransform()));
+                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+                    if (haveMesh)
+                        instanceGraphic->AddTriMesh(meshArgs);
+                    else
+                        polylineArgsList.Apply(*instanceGraphic);
+
+                    instanceGraphic->Close();
+                    tile.AddGraphic(*instanceGraphic);
+                    }
                 }
             }
         }
@@ -1948,16 +2034,14 @@ BentleyStatus Loader::_LoadTile()
             {
             BeAssert(havePolyline);
             for (auto const& polyline : mesh->Polylines())
-                {
-                if (polylineArgs.Init(mesh->Points(), polyline.GetIndices()))
-                    subGraphic->AddLineString(static_cast<int>(polylineArgs.m_vertices.size()), &polylineArgs.m_vertices[0]);
-                }
+                polylineArgs.InitAndApply(*subGraphic, mesh->Points(), polyline.GetIndices());
             }
 
         subGraphic->Close();
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
+    // ###TODO: Doesn't handle case in which all graphics were instanced...
     if (graphic.IsValid())
         {
         if (root.WantDebugRanges())
@@ -2624,7 +2708,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
     clone->GetRange(range);
     tf.Multiply(thisTileRange, range);
 
-    if (!s_doInstances || !thisTileRange.IsContained(m_tileRange))
+    if (!s_cacheInstances || !thisTileRange.IsContained(m_tileRange))
         {
         IGeometryPtr geom = IGeometry::Create(clone);
         return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
@@ -2819,7 +2903,7 @@ TileGeometryProcessor::Result TileGeometryProcessor::OutputGraphics(GeometryProc
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometryProcessorContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams)
     {
-    if (s_doInstances)
+    if (s_cacheInstances)
         {
         GraphicParams graphicParams;
         _CookGeometryParams(geomParams, graphicParams);
