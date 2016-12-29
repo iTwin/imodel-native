@@ -365,9 +365,17 @@ void ECClass::FindUniquePropertyName(Utf8StringR newName, Utf8CP prefix, Utf8CP 
 //---------------+---------------+---------------+---------------+---------------+-------
 ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDerivedProperties)
     {
+    Utf8String originalName = prop->GetName();
+
     Utf8String newName;
     FindUniquePropertyName(newName, prop->GetClass().GetSchema().GetAlias().c_str(), prop->GetName().c_str());
-    return RenameConflictProperty(prop, renameDerivedProperties, newName);
+    ECObjectsStatus status = RenameConflictProperty(prop, renameDerivedProperties, newName);
+    if (ECObjectsStatus::Success != status)
+        LOG.errorv("Failed to rename property %s:%s to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
+    else
+        LOG.warningv("The property %s:%s was renamed to %s", prop->GetClass().GetFullName(), originalName.c_str(), newName.c_str());
+
+    return status;
     }
 
 //---------------------------------------------------------------------------------------
@@ -420,7 +428,6 @@ ECObjectsStatus ECClass::RenameConflictProperty(ECPropertyP prop, bool renameDer
         }
     return ECObjectsStatus::Success;
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
@@ -542,8 +549,9 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
             {
             if (!resolveConflicts)
                 return ECObjectsStatus::CaseCollision;
-            LOG.debugv("Case-collision between %s:%s and %s:%s", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), derivedProperty->GetName().c_str());
-            RenameConflictProperty(derivedProperty, true);
+            LOG.warningv("Case-collision between %s:%s and %s:%s", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), derivedProperty->GetName().c_str());
+            if (ECObjectsStatus::Success != RenameConflictProperty(derivedProperty, true))
+                return status;
             }
 
         // TFS#246533: Silly multiple inheritance scenarios...does derived property already have a different base property? Does the new property
@@ -554,8 +562,8 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
                 derivedProperty->SetBaseProperty (&baseProperty);
             else if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                 {
-                LOG.debugv("DataTypeMismatch when adding base property '%s:%s' to '%s:%s;", baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetFullName(), GetName().c_str());
-                RenameConflictProperty(derivedProperty, true);
+                if (ECObjectsStatus::Success != RenameConflictProperty(derivedProperty, true))
+                    return status;
                 }
             }
         }
@@ -914,13 +922,8 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
         }
     
     if (!newProperty._CanOverride(baseProperty))
-        {
-        LOG.errorv("The datatype of ECProperty %s.%s (%s) does not match the datatype of ECProperty %s.%s (%s)... which it overrides.", 
-            newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(), 
-            baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseProperty.GetTypeName().c_str());
-
         return ECObjectsStatus::DataTypeMismatch;
-        }
+
     return ECObjectsStatus::Success; 
     }
 
@@ -1204,25 +1207,22 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
                 // Same type, different case, simply rename the second property to match the first
                 if (ECObjectsStatus::Success == status)
                     {
-                    LOG.debugv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
+                    LOG.warningv("Case-collision between %s:%s and %s:%s.  Renaming to %s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), prop->GetName().c_str());
                     ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
-                    conflictClass->RenameConflictProperty(thisProperty, true, prop->GetName());
+                    if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true, prop->GetName()))
+                        return status;
                     }
                 }
 
             if (ECObjectsStatus::Success != status)
                 {
-                if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
-                    {
-                    LOG.debugv("Case-collision between %s:%s and %s:%s", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
-                    conflictClass->RenameConflictProperty(thisProperty, true);
-                    }
-                else
-                    {
-                    LOG.errorv("Attempt to override a %s property of class %s with a different type property in derived class %s", thisProperty->GetName().c_str(), baseClass.GetName().c_str(), GetName().c_str());
+                if (!resolveConflicts)
                     return status;
-                    }
+
+                LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true))
+                    return status;
                 }
             }
         }

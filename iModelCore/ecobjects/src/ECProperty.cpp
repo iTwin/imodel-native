@@ -610,28 +610,31 @@ SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersi
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    PrimitiveType basePrimitiveType;
+    if (!baseProperty.GetIsPrimitive() && !baseProperty.GetIsPrimitiveArray())
+        {
+        LOG.errorv("The property %s:%s cannot be overriden by PrimitiveECProperty %s:%s because it is not a PrimitiveECProperty.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
+        return false;
+        }
     
     // normally, we do not allow a primitive property to override an array property.  However, there is a set of schemas that
     // have been delivered that allow this behavior.  If the primitive property type is the same as the type used in the array, then
     // we allow it to be overridden.
+    PrimitiveType basePrimitiveType;
     if (baseProperty.GetIsArray())
-        {
-        PrimitiveArrayECPropertyCP arrayProperty = baseProperty.GetAsPrimitiveArrayProperty();
-        if (nullptr == arrayProperty)
-            return false;
-        basePrimitiveType = arrayProperty->GetPrimitiveElementType();
-        }
-    else if (baseProperty.GetIsStruct())
-        return false;
-    else if (baseProperty.GetIsNavigation())
-        return false;
+        basePrimitiveType = baseProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
     else
-        {
         basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->GetType();
-        }
         
-    return (basePrimitiveType == m_primitiveType);
+    if (basePrimitiveType != m_primitiveType)
+        {
+        LOG.errorv("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
+                   ECXml::GetPrimitiveTypeName(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
+        return false;
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1012,17 +1015,31 @@ SchemaWriteStatus StructECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool StructECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    if (baseProperty.GetIsPrimitive())
+    if (!baseProperty.GetIsStruct())
+        {
+        LOG.errorv("The property %s:%s cannot be overriden by StructECProperty %s:%s because it is not a StructECProperty.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
-        
-    if (baseProperty.GetIsStructArray())
-        return false;
+        }
 
     // if the struct type hasn't been set yet, we will say it can override
     if (NULL == m_structType)
         return true;
 
-    return (GetTypeName() == baseProperty.GetTypeName());
+    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
+    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
+    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
+    // Instead, compare the full-qualified class name.
+    Utf8String baseStructName = baseProperty.GetAsStructProperty()->GetType().GetFullName();
+    if (0 != strcmp(m_structType->GetFullName(), baseStructName.c_str()))
+        {
+        LOG.errorv("The StructECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseStructName.c_str(),
+                   GetClass().GetFullName(), GetName().c_str(), m_structType->GetFullName());
+        return false;
+        }
+
+    return true;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -1297,23 +1314,29 @@ ECObjectsStatus ArrayECProperty::SetMaxOccurs (Utf8StringCR maxOccurs)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    auto baseArray = baseProperty.GetAsPrimitiveArrayProperty();
-    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+    if (!baseProperty.GetIsPrimitive() && !baseProperty.GetIsPrimitiveArray())
         {
-        // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
-        if (nullptr == baseArray && GetKind() == ARRAYKIND_Primitive)
-            {
-            auto basePrim = baseProperty.GetAsPrimitiveProperty();
-            return nullptr != basePrim && basePrim->GetType() == GetPrimitiveElementType();
-            }
-        else
-            return false;
+        LOG.errorv("The property %s:%s cannot be overriden by PrimitiveArrayECProperty %s:%s because it is not a PrimitiveArrayECProperty.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
+        return false;
         }
+    
+    // Apparently this is a thing...overriding a primitive property with a primitive array of same type.
+    PrimitiveType basePrimitiveType;
+    if (baseProperty.GetIsPrimitive())
+        basePrimitiveType = baseProperty.GetAsPrimitiveProperty()->GetType();
     else
+        basePrimitiveType = baseProperty.GetAsPrimitiveArrayProperty()->GetPrimitiveElementType();
+
+    if (basePrimitiveType != m_primitiveType)
         {
-        Utf8String typeName = GetTypeName();
-        return typeName == EMPTY_STRING || typeName == baseProperty.GetTypeName();
+        LOG.errorv("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
+                   GetClass().GetFullName(), GetName().c_str(), ECXml::GetPrimitiveTypeName(m_primitiveType));
+        return false;
         }
+
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1445,13 +1468,10 @@ bool PrimitiveArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP
 //---------------+---------------+---------------+---------------+---------------+-------
 bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     {
-    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
-    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
-    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
-    // Instead, compare the full-qualified class name.
-    auto baseArray = baseProperty.GetAsStructArrayProperty();
-    if (nullptr == baseArray || baseArray->GetKind() != GetKind())
+    if (!baseProperty.GetIsStructArray())
         {
+        LOG.errorv("The property %s:%s cannot be overriden by StructArrayECProperty %s:%s because it is not a StructArrayECProperty.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
     
@@ -1459,7 +1479,20 @@ bool StructArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
     if (nullptr == m_structType)
         return false;
 
-    return 0 == strcmp (m_structType->GetFullName(), baseArray->GetStructElementType().GetFullName());
+    // This used to always compare GetTypeName(). Type names for struct arrays include the alias as defined in the referencing schema. That is weird and easily breaks if:
+    //  -Base property is defined in same schema as the struct class (cannot be worked around), or
+    //  -Base property's schema declares different alias for struct class's schema than the overriding property's schema (dumb workaround: make them use the same alias).
+    // Instead, compare the full-qualified class name.
+    Utf8String baseStructName = baseProperty.GetAsStructArrayProperty()->GetStructElementType().GetFullName();
+    if (0 != strcmp(m_structType->GetFullName(), baseStructName.c_str()))
+        {
+        LOG.errorv("The StructArrayECProperty %s:%s with type %s cannot be overriden by %s:%s with type %s because they have different types.",
+                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseStructName.c_str(),
+                   GetClass().GetFullName(), GetName().c_str(), m_structType->GetFullName());
+        return false;
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2017,19 +2050,35 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     {
     NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
     if (nullptr == baseNavProperty)
+        {
+        LOG.errorv("The property %s:%s cannot be overriden by a NavigationECProperty %s:%s because it is not a NavigationECProperty.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
+        }
 
     ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
     if (GetDirection() != baseDirection)
+        {
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overriden by %s:%s because they have different directions.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
+        }
 
     // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
     if (nullptr == m_relationshipClass)
         return true;
 
     ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
+    if (!m_relationshipClass->Is(baseRelClass))
+        {
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overriden by %s:%s because the relationship %s on property %s:%s is not derived from the relationship %s on property %s:%s.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str(),
+                   m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str(),
+                   baseRelClass->GetFullName(), baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str());
+        return false;
+        }
 
-    return m_relationshipClass->Is(baseRelClass);
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
