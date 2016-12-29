@@ -4063,5 +4063,118 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BlobIO)
+    {
+    auto assertBlobIO = [] (ECDbCR ecdb, Utf8CP className, Utf8CP accessString)
+        {
+        ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", className);
+        ASSERT_TRUE(ecClass != nullptr) << className;
+
+        std::vector<Utf8String> expectedBlobChunks {"Hello",", ", "world"};
+        const int expectedBlobSize = 13;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO %s(%s) VALUES(?)", ecClass->GetECSqlName().c_str(), accessString);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, expectedBlobSize)) << stmt.GetECSql();
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        BlobIO io;
+        ASSERT_EQ(SUCCESS, ecdb.OpenBlobIO(io, *ecClass, accessString, key.GetECInstanceId(), true));
+        ASSERT_TRUE(io.IsValid());
+        ASSERT_EQ(expectedBlobSize, io.GetNumBytes());
+
+        int offset = 0;
+        for (Utf8StringCR blobChunk : expectedBlobChunks)
+            {
+            ASSERT_EQ(BE_SQLITE_OK, io.Write(blobChunk.c_str(), (int) blobChunk.size(), offset));
+            offset += (int) blobChunk.size();
+            }
+        //add trailing \0
+        Utf8Char nullChar('\0');
+        ASSERT_EQ(BE_SQLITE_OK, io.Write(&nullChar, 1, offset));
+        ASSERT_EQ(BE_SQLITE_OK, io.Close());
+        ASSERT_FALSE(io.IsValid());
+
+        //validate result
+        ecsql.Sprintf("SELECT %s FROM %s WHERE ECInstanceId=%s", accessString, 
+                      ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        int actualBlobSize = -1;
+        ASSERT_STREQ("Hello, world", (Utf8CP) stmt.GetValueBlob(0, &actualBlobSize)) << stmt.GetECSql();
+        ASSERT_EQ(expectedBlobSize, actualBlobSize) << stmt.GetECSql();
+
+        //validate result via blobio
+        ASSERT_EQ(SUCCESS, ecdb.OpenBlobIO(io, *ecClass, accessString, key.GetECInstanceId(), false));
+        ASSERT_TRUE(io.IsValid());
+        ASSERT_EQ(expectedBlobSize, io.GetNumBytes());
+        Utf8String actualBlobBuffer;
+        actualBlobBuffer.reserve((size_t) expectedBlobSize);
+        ASSERT_EQ(BE_SQLITE_OK, io.Read(const_cast<Utf8P> (actualBlobBuffer.data()), expectedBlobSize, 0));
+        ASSERT_STREQ("Hello, world", actualBlobBuffer.c_str()) << "BlobIO::Read";
+        };
+
+
+    ECDbCR ecdb = SetupECDb("blobio.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    assertBlobIO(ecdb, "P", "Bi");
+    assertBlobIO(ecdb, "PSA", "PStructProp.bi");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
+    {
+    ECDbCR ecdb = SetupECDb("blobio.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    
+    {
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        const bool expectedToSucceed = prop->GetIsPrimitive() && (prop->GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary || prop->GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_IGeometry);
+        if (!expectedToSucceed)
+            {
+            BlobIO io;
+            ASSERT_EQ(ERROR, ecdb.OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Not a binary/geometry property";
+            ASSERT_FALSE(io.IsValid());
+            }
+        }
+    }
+
+    {
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, ecdb.OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Cannot use BlobIO on ECStructs";
+        ASSERT_FALSE(io.IsValid());
+        }
+    }
+
+    {
+    ECClassCP ecClass = ecdb.Schemas().GetECClass("ECDbMap", "ClassMap");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, ecdb.OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Cannot use BlobIO on custom attribute classes";
+        ASSERT_FALSE(io.IsValid());
+        }
+    }
+
+    }
 
 END_ECDBUNITTESTS_NAMESPACE

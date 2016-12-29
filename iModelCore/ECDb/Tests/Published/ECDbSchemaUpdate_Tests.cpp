@@ -4612,28 +4612,6 @@ TEST_F(ECSchemaUpdateTests, DeleteNavigationProperty)
     SetupECDb("schemaupdate.ecdb", schemaItem);
     ASSERT_TRUE(GetECDb().IsDbOpen());
     ASSERT_EQ(DbResult::BE_SQLITE_OK, GetECDb().SaveChanges());
-
-    SchemaItem schemaWithDeletedKeyProperty(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='A'>"
-        "        <ECProperty propertyName='PA' typeName='int' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
-        "        <ECProperty propertyName='PB' typeName='int' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='AHasB' strength='Embedding' modifier='Sealed'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='A' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='B' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>", false, "can't delete a property used as keyProperty.");
-    bool asserted = false;
-    AssertSchemaImport(asserted, GetECDb(), schemaWithDeletedKeyProperty);
-    ASSERT_FALSE(asserted);
     }
 
 //---------------------------------------------------------------------------------------

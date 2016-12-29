@@ -132,6 +132,8 @@ private:
 
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
+    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const;
+
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
     DbResult OnDbCreated() const;

@@ -334,4 +334,67 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle  12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const
+    {
+    if (blobIO.IsValid())
+        return ERROR;
+
+    //all this method does is to determine the table and column name for the given class name and property access string.
+    //the code is verbose because serious validation is done to ensure that the BlobIO is only used for ECProperties
+    //that store BLOB values in a single column.
+    ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
+    if (classMap == nullptr || classMap->GetType() == ClassMap::Type::NotMapped)
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s'. Its ECClass is not mapped to a table.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    PropertyMap const* propMap = classMap->GetPropertyMaps().Find(propertyAccessString);
+    if (propMap == nullptr)
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty doesn't exist in the ECClass.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    if (PropertyMap::Type::Primitive != propMap->GetType())
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s'. The ECProperty must be primitive and of type Binary.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    BeAssert(propMap->GetProperty().GetIsPrimitive());
+    const PrimitiveType primType = propMap->GetProperty().GetAsPrimitiveProperty()->GetType();
+    if (primType != PRIMITIVETYPE_Binary && primType != PRIMITIVETYPE_IGeometry)
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s'. It must be either of type Binary or IGeometry.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    PrimitivePropertyMap const* primPropMap = static_cast<PrimitivePropertyMap const*> (propMap);
+    DbColumn const& col = primPropMap->GetColumn();
+
+    if (col.IsOverflowSlave())
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' as it is mapped to an overflow column.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    if (col.GetPersistenceType() == PersistenceType::Virtual)
+        {
+        LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' as it is not mapped to a column.",
+                   ecClass.GetFullName(), propertyAccessString);
+        return ERROR;
+        }
+
+    return blobIO.Open(m_ecdb, col.GetTable().GetName().c_str(), col.GetName().c_str(), ecinstanceId.GetValue(), writable) == BE_SQLITE_OK ? SUCCESS : ERROR;
+    }
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

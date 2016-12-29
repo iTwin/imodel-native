@@ -1841,15 +1841,6 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
                 if (!sharedColumnFound) sharedColumnFound = true;
                 continue;
                 }
-            //Check for use as key property.
-            if (Enum::Contains(column->GetKind(), DbColumn::Kind::SourceECInstanceId) ||
-                Enum::Contains(column->GetKind(), DbColumn::Kind::TargetECInstanceId))
-                {
-                //Fail we do not want to delete a sql column right now
-                Issues().Report(ECDbIssueSeverity::Error, "ECSchema Update failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass as it is used as KeyProperty in a relationship.",
-                                          deletedProperty.GetClass().GetFullName(), deletedProperty.GetName().c_str());
-                return ERROR;
-                }
 
             //For virtual column delete column from ec_Column.
             if (column->GetPersistenceType() == PersistenceType::Virtual)

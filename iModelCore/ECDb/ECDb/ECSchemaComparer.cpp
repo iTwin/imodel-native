@@ -1557,8 +1557,6 @@ SystemId ECChange::StringToSystemId(Utf8CP idString)
     if (strcmp(idString, "IsPrimitive") == 0) return SystemId::IsPrimitive;
     if (strcmp(idString, "IsPrimitiveArray") == 0) return SystemId::IsPrimitiveArray;
     if (strcmp(idString, "IsNavigation") == 0) return SystemId::IsNavigation;
-    if (strcmp(idString, "KeyProperties") == 0) return SystemId::KeyProperties;
-    if (strcmp(idString, "KeyProperty") == 0) return SystemId::KeyProperty;
     if (strcmp(idString, "KindOfQuantities") == 0) return SystemId::KindOfQuantities;
     if (strcmp(idString, "KindOfQuantity") == 0) return SystemId::KindOfQuantity;
     if (strcmp(idString, "MaximumValue") == 0) return SystemId::MaximumValue;
@@ -1640,8 +1638,6 @@ Utf8CP ECChange::SystemIdToString(SystemId id)
             case SystemId::IsPrimitive: return "IsPrimitive";
             case SystemId::IsPrimitiveArray: return "IsPrimitiveArray";
             case SystemId::IsNavigation: return "IsNavigation";
-            case SystemId::KeyProperties: return "KeyProperties";
-            case SystemId::KeyProperty: return "KeyProperty";
             case SystemId::KindOfQuantities: return "KindOfQuantities";
             case SystemId::KindOfQuantity: return "KindOfQuantity";
             case SystemId::MaximumValue: return "MaximumValue";
