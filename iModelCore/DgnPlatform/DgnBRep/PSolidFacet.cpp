@@ -465,6 +465,25 @@ IFacetOptionsCR                 facetOptions
 
     return SUCCESS;
     }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+static void enableConcurrentFacetting()
+    {
+    static char facetFuncStr[] = "PK_TOPOL_facet_2";
+    char const* facetFuncName = facetFuncStr;
+    PK_FUNCTION_t facetFunc = 0;
+    PK_FUNCTION_find_o_t findOpts;
+
+    PK_FUNCTION_find_o_m(findOpts);
+    PK_FUNCTION_find(1, &facetFuncName, &findOpts, &facetFunc);
+
+    PK_FUNCTION_run_t facetRun = PK_FUNCTION_run_mutable_conc_c;
+    PK_THREAD_set_function_run_o_t facetRunOpts;
+
+    PK_THREAD_set_function_run_o_m(facetRunOpts);
+    PK_THREAD_set_function_run(1, &facetFunc, &facetRun, &facetRunOpts);
+    }
 
 /*=================================================================================**//**
 * @bsiclass                                                     Brien.Bastings  04/09
@@ -1225,6 +1244,7 @@ void            FacetEntity (IBRepEntityCR in, double pixelSize, DRange1dP pixel
 
     memset (&m_table, 0, sizeof (m_table)); // Not initialized if error?!?
 
+    enableConcurrentFacetting();
     if (SUCCESS != PK_TOPOL_facet_2 (1, &entityTag, NULL, &options, &m_table) || !_IsTableValid ())
         return;
 
@@ -1318,6 +1338,7 @@ void            FacetEntity (IBRepEntityCR in, IFacetOptionsR facetOptions)
 
     memset (&m_table, 0, sizeof (m_table)); // Not initialized if error?!?
 
+    enableConcurrentFacetting();
     if (SUCCESS != PK_TOPOL_facet_2 (1, &entityTag, NULL, &options, &m_table) || !_IsTableValid ())
         return;
 
