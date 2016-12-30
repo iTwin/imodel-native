@@ -23,6 +23,7 @@ void DgnViewport::DestroyViewport()
         m_viewController = nullptr;
         }
 
+    RemoveAnimator();
     SetRenderTarget(nullptr);
     }
 
@@ -31,6 +32,7 @@ void DgnViewport::DestroyViewport()
 //---------------------------------------------------------------------------------------
 void DgnViewport::SuspendViewport()
     {
+    RemoveAnimator();
     SetRenderTarget(nullptr);
     }
 
@@ -1203,6 +1205,36 @@ void DgnViewport::ChangeViewController(ViewControllerR viewController)
 
     InvalidateScene();
     m_sync.InvalidateController();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::Animate()
+    {
+    if (m_animator.IsValid() && IViewportAnimator::RemoveMe::Yes == m_animator->_Animate(*this))
+        m_animator = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::RemoveAnimator()
+    {
+    if (m_animator.IsValid())
+        {
+        m_animator->_OnInterrupted(*this);
+        m_animator = nullptr;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SetAnimator(IViewportAnimatorR animator)
+    {
+    RemoveAnimator();
+    m_animator = &animator;
     }
 
 /*---------------------------------------------------------------------------------**//**

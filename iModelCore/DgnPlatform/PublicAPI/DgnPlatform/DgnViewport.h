@@ -12,6 +12,9 @@
 #include "ViewController.h"
 #include "TileTree.h"
 
+DGNPLATFORM_TYPEDEFS(IViewportAnimator);
+DGNPLATFORM_REF_COUNTED_PTR(IViewportAnimator);
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 /**  @addtogroup GROUP_DgnView DgnView Module
@@ -45,6 +48,28 @@ struct FitViewParams
     bool m_useElementAlignedBox = false;
     bool m_fitDepthOnly = false;
     bool m_limitByVolume = false;
+};
+
+//=======================================================================================
+//! Interface adopted by an object which animates a viewport.
+//! Only one animator may be associated with a viewport at a given time. Registering a new
+//! animator replaces any existing animator.
+//! The animator's _Animate() function will be invoked just prior to the rendering of each frame.
+//! The return value of _Animate() indicates whether to keep the animator active or to remove it.
+//! The animator may also be removed in response to certain changes to the viewport - e.g., when
+//! the viewport is closed, or its view controller changed, etc.
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct IViewportAnimator : RefCountedBase
+{
+    enum class RemoveMe { Yes, No };
+
+    //! Apply animation to the viewport. Return RemoveMe::Yes when animation is completed, causing the animator to be removed from the viewport.
+    virtual RemoveMe _Animate(DgnViewportR viewport) = 0;
+
+    //! Invoked when this IViewportAnimator is removed from the viewport, e.g. because it was replaced by a new animator, the viewport was closed -
+    //! that is, for any reason other than returning RemoveMe::Yes from _Animate()
+    virtual void _OnInterrupted(DgnViewportR viewport) { }
 };
 
 struct TileViewport;
@@ -137,6 +162,7 @@ protected:
     ViewUndoStack m_forwardStack;
     ViewUndoStack m_backStack;
     EventHandlerList<Tracker> m_trackers;
+    IViewportAnimatorPtr m_animator;
 
     DGNPLATFORM_EXPORT void DestroyViewport();
     DGNPLATFORM_EXPORT void SuspendViewport();
@@ -156,7 +182,7 @@ protected:
     void CalcTargetNumElements(UpdatePlan const& plan, bool isForProgressive);
     void ChangeScene(Render::Task::Priority);
     DGNPLATFORM_EXPORT void SaveViewUndo();
-
+    DGNPLATFORM_EXPORT void Animate();
 public:
     DgnViewport(Render::TargetP target) {SetRenderTarget(target);}
     virtual ~DgnViewport() {DestroyViewport();}
@@ -522,6 +548,9 @@ public:
     EventHandlerList<Tracker>& GetTrackers() {return m_trackers;}
     void AddTracker(Tracker* tracker) {m_trackers.AddHandler(tracker);}
     void DropTracker(Tracker* tracker) {m_trackers.DropHandler(tracker);}
+
+    DGNPLATFORM_EXPORT void SetAnimator(IViewportAnimatorR animator);
+    DGNPLATFORM_EXPORT void RemoveAnimator();
 
     DGNPLATFORM_EXPORT ColorDef GetSolidFillEdgeColor(ColorDef inColor);
 
