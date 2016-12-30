@@ -80,17 +80,17 @@ enum class NormalMode
 //=======================================================================================
 struct GeometryOptions
 {
-    enum class Surfaces { Yes, No };
+    enum class SurfacesOnly { Yes, No };
     enum class TwoSidedTriangles { Yes, No };
 
     NormalMode          m_normalMode;
-    Surfaces            m_surfaces;
+    SurfacesOnly        m_surfaces;
     TwoSidedTriangles   m_twoSidedTriangles;
 
-    explicit GeometryOptions(NormalMode normals=NormalMode::CurvedSurfacesOnly, Surfaces surfaces=Surfaces::Yes, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
+    explicit GeometryOptions(NormalMode normals=NormalMode::CurvedSurfacesOnly, SurfacesOnly surfaces=SurfacesOnly::No, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
         : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
 
-    bool WantSurfacesOnly() const { return Surfaces::Yes == m_surfaces; }
+    bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
     bool WantTwoSidedTriangles() const { return TwoSidedTriangles::Yes == m_twoSidedTriangles; }
 };
 

@@ -436,8 +436,8 @@ constexpr size_t s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
 // avoid re-facetting repeated geometry - cache and reuse
-// Improves tile generation time
-static bool s_cacheInstances = true;
+// Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
+static bool s_cacheInstances = false;
 // Reuse the same Graphic as a SubGraphic for instanced geometry
 // Results in significant worse framerate due to surprisingly poor performance of qv_defineTransclip()
 static bool s_instancesAsSubgraphics = false;
@@ -1926,7 +1926,6 @@ BentleyStatus Loader::_LoadTile()
     auto& system = *root.GetRenderSystem();
 
     GeometryOptions options;
-    options.m_surfaces = GeometryOptions::Surfaces::No; // ###TODO: Clean up naming - currently Surfaces::Yes means ONLY surfaces...
     LoadContext loadContext(this);
     auto geometry = tile.GenerateGeometry(options, loadContext);
 
