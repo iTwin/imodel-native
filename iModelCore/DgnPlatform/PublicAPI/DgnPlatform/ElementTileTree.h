@@ -87,7 +87,7 @@ struct GeometryOptions
     SurfacesOnly        m_surfaces;
     TwoSidedTriangles   m_twoSidedTriangles;
 
-    explicit GeometryOptions(NormalMode normals=NormalMode::CurvedSurfacesOnly, SurfacesOnly surfaces=SurfacesOnly::No, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
+    explicit GeometryOptions(NormalMode normals=NormalMode::Always, SurfacesOnly surfaces=SurfacesOnly::No, TwoSidedTriangles twoSidedTriangles=TwoSidedTriangles::No)
         : m_normalMode(normals), m_surfaces(surfaces), m_twoSidedTriangles(twoSidedTriangles) { }
 
     bool WantSurfacesOnly() const { return SurfacesOnly::Yes == m_surfaces; }
