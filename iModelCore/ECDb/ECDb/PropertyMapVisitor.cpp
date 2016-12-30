@@ -264,7 +264,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
 
             case ECSqlScope::NonSelectNoAssignmentExp:
             {
-            const bool addBase64ToBlobFunc = propertyMap.GetPersistenceDataType() == DbColumn::Type::Blob;
+            const bool addBase64ToBlobFunc = propertyMap.GetSqlDataType() == DbColumn::Type::Blob;
 
             if (addBase64ToBlobFunc)
                 sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");

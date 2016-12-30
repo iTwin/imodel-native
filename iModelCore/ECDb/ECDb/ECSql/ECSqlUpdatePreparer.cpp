@@ -124,7 +124,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
                 nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',");
 
-                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetPersistenceDataType() == DbColumn::Type::Blob;
+                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetSqlDataType() == DbColumn::Type::Blob;
                 if (addBlobToBase64Func)
                     nativeSqlBuilder.Append(SQLFUNC_BlobToBase64 "(");
 

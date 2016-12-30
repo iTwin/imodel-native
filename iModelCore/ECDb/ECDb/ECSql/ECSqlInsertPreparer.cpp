@@ -401,7 +401,7 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
                 insertBuilder.Append("'").Append(propertyNameSnippets[overflowComponentIndex]).Append("',");
 
                 SingleColumnDataPropertyMap const* propMap = overflowPropertyMaps[j];
-                const bool addBlobToBase64Func = propMap->GetPersistenceDataType() == DbColumn::Type::Blob;
+                const bool addBlobToBase64Func = propMap->GetSqlDataType() == DbColumn::Type::Blob;
                 if (addBlobToBase64Func)
                     insertBuilder.Append(SQLFUNC_BlobToBase64 "(");
 

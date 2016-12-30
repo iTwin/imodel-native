@@ -1309,7 +1309,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyM
         return SUCCESS;
         }
 
-    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetPersistenceDataType() == DbColumn::Type::Blob;
+    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetSqlDataType() == DbColumn::Type::Blob;
 
     if (addBase64ToBlobFunc)
         sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");

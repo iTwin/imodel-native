@@ -251,7 +251,7 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
         DbColumn const& m_column;
         virtual DbTable const& _GetTable() const override { return m_column.GetTable(); }
         virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
-        virtual DbColumn::Type _GetPersistenceDataType() const = 0;
+        virtual DbColumn::Type _GetSqlDataType() const = 0;
 
     protected:
         SingleColumnDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty, DbColumn const& column)
@@ -263,7 +263,7 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
     public:       
         virtual ~SingleColumnDataPropertyMap() {}
         DbColumn const& GetColumn() const { return m_column; }
-        DbColumn::Type GetPersistenceDataType() const { return _GetPersistenceDataType(); }
+        DbColumn::Type GetSqlDataType() const { return _GetSqlDataType(); }
     };
 
 //=======================================================================================
@@ -280,7 +280,7 @@ struct PrimitivePropertyMap final : SingleColumnDataPropertyMap
             : SingleColumnDataPropertyMap(Type::Primitive, parentPropMap, ecProperty, column, true)
             {}
 
-        virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsPrimitiveProperty()->GetType()); }
+        virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::PrimitiveTypeToColumnType(GetProperty().GetAsPrimitiveProperty()->GetType()); }
 
     public:
         virtual ~PrimitivePropertyMap() {}
@@ -313,7 +313,7 @@ struct PrimitiveArrayPropertyMap final : SingleColumnDataPropertyMap
         PrimitiveArrayPropertyMap(ClassMap const& classMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, classMap, ecProperty, column) {}
         PrimitiveArrayPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::PrimitiveArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::PrimitiveArray, parentPropMap, ecProperty, column, true) {}
 
-        virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::Type::Blob; }
+        virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::Type::Blob; }
 
     public:
         virtual ~PrimitiveArrayPropertyMap() {}
@@ -330,7 +330,7 @@ struct StructArrayPropertyMap final : SingleColumnDataPropertyMap
         StructArrayPropertyMap(ClassMap const& classMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::StructArray, classMap, ecProperty, column) {}
         StructArrayPropertyMap(CompoundDataPropertyMap const& parentPropMap, ECN::StructArrayECPropertyCR ecProperty, DbColumn const& column) : SingleColumnDataPropertyMap(Type::StructArray, parentPropMap, ecProperty, column, true) {}
 
-        virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::Type::Text; }
+        virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::Type::Text; }
 
     public:
         virtual ~StructArrayPropertyMap() {}
@@ -423,7 +423,7 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
                 : SingleColumnDataPropertyMap(Type::NavigationId, parentPropertyMap, ecProperty, column, true)
                 {}
 
-            virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::Type::Integer; }
+            virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::Type::Integer; }
 
             static RefCountedPtr<IdPropertyMap> CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column);
 
@@ -441,7 +441,7 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
                 : SingleColumnDataPropertyMap(Type::NavigationRelECClassId, parentPropertyMap, ecProperty, column, true), m_defaultClassId(defaultClassId)
                 {}
 
-            virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::Type::Integer; }
+            virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::Type::Integer; }
 
             static RefCountedPtr<RelECClassIdPropertyMap> CreateInstance(NavigationPropertyMap const& parentPropertyMap, DbColumn const& column, ECN::ECClassId defaultRelClassId);
 
