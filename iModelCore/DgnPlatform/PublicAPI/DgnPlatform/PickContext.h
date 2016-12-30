@@ -97,13 +97,14 @@ private:
     DPoint4d          m_pickPointView;
     double            m_pickAperture;
     double            m_pickApertureSquared;
+    double            m_pixelScale = 1.0; // only changes for sheet attachments
     uint32_t          m_overflowCount;
     LocateOptions     m_options;
     StopLocateTest*   m_stopTester;
     GeometrySourceCP  m_currentGeomSource;
     IElemTopologyCPtr m_currElemTopo;
-    DMap4dCP          m_attachToSheet = nullptr;
 
+    void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
     IPickGeomP _GetIPickGeom () override {return this;}
     StatusInt _OutputGeometry(GeometrySourceCR) override;
     bool _CheckStop() override;

@@ -424,8 +424,8 @@ ViewportStatus CameraViewDefinition::_SetupFromFrustum(Frustum const& frustum)
 
     // see if the frustum is tapered, and if so, set up camera eyepoint and adjust viewOrg and delta.
     double compression = xFront / xBack;
-#ifdef WIP_VIEW_DEFINITION // camera setup failure
-    if (!Allow3dManipulations() || (compression >=(1.0 - s_flatViewFractionTolerance)))
+#if defined (BENTLEY_CHANGE)
+    if (compression >=(1.0 - s_flatViewFractionTolerance))
         {
         SetCameraOn(false);
         return ViewportStatus::Success;
