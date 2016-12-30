@@ -9,7 +9,7 @@
 #include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
-#define DUMP_CHANGE_SUMMARY 1
+// #define DUMP_CHANGE_SUMMARY 1
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE

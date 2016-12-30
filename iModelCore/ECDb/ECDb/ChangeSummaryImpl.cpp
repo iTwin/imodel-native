@@ -1053,6 +1053,7 @@ BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChange const& sqlChange, 
     Utf8StringCR tableName = m_sqlChange->GetTableName();
     if (tableName.StartsWith("ec_"))
         {
+        sqlChange.GetChange().Dump(m_ecdb, false, 1);
         BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summary cannot be created.");
         return ERROR;
         }
@@ -2084,6 +2085,7 @@ bool ChangeIterator::RowEntry::MoveToMappedChange()
         Utf8StringCR tableName = m_sqlChange->GetTableName();
         if (tableName.StartsWith("ec_"))
             {
+            m_sqlChange->GetChange().Dump(GetDb(), false, 1);
             BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summaries are not reliable.");
             return false;
             }
