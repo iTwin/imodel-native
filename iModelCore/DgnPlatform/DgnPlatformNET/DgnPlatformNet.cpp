@@ -1087,7 +1087,7 @@ public:
     void BindDRange3d(int parameterIndex, GeometryNET::DRange3d value)
         {
         pin_ptr<GeometryNET::DRange3d>    valuePinned = &value;
-        m_statement->BindBinary (parameterIndex, valuePinned, sizeof(::DRange3d), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
+        m_statement->BindBlob(parameterIndex, valuePinned, sizeof(::DRange3d), BeSQLite::EC::IECSqlBinder::MakeCopy::Yes);
         }
 
     /**
@@ -1166,7 +1166,7 @@ public:
     GeometryNET::DRange3d GetValueDRange3d (int columnIndex)
         {
         int size;
-        void const* p = m_statement->GetValueBinary (columnIndex, &size);
+        void const* p = m_statement->GetValueBlob(columnIndex, &size);
         if ( (nullptr == p) || (size != sizeof(DRange3d)) )
             {
             throw gcnew DgnPlatformNETException ("ECSql ColumnType is not DRange3d type");

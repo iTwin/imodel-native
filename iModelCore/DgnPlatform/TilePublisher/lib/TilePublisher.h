@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                  
 |
 |     $Source: TilePublisher/lib/TilePublisher.h $
 |
@@ -96,6 +96,7 @@ protected:
     BeMutex                                 m_mutex;
     bool                                    m_publishSurfacesOnly;
     bool                                    m_publishIncremental;
+    bool                                    m_isComposite;
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, bool publishIncremental = true);
 
@@ -130,6 +131,8 @@ public:
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     bool GetPublishIncremental() const { return m_publishIncremental; }
+    void SetIsComposite(bool isComposite) { m_isComposite = isComposite; }
+    WCharCP GetBinaryDataFileExtension() const { return m_isComposite ? L"cmpt" : L"b3dm"; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
@@ -175,6 +178,7 @@ public:
 //=======================================================================================
 struct TilePublisher
 {
+
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
     BatchIdMap              m_batchIds;
@@ -182,6 +186,13 @@ private:
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
     bmap<TileTextureImageCP, Utf8String>    m_textureImages;
+
+    enum class VertexEncoding
+        {
+        StandardQuantization,
+        UnquantizedDoubles,
+        OctEncodedNormals
+        };
 
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
@@ -200,7 +211,7 @@ private:
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
     void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
-    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
+    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);

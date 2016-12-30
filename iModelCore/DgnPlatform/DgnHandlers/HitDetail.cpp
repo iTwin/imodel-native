@@ -375,7 +375,7 @@ CurvePrimitiveIdCP GeomDetail::GetCurvePrimitiveId() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    KeithBentley    04/015
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(DgnViewportR viewport, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport)
+HitDetail::HitDetail(DgnViewportR viewport, DgnViewportP sheetVp, GeometrySourceCP geomSource, DPoint3dCR testPoint, HitSource source, GeomDetailCR geomDetail) : m_viewport(viewport), m_sheetViewport(sheetVp)
     {
     m_elementId         = (nullptr != geomSource && nullptr != geomSource->ToElement() ? geomSource->ToElement()->GetElementId() : DgnElementId());
     m_locateSource      = source;
@@ -387,7 +387,7 @@ HitDetail::HitDetail(DgnViewportR viewport, GeometrySourceCP geomSource, DPoint3
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/04
 +---------------+---------------+---------------+---------------+---------------+------*/
-HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport)
+HitDetail::HitDetail(HitDetail const& from) : m_viewport(from.m_viewport), m_sheetViewport(from.m_sheetViewport) 
     {
     m_elementId         = from.m_elementId;
     m_locateSource      = from.m_locateSource;
@@ -406,12 +406,6 @@ HitDetail::~HitDetail() {}
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void HitDetail::_Draw(ViewContextR context) const {context.VisitHit(*this);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  09/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-IElemTopologyCP HitDetail::GetElemTopology() const {return (m_elemTopo.IsValid() ? m_elemTopo.get() : nullptr);}
-void HitDetail::SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  05/2015
@@ -1018,9 +1012,9 @@ static int doZCompare(HitDetailCR oHit1, HitDetailCR oHit2)
         // NOTE: QV wireframe hits are only needed to locate silhouettes, make sure they always lose to a real edge hit since a robust z compare isn't possible...
         if (isQvWireHit1 && !isQvWireHit2)
             return 1;
-        else if (isQvWireHit2 && !isQvWireHit1)
+        if (isQvWireHit2 && !isQvWireHit1)
             return -1;
-        else if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
+        if (DoubleOps::WithinTolerance(z1, z2, s_tooCloseTolerance))
             return 0; // Both QV or real edge hits...if close let other criteria determine order...
         }
 

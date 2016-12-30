@@ -242,6 +242,22 @@ bool GetVertexLocation(DPoint3dR point) const {return _GetVertexLocation(point);
 }; // ISubEntity
 
 //=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct IsSubEntityPtrEqual : std::binary_function <ISubEntityPtr, ISubEntityCP, bool>
+    {
+    bool operator() (ISubEntityPtr const& subEntityPtr, ISubEntityCP subEntity) const {return subEntityPtr->IsEqual(*subEntity);}
+    };
+
+//=======================================================================================
+// @bsiclass 
+//=======================================================================================
+struct IsParentGeometryPtrEqual : std::binary_function <ISubEntityPtr, GeometricPrimitiveCP, bool>
+    {
+    bool operator() (ISubEntityPtr const& subEntity, GeometricPrimitiveCP geom) const {return subEntity->IsParentEqual(*geom);}
+    };
+
+//=======================================================================================
 //! BRepUtil provides support for the creation, querying, and modification of BReps.
 //! Coordinates and distances are always supplied and returned in uors. Operations between 
 //! entities such as BRepUtil::Modify::BooleanUnion will automatically take the 
@@ -317,6 +333,16 @@ DGNPLATFORM_EXPORT static BentleyStatus GetTangentBlendEdges(bvector<ISubEntityP
 //! @param[in] face The face sub-entity that has the loop as part of it's bounds.
 //! @return SUCCESS if the output vector was populated.
 DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<ISubEntityPtr>& loopEdges, ISubEntityCR edge, ISubEntityCR face);
+
+//! Query the set of faces that are adjacent to the given face sub-entity.
+//! @param[out] subEntities A vector to hold the sub-entities of type SubEntityType::Face.
+//! @param[in] subEntity The face sub-entity to query adjacent faces for.
+//! @param[in] includeVertex Whether to include vertex connected adjacent faces or just edge connected faces.
+//! @param[in] includeRedundant Whether to include an adjacent face that has identical surface geometry as the given face.
+//! @param[in] includeSmoothOnly Whether to include an adjacent face that is not smoothly connected to the given face.
+//! @param[in] oneLevel When only returning smoothly connected adjacent faces, whether to return all smoothly connected faces, or just those immediately adjacent.
+//! @return SUCCESS if the output vector was populated.
+DGNPLATFORM_EXPORT static BentleyStatus GetAdjacentFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity, bool includeVertex = true, bool includeRedundant = true, bool includeSmoothOnly = false, bool oneLevel = true);
 
 //! Get uv face parameter range for the given face sub-entity.
 //! @param[in] subEntity The face sub-entity to query.
@@ -580,29 +606,31 @@ struct Modify
     DGNPLATFORM_EXPORT static RefCountedPtr<IRefCounted> CreateRollbackMark();
 
     //! Perform the specified boolean operation between the target body and tool body.
-    //! @param[in,out] target The target body to modify (may be consumed in boolean).
+    //! @param[in,out] target The target body to modify (may be consumed by subtract operation).
     //! @param[in,out] tool The tool body (consumed in boolean).
     //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    //! @note: A successful boolean can produce no geometry, check IBRepEntity::EntityType::Invalid != target.GetEntityType().
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, IBRepEntityR tool, BooleanMode mode);
+    //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityPtr& target, IBRepEntityPtr& tool, BooleanMode mode);
 
     //! Perform the specified boolean operation between the target body and one or more tool bodies.
-    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] target The target body to modify (may be consumed by subtract operation).
     //! @param[in,out] tools A vector of one or more tool bodies (consumed in boolean).
     //! @param[in] mode The boolean operation to perform.
     //! @return SUCCESS if boolean operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityR target, bvector<IBRepEntityPtr>& tools, BooleanMode mode);
+    //! @note: A successful boolean subtract can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanOperation(IBRepEntityPtr& target, bvector<IBRepEntityPtr>& tools, BooleanMode mode);
 
     //! Modify the target body by subtracting a cut body produced from sweeping the sheet tool body according to the specified cut direction and depth.
-    //! @param[in,out] target The target body to modify.
+    //! @param[in,out] target The target body to modify (may be consumed by cut operation).
     //! @param[in] planarTool The planar sheet body for the cut profile.
     //! @param[in] directionMode The sweep direction relative to the sheet body normal of the cut profile.
     //! @param[in] depthMode To specify if the cut should extended through the entire body or only create a pocket of fixed depth.
     //! @param[in] distance To specify the cut depth for CutDepthMode::Blind.
     //! @param[in] inside Whether to remove material inside profile or outside profile.
     //! @return SUCCESS if cut operation was completed.
-    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityR target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
+    //! @note: A successful boolean cut can produce no geometry, check target.IsValid().
+    DGNPLATFORM_EXPORT static BentleyStatus BooleanCut(IBRepEntityPtr& target, IBRepEntityCR planarTool, CutDirectionMode directionMode, CutDepthMode depthMode, double distance, bool inside);
 
     //! Sew the given set of sheet bodies together by joining those that share edges in common.
     //! @param[out] sewn The new bodies produced by sewing.

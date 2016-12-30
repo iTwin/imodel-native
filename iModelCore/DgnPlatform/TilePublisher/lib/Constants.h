@@ -27,6 +27,8 @@ static const uint32_t s_instanced3dVersion   = 1;
 #define GLTF_TRIANGLES 4
 #define GLTF_CULL_FACE 2884
 #define GLTF_DEPTH_TEST 2929
+#define GLTF_SIGNED_BYTE 0x1400
+#define GLTF_UNSIGNED_BYTE 0x1401
 #define GLTF_SIGNED_SHORT 5122
 #define GLTF_UNSIGNED_SHORT 5123
 #define GLTF_UINT32 5125
@@ -40,6 +42,8 @@ static const uint32_t s_instanced3dVersion   = 1;
 #define GLTF_ELEMENT_ARRAY_BUFFER 34963
 #define GLTF_FRAGMENT_SHADER 35632
 #define GLTF_VERTEX_SHADER 35633
+#define GLTF_INT_VEC2 0x8b53
+#define GLTF_INT_VEC3 0x8b54
 #define GLTF_FLOAT_VEC2 35664
 #define GLTF_FLOAT_VEC3 35665
 #define GLTF_FLOAT_VEC4 35666
@@ -60,10 +64,23 @@ static std::string  s_shaderPrecision        = "precision highp float;\n";
 
 static std::string  s_batchIdShaderAttribute = "attribute float a_batchId;\n";
 
+static std::string s_octDecode = 
+"float gltf_signNotZero(float value) { return value >= 0.0 ? 1.0 : -1.0; }\n"
+"vec2 gltf_signNotZero(vec2 value) { return vec2(gltf_signNotZero(value.x), gltf_signNotZero(value.y));}\n"
+" vec3 gltf_octDecode(vec2 encoded)\n"
+"  {\n"
+"     encoded = encoded / 255.0 * 2.0 - 1.0;\n"
+"     vec3 v = vec3(encoded.x, encoded.y, 1.0 - abs(encoded.x) - abs(encoded.y));\n"
+"     if (v.z < 0.0)\n"
+"         v.xy = (1.0 - abs(v.yx)) * gltf_signNotZero(v.xy);\n"
+"   return normalize(v);\n"
+"  }\n";
+
 //Shaders for display of mesh data
 static std::string s_litVertexCommon = 
+s_octDecode +
 "attribute vec3 a_pos;\n"
-"attribute vec3 a_n;\n"
+"attribute vec2 a_n;\n"
 "uniform mat4 u_mv;\n"
 "uniform mat4 u_proj;\n"
 "uniform mat3 u_nmx;\n"
@@ -71,7 +88,8 @@ static std::string s_litVertexCommon =
 "varying vec3 v_pos;\n"
 "void main(void) {\n"
 "vec4 pos = u_mv * vec4(a_pos,1.0);\n"
-"v_n = u_nmx * a_n;\n"
+"vec3 decodeNormal = gltf_octDecode(a_n);\n"
+"v_n = u_nmx * decodeNormal;\n"
 "v_pos = pos.xyz;\n"
 "gl_Position = u_proj * pos;\n";
 
@@ -125,13 +143,15 @@ static std::string s_computeLighting =
 "return vec4 (diffuseAndAmbient + specular, inputColor.a);\n"
 "}\n";
 
+
+
 static std::string s_untexturedFragShader = 
 "uniform vec4 u_color;\n"
 "varying vec3 v_n;\n"
 "varying vec3 v_pos;\n"
 "uniform float u_specularExponent;\n"
 "uniform vec3 u_specularColor;\n"
-+ s_computeLighting +     
++ s_computeLighting + 
 "void main(void) {\n"
 "gl_FragColor = computeLighting (v_n, v_pos, u_specularExponent, u_specularColor, u_color);}\n";
 
@@ -239,8 +259,8 @@ static double const s_qvExponentMultiplier  = 48.0,
                     s_qvDiffuse             = 0.6;
 
 
-static const WCharCP s_metadataExtension    = L"json";
-static const WCharCP s_binaryDataExtension  = L"cmpt";
+static const WCharCP s_metadataExtension        = L"json";
+
 
 
 

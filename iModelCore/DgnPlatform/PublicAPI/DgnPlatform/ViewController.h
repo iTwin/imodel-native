@@ -576,11 +576,13 @@ public:
         void DoQuery();
     };
 
+private:
+    Utf8String m_viewSQL; // don't rely on this - it will soon be removed from the API!
+
 protected:
     bool m_loading = false;
     Render::MaterialPtr m_skybox;
     IAuxCoordSysPtr m_auxCoordSys;     //!< The auxiliary coordinate system in use.
-    Utf8String m_viewSQL;
     double m_sceneLODSize = 6.0; 
     double m_nonSceneLODSize = 7.0; 
     mutable double m_queryElementPerSecond = 10000;
@@ -810,7 +812,7 @@ public:
 
 #ifdef WIP_VIEW_DEFINITION
 //=======================================================================================
-//! A SectioningViewController is a physical view with a clip that defines a section cut.
+//! A SectioningViewController is a spatial view with a clip that defines a section cut.
 //! @ingroup GROUP_DgnView
 // @bsiclass                                                    Keith.Bentley   03/12
 //=======================================================================================

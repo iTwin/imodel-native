@@ -130,12 +130,12 @@ PKIBooleanOptionEnum    booleanOptions      // => options for boolean
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
+BentleyStatus PSolidUtil::DoBoolean(IBRepEntityPtr& targetEntity, IBRepEntityPtr* toolEntities, size_t nTools, PK_boolean_function_t operation, PKIBooleanOptionEnum options, bool resolveNodeIdConflicts)
     {
     if (0 == nTools)
         return ERROR;
 
-    PK_ENTITY_t targetEntityTag = PSolidUtil::GetEntityTagForModify(targetEntity);
+    PK_ENTITY_t targetEntityTag = (targetEntity.IsValid() ? PSolidUtil::GetEntityTagForModify(*targetEntity) : PK_ENTITY_null);
 
     if (PK_ENTITY_null == targetEntityTag)
         return ERROR;
@@ -147,7 +147,7 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* t
 
     Transform   invTargetTransform;
  
-    invTargetTransform.InverseOf(targetEntity.GetEntityTransform());
+    invTargetTransform.InverseOf(targetEntity->GetEntityTransform());
 
     // Get tool bodies in coordinates of target...
     for (size_t iTool = 0; iTool < nTools; ++iTool)
@@ -207,11 +207,11 @@ BentleyStatus PSolidUtil::DoBoolean(IBRepEntityR targetEntity, IBRepEntityPtr* t
     if (SUCCESS == status)
         {
         if (PK_ENTITY_null == targetEntityTag)
-            PSolidUtil::ExtractEntityTag(targetEntity); // Invalidate target if successful result produced no geometry...
+            targetEntity = nullptr; // NOTE: Don't extract from original...need to support dynamics rollback for push/pull when calling BooleanCut to punch holes...
 
         // Invalidate tool entities that were consumed in boolean...
         for (size_t iTool = 0; iTool < nTools; ++iTool)
-            PSolidUtil::ExtractEntityTag(*toolEntities[iTool]);
+            toolEntities[iTool] = nullptr;
         }
     else
         {
