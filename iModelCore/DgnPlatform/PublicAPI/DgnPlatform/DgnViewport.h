@@ -212,7 +212,7 @@ public:
     DGNPLATFORM_EXPORT StatusInt ComputeVisibleDepthRange (double& minDepth, double& maxDepth, bool ignoreViewExtent = false);
     DGNPLATFORM_EXPORT StatusInt ComputeViewRange(DRange3dR, FitViewParams& params);
     void SetNeedsRefresh() const {m_sync.InvalidateDecorations();}
-    void SetNeedsHeal() const {m_sync.InvalidateController();}
+    void InvalidateController() const {m_sync.InvalidateController();}
     DGNPLATFORM_EXPORT static int GetDefaultIndexedLineWidth(int index);
     DGNPLATFORM_EXPORT static void OutputFrustumErrorMessage(ViewportStatus errorStatus);
     DGNPLATFORM_EXPORT void ChangeViewController(ViewControllerR);
@@ -222,10 +222,7 @@ public:
     DPoint3dCP GetViewCmdTargetCenter() {return m_sync.IsValidRotatePoint() ? &m_viewCmdTargetCenter : nullptr;}
     Point2d GetScreenOrigin() const {return m_renderTarget->GetScreenOrigin();}
     DGNPLATFORM_EXPORT double PixelsFromInches(double inches) const;
-    DGNVIEW_EXPORT void ForceHeal();
-    StatusInt HealViewport(UpdatePlan const&);
     void SynchronizeViewport(UpdatePlan const&);
-    bool GetNeedsHeal() {return m_sync.IsValidScene();}
     DGNVIEW_EXPORT void ForceHealImmediate(uint32_t timeout=500); // default 1/2 second
     DGNVIEW_EXPORT void SuspendForBackground();
     DGNVIEW_EXPORT void ResumeFromBackground(Render::Target* target);
