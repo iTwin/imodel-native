@@ -82,7 +82,7 @@ public:
 struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
-    friend struct SheetPicker;
+    friend struct SheetAttachmentPicker;
 
 private:
     bool              m_doneSearching;
