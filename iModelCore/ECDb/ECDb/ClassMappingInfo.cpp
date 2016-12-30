@@ -996,7 +996,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
         finalListOfTables[table->GetPersistenceType()].insert(table);
         }
 
-    return finalListOfTables[PersistenceType::Persisted];
+    return finalListOfTables[PersistenceType::Physical];
     }
 
 

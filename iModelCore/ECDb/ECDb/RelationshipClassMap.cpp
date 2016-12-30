@@ -43,7 +43,7 @@ DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColu
 
     persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetPersistenceType() == PersistenceType::Persisted)
+    if (table.GetPersistenceType() == PersistenceType::Physical)
         {
         if (persType == PersistenceType::Virtual)
             {
@@ -251,7 +251,7 @@ bool RelationshipClassEndTableMap::_RequiresJoin(ECN::ECRelationshipEnd endPoint
         auto target = GetTargetECClassIdPropMap()->GetDataPropertyMaps().front();
 
         return  &source->GetColumn() == &target->GetColumn()
-            && source->GetColumn().GetPersistenceType() == PersistenceType::Persisted;
+            && source->GetColumn().GetPersistenceType() == PersistenceType::Physical;
         }
 
     return false;
@@ -597,7 +597,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
         if (SUCCESS != TryDetermineForeignKeyColumnPosition(fkColPosition, *foreignEndTable, fkColInfo))
             return ERROR;
 
-        const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Persisted ? PersistenceType::Persisted : PersistenceType::Virtual;
+        const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Physical ? PersistenceType::Physical : PersistenceType::Virtual;
         DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName, DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
         if (newFkCol == nullptr)
             {
@@ -624,7 +624,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
 DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table, Utf8StringCR relClassIdColName, bool makeNotNull) const
     {
     BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
-    PersistenceType persType = PersistenceType::Persisted;
+    PersistenceType persType = PersistenceType::Physical;
     if (table.GetPersistenceType() == PersistenceType::Virtual || !table.IsOwnedByECDb() || GetClass().GetClassModifier() == ECClassModifier::Sealed)
         persType = PersistenceType::Virtual;
 
@@ -1320,7 +1320,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     if (ConstraintIncludesAnyClass(foreignEndConstraint.GetConstraintClasses()) || foreignEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
-        endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Persisted);
+        endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Physical);
         BeAssert(endECClassIdColumn != nullptr);
         }
     else
@@ -1373,7 +1373,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
         return ClassMappingStatus::Error;
         }
 
-    DbColumn const* sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::SourceECInstanceId, PersistenceType::Persisted);
+    DbColumn const* sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::SourceECInstanceId, PersistenceType::Physical);
     if (sourceECInstanceIdColumn == nullptr)
         return ClassMappingStatus::Error;
 
@@ -1403,7 +1403,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Relat
         return ClassMappingStatus::Error;
         }
 
-    DbColumn const* targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::TargetECInstanceId, PersistenceType::Persisted);
+    DbColumn const* targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::TargetECInstanceId, PersistenceType::Physical);
     if (targetECInstanceIdColumn == nullptr)
         return ClassMappingStatus::Error;
 
@@ -1518,16 +1518,16 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn const*>& columns, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4)
     {
-    if (nullptr != col1 && col1->GetPersistenceType() == PersistenceType::Persisted)
+    if (nullptr != col1 && col1->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col1);
 
-    if (nullptr != col2 && col2->GetPersistenceType() == PersistenceType::Persisted)
+    if (nullptr != col2 && col2->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col2);
 
-    if (nullptr != col3 && col3->GetPersistenceType() == PersistenceType::Persisted)
+    if (nullptr != col3 && col3->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col3);
 
-    if (nullptr != col4 && col4->GetPersistenceType() == PersistenceType::Persisted)
+    if (nullptr != col4 && col4->GetPersistenceType() == PersistenceType::Physical)
         columns.push_back(col4);
     }
 

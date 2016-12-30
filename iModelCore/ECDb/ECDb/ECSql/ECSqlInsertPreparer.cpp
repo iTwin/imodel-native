@@ -58,13 +58,7 @@ ECSqlStatus ECSqlInsertPreparer::Prepare(ECSqlPrepareContext& ctx, InsertStateme
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass 
-(
-ECSqlPrepareContext& ctx, 
-NativeSqlSnippets& nativeSqlSnippets, 
-ClassMap const& classMap,
-InsertStatementExp const& exp
-)
+ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoClass(ECSqlPrepareContext& ctx, NativeSqlSnippets& nativeSqlSnippets, ClassMap const& classMap, InsertStatementExp const& exp)
     {
     PreparePrimaryKey(ctx, nativeSqlSnippets, classMap);
     BuildNativeSqlInsertStatement(ctx.GetSqlBuilderR (), nativeSqlSnippets, exp);
@@ -202,8 +196,7 @@ ECSqlStatus ECSqlInsertPreparer::PrepareInsertIntoEndTableRelationship(ECSqlPrep
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& insertSqlSnippets,ECSqlPrepareContext& ctx,
-                    InsertStatementExp const& exp,ClassMap const& classMap)
+ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& insertSqlSnippets,ECSqlPrepareContext& ctx, InsertStatementExp const& exp, ClassMap const& classMap)
     {
     ECSqlStatus status = ECSqlExpPreparer::PrepareClassRefExp(insertSqlSnippets.m_classNameNativeSqlSnippet, ctx, *exp.GetClassNameExp());
     if (!status.IsSuccess())
@@ -315,7 +308,7 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
 
     if (SingleColumnDataPropertyMap const* classIdMap = classMap.GetECClassIdPropertyMap()->FindDataPropertyMap(classMap.GetJoinedTable()))
         {
-        if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Persisted)
+        if (classIdMap->GetColumn().GetPersistenceType() == PersistenceType::Physical)
             {
             NativeSqlBuilder::List classIdNameSqliteSnippets {NativeSqlBuilder(classIdMap->GetColumn().GetName().c_str())};
             nativeSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(classIdNameSqliteSnippets));
@@ -331,20 +324,13 @@ void ECSqlInsertPreparer::PreparePrimaryKey(ECSqlPrepareContext& ctx, NativeSqlS
             nativeSqlSnippets.m_valuesNativeSqlSnippets.push_back(move(classIdSqliteSnippets));
             }
         }
-    //if table has a class id column, handle this here
-
     }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlInsertPreparer::BuildNativeSqlInsertStatement 
-(
-NativeSqlBuilder& insertBuilder, 
-NativeSqlSnippets const& snippets,
-InsertStatementExp const& exp
-)
+void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insertBuilder, NativeSqlSnippets const& snippets, InsertStatementExp const& exp)
     {
     //For each expression in the property name / value list, a NativeSqlBuilder::List is created. For simple primitive
     //properties, the list will only contain one snippet, but for multi-dimensional properties (points, structs)
@@ -444,13 +430,7 @@ InsertStatementExp const& exp
 // @bsimethod                                    Krischan.Eberle                    12/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 //static
-void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement
-(
-NativeSqlBuilder& updateBuilder,
-NativeSqlSnippets const& insertSqlSnippets,
-std::vector<size_t> const& expIndexSkipList,
-RelationshipClassEndTableMap const& classMap
-)
+void ECSqlInsertPreparer::BuildNativeSqlUpdateStatement(NativeSqlBuilder& updateBuilder, NativeSqlSnippets const& insertSqlSnippets, std::vector<size_t> const& expIndexSkipList, RelationshipClassEndTableMap const& classMap)
     {
     ECClassIdPropertyMap const * ecClassIdPropertyMap = classMap.GetECClassIdPropertyMap();
     if (!ecClassIdPropertyMap->IsMappedToSingleTable())

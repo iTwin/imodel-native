@@ -293,7 +293,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
                 return ClassMappingStatus::Error;
                 }
 
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
+            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Physical &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 tphBaseClassMaps.push_back(baseClassMap);
             }
@@ -412,7 +412,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (columnVisitor.ContainsOverflowColumns() != GetColumnsPropertyMapVisitor::ContainsState::None)
+            if (columnVisitor.GetOverflowColumnCount() > 0)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
                                 "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
@@ -421,7 +421,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (columnVisitor.ContainsVirtualColumns() != GetColumnsPropertyMapVisitor::ContainsState::None)
+            if (columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
                                 "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
@@ -604,7 +604,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 return ERROR;
                 }
 
-            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Persisted &&
+            if (baseClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Physical &&
                 baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy)
                 tphBaseClassMaps.push_back(baseClassMap);
             }

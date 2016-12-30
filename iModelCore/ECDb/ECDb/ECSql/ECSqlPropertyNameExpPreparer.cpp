@@ -96,8 +96,8 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
     ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
     const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
-    const bool allColumnsAreVirtual = columnVisitor.ContainsVirtualColumns() == GetColumnsPropertyMapVisitor::ContainsState::All;
-    const bool allColumnsAreOverflow = columnVisitor.ContainsOverflowColumns() == GetColumnsPropertyMapVisitor::ContainsState::All;
+    const bool allColumnsAreVirtual = columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumns().size();
+    const bool allColumnsAreOverflow = columnVisitor.GetOverflowColumnCount() == columnVisitor.GetColumns().size();
 
     if (allColumnsAreVirtual || isConstraintIdPropertyMap)
         {
@@ -203,10 +203,15 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     {
     GetColumnsPropertyMapVisitor columnVisitor(PropertyMap::Type::All, true);
     propMap.AcceptVisitor(columnVisitor);
+    if (columnVisitor.GetColumns().empty())
+        {
+        BeAssert(false);
+        return ECSqlStatus::Error;
+        }
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
         !propMap.IsMappedToClassMapTables() && 
-        columnVisitor.ContainsVirtualColumns() != GetColumnsPropertyMapVisitor::ContainsState::All)
+        columnVisitor.GetVirtualColumnCount() < columnVisitor.GetColumns().size())
         {
         if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
             {
@@ -245,7 +250,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     NativeSqlBuilder selectSql;
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
-        if (columnVisitor.ContainsVirtualColumns() == GetColumnsPropertyMapVisitor::ContainsState::All)
+        if (columnVisitor.GetVirtualColumnCount() == columnVisitor.GetColumns().size())
             selectSql.Append(propMap.GetDefaultECClassId());
         else
             selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());

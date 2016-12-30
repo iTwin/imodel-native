@@ -16,26 +16,17 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
     {
-    public:
-        enum class ContainsState
-            {
-            None,
-            Some,
-            All
-            };
     private:
         DbTable const* m_table = nullptr;
         PropertyMap::Type m_filter = PropertyMap::Type::All;
         bool m_doNotSkipSystemPropertyMaps = false;
         mutable std::vector<DbColumn const*> m_columns;
-        mutable ContainsState m_containsVirtualColumns = ContainsState::None;
-        mutable ContainsState m_containsOverflowColumns = ContainsState::None;
+        mutable size_t m_virtualColumnCount = 0;
+        mutable size_t m_overflowColumnCount = 0;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
-
-        static ContainsState UpdateContainsState(ContainsState previous, bool matchIsContained);
 
     public:
         GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Type filter = PropertyMap::Type::All)
@@ -50,8 +41,8 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
         DbColumn const* GetSingleColumn() const;
 
-        ContainsState ContainsVirtualColumns() const { return m_containsVirtualColumns; }
-        ContainsState ContainsOverflowColumns() const { return m_containsOverflowColumns; }
+        size_t GetVirtualColumnCount() const { return m_virtualColumnCount ; }
+        size_t GetOverflowColumnCount() const { return m_overflowColumnCount; }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

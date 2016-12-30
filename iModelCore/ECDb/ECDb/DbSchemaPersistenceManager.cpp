@@ -145,7 +145,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         }
 
     std::vector<DbColumn const*> columns;
-    table.GetFilteredColumnList(columns, PersistenceType::Persisted);
+    table.GetFilteredColumnList(columns, PersistenceType::Physical);
     if (columns.empty())
         {
         BeAssert(false && "Table have no persisted columns");
@@ -258,7 +258,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
 
     //Create a fast hash set of in-memory column list;
     std::vector<DbColumn const*> columns;
-    table.GetFilteredColumnList(columns, PersistenceType::Persisted);
+    table.GetFilteredColumnList(columns, PersistenceType::Physical);
 
     std::vector<DbColumn const*> newColumns;
     //compute new columns;
@@ -345,7 +345,7 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
     std::vector<DbColumn const*> persistedColumns;
     for (DbColumn const* col : table.GetColumns())
         {
-        if (col->GetPersistenceType() == PersistenceType::Persisted)
+        if (col->GetPersistenceType() == PersistenceType::Physical)
             persistedColumns.push_back(col);
         }
 
@@ -407,7 +407,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     {
     auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
         {
-        if (table.GetPersistenceType() != PersistenceType::Persisted)
+        if (table.GetPersistenceType() != PersistenceType::Physical)
             return SUCCESS; //table is virtual -> noop
 
         Partition const* partition = desc.GetPartition(table);

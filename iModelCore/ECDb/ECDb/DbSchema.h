@@ -20,7 +20,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 enum class PersistenceType
     {
-    Persisted, //! Persisted in DB
+    Physical, //! Persisted in DB
     Virtual //! Not persisted in db rather used as a view specification
     };
 

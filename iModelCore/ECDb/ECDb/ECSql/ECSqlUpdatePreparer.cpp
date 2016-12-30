@@ -202,7 +202,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         DbTable const* table = &classMap.GetPrimaryTable();
         DbColumn const& classIdColumn = table->GetECClassIdColumn();
 
-        if (classIdColumn.GetPersistenceType() == PersistenceType::Persisted)
+        if (classIdColumn.GetPersistenceType() == PersistenceType::Physical)
             {
             if (ctx.IsParentOfJoinedTable())
                 {

@@ -41,7 +41,7 @@ std::set<DbTable const*> Exp::GetReferencedTables() const
             propertyNameExp->GetTypeInfo().GetPropertyMap()->AcceptVisitor(tableVisitor);
             for (auto table : tableVisitor.GetTables())
                 {
-                if (table->GetPersistenceType() == PersistenceType::Persisted)
+                if (table->GetPersistenceType() == PersistenceType::Physical)
                     tmp.insert(table);
                 }
             }

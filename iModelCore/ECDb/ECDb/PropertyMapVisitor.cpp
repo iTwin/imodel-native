@@ -23,8 +23,11 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap c
         DbColumn const& col = propertyMap.GetColumn();
         m_columns.push_back(&col);
 
-        m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
-        m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
+        if (col.GetPersistenceType() == PersistenceType::Virtual)
+            m_virtualColumnCount++;
+
+        if (col.IsOverflowSlave())
+            m_overflowColumnCount++;
         }
 
     return SUCCESS;
@@ -63,9 +66,11 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             {
             DbColumn const& col = dataPropMap->GetColumn();
             m_columns.push_back(&col);
+            if (col.GetPersistenceType() == PersistenceType::Virtual)
+                m_virtualColumnCount++;
 
-            m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
-            m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
+            if (col.IsOverflowSlave())
+                m_overflowColumnCount++;
             }
 
         return SUCCESS;
@@ -77,9 +82,11 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             {
             DbColumn const& col = m->GetColumn();
             m_columns.push_back(&col);
+            if (col.GetPersistenceType() == PersistenceType::Virtual)
+                m_virtualColumnCount++;
 
-            m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
-            m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
+            if (col.IsOverflowSlave())
+                m_overflowColumnCount++;
             }
         }
 
@@ -96,26 +103,6 @@ DbColumn const* GetColumnsPropertyMapVisitor::GetSingleColumn() const
         return nullptr;
 
     return GetColumns().front();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                 Krischan.Eberle       12/16
-//---------------------------------------------------------------------------------------
-//static
-GetColumnsPropertyMapVisitor::ContainsState GetColumnsPropertyMapVisitor::UpdateContainsState(ContainsState previous, bool matchIsContained)
-    {
-    if (matchIsContained)
-        {
-        if (previous == ContainsState::None)
-            return ContainsState::All;
-
-        return previous;
-        }
-
-    if (previous == ContainsState::All)
-        return ContainsState::Some;
-
-    return previous;
     }
 
 //************************************GetTablesPropertyMapVisitor********************

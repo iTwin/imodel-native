@@ -321,7 +321,7 @@ Partition const* StorageDescription::GetPartition(DbTable const& table) const
 //------------------------------------------------------------------------------------------
 BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
     {
-    if (table.GetPersistenceType() != PersistenceType::Persisted)
+    if (table.GetPersistenceType() != PersistenceType::Physical)
         return SUCCESS; //table is virtual -> noop
 
     Partition const* partition = GetHorizontalPartition(table);
@@ -520,7 +520,7 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(table.GetPersistenceType() == PersistenceType::Persisted);
+    BeAssert(table.GetPersistenceType() == PersistenceType::Physical);
     if (table.GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 
