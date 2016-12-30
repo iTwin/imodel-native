@@ -404,7 +404,8 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable());
+            DbTable const& table = GetJoinedTable();
+            GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
             if (columnVisitor.GetColumns().empty())
                 {
@@ -421,7 +422,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (columnVisitor.GetVirtualColumnCount() > 0)
+            if (table.GetPersistenceType() == PersistenceType::Physical && columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report(ECDbIssueSeverity::Error,
                                 "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
@@ -430,7 +431,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (!involvedTables.empty() && involvedTables.find(&GetJoinedTable()) == involvedTables.end())
+            if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
                 {
                 if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
                     {
@@ -454,7 +455,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 }
 
 
-            involvedTables.insert(&GetJoinedTable());
+            involvedTables.insert(&table);
             totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
