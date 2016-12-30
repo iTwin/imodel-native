@@ -437,7 +437,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
-static bool s_cacheInstances = false;
+static bool s_cacheInstances = true;
 // Reuse the same Graphic as a SubGraphic for instanced geometry
 // Results in significant worse framerate due to surprisingly poor performance of qv_defineTransclip()
 static bool s_instancesAsSubgraphics = false;
