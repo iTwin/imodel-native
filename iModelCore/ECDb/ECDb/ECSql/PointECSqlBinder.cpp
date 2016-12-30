@@ -184,15 +184,6 @@ ECSqlStatus PointToColumnsECSqlBinder::_BindDouble(double value)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus PointToColumnsECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind IGeometry value to Point2d / Point3d parameter.");
-    return ECSqlStatus::Error;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus PointToColumnsECSqlBinder::_BindInt(int value)

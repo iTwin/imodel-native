@@ -202,33 +202,6 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    const ECSqlStatus stat = CanBind(PRIMITIVETYPE_IGeometry);
-    if (!stat.IsSuccess())
-        return stat;
-
-    std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
-    if (ehs != nullptr)
-        {
-        for (IECSqlBinder* eh : *ehs)
-            {
-            ECSqlStatus es = eh->BindGeometryBlob(value, blobSize, makeCopy);
-            if (es != ECSqlStatus::Success)
-                return es;
-            }
-        }
-
-    const auto sqliteStat = GetSqliteStatementR ().BindBlob(m_sqliteIndex, value, blobSize, ToBeSQliteBindMakeCopy(makeCopy));
-    if (sqliteStat != BE_SQLITE_OK)
-        return ReportError(sqliteStat, "ECSqlStatement::BindGeometry");
-
-    return ECSqlStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
@@ -360,7 +333,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
     {
     //For DateTimes and Geometry column type and BindXXX type must match. All other types are implicitly
     //converted to each other by SQLite.
-    const auto fieldDataType = GetTypeInfo().GetPrimitiveType();
+    const PrimitiveType fieldDataType = GetTypeInfo().GetPrimitiveType();
     switch (fieldDataType)
         {
             case PRIMITIVETYPE_DateTime:
@@ -375,9 +348,9 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType reque
                 }
             case PRIMITIVETYPE_IGeometry:
                 {
-                if (requestedType != fieldDataType)
+                if (requestedType != PRIMITIVETYPE_IGeometry && requestedType != PRIMITIVETYPE_Binary)
                     {
-                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindGeometry can be called for a column of the IGeometry type.");
+                    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch: only BindGeometry or BindBlob can be called for a column of the IGeometry type.");
                     return ECSqlStatus::Error;
                     }
                 else

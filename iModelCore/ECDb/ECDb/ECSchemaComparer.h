@@ -85,8 +85,6 @@ enum class SystemId
     IsPrimitive,
     IsPrimitiveArray,
     IsNavigation,
-    KeyProperties,
-    KeyProperty,
     KindOfQuantities,
     KindOfQuantity,
     MaximumValue,
@@ -1042,7 +1040,6 @@ struct ECRelationshipConstraintClassChange :ECObjectChange
             }
         virtual ~ECRelationshipConstraintClassChange() {}
         StringChange& GetClassName() { return Get<StringChange>(SystemId::ClassFullName); }
-        StringChanges& KeyProperties() { return Get<StringChanges>(SystemId::KeyProperties); }
     };
 
 //=======================================================================================

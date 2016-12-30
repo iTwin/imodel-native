@@ -127,15 +127,6 @@ ECSqlStatus IdECSqlBinder::_BindDouble(double value)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus IdECSqlBinder::_BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind IGeometry value to Id parameter.");
-    return ECSqlStatus::Error;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
 ECSqlStatus IdECSqlBinder::_BindInt(int value)

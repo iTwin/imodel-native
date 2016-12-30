@@ -173,6 +173,14 @@ void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnCl
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                12/2016
+//---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const
+    {
+    return m_pimpl->OpenBlobIO(blobIO, ecClass, propertyAccessString, ecinstanceId, writable);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }

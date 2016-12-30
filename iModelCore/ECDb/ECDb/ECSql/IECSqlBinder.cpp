@@ -80,15 +80,7 @@ ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value)
         return ECSqlStatus::Error;
         }
 
-    return BindGeometryBlob(geometryBlob.data(), (int) geometryBlob.size(), MakeCopy::Yes);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2014
-//---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
-    {
-    return _BindPrimitive()._BindGeometryBlob(value, blobSize, makeCopy);
+    return BindBlob(geometryBlob.data(), (int) geometryBlob.size(), MakeCopy::Yes);
     }
 
 //---------------------------------------------------------------------------------------

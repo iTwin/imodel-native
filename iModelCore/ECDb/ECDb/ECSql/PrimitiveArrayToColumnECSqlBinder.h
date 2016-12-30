@@ -32,7 +32,7 @@ private:
         ECN::IECInstanceP m_instance;
         ECSqlTypeInfo const& m_arrayTypeInfo;
 
-        virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
+        virtual IECSqlPrimitiveBinder& _BindPrimitive() override { return *this; }
         virtual IECSqlStructBinder& _BindStruct() override;
         virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
         virtual ECSqlStatus _BindNull() override;
@@ -43,14 +43,13 @@ private:
         virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
         virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
         virtual ECSqlStatus _BindDouble(double value) override;
-        virtual ECSqlStatus _BindGeometryBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy) override;
         virtual ECSqlStatus _BindInt(int value) override;
         virtual ECSqlStatus _BindInt64(int64_t value) override;
         virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
         virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
         virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
-        ECSqlStatus VerifyType(ECN::PrimitiveType) const;
+        ECSqlStatus FailAndLogTypeMismatchError(ECN::PrimitiveType) const;
         ECSqlStatus SetValue(ECN::ECValueCR);
 
     public:

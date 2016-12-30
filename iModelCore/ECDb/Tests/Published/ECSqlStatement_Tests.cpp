@@ -4063,5 +4063,206 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
+    {
+    SetupECDb("bindzeroblob.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Element">
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns='ECDbMap.02.00'>
+                                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns='ECDbMap.02.00'>
+                                        <SharedColumnCount>3</SharedColumnCount>
+                                    </ShareColumns>
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="Prop1" typeName="Binary" />
+                                <ECProperty propertyName="Prop2" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Prop1_Overflow" typeName="Binary" />
+                                <ECProperty propertyName="Prop2_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
 
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Element(Prop1,Prop2,Prop1_Overflow,Prop2_Overflow) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(2, 10)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql();
+
+    //ECInstanceKey key;
+    //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BlobIO)
+    {
+    auto assertBlobIO = [] (ECDbCR ecdb, Utf8CP className, Utf8CP accessString)
+        {
+        ECClassCP ecClass = ecdb.Schemas().GetECClass("ECSqlTest", className);
+        ASSERT_TRUE(ecClass != nullptr) << className;
+
+        std::vector<Utf8String> expectedBlobChunks {"Hello",", ", "world"};
+        const int expectedBlobSize = 13;
+
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO %s(%s) VALUES(?)", ecClass->GetECSqlName().c_str(), accessString);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, expectedBlobSize)) << stmt.GetECSql();
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        BlobIO io;
+        ASSERT_EQ(SUCCESS, ecdb.OpenBlobIO(io, *ecClass, accessString, key.GetECInstanceId(), true));
+        ASSERT_TRUE(io.IsValid());
+        ASSERT_EQ(expectedBlobSize, io.GetNumBytes());
+
+        int offset = 0;
+        for (Utf8StringCR blobChunk : expectedBlobChunks)
+            {
+            ASSERT_EQ(BE_SQLITE_OK, io.Write(blobChunk.c_str(), (int) blobChunk.size(), offset));
+            offset += (int) blobChunk.size();
+            }
+        //add trailing \0
+        Utf8Char nullChar('\0');
+        ASSERT_EQ(BE_SQLITE_OK, io.Write(&nullChar, 1, offset));
+        ASSERT_EQ(BE_SQLITE_OK, io.Close());
+        ASSERT_FALSE(io.IsValid());
+
+        //validate result
+        ecsql.Sprintf("SELECT %s FROM %s WHERE ECInstanceId=%s", accessString, 
+                      ecClass->GetECSqlName().c_str(), key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        int actualBlobSize = -1;
+        ASSERT_STREQ("Hello, world", (Utf8CP) stmt.GetValueBlob(0, &actualBlobSize)) << stmt.GetECSql();
+        ASSERT_EQ(expectedBlobSize, actualBlobSize) << stmt.GetECSql();
+
+        //validate result via blobio
+        ASSERT_EQ(SUCCESS, ecdb.OpenBlobIO(io, *ecClass, accessString, key.GetECInstanceId(), false));
+        ASSERT_TRUE(io.IsValid());
+        ASSERT_EQ(expectedBlobSize, io.GetNumBytes());
+        Utf8String actualBlobBuffer;
+        actualBlobBuffer.reserve((size_t) expectedBlobSize);
+        ASSERT_EQ(BE_SQLITE_OK, io.Read(const_cast<Utf8P> (actualBlobBuffer.data()), expectedBlobSize, 0));
+        ASSERT_STREQ("Hello, world", actualBlobBuffer.c_str()) << "BlobIO::Read";
+        };
+
+
+    ECDbCR ecdb = SetupECDb("blobio.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    assertBlobIO(ecdb, "P", "Bi");
+    assertBlobIO(ecdb, "PSA", "PStructProp.bi");
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                   12/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
+    {
+    SetupECDb("blobioinvalidcases.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    {
+    ECClassCP ecClass = GetECDb().Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        const bool expectedToSucceed = prop->GetIsPrimitive() && (prop->GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary || prop->GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_IGeometry);
+        if (!expectedToSucceed)
+            {
+            BlobIO io;
+            ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Not a binary/geometry property";
+            ASSERT_FALSE(io.IsValid());
+            }
+        }
+    }
+
+    {
+    ECClassCP ecClass = GetECDb().Schemas().GetECClass("ECSqlTest", "PStruct");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Cannot use BlobIO on ECStructs";
+        ASSERT_FALSE(io.IsValid());
+        }
+    }
+
+    {
+    ECClassCP ecClass = GetECDb().Schemas().GetECClass("ECDbMap", "ClassMap");
+    ASSERT_TRUE(ecClass != nullptr);
+    for (ECPropertyCP prop : ecClass->GetProperties())
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *ecClass, prop->GetName().c_str(), ECInstanceId((uint64_t) 1), true)) << "Cannot use BlobIO on custom attribute classes";
+        ASSERT_FALSE(io.IsValid());
+        }
+    }
+
+    GetECDb().CloseDb();
+
+    {
+    SetupECDb("blobioinvalidcases2.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Element">
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns='ECDbMap.02.00'>
+                                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns='ECDbMap.02.00'>
+                                        <SharedColumnCount>3</SharedColumnCount>
+                                    </ShareColumns>
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="Prop1" typeName="Binary" />
+                                <ECProperty propertyName="Prop2" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Prop1_Overflow" typeName="Binary" />
+                                <ECProperty propertyName="Prop2_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(GetECDb().IsDbOpen());
+
+    ECInstanceKey key;
+        {
+        ECSqlStatement stmt;
+        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroblob is not supported for overflow columns.
+        //But as we want to test the error handling of OpenBlobIO this is sufficient.
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow) VALUES(zeroblob(10),?,zeroblob(10))"));
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        }
+
+    ECClassCP testClass = GetECDb().Schemas().GetECClass("TestSchema", "Element");
+    ASSERT_TRUE(testClass != nullptr);
+
+        {
+        BlobIO io;
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop1", key.GetECInstanceId(), true)) << "Binary property not mapped to overflow column";
+        }
+        {
+        BlobIO io;
+        ASSERT_EQ(SUCCESS, GetECDb().OpenBlobIO(io, *testClass, "Prop2", key.GetECInstanceId(), true)) << "IGeometry property not mapped to overflow column";
+        }
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *testClass, "Prop1_Overflow", key.GetECInstanceId(), true)) << "Binary property mapped to overflow column";
+        }
+        {
+        BlobIO io;
+        ASSERT_EQ(ERROR, GetECDb().OpenBlobIO(io, *testClass, "Prop2_Overflow", key.GetECInstanceId(), true)) << "IGeometry property mapped to overflow column";
+        }
+    }
+    }
 END_ECDBUNITTESTS_NAMESPACE
