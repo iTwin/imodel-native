@@ -417,8 +417,10 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetNavigationValue(IECInstanceR inst
     ECClassId relClassId;
     ECInstanceId navId = value.GetNavigation<ECInstanceId>(&relClassId);
     ECValue navValue;
-    if (ECObjectsStatus::Success != navValue.SetNavigationInfo(navId, relClassId))
-        return ERROR;
+    if (relClassId.IsValid())
+        navValue = ECValue(navId, relClassId);
+    else
+        navValue = ECValue(navId);
 
     return instance.SetValue(prop->GetName().c_str(), navValue) == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }
