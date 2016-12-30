@@ -20,13 +20,6 @@ ElementAspectTests.ImportElementsWithAspect
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
 
-#WIP: Umar - Test Refactoring to remove pre-published data dependency
-RevisionTestFixture.Codes
-
-#TFS 628937
-DgnChangeSummaryTestFixture.ValidateChangeSummaries
-ChangeSummaryTestFixture.QueryMultipleSessions
-
 #TFS 557952: FindSection method in Csvfile.h does not work properly
 CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
@@ -41,10 +34,5 @@ ImportTest.ImportElementsWithAuthorities
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
-
 DgnECNavigatorTest.GetElementInfo
 DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
-
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman - must somehow use an API that has access to the write token in order to insert data into a BIM using ECSql
-
-DependencyRevisionTest.Merge # Raman - Needs to be adjusted for overflow column support

@@ -250,7 +250,7 @@ ChangeSet::ConflictResolution RevisionChangesFileReader::_OnConflict(ChangeSet::
 
     if (LOG.isSeverityEnabled(NativeLogging::LOG_INFO))
         {
-        LOG.infov("Conflict detected - incoming revision:");
+        LOG.infov("Conflict detected - incoming revision %s:", indirect ? "skipped" : "replaced");
         BeAssert(tableName != nullptr);
         iter.Dump(m_dgndb, false, 1);
         }
