@@ -1260,7 +1260,14 @@ struct unixFileId {
 #if OS_VXWORKS
   struct vxworksFileId *pId;  /* Unique file ID for vxworks. */
 #else
-  ino_t ino;                  /* Inode number */
+  /* We are told that some versions of Android contain a bug that
+  ** sizes ino_t at only 32-bits instead of 64-bits. (See
+  ** https://android-review.googlesource.com/#/c/115351/3/dist/sqlite3.c)
+  ** To work around this, always allocate 64-bits for the inode number.  
+  ** On small machines that only have 32-bit inodes, this wastes 4 bytes,
+  ** but that should not be a big deal. */
+  /* WAS:  ino_t ino;   */
+  u64 ino;                   /* Inode number */
 #endif
 };
 
@@ -1505,7 +1512,7 @@ static int findInodeInfo(
 #if OS_VXWORKS
   fileId.pId = pFile->pId;
 #else
-  fileId.ino = statbuf.st_ino;
+  fileId.ino = (u64)statbuf.st_ino;
 #endif
   pInode = inodeList;
   while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
@@ -1539,7 +1546,8 @@ static int fileHasMoved(unixFile *pFile){
 #else
   struct stat buf;
   return pFile->pInode!=0 &&
-      (osStat(pFile->zPath, &buf)!=0 || buf.st_ino!=pFile->pInode->fileId.ino);
+      (osStat(pFile->zPath, &buf)!=0 
+         || (u64)buf.st_ino!=pFile->pInode->fileId.ino);
 #endif
 }
 
@@ -5711,7 +5719,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
     unixEnterMutex();
     pInode = inodeList;
     while( pInode && (pInode->fileId.dev!=sStat.st_dev
-                     || pInode->fileId.ino!=sStat.st_ino) ){
+                     || pInode->fileId.ino!=(u64)sStat.st_ino) ){
        pInode = pInode->pNext;
     }
     if( pInode ){
@@ -14272,7 +14280,7 @@ SQLITE_PRIVATE u32 sqlite3BitvecSize(Bitvec *p){
   return p->iSize;
 }
 
-#ifndef SQLITE_OMIT_BUILTIN_TEST
+#ifndef SQLITE_UNTESTABLE
 /*
 ** Let V[] be an array of unsigned characters sufficient to hold
 ** up to N bits.  Let I be an integer between 0 and N.  0<=I<N.
@@ -14387,7 +14395,7 @@ bitvec_end:
   sqlite3BitvecDestroy(pBitvec);
   return rc;
 }
-#endif /* SQLITE_OMIT_BUILTIN_TEST */
+#endif /* SQLITE_UNTESTABLE */
 
 /************** End of bitvec.c **********************************************/
 /************** Begin file pcache.c ******************************************/
@@ -14501,7 +14509,7 @@ struct PCache {
 SQLITE_PRIVATE int sqlite3PcachePageSanity(PgHdr *pPg){
   PCache *pCache;
   assert( pPg!=0 );
-  assert( pPg->pgno>0 );    /* Page number is 1 or more */
+  assert( pPg->pgno>0 || pPg->pPager==0 );    /* Page number is 1 or more */
   pCache = pPg->pCache;
   assert( pCache!=0 );      /* Every page has an associated PCache */
   if( pPg->flags & PGHDR_CLEAN ){
@@ -14677,6 +14685,12 @@ SQLITE_PRIVATE int sqlite3PcacheSize(void){ return sizeof(PCache); }
 ** has already been allocated and is passed in as the p pointer. 
 ** The caller discovers how much space needs to be allocated by 
 ** calling sqlite3PcacheSize().
+**
+** szExtra is some extra space allocated for each page.  The first
+** 8 bytes of the extra space will be zeroed as the page is allocated,
+** but remaining content will be uninitialized.  Though it is opaque
+** to this module, the extra space really ends up being the MemPage
+** structure in the pager.
 */
 SQLITE_PRIVATE int sqlite3PcacheOpen(
   int szPage,                  /* Size of every page */
@@ -14689,6 +14703,7 @@ SQLITE_PRIVATE int sqlite3PcacheOpen(
   memset(p, 0, sizeof(PCache));
   p->szPage = 1;
   p->szExtra = szExtra;
+  assert( szExtra>=8 );  /* First 8 bytes will be zeroed */
   p->bPurgeable = bPurgeable;
   p->eCreate = 2;
   p->xStress = xStress;
@@ -14758,7 +14773,6 @@ SQLITE_PRIVATE sqlite3_pcache_page *sqlite3PcacheFetch(
   assert( pCache!=0 );
   assert( pCache->pCache!=0 );
   assert( createFlag==3 || createFlag==0 );
-  assert( pgno>0 );
   assert( pCache->eCreate==((pCache->bPurgeable && pCache->pDirty) ? 1 : 2) );
 
   /* eCreate defines what to do if the page does not exist.
@@ -14858,7 +14872,7 @@ static SQLITE_NOINLINE PgHdr *pcacheFetchFinishWithInit(
   pPgHdr->pPage = pPage;
   pPgHdr->pData = pPage->pBuf;
   pPgHdr->pExtra = (void *)&pPgHdr[1];
-  memset(pPgHdr->pExtra, 0, pCache->szExtra);
+  memset(pPgHdr->pExtra, 0, 8);
   pPgHdr->pCache = pCache;
   pPgHdr->pgno = pgno;
   pPgHdr->flags = PGHDR_CLEAN;
@@ -17185,6 +17199,7 @@ SQLITE_PRIVATE int sqlite3WalHeapMemory(Wal *pWal);
 #ifdef SQLITE_ENABLE_SNAPSHOT
 SQLITE_PRIVATE int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot);
 SQLITE_PRIVATE void sqlite3WalSnapshotOpen(Wal *pWal, sqlite3_snapshot *pSnapshot);
+SQLITE_PRIVATE int sqlite3WalSnapshotRecover(Wal *pWal);
 #endif
 
 #ifdef SQLITE_ENABLE_ZIPVFS
@@ -17874,6 +17889,7 @@ struct Pager {
   int nRead;                  /* Database pages read */
 #endif
   void (*xReiniter)(DbPage*); /* Call this routine when reloading pages */
+  int (*xGet)(Pager*,Pgno,DbPage**,int); /* Routine to fetch a patch */
 #ifdef SQLITE_HAS_CODEC
   void *(*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
   void (*xCodecSizeChng)(void*,int,int); /* Notify of page size changes */
@@ -18199,6 +18215,33 @@ static char *print_pager_state(Pager *p){
   return zRet;
 }
 #endif
+
+/* Forward references to the various page getters */
+static int getPageNormal(Pager*,Pgno,DbPage**,int);
+static int getPageError(Pager*,Pgno,DbPage**,int);
+#if SQLITE_MAX_MMAP_SIZE>0
+static int getPageMMap(Pager*,Pgno,DbPage**,int);
+#endif
+
+/*
+** Set the Pager.xGet method for the appropriate routine used to fetch
+** content from the pager.
+*/
+static void setGetterMethod(Pager *pPager){
+  if( pPager->errCode ){
+    pPager->xGet = getPageError;
+#if SQLITE_MAX_MMAP_SIZE>0
+  }else if( USEFETCH(pPager)
+#ifdef SQLITE_HAS_CODEC
+   && pPager->xCodec==0
+#endif
+  ){
+    pPager->xGet = getPageMMap;
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
+  }else{
+    pPager->xGet = getPageNormal;
+  }
+}
 
 /*
 ** Return true if it is necessary to write page *pPg into the sub-journal.
@@ -19014,6 +19057,7 @@ static void pager_unlock(Pager *pPager){
     }
     if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
     pPager->errCode = SQLITE_OK;
+    setGetterMethod(pPager);
   }
 
   pPager->journalOff = 0;
@@ -19051,6 +19095,7 @@ static int pager_error(Pager *pPager, int rc){
   if( rc2==SQLITE_FULL || rc2==SQLITE_IOERR ){
     pPager->errCode = rc;
     pPager->eState = PAGER_ERROR;
+    setGetterMethod(pPager);
   }
   return rc;
 }
@@ -19219,7 +19264,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   pPager->pInJournal = 0;
   pPager->nRec = 0;
   if( rc==SQLITE_OK ){
-    if( pagerFlushOnCommit(pPager, bCommit) ){
+    if( MEMDB || pagerFlushOnCommit(pPager, bCommit) ){
       sqlite3PcacheCleanAll(pPager->pPCache);
     }else{
       sqlite3PcacheClearWritable(pPager->pPCache);
@@ -20618,6 +20663,7 @@ static void pagerFixMaplimit(Pager *pPager){
     sqlite3_int64 sz;
     sz = pPager->szMmap;
     pPager->bUseFetch = (sz>0);
+    setGetterMethod(pPager);
     sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_SIZE, &sz);
   }
 #endif
@@ -21114,6 +21160,7 @@ static int pagerSyncHotJournal(Pager *pPager){
   return rc;
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Obtain a reference to a memory mapped page object for page number pgno. 
 ** The new object will use the pointer pData, obtained from xFetch().
@@ -21136,7 +21183,8 @@ static int pagerAcquireMapPage(
     *ppPage = p = pPager->pMmapFreelist;
     pPager->pMmapFreelist = p->pDirty;
     p->pDirty = 0;
-    memset(p->pExtra, 0, pPager->nExtra);
+    assert( pPager->nExtra>=8 );
+    memset(p->pExtra, 0, 8);
   }else{
     *ppPage = p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
     if( p==0 ){
@@ -21161,6 +21209,7 @@ static int pagerAcquireMapPage(
 
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** Release a reference to page pPg. pPg must have been returned by an 
@@ -21214,7 +21263,10 @@ SQLITE_PRIVATE int sqlite3PagerClose(Pager *pPager, sqlite3 *db){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal,db,pPager->ckptSyncFlags,pPager->pageSize,pTmp);
+  assert( db || pPager->pWal==0 );
+  sqlite3WalClose(pPager->pWal, db, pPager->ckptSyncFlags, pPager->pageSize,
+      (db && (db->flags & SQLITE_NoCkptOnClose) ? 0 : pTmp)
+  );
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -21733,7 +21785,9 @@ SQLITE_PRIVATE int sqlite3PagerFlush(Pager *pPager){
 **
 ** The nExtra parameter specifies the number of bytes of space allocated
 ** along with each page reference. This space is available to the user
-** via the sqlite3PagerGetExtra() API.
+** via the sqlite3PagerGetExtra() API.  When a new page is allocated, the
+** first 8 bytes of this space are zeroed but the remainder is uninitialized.
+** (The extra space is used by btree as the MemPage object.)
 **
 ** The flags argument is used to specify properties that affect the
 ** operation of the pager. It should be passed some bitwise combination
@@ -21963,8 +22017,8 @@ act_like_temp_file:
 
   /* Initialize the PCache object. */
   if( rc==SQLITE_OK ){
-    assert( nExtra<1000 );
     nExtra = ROUND8(nExtra);
+    assert( nExtra>=8 && nExtra<1000 );
     rc = sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
                        !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
   }
@@ -22029,6 +22083,7 @@ act_like_temp_file:
   /* pPager->xBusyHandler = 0; */
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
+  setGetterMethod(pPager);
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   /* pPager->szMmap = SQLITE_DEFAULT_MMAP_SIZE // will be set by btree.c */
 
@@ -22442,9 +22497,16 @@ static void pagerUnlockIfUnused(Pager *pPager){
 }
 
 /*
-** Acquire a reference to page number pgno in pager pPager (a page
-** reference has type DbPage*). If the requested reference is 
+** The page getter methods each try to acquire a reference to a
+** page with page number pgno. If the requested reference is 
 ** successfully obtained, it is copied to *ppPage and SQLITE_OK returned.
+**
+** There are different implementations of the getter method depending
+** on the current state of the pager.
+**
+**     getPageNormal()         --  The normal getter
+**     getPageError()          --  Used if the pager is in an error state
+**     getPageMmap()           --  Used if memory-mapped I/O is enabled
 **
 ** If the requested page is already in the cache, it is returned. 
 ** Otherwise, a new page object is allocated and populated with data
@@ -22457,14 +22519,14 @@ static void pagerUnlockIfUnused(Pager *pPager){
 ** already in the cache when this function is called, then the extra
 ** data is left as it was when the page object was last used.
 **
-** If the database image is smaller than the requested page or if a 
-** non-zero value is passed as the noContent parameter and the 
+** If the database image is smaller than the requested page or if 
+** the flags parameter contains the PAGER_GET_NOCONTENT bit and the 
 ** requested page is not already stored in the cache, then no 
 ** actual disk read occurs. In this case the memory image of the 
 ** page is initialized to all zeros. 
 **
-** If noContent is true, it means that we do not care about the contents
-** of the page. This occurs in two scenarios:
+** If PAGER_GET_NOCONTENT is true, it means that we do not care about
+** the contents of the page. This occurs in two scenarios:
 **
 **   a) When reading a free-list leaf page from the database, and
 **
@@ -22472,8 +22534,8 @@ static void pagerUnlockIfUnused(Pager *pPager){
 **      a new page into the cache to be filled with the data read
 **      from the savepoint journal.
 **
-** If noContent is true, then the data returned is zeroed instead of
-** being read from the database. Additionally, the bits corresponding
+** If PAGER_GET_NOCONTENT is true, then the data returned is zeroed instead
+** of being read from the database. Additionally, the bits corresponding
 ** to pgno in Pager.pInJournal (bitvec of pages already written to the
 ** journal file) and the PagerSavepoint.pInSavepoint bitvecs of any open
 ** savepoints are set. This means if the page is made writable at any
@@ -22491,106 +22553,39 @@ static void pagerUnlockIfUnused(Pager *pPager){
 ** Since Lookup() never goes to disk, it never has to deal with locks
 ** or journal files.
 */
-SQLITE_PRIVATE int sqlite3PagerGet(
+static int getPageNormal(
   Pager *pPager,      /* The pager open on the database file */
   Pgno pgno,          /* Page number to fetch */
   DbPage **ppPage,    /* Write a pointer to the page here */
   int flags           /* PAGER_GET_XXX flags */
 ){
   int rc = SQLITE_OK;
-  PgHdr *pPg = 0;
-  u32 iFrame = 0;                 /* Frame to read from WAL file */
-  const int noContent = (flags & PAGER_GET_NOCONTENT);
+  PgHdr *pPg;
+  u8 noContent;                   /* True if PAGER_GET_NOCONTENT is set */
+  sqlite3_pcache_page *pBase;
 
-  /* It is acceptable to use a read-only (mmap) page for any page except
-  ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
-  ** flag was specified by the caller. And so long as the db is not a 
-  ** temporary or in-memory database.  */
-  const int bMmapOk = (pgno>1 && USEFETCH(pPager)
-   && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
-#ifdef SQLITE_HAS_CODEC
-   && pPager->xCodec==0
-#endif
-  );
-
-  /* Optimization note:  Adding the "pgno<=1" term before "pgno==0" here
-  ** allows the compiler optimizer to reuse the results of the "pgno>1"
-  ** test in the previous statement, and avoid testing pgno==0 in the
-  ** common case where pgno is large. */
-  if( pgno<=1 && pgno==0 ){
-    return SQLITE_CORRUPT_BKPT;
-  }
+  assert( pPager->errCode==SQLITE_OK );
   assert( pPager->eState>=PAGER_READER );
   assert( assert_pager_state(pPager) );
-  assert( noContent==0 || bMmapOk==0 );
-
   assert( pPager->hasHeldSharedLock==1 );
 
-  /* If the pager is in the error state, return an error immediately. 
-  ** Otherwise, request the page from the PCache layer. */
-  if( pPager->errCode!=SQLITE_OK ){
-    rc = pPager->errCode;
-  }else{
-    if( bMmapOk && pagerUseWal(pPager) ){
-      rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
-      if( rc!=SQLITE_OK ) goto pager_acquire_err;
-    }
-
-    if( bMmapOk && iFrame==0 ){
-      void *pData = 0;
-
-      rc = sqlite3OsFetch(pPager->fd, 
-          (i64)(pgno-1) * pPager->pageSize, pPager->pageSize, &pData
-      );
-
-      if( rc==SQLITE_OK && pData ){
-        if( pPager->eState>PAGER_READER || pPager->tempFile ){
-          pPg = sqlite3PagerLookup(pPager, pgno);
-        }
-        if( pPg==0 ){
-          rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
-        }else{
-          sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1)*pPager->pageSize, pData);
-        }
-        if( pPg ){
-          assert( rc==SQLITE_OK );
-          *ppPage = pPg;
-          return SQLITE_OK;
-        }
-      }
-      if( rc!=SQLITE_OK ){
-        goto pager_acquire_err;
-      }
-    }
-
-    {
-      sqlite3_pcache_page *pBase;
-      pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
-      if( pBase==0 ){
-        rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
-        if( rc!=SQLITE_OK ) goto pager_acquire_err;
-        if( pBase==0 ){
-          pPg = *ppPage = 0;
-          rc = SQLITE_NOMEM_BKPT;
-          goto pager_acquire_err;
-        }
-      }
-      pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
-      assert( pPg!=0 );
-    }
-  }
-
-  if( rc!=SQLITE_OK ){
-    /* Either the call to sqlite3PcacheFetch() returned an error or the
-    ** pager was already in the error-state when this function was called.
-    ** Set pPg to 0 and jump to the exception handler.  */
+  if( pgno==0 ) return SQLITE_CORRUPT_BKPT;
+  pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
+  if( pBase==0 ){
     pPg = 0;
-    goto pager_acquire_err;
+    rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
+    if( rc!=SQLITE_OK ) goto pager_acquire_err;
+    if( pBase==0 ){
+      rc = SQLITE_NOMEM_BKPT;
+      goto pager_acquire_err;
+    }
   }
+  pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
   assert( pPg==(*ppPage) );
   assert( pPg->pgno==pgno );
   assert( pPg->pPager==pPager || pPg->pPager==0 );
 
+  noContent = (flags & PAGER_GET_NOCONTENT)!=0;
   if( pPg->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
@@ -22600,16 +22595,17 @@ SQLITE_PRIVATE int sqlite3PagerGet(
 
   }else{
     /* The pager cache has created a new page. Its content needs to 
-    ** be initialized.  */
-
-    pPg->pPager = pPager;
-
-    /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
-    ** number greater than this, or the unused locking-page, is requested. */
+    ** be initialized. But first some error checks:
+    **
+    ** (1) The maximum page number is 2^31
+    ** (2) Never try to fetch the locking page
+    */
     if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto pager_acquire_err;
     }
+
+    pPg->pPager = pPager;
 
     assert( !isOpen(pPager->fd) || !MEMDB );
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
@@ -22636,7 +22632,8 @@ SQLITE_PRIVATE int sqlite3PagerGet(
       memset(pPg->pData, 0, pPager->pageSize);
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
-      if( pagerUseWal(pPager) && bMmapOk==0 ){
+      u32 iFrame = 0;                 /* Frame to read from WAL file */
+      if( pagerUseWal(pPager) ){
         rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
         if( rc!=SQLITE_OK ) goto pager_acquire_err;
       }
@@ -22649,7 +22646,6 @@ SQLITE_PRIVATE int sqlite3PagerGet(
     }
     pager_set_pagehash(pPg);
   }
-
   return SQLITE_OK;
 
 pager_acquire_err:
@@ -22658,9 +22654,107 @@ pager_acquire_err:
     sqlite3PcacheDrop(pPg);
   }
   pagerUnlockIfUnused(pPager);
-
   *ppPage = 0;
   return rc;
+}
+
+#if SQLITE_MAX_MMAP_SIZE>0
+/* The page getter for when memory-mapped I/O is enabled */
+static int getPageMMap(
+  Pager *pPager,      /* The pager open on the database file */
+  Pgno pgno,          /* Page number to fetch */
+  DbPage **ppPage,    /* Write a pointer to the page here */
+  int flags           /* PAGER_GET_XXX flags */
+){
+  int rc = SQLITE_OK;
+  PgHdr *pPg = 0;
+  u32 iFrame = 0;                 /* Frame to read from WAL file */
+
+  /* It is acceptable to use a read-only (mmap) page for any page except
+  ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
+  ** flag was specified by the caller. And so long as the db is not a 
+  ** temporary or in-memory database.  */
+  const int bMmapOk = (pgno>1
+   && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
+  );
+
+  assert( USEFETCH(pPager) );
+#ifdef SQLITE_HAS_CODEC
+  assert( pPager->xCodec==0 );
+#endif
+
+  /* Optimization note:  Adding the "pgno<=1" term before "pgno==0" here
+  ** allows the compiler optimizer to reuse the results of the "pgno>1"
+  ** test in the previous statement, and avoid testing pgno==0 in the
+  ** common case where pgno is large. */
+  if( pgno<=1 && pgno==0 ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  assert( pPager->eState>=PAGER_READER );
+  assert( assert_pager_state(pPager) );
+  assert( pPager->hasHeldSharedLock==1 );
+  assert( pPager->errCode==SQLITE_OK );
+
+  if( bMmapOk && pagerUseWal(pPager) ){
+    rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+    if( rc!=SQLITE_OK ){
+      *ppPage = 0;
+      return rc;
+    }
+  }
+  if( bMmapOk && iFrame==0 ){
+    void *pData = 0;
+    rc = sqlite3OsFetch(pPager->fd, 
+        (i64)(pgno-1) * pPager->pageSize, pPager->pageSize, &pData
+    );
+    if( rc==SQLITE_OK && pData ){
+      if( pPager->eState>PAGER_READER || pPager->tempFile ){
+        pPg = sqlite3PagerLookup(pPager, pgno);
+      }
+      if( pPg==0 ){
+        rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
+     }else{
+        sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1)*pPager->pageSize, pData);
+      }
+      if( pPg ){
+        assert( rc==SQLITE_OK );
+        *ppPage = pPg;
+        return SQLITE_OK;
+      }
+    }
+    if( rc!=SQLITE_OK ){
+      *ppPage = 0;
+      return rc;
+    }
+  }
+  return getPageNormal(pPager, pgno, ppPage, flags);
+}
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
+
+/* The page getter method for when the pager is an error state */
+static int getPageError(
+  Pager *pPager,      /* The pager open on the database file */
+  Pgno pgno,          /* Page number to fetch */
+  DbPage **ppPage,    /* Write a pointer to the page here */
+  int flags           /* PAGER_GET_XXX flags */
+){
+  UNUSED_PARAMETER(pgno);
+  UNUSED_PARAMETER(flags);
+  assert( pPager->errCode!=SQLITE_OK );
+  *ppPage = 0;
+  return pPager->errCode;
+}
+
+
+/* Dispatch all page fetch requests to the appropriate getter method.
+*/
+SQLITE_PRIVATE int sqlite3PagerGet(
+  Pager *pPager,      /* The pager open on the database file */
+  Pgno pgno,          /* Page number to fetch */
+  DbPage **ppPage,    /* Write a pointer to the page here */
+  int flags           /* PAGER_GET_XXX flags */
+){
+  return pPager->xGet(pPager, pgno, ppPage, flags);
 }
 
 /*
@@ -23136,11 +23230,11 @@ SQLITE_PRIVATE int sqlite3PagerWrite(PgHdr *pPg){
   assert( (pPg->flags & PGHDR_MMAP)==0 );
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( assert_pager_state(pPager) );
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }else if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
+  if( (pPg->flags & PGHDR_WRITEABLE)!=0 && pPager->dbSize>=pPg->pgno ){
     if( pPager->nSavepoint ) return subjournalPageIfRequired(pPg);
     return SQLITE_OK;
+  }else if( pPager->errCode ){
+    return pPager->errCode;
   }else if( pPager->sectorSize > (u32)pPager->pageSize ){
     assert( pPager->tempFile==0 );
     return pagerWriteLargeSector(pPg);
@@ -23635,6 +23729,7 @@ SQLITE_PRIVATE int sqlite3PagerRollback(Pager *pPager){
       */
       pPager->errCode = SQLITE_ABORT;
       pPager->eState = PAGER_ERROR;
+      setGetterMethod(pPager);
       return rc;
     }
   }else{
@@ -23896,6 +23991,7 @@ SQLITE_PRIVATE int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     ){
       pPager->errCode = SQLITE_ABORT;
       pPager->eState = PAGER_ERROR;
+      setGetterMethod(pPager);
     }
 #endif
   }
@@ -23968,6 +24064,7 @@ SQLITE_PRIVATE void sqlite3PagerSetCodec(
   pPager->xCodecSizeChng = xCodecSizeChng;
   pPager->xCodecFree = xCodecFree;
   pPager->pCodec = pCodec;
+  setGetterMethod(pPager);
   pagerReportSize(pPager);
 }
 SQLITE_PRIVATE void *sqlite3PagerGetCodec(Pager *pPager){
@@ -24578,6 +24675,20 @@ SQLITE_PRIVATE int sqlite3PagerSnapshotOpen(Pager *pPager, sqlite3_snapshot *pSn
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     sqlite3WalSnapshotOpen(pPager->pWal, pSnapshot);
+  }else{
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+/*
+** If this is a WAL database, call sqlite3WalSnapshotRecover(). If this 
+** is not a WAL database, return an error.
+*/
+SQLITE_PRIVATE int sqlite3PagerSnapshotRecover(Pager *pPager){
+  int rc;
+  if( pPager->pWal ){
+    rc = sqlite3WalSnapshotRecover(pPager->pWal);
   }else{
     rc = SQLITE_ERROR;
   }
@@ -26549,8 +26660,9 @@ SQLITE_PRIVATE int sqlite3WalClose(
     **
     ** The EXCLUSIVE lock is not released before returning.
     */
-    rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
-    if( rc==SQLITE_OK ){
+    if( zBuf!=0
+     && SQLITE_OK==(rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE))
+    ){
       if( pWal->exclusiveMode==WAL_NORMAL_MODE ){
         pWal->exclusiveMode = WAL_EXCLUSIVE_MODE;
       }
@@ -26984,6 +27096,84 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SNAPSHOT
+/*
+** Attempt to reduce the value of the WalCkptInfo.nBackfillAttempted 
+** variable so that older snapshots can be accessed. To do this, loop
+** through all wal frames from nBackfillAttempted to (nBackfill+1), 
+** comparing their content to the corresponding page with the database
+** file, if any. Set nBackfillAttempted to the frame number of the
+** first frame for which the wal file content matches the db file.
+**
+** This is only really safe if the file-system is such that any page 
+** writes made by earlier checkpointers were atomic operations, which 
+** is not always true. It is also possible that nBackfillAttempted
+** may be left set to a value larger than expected, if a wal frame
+** contains content that duplicate of an earlier version of the same
+** page.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code if an
+** error occurs. It is not an error if nBackfillAttempted cannot be
+** decreased at all.
+*/
+SQLITE_PRIVATE int sqlite3WalSnapshotRecover(Wal *pWal){
+  int rc;
+
+  assert( pWal->readLock>=0 );
+  rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  if( rc==SQLITE_OK ){
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+    int szPage = (int)pWal->szPage;
+    i64 szDb;                   /* Size of db file in bytes */
+
+    rc = sqlite3OsFileSize(pWal->pDbFd, &szDb);
+    if( rc==SQLITE_OK ){
+      void *pBuf1 = sqlite3_malloc(szPage);
+      void *pBuf2 = sqlite3_malloc(szPage);
+      if( pBuf1==0 || pBuf2==0 ){
+        rc = SQLITE_NOMEM;
+      }else{
+        u32 i = pInfo->nBackfillAttempted;
+        for(i=pInfo->nBackfillAttempted; i>pInfo->nBackfill; i--){
+          volatile ht_slot *dummy;
+          volatile u32 *aPgno;      /* Array of page numbers */
+          u32 iZero;                /* Frame corresponding to aPgno[0] */
+          u32 pgno;                 /* Page number in db file */
+          i64 iDbOff;               /* Offset of db file entry */
+          i64 iWalOff;              /* Offset of wal file entry */
+
+          rc = walHashGet(pWal, walFramePage(i), &dummy, &aPgno, &iZero);
+          if( rc!=SQLITE_OK ) break;
+          pgno = aPgno[i-iZero];
+          iDbOff = (i64)(pgno-1) * szPage;
+
+          if( iDbOff+szPage<=szDb ){
+            iWalOff = walFrameOffset(i, szPage) + WAL_FRAME_HDRSIZE;
+            rc = sqlite3OsRead(pWal->pWalFd, pBuf1, szPage, iWalOff);
+
+            if( rc==SQLITE_OK ){
+              rc = sqlite3OsRead(pWal->pDbFd, pBuf2, szPage, iDbOff);
+            }
+
+            if( rc!=SQLITE_OK || 0==memcmp(pBuf1, pBuf2, szPage) ){
+              break;
+            }
+          }
+
+          pInfo->nBackfillAttempted = i-1;
+        }
+      }
+
+      sqlite3_free(pBuf1);
+      sqlite3_free(pBuf2);
+    }
+    walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  }
+
+  return rc;
+}
+#endif /* SQLITE_ENABLE_SNAPSHOT */
+
 /*
 ** Begin a read transaction on the database.
 **
@@ -27046,7 +27236,11 @@ SQLITE_PRIVATE int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
       ** has not yet set the pInfo->nBackfillAttempted variable to indicate 
       ** its intent. To avoid the race condition this leads to, ensure that
       ** there is no checkpointer process by taking a shared CKPT lock 
-      ** before checking pInfo->nBackfillAttempted.  */
+      ** before checking pInfo->nBackfillAttempted.  
+      **
+      ** TODO: Does the aReadMark[] lock prevent a checkpointer from doing
+      **       this already?
+      */
       rc = walLockShared(pWal, WAL_CKPT_LOCK);
 
       if( rc==SQLITE_OK ){
@@ -27998,9 +28192,14 @@ SQLITE_PRIVATE int sqlite3WalHeapMemory(Wal *pWal){
 SQLITE_PRIVATE int sqlite3WalSnapshotGet(Wal *pWal, sqlite3_snapshot **ppSnapshot){
   int rc = SQLITE_OK;
   WalIndexHdr *pRet;
+  static const u32 aZero[4] = { 0, 0, 0, 0 };
 
   assert( pWal->readLock>=0 && pWal->writeLock==0 );
 
+  if( memcmp(&pWal->hdr.aFrameCksum[0],aZero,16)==0 ){
+    *ppSnapshot = 0;
+    return SQLITE_ERROR;
+  }
   pRet = (WalIndexHdr*)sqlite3_malloc(sizeof(WalIndexHdr));
   if( pRet==0 ){
     rc = SQLITE_NOMEM_BKPT;
@@ -28338,37 +28537,39 @@ typedef struct CellInfo CellInfo;
 #define PTF_LEAF      0x08
 
 /*
-** As each page of the file is loaded into memory, an instance of the following
-** structure is appended and initialized to zero.  This structure stores
-** information about the page that is decoded from the raw file page.
+** An instance of this object stores information about each a single database
+** page that has been loaded into memory.  The information in this object
+** is derived from the raw on-disk page content.
 **
-** The pParent field points back to the parent page.  This allows us to
-** walk up the BTree from any leaf to the root.  Care must be taken to
-** unref() the parent page pointer when this page is no longer referenced.
-** The pageDestructor() routine handles that chore.
+** As each database page is loaded into memory, the pager allocats an
+** instance of this object and zeros the first 8 bytes.  (This is the
+** "extra" information associated with each page of the pager.)
 **
 ** Access to all fields of this structure is controlled by the mutex
 ** stored in MemPage.pBt->mutex.
 */
 struct MemPage {
   u8 isInit;           /* True if previously initialized. MUST BE FIRST! */
-  u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
+  u8 bBusy;            /* Prevent endless loops on corrupt database files */
   u8 intKey;           /* True if table b-trees.  False for index b-trees */
   u8 intKeyLeaf;       /* True if the leaf of an intKey table */
+  Pgno pgno;           /* Page number for this page */
+  /* Only the first 8 bytes (above) are zeroed by pager.c when a new page
+  ** is allocated. All fields that follow must be initialized before use */
   u8 leaf;             /* True if a leaf page */
   u8 hdrOffset;        /* 100 for page 1.  0 otherwise */
   u8 childPtrSize;     /* 0 if leaf==1.  4 if leaf==0 */
   u8 max1bytePayload;  /* min(maxLocal,127) */
-  u8 bBusy;            /* Prevent endless loops on corrupt database files */
+  u8 nOverflow;        /* Number of overflow cell bodies in aCell[] */
   u16 maxLocal;        /* Copy of BtShared.maxLocal or BtShared.maxLeaf */
   u16 minLocal;        /* Copy of BtShared.minLocal or BtShared.minLeaf */
   u16 cellOffset;      /* Index in aData of first cell pointer */
   u16 nFree;           /* Number of free bytes on the page */
   u16 nCell;           /* Number of cells on this page, local and ovfl */
   u16 maskPage;        /* Mask for page offset */
-  u16 aiOvfl[5];       /* Insert the i-th overflow cell before the aiOvfl-th
+  u16 aiOvfl[4];       /* Insert the i-th overflow cell before the aiOvfl-th
                        ** non-overflow cell */
-  u8 *apOvfl[5];       /* Pointers to the body of overflow cells */
+  u8 *apOvfl[4];       /* Pointers to the body of overflow cells */
   BtShared *pBt;       /* Pointer to BtShared that this page is part of */
   u8 *aData;           /* Pointer to disk image of the page data */
   u8 *aDataEnd;        /* One byte past the end of usable data */
@@ -28377,15 +28578,7 @@ struct MemPage {
   DbPage *pDbPage;     /* Pager page handle */
   u16 (*xCellSize)(MemPage*,u8*);             /* cellSizePtr method */
   void (*xParseCell)(MemPage*,u8*,CellInfo*); /* btreeParseCell method */
-  Pgno pgno;           /* Page number for this page */
 };
-
-/*
-** The in-memory image of a disk page has the auxiliary information appended
-** to the end.  EXTRA_SIZE is the number of bytes of space needed to hold
-** that extra information.
-*/
-#define EXTRA_SIZE sizeof(MemPage)
 
 /*
 ** A linked list of the following structures is stored at BtShared.pLock.
