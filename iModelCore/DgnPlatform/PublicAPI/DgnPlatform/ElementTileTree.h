@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+//__BENTLEY_INTERNAL_ONLY__
 
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/DgnModel.h>
