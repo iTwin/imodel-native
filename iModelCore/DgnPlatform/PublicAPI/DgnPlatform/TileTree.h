@@ -201,7 +201,7 @@ protected:
     int m_activeLoads = 0;
     DgnDbR m_db;
     BeFileName m_localCacheName;
-    Transform m_location;         // transform from tile coordinates to world coordinates  
+    Transform m_location;         // transform from tile coordinates to world coordinates
     double m_biasDistance = 0.0;  // for 2d display priority
     double m_hiResBiasDistance = -0.5; // for moving higer resolution substitute tiles behind real tiles.
     double m_loResBiasDistance = -1.0; // for moving lower resolution substitute tiles behind real tiles.

@@ -338,7 +338,6 @@ void Attachment::Tree::Draw(RenderContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->m_rect.Init(0, 0, m_pixels, m_pixels);
         m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         }
@@ -386,19 +385,14 @@ bool Attachment::Tree::Pick(PickContext& context)
     if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
         return false;
 
-    // get the transform from sheet's view coordinates to attachment's view coordinates (attachment view coordinates are a fixed size sqaure)
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(GetLocation());
-    context.WorldToView(frust.m_pts, frust.m_pts, 8);
-    Transform attachViewToSheetView = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
-    attachViewToSheetView.ScaleMatrixColumns(1.0/m_pixels, 1.0/m_pixels, 1.0/frust.m_pts[NPC_LeftTopFront].z);
-
-    return context._ProcessSheetAttachment(*m_viewport, attachViewToSheetView);
+    return context._ProcessSheetAttachment(*m_viewport);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
+                T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -424,6 +418,7 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
         m_scale.Init(1.0, aspect);
 
     // now expand the frustum in one direction so that the view is square (so we can use square tiles)
+    m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
     m_viewport->ChangeViewController(*view);
     m_viewport->SetupFromViewController();
 
@@ -457,9 +452,9 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     auto& box = attach->GetPlacement().GetElementBox();
     auto range = attach->GetPlacement().CalculateRange();
     range.low.z = 0.0; // make sure we're exactly on the sheet.
-    Transform location = Transform::From(range.low);
-    location.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
-    SetLocation(location);
+    m_viewport->m_toParent = Transform::From(range.low);
+    m_viewport->m_toParent.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    SetLocation(m_viewport->m_toParent);
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
