@@ -156,9 +156,6 @@ struct Task : RefCounted<NonCopyableClass>
         ChangeDecorations,
         DrawFrame,
         Redraw,
-        BeginHeal,
-        FinishHeal,
-        Heal,
         DefineGeometryTexture,
         FindNearestZ,
         ReadImage,
@@ -1775,11 +1772,6 @@ public:
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
     virtual void _Redraw(Redraws&) = 0;
-    virtual void _BeginHeal() = 0;
-    virtual void _DrawHeal(GraphicListR healList) = 0;
-    enum class HealAborted : bool {No=0, Yes=1};
-    virtual void _FinishHeal(HealAborted) = 0;
-    virtual bool _NeedsHeal(BSIRectR) const = 0;
     virtual void _DrawFrame(StopWatch&) = 0;
     virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}

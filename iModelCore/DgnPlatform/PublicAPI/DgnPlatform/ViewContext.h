@@ -393,19 +393,6 @@ public:
 
 //=======================================================================================
 //! @ingroup GROUP_ViewContext
-// @bsiclass                                                    Keith.Bentley   10/15
-//=======================================================================================
-struct HealContext : RenderListContext
-{
-    DEFINE_T_SUPER(RenderListContext);
-    void Flush(bool restart);
-public:
-    virtual void _HealElement(DgnElementId);
-    HealContext(DgnViewportR vp, BSIRectCR, UpdatePlan const& plan);
-};
-
-//=======================================================================================
-//! @ingroup GROUP_ViewContext
 // @bsiclass                                                    Keith.Bentley   12/15
 //=======================================================================================
 struct DynamicsContext : RenderContext

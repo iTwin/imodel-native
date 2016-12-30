@@ -602,7 +602,6 @@ Texture* LsDefinition::GetTexture(ViewContextR viewContext, LineStyleSymbR lineS
             case DrawPurpose::Plot:
             case DrawPurpose::Dynamics:
             case DrawPurpose::Redraw:
-            case DrawPurpose::Heal:
                 {
                 BeAssert (weight >=0 && weight < 32);
                 TextureDescr    tDescr;
