@@ -356,6 +356,7 @@ void Attachment::Tree::Draw(RenderContextR context)
     // the scene is available, draw its tiles
     DrawInView(context);
 
+#define DEBUG_ATTACHMENT_RANGE
 #ifdef DEBUG_ATTACHMENT_RANGE
     ElementAlignedBox3d range(0,0,0, 1.0,1.0,1.0);
     GetLocation().Multiply(&range.low, &range.low, 2);
@@ -389,8 +390,8 @@ bool Attachment::Tree::Pick(PickContext& context)
 
     Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(GetLocation());
     context.WorldToView(frust.m_pts, frust.m_pts, 8);
-    Transform attachViewToSheetView = Transform::FromPlaneOf3Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear]);
-    attachViewToSheetView.ScaleMatrixColumns(m_sizeNPC.x/m_pixels, m_sizeNPC.y/m_pixels, 1.0);
+    Transform attachViewToSheetView = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
+    attachViewToSheetView.ScaleMatrixColumns(m_sizeNPC.x/m_pixels, m_sizeNPC.y/m_pixels, 1.0/frust.m_pts[NPC_LeftTopFront].z);
 
     return context._ProcessSheetAttachment(*m_viewport, attachViewToSheetView);
     }

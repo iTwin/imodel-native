@@ -82,6 +82,8 @@ public:
 struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
+    friend struct SheetPicker;
+
 private:
     bool              m_doneSearching;
     bool              m_unusableLStyleHit;
@@ -113,7 +115,8 @@ private:
     void _DrawStyledBSplineCurve2d(MSBsplineCurveCR, double zDepth) override;
     Render::GraphicBuilderPtr _CreateGraphic(Render::Graphic::CreateParams const& params) override {_GetGeomDetail().Init(); SimplifyGraphic* graphic = new SimplifyGraphic(params, *this, *this); return graphic;}
     Render::GraphicPtr _CreateBranch(Render::GraphicBranch&, TransformCP, ClipVectorCP) override {return new SimplifyGraphic(Render::Graphic::CreateParams(), *this, *this);}
-    DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic);
+    DPoint4d ConvertLocalToView(DPoint3dCR localPt, SimplifyGraphic const& graphic) const;
+    DPoint3d ConvertViewToLocal(DPoint4dCR viewPt, SimplifyGraphic const& graphic) const;
 
     bool TestPoint(DPoint3dCR localPt, HitPriority priority, SimplifyGraphic const&);
     bool TestPointArray(size_t numPts, DPoint3dCP localPts, HitPriority priority, SimplifyGraphic const&);
@@ -162,12 +165,12 @@ public:
     void _SetElemTopology(IElemTopologyCP topo) override {m_currElemTopo = topo;}
     virtual bool _ProcessSheetAttachment(DgnViewportR, TransformCR attachViewToSheetView);
 
-    DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=NULL);
+    DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
     DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);
     DGNVIEW_EXPORT TestHitStatus TestHit(HitDetailCR, DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP hitList);
     static void InitBoresite(DRay3dR boresite, DPoint3dCR localPoint, DMatrix4dCR viewToLocal);
-    static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld = nullptr);
-    static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld = nullptr);
+    static void InitBoresite(DRay3dR boresite, DPoint3dCR worldPoint, DgnViewportCR vp, TransformCP localToWorld=nullptr);
+    static void InitBoresite(DRay3dR boresite, DgnButtonEventCR ev, TransformCP localToWorld=nullptr);
 };
 
 END_BENTLEY_DGN_NAMESPACE
