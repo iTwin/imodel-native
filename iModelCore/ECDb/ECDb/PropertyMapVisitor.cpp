@@ -17,9 +17,15 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap const& propertyMap) const
     {
-    if ((m_table == nullptr || m_table == &propertyMap.GetTable()) && 
+    if ((m_table == nullptr || m_table == &propertyMap.GetTable()) &&
         Enum::Contains(m_filter, propertyMap.GetType()))
-        m_columns.push_back(&propertyMap.GetColumn());
+        {
+        DbColumn const& col = propertyMap.GetColumn();
+        m_columns.push_back(&col);
+
+        m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
+        m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
+        }
 
     return SUCCESS;
     }
@@ -49,41 +55,35 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
     if (!Enum::Contains(m_filter, propertyMap.GetType()))
         return SUCCESS;
 
-    if (m_doNotSkipSystemPropertyMaps)
+    if (m_table != nullptr)
         {
-        for (SystemPropertyMap::PerTablePrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
+        BeAssert(m_doNotSkipSystemPropertyMaps == false);
+        SystemPropertyMap::PerTablePrimitivePropertyMap const* dataPropMap = propertyMap.FindDataPropertyMap(*m_table);
+        if (dataPropMap != nullptr)
             {
-            m_columns.push_back(&m->GetColumn());
+            DbColumn const& col = dataPropMap->GetColumn();
+            m_columns.push_back(&col);
+
+            m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
+            m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
             }
 
         return SUCCESS;
         }
 
-    if (m_table == nullptr)
-        return SUCCESS;
-
-    SystemPropertyMap::PerTablePrimitivePropertyMap const* dataPropMap = propertyMap.FindDataPropertyMap(*m_table);
-    if (dataPropMap != nullptr)
-        m_columns.push_back(&dataPropMap->GetColumn());
-    
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-bool GetColumnsPropertyMapVisitor::AllColumnsAreVirtual() const
-    {
-    BeAssert(!GetColumns().empty());
-    bool isVirtual = true;
-    for (DbColumn const* column : GetColumns())
+    if (m_doNotSkipSystemPropertyMaps)
         {
-        isVirtual &= column->GetPersistenceType() == PersistenceType::Virtual;
-        if (!isVirtual)
-            break;
+        for (SystemPropertyMap::PerTablePrimitivePropertyMap const* m : propertyMap.GetDataPropertyMaps())
+            {
+            DbColumn const& col = m->GetColumn();
+            m_columns.push_back(&col);
+
+            m_containsVirtualColumns = UpdateContainsState(m_containsVirtualColumns, col.GetPersistenceType() == PersistenceType::Virtual);
+            m_containsOverflowColumns = UpdateContainsState(m_containsOverflowColumns, col.IsOverflowSlave());
+            }
         }
 
-    return isVirtual;
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -96,6 +96,26 @@ DbColumn const* GetColumnsPropertyMapVisitor::GetSingleColumn() const
         return nullptr;
 
     return GetColumns().front();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Krischan.Eberle       12/16
+//---------------------------------------------------------------------------------------
+//static
+GetColumnsPropertyMapVisitor::ContainsState GetColumnsPropertyMapVisitor::UpdateContainsState(ContainsState previous, bool matchIsContained)
+    {
+    if (matchIsContained)
+        {
+        if (previous == ContainsState::None)
+            return ContainsState::All;
+
+        return previous;
+        }
+
+    if (previous == ContainsState::All)
+        return ContainsState::Some;
+
+    return previous;
     }
 
 //************************************GetTablesPropertyMapVisitor********************
@@ -208,13 +228,13 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
     switch (propertyMap.GetType())
         {
             case PropertyMap::Type::ConstraintECInstanceId:
-                return ToNativeSql(static_cast<ConstraintECInstanceIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
             case PropertyMap::Type::ConstraintECClassId:
-                return ToNativeSql(static_cast<ConstraintECClassIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
             case PropertyMap::Type::ECClassId:
-                return ToNativeSql(static_cast<ECClassIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ECClassIdPropertyMap>());
             case PropertyMap::Type::ECInstanceId:
-                return ToNativeSql(static_cast<ECInstanceIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ECInstanceIdPropertyMap>());
             default:
                 BeAssert(false);
                 return ERROR;
@@ -227,7 +247,7 @@ BentleyStatus ToSqlPropertyMapVisitor::_Visit(SystemPropertyMap const& propertyM
 BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
+        return ToNativeSql(*propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
 
     Result& result = Record(propertyMap);
 
@@ -236,10 +256,8 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenLeft();
 
-    if (propertyMap.GetOverflowState() != DataPropertyMap::OverflowState::Yes)
+    if (!propertyMap.GetColumn().IsOverflowSlave())
         {
-        BeAssert(propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::No);
-
         sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         if (m_wrapInParentheses)
             sqlBuilder.AppendParenRight();
@@ -314,7 +332,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(NavigationPropertyMap::RelECC
             case ECSqlScope::NonSelectNoAssignmentExp:
             {
             BeAssert(relClassIdPropMap.GetParent() != nullptr && relClassIdPropMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
-            NavigationPropertyMap::IdPropertyMap const& idPropMap = static_cast<NavigationPropertyMap const*>(relClassIdPropMap.GetParent())->GetIdPropertyMap();
+            NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
             NativeSqlBuilder idColStrBuilder;
             idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());

@@ -153,7 +153,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
         {
             case PropertyMap::Type::ConstraintECClassId:
             {
-            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = static_cast<ConstraintECClassIdPropertyMap const&>(propMap);
+            ConstraintECClassIdPropertyMap const& constraintClassIdPropMap = *propMap.GetAs<ConstraintECClassIdPropertyMap>();
             if (nullptr != ConstraintECClassIdJoinInfo::RequiresJoinTo(constraintClassIdPropMap, true /*ignoreVirtualColumnCheck*/))
                 return true;
 
@@ -162,7 +162,7 @@ bool ECSqlBinderFactory::RequiresNoopBinder(ECSqlPrepareContext& ctx, PropertyMa
             return constraintClassIdPropMap.IsVirtual(*contextTable);
             }
             case PropertyMap::Type::NavigationRelECClassId:
-                return static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propMap).IsVirtual();
+                return propMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>()->IsVirtual();
 
             default:
                 return false;

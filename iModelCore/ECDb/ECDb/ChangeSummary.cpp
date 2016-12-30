@@ -487,8 +487,7 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
 
     if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
-        StructPropertyMap const& structPropMap = static_cast<StructPropertyMap const&> (propertyMap);
-        for (PropertyMap const* childPropMap : structPropMap)
+        for (PropertyMap const* childPropMap : *propertyMap.GetAs<StructPropertyMap>())
             {
             AddColumnMapsForProperty(*childPropMap);
             }
@@ -498,13 +497,11 @@ void TableMapDetail::AddColumnMapsForProperty(PropertyMap const& propertyMap)
 
     if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d || propertyMap.GetType() == PropertyMap::Type::Navigation)
         {
-        CompoundDataPropertyMap const& compoundDataPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
-        for (PropertyMap const* childPropMap : compoundDataPropMap)
+        for (PropertyMap const* childPropMap : *propertyMap.GetAs<CompoundDataPropertyMap>())
             {
             BeAssert(childPropMap->IsData());
-            DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap const*> (childPropMap);
             GetColumnsPropertyMapVisitor columnsDisp;
-            dataPropMap->AcceptVisitor(columnsDisp);
+            childPropMap->AcceptVisitor(columnsDisp);
             BeAssert(columnsDisp.GetColumns().size() == 1);
             Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
             int columnIndex = GetColumnIndexByName(columnName);
@@ -1107,7 +1104,7 @@ bool ChangeExtractor::ChangeAffectsProperty(PropertyMap const& propertyMap) cons
     {
     if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
-        for (PropertyMap const* childPropMap : static_cast<StructPropertyMap const&> (propertyMap))
+        for (PropertyMap const* childPropMap : *propertyMap.GetAs<StructPropertyMap>())
             {
             if (ChangeAffectsProperty(*childPropMap))
                 return true;
@@ -1540,7 +1537,7 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
 
     if (propertyMap.GetType() == PropertyMap::Type::Struct)
         {
-        for (PropertyMap const* memberPropMap : static_cast<StructPropertyMap const&> (propertyMap))
+        for (PropertyMap const* memberPropMap : *propertyMap.GetAs<StructPropertyMap>())
             {
             RecordPropertyValue(instance, *memberPropMap);
             }
@@ -1550,13 +1547,11 @@ void ChangeExtractor::RecordPropertyValue(ChangeSummary::InstanceCR instance, Pr
 
     if (propertyMap.GetType() == PropertyMap::Type::Point2d || propertyMap.GetType() == PropertyMap::Type::Point3d)
         {
-        CompoundDataPropertyMap const& pointPropMap = static_cast<CompoundDataPropertyMap const&> (propertyMap);
-        for (PropertyMap const* childPropMap : pointPropMap)
+        for (PropertyMap const* childPropMap : *propertyMap.GetAs<CompoundDataPropertyMap>())
             {
             BeAssert(childPropMap->IsData());
-            DataPropertyMap const* coordinatePropMap = static_cast<DataPropertyMap const*> (childPropMap);
             GetColumnsPropertyMapVisitor columnsDisp;
-            coordinatePropMap->AcceptVisitor(columnsDisp);
+            childPropMap->AcceptVisitor(columnsDisp);
             BeAssert(columnsDisp.GetColumns().size() == 1);
             Utf8StringCR columnName = columnsDisp.GetColumns()[0]->GetName();
             RecordColumnValue(instance, columnName, childPropMap->GetAccessString().c_str());

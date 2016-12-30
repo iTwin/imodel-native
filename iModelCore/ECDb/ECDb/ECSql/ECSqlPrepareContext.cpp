@@ -69,7 +69,7 @@ int ECSqlPrepareContext::ExpScope::GetNativeSqlSelectClauseColumnCount() const
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECSqlPrepareContext::ExpScope::IncrementNativeSqlSelectClauseColumnCount(size_t value)
     {
-    m_nativeSqlSelectClauseColumnCount += static_cast<int> (value);
+    m_nativeSqlSelectClauseColumnCount += (int) (value);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -245,7 +245,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
 
         if (property->GetPropertyMap().IsSystem())
             {
-            SystemPropertyMap const& systemPropertyMap = static_cast<SystemPropertyMap const&>(property->GetPropertyMap());
+            SystemPropertyMap const& systemPropertyMap = *property->GetPropertyMap().GetAs<SystemPropertyMap>();
             joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
             joinedTableValues.push_back(NativeSqlBuilder(value->ToECSql().c_str()));
             parentOfJoinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -277,7 +277,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             }
         else if (property->GetPropertyMap().IsData())
             {
-            DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
+            DataPropertyMap const& businessPropertyMap = *property->GetPropertyMap().GetAs<DataPropertyMap>();
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
                 joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));
@@ -382,7 +382,7 @@ std::unique_ptr<ECSqlPrepareContext::JoinedTableInfo> ECSqlPrepareContext::Joine
             }
         else if (property->GetPropertyMap().IsData())
             {
-            DataPropertyMap const& businessPropertyMap = static_cast<DataPropertyMap const&>(property->GetPropertyMap());
+            DataPropertyMap const& businessPropertyMap = *property->GetPropertyMap().GetAs<DataPropertyMap>();
             if (&businessPropertyMap.GetTable() == &joinedTable)
                 {
                 joinedTableProperties.push_back(NativeSqlBuilder(property->ToECSql().c_str()));

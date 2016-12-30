@@ -372,8 +372,8 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
         baseClassMap.GetPropertyMaps().AcceptVisitor(typeVisitor);
         for (PropertyMap const* result : typeVisitor.Results())
             {
-            DataPropertyMap const* derivedPropertyMap = static_cast<DataPropertyMap const*> (derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str()));
-            if (derivedPropertyMap == nullptr)
+            PropertyMap const* derivedPropMap = derivedClassMap.GetPropertyMaps().Find(result->GetAccessString().c_str());
+            if (derivedPropMap == nullptr || !derivedPropMap->IsData())
                 {
                 BeAssert(false);
                 return ERROR;
@@ -382,7 +382,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             std::vector<DbColumn const*> derivedColumnList, baseColumnList;
             GetColumnsPropertyMapVisitor baseColumnVisitor, derivedColumnVisitor;
             result->AcceptVisitor(baseColumnVisitor);
-            derivedPropertyMap->AcceptVisitor(derivedColumnVisitor);
+            derivedPropMap->AcceptVisitor(derivedColumnVisitor);
             if (baseColumnVisitor.GetColumns().size() != derivedColumnVisitor.GetColumns().size())
                 {
                 BeAssert(false);
@@ -582,7 +582,7 @@ BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& 
             viewSql.Append("NULL ").AppendEscaped(propertyMap->GetAccessString().c_str());
         else
             {
-            PrimitivePropertyMap const* primitiveMap = static_cast<PrimitivePropertyMap const*>(propertyMap);
+            PrimitivePropertyMap const* primitiveMap = propertyMap->GetAs<PrimitivePropertyMap>();
             viewSql.Append("NULL ").AppendEscaped(primitiveMap->GetColumn().GetName().c_str());
             }
 
@@ -908,7 +908,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 {
                 if (propertyMap->IsData())
                     {
-                    DataPropertyMap const* dataPropertyMap = static_cast<DataPropertyMap const*> (propertyMap);
+                    DataPropertyMap const* dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
                     if (&dataPropertyMap->GetTable() != &contextTable)
                         requireJoinToTableForDataProperties = &dataPropertyMap->GetTable();
                     }
@@ -934,7 +934,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                     {
                     if (propertyMap->IsData())
                         {
-                        DataPropertyMap const* dataPropertyMap = static_cast<DataPropertyMap const*> (propertyMap);
+                        DataPropertyMap const* dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
                         if (&dataPropertyMap->GetTable() != &contextTable)
                             requireJoinToTableForDataProperties = &dataPropertyMap->GetTable();
                         }
@@ -984,7 +984,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             BeAssert(dynamic_cast<SingleColumnDataPropertyMap const*>(propertyMap) != nullptr);
 
 
-            SingleColumnDataPropertyMap const* dataProperty = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
+            SingleColumnDataPropertyMap const* dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
             //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
             if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
                 {
@@ -1052,7 +1052,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                     bool appendAlias = false;
                     if (basePropertyMap != nullptr)
                         {
-                        SingleColumnDataPropertyMap const* baseDataProperty = static_cast<SingleColumnDataPropertyMap const*>(basePropertyMap);
+                        SingleColumnDataPropertyMap const* baseDataProperty = basePropertyMap->GetAs<SingleColumnDataPropertyMap>();
                         if (!r.GetColumn().GetName().EqualsI(baseDataProperty->GetColumn().GetName()))
                             {
                             propertySql.AppendSpace().AppendEscaped(baseDataProperty->GetColumn().GetName().c_str());
@@ -1279,13 +1279,13 @@ BentleyStatus ViewGenerator::ToSqlVisitor::_Visit(SystemPropertyMap const& prope
     switch (propertyMap.GetType())
         {
             case PropertyMap::Type::ConstraintECInstanceId:
-                return ToNativeSql(static_cast<ConstraintECInstanceIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ConstraintECInstanceIdPropertyMap>());
             case PropertyMap::Type::ConstraintECClassId:
-                return ToNativeSql(static_cast<ConstraintECClassIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ConstraintECClassIdPropertyMap>());
             case PropertyMap::Type::ECClassId:
-                return ToNativeSql(static_cast<ECClassIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ECClassIdPropertyMap>());
             case PropertyMap::Type::ECInstanceId:
-                return ToNativeSql(static_cast<ECInstanceIdPropertyMap const&>(propertyMap));
+                return ToNativeSql(*propertyMap.GetAs<ECInstanceIdPropertyMap>());
             default:
                 BeAssert(false);
                 return ERROR;
@@ -1298,18 +1298,17 @@ BentleyStatus ViewGenerator::ToSqlVisitor::_Visit(SystemPropertyMap const& prope
 BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyMap const& propertyMap) const
     {
     if (propertyMap.GetType() == PropertyMap::Type::NavigationRelECClassId)
-        return ToNativeSql(static_cast<NavigationPropertyMap::RelECClassIdPropertyMap const&>(propertyMap));
+        return ToNativeSql(*propertyMap.GetAs<NavigationPropertyMap::RelECClassIdPropertyMap>());
 
     Result& result = Record(propertyMap);
     NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
 
-    if (propertyMap.GetOverflowState() != DataPropertyMap::OverflowState::Yes)
+    if (!propertyMap.GetColumn().IsOverflowSlave())
         {
         sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         return SUCCESS;
         }
 
-    BeAssert(propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::Yes);
     const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetPersistenceDataType() == DbColumn::Type::Blob;
 
     if (addBase64ToBlobFunc)
@@ -1334,7 +1333,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
     Result& result = Record(relClassIdPropMap);
 
     BeAssert(relClassIdPropMap.GetParent() != nullptr && relClassIdPropMap.GetParent()->GetType() == PropertyMap::Type::Navigation);
-    NavigationPropertyMap::IdPropertyMap const& idPropMap = static_cast<NavigationPropertyMap const*>(relClassIdPropMap.GetParent())->GetIdPropertyMap();
+    NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
     NativeSqlBuilder idColStrBuilder;
     idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());

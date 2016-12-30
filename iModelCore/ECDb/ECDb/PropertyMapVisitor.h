@@ -16,29 +16,42 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
     {
+    public:
+        enum class ContainsState
+            {
+            None,
+            Some,
+            All
+            };
     private:
-        DbTable const* m_table;
-        PropertyMap::Type m_filter;
-        bool m_doNotSkipSystemPropertyMaps;
+        DbTable const* m_table = nullptr;
+        PropertyMap::Type m_filter = PropertyMap::Type::All;
+        bool m_doNotSkipSystemPropertyMaps = false;
         mutable std::vector<DbColumn const*> m_columns;
+        mutable ContainsState m_containsVirtualColumns = ContainsState::None;
+        mutable ContainsState m_containsOverflowColumns = ContainsState::None;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
+        static ContainsState UpdateContainsState(ContainsState previous, bool matchIsContained);
+
     public:
         GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Type filter = PropertyMap::Type::All)
-            : IPropertyMapVisitor(), m_table(&table), m_filter(filter), m_doNotSkipSystemPropertyMaps(false)
+            : IPropertyMapVisitor(), m_table(&table), m_filter(filter)
             {}
         GetColumnsPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool doNotSkipSystemPropertyMaps = false)
-            :IPropertyMapVisitor(), m_table(nullptr), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipSystemPropertyMaps)
+            :IPropertyMapVisitor(), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipSystemPropertyMaps)
             {}
 
         ~GetColumnsPropertyMapVisitor() {}
 
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
         DbColumn const* GetSingleColumn() const;
-        bool AllColumnsAreVirtual() const;
+
+        ContainsState ContainsVirtualColumns() const { return m_containsVirtualColumns; }
+        ContainsState ContainsOverflowColumns() const { return m_containsOverflowColumns; }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

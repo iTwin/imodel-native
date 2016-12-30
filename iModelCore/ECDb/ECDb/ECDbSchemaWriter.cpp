@@ -1838,7 +1838,9 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             //For shared column do not delete column itself.
             if (column->IsShared())
                 {
-                if (!sharedColumnFound) sharedColumnFound = true;
+                if (!sharedColumnFound) 
+                    sharedColumnFound = true;
+
                 continue;
                 }
 

@@ -331,9 +331,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (propertyMap->GetType() == PropertyMap::Type::Navigation)
             {
-            NavigationPropertyMap& navPropertyMap = static_cast<NavigationPropertyMap&>(*propertyMap);
-            if (!navPropertyMap.IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(navPropertyMap);
+            NavigationPropertyMap const* navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
+            if (!navPropertyMap->IsComplete())
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
             }
         }
 
@@ -347,9 +347,9 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 
         if (property->GetIsNavigation())
             {
-            NavigationPropertyMap* navPropertyMap = static_cast<NavigationPropertyMap*>(propMap);
+            NavigationPropertyMap const* navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap->IsComplete())
-                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*navPropertyMap);
+                ctx.GetImportCtx().GetClassMapLoadContext().AddNavigationPropertyMap(*const_cast<NavigationPropertyMap*>(navPropertyMap));
             }
         }
 
@@ -406,60 +406,56 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
 
             GetColumnsPropertyMapVisitor columnVisitor(GetJoinedTable());
             propertyMap->AcceptVisitor(columnVisitor);
-            std::vector<DbColumn const*> const& columns = columnVisitor.GetColumns();
-            if (0 == columns.size())
+            if (columnVisitor.GetColumns().empty())
                 {
                 BeAssert(false && "Reject user defined index on %s. Fail to find column property map for property. Something wrong with mapping");
                 return ERROR;
                 }
 
-            for (DbColumn const* column : columns)
+            if (columnVisitor.ContainsOverflowColumns() != GetColumnsPropertyMapVisitor::ContainsState::None)
                 {
-                if (column->IsOverflowSlave())
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error,
-                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                    "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
-                                    i, GetClass().GetFullName(), propertyAccessString.c_str());
-                    return ERROR;
-                    }
-
-                if (column->GetTable().GetPersistenceType() == PersistenceType::Persisted && column->GetPersistenceType() == PersistenceType::Virtual)
-                    {
-                    Issues().Report(ECDbIssueSeverity::Error,
-                                  "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                  "The specified ECProperty '%s' is mapped to a virtual column.",
-                                  i, GetClass().GetFullName(), propertyAccessString.c_str());
-                    return ERROR;
-                    }
-
-                DbTable const& table = column->GetTable();
-                if (!involvedTables.empty() && involvedTables.find(&table) == involvedTables.end())
-                    {
-                    if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
-                        {
-                        Issues().Report(ECDbIssueSeverity::Error,
-                                      "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                      "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
-                                      "is applied to this class hierarchy.",
-                                      i, GetClass().GetFullName());
-                        }
-                    else
-                        {
-                        Issues().Report(ECDbIssueSeverity::Error,
-                                      "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                      "The properties that make up the index are mapped to different tables.",
-                                      i, GetClass().GetFullName());
-
-                        BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
-                        }
-
-                    return ERROR;
-                    }
-
-                involvedTables.insert(&table);
-                totalColumns.push_back(column);
+                Issues().Report(ECDbIssueSeverity::Error,
+                                "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                                "The specified ECProperty '%s' is mapped to an overflow column. Indexes on overflow columns are not supported.",
+                                i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
                 }
+
+            if (columnVisitor.ContainsVirtualColumns() != GetColumnsPropertyMapVisitor::ContainsState::None)
+                {
+                Issues().Report(ECDbIssueSeverity::Error,
+                                "DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                                "The specified ECProperty '%s' is mapped to a virtual column.",
+                                i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
+                }
+
+            if (!involvedTables.empty() && involvedTables.find(&GetJoinedTable()) == involvedTables.end())
+                {
+                if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
+                    {
+                    Issues().Report(ECDbIssueSeverity::Error,
+                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
+                                    "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
+                                    "is applied to this class hierarchy.",
+                                    i, GetClass().GetFullName());
+                    }
+                else
+                    {
+                    Issues().Report(ECDbIssueSeverity::Error,
+                                    "DbIndex custom attribute #%d on ECClass '%s' is invalid. "
+                                    "The properties that make up the index are mapped to different tables.",
+                                    i, GetClass().GetFullName());
+
+                    BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
+                    }
+
+                return ERROR;
+                }
+
+
+            involvedTables.insert(&GetJoinedTable());
+            totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
             }
 
         DbTable* involvedTable =  const_cast<DbTable*>(*involvedTables.begin());
@@ -650,7 +646,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
         //GetColumnFactory().Update(true);
         for (ECPropertyCP property : failedToLoadProperties)
             {
-            PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
+            PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -659,25 +655,25 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
                 BeAssert(false);
                 return ERROR;
                 }
-            //Nav properties cannot be safed here as they are not yet mapped.
-            if (propMap->GetType() != PropertyMap::Type::Navigation)
-                {
-                DataPropertyMap const* dataPropMap = static_cast<DataPropertyMap*>(propMap);
-                //! ECSchema update added new property for which we need to save property map
-                DbMapSaveContext ctx(m_ecdb);
-                //First make sure table is updated on disk. The table must already exist for this operation to work.
-                if (GetDbMap().GetDbSchema().UpdateTableOnDisk(dataPropMap->GetTable()) != SUCCESS)
-                    {
-                    BeAssert(false && "Failed to save table");
-                    return ERROR;
-                    }
+            
+            //Nav property maps cannot be saved here as they are not yet mapped.
+            if (propMap->GetType() == PropertyMap::Type::Navigation)
+                continue;
 
-                ctx.BeginSaving(*this);
-                DbClassMapSaveContext classMapContext(ctx);
-                SavePropertyMapVisitor saveVisitor(classMapContext);
-                propMap->AcceptVisitor(saveVisitor);
-                ctx.EndSaving(*this);
+            //! ECSchema update added new property for which we need to save property map
+            DbMapSaveContext ctx(m_ecdb);
+            //First make sure table is updated on disk. The table must already exist for this operation to work.
+            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>()->GetTable()) != SUCCESS)
+                {
+                BeAssert(false && "Failed to save table");
+                return ERROR;
                 }
+
+            ctx.BeginSaving(*this);
+            DbClassMapSaveContext classMapContext(ctx);
+            SavePropertyMapVisitor saveVisitor(classMapContext);
+            propMap->AcceptVisitor(saveVisitor);
+            ctx.EndSaving(*this);
             }
         }
 
@@ -689,7 +685,11 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
     {
-    return static_cast<ECInstanceIdPropertyMap const*> (GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME));
+    PropertyMap const* propMap = GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME);
+    if (propMap == nullptr)
+        return nullptr;
+
+    return propMap->GetAs<ECInstanceIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------
@@ -697,7 +697,11 @@ ECInstanceIdPropertyMap const* ClassMap::GetECInstanceIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
     {
-    return static_cast<ECClassIdPropertyMap const*>(GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME));
+    PropertyMap const* propMap = GetPropertyMaps().Find(ECDbSystemSchemaHelper::ECCLASSID_PROPNAME);
+    if (propMap == nullptr)
+        return nullptr;
+
+    return propMap->GetAs<ECClassIdPropertyMap>();
     }
 
 //---------------------------------------------------------------------------------------

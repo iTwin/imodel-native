@@ -1239,14 +1239,15 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     }
 
     {
-    ConstraintECInstanceIdPropertyMap const* fromRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey));
+    PropertyMap const* fromRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(fromRelatedKey);
     if (fromRelatedIdPropMap == nullptr)
         {
         BeAssert(false);
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    
+    ToSqlPropertyMapVisitor fromRelatedIdSqlVisitor(*fromRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>()->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     fromRelatedIdPropMap->AcceptVisitor(fromRelatedIdSqlVisitor);
     if (fromRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1286,14 +1287,14 @@ ECSqlStatus ECSqlExpPreparer::PrepareRelationshipJoinExp(ECSqlPrepareContext& ct
     }
 
     {
-    ConstraintECInstanceIdPropertyMap const* toRelatedIdPropMap = static_cast<ConstraintECInstanceIdPropertyMap const*>(relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey));
+    PropertyMap const* toRelatedIdPropMap = relationshipClassNameExp.GetInfo().GetMap().GetPropertyMaps().Find(toRelatedKey);
     if (toRelatedIdPropMap == nullptr)
         {
         BeAssert(false);
         return ECSqlStatus::Error;
         }
 
-    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
+    ToSqlPropertyMapVisitor toRelatedIdSqlVisitor(*toRelatedIdPropMap->GetAs<ConstraintECInstanceIdPropertyMap>()->GetTables().front(), ToSqlPropertyMapVisitor::ECSqlScope::Select, relationshipClassNameExp.GetId().c_str());
     toRelatedIdPropMap->AcceptVisitor(toRelatedIdSqlVisitor);
     if (toRelatedIdSqlVisitor.GetResultSet().size() != 1)
         {
@@ -1598,22 +1599,39 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
     {
     BeAssert(nativeSqlSnippetLists.empty());
     size_t index = 0;
-    for (auto valueExp : exp->GetChildren())
+    for (Exp const* valueExp : exp->GetChildren())
         {
-        ECSqlStatus stat = ECSqlStatus::Success;
         BeAssert(valueExp != nullptr);
 
         NativeSqlBuilder::List nativeSqlSnippets;
         const size_t targetNativeSqlSnippetCount = targetNativeSqlSnippetLists[index].size();
         PropertyNameExp const* targetPropertyExp = targetExp->GetPropertyNameExp(index);
-        bool isOverFlowPropertyMap = false;
+        bool allColsAreOverflow = false;
         if (targetPropertyExp->GetPropertyMap().IsData())
-            isOverFlowPropertyMap = static_cast<DataPropertyMap const&>(targetPropertyExp->GetPropertyMap()).GetOverflowState() == DataPropertyMap::OverflowState::Yes;
+            {
+            GetColumnsPropertyMapVisitor getColsVisitor;
+            if (SUCCESS != targetPropertyExp->GetPropertyMap().AcceptVisitor(getColsVisitor) ||
+                getColsVisitor.GetColumns().empty())
+                {
+                BeAssert(false);
+                return ECSqlStatus::Error;
+                }
+
+            allColsAreOverflow = true;
+            for (DbColumn const* col : getColsVisitor.GetColumns())
+                {
+                if (!col->IsOverflowSlave())
+                    {
+                    allColsAreOverflow = false;
+                    break;
+                    }
+                }
+            }
 
 
         //If target expression does not have any SQL snippets, it means the expression is not necessary in SQLite SQL (e.g. for source/target class id props)
         //In that case the respective value exp does not need to be prepared either.
-
+        ECSqlStatus stat = ECSqlStatus::Success;
         if (valueExp->IsParameterExp())
             {
             BeAssert(dynamic_cast<ParameterExp const*> (valueExp) != nullptr);
@@ -1628,7 +1646,7 @@ ECSqlStatus ECSqlExpPreparer::PrepareValueExpListExp(NativeSqlBuilder::ListOfLis
                 stat = PrepareNullLiteralValueExp(nativeSqlSnippets, ctx, static_cast<LiteralValueExp const*> (valueExp), targetNativeSqlSnippetCount);
                 }
             }
-        else if (targetNativeSqlSnippetCount > 0 || isOverFlowPropertyMap)
+        else if (targetNativeSqlSnippetCount > 0 || allColsAreOverflow)
             stat = PrepareValueExp(nativeSqlSnippets, ctx, static_cast<ValueExp const*> (valueExp));
 
         if (!stat.IsSuccess())

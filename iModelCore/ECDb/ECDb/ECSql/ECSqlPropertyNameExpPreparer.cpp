@@ -38,7 +38,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     if (currentScopeECSqlType == ECSqlType::Delete)
         {
         if (currentScope.HasExtendedOption(ECSqlPrepareContext::ExpScope::ExtendedOptions::SkipTableAliasWhenPreparingDeleteWhereClause) &&
-            propMap.IsSystem() && static_cast<SystemPropertyMap const&>(propMap).GetTables().size() > 1)
+            propMap.IsSystem() && propMap.GetAs<SystemPropertyMap>()->GetTables().size() > 1)
             {
             BeAssert(exp->GetClassRefExp()->GetType() == Exp::Type::ClassName);
             if (exp->GetClassRefExp()->GetType() != Exp::Type::ClassName)
@@ -66,7 +66,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::Prepare(NativeSqlBuilder::List& native
     switch (effectivePropMap->GetType())
         {
             case PropertyMap::Type::ConstraintECClassId:
-                return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, *exp, *static_cast<ConstraintECClassIdPropertyMap const*>(effectivePropMap), classIdentifier.c_str());
+                return PrepareRelConstraintClassIdPropMap(nativeSqlSnippets, currentScopeECSqlType, *exp, *effectivePropMap->GetAs<ConstraintECClassIdPropertyMap>(), classIdentifier.c_str());
 
             default:
                 PrepareDefault(nativeSqlSnippets, currentScopeECSqlType, *exp, *effectivePropMap, classIdentifier.c_str());
@@ -94,9 +94,12 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         }
  
     //Property maps to virtual column which can mean that the exp doesn't need to be translated.
-    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? static_cast<ConstraintECClassIdPropertyMap const*>(&propertyMap) : nullptr;
-    bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
-    if (columnVisitor.AllColumnsAreVirtual() || isConstraintIdPropertyMap)
+    ConstraintECClassIdPropertyMap const* constraintClassIdPropMap = propertyMap.GetType() == PropertyMap::Type::ConstraintECClassId ? propertyMap.GetAs<ConstraintECClassIdPropertyMap>() : nullptr;
+    const bool isConstraintIdPropertyMap = (constraintClassIdPropMap != nullptr && !constraintClassIdPropMap->IsMappedToClassMapTables() && currentScopeECSqlType != ECSqlType::Select);
+    const bool allColumnsAreVirtual = columnVisitor.ContainsVirtualColumns() == GetColumnsPropertyMapVisitor::ContainsState::All;
+    const bool allColumnsAreOverflow = columnVisitor.ContainsOverflowColumns() == GetColumnsPropertyMapVisitor::ContainsState::All;
+
+    if (allColumnsAreVirtual || isConstraintIdPropertyMap)
         {
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
@@ -104,15 +107,12 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
             if (ECDbSystemSchemaHelper::Equals(ctx.GetECDb().Schemas(), propertyMap.GetProperty(), ECSqlSystemPropertyInfo::Class::ECClassId))
                 return true;
 
-            if (propertyMap.IsData())
-                return static_cast<DataPropertyMap const&>(propertyMap).GetOverflowState() == DataPropertyMap::OverflowState::Yes;
-
-            return false;
+            return allColumnsAreOverflow;
             }
         
         if (currentScopeECSqlType == ECSqlType::Update)
             {
-            if (propertyMap.IsData() && static_cast<DataPropertyMap const&>(propertyMap).GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+            if (allColumnsAreOverflow)
                 return true;
             }
 
@@ -205,7 +205,8 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     propMap.AcceptVisitor(columnVisitor);
 
     if ((ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update) &&
-        !propMap.IsMappedToClassMapTables() && !columnVisitor.AllColumnsAreVirtual())
+        !propMap.IsMappedToClassMapTables() && 
+        columnVisitor.ContainsVirtualColumns() != GetColumnsPropertyMapVisitor::ContainsState::All)
         {
         if (exp.GetClassRefExp()->GetType() != Exp::Type::ClassName)
             {
@@ -235,7 +236,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
                                     classIdColumn->GetTable().GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId)->GetName().c_str(),
                                     ecInstanceIdVisitor.GetSingleColumn()->GetName().c_str());
 
-                nativeSqlSnippets.push_back(str); 
+                nativeSqlSnippets.push_back(str);
                 return ECSqlStatus::Success;
                 }
             }
@@ -244,7 +245,7 @@ ECSqlStatus ECSqlPropertyNameExpPreparer::PrepareRelConstraintClassIdPropMap(Nat
     NativeSqlBuilder selectSql;
     if (ecsqlType == ECSqlType::Delete || ecsqlType == ECSqlType::Update)
         {
-        if (columnVisitor.AllColumnsAreVirtual())
+        if (columnVisitor.ContainsVirtualColumns() == GetColumnsPropertyMapVisitor::ContainsState::All)
             selectSql.Append(propMap.GetDefaultECClassId());
         else
             selectSql.Append(classIdentifier, columnVisitor.GetSingleColumn()->GetName().c_str());

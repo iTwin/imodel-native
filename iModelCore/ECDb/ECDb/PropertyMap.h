@@ -148,6 +148,13 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         virtual ~PropertyMap() {}
 
         Type GetType() const { return m_type; }
+        
+        template <typename TPropertyMap>
+        TPropertyMap const* GetAs() const
+            {
+            BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr);
+            return static_cast<TPropertyMap const*> (this);
+            }
 
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
         
@@ -183,16 +190,9 @@ ENUM_IS_FLAGS(PropertyMap::Type);
 //+===============+===============+===============+===============+===============+======
 struct DataPropertyMap : PropertyMap
     {
-    enum class OverflowState
-        {
-        No = 0,
-        Yes = 1,
-        Mix= 2 
-        };
     private:
         virtual DbTable const& _GetTable() const = 0;
         virtual bool _IsMappedToTable(DbTable const& table) const override { return &GetTable() == &table; }
-        virtual OverflowState _GetOverflowState() const = 0;
 
     protected:
         DataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty) : PropertyMap(kind, classMap, ecProperty) {}
@@ -204,7 +204,6 @@ struct DataPropertyMap : PropertyMap
 
     public:
         ~DataPropertyMap() {}
-        OverflowState GetOverflowState() const { return _GetOverflowState(); }
         DbTable const& GetTable() const { return _GetTable(); }
         //! create copy of the this property map with new context classmap
         RefCountedPtr<DataPropertyMap> CreateCopy(ClassMap const& newClassMapContext) const;
@@ -221,7 +220,7 @@ struct CompoundDataPropertyMap : DataPropertyMap
  
     private:
         virtual DbTable const& _GetTable() const override;
-        virtual OverflowState _GetOverflowState() const override;
+
     protected:
         bvector<DataPropertyMap const*> m_list;
         CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
@@ -252,7 +251,6 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
         DbColumn const& m_column;
         virtual DbTable const& _GetTable() const override { return m_column.GetTable(); }
         virtual BentleyStatus _AcceptVisitor(IPropertyMapVisitor const& visitor)  const override { return visitor.Visit(*this); }
-        virtual OverflowState _GetOverflowState() const override { return Enum::Intersects(m_column.GetKind(), DbColumn::Kind::OverflowSlave) ? OverflowState::Yes : OverflowState::No; }
         virtual DbColumn::Type _GetPersistenceDataType() const = 0;
 
     protected:
@@ -265,7 +263,6 @@ struct SingleColumnDataPropertyMap : DataPropertyMap
     public:       
         virtual ~SingleColumnDataPropertyMap() {}
         DbColumn const& GetColumn() const { return m_column; }
-
         DbColumn::Type GetPersistenceDataType() const { return _GetPersistenceDataType(); }
     };
 

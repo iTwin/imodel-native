@@ -60,15 +60,15 @@ void DbColumnFactory::Initialize()
                     continue;
                 }
 
-            SingleColumnDataPropertyMap const* dataPropertyMap = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
-            auto columnItor = m_usedColumnMap.find(propertyMap->GetAccessString());
+            SingleColumnDataPropertyMap const* singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+            auto columnItor = m_usedColumnMap.find(singleColDataPropertyMap->GetAccessString());
             if (columnItor != m_usedColumnMap.end())
                 {
-                if (columnItor->second.find(&dataPropertyMap->GetColumn()) != columnItor->second.end())
+                if (columnItor->second.find(&singleColDataPropertyMap->GetColumn()) != columnItor->second.end())
                     continue;
                 }
 
-            AddColumnToCache(dataPropertyMap->GetColumn(), dataPropertyMap->GetAccessString());
+            AddColumnToCache(singleColDataPropertyMap->GetColumn(), singleColDataPropertyMap->GetAccessString());
             }
         }
     }

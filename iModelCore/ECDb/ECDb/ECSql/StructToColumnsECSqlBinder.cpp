@@ -26,7 +26,7 @@ BentleyStatus StructToColumnsECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    StructPropertyMap const* structPropMap = static_cast<StructPropertyMap const*> (typeInfo.GetPropertyMap());
+    StructPropertyMap const* structPropMap = typeInfo.GetPropertyMap()->GetAs<StructPropertyMap>();
 
     int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order

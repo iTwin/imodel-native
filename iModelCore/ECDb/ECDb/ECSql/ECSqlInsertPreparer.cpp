@@ -227,8 +227,8 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
         for (PropertyMap const* childPropertyMap : visitor.Results())
             {
-            SingleColumnDataPropertyMap const* childDataPropertyMap = static_cast<SingleColumnDataPropertyMap const*>(childPropertyMap);
-            if (childDataPropertyMap->GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+            SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
+            if (childDataPropertyMap->GetColumn().IsOverflowSlave())
                 {
                 insertSqlSnippets.m_overflowPropertyComponentIndexes[index].push_back(component);
                 insertSqlSnippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);

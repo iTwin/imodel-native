@@ -102,11 +102,11 @@ bool ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, Utf8StringCR ecsqlPar
 //---------------------------------------------------------------------------------------
 ECSqlStatus ECSqlParameterMap::TryGetBinder(ECSqlBinder*& binder, int ecsqlParameterIndex) const
     {
-    if (ecsqlParameterIndex <= 0 || ecsqlParameterIndex > static_cast<int> (m_binders.size()))
+    if (ecsqlParameterIndex <= 0 || ecsqlParameterIndex > (int) (m_binders.size()))
         return ECSqlStatus::Error;
 
     //parameter indices are 1-based, but stored in a 0-based vector.
-    binder = m_binders[static_cast<size_t> (ecsqlParameterIndex - 1)];
+    binder = m_binders[(size_t) (ecsqlParameterIndex - 1)];
     return ECSqlStatus::Success;
     }
 
@@ -210,14 +210,14 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                     }
                 else
                     {
-                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                    ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int)(param->GetIndex()));
                     if (st != ECSqlStatus::Success)
                         {
                         BeAssert(false && "Programmer Error: Parameter order is not correct.");
                         return st;
                         }
 
-                    st = TryGetBinder(cbinder, static_cast<int>(orignalParam->GetIndex()));
+                    st = TryGetBinder(cbinder, (int) (orignalParam->GetIndex()));
                     if (st != ECSqlStatus::Success)
                         {
                         BeAssert(false && "Programmer Error: Failed to find named parameter in secondary");
@@ -231,14 +231,14 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
                 }
             else
                 {
-                ECSqlStatus st = baseParameterMap.TryGetBinder(binder, static_cast<int>(param->GetIndex()));
+                ECSqlStatus st = baseParameterMap.TryGetBinder(binder, (int) (param->GetIndex()));
                 if (st != ECSqlStatus::Success)
                     {
                     BeAssert(false && "Programmer Error: Parameter order is not correct.");
                     return st;
                     }
 
-                AddProxyBinder(static_cast<int>(orignalParam->GetIndex()), *binder, orignalParam->GetName());
+                AddProxyBinder((int) (orignalParam->GetIndex()), *binder, orignalParam->GetName());
                 }
             }
         }
@@ -262,7 +262,7 @@ ECSqlStatus ECSqlParameterMap::RemapForJoinTable(ECSqlPrepareContext& ctx)
             return ECSqlStatus::Error;
             }
         if (abinder != nullptr && bbinder == nullptr)
-            AddProxyBinder(static_cast<int>(param->GetIndex()), *abinder, param->GetName());
+            AddProxyBinder((int) (param->GetIndex()), *abinder, param->GetName());
         }
 
     return ECSqlStatus::Success;

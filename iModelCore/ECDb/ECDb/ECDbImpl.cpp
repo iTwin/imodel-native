@@ -377,7 +377,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
         return ERROR;
         }
 
-    PrimitivePropertyMap const* primPropMap = static_cast<PrimitivePropertyMap const*> (propMap);
+    PrimitivePropertyMap const* primPropMap = propMap->GetAs<PrimitivePropertyMap>();
     DbColumn const& col = primPropMap->GetColumn();
 
     if (col.IsOverflowSlave())

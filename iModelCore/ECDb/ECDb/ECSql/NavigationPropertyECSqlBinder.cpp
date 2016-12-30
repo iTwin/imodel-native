@@ -31,7 +31,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
         return ERROR;
         }
 
-    NavigationPropertyMap const* navPropMap = static_cast<NavigationPropertyMap const*> (typeInfo.GetPropertyMap());
+    NavigationPropertyMap const* navPropMap = typeInfo.GetPropertyMap()->GetAs<NavigationPropertyMap>();
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
