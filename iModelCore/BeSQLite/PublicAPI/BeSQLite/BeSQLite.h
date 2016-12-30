@@ -898,7 +898,7 @@ public:
     //! @see sqlite3_blob_open
     BE_SQLITE_EXPORT DbResult Open(DbR db, Utf8CP tableName, Utf8CP columnName, uint64_t row, bool writable, Utf8CP dbName=0);
 
-    //! Move and existing opened BlobIO to a new row in the same table.
+    //! Move an existing opened BlobIO to a new row in the same table.
     //! @param[in] row The new rowId
     //! @return BE_SQLITE_OK on success, error status otherwise.
     //! @see sqlite3_blob_reopen
@@ -2722,7 +2722,15 @@ public:
     //! change the size of a blob.
     //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
     BE_SQLITE_EXPORT BentleyStatus SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_t rowId);
-};
+
+    //! Save this compressed value as a blob in a Db.
+    //! @remarks Opening and destroying the BlobIO handle must be done by the caller.
+    //! @param[in] blobIO the BlobIO handle used to write the BLOB to the SQLite database. It must already be opened in read-write mode.
+    //! @note The cell in the db to which @p blobIO points to must be an existing blob of #GetCompressedSize bytes. This method cannot be used to
+    //! change the size of a blob.
+    //! @see sqlite3_blob_open, sqlite3_blob_write, sqlite3_blob_close
+    BE_SQLITE_EXPORT BentleyStatus SaveToRow(BlobIO& blobIO);
+    };
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   07/12

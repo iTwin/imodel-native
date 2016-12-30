@@ -3117,29 +3117,40 @@ void SnappyToBlob::Finish()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SnappyToBlob::SaveToRow(DbR db, Utf8CP tableName, Utf8CP column, int64_t rowId)
     {
-    Finish();
-
     BlobIO blobIO;
-    StatusInt status = blobIO.Open(db, tableName, column, rowId, true);
+    DbResult status = blobIO.Open(db, tableName, column, rowId, true);
     if (BE_SQLITE_OK != status)
         {
-        BeAssert(0);
-        return  ERROR;
+        BeAssert(false);
+        return ERROR;
         }
 
+    return SaveToRow(blobIO);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/10
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SnappyToBlob::SaveToRow(BlobIO& io)
+    {
+    if (!io.IsValid())
+        return ERROR;
+
+    Finish();
+
     int offset = 0;
-    for (uint32_t i=0; i< m_currChunk; ++i)
+    for (uint32_t i = 0; i< m_currChunk; ++i)
         {
-        status = blobIO.Write(m_chunks[i]->m_data, m_chunks[i]->GetChunkSize(), offset);
+        DbResult status = io.Write(m_chunks[i]->m_data, m_chunks[i]->GetChunkSize(), offset);
         if (BE_SQLITE_OK != status)
             {
-            BeAssert(0);
+            BeAssert(false);
             break;
             }
         offset += m_chunks[i]->GetChunkSize();
         }
 
-    return  SUCCESS;
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
