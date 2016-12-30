@@ -23,6 +23,8 @@ struct SystemPropertyMap : PropertyMap
                 : SingleColumnDataPropertyMap(Type::SystemPerTablePrimitive, parentPropertyMap, ecProperty, column, false)
                 {}
 
+            virtual DbColumn::Type _GetPersistenceDataType() const override { return DbColumn::Type::Integer; }
+
         public:
             virtual ~PerTablePrimitivePropertyMap() {}
 

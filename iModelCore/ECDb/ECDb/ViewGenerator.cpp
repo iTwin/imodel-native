@@ -1310,7 +1310,7 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyM
         }
 
     BeAssert(propertyMap.GetOverflowState() == DataPropertyMap::OverflowState::Yes);
-    const bool addBase64ToBlobFunc = !m_forECClassView && (propertyMap.GetType() == PropertyMap::Type::PrimitiveArray || (propertyMap.GetType() == PropertyMap::Type::Primitive && propertyMap.GetProperty().GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary));
+    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetPersistenceDataType() == DbColumn::Type::Blob;
 
     if (addBase64ToBlobFunc)
         sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");

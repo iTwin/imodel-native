@@ -170,14 +170,14 @@ DataPropertyMap::OverflowState CompoundDataPropertyMap::_GetOverflowState() cons
         {
         OverflowState childState = child->GetOverflowState();
         if (childState == OverflowState::Mix)
-            return  OverflowState::Mix;
+            return OverflowState::Mix;
 
         if (childState == OverflowState::Yes)
             {
             if (state.IsValid())
                 {
                 if (state == OverflowState::No)
-                    return   OverflowState::Mix;
+                    return OverflowState::Mix;
                 }
             else
                 state = OverflowState::Yes;
@@ -187,7 +187,7 @@ DataPropertyMap::OverflowState CompoundDataPropertyMap::_GetOverflowState() cons
             if (state.IsValid())
                 {
                 if (state == OverflowState::Yes)
-                    return   OverflowState::Mix;
+                    return OverflowState::Mix;
                 }
             else
                 state = OverflowState::No;

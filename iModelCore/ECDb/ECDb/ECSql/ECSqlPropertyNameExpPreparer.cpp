@@ -102,14 +102,10 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         if (currentScopeECSqlType == ECSqlType::Insert)
             {
             if (ECDbSystemSchemaHelper::Equals(ctx.GetECDb().Schemas(), propertyMap.GetProperty(), ECSqlSystemPropertyInfo::Class::ECClassId))
-                {
                 return true;
-                }
 
             if (propertyMap.IsData())
-                {
                 return static_cast<DataPropertyMap const&>(propertyMap).GetOverflowState() == DataPropertyMap::OverflowState::Yes;
-                }
 
             return false;
             }
@@ -117,9 +113,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         if (currentScopeECSqlType == ECSqlType::Update)
             {
             if (propertyMap.IsData() && static_cast<DataPropertyMap const&>(propertyMap).GetOverflowState() == DataPropertyMap::OverflowState::Yes)
-                {
                 return true;
-                }
             }
 
         switch (currentScope.GetExp().GetType())

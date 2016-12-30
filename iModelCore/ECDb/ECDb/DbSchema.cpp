@@ -1559,12 +1559,15 @@ DbColumn::Type DbColumn::PrimitiveTypeToColumnType(ECN::PrimitiveType type)
     switch (type)
         {
             case ECN::PrimitiveType::PRIMITIVETYPE_Binary:
-            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:;
+            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:
                 return DbColumn::Type::Blob;
+
             case ECN::PrimitiveType::PRIMITIVETYPE_Boolean:
                 return DbColumn::Type::Boolean;
+
             case ECN::PrimitiveType::PRIMITIVETYPE_DateTime:
                 return DbColumn::Type::TimeStamp;
+
             case ECN::PrimitiveType::PRIMITIVETYPE_Double:
                 return DbColumn::Type::Real;
 

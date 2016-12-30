@@ -3399,6 +3399,82 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
     ASSERT_EQ(2, rowCount);
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GeometryAndOverflowColumns)
+    {
+    ECDbCR ecdb = SetupECDb("ecsql_geometry.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Element">
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns='ECDbMap.02.00'>
+                                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns='ECDbMap.02.00'>
+                                        <SharedColumnCount>3</SharedColumnCount>
+                                    </ShareColumns>
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECArrayProperty propertyName="GeomArray" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Geom_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECArrayProperty propertyName="GeomArray_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    std::vector<IGeometryPtr> expectedGeoms {IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))),
+        IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(1.0, 1.0, 1.0, 2.0, 2.0, 2.0))),
+        IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(2.0, 2.0, 2.0, 3.0, 3.0, 3.0)))};
+
+    IGeometryPtr expectedGeomSingle = expectedGeoms[0];
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Element(Geom,GeomArray,Geom_Overflow,GeomArray_Overflow) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
+    IECSqlArrayBinder& arrayBinder = statement.BindArray(2, 3);
+    for (IGeometryPtr& geom : expectedGeoms)
+        {
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        }
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(3, *expectedGeomSingle));
+    IECSqlArrayBinder& arrayBinder2 = statement.BindArray(4, 3);
+    for (IGeometryPtr& geom : expectedGeoms)
+        {
+        IECSqlBinder& arrayElementBinder = arrayBinder2.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key)) << statement.GetECSql() << " " << statement.GetNativeSql();
+    }
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Geom,GeomArray,Geom_Overflow,GeomArray_Overflow FROM ts.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << statement.GetECSql();
+
+    AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(0), "Geometry property");
+    size_t arrayIndex = 0;
+    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(1))
+        {
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property");
+        arrayIndex++;
+        }
+    AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(2), "Geometry property overflow");
+    arrayIndex = 0;
+    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(3))
+        {
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property overflow");
+        arrayIndex++;
+        }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  06/15
 //+---------------+---------------+---------------+---------------+---------------+------
