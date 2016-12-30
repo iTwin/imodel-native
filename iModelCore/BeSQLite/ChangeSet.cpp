@@ -492,6 +492,9 @@ Utf8String Changes::Change::FormatPrimarykeyColumns(bool isInsert, int detailLev
     int npcols;
     GetPrimaryKeyColumns(&pcols, &npcols);
 
+    if (!pcols)
+        return "";
+
     Utf8String pcolstr;
     for (int i=0; i<npcols; ++i)
         {
@@ -530,7 +533,7 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
         tablesSeen.insert(tableName);
         }
 
-    LOG.infov("key=%s ", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
+    LOG.infov("key=%s", FormatPrimarykeyColumns((DbOpcode::Insert == opcode), detailLevel).c_str());
 
     bvector<Utf8String> columnNames;
     db.GetColumns(columnNames, tableName);
@@ -538,15 +541,15 @@ void Changes::Change::Dump(Db const& db, bool isPatchSet, bset<Utf8String>& tabl
     switch (opcode)
         {
         case DbOpcode::Delete:
-            LOG.infov("DELETE ");
+            LOG.infov("DELETE (%s)", indirect ? "indirect" : "direct");
             DumpColumns(0, nCols-1, Stage::Old, columnNames, detailLevel);
             break;
         case DbOpcode::Insert:
-            LOG.infov("INSERT ");
+            LOG.infov("INSERT (%s)", indirect ? "indirect" : "direct");
             DumpColumns(0, nCols-1, Stage::New, columnNames, detailLevel);
             break;
         case DbOpcode::Update:
-            LOG.infov("UPDATE ");
+            LOG.infov("UPDATE (%s)", indirect ? "indirect" : "direct");
             if (!isPatchSet)
                 {
                 LOG.infov("old: ");
