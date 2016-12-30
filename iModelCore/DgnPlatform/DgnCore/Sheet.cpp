@@ -156,9 +156,8 @@ double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedB
         BeAssert(false);
         return 1.0;
         }
-    auto viewExtents = viewDef->GetExtents();
 
-    return viewExtents.x / placement.GetWidth();
+    return viewDef->GetExtents().x / placement.GetWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
