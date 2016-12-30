@@ -502,6 +502,8 @@ struct Root : TileTree::Root
     uint32_t m_maxPixelSize;   //! the maximum size, in pixels, that the radius of the diagonal of the tile should stretched to. If the tile's size on screen is larger than this, use its children.
     ClipVectorCPtr m_clip;     //! clip volume applied to tiles, in tile coordinates
 
+    virtual ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+
     uint32_t GetMaxPixelSize() const {return m_maxPixelSize;}
     Root(DgnDbR, TransformCR location, Utf8CP rootUrl, Render::SystemP system, uint8_t maxZoom, uint32_t maxSize, double transparency=0.0);
 };

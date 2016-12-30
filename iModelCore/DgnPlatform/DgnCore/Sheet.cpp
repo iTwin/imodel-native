@@ -346,9 +346,6 @@ bool Attachment::Tree::Pick(PickContext& context)
     if (context.WasAborted())
         return true;
 
-    if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
-        return false;
-
     Transform sheetToTile;
     sheetToTile.InverseOf(GetLocation());
     Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
