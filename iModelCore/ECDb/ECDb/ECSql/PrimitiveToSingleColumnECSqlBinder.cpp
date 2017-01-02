@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveToSingleColumnECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -105,6 +105,14 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindZeroBlob(int blobSize)
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
         return stat;
+
+    PropertyMap const* propMap = GetTypeInfo().GetPropertyMap();
+    BeAssert(propMap == nullptr || Enum::Contains(PropertyMap::Type::SingleColumnData, propMap->GetType()));
+    if (propMap != nullptr && propMap->GetAs<PrimitivePropertyMap>()->GetColumn().IsInOverflow())
+        {
+        GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot call BindZeroBlob for ECProperty that maps into the overflow column.");
+        return ECSqlStatus::Error;
+        }
 
     std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
     if (ehs != nullptr)

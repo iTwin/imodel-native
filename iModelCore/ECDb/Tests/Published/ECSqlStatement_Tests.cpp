@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatement_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -4153,11 +4153,14 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>3</SharedColumnCount>
+                                        <SharedColumnCount>6</SharedColumnCount>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
                                 <ECProperty propertyName="Prop2" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Prop3" typeName="String" />
+                                <ECArrayProperty propertyName="Prop4" typeName="Binary" />
+                                <ECStructArrayProperty propertyName="Prop5" typeName="ecdbmap:DbIndex" />
                                 <ECProperty propertyName="Prop1_Overflow" typeName="Binary" />
                                 <ECProperty propertyName="Prop2_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
                               </ECEntityClass>
@@ -4165,14 +4168,14 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Element(Prop1,Prop2,Prop1_Overflow,Prop2_Overflow) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Element(Prop1,Prop2,Prop3,Prop4,Prop5,Prop1_Overflow,Prop2_Overflow) VALUES(?,?,?,?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(2, 10)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql();
-
-    //ECInstanceKey key;
-    //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql() << "BindZeroBlob against string prop is ok as blob and strings are compatible in SQLite";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql() << "BindZeroBlob against prim array is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(5, 10)) << stmt.GetECSql() << "BindZeroBlob against struct array is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(6, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(7, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4313,7 +4316,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     ECInstanceKey key;
         {
         ECSqlStatement stmt;
-        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroblob is not supported for overflow columns.
+        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroBlob is not supported for overflow columns.
         //But as we want to test the error handling of OpenBlobIO this is sufficient.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow) VALUES(zeroblob(10),?,zeroblob(10))"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
