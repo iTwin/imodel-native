@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $
+|     $Source: ECDb/ECSql/PrimitiveArrayECSqlField.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
+PrimitiveArrayECSqlField::PrimitiveArrayECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex, ECClassCR primitiveArraySystemClass)
     : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_primitiveArraySystemClass(primitiveArraySystemClass), m_sqliteColumnIndex(sqliteColumnIndex), m_arrayElement(*ecsqlStatement.GetECDb())
     {
     //for empty arrays we cache some information so that we don't have to compute it for each step
@@ -53,7 +53,7 @@ PrimitiveArrayMappedToSingleColumnECSqlField::PrimitiveArrayMappedToSingleColumn
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterStep()
+ECSqlStatus PrimitiveArrayECSqlField::_OnAfterStep()
     {
     OnAfterReset();
 
@@ -100,7 +100,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterReset()
+ECSqlStatus PrimitiveArrayECSqlField::_OnAfterReset()
     {
     DoReset();
     return ECSqlStatus::Success;
@@ -109,7 +109,7 @@ ECSqlStatus PrimitiveArrayMappedToSingleColumnECSqlField::_OnAfterReset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void PrimitiveArrayMappedToSingleColumnECSqlField::DoReset() const
+void PrimitiveArrayECSqlField::DoReset() const
     {
     m_arrayElement.Reset();
     m_currentArrayIndex = -1;
@@ -118,7 +118,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::DoReset() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-void PrimitiveArrayMappedToSingleColumnECSqlField::_MoveNext(bool onInitializingIterator) const
+void PrimitiveArrayECSqlField::_MoveNext(bool onInitializingIterator) const
     {
     if (onInitializingIterator)
         DoReset();
@@ -140,7 +140,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::_MoveNext(bool onInitializing
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-bool PrimitiveArrayMappedToSingleColumnECSqlField::_IsAtEnd() const
+bool PrimitiveArrayECSqlField::_IsAtEnd() const
     {
     return m_currentArrayIndex >= _GetArrayLength();
     }
@@ -148,7 +148,7 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::_IsAtEnd() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlValue const* PrimitiveArrayMappedToSingleColumnECSqlField::_GetCurrent() const
+IECSqlValue const* PrimitiveArrayECSqlField::_GetCurrent() const
     {
     BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength());
     return &m_arrayElement;
@@ -157,7 +157,7 @@ IECSqlValue const* PrimitiveArrayMappedToSingleColumnECSqlField::_GetCurrent() c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-int PrimitiveArrayMappedToSingleColumnECSqlField::_GetArrayLength() const
+int PrimitiveArrayECSqlField::_GetArrayLength() const
     {
     return m_arrayInfo.GetCount();
     }
@@ -166,7 +166,7 @@ int PrimitiveArrayMappedToSingleColumnECSqlField::_GetArrayLength() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPrimitive() const
+IECSqlPrimitiveValue const& PrimitiveArrayECSqlField::_GetPrimitive() const
     {
     ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
@@ -175,7 +175,7 @@ IECSqlPrimitiveValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetPr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetStruct() const
+IECSqlStructValue const& PrimitiveArrayECSqlField::_GetStruct() const
     {
     ReportError(ECSqlStatus::Error, "GetStruct cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton().GetStruct();
@@ -184,7 +184,7 @@ IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::_GetStruc
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-IECInstanceCP PrimitiveArrayMappedToSingleColumnECSqlField::GetArrayValueECInstance() const
+IECInstanceCP PrimitiveArrayECSqlField::GetArrayValueECInstance() const
     {
     return m_arrayValueECInstance.get();
     }
@@ -194,7 +194,7 @@ IECInstanceCP PrimitiveArrayMappedToSingleColumnECSqlField::GetArrayValueECInsta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Init(ECSqlColumnInfoCR parentColumnInfo)
+void PrimitiveArrayECSqlField::ArrayElementValue::Init(ECSqlColumnInfoCR parentColumnInfo)
     {
     m_columnInfo = ECSqlColumnInfo::CreateForArrayElement(parentColumnInfo, -1);
     }
@@ -202,7 +202,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Init(ECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::SetValue(IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata)
+BentleyStatus PrimitiveArrayECSqlField::ArrayElementValue::SetValue(IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata)
     {
     auto status = instance.GetValue(m_value, 1, arrayIndex);
     if (status != ECObjectsStatus::Success)
@@ -231,7 +231,7 @@ BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::S
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-void const* PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBlob(int* blobSize) const
+void const* PrimitiveArrayECSqlField::ArrayElementValue::_GetBlob(int* blobSize) const
     {
     if (!CanRead(PRIMITIVETYPE_Binary))
         return NoopECSqlValue::GetSingleton().GetBlob(blobSize);
@@ -246,7 +246,7 @@ void const* PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_Ge
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBoolean() const
+bool PrimitiveArrayECSqlField::ArrayElementValue::_GetBoolean() const
     {
     if (!CanRead(PRIMITIVETYPE_Boolean))
         return NoopECSqlValue::GetSingleton().GetBoolean();
@@ -257,7 +257,7 @@ bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetBoolea
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
+uint64_t PrimitiveArrayECSqlField::ArrayElementValue::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     if (!CanRead(PRIMITIVETYPE_DateTime))
         return NoopECSqlValue::GetSingleton().GetDateTimeJulianDaysMsec(metadata);
@@ -269,7 +269,7 @@ uint64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      09/2015
 //---------------------------------------------------------------------------------------
-double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+double PrimitiveArrayECSqlField::ArrayElementValue::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
     const uint64_t jdMsec = _GetDateTimeJulianDaysMsec(metadata);
     return DateTime::MsecToRationalDay(jdMsec);
@@ -278,7 +278,7 @@ double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDate
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDouble() const
+double PrimitiveArrayECSqlField::ArrayElementValue::_GetDouble() const
     {
     if (!CanRead(PRIMITIVETYPE_Double))
         return NoopECSqlValue::GetSingleton().GetDouble();
@@ -289,7 +289,7 @@ double PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetDoub
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-int PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt() const
+int PrimitiveArrayECSqlField::ArrayElementValue::_GetInt() const
     {
     if (!CanRead(PRIMITIVETYPE_Integer))
         return NoopECSqlValue::GetSingleton().GetInt();
@@ -300,7 +300,7 @@ int PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt() c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-int64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt64() const
+int64_t PrimitiveArrayECSqlField::ArrayElementValue::_GetInt64() const
     {
     if (!CanRead(PRIMITIVETYPE_Long))
         return NoopECSqlValue::GetSingleton().GetInt64();
@@ -311,7 +311,7 @@ int64_t PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetInt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-Utf8CP PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetText() const
+Utf8CP PrimitiveArrayECSqlField::ArrayElementValue::_GetText() const
     {
     if (!CanRead(PRIMITIVETYPE_String))
         return NoopECSqlValue::GetSingleton().GetText();
@@ -322,7 +322,7 @@ Utf8CP PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetText
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-DPoint2d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPoint2d() const
+DPoint2d PrimitiveArrayECSqlField::ArrayElementValue::_GetPoint2d() const
     {
     if (!CanRead(PRIMITIVETYPE_Point2d))
         return NoopECSqlValue::GetSingleton().GetPoint2d();
@@ -333,7 +333,7 @@ DPoint2d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-DPoint3d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPoint3d() const
+DPoint3d PrimitiveArrayECSqlField::ArrayElementValue::_GetPoint3d() const
     {
     if (!CanRead(PRIMITIVETYPE_Point3d))
         return NoopECSqlValue::GetSingleton().GetPoint3d();
@@ -345,7 +345,7 @@ DPoint3d PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetPo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
-IGeometryPtr PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetGeometry() const
+IGeometryPtr PrimitiveArrayECSqlField::ArrayElementValue::_GetGeometry() const
     {
     if (!CanRead(PRIMITIVETYPE_IGeometry))
         return NoopECSqlValue::GetSingleton().GetGeometry();
@@ -356,7 +356,7 @@ IGeometryPtr PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_G
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetStruct() const
+IECSqlStructValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetStruct() const
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetStruct cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton().GetStruct();
@@ -365,7 +365,7 @@ IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElem
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-IECSqlArrayValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetArray() const
+IECSqlArrayValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetArray() const
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton().GetArray();
@@ -374,7 +374,7 @@ IECSqlArrayValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayEleme
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
-void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Reset()
+void PrimitiveArrayECSqlField::ArrayElementValue::Reset()
     {
     m_value.Clear();
     }
@@ -382,7 +382,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Reset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      10/2013
 //---------------------------------------------------------------------------------------
-bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::CanRead(PrimitiveType requestedType) const
+bool PrimitiveArrayECSqlField::ArrayElementValue::CanRead(PrimitiveType requestedType) const
     {
     const PrimitiveType fieldType = m_columnInfo.GetDataType().GetPrimitiveType();
 

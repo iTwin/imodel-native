@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h $
+|     $Source: ECDb/ECSql/PrimitiveArrayECSqlField.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveArrayMappedToSingleColumnECSqlField : public ECSqlField, public IECSqlArrayValue
+struct PrimitiveArrayECSqlField : public ECSqlField, public IECSqlArrayValue
     {
 private:
     struct ArrayElementValue : public IECSqlValue, IECSqlPrimitiveValue
@@ -88,8 +88,8 @@ private:
     ECN::IECInstanceCP GetArrayValueECInstance() const;
 
 public:
-    PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
-    ~PrimitiveArrayMappedToSingleColumnECSqlField() {}
+    PrimitiveArrayECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
+    ~PrimitiveArrayECSqlField() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

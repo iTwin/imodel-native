@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlFieldFactory.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -130,7 +130,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
             int xColumnIndex = sqlColumnIndex++;
             int yColumnIndex = sqlColumnIndex++;
 
-            field = std::unique_ptr<ECSqlField>(new PointMappedToColumnsECSqlField(ecsqlStmt, ecsqlColumnInfo, xColumnIndex, yColumnIndex));
+            field = std::unique_ptr<ECSqlField>(new PointECSqlField(ecsqlStmt, ecsqlColumnInfo, xColumnIndex, yColumnIndex));
             break;
             }
             case PRIMITIVETYPE_Point3d:
@@ -139,11 +139,11 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveField(std::unique_ptr<ECSqlField>&
             int yColumnIndex = sqlColumnIndex++;
             int zColumnIndex = sqlColumnIndex++;
 
-            field = std::unique_ptr<ECSqlField>(new PointMappedToColumnsECSqlField(ecsqlStmt, ecsqlColumnInfo, xColumnIndex, yColumnIndex, zColumnIndex));
+            field = std::unique_ptr<ECSqlField>(new PointECSqlField(ecsqlStmt, ecsqlColumnInfo, xColumnIndex, yColumnIndex, zColumnIndex));
             break;
             }
             default:
-                field = std::unique_ptr<ECSqlField>(new PrimitiveMappedToSingleColumnECSqlField(ecsqlStmt, ecsqlColumnInfo, sqlColumnIndex++));
+                field = std::unique_ptr<ECSqlField>(new PrimitiveECSqlField(ecsqlStmt, ecsqlColumnInfo, sqlColumnIndex++));
                 break;
         }
 
@@ -195,7 +195,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveArrayField(std::unique_ptr<ECSqlFi
         return ECSqlStatus::Error;
         }
 
-    field = std::unique_ptr<ECSqlField>(new PrimitiveArrayMappedToSingleColumnECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++, *primArraySystemClass));
+    field = std::unique_ptr<ECSqlField>(new PrimitiveArrayECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++, *primArraySystemClass));
     return ECSqlStatus::Success;
     }
 
@@ -205,7 +205,7 @@ ECSqlStatus ECSqlFieldFactory::CreatePrimitiveArrayField(std::unique_ptr<ECSqlFi
 //static
 ECSqlStatus ECSqlFieldFactory::CreateStructArrayField(std::unique_ptr<ECSqlField>& field, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECSqlColumnInfo const& ecsqlColumnInfo)
     {
-    field = std::unique_ptr<ECSqlField>(new StructArrayJsonECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++));
+    field = std::unique_ptr<ECSqlField>(new StructArrayECSqlField(ctx.GetECSqlStatementR(), ecsqlColumnInfo, sqlColumnIndex++));
     return ECSqlStatus::Success;
     }
 
@@ -215,7 +215,7 @@ ECSqlStatus ECSqlFieldFactory::CreateStructArrayField(std::unique_ptr<ECSqlField
 //static
 ECSqlStatus ECSqlFieldFactory::CreateStructMemberFields(std::unique_ptr<ECSqlField>& structField, int& sqlColumnIndex, ECSqlPrepareContext& ctx, ECN::ECStructClassCR structType, ECSqlColumnInfo const& structFieldColumnInfo)
     {
-    std::unique_ptr<StructMappedToColumnsECSqlField> newStructField(new StructMappedToColumnsECSqlField(ctx.GetECSqlStatementR(), structFieldColumnInfo));
+    std::unique_ptr<StructECSqlField> newStructField(new StructECSqlField(ctx.GetECSqlStatementR(), structFieldColumnInfo));
 
     for (ECPropertyCP prop : structType.GetProperties())
         {

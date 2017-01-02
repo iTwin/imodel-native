@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.h $
+|     $Source: ECDb/ECSql/PrimitiveECSqlField.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveMappedToSingleColumnECSqlField : public ECSqlField, public IECSqlPrimitiveValue
+struct PrimitiveECSqlField : public ECSqlField, public IECSqlPrimitiveValue
     {
 private:
     int m_sqliteColumnIndex;
@@ -39,7 +39,7 @@ private:
     virtual IGeometryPtr _GetGeometry() const override;
 
 public:
-    PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
-    ~PrimitiveMappedToSingleColumnECSqlField() {}
+    PrimitiveECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
+    ~PrimitiveECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

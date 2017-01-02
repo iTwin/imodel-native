@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayJsonECSqlField.h $
+|     $Source: ECDb/ECSql/StructArrayECSqlField.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -128,7 +128,7 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      02/2016
 //+===============+===============+===============+===============+===============+======
-struct StructArrayJsonECSqlField : public ECSqlField
+struct StructArrayECSqlField : public ECSqlField
     {
 private:
     int m_sqliteColumnIndex;
@@ -148,8 +148,8 @@ private:
     void DoReset() const;
 
 public:
-    StructArrayJsonECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex);
-    ~StructArrayJsonECSqlField() {}
+    StructArrayECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex);
+    ~StructArrayECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

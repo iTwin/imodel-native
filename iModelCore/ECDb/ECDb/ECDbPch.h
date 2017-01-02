@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPch.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -68,11 +68,11 @@
 #include "ECSql/ECSqlStatementNoopImpls.h"
 #include "ECSql/ECSqlFieldFactory.h"
 #include "ECSql/ECSqlField.h"
-#include "ECSql/PrimitiveMappedToSingleColumnECSqlField.h"
-#include "ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h"
-#include "ECSql/PointMappedToColumnsECSqlField.h"
-#include "ECSql/StructMappedToColumnsECSqlField.h"
-#include "ECSql/StructArrayJsonECSqlField.h"
+#include "ECSql/PrimitiveECSqlField.h"
+#include "ECSql/PrimitiveArrayECSqlField.h"
+#include "ECSql/PointECSqlField.h"
+#include "ECSql/StructECSqlField.h"
+#include "ECSql/StructArrayECSqlField.h"
 #include "ECSql/NavigationPropertyECSqlField.h"
 #include "ECSql/ECSqlDeletePreparer.h"
 #include "ECSql/ECInstanceAdapterHelper.h"

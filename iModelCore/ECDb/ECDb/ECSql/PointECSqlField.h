@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.h $
+|     $Source: ECDb/ECSql/PointECSqlField.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct PointMappedToColumnsECSqlField : public ECSqlField, IECSqlPrimitiveValue
+struct PointECSqlField : public ECSqlField, IECSqlPrimitiveValue
     {
 private:
     int m_xColumnIndex;
@@ -43,9 +43,9 @@ private:
     bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
 public:
-    PointMappedToColumnsECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int xColumnIndex, int yColumnIndex, int zColumnIndex);
-    PointMappedToColumnsECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointMappedToColumnsECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
-    ~PointMappedToColumnsECSqlField() {}
+    PointECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int xColumnIndex, int yColumnIndex, int zColumnIndex);
+    PointECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
+    ~PointECSqlField() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 #
 #     $Source: ECDb/ECDb.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %include mdl.mki
@@ -107,11 +107,11 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
                 $(baseDir)ECSql/ECSqlField.h \
-                $(baseDir)ECSql/PointMappedToColumnsECSqlField.h \
-                $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h \
-                $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.h \
-                $(baseDir)ECSql/StructMappedToColumnsECSqlField.h \
-                $(baseDir)ECSql/StructArrayJsonECSqlField.h \
+                $(baseDir)ECSql/PointECSqlField.h \
+                $(baseDir)ECSql/PrimitiveArrayECSqlField.h \
+                $(baseDir)ECSql/PrimitiveECSqlField.h \
+                $(baseDir)ECSql/StructECSqlField.h \
+                $(baseDir)ECSql/StructArrayECSqlField.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlField.h \
                 $(baseDir)ECSql/ECInstanceAdapterHelper.h \
                 $(baseDir)DbSchema.h \
@@ -332,15 +332,15 @@ $(o)ECSqlField$(oext):                                        $(baseDir)ECSql/EC
 
 $(o)ECSqlFieldFactory$(oext):                                 $(baseDir)ECSql/ECSqlFieldFactory.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayMappedToSingleColumnECSqlField$(oext):      $(baseDir)ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveArrayECSqlField$(oext):                          $(baseDir)ECSql/PrimitiveArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveMappedToSingleColumnECSqlField$(oext):           $(baseDir)ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveECSqlField$(oext):                               $(baseDir)ECSql/PrimitiveECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PointMappedToColumnsECSqlField$(oext):                    $(baseDir)ECSql/PointMappedToColumnsECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PointECSqlField$(oext):                                   $(baseDir)ECSql/PointECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructMappedToColumnsECSqlField$(oext):                   $(baseDir)ECSql/StructMappedToColumnsECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructECSqlField$(oext):                                  $(baseDir)ECSql/StructECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayJsonECSqlField$(oext):                         $(baseDir)ECSql/StructArrayJsonECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructArrayECSqlField$(oext):                             $(baseDir)ECSql/StructArrayECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)NavigationPropertyECSqlField$(oext):                      $(baseDir)ECSql/NavigationPropertyECSqlField.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

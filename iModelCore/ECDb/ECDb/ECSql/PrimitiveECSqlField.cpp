@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp $
+|     $Source: ECDb/ECSql/PrimitiveECSqlField.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
+PrimitiveECSqlField::PrimitiveECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int columnIndex)
     : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_sqliteColumnIndex(columnIndex)
     {
     if (m_ecsqlColumnInfo.GetDataType().GetPrimitiveType() == PRIMITIVETYPE_DateTime)
@@ -38,7 +38,7 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* PrimitiveMappedToSingleColumnECSqlField::_GetBlob(int* blobSize) const
+void const* PrimitiveECSqlField::_GetBlob(int* blobSize) const
     {
     if (blobSize != nullptr)
         *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
@@ -49,7 +49,7 @@ void const* PrimitiveMappedToSingleColumnECSqlField::_GetBlob(int* blobSize) con
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+double PrimitiveECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
     const double jd = GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex);
     metadata = m_datetimeMetadata;
@@ -59,7 +59,7 @@ double PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDays(DateTime:
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
+uint64_t PrimitiveECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     const double jd = _GetDateTimeJulianDays(metadata);
     return DateTime::RationalDayToMsec(jd);
@@ -68,7 +68,7 @@ uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysMsec(Dat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
-IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
+IGeometryPtr PrimitiveECSqlField::_GetGeometry() const
     {
     int blobSize = -1;
     Byte const* blob = static_cast<Byte const*> (_GetBlob(&blobSize));
@@ -96,7 +96,7 @@ IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2d() const
+DPoint2d PrimitiveECSqlField::_GetPoint2d() const
     {
     ReportError(ECSqlStatus::Error, "GetPoint2d cannot be called for columns which are not of the Point2d type.");
     BeAssert(false && "GetPoint2d cannot be called for columns which are not of the Point2d type.");
@@ -106,7 +106,7 @@ DPoint2d PrimitiveMappedToSingleColumnECSqlField::_GetPoint2d() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3d() const
+DPoint3d PrimitiveECSqlField::_GetPoint3d() const
     {
     ReportError(ECSqlStatus::Error, "GetPoint3d cannot be called for columns which are not of the Point3d type.");
     BeAssert(false && "GetPoint3d cannot be called for columns which are not of the Point3d type.");
@@ -116,7 +116,7 @@ DPoint3d PrimitiveMappedToSingleColumnECSqlField::_GetPoint3d() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue const& PrimitiveMappedToSingleColumnECSqlField::_GetArray() const
+IECSqlArrayValue const& PrimitiveECSqlField::_GetArray() const
     {
     ReportError(ECSqlStatus::Error, "GetArray cannot be called for primitive columns.");
     BeAssert(false && "GetArray cannot be called for primitive columns.");
@@ -126,7 +126,7 @@ IECSqlArrayValue const& PrimitiveMappedToSingleColumnECSqlField::_GetArray() con
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructValue const& PrimitiveMappedToSingleColumnECSqlField::_GetStruct() const
+IECSqlStructValue const& PrimitiveECSqlField::_GetStruct() const
     {
     ReportError(ECSqlStatus::Error, "GetStruct cannot be called for primitive columns.");
     BeAssert(false && "GetStruct cannot be called for primitive columns.");

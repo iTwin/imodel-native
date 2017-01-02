@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PointMappedToColumnsECSqlField.cpp $
+|     $Source: ECDb/ECSql/PointECSqlField.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -12,14 +12,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-PointMappedToColumnsECSqlField::PointMappedToColumnsECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
+PointECSqlField::PointECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int xColumnIndex, int yColumnIndex, int zColumnIndex)
     : ECSqlField(ecsqlStatement, ecsqlColumnInfo, false, false), m_xColumnIndex(xColumnIndex), m_yColumnIndex(yColumnIndex), m_zColumnIndex(zColumnIndex)
     {}
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PointMappedToColumnsECSqlField::_IsNull() const
+bool PointECSqlField::_IsNull() const
     {
     //To be consistent with the ECSQL parser which translates "MyPoint IS NULL" to "MyPoint.X IS NULL *AND* MyPoint.Y IS NULL"
     //this method uses the same semantics.
@@ -31,7 +31,7 @@ bool PointMappedToColumnsECSqlField::_IsNull() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint2d PointMappedToColumnsECSqlField::_GetPoint2d() const
+DPoint2d PointECSqlField::_GetPoint2d() const
     {
     if (IsPoint3d())
         {
@@ -48,7 +48,7 @@ DPoint2d PointMappedToColumnsECSqlField::_GetPoint2d() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-DPoint3d PointMappedToColumnsECSqlField::_GetPoint3d() const
+DPoint3d PointECSqlField::_GetPoint3d() const
     {
     if (!IsPoint3d())
         {
@@ -68,7 +68,7 @@ DPoint3d PointMappedToColumnsECSqlField::_GetPoint3d() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-void const* PointMappedToColumnsECSqlField::_GetBlob(int* blobSize) const
+void const* PointECSqlField::_GetBlob(int* blobSize) const
     {
     ReportError(ECSqlStatus::Error, "GetBlob cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetBlob cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -78,7 +78,7 @@ void const* PointMappedToColumnsECSqlField::_GetBlob(int* blobSize) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-bool PointMappedToColumnsECSqlField::_GetBoolean() const
+bool PointECSqlField::_GetBoolean() const
     {
     ReportError(ECSqlStatus::Error, "GetBoolean cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetBoolean cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -88,7 +88,7 @@ bool PointMappedToColumnsECSqlField::_GetBoolean() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
+uint64_t PointECSqlField::_GetDateTimeJulianDaysMsec(DateTime::Info& metadata) const
     {
     ReportError(ECSqlStatus::Error, "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -98,7 +98,7 @@ uint64_t PointMappedToColumnsECSqlField::_GetDateTimeJulianDaysMsec(DateTime::In
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-double PointMappedToColumnsECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
+double PointECSqlField::_GetDateTimeJulianDays(DateTime::Info& metadata) const
     {
     ReportError(ECSqlStatus::Error, "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetDateTime cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -108,7 +108,7 @@ double PointMappedToColumnsECSqlField::_GetDateTimeJulianDays(DateTime::Info& me
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-double PointMappedToColumnsECSqlField::_GetDouble() const
+double PointECSqlField::_GetDouble() const
     {
     ReportError(ECSqlStatus::Error, "GetDouble cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetDouble cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -118,7 +118,7 @@ double PointMappedToColumnsECSqlField::_GetDouble() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-int PointMappedToColumnsECSqlField::_GetInt() const
+int PointECSqlField::_GetInt() const
     {
     ReportError(ECSqlStatus::Error, "GetInt cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetInt cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -128,7 +128,7 @@ int PointMappedToColumnsECSqlField::_GetInt() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-int64_t PointMappedToColumnsECSqlField::_GetInt64() const
+int64_t PointECSqlField::_GetInt64() const
     {
     ReportError(ECSqlStatus::Error, "GetInt64 cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetInt64 cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -138,7 +138,7 @@ int64_t PointMappedToColumnsECSqlField::_GetInt64() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-Utf8CP PointMappedToColumnsECSqlField::_GetText() const
+Utf8CP PointECSqlField::_GetText() const
     {
     ReportError(ECSqlStatus::Error, "GetText cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetText cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -148,7 +148,7 @@ Utf8CP PointMappedToColumnsECSqlField::_GetText() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-IGeometryPtr PointMappedToColumnsECSqlField::_GetGeometry() const
+IGeometryPtr PointECSqlField::_GetGeometry() const
     {
     ReportError(ECSqlStatus::Error, "GetGeometry cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetGeometry cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -158,7 +158,7 @@ IGeometryPtr PointMappedToColumnsECSqlField::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                       03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlPrimitiveValue const& PointMappedToColumnsECSqlField::_GetPrimitive() const
+IECSqlPrimitiveValue const& PointECSqlField::_GetPrimitive() const
     {
     return *this;
     }
@@ -166,7 +166,7 @@ IECSqlPrimitiveValue const& PointMappedToColumnsECSqlField::_GetPrimitive() cons
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-IECSqlArrayValue const& PointMappedToColumnsECSqlField::_GetArray() const
+IECSqlArrayValue const& PointECSqlField::_GetArray() const
     {
     ReportError(ECSqlStatus::Error, "GetArray cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetArray cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
@@ -176,7 +176,7 @@ IECSqlArrayValue const& PointMappedToColumnsECSqlField::_GetArray() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    06/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-IECSqlStructValue const& PointMappedToColumnsECSqlField::_GetStruct() const
+IECSqlStructValue const& PointECSqlField::_GetStruct() const
     {
     ReportError(ECSqlStatus::Error, "GetStruct cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
     BeAssert(false && "GetStruct cannot be called for Point2d or Point3d column. Call GetPoint2d / GetPoint3d instead.");
