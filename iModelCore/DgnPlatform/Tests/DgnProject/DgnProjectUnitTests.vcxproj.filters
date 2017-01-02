@@ -181,6 +181,9 @@
     <ClCompile Include="Published\ElementGeometry_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
+	<ClCompile Include="Published\Ecutils_Tests.cpp">
+	  <Filter>Published</Filter>
+    </ClCompile>
     <ClCompile Include="Published\ElementGroup_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
