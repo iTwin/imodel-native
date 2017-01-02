@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -338,10 +338,16 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             break;
             }
             case ECN::PRIMITIVETYPE_Binary:
+            case ECN::PRIMITIVETYPE_IGeometry:
             {
             int size = 0;
             const Byte* b = (const Byte *) value.GetBlob(&size);
-            val.SetBinary(b, size, false);
+
+            if (primitiveType == PRIMITIVETYPE_Binary)
+                val.SetBinary(b, (size_t) size, false);
+            else
+                val.SetIGeometry(b, (size_t) size, false);
+
             break;
             }
             case ECN::PRIMITIVETYPE_Point2d:
@@ -362,13 +368,6 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             const uint64_t jdMsec = value.GetDateTimeJulianDaysMsec(metadata);
             const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdMsec);
             val.SetDateTimeTicks(ceTicks, metadata);
-            break;
-            }
-            case ECN::PRIMITIVETYPE_IGeometry:
-            {
-            int bgfbSize = -1;
-            void const* bgfb = value.GetGeometryBlob(&bgfbSize);
-            val.SetBinary(static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
             break;
             }
         }

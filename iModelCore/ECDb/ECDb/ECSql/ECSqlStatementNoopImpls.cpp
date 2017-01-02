@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementNoopImpls.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -57,18 +57,6 @@ void const* NoopECSqlValue::_GetBlob(int* blobSize) const
 
     return nullptr;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      12/2013
-//---------------------------------------------------------------------------------------
-void const* NoopECSqlValue::_GetGeometryBlob(int* blobSize) const
-    {
-    if (blobSize != nullptr)
-        *blobSize = -1;
-
-    return nullptr;
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

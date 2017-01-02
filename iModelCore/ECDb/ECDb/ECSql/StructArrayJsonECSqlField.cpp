@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/StructArrayJsonECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -297,34 +297,15 @@ IGeometryPtr PrimitiveJsonECSqlValue::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* PrimitiveJsonECSqlValue::_GetGeometryBlob(int* blobSize) const
-    {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_IGeometry))
-        return NoopECSqlValue::GetSingleton().GetGeometryBlob(blobSize);
-
-    IGeometryPtr geom = _GetGeometry();
-
-    //As the API contract says that IECSqlValue owns the geometry blob, we need to cache the blob
-    //in this object
-    BentleyGeometryFlatBuffer::GeometryToBytes(*geom, m_blobCache);
-    if (m_blobCache.empty())
-        {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetGeometryBlob failed for '%s'. Invalid JSON format for IGeometry.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetGeometryBlob(blobSize);
-        }
-
-    return m_blobCache.data();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveJsonECSqlValue::CanCallGetFor(ECN::PrimitiveType getMethodType) const
     {
     const PrimitiveType actualDataType = GetColumnInfo().GetDataType().GetPrimitiveType();
+    if (getMethodType == PRIMITIVETYPE_Binary)
+        {
+        if (actualDataType == PRIMITIVETYPE_Binary || actualDataType == PRIMITIVETYPE_IGeometry)
+            return true;
+        }
+
     if (actualDataType != getMethodType)
         {
         Utf8String msg;

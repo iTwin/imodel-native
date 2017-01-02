@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlValue.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -135,14 +135,6 @@ IGeometryPtr IECSqlValue::GetGeometry() const
     return _GetPrimitive()._GetGeometry();
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 11/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-void const* IECSqlValue::GetGeometryBlob(int* blobSize) const
-    {
-    return _GetPrimitive()._GetGeometryBlob(blobSize);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Shaun.Sewall        10/2016
 //---------------------------------------------------------------------------------------
@@ -251,34 +243,12 @@ IECSqlArrayValue::const_iterator IECSqlArrayValue::end() const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator()
-    : m_arrayValue(nullptr)
-    {
-    BeAssert(IsEndIterator());
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
 IECSqlArrayValue::const_iterator::const_iterator(IECSqlArrayValue const& arrayValue)
     : m_arrayValue(&arrayValue)
     {
     BeAssert(!IsEndIterator());
     m_arrayValue->_MoveNext(true); //iterator points to first element, therefore call MoveNext to initialize the iterator
     }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::~const_iterator()
-    {}
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator(const_iterator const& rhs)
-    : m_arrayValue(rhs.m_arrayValue)
-    {}
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                 03/2014
@@ -291,15 +261,6 @@ IECSqlArrayValue::const_iterator& IECSqlArrayValue::const_iterator::operator= (c
         }
 
     return *this;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayValue::const_iterator::const_iterator(const_iterator&& rhs)
-    : m_arrayValue(std::move(rhs.m_arrayValue))
-    {
-    rhs.m_arrayValue = nullptr;
     }
 
 //--------------------------------------------------------------------------------------
@@ -357,28 +318,5 @@ bool IECSqlArrayValue::const_iterator::operator==(const_iterator const& rhs) con
     return operator*() == rhs.operator*();
     }
 
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlArrayValue::const_iterator::operator!=(const_iterator const& rhs) const
-    {
-    return !(*this == rhs);
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlArrayValue::const_iterator::IsAtEnd() const
-    {
-    return IsEndIterator() || m_arrayValue->_IsAtEnd();
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                 03/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-bool IECSqlArrayValue::const_iterator::IsEndIterator() const
-    {
-    return m_arrayValue == nullptr;
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

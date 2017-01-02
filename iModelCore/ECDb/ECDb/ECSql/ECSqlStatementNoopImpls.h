@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementNoopImpls.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -96,7 +96,6 @@ struct NoopECSqlValue : public IECSqlValue, IECSqlPrimitiveValue, IECSqlStructVa
         virtual DPoint2d _GetPoint2d() const override { return DPoint2d::From(0.0, 0.0); }
         virtual DPoint3d _GetPoint3d() const override { return DPoint3d::From(0.0, 0.0, 0.0); }
         virtual IGeometryPtr _GetGeometry() const override { return nullptr; }
-        virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
         //IECSqlStructValue
         virtual int _GetMemberCount() const override { return -1; }

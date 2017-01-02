@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/LightweightCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -135,7 +135,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         {
         ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
         BeAssert(!stmt->IsColumnNull(1));
-        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        const ECRelationshipEnd ecRelEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
+        RelationshipEnd end = ecRelEnd == ECRelationshipEnd_Source ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())
@@ -178,7 +179,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         {
         ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
         BeAssert(!stmt->IsColumnNull(1));
-        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        const ECRelationshipEnd ecRelEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
+        RelationshipEnd end = ecRelEnd == ECRelationshipEnd_Source ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto constraintIt = constraintClassIds.find(constraintClassId);
         if (constraintIt == constraintClassIds.end())

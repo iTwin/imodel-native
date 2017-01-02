@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -38,28 +38,12 @@ PrimitiveMappedToSingleColumnECSqlField::PrimitiveMappedToSingleColumnECSqlField
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       06/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-bool PrimitiveMappedToSingleColumnECSqlField::_IsNull() const
-    {
-    return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 void const* PrimitiveMappedToSingleColumnECSqlField::_GetBlob(int* blobSize) const
     {
     if (blobSize != nullptr)
         *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
     return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-bool PrimitiveMappedToSingleColumnECSqlField::_GetBoolean() const
-    {
-    return GetSqliteStatement().GetValueInt(m_sqliteColumnIndex) != 0;
     }
 
 //-----------------------------------------------------------------------------------------
@@ -81,45 +65,13 @@ uint64_t PrimitiveMappedToSingleColumnECSqlField::_GetDateTimeJulianDaysMsec(Dat
     return DateTime::RationalDayToMsec(jd);
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-double PrimitiveMappedToSingleColumnECSqlField::_GetDouble() const
-    {
-    return GetSqliteStatement().GetValueDouble(m_sqliteColumnIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int PrimitiveMappedToSingleColumnECSqlField::_GetInt() const
-    {
-    return GetSqliteStatement().GetValueInt(m_sqliteColumnIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-int64_t PrimitiveMappedToSingleColumnECSqlField::_GetInt64() const
-    {
-    return GetSqliteStatement().GetValueInt64(m_sqliteColumnIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       06/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP PrimitiveMappedToSingleColumnECSqlField::_GetText() const
-    {
-    return GetSqliteStatement().GetValueText(m_sqliteColumnIndex);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
 IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
     {
     int blobSize = -1;
-    Byte const* blob = static_cast<Byte const*> (_GetGeometryBlob(&blobSize));
+    Byte const* blob = static_cast<Byte const*> (_GetBlob(&blobSize));
     if (blob == nullptr)
         return nullptr;
 
@@ -137,17 +89,6 @@ IGeometryPtr PrimitiveMappedToSingleColumnECSqlField::_GetGeometry() const
     IGeometryPtr geom = BentleyGeometryFlatBuffer::BytesToGeometry(byteVec);
     BeAssert(geom != nullptr);
     return geom;
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-void const* PrimitiveMappedToSingleColumnECSqlField::_GetGeometryBlob(int* blobSize) const
-    {
-    if (blobSize != nullptr)
-        *blobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
-
-    return GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     }
 
 //**** No-op implementations

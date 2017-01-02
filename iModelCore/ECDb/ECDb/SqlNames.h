@@ -200,7 +200,4 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_String == 0x901, "Persisted Enum has changed: ECN::PrimitiveType.");
 
 
-
-
-
 END_BENTLEY_SQLITE_EC_NAMESPACE

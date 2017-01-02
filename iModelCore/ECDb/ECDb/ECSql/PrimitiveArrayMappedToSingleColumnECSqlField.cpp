@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -202,12 +202,7 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Init(ECSql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::SetValue
-(
-    IECInstanceCR instance,
-    uint32_t arrayIndex,
-    DateTime::Info const& dateTimeMetadata
-)
+BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::SetValue(IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata)
     {
     auto status = instance.GetValue(m_value, 1, arrayIndex);
     if (status != ECObjectsStatus::Success)
@@ -231,14 +226,6 @@ BentleyStatus PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::S
         }
 
     return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_IsNull() const
-    {
-    return m_value.IsNull();
     }
 
 //---------------------------------------------------------------------------------------
@@ -367,31 +354,6 @@ IGeometryPtr PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_G
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      11/2014
-//---------------------------------------------------------------------------------------
-void const* PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetGeometryBlob(int* blobSize) const
-    {
-    if (!CanRead(PRIMITIVETYPE_IGeometry))
-        return NoopECSqlValue::GetSingleton().GetGeometryBlob(blobSize);
-
-    //ECObjects handles geometries as blobs, and as primitive arrays in ECDb are stored as an ECInstance,
-    //we can call _GetBinary to retrieve the geometry
-    size_t size;
-    auto data = m_value.GetBinary(size);
-    if (blobSize)
-        *blobSize = (int) size;
-    return data;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-ECSqlColumnInfoCR PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetColumnInfo() const
-    {
-    return m_columnInfo;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      07/2013
 //---------------------------------------------------------------------------------------
 IECSqlStructValue const& PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::_GetStruct() const
@@ -422,7 +384,15 @@ void PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::Reset()
 //---------------------------------------------------------------------------------------
 bool PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue::CanRead(PrimitiveType requestedType) const
     {
-    if (requestedType != m_columnInfo.GetDataType().GetPrimitiveType())
+    const PrimitiveType fieldType = m_columnInfo.GetDataType().GetPrimitiveType();
+
+    if (requestedType == PRIMITIVETYPE_Binary)
+        {
+        if (fieldType == PRIMITIVETYPE_Binary || fieldType == PRIMITIVETYPE_IGeometry)
+            return true;
+        }
+
+    if (requestedType != fieldType)
         {
         m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "For primitive array elements only the GetXXX method which directly matches the array element type can be called.");
         return false;

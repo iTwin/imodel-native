@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlValue.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,13 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         ECDB_EXPORT ECSqlColumnInfoCR GetColumnInfo() const;
 
         //! Indicates whether the value is %NULL or not.
-        //! @return true if column value is %NULL, false otherwise
+        //! @remarks When is a compound value %NULL?
+        //!     - Point2d: if X, @b and Y is %NULL
+        //!     - Point3d: if X, Y, and @b and Z is %NULL
+        //!     - Struct: If all members are %NULL
+        //!     - Navigation: If Id is %NULL (see also @ref ECDbNavigationProperties)
+        //!     - Primitive/struct array: are never %NULL
+        //! @return true if value is %NULL, false otherwise
         ECDB_EXPORT bool IsNull() const;
 
         //! Gets value as a BLOB
@@ -58,14 +64,14 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! Gets the value as a boolean value.
         //! @return Value as boolean
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT bool GetBoolean() const;
 
         //! Gets the value as a DateTime value.
         //! @return DateTime value
         //! @note Possible errors:
-        //! - column data type is not DateTime
+        //! - property data type is not DateTime
         //! @see @ref ECDbCodeSampleECSqlStatementAndDateTimeProperties
         ECDB_EXPORT DateTime GetDateTime() const;
 
@@ -86,62 +92,54 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! Gets the value as a double
         //! @return Double value
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT double GetDouble() const;
 
         //! Gets the value as an integer
         //! @return Integer value
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT int GetInt() const;
 
         //! Gets the value as Int64
         //! @return Int64 value
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT int64_t GetInt64() const;
 
         //! Gets the value as uint64_t
         //! @return uint64_t value
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         uint64_t GetUInt64() const { return (uint64_t) GetInt64(); }
 
         //! Gets the value as UTF-8 encoded string
         //! @return UTF-8 encoded string value
         //! @note Possible errors:
-        //! - column is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
+        //! - property is not of one of the basic primitive types (boolean, integer, long, double, string). Only 
         //!   those types can implicitly be converted into each other.
         ECDB_EXPORT Utf8CP GetText() const;
 
         //! Gets the value as Point2d
         //! @return Point2d value
         //! @note Possible errors:
-        //! - column data type is not Point2d
+        //! - property data type is not Point2d
         ECDB_EXPORT DPoint2d GetPoint2d() const;
 
         //! Gets the value as Point3d
         //! @return Point3d value
         //! @note Possible errors:
-        //! - column data type is not Point3d
+        //! - property data type is not Point3d
         ECDB_EXPORT DPoint3d GetPoint3d() const;
-
-#if !defined (DOCUMENTATION_GENERATOR)
-        //! Gets the value as a Bentley Geometry Flatbuffer blob.
-        //! @return Bentley Geometry Flatbuffer blob
-        //! @note Possible errors:
-        //! - column data type is not Geometry
-        void const* GetGeometryBlob(int* blobSize = nullptr) const;
-#endif
 
         //! Gets the value as an IGeometry value.
         //! @return Column value as IGeometry
         //! @note Possible errors:
-        //! - column data type is not IGeometry
+        //! - property data type is not IGeometry
         ECDB_EXPORT IGeometryPtr GetGeometry() const;
 
         //! Gets the value as a BeInt64Id
@@ -149,14 +147,14 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //! this method to get ECInstanceId values.
         //! @return BeInt64Id value
         //! @note Possible errors:
-        //! - column data does not hold a BeInt64Id
+        //! - property data does not hold a BeInt64Id
         template <class TBeInt64Id>
         TBeInt64Id GetId() const { return TBeInt64Id(GetUInt64()); }
 
         //! Gets the value as a BeGuid
         //! @return BeGuid value
         //! @note Possible errors:
-        //! - column data does not hold a BeGuid
+        //! - property data does not hold a BeGuid
         ECDB_EXPORT BeGuid GetGuid() const;
 
         //! Gets the value as a NavigationECProperty value
@@ -164,7 +162,7 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //!             You can pass nullptr to this parameter if you don't want it to be returned
         //! @return ECInstanceId of the related ECInstance
         //! @note Possible errors:
-        //! - column does not refer to a NavigationECProperty
+        //! - property does not refer to a NavigationECProperty
         ECDB_EXPORT BeInt64Id GetNavigation(ECN::ECClassId* relationshipECClassId) const;
 
         //! Gets the value as a NavigationECProperty value
@@ -172,20 +170,20 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //!             You can pass nullptr to this parameter if you don't want it to be returned
         //! @return ECInstanceId of the related ECInstance
         //! @note Possible errors:
-        //! - column does not refer to a NavigationECProperty
+        //! - property does not refer to a NavigationECProperty
         template <class TBeInt64Id>
         TBeInt64Id GetNavigation(ECN::ECClassId* relationshipECClassId)  const { return TBeInt64Id(GetNavigation(relationshipECClassId).GetValueUnchecked()); }
 
         //! Used to access the value if it is a struct value
         //! @return Struct value
         //! @note Possible errors:
-        //! - column data type is not an ECStruct
+        //! - property data type is not an ECStruct
         ECDB_EXPORT IECSqlStructValue const& GetStruct() const;
 
         //! Used to access the value if it is an array value
         //! @return Array value
         //! @note Possible errors:
-        //! - column data type is not an array
+        //! - property data type is not an array
         ECDB_EXPORT IECSqlArrayValue const& GetArray() const;
     };
 
@@ -231,25 +229,25 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayValue : NonCopyableClass
             private:
                 IECSqlArrayValue const* m_arrayValue;
 
-                bool IsAtEnd() const;
-                bool IsEndIterator() const;
+                bool IsAtEnd() const { return IsEndIterator() || m_arrayValue->_IsAtEnd(); }
+                bool IsEndIterator() const { return m_arrayValue == nullptr; }
 
             public:
                 // end iterator
-                ECDB_EXPORT const_iterator();
+                const_iterator() : m_arrayValue(nullptr) {}
                 ECDB_EXPORT explicit const_iterator(IECSqlArrayValue const& arrayValue);
-                ECDB_EXPORT ~const_iterator();
+                ~const_iterator() {}
                 //copyable
-                ECDB_EXPORT const_iterator(const_iterator const& rhs);
+                const_iterator(const_iterator const& rhs) : m_arrayValue(rhs.m_arrayValue) {}
                 ECDB_EXPORT const_iterator& operator= (const_iterator const& rhs);
                 //moveable
-                ECDB_EXPORT const_iterator(const_iterator&& rhs);
+                const_iterator(const_iterator&& rhs) : m_arrayValue(std::move(rhs.m_arrayValue)) { rhs.m_arrayValue = nullptr; }
                 ECDB_EXPORT const_iterator& operator= (const_iterator&& rhs);
 
                 ECDB_EXPORT IECSqlValue const* operator* () const;
                 ECDB_EXPORT const_iterator& operator++ ();
                 ECDB_EXPORT bool operator== (const_iterator const& rhs) const;
-                ECDB_EXPORT bool operator!= (const_iterator const& rhs) const;
+                bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
             };
     private:
         virtual void _MoveNext(bool onInitializingIterator = false) const = 0;

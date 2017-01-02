@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchemaPersistenceManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -735,7 +735,7 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColum
             }
 
         BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(3), "notnull") == 0);
-        const bool colIsNotNull = stmt.GetValueInt(3) == 1;
+        const bool colIsNotNull = stmt.GetValueBoolean(3);
 
         BeAssert(BeStringUtilities::StricmpAscii(stmt.GetColumnName(4), "dflt_value") == 0);
         Utf8String colDefaultValue;
