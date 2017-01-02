@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SqlNames.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -65,10 +65,10 @@ static_assert(64 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::
 static_assert(128 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_RelECClassId "256"
 static_assert(256 == (int) DbColumn::Kind::RelECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_Overflow "512"
-static_assert(512 == (int) DbColumn::Kind::Overflow, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_OverflowSlave "1024"
-static_assert(1024 == (int) DbColumn::Kind::OverflowSlave, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_PhysicalOverflow "512"
+static_assert(512 == (int) DbColumn::Kind::PhysicalOverflow, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_InOverflow "1024"
+static_assert(1024 == (int) DbColumn::Kind::InOverflow, "Persisted enum DbColumn::Kind has changed");
 
 //** Enum DbTable::Type
 #define SQLVAL_DbTable_Type_Primary "0"

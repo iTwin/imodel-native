@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -225,6 +225,38 @@ RefCountedPtr<PrimitivePropertyMap> PrimitivePropertyMap::CreateInstance(ClassMa
     return new PrimitivePropertyMap(classMap, ecProperty, column);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Krischan.Eberle     01/17
+//---------------------------------------------------------------------------------------
+//static 
+DbColumn::Type PrimitivePropertyMap::DetermineColumnDataType(ECN::PrimitiveType primType)
+    {
+    switch (primType)
+        {
+            case ECN::PrimitiveType::PRIMITIVETYPE_Binary:
+            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:
+                return DbColumn::Type::Blob;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_Boolean:
+                return DbColumn::Type::Boolean;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_DateTime:
+                return DbColumn::Type::TimeStamp;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_Double:
+                return DbColumn::Type::Real;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_Integer:
+            case ECN::PrimitiveType::PRIMITIVETYPE_Long:
+                return DbColumn::Type::Integer;
+
+            case ECN::PrimitiveType::PRIMITIVETYPE_String:
+                return DbColumn::Type::Text;
+        }
+
+    BeAssert(false && "Type not supported");
+    return DbColumn::Type::Any;
+    }
 
 //************************************Point2dPropertyMap********************
 //---------------------------------------------------------------------------------------

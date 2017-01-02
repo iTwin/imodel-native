@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlInsertPreparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -221,7 +221,7 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         for (PropertyMap const* childPropertyMap : visitor.Results())
             {
             SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
-            if (childDataPropertyMap->GetColumn().IsOverflowSlave())
+            if (childDataPropertyMap->GetColumn().IsInOverflow())
                 {
                 insertSqlSnippets.m_overflowPropertyComponentIndexes[index].push_back(component);
                 insertSqlSnippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);
@@ -401,7 +401,7 @@ void ECSqlInsertPreparer::BuildNativeSqlInsertStatement(NativeSqlBuilder& insert
                 insertBuilder.Append("'").Append(propertyNameSnippets[overflowComponentIndex]).Append("',");
 
                 SingleColumnDataPropertyMap const* propMap = overflowPropertyMaps[j];
-                const bool addBlobToBase64Func = propMap->GetSqlDataType() == DbColumn::Type::Blob;
+                const bool addBlobToBase64Func = propMap->GetColumnDataType() == DbColumn::Type::Blob;
                 if (addBlobToBase64Func)
                     insertBuilder.Append(SQLFUNC_BlobToBase64 "(");
 

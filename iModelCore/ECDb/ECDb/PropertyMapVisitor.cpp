@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMapVisitor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -26,7 +26,7 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SingleColumnDataPropertyMap c
         if (col.GetPersistenceType() == PersistenceType::Virtual)
             m_virtualColumnCount++;
 
-        if (col.IsOverflowSlave())
+        if (col.IsInOverflow())
             m_overflowColumnCount++;
         }
 
@@ -69,7 +69,7 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             if (col.GetPersistenceType() == PersistenceType::Virtual)
                 m_virtualColumnCount++;
 
-            if (col.IsOverflowSlave())
+            if (col.IsInOverflow())
                 m_overflowColumnCount++;
             }
 
@@ -85,7 +85,7 @@ BentleyStatus GetColumnsPropertyMapVisitor::_Visit(SystemPropertyMap const& prop
             if (col.GetPersistenceType() == PersistenceType::Virtual)
                 m_virtualColumnCount++;
 
-            if (col.IsOverflowSlave())
+            if (col.IsInOverflow())
                 m_overflowColumnCount++;
             }
         }
@@ -243,7 +243,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
     if (m_wrapInParentheses)
         sqlBuilder.AppendParenLeft();
 
-    if (!propertyMap.GetColumn().IsOverflowSlave())
+    if (!propertyMap.GetColumn().IsInOverflow())
         {
         sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         if (m_wrapInParentheses)
@@ -264,7 +264,7 @@ BentleyStatus ToSqlPropertyMapVisitor::ToNativeSql(SingleColumnDataPropertyMap c
 
             case ECSqlScope::NonSelectNoAssignmentExp:
             {
-            const bool addBase64ToBlobFunc = propertyMap.GetSqlDataType() == DbColumn::Type::Blob;
+            const bool addBase64ToBlobFunc = propertyMap.GetColumnDataType() == DbColumn::Type::Blob;
 
             if (addBase64ToBlobFunc)
                 sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -954,15 +954,12 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         PropertyMap const* basePropertyMap = kvp.second;
         PropertyMap const* propertyMap = kvp.first;
         if (basePropertyMap != nullptr)
-            {
             BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(basePropertyMap) == nullptr);
-            }
 
         BeAssert(dynamic_cast<CompoundDataPropertyMap const*>(propertyMap) == nullptr);
         if (ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames())
             ctx.GetAs<ECClassViewContext>().AddViewColumnName(propertyMap->GetAccessString());
 
-        NativeSqlBuilder propertySql;
         // We only need table qualifier if there is at least one data property selected that require joining to another table
         // In this case all data properties are table qualified name to ensure no conflict between two tables columns.
         // System property never require a join but therefor requireJoinToTableForDataProperties = nullptr if no data property was choosen
@@ -976,100 +973,101 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                 }
 
             ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
-            propertySql = r.GetSqlBuilder();
+            propertySqlList.push_back(r.GetSqlBuilder());
+            continue;
             }
-        else //Data Property
+
+        BeAssert(propertyMap->IsData());
+        BeAssert(dynamic_cast<SingleColumnDataPropertyMap const*>(propertyMap) != nullptr);
+
+        SingleColumnDataPropertyMap const* dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+        //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
+        if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
             {
-            BeAssert(propertyMap->IsData());
-            BeAssert(dynamic_cast<SingleColumnDataPropertyMap const*>(propertyMap) != nullptr);
+            ToSqlVisitor toSqlVisitor(*requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
 
-
-            SingleColumnDataPropertyMap const* dataProperty = propertyMap->GetAs<SingleColumnDataPropertyMap>();
-            //! Join table does not require casting as we only split table into exactly two possible tables and only if shared table is enabled.
-            if (&dataProperty->GetTable() == requireJoinToTableForDataProperties)
+            if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
-                ToSqlVisitor toSqlVisitor(*requireJoinToTableForDataProperties, requireJoinToTableForDataProperties->GetName().c_str(), false, ctx.GetViewType() == ViewType::ECClassView);
-                    
-                if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
+                BeAssert(false);
+                return ERROR;
+                }
 
-                ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
-                //! This is where we generate strong type column for shared column for debug view
-                if (ctx.GetViewType() == ViewType::ECClassView && r.GetColumn().IsShared())
+            ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
+            //! This is where we generate strong type column for shared column for ECClassView
+            if (ctx.GetViewType() == ViewType::ECClassView)
+                {
+                NativeSqlBuilder propertySql;
+                if (r.GetColumn().IsShared())
                     {
-                    const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(r.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
-                    propertySql.Append("CAST(").Append(r.GetSql()).Append(" AS ").Append(DbColumn::TypeToSql(colType)).Append(")");
+                    //non-overflow shared columns don't have a column data type in its DDL.
+                    //overflow cols don't have a data type either. It is deduced from the result of the SQLite
+                    //function json_extract which only knows the SQLite types.
+                    //ECDb uses SQL-99 data types as SQLite supports them in their CAST expression
+                    //and DDL - although they have only informational meaning.
+                    //So to render data in shared columns according to the correct type, ECDb casts the shared column
+                    //to the respective type
+                    BeAssert(r.GetColumn().IsInOverflow() || r.GetColumn().GetType() == DbColumn::Type::Any);
+                    Utf8String castExp;
+                    castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
+                    propertySql.Append(castExp.c_str());
                     }
                 else
-                    {
-                    propertySql = r.GetSqlBuilder();
-                    if (dataProperty->GetColumn().GetPhysicalOverflowColumn() != nullptr)
-                        {
-                        propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
-                        }
-                    }
-                }
-            else
-                {
-                ToSqlVisitor toSqlVisitor(contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
-                if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
+                    propertySql.Append(r.GetSqlBuilder().ToString());
 
-                ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
-                if (ctx.GetViewType() == ViewType::ECClassView && r.GetColumn().IsShared())
-                    {
-                    if (r.GetPropertyMap().GetProperty().GetIsStructArray())
-                        {
-                        if (r.GetColumn().GetType() != DbColumn::Type::Text)
-                            propertySql.Append("CAST(").Append(r.GetSql()).Append(" AS TEXT)");
-                        else
-                            propertySql.Append(r.GetSql());
-                        }
-                    else if (r.GetPropertyMap().GetProperty().GetIsPrimitiveArray())
-                        {
-                        if (r.GetColumn().GetType() != DbColumn::Type::Blob)
-                            propertySql.Append("CAST(").Append(r.GetSql()).Append(" AS BLOB)");
-                        else
-                            propertySql.Append(r.GetSql());
-                        }
-                    else
-                        {
-                        const DbColumn::Type colType = DbColumn::PrimitiveTypeToColumnType(r.GetPropertyMap().GetProperty().GetAsPrimitiveProperty()->GetType());
-                        propertySql.Append("CAST(").Append(r.GetSql()).Append(" AS ").Append(DbColumn::TypeToSql(colType)).Append(")");
-                        }
-                    }
-                else
-                    {
-                    propertySql = r.GetSqlBuilder();
-                    //! Here we want rename or add column alias so it appear to be a basePropertyMap
-                    //! But we only do that if column name differ
-                    bool appendAlias = false;
-                    if (basePropertyMap != nullptr)
-                        {
-                        SingleColumnDataPropertyMap const* baseDataProperty = basePropertyMap->GetAs<SingleColumnDataPropertyMap>();
-                        if (!r.GetColumn().GetName().EqualsI(baseDataProperty->GetColumn().GetName()))
-                            {
-                            propertySql.AppendSpace().AppendEscaped(baseDataProperty->GetColumn().GetName().c_str());
-                            appendAlias = true;
-                            }
-                        }
-
-                    if (!appendAlias)
-                        {
-                        if (dataProperty->GetColumn().GetPhysicalOverflowColumn() != nullptr)
-                            {
-                            propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
-                            }
-                        }
-                    }
+                propertySqlList.push_back(propertySql);
+                continue;
                 }
+
+            NativeSqlBuilder propertySql(r.GetSqlBuilder());
+            if (dataProperty->GetColumn().IsInOverflow())
+                propertySql.AppendSpace().AppendEscaped(dataProperty->GetColumn().GetName().c_str());
+
+            propertySqlList.push_back(propertySql);
+            continue;
             }
+
+        //no join needed
+        ToSqlVisitor toSqlVisitor(contextTable, systemContextTableAlias, false, ctx.GetViewType() == ViewType::ECClassView);
+        if (SUCCESS != dataProperty->AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        NativeSqlBuilder propertySql;
+        ToSqlVisitor::Result const& r = toSqlVisitor.GetResultSet().front();
+        if (ctx.GetViewType() == ViewType::ECClassView && r.GetColumn().IsShared())
+            {
+            //non-overflow shared columns don't have a column data type in its DDL.
+            //overflow cols don't have a data type either. It is deduced from the result of the SQLite
+            //function json_extract which only knows the SQLite types.
+            //ECDb uses SQL-99 data types as SQLite supports them in their CAST expression
+            //and DDL - although they have only informational meaning.
+            //So to render data in shared columns according to the correct type, ECDb casts the shared column
+            //to the respective type
+            BeAssert(r.GetColumn().IsInOverflow() || r.GetColumn().GetType() == DbColumn::Type::Any);
+            Utf8String castExp;
+            castExp.Sprintf("CAST(%s AS %s)", r.GetSqlBuilder().ToString(), DbColumn::TypeToSql(r.GetPropertyMap().GetColumnDataType()));
+            propertySql.Append(castExp.c_str());
+            }
+        else
+            propertySql.Append(r.GetSqlBuilder().ToString());
+
+        //! Here we want rename or add column alias so it appear to be a basePropertyMap
+        //! But we only do that if column name differ
+        Utf8StringCP colAlias = nullptr;
+        if (basePropertyMap != nullptr)
+            {
+            DbColumn const& basePropertyMapCol = basePropertyMap->GetAs<SingleColumnDataPropertyMap>()->GetColumn();
+            if (!r.GetColumn().GetName().EqualsI(basePropertyMapCol.GetName()))
+                colAlias = &basePropertyMapCol.GetName();
+            }
+
+        if (colAlias == nullptr && dataProperty->GetColumn().IsInOverflow())
+            colAlias = &dataProperty->GetColumn().GetName();
+
+        if (colAlias != nullptr)
+            propertySql.AppendSpace().AppendEscaped(colAlias->c_str());
 
         propertySqlList.push_back(propertySql);
         }
@@ -1303,13 +1301,13 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(SingleColumnDataPropertyM
     Result& result = Record(propertyMap);
     NativeSqlBuilder& sqlBuilder = result.GetSqlBuilderR();
 
-    if (!propertyMap.GetColumn().IsOverflowSlave())
+    if (!propertyMap.GetColumn().IsInOverflow())
         {
         sqlBuilder.Append(m_classIdentifier, propertyMap.GetColumn().GetName().c_str());
         return SUCCESS;
         }
 
-    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetSqlDataType() == DbColumn::Type::Blob;
+    const bool addBase64ToBlobFunc = !m_forECClassView && propertyMap.GetColumnDataType() == DbColumn::Type::Blob;
 
     if (addBase64ToBlobFunc)
         sqlBuilder.Append(SQLFUNC_Base64ToBlob "(");

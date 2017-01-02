@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSchemaUpdate_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -1557,7 +1557,7 @@ TEST_F(ECSchemaUpdateTests, AddNewCA)
         //Verify newly added CA
         testClass = GetECDb().Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass");
         ASSERT_TRUE(testClass != nullptr);
-        IECInstancePtr bsca = testClass->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
+        IECInstancePtr bsca = testClass->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
         ASSERT_TRUE(bsca != nullptr);
 
         ECValue val;
@@ -5752,7 +5752,7 @@ TEST_F(ECSchemaUpdateTests, DeleteCustomAttribute)
     asserted = false;
     AssertSchemaImport(asserted, ecdb, deleteCAFromClass);
     ASSERT_FALSE(asserted);
-    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("ClassHasCurrentTimeStampProperty");
+    IECInstancePtr classCA = ecdb.Schemas().GetECSchema("TestSchema")->GetClassCP("TestClass")->GetCustomAttribute("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     ASSERT_TRUE(classCA == nullptr);
 
     //Delete CA from property

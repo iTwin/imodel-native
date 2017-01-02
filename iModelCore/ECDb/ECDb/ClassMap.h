@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,7 +125,7 @@ struct ClassMap : RefCountedBase
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bool m_isDirty;
 
-        BentleyStatus CreateCurrentTimeStampTrigger(ECN::ECPropertyCR);
+        BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
 
         bool DetermineIsExclusiveRootClassOfTable(ClassMappingInfo const&) const;
 

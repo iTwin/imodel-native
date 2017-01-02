@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -380,7 +380,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
     PrimitivePropertyMap const* primPropMap = propMap->GetAs<PrimitivePropertyMap>();
     DbColumn const& col = primPropMap->GetColumn();
 
-    if (col.IsOverflowSlave())
+    if (col.IsInOverflow())
         {
         LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' as it is mapped to an overflow column.",
                    ecClass.GetFullName(), propertyAccessString);

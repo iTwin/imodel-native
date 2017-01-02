@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchema.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1211,15 +1211,15 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         }
 
     //Overflow property check
-    if (Enum::Intersects(kind, DbColumn::Kind::Overflow))
+    if (Enum::Intersects(kind, DbColumn::Kind::PhysicalOverflow))
         {
-        if (kind != DbColumn::Kind::Overflow)
+        if (kind != DbColumn::Kind::PhysicalOverflow)
             {
             BeAssert(false && "OverflowMaster should be the only flag on a column");
             return nullptr;
             }
 
-        if (GetFilteredColumnFirst(DbColumn::Kind::Overflow) != nullptr)
+        if (GetFilteredColumnFirst(DbColumn::Kind::PhysicalOverflow) != nullptr)
             {
             BeAssert(false && "There can only be exactly one overflow column per table");
             return nullptr;
@@ -1261,7 +1261,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
     else
         m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
 
-    if (kind == DbColumn::Kind::Overflow)
+    if (kind == DbColumn::Kind::PhysicalOverflow)
         m_overflowColumn = newColumnP;
 
     if (Enum::Contains(kind, DbColumn::Kind::ECClassId))
@@ -1337,7 +1337,7 @@ BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
 
     //the overflow column will hold its data as JSON. So the column data type is TEXT.
     Utf8StringCR customOverflowColname = tphInfo.GetOverflowColumnName();
-    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::Overflow, PersistenceType::Physical))
+    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::PhysicalOverflow, PersistenceType::Physical))
         return ERROR;
 
     return SUCCESS;
@@ -1352,7 +1352,7 @@ DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType)
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
 
-    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::InOverflow, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1495,7 +1495,7 @@ bool DbColumn::IsUnique() const
 //---------------------------------------------------------------------------------------
 DbColumn const* DbColumn::GetPhysicalOverflowColumn() const
     {
-    if (Enum::Intersects(m_kind, Kind::OverflowSlave))
+    if (Enum::Intersects(m_kind, Kind::InOverflow))
         {
         BeAssert(m_table.GetPhysicalOverflowColumn() != nullptr);
         return m_table.GetPhysicalOverflowColumn();
@@ -1520,9 +1520,9 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
 
-    if (m_kind == DbColumn::Kind::Overflow)
+    if (m_kind == DbColumn::Kind::PhysicalOverflow)
         {
-        BeAssert(false && "Cannot change Kind for a OverflowMaster column");
+        BeAssert(false && "Cannot change Kind for a Overflow physical column");
         return ERROR;
         }
 
@@ -1549,38 +1549,6 @@ BentleyStatus DbColumn::MakeNonVirtual()
 
     m_persistenceType = PersistenceType::Physical;
     return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static 
-DbColumn::Type DbColumn::PrimitiveTypeToColumnType(ECN::PrimitiveType type)
-    {
-    switch (type)
-        {
-            case ECN::PrimitiveType::PRIMITIVETYPE_Binary:
-            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:
-                return DbColumn::Type::Blob;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_Boolean:
-                return DbColumn::Type::Boolean;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_DateTime:
-                return DbColumn::Type::TimeStamp;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_Double:
-                return DbColumn::Type::Real;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_Integer:
-            case ECN::PrimitiveType::PRIMITIVETYPE_Long:
-                return DbColumn::Type::Integer;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_String:
-                return DbColumn::Type::Text;
-        }
-
-    BeAssert(false && "Type not supported");
-    return DbColumn::Type::Any;
     }
 
 //---------------------------------------------------------------------------------------

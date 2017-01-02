@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPropertyNameExpPreparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -188,7 +188,7 @@ void ECSqlPropertyNameExpPreparer::PrepareDefault(NativeSqlBuilder::List& native
         //(we must check for the prop name list clause, because if it shows up in the values list, it must not be ignored)
         //INSERT INTO Foo(SourceECClassId) -> ignore SourceECClassId if it maps to a virtual column
         //INSERT INTO Foo(MyProp) VALUES(ECClassId + 1000) -> never ignore. If virtual, the ECClassId from the respective ECClass is used
-        if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual && !r.GetColumn().IsOverflowSlave())
+        if (sqlVisitor.IsForAssignmentExpression() && r.GetColumn().GetPersistenceType() == PersistenceType::Virtual && !r.GetColumn().IsInOverflow())
             continue;
 
         nativeSqlSnippets.push_back(r.GetSqlBuilder());

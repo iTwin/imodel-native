@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -23,7 +23,7 @@ struct SystemPropertyMap : PropertyMap
                 : SingleColumnDataPropertyMap(Type::SystemPerTablePrimitive, parentPropertyMap, ecProperty, column, false)
                 {}
 
-            virtual DbColumn::Type _GetSqlDataType() const override { return DbColumn::Type::Integer; }
+            virtual DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }
 
         public:
             virtual ~PerTablePrimitivePropertyMap() {}

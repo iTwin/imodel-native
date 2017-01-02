@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchema.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -102,8 +102,8 @@ public:
         DataColumn = 64, //! unshared data column
         SharedDataColumn = 128, //! shared data column
         RelECClassId = 256,
-        Overflow = 512, //! physical overflow column (one per table)
-        OverflowSlave = 1024 //! virtual column pointing to JSON object in the physical overflow column
+        PhysicalOverflow = 512, //! physical overflow column (one per table)
+        InOverflow = 1024 //! virtual column pointing to JSON object in the physical overflow column
         };
 
     struct Constraints : NonCopyableClass
@@ -195,8 +195,7 @@ public:
     bool IsOnlyColumnOfPrimaryKeyConstraint() const;
     Kind GetKind() const { return m_kind; }
     bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
-    bool IsOverflowSlave() const { return Enum::Intersects(m_kind, Kind::OverflowSlave); }
-
+    bool IsInOverflow() const { return Enum::Intersects(m_kind, Kind::InOverflow); }
     DbTable& GetTableR() const { return m_table; }
     Constraints& GetConstraintsR() { return m_constraints; };
     void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
@@ -205,7 +204,6 @@ public:
     BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
 
     static Utf8CP TypeToSql(DbColumn::Type);
-    static Type PrimitiveTypeToColumnType(ECN::PrimitiveType);
     static bool IsCompatible(Type lhs, Type rhs);
     static Utf8CP KindToString(Kind);
     };

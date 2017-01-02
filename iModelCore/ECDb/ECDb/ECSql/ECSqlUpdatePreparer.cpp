@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlUpdatePreparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -124,7 +124,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
                 nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',");
 
-                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetSqlDataType() == DbColumn::Type::Blob;
+                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetColumnDataType() == DbColumn::Type::Blob;
                 if (addBlobToBase64Func)
                     nativeSqlBuilder.Append(SQLFUNC_BlobToBase64 "(");
 
@@ -297,7 +297,7 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
             for (PropertyMap const* childPropertyMap : visitor.Results())
                 {               
                 SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
-                if (childDataPropertyMap->GetColumn().IsOverflowSlave())
+                if (childDataPropertyMap->GetColumn().IsInOverflow())
                     {
                     snippets.m_overflowPropertyComponentIndexes[index].push_back(component);
                     snippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);

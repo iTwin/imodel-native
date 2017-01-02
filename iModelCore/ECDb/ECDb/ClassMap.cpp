@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -175,7 +175,7 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-    ECPropertyCP currentTimeStampProp = ctx.GetClassMappingInfo().GetClassHasCurrentTimeStampProperty();
+    PrimitiveECPropertyCP currentTimeStampProp = ctx.GetClassMappingInfo().GetClassHasCurrentTimeStampProperty();
     if (currentTimeStampProp != nullptr)
         {
         if (SUCCESS != CreateCurrentTimeStampTrigger(*currentTimeStampProp))
@@ -229,14 +229,19 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(ECPropertyCR currentTimeStampProp)
+BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR currentTimeStampProp)
     {
-    PrimitivePropertyMap const* propertyMap = dynamic_cast<PrimitivePropertyMap const*>(GetPropertyMaps().Find(currentTimeStampProp.GetName().c_str()));
-    if (propertyMap == nullptr)
+    if (currentTimeStampProp.GetType() != PRIMITIVETYPE_DateTime)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    PropertyMap const* propMap = GetPropertyMaps().Find(currentTimeStampProp.GetName().c_str());
+    if (propMap == nullptr)
         return SUCCESS;
 
-
-    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propertyMap->GetColumn());
+    DbColumn& currentTimeStampColumn = const_cast<DbColumn&>(propMap->GetAs<PrimitivePropertyMap>()->GetColumn());
     if (currentTimeStampColumn.IsShared())
         {
         Issues().Report(ECDbIssueSeverity::Warning,
