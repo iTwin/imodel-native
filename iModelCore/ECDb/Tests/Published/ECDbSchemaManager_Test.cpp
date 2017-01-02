@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSchemaManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -1187,6 +1187,69 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForSubsetOfClasses)
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Cubicle]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.Foo_has_Bars]")) != stcoViews.end());
     ASSERT_TRUE(stcoViews.find(Utf8String("[stco.RelationWithLinkTableMapping]")) != stcoViews.end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                   01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECDbSchemaManagerTests, CreateECClassViews_SharedColumns)
+    {
+    ECDbR ecdb = SetupECDb("createecclassviewssharedcols.ecdb",
+                      SchemaItem("<?xml version='1.0' encoding='utf-8' ?>"
+            "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+            "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+            "  <ECEntityClass typeName='Model' >"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "            <ShareColumns xmlns='ECDbMap.02.00'>"
+            "                <SharedColumnCount>4</SharedColumnCount>"
+            "            </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "    <ECProperty propertyName='StringProp' typeName='string' />"
+            "    <ECProperty propertyName='DateTimeProp' typeName='dateTime' />"
+            "    <ECProperty propertyName='BlobProp' typeName='binary' />"
+            "    <ECProperty propertyName='GeomProp_Overflow' typeName='Bentley.Geometry.Common.IGeometry' />"
+            "    <ECProperty propertyName='BlobProp_Overflow' typeName='binary' />"
+            "    <ECProperty propertyName='DateTimeProp_Overflow' typeName='dateTime' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='Element' modifier='Abstract' >"
+            "        <ECCustomAttributes>"
+            "            <ClassMap xmlns='ECDbMap.02.00'>"
+            "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+            "            </ClassMap>"
+            "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+            "        </ECCustomAttributes>"
+            "    <ECProperty propertyName='Code' typeName='string' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubElementSharedCols' modifier='Sealed' >"
+            "        <ECCustomAttributes>"
+            "            <ShareColumns xmlns='ECDbMap.02.00'>"
+            "                <SharedColumnCount>4</SharedColumnCount>"
+            "            </ShareColumns>"
+            "        </ECCustomAttributes>"
+            "      <BaseClass>Element</BaseClass>"
+            "    <ECProperty propertyName='StringProp' typeName='string' />"
+            "    <ECProperty propertyName='DateTimeProp' typeName='dateTime' />"
+            "    <ECProperty propertyName='BlobProp' typeName='binary' />"
+            "    <ECProperty propertyName='GeomProp_Overflow' typeName='Bentley.Geometry.Common.IGeometry' />"
+            "    <ECProperty propertyName='BlobProp_Overflow' typeName='binary' />"
+            "    <ECProperty propertyName='DateTimeProp_Overflow' typeName='dateTime' />"
+            "  </ECEntityClass>"
+            "  <ECEntityClass typeName='SubElementNoSharedCols' modifier='Sealed' >"
+            "      <BaseClass>Element</BaseClass>"
+            "    <ECProperty propertyName='PropA' typeName='dateTime' />"
+            "    <ECProperty propertyName='PropB' typeName='binary' />"
+            "  </ECEntityClass>"
+            "</ECSchema>"), 3);
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ASSERT_EQ(SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
+    bmap<Utf8String, bset<Utf8String>> classViewInfo;
+    bool validationFailed = false;
+    AssertECClassViews(classViewInfo, validationFailed, ecdb);
+    ASSERT_FALSE(validationFailed);
     }
 
 //---------------------------------------------------------------------------------------
