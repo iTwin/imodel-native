@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECInstanceAdapterHelper.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -35,7 +34,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) cons
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECPropertyCP prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
-        if (prop->GetName().Equals("ECInstanceId"))
+        if (prop->GetName().Equals(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
             {
             id = m_ecSqlStatement.GetValueId<ECInstanceId>(i);
             return SUCCESS;

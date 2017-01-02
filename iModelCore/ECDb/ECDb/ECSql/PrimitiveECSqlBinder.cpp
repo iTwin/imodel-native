@@ -1,13 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveToSingleColumnECSqlBinder.cpp $
+|     $Source: ECDb/ECSql/PrimitiveECSqlBinder.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
-#include "ECSqlStatementBase.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -15,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-void PrimitiveToSingleColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
+void PrimitiveECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
     {
     m_sqliteIndex = (int) sqliteIndex;
     }
@@ -23,7 +21,7 @@ void PrimitiveToSingleColumnECSqlBinder::_SetSqliteIndex(int ecsqlParameterCompo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
+ECSqlStatus PrimitiveECSqlBinder::_BindNull()
     {
     std::vector<IECSqlBinder*>* ehs = GetOnBindEventHandlers();
     if (ehs != nullptr)
@@ -46,7 +44,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
+ECSqlStatus PrimitiveECSqlBinder::_BindBoolean(bool value)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Boolean);
     if (!stat.IsSuccess())
@@ -73,7 +71,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBoolean(bool value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+ECSqlStatus PrimitiveECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
@@ -100,7 +98,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindBlob(const void* value, int
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindZeroBlob(int blobSize)
+ECSqlStatus PrimitiveECSqlBinder::_BindZeroBlob(int blobSize)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Binary);
     if (!stat.IsSuccess())
@@ -135,7 +133,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindZeroBlob(int blobSize)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
+ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata)
     {
     const double jd = DateTime::MsecToRationalDay(julianDayMsec);
     return _BindDateTime(jd, metadata);
@@ -144,7 +142,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(uint64_t julianDay
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
+ECSqlStatus PrimitiveECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const& metadata)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_DateTime);
     if (!stat.IsSuccess())
@@ -185,7 +183,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDateTime(double julianDay, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
+ECSqlStatus PrimitiveECSqlBinder::_BindDouble(double value)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Double);
     if (!stat.IsSuccess())
@@ -212,7 +210,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindDouble(double value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
+ECSqlStatus PrimitiveECSqlBinder::_BindInt(int value)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Integer);
     if (!stat.IsSuccess())
@@ -239,7 +237,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt(int value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
+ECSqlStatus PrimitiveECSqlBinder::_BindInt64(int64_t value)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_Long);
     if (!stat.IsSuccess())
@@ -266,7 +264,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2d (DPoint2dCR value)
+ECSqlStatus PrimitiveECSqlBinder::_BindPoint2d (DPoint2dCR value)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2d value can only be bound to parameter of same type.");
     return ECSqlStatus::Error;
@@ -275,7 +273,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint2d (DPoint2dCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3d (DPoint3dCR value)
+ECSqlStatus PrimitiveECSqlBinder::_BindPoint3d (DPoint3dCR value)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3d value can only be bound to parameter of same type.");
     return ECSqlStatus::Error;
@@ -284,7 +282,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindPoint3d (DPoint3dCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
+ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_String);
     if (!stat.IsSuccess())
@@ -311,7 +309,7 @@ ECSqlStatus PrimitiveToSingleColumnECSqlBinder::_BindText(Utf8CP value, IECSqlBi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()
+IECSqlPrimitiveBinder& PrimitiveECSqlBinder::_BindPrimitive()
     {
     return *this;
     }
@@ -319,7 +317,7 @@ IECSqlPrimitiveBinder& PrimitiveToSingleColumnECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
+IECSqlStructBinder& PrimitiveECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
     return NoopECSqlBinder::Get().BindStruct();
@@ -328,7 +326,7 @@ IECSqlStructBinder& PrimitiveToSingleColumnECSqlBinder::_BindStruct()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlArrayBinder& PrimitiveECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
     return NoopECSqlBinder::Get().BindArray(initialCapacity);
@@ -337,7 +335,7 @@ IECSqlArrayBinder& PrimitiveToSingleColumnECSqlBinder::_BindArray(uint32_t initi
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveToSingleColumnECSqlBinder::CanBind(ECN::PrimitiveType requestedType) const
+ECSqlStatus PrimitiveECSqlBinder::CanBind(ECN::PrimitiveType requestedType) const
     {
     //For DateTimes and Geometry column type and BindXXX type must match. All other types are implicitly
     //converted to each other by SQLite.

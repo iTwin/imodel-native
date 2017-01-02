@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "ECDbInternalTypes.h"
+#include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeId.h>
 #include "BeBriefcaseBasedIdSequence.h"
 #include "MapStrategy.h"

@@ -2,22 +2,13 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinderFactory.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlBinderFactory.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
-#include "PointECSqlBinder.h"
-#include "StructToColumnsECSqlBinder.h"
-#include "PrimitiveArrayToColumnECSqlBinder.h"
-#include "StructArrayJsonECSqlBinder.h"
-#include "NavigationPropertyECSqlBinder.h"
-#include "IdECSqlBinder.h"
-#include "ECSqlStatementBase.h"
-#include "ECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //****************** ECSqlBinderFactory **************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
@@ -59,13 +50,13 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
                     case ECN::PRIMITIVETYPE_Integer:
                     case ECN::PRIMITIVETYPE_Long:
                     case ECN::PRIMITIVETYPE_String:
-                        return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+                        return std::unique_ptr<ECSqlBinder>(new PrimitiveECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
 
                     case ECN::PRIMITIVETYPE_Point2d:
-                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, false));
+                        return std::unique_ptr<ECSqlBinder>(new PointECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, false));
 
                     case ECN::PRIMITIVETYPE_Point3d:
-                        return std::unique_ptr<ECSqlBinder>(new PointToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, true));
+                        return std::unique_ptr<ECSqlBinder>(new PointECSqlBinder(ctx.GetECSqlStatementR(), typeInfo, true));
 
                     default:
                         BeAssert(false && "Could not create parameter mapping for the given parameter exp.");
@@ -75,11 +66,11 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
             }
             //the rare case of expressions like this: NULL IS ?
             case ECSqlTypeInfo::Kind::Null:
-                return std::unique_ptr<ECSqlBinder>(new PrimitiveToSingleColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
 
             case ECSqlTypeInfo::Kind::Struct:
             {
-            std::unique_ptr<StructToColumnsECSqlBinder> structBinder(new StructToColumnsECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+            std::unique_ptr<StructECSqlBinder> structBinder(new StructECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             if (SUCCESS != structBinder->Initialize(ctx))
                 return nullptr;
 
@@ -87,9 +78,9 @@ std::unique_ptr<ECSqlBinder> ECSqlBinderFactory::CreateBinder(ECSqlPrepareContex
             }
 
             case ECSqlTypeInfo::Kind::PrimitiveArray:
-                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayToColumnECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new PrimitiveArrayECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::StructArray:
-                return std::unique_ptr<ECSqlBinder>(new StructArrayJsonECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
+                return std::unique_ptr<ECSqlBinder>(new StructArrayECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));
             case ECSqlTypeInfo::Kind::Navigation:
             {
             std::unique_ptr<NavigationPropertyECSqlBinder> navPropBinder(new NavigationPropertyECSqlBinder(ctx.GetECSqlStatementR(), typeInfo));

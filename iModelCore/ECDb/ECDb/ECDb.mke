@@ -98,11 +98,11 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/IECSqlPrimitiveBinder.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlBinderFactory.h \
-                $(baseDir)ECSql/PrimitiveToSingleColumnECSqlBinder.h \
+                $(baseDir)ECSql/PrimitiveECSqlBinder.h \
                 $(baseDir)ECSql/PointECSqlBinder.h \
-                $(baseDir)ECSql/StructToColumnsECSqlBinder.h \
-                $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.h \
-                $(baseDir)ECSql/StructArrayJsonECSqlBinder.h \
+                $(baseDir)ECSql/StructECSqlBinder.h \
+                $(baseDir)ECSql/PrimitiveArrayECSqlBinder.h \
+                $(baseDir)ECSql/StructArrayECSqlBinder.h \
                 $(baseDir)ECSql/NavigationPropertyECSqlBinder.h \
                 $(baseDir)ECSql/IdECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlFieldFactory.h \
@@ -312,15 +312,15 @@ $(o)ECSqlBinder$(oext):                                       $(baseDir)ECSql/EC
 
 $(o)ECSqlBinderFactory$(oext):                                $(baseDir)ECSql/ECSqlBinderFactory.cpp      $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveToSingleColumnECSqlBinder$(oext):                $(baseDir)ECSql/PrimitiveToSingleColumnECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveECSqlBinder$(oext):                              $(baseDir)ECSql/PrimitiveECSqlBinder.cpp  $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PointECSqlBinder$(oext):                                  $(baseDir)ECSql/PointECSqlBinder.cpp        $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructToColumnsECSqlBinder$(oext):                        $(baseDir)ECSql/StructToColumnsECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructECSqlBinder$(oext):                                 $(baseDir)ECSql/StructECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)PrimitiveArrayToColumnECSqlBinder$(oext):                 $(baseDir)ECSql/PrimitiveArrayToColumnECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)PrimitiveArrayECSqlBinder$(oext):                         $(baseDir)ECSql/PrimitiveArrayECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
-$(o)StructArrayJsonECSqlBinder$(oext):                        $(baseDir)ECSql/StructArrayJsonECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+$(o)StructArrayECSqlBinder$(oext):                            $(baseDir)ECSql/StructArrayECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)NavigationPropertyECSqlBinder$(oext):                     $(baseDir)ECSql/NavigationPropertyECSqlBinder.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

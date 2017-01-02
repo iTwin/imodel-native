@@ -2,12 +2,10 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "NavigationPropertyECSqlBinder.h"
-#include "IdECSqlBinder.h"
 
 USING_NAMESPACE_BENTLEY_EC
 

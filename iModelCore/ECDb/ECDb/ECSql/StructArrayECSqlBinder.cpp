@@ -1,14 +1,12 @@
 /*------------------
 --------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayJsonECSqlBinder.cpp $
+|     $Source: ECDb/ECSql/StructArrayECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "StructArrayJsonECSqlBinder.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <GeomSerialization/GeomLibsFlatBufferApi.h>
@@ -462,7 +460,7 @@ ECSqlStatus ArrayJsonECSqlBindValue::_BuildJson(Json::Value& json) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructArrayJsonECSqlBinder::StructArrayJsonECSqlBinder(ECSqlStatementBase& stmt, ECSqlTypeInfo const& typeInfo)
+StructArrayECSqlBinder::StructArrayECSqlBinder(ECSqlStatementBase& stmt, ECSqlTypeInfo const& typeInfo)
     : ECSqlBinder(stmt, typeInfo, 1, true, true), IECSqlArrayBinder()
     {
     BeAssert(GetTypeInfo().GetKind() == ECSqlTypeInfo::Kind::StructArray);
@@ -473,13 +471,13 @@ StructArrayJsonECSqlBinder::StructArrayJsonECSqlBinder(ECSqlStatementBase& stmt,
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayJsonECSqlBinder::_OnBeforeStep()
+ECSqlStatus StructArrayECSqlBinder::_OnBeforeStep()
     {
     ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), (uint32_t) m_binder->GetLength());
     if (!stat.IsSuccess())
         return stat;
 
-    PrimitiveToSingleColumnECSqlBinder jsonBinder(GetECSqlStatementR(), ECSqlTypeInfo(PRIMITIVETYPE_String));
+    PrimitiveECSqlBinder jsonBinder(GetECSqlStatementR(), ECSqlTypeInfo(PRIMITIVETYPE_String));
     jsonBinder.SetSqliteIndex(m_sqliteIndex);
 
     if (m_binder->GetLength() == 0)
@@ -500,7 +498,7 @@ ECSqlStatus StructArrayJsonECSqlBinder::_OnBeforeStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& StructArrayJsonECSqlBinder::_BindPrimitive()
+IECSqlPrimitiveBinder& StructArrayECSqlBinder::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to struct array parameter.");
     return NoopECSqlBinder::Get().BindPrimitive();
@@ -509,7 +507,7 @@ IECSqlPrimitiveBinder& StructArrayJsonECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& StructArrayJsonECSqlBinder::_BindStruct()
+IECSqlStructBinder& StructArrayECSqlBinder::_BindStruct()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind struct value to struct array parameter.");
     return NoopECSqlBinder::Get().BindStruct();

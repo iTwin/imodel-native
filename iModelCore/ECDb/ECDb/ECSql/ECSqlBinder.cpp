@@ -2,14 +2,10 @@
 |
 |     $Source: ECDb/ECSql/ECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECSqlBinder.h"
-#include "ECSqlStatementBase.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
-#include "ECSqlStatementNoopImpls.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

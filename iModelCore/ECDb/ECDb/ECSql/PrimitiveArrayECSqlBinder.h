@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveArrayToColumnECSqlBinder.h $
+|     $Source: ECDb/ECSql/PrimitiveArrayECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,14 +10,14 @@
 
 #include "ECSqlBinder.h"
 #include "IECSqlPrimitiveBinder.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
+#include "PrimitiveECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveArrayToColumnECSqlBinder : public ECSqlBinder, IECSqlArrayBinder
+struct PrimitiveArrayECSqlBinder : public ECSqlBinder, IECSqlArrayBinder
     {
 private:
     //=======================================================================================
@@ -82,8 +82,8 @@ private:
     ECN::StandaloneECInstanceP GetInstance(bool create) const;
 
 public:
-    PrimitiveArrayToColumnECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-    ~PrimitiveArrayToColumnECSqlBinder() {}
+    PrimitiveArrayECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+    ~PrimitiveArrayECSqlBinder() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -8,6 +8,7 @@
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
 #include "DbSchema.h"
+#include "ECDbSchemaPersistenceHelper.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveToSingleColumnECSqlBinder.h $
+|     $Source: ECDb/ECSql/PrimitiveECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveToSingleColumnECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
+struct PrimitiveECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
     {
 private:
     int m_sqliteIndex;
@@ -43,10 +43,10 @@ private:
     virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
 
 public:
-    PrimitiveToSingleColumnECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
+    PrimitiveECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)
         : ECSqlBinder(ecsqlStatement, typeInfo, 1, false, false), m_sqliteIndex(-1) {}
 
-    ~PrimitiveToSingleColumnECSqlBinder() {}
+    ~PrimitiveECSqlBinder() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
