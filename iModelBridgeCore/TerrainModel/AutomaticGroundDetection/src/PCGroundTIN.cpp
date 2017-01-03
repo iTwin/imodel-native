@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCGroundTIN.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -12,6 +12,7 @@
 #include "BcDtmProvider.h"
 
 #include "PCGroundTIN.h"
+#include "TriangleSearcher.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -838,13 +839,13 @@ bool PCGroundTriangle::QueryPointToAddToTin()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PCGroundTriangle::TryPointToAddToTin(const DPoint3d& pt)
     {
-#if 0
-    m_pAcceptedPointCollection->AddPoint(pt, *this);
+    DPoint3d ptToAdd(pt);
+
+    m_pAcceptedPointCollection->AddPoint(ptToAdd, *this);
 
     //if no point, nothing to Add
     if (m_pAcceptedPointCollection->size() == 0)
         return false;
-#endif
 
     return true;
     }
@@ -1205,6 +1206,22 @@ StatusInt PCGroundTIN::_CreateInitialTIN()
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool s_testOneQuery = false;
 
+void PCGroundTIN::OutputDtmPreview()
+    {    
+    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
+    
+    en->SetExcludeAllRegions();
+    en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
+
+    IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+
+    for (PolyfaceQueryP pf : *en)
+        {
+        // Polyface returned.        
+        ptsAccumPtr->OutputPreview(*pf);
+        }
+    }
+
 StatusInt  PCGroundTIN::_DensifyTIN()
     {       
     if (s_testOneQuery)
@@ -1238,16 +1255,16 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                 }
 */
 
-            TriangleSearcher triSearcher;
+            TriangleSearcherPtr triSearcher(TriangleSearcher::Create());
             
-            for (PCGroundTriangleCollection::iterator triItr = m_trianglesToProcess.begin(); triItr != m_trianglesToProcess.end() && progressMonitor.InProgress(); ++triItr, ++nbTriangleProcessed, IncrementWorkDone())
+            for (PCGroundTriangleCollection::iterator triItr = m_trianglesToProcess.begin(); triItr != m_trianglesToProcess.end() /*&& progressMonitor.InProgress()*/; ++triItr/*, ++nbTriangleProcessed, IncrementWorkDone()*/)
                 {                
-                Point a(triItr->GetPoint(0).x, triItr->GetPoint(0).y, triItr->GetPoint(0).z);
-                Point b(triItr->GetPoint(1).x, triItr->GetPoint(1).y, triItr->GetPoint(1).z);
-                Point c(triItr->GetPoint(2).x, triItr->GetPoint(2).y, triItr->GetPoint(2).z);
+                CPoint a((*triItr)->GetPoint(0).x, (*triItr)->GetPoint(0).y, (*triItr)->GetPoint(0).z);
+                CPoint b((*triItr)->GetPoint(1).x, (*triItr)->GetPoint(1).y, (*triItr)->GetPoint(1).z);
+                CPoint c((*triItr)->GetPoint(2).x, (*triItr)->GetPoint(2).y, (*triItr)->GetPoint(2).z);
                 CTriangle triangle(a, b, c);
 
-                triSearcher.AddTriangle(triangle);                                
+                triSearcher->AddTriangle(triangle);                                
                 }
 
             for (auto itr = pPointsProvider->begin(); itr != pPointsProvider->end(); ++itr)
@@ -1256,18 +1273,24 @@ StatusInt  PCGroundTIN::_DensifyTIN()
 
                 double distance;
                 CTriangle nearestTriangle;
-                triSearcher.SearchNearestTri(nearestTriangle, distance, ptIndex);
+                triSearcher->SearchNearestTri(nearestTriangle, distance, ptIndex);
 
-                DPoint3d a(DPoint3d::From(nearestTriangle.vertex(0).x(), nearestTriangle.vertex(0).y(), nearestTriangle.vertex(0).z());
-                DPoint3d b(DPoint3d::From(nearestTriangle.vertex(1).x(), nearestTriangle.vertex(1).y(), nearestTriangle.vertex(1).z());
-                DPoint3d c(DPoint3d::From(nearestTriangle.vertex(2).x(), nearestTriangle.vertex(2).y(), nearestTriangle.vertex(2).z());
+                DPoint3d a(DPoint3d::From(nearestTriangle.vertex(0).x(), nearestTriangle.vertex(0).y(), nearestTriangle.vertex(0).z()));
+                DPoint3d b(DPoint3d::From(nearestTriangle.vertex(1).x(), nearestTriangle.vertex(1).y(), nearestTriangle.vertex(1).z()));
+                DPoint3d c(DPoint3d::From(nearestTriangle.vertex(2).x(), nearestTriangle.vertex(2).y(), nearestTriangle.vertex(2).z()));
 
                 PCGroundTrianglePtr groundTriPtr(PCGroundTriangle::Create(*this, a, b, c));
 
-                groundTriPtr
+                groundTriPtr->TryPointToAddToTin(ptIndex);
 
+                size_t nbSeedPointsToAdded(0);
+                for (auto itr = groundTriPtr->GetPointToAdd().begin();
+                    itr != groundTriPtr->GetPointToAdd().end() && nbSeedPointsToAdded < PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD;
+                    ++itr, nbSeedPointsToAdded++)
+                    AddPoint(*itr);
                 }
 
+#if 0 
             ProgressMonitor progressMonitor(*m_pReport, m_trianglesToProcess.size(), false, m_pParams->GetUseMultiThread());
             size_t nbTriangleProcessed(1);
             for (PCGroundTriangleCollection::iterator triItr = m_trianglesToProcess.begin(); triItr != m_trianglesToProcess.end() && progressMonitor.InProgress(); ++triItr, ++nbTriangleProcessed, IncrementWorkDone())
@@ -1291,7 +1314,7 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                 m_pReport->EndPhase(L"ABORT -  Densification of TIN");
                 return ERROR;//User abort
                 }
-
+#endif
             m_pReport->EndCurrentIteration();
             }
 #endif
@@ -1306,6 +1329,8 @@ StatusInt  PCGroundTIN::_DensifyTIN()
         int currentIteration = 1;
         for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
             {
+            OutputDtmPreview();
+
             m_pReport->StartCurrentIteration(currentIteration);
 
             //Special case for first iteration        
@@ -1352,13 +1377,14 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                 m_pReport->OutputMessage(tmpMessage);
     */
                 }
+
             progressMonitor.FinalStageProcessing();
             if (progressMonitor.WasCanceled() || progressMonitor.WasError())
                 {
                 m_pReport->EndCurrentIteration();
                 m_pReport->EndPhase(L"ABORT -  Densification of TIN");
                 return ERROR;//User abort
-                }
+                }                                                            
 
             m_pReport->EndCurrentIteration();
             }

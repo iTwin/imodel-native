@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCGroundTIN.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -377,6 +377,9 @@ private:
     // IDPoint3dCriteria implementation
     virtual bool _IsAccepted(DPoint3d const& point) const override;
 
+    void CreatePolyfaceQuery();
+
+    void OutputDtmPreview();
 
     DRange3d                            m_boundingBoxMeter;
     bool                                m_shouldStopIteration;

@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/BcDtmProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,6 +25,8 @@ public:
      static BcDtmProviderPtr Create();
      static BcDtmProviderPtr CreateFrom(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM& bcDtm);
      static BcDtmProviderPtr CreateFrom(WChar* filename, WChar* name = nullptr);
+
+     BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr GetBcDTM();
 
 private:
     BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr     m_pBcDtm;
