@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/Published/LinkElement_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -341,7 +341,7 @@ TEST_F(LinkElementTest, RepositoryLinkCRUD)
     ASSERT_TRUE(link2.IsValid());
     BeTest::SetFailOnAssert(false);
     ASSERT_FALSE(link2->Insert().IsValid());
-    BeTest::SetFailOnAssert(false);
+    BeTest::SetFailOnAssert(true);
     testLabel2 = RepositoryLink::CreateUniqueCode(*model, "TestLabel");
     link2 = RepositoryLink::Create(*model, testUrl, testLabel2.GetValueCP(), testDescription);
     ASSERT_TRUE(link2.IsValid());
