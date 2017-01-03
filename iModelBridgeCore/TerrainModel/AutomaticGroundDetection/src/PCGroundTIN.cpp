@@ -12,7 +12,7 @@
 #include "BcDtmProvider.h"
 
 #include "PCGroundTIN.h"
-#include "TriangleSearcher.h"
+//#include "TriangleSearcher.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
@@ -1205,20 +1205,24 @@ StatusInt PCGroundTIN::_CreateInitialTIN()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool s_testOneQuery = false;
+static bool s_outputPreview = false;
 
 void PCGroundTIN::OutputDtmPreview()
     {    
-    DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
-    
-    en->SetExcludeAllRegions();
-    en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
-
-    IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
-
-    for (PolyfaceQueryP pf : *en)
+    if (s_outputPreview)
         {
-        // Polyface returned.        
-        ptsAccumPtr->OutputPreview(*pf);
+        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
+    
+        en->SetExcludeAllRegions();
+        en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
+
+        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+
+        for (PolyfaceQueryP pf : *en)
+            {
+            // Polyface returned.        
+            ptsAccumPtr->OutputPreview(*pf);
+            }
         }
     }
 
