@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2820,6 +2820,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 }
 
             meshPart->AddInstance (TileMeshInstance(geom->GetEntityId(), geom->GetTransform()));
+            m_containsParts = true;
             }
         else
             {
@@ -2829,14 +2830,6 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, twoSidedTriangles, doSurfacesOnly, true, filter, uninstancedGeometry);
 
     meshes.insert (meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
-
-    static bool                 s_omitInstances = false, s_omitUninstanced = false;
-
-    if (s_omitInstances)
-        publishedTileGeometry.Parts().clear();
-
-    if (s_omitUninstanced)
-        publishedTileGeometry.Meshes().clear();
 
     return publishedTileGeometry;
     }
