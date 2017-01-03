@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -284,6 +284,34 @@ void            BeTest::SetFailOnAssert (bool doFail, BeAssertFunctions::AssertT
         } 
 
     s_bentleyCS.unlock();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      11/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+bool BeTest::GetFailOnAssert (BeAssertFunctions::AssertType atype)
+    {
+    bool allWillFail = true;
+
+    s_bentleyCS.lock();
+
+    if (atype == BeAssertFunctions::AssertType::All)
+        {
+        allWillFail = true;
+        for (int i=0; i<(int)BeAssertFunctions::AssertType::TypeCount; ++i)
+            {
+            if (i != (int)BeAssertFunctions::AssertType::Data)   // must set data asserts specifically
+                allWillFail &= s_failOnAssert[i];
+            }
+        }
+    else
+        {
+        allWillFail = s_failOnAssert[(int)atype];
+        } 
+
+    s_bentleyCS.unlock();
+
+    return allWillFail;
     }
 
 /*---------------------------------------------------------------------------------**//**
