@@ -52,7 +52,8 @@ struct EXPORT_VTABLE_ATTRIBUTE IECSqlValue : NonCopyableClass
         //!     - Point3d: if X, Y, and @b and Z is %NULL
         //!     - Struct: If all members are %NULL
         //!     - Navigation: If Id is %NULL (see also @ref ECDbNavigationProperties)
-        //!     - Primitive/struct array: are never %NULL
+        //!     - Primitive/struct array: true if unset, false otherwise, even if an empty array was set
+        //!     So there is a difference between the array being %NULL and empty.
         //! @return true if value is %NULL, false otherwise
         ECDB_EXPORT bool IsNull() const;
 

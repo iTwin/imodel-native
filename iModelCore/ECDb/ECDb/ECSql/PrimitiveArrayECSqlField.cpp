@@ -57,42 +57,36 @@ ECSqlStatus PrimitiveArrayECSqlField::_OnAfterStep()
     {
     OnAfterReset();
 
+    if (IsNull())
+        {
+        m_arrayValueECInstance = m_emptyArrayValueECInstance;
+        m_arrayInfo = m_emptyArrayInfo;
+        return ECSqlStatus::Success;
+        }
+
     Byte* arrayBlob = (Byte*) GetSqliteStatement().GetValueBlob(m_sqliteColumnIndex);
     const int arrayBlobSize = GetSqliteStatement().GetColumnBytes(m_sqliteColumnIndex);
 
-    const bool isEmptyArray = arrayBlob == nullptr;
-    if (!isEmptyArray)
+    if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
+        return ReportError(ECSqlStatus::Error, "BLOB is not a valid ECD BLOB used to persist primitive arrays.");
+
+    //Initialize ECInstance from blob
+    m_arrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateSharedInstance(arrayBlob, arrayBlobSize);
+    if (m_arrayValueECInstance == nullptr)
         {
-        if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
-            {
-            BeAssert(false && "BLOB is from a future version that thinks it is not compatible with us");
-            return ReportError(ECSqlStatus::Error, "BLOB is from a future version that thinks it is not compatible with us");
-            }
-
-        //Initialize ECInstance from blob
-        m_arrayValueECInstance = m_primitiveArraySystemClass.GetDefaultStandaloneEnabler()->CreateSharedInstance(arrayBlob, arrayBlobSize);
-        if (!m_arrayValueECInstance.IsValid())
-            {
-            BeAssert(false && "Shared ECInstance created from array BLOB is nullptr.");
-            return ReportError(ECSqlStatus::Error, "Shared ECInstance created from array BLOB is nullptr.");
-            }
-
-        //Get array information 
-        ECValue arrayMetaInfo;
-        if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
-            {
-            BeAssert(false && "Could not retrieve array information from array ECInstance.");
-            return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
-            }
-
-        m_arrayInfo = arrayMetaInfo.GetArrayInfo();
+        BeAssert(false && "Shared ECInstance created from array ECD BLOB is nullptr.");
+        return ReportError(ECSqlStatus::Error, "Shared ECInstance created from array ECD BLOB is nullptr.");
         }
-    else
+
+    //Get array information 
+    ECValue arrayMetaInfo;
+    if (m_arrayValueECInstance->GetValue(arrayMetaInfo, 1) != ECObjectsStatus::Success)
         {
-        //array is empty.
-        m_arrayValueECInstance = m_emptyArrayValueECInstance;
-        m_arrayInfo = m_emptyArrayInfo;
+        BeAssert(false && "Could not retrieve array information from array ECInstance.");
+        return ReportError(ECSqlStatus::Error, "Could not retrieve array information from array ECInstance.");
         }
+
+    m_arrayInfo = arrayMetaInfo.GetArrayInfo();
 
     return ECSqlStatus::Success;
     }
@@ -131,37 +125,9 @@ void PrimitiveArrayECSqlField::_MoveNext(bool onInitializingIterator) const
         return;
 
     BeAssert(m_currentArrayIndex >= 0);
-
-    auto ecInstance = GetArrayValueECInstance();
-    BeAssert(ecInstance != nullptr);
-    m_arrayElement.SetValue(*ecInstance, (uint32_t) m_currentArrayIndex, m_datetimeMetadata);
+    BeAssert(GetArrayValueECInstance() != nullptr);
+    m_arrayElement.SetValue(*GetArrayValueECInstance(), (uint32_t) m_currentArrayIndex, m_datetimeMetadata);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-bool PrimitiveArrayECSqlField::_IsAtEnd() const
-    {
-    return m_currentArrayIndex >= _GetArrayLength();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2014
-//---------------------------------------------------------------------------------------
-IECSqlValue const* PrimitiveArrayECSqlField::_GetCurrent() const
-    {
-    BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength());
-    return &m_arrayElement;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2013
-//---------------------------------------------------------------------------------------
-int PrimitiveArrayECSqlField::_GetArrayLength() const
-    {
-    return m_arrayInfo.GetCount();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
@@ -180,15 +146,6 @@ IECSqlStructValue const& PrimitiveArrayECSqlField::_GetStruct() const
     ReportError(ECSqlStatus::Error, "GetStruct cannot be called for array value. Call GetArray instead.");
     return NoopECSqlValue::GetSingleton().GetStruct();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2013
-//---------------------------------------------------------------------------------------
-IECInstanceCP PrimitiveArrayECSqlField::GetArrayValueECInstance() const
-    {
-    return m_arrayValueECInstance.get();
-    }
-
 
 //*********************** PrimitiveArrayMappedToSingleColumnECSqlField::ArrayElementValue *******************
 //---------------------------------------------------------------------------------------
@@ -369,14 +326,6 @@ IECSqlArrayValue const& PrimitiveArrayECSqlField::ArrayElementValue::_GetArray()
     {
     m_ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "GetArray cannot be called for array element. Call GetPrimitive instead.");
     return NoopECSqlValue::GetSingleton().GetArray();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan      07/2013
-//---------------------------------------------------------------------------------------
-void PrimitiveArrayECSqlField::ArrayElementValue::Reset()
-    {
-    m_value.Clear();
     }
 
 //---------------------------------------------------------------------------------------

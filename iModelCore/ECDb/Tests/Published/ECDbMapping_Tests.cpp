@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbMapping_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2333,9 +2333,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertWithNoParameters)
     ASSERT_EQ(64.34, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(34.45, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));       //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));       //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //BIN is null
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //Geom is null
     }
@@ -2419,9 +2419,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertExplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     }
 
@@ -2579,9 +2579,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertImplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     
     }
