@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -17,12 +17,14 @@
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
 struct IScalableMeshGroundExtractor;
 
 typedef RefCountedPtr<IScalableMeshGroundExtractor> IScalableMeshGroundExtractorPtr;
 
+
+
 /*=================================================================================**//**
-* Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
 struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
@@ -36,12 +38,16 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
 
         virtual StatusInt _SetExtractionArea(const bvector<DPoint3d>& area) = 0;
 
+        virtual StatusInt _SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer) = 0;
+
           
     public:
       
         BENTLEY_SM_EXPORT StatusInt ExtractAndEmbed(const BeFileName& coverageTempDataFolder);                
-
+        
         BENTLEY_SM_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
+
+        BENTLEY_SM_EXPORT StatusInt SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer);
         
         BENTLEY_SM_EXPORT static IScalableMeshGroundExtractorPtr Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);        
 

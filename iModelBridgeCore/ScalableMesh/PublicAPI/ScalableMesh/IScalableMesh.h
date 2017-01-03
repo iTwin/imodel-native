@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -46,6 +46,9 @@ typedef RefCountedPtr<IScalableMesh> IScalableMeshPtr;
 struct IScalableMeshTileTriangulatorManager;
 typedef RefCountedPtr<IScalableMeshTileTriangulatorManager> IScalableMeshTileTriangulatorManagerPtr;
 
+struct IScalableMeshGroundPreviewer;
+typedef RefCountedPtr<IScalableMeshGroundPreviewer> IScalableMeshGroundPreviewerPtr;
+
 namespace GeoCoords {
 struct GCS;
 } 
@@ -83,6 +86,25 @@ public:
     BENTLEY_SM_EXPORT static size_t GetMaximumMemoryUsage();
     BENTLEY_SM_EXPORT static size_t GetMaximumVideoMemoryUsage();
 };
+
+
+/*=================================================================================**//**
+* @bsiclass                                                     Bentley Systems
++===============+===============+===============+===============+===============+======*/
+struct IScalableMeshGroundPreviewer abstract : virtual public RefCountedBase
+{
+private:
+
+protected:
+
+    //Synchonization with data sources functions
+    virtual StatusInt _UpdatePreview(PolyfaceQueryCR currentGround) = 0;
+
+public:
+
+    BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+};
+
 
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
@@ -204,8 +226,8 @@ struct IScalableMesh abstract:  IRefCounted
         virtual IScalableMeshNodePtr               _GetRootNode() = 0;
 
         virtual void                               _ImportTerrainSM(WString terrainPath) = 0;
-
-        virtual BentleyStatus                      _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id) = 0;
+                                                                                                                                                                 
+        virtual BentleyStatus                      _CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer) = 0;
 
         virtual void                               _GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData) = 0;
 
@@ -332,7 +354,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT IScalableMeshPtr       GetTerrainSM();
 
-        BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id);
+        BENTLEY_SM_EXPORT BentleyStatus          CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer);
 
         BENTLEY_SM_EXPORT void                   GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData);
 

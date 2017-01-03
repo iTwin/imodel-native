@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:13 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -38,6 +38,7 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         IScalableMeshPtr  m_scalableMesh;
         bvector<DPoint3d> m_extractionArea;       
         WString           m_smTerrainPath;
+        IScalableMeshGroundPreviewerPtr  m_groundPreviewer;
 
         StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);
 
@@ -46,6 +47,8 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         virtual StatusInt                   _ExtractAndEmbed(const BeFileName& coverageTempDataFolder) override;     
 
         virtual StatusInt                   _SetExtractionArea(const bvector<DPoint3d>& area) override;
+
+        virtual StatusInt                   _SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer) override;
 
         explicit                            ScalableMeshGroundExtractor(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh);
 

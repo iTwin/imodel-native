@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -199,7 +199,7 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
          Set the path of the files created for a given project (e.g. : dgndb file). 
         -----------------------------------------------------------------------------*/
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) = 0;
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.
