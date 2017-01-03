@@ -47,23 +47,4 @@ DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
 
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman - must somehow use an API that has access to the write token in order to insert data into a BIM using ECSql
 
-#Need to be adjusted to new nav prop semantics or overflow col support
-SqlFunctionsTest.DGN_point_min_distance_to_bbox
-SqlFunctionsTest.spatialQueryECSql
-SqlFunctionsTest.spatialQuery
-CreateFromInstanceTests.ViewDefinition
-DgnElementTests.DemoArrayProblem
-DependencyRevisionTest.Merge
-#ElementGroupTests.DeleteMemberElement
-#ElementGroupTests.DeleteElementGroup
-#ElementGroupTests.ElementGroupsMembersHelper
-#RevisionTestFixture.Workflow
-#DependencyRevisionTest.TestDependency
-#DependencyRevisionTest.SingleRevision
-#DependencyRevisionTest.Conflict
-#DependencyRevisionTest.DirectAndIndirectChangesToSameElement
-#DependencyRevisionTest.UpdateCache
-#DependencyRevisionTest.MergeDependencyPermutations
-#SessionTests.Sessions
-#TextAnnotationTest.BasicCrud2d
-#TextAnnotationTest.BasicCrud3d
+DependencyRevisionTest.Merge # Raman - Needs to be adjusted for overflow column support

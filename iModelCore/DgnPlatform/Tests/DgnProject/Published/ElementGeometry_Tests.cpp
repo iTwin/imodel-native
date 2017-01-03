@@ -2,11 +2,12 @@
 |
 |  $Source: Tests/DgnProject/Published/ElementGeometry_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "../TestFixture/DgnDbTestFixtures.h"
+#include <folly/BeFolly.h>
 
 /*---------------------------------------------------------------------------------**//**
 * Test fixture for testing Element Geometry 
@@ -46,15 +47,29 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_TRUE(GeometricPrimitive::GeometryType::CurvePrimitive == elmGeom->GetGeometryType());
     ICurvePrimitivePtr getAsCurvePrimitive = elmGeom->GetAsICurvePrimitive();
     EXPECT_TRUE(getAsCurvePrimitive.IsValid());
+    EXPECT_TRUE(elmGeom->IsWire());
+    EXPECT_FALSE(elmGeom->IsSheet());
+    EXPECT_FALSE(elmGeom->IsSolid());
+    //Clone CurvePrimitive
+    GeometricPrimitivePtr elmGeomC = elmGeom->Clone();
+    EXPECT_TRUE(elmGeomC.IsValid());
+    EXPECT_TRUE(elmGeomC->GetGeometryType() == elmGeom->GetGeometryType());
 
     // Curve Vector
     //
-    CurveVectorPtr curveVector =  GeomHelper::computeShape();
+    CurveVectorPtr curveVector = GeomHelper::computeShape();
     GeometricPrimitivePtr elmGeom2 = GeometricPrimitive::Create(*curveVector);
     EXPECT_TRUE(elmGeom2.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::CurveVector == elmGeom2->GetGeometryType());
     CurveVectorPtr getAsCurveVector = elmGeom2->GetAsCurveVector();
     EXPECT_TRUE(getAsCurveVector.IsValid());
+    EXPECT_TRUE(elmGeom2->IsWire());
+    EXPECT_FALSE(elmGeom2->IsSheet());
+    EXPECT_FALSE(elmGeom2->IsSolid());
+    //Clone CurveVector Primitive
+    GeometricPrimitivePtr elmGeom2C = elmGeom2->Clone();
+    EXPECT_TRUE(elmGeom2C.IsValid());
+    EXPECT_TRUE(elmGeom2C->GetGeometryType() == elmGeom2->GetGeometryType());
 
     // SolidPrimitive
     //
@@ -67,6 +82,13 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_TRUE(GeometricPrimitive::GeometryType::SolidPrimitive == elmGeom3->GetGeometryType());
     ISolidPrimitivePtr getAsSolid = elmGeom3->GetAsISolidPrimitive();
     EXPECT_TRUE(getAsSolid.IsValid());
+    EXPECT_FALSE(elmGeom3->IsWire());
+    EXPECT_FALSE(elmGeom3->IsSheet());
+    EXPECT_TRUE(elmGeom3->IsSolid());
+    //Clone SolidPrimitive
+    GeometricPrimitivePtr elmGeom3C = elmGeom3->Clone();
+    EXPECT_TRUE(elmGeom3C.IsValid());
+    EXPECT_TRUE(elmGeom3C->GetGeometryType() == elmGeom3->GetGeometryType());
 
     // MSBsplineSurface
     //
@@ -77,6 +99,13 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_TRUE(GeometricPrimitive::GeometryType::BsplineSurface == elmGeom4->GetGeometryType());
     MSBsplineSurfacePtr getAsMesh = elmGeom4->GetAsMSBsplineSurface();
     EXPECT_TRUE(getAsMesh.IsValid());
+    EXPECT_FALSE(elmGeom4->IsWire());
+    EXPECT_TRUE(elmGeom4->IsSheet());
+    EXPECT_FALSE(elmGeom4->IsSolid());
+    //Clone MSBsplineSurface
+    GeometricPrimitivePtr elmGeom4C = elmGeom4->Clone();
+    EXPECT_TRUE(elmGeom4C.IsValid());
+    EXPECT_TRUE(elmGeom4C->GetGeometryType() == elmGeom4->GetGeometryType());
 
     // PolyfaceQuery
     //
@@ -89,22 +118,49 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_TRUE(GeometricPrimitive::GeometryType::Polyface == elmGeom5->GetGeometryType());
     PolyfaceHeaderPtr getAsPolyFace = elmGeom5->GetAsPolyfaceHeader();
     EXPECT_TRUE(getAsPolyFace.IsValid());
+    EXPECT_FALSE(elmGeom5->IsWire());
+    EXPECT_FALSE(elmGeom5->IsSheet());
+    EXPECT_TRUE(elmGeom5->IsSolid());
+    //Clone Polyface
+    GeometricPrimitivePtr elmGeom5C = elmGeom5->Clone();
+    EXPECT_TRUE(elmGeom5C.IsValid());
+    EXPECT_TRUE(elmGeom5C->GetGeometryType() == elmGeom5->GetGeometryType());
 
     // IBRepEntityPtr
     //
+    IBRepEntityPtr out;
+    EXPECT_EQ(BentleyStatus::SUCCESS, BRepUtil::Create::BodyFromBSurface(out, *surface));
+    GeometricPrimitivePtr elmGeom6 = GeometricPrimitive::Create(out);
+    EXPECT_TRUE(elmGeom6.IsValid());
+    EXPECT_TRUE(GeometricPrimitive::GeometryType::BRepEntity == elmGeom6->GetGeometryType());
+    IBRepEntityPtr getAsIBRepEntity = elmGeom6->GetAsIBRepEntity();
+    EXPECT_TRUE(getAsIBRepEntity.IsValid());
+    EXPECT_FALSE(elmGeom6->IsWire());
+    EXPECT_TRUE(elmGeom6->IsSheet());
+    EXPECT_FALSE(elmGeom6->IsSolid());
+    //Clone IBRepEntity
+    GeometricPrimitivePtr elmGeom6C = elmGeom6->Clone();
+    EXPECT_TRUE(elmGeom6C.IsValid());
+    EXPECT_TRUE(elmGeom6C->GetGeometryType() == elmGeom6->GetGeometryType());
 
     // TextString
     //
-    
     TextStringPtr text = GeomHelper::CreateTextString();
-    GeometricPrimitivePtr elmGeom6 = GeometricPrimitive::Create(*text);
-    EXPECT_TRUE(elmGeom6.IsValid());
-    EXPECT_TRUE(GeometricPrimitive::GeometryType::TextString == elmGeom6->GetGeometryType());
-    TextStringPtr getAsTexTString = elmGeom6->GetAsTextString();
+    GeometricPrimitivePtr elmGeom7 = GeometricPrimitive::Create(*text);
+    EXPECT_TRUE(elmGeom7.IsValid());
+    EXPECT_TRUE(GeometricPrimitive::GeometryType::TextString == elmGeom7->GetGeometryType());
+    TextStringPtr getAsTexTString = elmGeom7->GetAsTextString();
     EXPECT_TRUE(getAsTexTString.IsValid());
     EXPECT_STREQ(text->GetText().c_str(), getAsTexTString->GetText().c_str());
-
+    EXPECT_FALSE(elmGeom7->IsWire());
+    EXPECT_FALSE(elmGeom7->IsSheet());
+    EXPECT_FALSE(elmGeom7->IsSolid());
+    //Clone TestString
+    GeometricPrimitivePtr elmGeom7C = elmGeom7->Clone();
+    EXPECT_TRUE(elmGeom7C.IsValid());
+    EXPECT_TRUE(elmGeom7C->GetGeometryType() == elmGeom7->GetGeometryType());
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
@@ -128,5 +184,89 @@ TEST_F(GeometricPrimitiveTests, FacetCounts)
 
     size_t actualFacetCount = polyface->GetNumFacet();
     EXPECT_EQ(facetCountApprox, actualFacetCount);
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct ParasolidTests : GeometricPrimitiveTests
+{
+    static ISolidPrimitivePtr CreateCone(double dz, double radius)
+        {
+        DgnConeDetail detail(DPoint3d::From(0,0,0), DPoint3d::From(0,0,dz), radius, radius, true);
+        ISolidPrimitivePtr prim = ISolidPrimitive::CreateDgnCone(detail);
+        EXPECT_TRUE(prim.IsValid());
+        return prim;
+        }
+
+    static IBRepEntityPtr CreateEntity(ISolidPrimitiveCR primitive)
+        {
+        IBRepEntityPtr brep;
+        EXPECT_EQ(SUCCESS, BRepUtil::Create::BodyFromSolidPrimitive(brep, primitive));
+        return brep;
+        }
+
+    static IBRepEntityPtr CreateConeEntity(double dz, double radius)
+        {
+        auto cone = CreateCone(dz, radius);
+        EXPECT_TRUE(cone.IsValid());
+        return cone.IsValid() ? CreateEntity(*cone) : nullptr;
+        }
+
+    static bool FacetEntity(IBRepEntityCR entity, uint32_t howManyTimes)
+        {
+        auto facetOptions = CreateFacetOptions(0.01);
+        for (uint32_t i = 0; i < howManyTimes; i++)
+            {
+            PolyfaceHeaderPtr mesh = BRepUtil::FacetEntity(entity, *facetOptions);
+            if (mesh.IsNull())
+                return false;
+            }
+
+        return true;
+        }
+};
+
+/*---------------------------------------------------------------------------------**//**
+* Test that we can facet independent solid entities concurrently.
+* @bsimethod                                                    Paul.Connelly   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ParasolidTests, ConcurrentFacet)
+    {
+    SetupSeedProject();
+    PhysicalModelPtr model = GetDefaultPhysicalModel();
+
+    // Create a bunch of solid primitives
+    double baseDz = 3.0;
+    constexpr uint32_t howManyEntities = 8;
+    IBRepEntityPtr entities[howManyEntities];
+    for (uint32_t i = 0; i < howManyEntities; i++)
+        {
+        double dz = baseDz * (i+1);
+        auto entity = CreateConeEntity(dz, dz/2.0);
+        ASSERT_TRUE(entity.IsValid());
+        entities[i] = entity;
+        }
+
+    // Facet each entity repeatedly on a separate thread
+    constexpr uint32_t howManyTimes = 50;
+    std::vector<folly::Future<bool>> futures;
+    for (uint32_t i = 0; i < howManyEntities; i++)
+        {
+        auto entity = entities[i];
+        futures.push_back(folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]() { return ParasolidTests::FacetEntity(*entity, howManyTimes); }));
+        }
+
+    auto future = folly::unorderedReduce(futures, true, [=](bool reduced, bool next) { return reduced && next; });
+    EXPECT_TRUE(future.get());
+
+    // Now facet the same entity repeatedly on multiple threads. This should be safe, but effectively serialized
+    futures.clear();
+    IBRepEntityPtr entity = entities[0];
+    for (uint32_t i = 0; i < howManyEntities; i++)
+        futures.push_back(folly::via(&BeFolly::ThreadPool::GetCpuPool(), [=]() { return ParasolidTests::FacetEntity(*entity, howManyTimes); }));
+
+    future = folly::unorderedReduce(futures, true, [=](bool reduced, bool next) { return reduced && next; });
+    EXPECT_TRUE(future.get());
     }
 

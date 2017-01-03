@@ -750,7 +750,7 @@ void JsPreparedECSqlStatement::BindDouble(int parameterIndex, double value)
 void JsPreparedECSqlStatement::BindDRange3d(int parameterIndex, JsDRange3dP value)
     {
     DGNJSAPI_VALIDATE_ARGS_VOID(IsValid() && value);
-    CHECK_BIND_RESULT(m_stmt->BindBinary(parameterIndex, &value->GetCR(), sizeof(DRange3d), IECSqlBinder::MakeCopy::Yes));
+    CHECK_BIND_RESULT(m_stmt->BindBlob(parameterIndex, &value->GetCR(), sizeof(DRange3d), IECSqlBinder::MakeCopy::Yes));
     }
 
 //---------------------------------------------------------------------------------------
@@ -778,7 +778,7 @@ JsDRange3dP JsPreparedECSqlStatement::GetValueDRange3d(int32_t col)
     {
     CHECK_GET_VALUE_ARGS(col,nullptr);
     int sz;
-    void const* p = m_stmt->GetValueBinary(col, &sz);
+    void const* p = m_stmt->GetValueBlob(col, &sz);
     if (nullptr == p || sz != sizeof(DRange3d))
         {
         DGNJSAPI_DGNSCRIPT_THROW("ECSql", "ColumnType");

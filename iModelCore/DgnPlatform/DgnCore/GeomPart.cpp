@@ -25,7 +25,7 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
         return DgnDbStatus::BadElement;
 
     int blobSize;
-    void const* blob = statement.GetValueBinary(geometryStreamIndex, &blobSize);
+    void const* blob = statement.GetValueBlob(geometryStreamIndex, &blobSize);
     status = m_geometry.ReadGeometryStream(GetDgnDb().Elements().GetSnappyFrom(), GetDgnDb(), blob, blobSize);
     if (DgnDbStatus::Success != status)
         return status;
@@ -123,7 +123,7 @@ DgnDbStatus DgnGeometryPart::WriteGeometryStream()
 
     m_multiChunkGeomStream = false;
     DgnDbR db = GetDgnDb();
-    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), BIS_TABLE(BIS_CLASS_DefinitionElement), "sc1"); // NOTE: takes advantage of knowing how the EC --> SQLite mapping will turn out!
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), BIS_CLASS_GeometryPart, PARAM_GeometryStream);
     }
 
 /*---------------------------------------------------------------------------------**//**

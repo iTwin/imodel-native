@@ -129,14 +129,6 @@ void AutoHandledPropertiesCollection::Iterator::ToNextValid()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/13
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnVersion getCurrentSchemaVerion()
-    {
-    return DgnVersion(DGNDB_CURRENT_VERSION_Major, DGNDB_CURRENT_VERSION_Minor, DGNDB_CURRENT_VERSION_Sub1, DGNDB_CURRENT_VERSION_Sub2);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 static void importBisCoreSchema(DgnDbCR db)
@@ -175,10 +167,11 @@ static void importBisCoreSchema(DgnDbCR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DbResult insertIntoDgnModel(DgnDbR db, DgnElementId modeledElementId, DgnClassId classId)
     {
-    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,Visibility) VALUES(?,?,?,0)");
+    Statement stmt(db, "INSERT INTO " BIS_TABLE(BIS_CLASS_Model) " (Id,ECClassId,ModeledElementId,ModeledElementRelECClassId,Visibility) VALUES(?,?,?,?,0)");
     stmt.BindId(1, DgnModelId(modeledElementId.GetValue())); // DgnModelId is the same as the element that it is modeling
     stmt.BindId(2, classId);
     stmt.BindId(3, modeledElementId);
+    stmt.BindId(4, db.Schemas().GetECClassId(BIS_ECSCHEMA_NAME, BIS_REL_ModelModelsElement));
 
     DbResult result = stmt.Step();
     BeAssert(BE_SQLITE_DONE == result && "Failed to create model");
@@ -499,7 +492,7 @@ DbResult DgnDb::OpenParams::_DoUpgrade(DgnDbR project, DgnVersion& version) cons
         }
 
 #endif
-    version = getCurrentSchemaVerion();
+    version = DgnDbSchemaVersion::GetCurrent();
     return  BE_SQLITE_OK;
     }
 
@@ -522,7 +515,7 @@ DbResult DgnDb::OpenParams::UpgradeSchema(DgnDbR project) const
         project.SaveDgnDbSchemaVersion(version);
 
         // Stop when we get to the current version.
-        if (getCurrentSchemaVerion() == version)
+        if (DgnDbSchemaVersion::GetCurrent() == version)
             break;
         }
 
@@ -551,7 +544,7 @@ DbResult DgnDb::_VerifySchemaVersion(Db::OpenParams const& params)
         }
 
     m_schemaVersion.FromJson(versionString.c_str());
-    DgnVersion expectedVersion = getCurrentSchemaVerion();
+    DgnVersion expectedVersion = DgnDbSchemaVersion::GetCurrent();
     DgnVersion minimumAutoUpgradableVersion(DGNDB_SUPPORTED_VERSION_Major, DGNDB_SUPPORTED_VERSION_Minor, 0, 0);
 
     bool profileIsAutoUpgradable = false;

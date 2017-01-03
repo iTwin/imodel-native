@@ -362,7 +362,7 @@ DgnDbStatus LinearDimension::BindParams(BeSQLite::EC::ECSqlStatement& stmt)
     fbb.Finish(mloc);
 
     // Bind points
-    if (ECSqlStatus::Success != stmt.BindBinary(stmt.GetParameterIndex (PROP_Points), fbb.GetBufferPointer(), fbb.GetSize(), IECSqlBinder::MakeCopy::Yes))
+    if (ECSqlStatus::Success != stmt.BindBlob(stmt.GetParameterIndex (PROP_Points), fbb.GetBufferPointer(), fbb.GetSize(), IECSqlBinder::MakeCopy::Yes))
         return DgnDbStatus::BadArg;
 
     return DgnDbStatus::Success;
@@ -377,7 +377,7 @@ DgnDbStatus LinearDimension::ReadSelectParams(BeSQLite::EC::ECSqlStatement& sele
 
     // Read points and deserialize from flatbuf
     int dataSize = 0;
-    ByteCP data = static_cast<ByteCP>(select.GetValueBinary(selectParams.GetSelectIndex(PROP_Points), &dataSize));
+    ByteCP data = static_cast<ByteCP>(select.GetValueBlob(selectParams.GetSelectIndex(PROP_Points), &dataSize));
 
     auto fbPoints = GetRoot<FB::DimensionPoints>(data);
     FB::DPoint2dVector const* coords   = fbPoints->coords();

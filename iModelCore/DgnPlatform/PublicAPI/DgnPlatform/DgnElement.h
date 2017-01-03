@@ -1833,7 +1833,7 @@ struct GeometryStream : ByteStream
 public:
     bool HasGeometry() const {return HasData();}  //!< return false if this GeometryStream is empty.
     DgnDbStatus ReadGeometryStream(BeSQLite::SnappyFromMemory& snappy, DgnDbR dgnDb, void const* blob, int blobSize); //!< @private
-    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP tableName, Utf8CP columnName); //!< @private
+    static DgnDbStatus WriteGeometryStream(BeSQLite::SnappyToBlob&, DgnDbR, DgnElementId, Utf8CP className, Utf8CP propertyName); //!< @private
     DgnDbStatus BindGeometryStream(bool& multiChunkGeometryStream, BeSQLite::SnappyToBlob&, BeSQLite::EC::ECSqlStatement&, Utf8CP parameterName) const; //!< @private
 };
 
@@ -2103,7 +2103,7 @@ protected:
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;
-    virtual Utf8CP _GetGeometryColumnTableName() const = 0;
+    virtual Utf8CP _GetGeometryColumnClassName() const = 0;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
@@ -2178,7 +2178,7 @@ protected:
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
     GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
-    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement3d);}
+    Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement3d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
@@ -2239,7 +2239,7 @@ protected:
     DgnElementCP _ToElement() const override final {return this;}
     GeometrySourceCP _ToGeometrySource() const override final {return this;}
     GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
-    Utf8CP _GetGeometryColumnTableName() const override final {return BIS_TABLE(BIS_CLASS_GeometricElement2d);}
+    Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement2d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
     DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
@@ -3025,7 +3025,7 @@ private:
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
-    mutable BeSQLite::BeDbMutex m_mutex;
+    mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
     mutable AutoHandledPropertyUpdaterCache m_updaterCache;
@@ -3058,6 +3058,8 @@ private:
     ECSqlClassParams const& GetECSqlClassParams(DgnClassId) const;
 
 public:
+    BeMutex& GetMutex() {return m_mutex;}
+
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
     // *** WIP_SCHEMA_IMPORT - temporary work-around needed because ECClass objects are deleted when a schema is imported
     DGNPLATFORM_EXPORT void ClearUpdaterCache();

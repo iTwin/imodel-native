@@ -46,7 +46,7 @@ RangeIndex::Traverser::Accept FitContext::_CheckRangeTreeNode(RangeIndex::FBoxCR
     if (Traverser::Accept::No == T_Super::_CheckRangeTreeNode(range, is3d))
         return Traverser::Accept::No ;
 
-    return IsRangeContained(range) ? Traverser::Accept::Yes : Traverser::Accept::No;
+    return IsRangeContained(range) ? Traverser::Accept::No : Traverser::Accept::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**

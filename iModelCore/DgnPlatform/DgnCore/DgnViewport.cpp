@@ -12,6 +12,15 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::DestroyViewport()
     {
+    SuspendViewport();
+    m_viewController = nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnViewport::SuspendViewport()
+    {
     ClearProgressiveTasks();
     if (m_renderTarget.IsValid())
         RenderQueue().WaitForIdle();
@@ -21,18 +30,8 @@ void DgnViewport::DestroyViewport()
         m_viewController->RequestAbort(true);
         m_viewController->GetDgnDb().Models().DropGraphicsForViewport(*this);
         m_viewController->GetDgnDb().Elements().DropGraphicsForViewport(*this);        
-        m_viewController = nullptr;
         }
 
-    SetRenderTarget(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   John.Gooding    04/2016
-//---------------------------------------------------------------------------------------
-void DgnViewport::SuspendViewport()
-    {
-    ClearProgressiveTasks();
     SetRenderTarget(nullptr);
     }
 

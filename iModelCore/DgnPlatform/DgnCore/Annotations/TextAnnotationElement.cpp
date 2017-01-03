@@ -46,7 +46,7 @@ DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el, BeSQLite::EC:
     if (annotationBlob.empty())
         update->BindNull(1);
     else
-        update->BindBinary(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
+        update->BindBlob(1, &annotationBlob[0], (int)annotationBlob.size(), IECSqlBinder::MakeCopy::No);
 
     update->BindId(2, el.GetElementId());
 
@@ -76,7 +76,7 @@ DgnDbStatus TextAnnotationData::_LoadProperties(DgnElementCR el)
         }
 
     int dataSize = 0;
-    ByteCP data = (ByteCP)select->GetValueBinary(0, &dataSize);
+    ByteCP data = (ByteCP)select->GetValueBlob(0, &dataSize);
     if ((0 == dataSize) || (nullptr == data))
         {
         m_annotation = nullptr;

@@ -478,7 +478,7 @@ void SimplifyGraphic::LocalToView(DPoint4dP viewPts, DPoint3dCP localPts, int nP
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SimplifyGraphic::LocalToView(DPoint3dP viewPts, DPoint3dCP localPts, int nPts) const
     {
-    DMatrix4dCR  localToView = GetLocalToView();
+    DMatrix4dCR localToView = GetLocalToView();
 
     if (nullptr != m_context.GetViewport() && m_context.GetViewport()->IsCameraOn())
         localToView.MultiplyAndRenormalize(viewPts, localPts, nPts);
