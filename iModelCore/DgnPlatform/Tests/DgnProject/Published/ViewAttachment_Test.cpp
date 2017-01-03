@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ViewAttachment_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -206,10 +206,16 @@ template<typename VC, typename EL> void ViewAttachmentTest::SetupAndSaveViewCont
     ASSERT_TRUE(viewController.GetViewDefinition().GetDisplayStyle().Update().IsValid());
     }
 
+struct IgnoreAssertionFailures
+    {
+    IgnoreAssertionFailures() {BentleyApi::BeTest::SetFailOnAssert(false);}
+    ~IgnoreAssertionFailures() {BentleyApi::BeTest::SetFailOnAssert(true);}
+    };
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ViewAttachmentTest, CRUD)
+TEST_F(ViewAttachmentTest, CRUD) 
     {
     auto& db = GetDgnDb();
 
@@ -218,16 +224,19 @@ TEST_F(ViewAttachmentTest, CRUD)
     // Test some invalid CreateParams
     // Invalid view id
     {
+    IgnoreAssertionFailures expectAsserts;
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, DgnViewId(), m_attachmentCatId, placement);
     EXPECT_INVALID(attachment.Insert());
     }
     // Invalid category
     {
+    IgnoreAssertionFailures expectAsserts;
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, DgnCategoryId(), placement);
     EXPECT_INVALID(attachment.Insert());
     }
     // Not a sheet model
     {
+    IgnoreAssertionFailures expectAsserts;
     Sheet::ViewAttachment attachment(GetDgnDb(), m_drawingModelId, m_viewId, m_attachmentCatId, placement);
     EXPECT_INVALID(attachment.Insert());
     }
