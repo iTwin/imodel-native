@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECProperty.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -790,7 +790,7 @@ bool PrimitiveECProperty::_IsCalculated() const
 //+---------------+---------------+---------------+---------------+---------------+------
 Utf8StringCR ExtendedTypeECProperty::GetExtendedTypeName() const
     {
-    if (!ExtendedTypeLocallyDefined())
+    if (!IsExtendedTypeDefinedLocally())
         {
         ECPropertyCP baseProperty = GetBaseProperty();
         if (nullptr != baseProperty)
@@ -908,7 +908,7 @@ SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(Be
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const
     {
-    if (this->ExtendedTypeLocallyDefined())
+    if (this->IsExtendedTypeDefinedLocally())
         {
         attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
         }
@@ -1332,7 +1332,7 @@ bool PrimitiveArrayECProperty::_CanOverride (ECPropertyCR baseProperty) const
         {
         LOG.errorv("The ECProperty %s:%s has a primitive type '%s' that does not match the primitive type '%s' of ECProperty %s:%s.",
                    baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), ECXml::GetPrimitiveTypeName(basePrimitiveType),
-                   GetClass().GetFullName(), GetName().c_str(), ECXml::GetPrimitiveTypeName(m_primitiveType));
+                   ECXml::GetPrimitiveTypeName(m_primitiveType), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
 

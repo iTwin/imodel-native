@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECObjects.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -177,7 +177,8 @@ enum class ECObjectsStatus
     InvalidECVersion,
     InterfaceUnacceptable,
     PropertyNotSupported,
-    RelationshipAlreadyHasBaseClass
+    RelationshipAlreadyHasBaseClass,
+    InvalidPrimitiveOverrride,
     };
 
 //! Result status for deserializing an ECSchema from Xml

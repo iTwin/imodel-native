@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaDeserializationConversionTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -750,6 +750,97 @@ TEST_F(SchemaDeserializationConversionTest, TestDroppingRelationshipBaseClasses)
         ASSERT_TRUE(nullptr != baseClass) << "There are no base classes on " << ecClass->GetFullName() << " when the size was 1.";
         EXPECT_STREQ("BaseRel2", baseClass->GetName().c_str()) << "The base class was not the expected base class on relationship " << ecClass->GetFullName() << ".";
         }
+    }
+
+void TestOverriding(Utf8CP schemaName, int readVersion, bool allowOverriding)
+    {
+    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
+        "<ECSchema schemaName='%s' namespacePrefix='ts' version='%d.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
+        "   <ECClass typeName='CustAttribute' isCustomAttributeClass='true'>"
+        "       <ECProperty propertyName='TestValue' typeName='int'/>"
+        "   </ECClass>"
+        "   <ECClass typeName='derived' isDomainClass='True'>"
+        "       <BaseClass>child</BaseClass>"
+        "       <ECProperty propertyName='IntegerProperty' typeName='int' />"
+        "       <ECArrayProperty propertyName='IntArrayProperty' typeName='int' minOccurs='0' maxOccurs='1' />"
+        "   </ECClass>"
+        "   <ECClass typeName='base' isDomainClass='True'>"
+        "       <ECProperty propertyName='IntegerProperty' typeName='int' >"
+        "           <ECCustomAttributes>"
+        "               <CustAttribute xmlns='%s.%d.0'>"
+        "                   <TestValue>4</TestValue>"
+        "               </CustAttribute>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "       <ECArrayProperty propertyName='IntArrayProperty' typeName='int' minOccurs='0' maxOccurs='1' />"
+        "   </ECClass>"
+        "   <ECClass typeName='child' isDomainClass='True'>"
+        "       <BaseClass>base</BaseClass>"
+        "       <ECArrayProperty propertyName='IntegerProperty' typeName='int' minOccurs='0' maxOccurs='1' />"
+        "       <ECProperty propertyName='IntArrayProperty' typeName='int' />"
+        "   </ECClass>"
+        "</ECSchema>";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, schemaName, readVersion, schemaName, readVersion);
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *schemaContext);
+    if (!allowOverriding)
+        {
+        ASSERT_NE(SchemaReadStatus::Success, status) << "The schema " << schemaName << " should have failed to deserialize";
+        return;
+        }
+
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "The schema " << schemaName << " should deserialize successfully";
+    ASSERT_TRUE(schema.IsValid()) << "The schema " << schemaName << " is invalid even though returned success";
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema " << schemaName << " deserialized to the wrong version of EC.";
+
+    bvector<Utf8CP> classNames = {"base", "child","derived"};
+    for (Utf8CP className : classNames)
+        {
+        ECClassCP ecClass = schema->GetClassCP(className);
+        ASSERT_TRUE(nullptr != ecClass) << "The class " << schemaName << ":" << className << " could not be found.";
+        ECPropertyP ecProp = ecClass->GetPropertyP("IntegerProperty", false);
+        ASSERT_TRUE(nullptr != ecProp) << "The property " << ecClass->GetFullName() << ".IntegerProperty could not be found.";
+        PrimitiveArrayECPropertyCP arrProp = ecProp->GetAsPrimitiveArrayProperty();
+        ASSERT_TRUE(nullptr != arrProp) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << " is not a primitive array property when it should be.";
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, arrProp->GetPrimitiveElementType()) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << "is not of the expected type.";
+
+        if (ecClass->GetName().Equals("base"))
+            {
+            IECInstancePtr instance = arrProp->GetCustomAttributeLocal("CustAttribute");
+            ASSERT_TRUE(instance.IsValid()) << "Could not find the custom attribute CustAttribute on " << ecClass->GetFullName() << "." << ecProp->GetName().c_str();
+            ECValue v;
+            ECObjectsStatus instanceStatus = instance->GetValue(v, "TestValue");
+            ASSERT_EQ(ECObjectsStatus::Success, instanceStatus) << "Failed to read the value of ";
+            ASSERT_FALSE(v.IsNull()) << "The value of the TestValue CA is null in " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << " when it shouldn't be.";
+            EXPECT_EQ(4, v.GetInteger()) << "The value of the TestValue CA is not as expected in " << ecClass->GetFullName() << "." << ecProp->GetName().c_str();
+            }
+
+        ECPropertyP ecProp2 = ecClass->GetPropertyP("IntArrayProperty", false);
+        ASSERT_TRUE(nullptr != ecProp2) << "The property " << ecClass->GetFullName() << ".IntArrayProperty could not be found.";
+        PrimitiveArrayECPropertyCP arrProp2 = ecProp2->GetAsPrimitiveArrayProperty();
+        ASSERT_TRUE(nullptr != arrProp2) << "The property " << ecClass->GetFullName() << "." << ecProp2->GetName().c_str() << " is not a primitive array property when it should be.";
+        EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, arrProp2->GetPrimitiveElementType()) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << "is not of the expected type.";
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, TestArrayPropertyOverriding)
+    {
+    TestOverriding("TestSchema", 5, false);
+    TestOverriding("jclass", 1, true);
+    TestOverriding("jclass", 2, true);
+    TestOverriding("ECXA_ams", 1, true);
+    TestOverriding("ECXA_ams_user", 1, true);
+    TestOverriding("ams", 1, true);
+    TestOverriding("ams_user", 1, true);
+    TestOverriding("Bentley_JSpace_CustomAttributes", 2, true);
+    TestOverriding("Bentley_Plant", 6, true);
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

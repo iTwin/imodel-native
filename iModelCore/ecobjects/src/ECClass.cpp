@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -602,14 +602,14 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
         ECObjectsStatus status = CanPropertyBeOverridden (*baseProperty, *pProperty);
         if (ECObjectsStatus::Success != status)
             {
-            if (!resolveConflicts)
-                return status;
-            else
+            if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
                 {
                 Utf8String newName;
                 FindUniquePropertyName(newName, pProperty->GetClass().GetSchema().GetAlias().c_str(), pProperty->GetName().c_str());
                 pProperty->SetName(newName);
                 }
+            else
+                return status;
             }
         else if (!baseProperty->GetName().Equals(pProperty->GetName()))
             {
@@ -621,6 +621,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 return ECObjectsStatus::CaseCollision;
                 }
             }
+
         pProperty->SetBaseProperty (baseProperty);
         }
 
@@ -907,6 +908,154 @@ ECSchemaCP schema
     return false;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+void ECClass::OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty)
+    {
+    InvalidateDefaultStandaloneEnabler();
+
+    ECPropertyP derivedProperty = GetPropertyP(baseProperty.GetName(), false);
+    if (nullptr != derivedProperty)
+        if (ECObjectsStatus::Success != derivedProperty->SetBaseProperty(newBaseProperty))
+            derivedProperty->SetBaseProperty(nullptr); // see comments in SetBaseProperty()
+
+    for (ECClassP derivedClass : m_derivedClasses)
+        derivedClass->OnBaseClassPropertyRemoved(baseProperty);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, Utf8String propName)
+    {
+    if (ecClass->HasBaseClasses())
+        {
+        for (ECClassP baseClass : ecClass->GetBaseClasses())
+            {
+            if (!ConvertPropertyToPrimitveArray(baseClass, propName))
+                return false;
+            }
+        }
+
+    ECPropertyP ecProp = ecClass->GetPropertyP(propName, false);
+    if (nullptr == ecProp)
+        return true;
+
+    // Check if the property is already a primitiveArrayProperty
+    PrimitiveArrayECPropertyCP arrProp = ecProp->GetAsPrimitiveArrayProperty();
+    if (nullptr != arrProp)
+        return true;
+
+    PrimitiveECPropertyCP primProp = ecProp->GetAsPrimitiveProperty();
+    if (nullptr == primProp)
+        return false;
+
+    uint32_t propertyIndex = -1;
+    for (size_t i = 0; i < ecClass->m_propertyList.size(); i++)
+        {
+        if (ecClass->m_propertyList[i] == ecProp)
+            {
+            propertyIndex = (uint32_t) i;
+            break;
+            }
+        }
+
+    if (-1 == propertyIndex)
+        return true;
+
+    PrimitiveArrayECPropertyP newProperty = new PrimitiveArrayECProperty(*ecClass);
+    newProperty->SetName(primProp->GetName());
+    newProperty->SetPrimitiveElementType(primProp->GetType());
+    newProperty->SetDescription(primProp->GetInvariantDescription());
+    if (primProp->GetIsDisplayLabelDefined())
+        newProperty->SetDisplayLabel(primProp->GetInvariantDisplayLabel());
+    newProperty->SetIsReadOnly(primProp->IsReadOnlyFlagSet());
+
+    ECObjectsStatus status = primProp->CopyCustomAttributesTo(*newProperty);
+    if (ECObjectsStatus::Success != status)
+        {
+        LOG.errorv("Failed to convert the property, %s.%s, to a primitive array property because could not copy all original custom attributes.", 
+                   primProp->GetClass().GetFullName(), primProp->GetName().c_str());
+        return false;
+        }
+    
+    if (primProp->IsKindOfQuantityDefinedLocally())
+        newProperty->SetKindOfQuantity(primProp->GetKindOfQuantity());
+    if (primProp->IsExtendedTypeDefinedLocally())
+        {
+        Utf8String extendTypeName = primProp->GetExtendedTypeName();
+        status = newProperty->SetExtendedTypeName(extendTypeName.c_str());
+        if (ECObjectsStatus::Success != status)
+            {
+            LOG.errorv("Failed to convert the property, %s.%s, to a primitive array property because could not set the extended type name, %s, on the primitive array property.",
+                       primProp->GetClass().GetFullName(), primProp->GetName().c_str(), extendTypeName.c_str());
+            delete newProperty;
+            return false;
+            }
+        }
+
+    ecClass->m_propertyMap.erase(ecClass->m_propertyMap.find(ecProp->GetName().c_str()));
+    ecClass->InvalidateDefaultStandaloneEnabler();
+
+    ecClass->m_propertyMap[newProperty->GetName().c_str()] = newProperty;
+    ecClass->m_propertyList[propertyIndex] = newProperty;
+
+    
+    for (ECClassP derivedClass : ecClass->GetDerivedClasses())
+        derivedClass->OnBaseClassPropertyChanged(*ecProp, newProperty);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete newProperty;
+        return false;
+        }
+
+    delete primProp;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+///<summary>
+///     Only to be used to fix a handful of schemas that have primitive array 
+///     properties override primitive properties. Details about this can be found in
+///     the summary of ECClass::SchemaAllowsOverridingArrays.
+///     
+///     All base primitive properties that are overriden by a primitive array property, 
+///     or vice versa, will be converted to primitive array properties. If the conversion
+///     fails the schema will fail to deserialize. 
+ @bsimethod                                     Caleb.Shafer                    12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ECObjectsStatus ECClass::FixArrayPropertyOverrides()
+    {
+    if (!SchemaAllowsOverridingArrays(&this->GetSchema()))
+        return ECObjectsStatus::Error;
+
+    for (ECPropertyP ecProp : GetProperties(false))
+        {
+        if (nullptr == ecProp->GetBaseProperty() || !(ecProp->GetIsPrimitiveArray() || ecProp->GetIsPrimitive()))
+            continue;
+
+        Utf8String propName = ecProp->GetName();
+        for (ECClassP baseClass : GetBaseClasses())
+            {
+            ECPropertyP baseProperty = baseClass->GetPropertyP(propName, true);
+            if (nullptr == baseProperty)
+                continue;
+
+            if (ecProp->GetIsPrimitive() != baseProperty->GetIsPrimitive() || ecProp->GetIsPrimitiveArray() != baseProperty->GetIsPrimitiveArray())
+                {
+                if (!ConvertPropertyToPrimitveArray(this, propName))
+                    return ECObjectsStatus::Error;
+                break;
+                }
+            }
+        }
+
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -917,8 +1066,12 @@ ECObjectsStatus ECClass::CanPropertyBeOverridden (ECPropertyCR baseProperty, ECP
     // of override.  So need to check if this is one of those schemas before returning an error
     if ((baseProperty.GetIsArray() && !newProperty.GetIsArray()) || (!baseProperty.GetIsArray() && newProperty.GetIsArray()))
         {
-        if (!SchemaAllowsOverridingArrays(&this->GetSchema()))
-            return ECObjectsStatus::DataTypeMismatch;
+        if (m_schema.GetOriginalECXmlVersionMajor() != 2 || !SchemaAllowsOverridingArrays(&this->GetSchema()))
+            {
+            LOG.errorv("The property %s:%s cannot override %s:%s because an array property cannot override a non-array property or vice-versa.",
+                       newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str());
+            return ECObjectsStatus::InvalidPrimitiveOverrride;
+            }
         }
     
     if (!newProperty._CanOverride(baseProperty))
@@ -1216,12 +1369,14 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
 
             if (ECObjectsStatus::Success != status)
                 {
-                if (!resolveConflicts)
-                    return status;
-
-                LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
-                if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true))
+                if (ECObjectsStatus::DataTypeMismatch == status && resolveConflicts)
+                    {
+                    LOG.warningv("Conflict between %s:%s and %s:%s.  Renaming...", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
+                    ECClassP conflictClass = const_cast<ECClassP> (&thisProperty->GetClass());
+                    if (ECObjectsStatus::Success != conflictClass->RenameConflictProperty(thisProperty, true))
+                        return status;
+                    }
+                else
                     return status;
                 }
             }

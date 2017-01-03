@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/ECSchema.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -889,12 +889,13 @@ protected:
     virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
     virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
     virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
-    bool ExtendedTypeLocallyDefined() const { return m_extendedTypeName.size() > 0; }
 
     SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const;
 
 public:
+    //! Returns whether the ExtendedTypeName has been set explicitly and not inherited from base property
+    bool IsExtendedTypeDefinedLocally() const { return m_extendedTypeName.size() > 0; }
     //! Gets the extended type name of this ECProperty
     ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
     //! Sets the Name of the Extended Type of this property.
@@ -1471,6 +1472,8 @@ private:
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
     bool            TraverseInterfaces(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
+    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, Utf8String propName);
+    ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;
     void            RemoveDerivedClass(ECClassCR baseClass) const;
@@ -1482,6 +1485,7 @@ private:
     ECObjectsStatus CopyProperty(ECPropertyP& destProperty, ECPropertyCP sourceProperty, Utf8CP destPropertyName, bool copyCustomAttributes, bool andAddProperty=true);
 
     void            OnBaseClassPropertyRemoved (ECPropertyCR baseProperty);
+    void            OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP newBaseProperty);
     ECObjectsStatus OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bool resolveConflicts);
 
     ECObjectsStatus ValidateInterface(ECInterfaceClassCR interfaceClass) const;

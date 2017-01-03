@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECSchema.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -736,6 +736,16 @@ bool ECSchema::Validate(bool resolveIssues)
         {
         if (!ecClass->_Verify(resolveIssues))
             isValid = false;
+        }
+
+    if (m_originalECXmlVersionMajor == 2 && resolveIssues && ECClass::SchemaAllowsOverridingArrays(this))
+        {
+        for (ECClassP ecClass : GetClasses())
+            {
+            ECObjectsStatus status = ecClass->FixArrayPropertyOverrides();
+            if (ECObjectsStatus::Success != status)
+                return false;
+            }
         }
 
     if (!isValid)
