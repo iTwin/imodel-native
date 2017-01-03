@@ -796,6 +796,8 @@ void UserManager::Perform(int userCount)
 
         CURLMsg *msg;
         int nbQueue;
+        float total = 0;
+        float failures = 0;
         while ((msg = curl_multi_info_read(m_pCurlHandle, &nbQueue)))
             {
             if (msg->msg == CURLMSG_DONE)
@@ -806,6 +808,7 @@ void UserManager::Perform(int userCount)
 
                 if (msg->data.result == CURLE_OK)
                     {
+                    total++;
                     //response received, ensure that it is valid
                     user->ValidatePrevious(still_running);
 
@@ -824,10 +827,14 @@ void UserManager::Perform(int userCount)
                     }
                 else if (msg->data.result != CURLE_OK)
                     {
+                    total++;
+                    failures++;
                     char error[256];
                     sprintf(error, "curl error number: %d", (int)msg->data.result);
                     //in case of curl failure, add error number to error list
                     s_stats.InsertStats(user->m_currentOperation, false, user->m_downloadStart, still_running, Utf8String(error));
+                    if((failures / total) > 0.8f) //ensure that stats are printed even if most requests are failing
+                        s_stats.PrintStats();
                     if(s_keepRunning)
                         {
                         if(user->m_retryCounter < 10)
