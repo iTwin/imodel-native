@@ -976,31 +976,6 @@ ECObjectsStatus ECSchema::CreateEntityClass (ECEntityClassP& pClass, Utf8StringC
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECSchema::CreateInterfaceClass (ECInterfaceClassP& pClass, Utf8StringCR name)
-    {
-    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
-
-    pClass = new ECInterfaceClass(*this);
-    ECObjectsStatus status = pClass->SetName (name);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete pClass;
-        pClass = nullptr;
-        return status;
-        }
-
-    if (ECObjectsStatus::Success != (status = AddClass(pClass)))
-        {
-        delete pClass;
-        pClass = nullptr;
-        }
-    
-    return status;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------

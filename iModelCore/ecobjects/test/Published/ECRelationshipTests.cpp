@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/ECRelationshipTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -715,13 +715,9 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     ECEntityClassP entityClassA;
     ECEntityClassP entityClassB;
     ECEntityClassP entityClassC;
-    ECInterfaceClassP interfaceClassB;
     ecSchema->CreateEntityClass(entityClassA, "A");
     ecSchema->CreateEntityClass(entityClassB, "B");
     ecSchema->CreateEntityClass(entityClassC, "C");
-    ecSchema->CreateInterfaceClass(interfaceClassB, "InterfaceB");
-
-    entityClassB->AddInterface(*interfaceClassB);
 
     ECRelationshipClassP relationClass;
     ecSchema->CreateRelationshipClass(relationClass, "ARelB");
@@ -741,13 +737,13 @@ TEST_F(ECRelationshipTests, TestAbstractConstraint)
     EXPECT_STREQ("C", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
     EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().AddClass(*entityClassB)) << "Should fail to add the second constaint class because the abstract constraint has not been explicity set.";
-    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*interfaceClassB)) << "The abstract constraint cannot be set to B because C is not derived from B.";
+    EXPECT_EQ(ECObjectsStatus::RelationshipConstraintsNotCompatible, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint cannot be set to B because C is not nor derived from B.";
     entityClassC->AddBaseClass(*entityClassB); // Making C derive from B
-    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*interfaceClassB)) << "The abstract constraint can now be set because B is a base class of C";
+    EXPECT_EQ(ECObjectsStatus::Success, relationClass->GetTarget().SetAbstractConstraint(*entityClassB)) << "The abstract constraint can now be set because B is a base class of C";
 
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefinedLocally()) << "The Target Constraint's Abstract Constraint has now been explicity set therefore is locally defined.";
     EXPECT_TRUE(relationClass->GetTarget().IsAbstractConstraintDefined()) << "The Target Constraint's Abstract Constraint is locally set therefore should return true.";
-    EXPECT_STREQ("InterfaceB", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
+    EXPECT_STREQ("B", relationClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
     }
 
 //---------------------------------------------------------------------------------------

@@ -54,7 +54,6 @@ EC_TYPEDEFS(KindOfQuantity);
 EC_TYPEDEFS(KindOfQuantityContainer);
 EC_TYPEDEFS(ECEntityClass);
 EC_TYPEDEFS(ECCustomAttributeClass);
-EC_TYPEDEFS(ECInterfaceClass);
 EC_TYPEDEFS(ECStructClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
@@ -69,10 +68,6 @@ EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(ECPropertyValue);
 EC_TYPEDEFS(IECWipRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
-
-EC_TYPEDEFS(ECInterfaceProperty);
-EC_TYPEDEFS(PrimitiveECInterfaceProperty);
-EC_TYPEDEFS(NavigationECInterfaceProperty);
 
 EC_TYPEDEFS(ECEnabler);
 EC_TYPEDEFS(StandaloneECEnabler);
@@ -175,7 +170,6 @@ enum class ECObjectsStatus
     CaseCollision,
     CustomAttributeContainerTypesNotCompatible,
     InvalidECVersion,
-    InterfaceUnacceptable,
     PropertyNotSupported,
     RelationshipAlreadyHasBaseClass,
     InvalidPrimitiveOverrride,
@@ -492,25 +486,22 @@ enum class ECClassModifier
 //! Used to define what type of IECCustomAttributeContainer this CustomAttribute can be applied to
 enum class CustomAttributeContainerType
     {
-    Schema                      = (0x0001 << 0),
-    EntityClass                 = (0x0001 << 1),
-    CustomAttributeClass        = (0x0001 << 2),
-    StructClass                 = (0x0001 << 3),
-    RelationshipClass           = (0x0001 << 4),
-    InterfaceClass              = (0x0001 << 5),
-    AnyClass                    = EntityClass | CustomAttributeClass | StructClass | RelationshipClass | InterfaceClass,
-    PrimitiveInterfaceProperty  = (0x0001 << 6),
-    PrimitiveProperty           = (0x0001 << 7),
-    StructProperty              = (0x0001 << 8),
-    PrimitiveArrayProperty      = (0x0001 << 9),
-    StructArrayProperty         = (0x0001 << 10),
-    NavigationInterfaceProperty = (0x0001 << 11),
-    NavigationProperty          = (0x0001 << 12),
-    AnyProperty                 = PrimitiveProperty | StructProperty | PrimitiveArrayProperty | StructArrayProperty | NavigationProperty,
-    SourceRelationshipConstraint    = (0x0001 << 13),
-    TargetRelationshipConstraint    = (0x0001 << 14),
+    Schema                  = (0x0001 << 0),
+    EntityClass             = (0x0001 << 1),
+    CustomAttributeClass    = (0x0001 << 2),
+    StructClass             = (0x0001 << 3),
+    RelationshipClass       = (0x0001 << 4),
+    AnyClass                = EntityClass | CustomAttributeClass | StructClass | RelationshipClass,
+    PrimitiveProperty       = (0x0001 << 5),
+    StructProperty          = (0x0001 << 6),
+    PrimitiveArrayProperty  = (0x0001 << 7),
+    StructArrayProperty     = (0x0001 << 8),
+    NavigationProperty      = (0x0001 << 9),
+    AnyProperty             = PrimitiveProperty | StructProperty | PrimitiveArrayProperty | StructArrayProperty | NavigationProperty,
+    SourceRelationshipConstraint    = (0x0001 << 10),
+    TargetRelationshipConstraint    = (0x0001 << 11),
     AnyRelationshipConstraint       = SourceRelationshipConstraint | TargetRelationshipConstraint,
-    Any                         = Schema | AnyClass | AnyProperty | AnyRelationshipConstraint
+    Any                     = Schema | AnyClass | AnyProperty | AnyRelationshipConstraint
     };
 
 ENUM_IS_FLAGS(CustomAttributeContainerType)

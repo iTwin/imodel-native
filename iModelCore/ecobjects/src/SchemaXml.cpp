@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaXml.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -30,7 +30,6 @@ struct SchemaXmlReaderImpl
 
     protected:
         ECEntityClassP CreateEntityClass(ECSchemaPtr& schemaOut);
-        ECInterfaceClassP CreateInterfaceClass(ECSchemaPtr& schemaOut);
         ECStructClassP CreateStructClass(ECSchemaPtr& schemaOut);
         ECCustomAttributeClassP CreateCustomAttributeClass(ECSchemaPtr& schemaOut);
         ECRelationshipClassP CreateRelationshipClass(ECSchemaPtr& schemaOut);
@@ -268,8 +267,6 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadClassStubsFromXml(ECSchemaPtr& schemaO
             LOG.tracev("    Created ECCustomAttributeClass Stub: %s", ecClass->GetName().c_str());
         else if (ecClass->IsRelationshipClass())
             LOG.tracev("    Created Relationship ECClass Stub: %s", ecClass->GetName().c_str());
-        else if (ecClass->IsInterfaceClass())
-            LOG.tracev("    Created Interface ECClass Stub: %s", ecClass->GetName().c_str());
         else
             LOG.tracev("    Created ECEntityClass Stub: %s", ecClass->GetName().c_str());
 
@@ -308,7 +305,7 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
 
-    bvector<ECPropertyP> navigationProperties;
+    bvector<NavigationECPropertyP> navigationProperties;
     ClassDeserializationVector::const_iterator  classesStart, classesEnd, classesIterator;
     ECClassP    ecClass;
     BeXmlNodeP  classNode;
@@ -323,30 +320,15 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
             return status;
         }
 
-    for (auto const& ecProp : navigationProperties)
-        {
-        bool verified = false;
-        if (ecProp->GetIsNavigation())
-            verified = ecProp->GetAsNavigationPropertyP()->Verify();
-        else if (ecProp->GetIsNavigationInterfaceProperty())
-            verified = ecProp->GetAsNavigationInterfacePropertyP()->Verify();
-        else
-            return SchemaReadStatus::InvalidECSchemaXml;
-
-        if (!verified)
+    for (auto const& navProp : navigationProperties)
+        if (!navProp->Verify())
             {
-            ECRelationshipClassCP relClass = ecProp->GetIsNavigation() ? ecProp->GetAsNavigationProperty()->GetRelationshipClass()
-                                                                        : ecProp->GetAsNavigationInterfaceProperty()->GetRelationshipClass();
-
-            ECRelatedInstanceDirection direction = ecProp->GetIsNavigation() ? ecProp->GetAsNavigationProperty()->GetDirection()
-                                                                              : ecProp->GetAsNavigationInterfaceProperty()->GetDirection();
             LOG.errorv("Unable to load NavigationECProperty '%s:%s.%s' because the relationship '%s' does not support this class as a constraint when traversed in the '%s' direction or max multiplicity is greater than 1.",
-                        ecProp->GetClass().GetSchema().GetName().c_str(), ecProp->GetClass().GetName().c_str(), ecProp->GetName().c_str(),
-                        relClass->GetName().c_str(), ECXml::DirectionToString(direction));
+                        navProp->GetClass().GetSchema().GetName().c_str(), navProp->GetClass().GetName().c_str(), navProp->GetName().c_str(),
+                        navProp->GetRelationshipClass()->GetName().c_str(), ECXml::DirectionToString(navProp->GetDirection()));
                 
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        }
 
     if (!schemaOut->Validate(true))
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -364,14 +346,6 @@ SchemaReadStatus SchemaXmlReaderImpl::_ReadClassContentsFromXml(ECSchemaPtr& sch
 ECEntityClassP SchemaXmlReaderImpl::CreateEntityClass(ECSchemaPtr& schemaOut)
     {
     return new ECEntityClass(*schemaOut);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECInterfaceClassP SchemaXmlReaderImpl::CreateInterfaceClass(ECSchemaPtr& schemaOut)
-    {
-    return new ECInterfaceClass(*schemaOut);
     }
 
 //---------------------------------------------------------------------------------------
@@ -639,7 +613,6 @@ bool SchemaXmlReader3::IsECClassElementNode(BeXmlNodeR elementNode)
 bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, ECSchemaPtr& schemaOut)
     {
     ECEntityClassP entityClass = nullptr;
-    ECInterfaceClassP interfaceClass = nullptr;
     ECStructClassP structClass = nullptr;
     ECRelationshipClassP relationshipClass = nullptr;
     ECCustomAttributeClassP caClass = nullptr;
@@ -667,11 +640,6 @@ bool SchemaXmlReader3::ReadClassNode(ECClassP &ecClass, BeXmlNodeR classNode, EC
         {
         relationshipClass = CreateRelationshipClass(schemaOut);
         ecClass = relationshipClass;
-        }
-    else if (0 == strcmp(EC_INTERFACECLASS_ELEMENT, nodeName))
-        {
-        interfaceClass = CreateInterfaceClass(schemaOut);
-        ecClass = interfaceClass;
         }
 
     if (nullptr == ecClass)
@@ -1081,15 +1049,10 @@ SchemaWriteStatus SchemaXmlWriter::WriteClass(ECClassCR ecClass)
     else
         m_context.m_alreadyWrittenClasses.insert(ecClass.GetName().c_str());
 
-    // If schema element order shouldn't be preserved, interface classes, base classes and contraints
-    // will be written before the actual class to write. Else the order given by the WriteClass 
-    // calls is used.
+    // If schema element order shouldn't be preserved, baseclasses and contraints will be written
+    //  before the actual class to write. Else the order given by the WriteClass calls is used.
     if (!ecClass.GetSchema().m_serializationOrder.GetPreserveElementOrder())
         {
-        // write the interface classes first.
-        for (ECInterfaceClassP interfaceClass : ecClass.GetInterfaceClasses())
-            WriteClass(*interfaceClass);
-
         // write the base classes first.
         for (ECClassP baseClass : ecClass.GetBaseClasses())
             WriteClass(*baseClass);

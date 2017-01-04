@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,19 +21,15 @@
 #define     EC_SCHEMA_ELEMENT                   "ECSchema"
 #define     EC_CUSTOM_ATTRIBUTES_ELEMENT        "ECCustomAttributes"
 #define     EC_BASE_CLASS_ELEMENT               "BaseClass"
-#define     EC_INTERFACE_ELEMENT                "Interface"
 #define     EC_CLASS_ELEMENT                    "ECClass"
 #define     EC_ENTITYCLASS_ELEMENT              "ECEntityClass"
-#define     EC_INTERFACECLASS_ELEMENT           "ECInterfaceClass"
 #define     EC_STRUCTCLASS_ELEMENT              "ECStructClass"
 #define     EC_CUSTOMATTRIBUTECLASS_ELEMENT     "ECCustomAttributeClass"
 #define     EC_PROPERTY_ELEMENT                 "ECProperty"
-#define     EC_INTERFACEPROPERTY_ELEMENT        "ECInterfaceProperty"
 #define     EC_ARRAYPROPERTY_ELEMENT            "ECArrayProperty"
 #define     EC_STRUCTPROPERTY_ELEMENT           "ECStructProperty"
 #define     EC_STRUCTARRAYPROPERTY_ELEMENT      "ECStructArrayProperty"
 #define     EC_NAVIGATIONPROPERTY_ELEMENT       "ECNavigationProperty"
-#define     EC_NAVIGATION_INTERFACEPROPERTY_ELEMENT      "ECNavigationInterfaceProperty"
 #define     EC_RELATIONSHIP_CLASS_ELEMENT       "ECRelationshipClass"
 #define     EC_SOURCECONSTRAINT_ELEMENT         "Source"
 #define     EC_TARGETCONSTRAINT_ELEMENT         "Target"

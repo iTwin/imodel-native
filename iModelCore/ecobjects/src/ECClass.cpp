@@ -214,22 +214,6 @@ ECCustomAttributeClassP ECClass::GetCustomAttributeClassP()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECInterfaceClassCP ECClass::GetInterfaceClassCP() const
-    {
-    return _GetInterfaceClassCP();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECInterfaceClassP ECClass::GetInterfaceClassP()
-    {
-    return _GetInterfaceClassP();
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClassCP ECClass::GetStructClassCP() const
@@ -578,9 +562,6 @@ ECObjectsStatus ECClass::OnBaseClassPropertyAdded (ECPropertyCR baseProperty, bo
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConflicts)
     {
-    if (!this->IsInterfaceClass() && pProperty->GetIsInterfaceProperty())
-        return ECObjectsStatus::PropertyNotSupported;
-
     PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
     if (m_propertyMap.end() != propertyIterator)
         {
@@ -621,25 +602,7 @@ ECObjectsStatus ECClass::AddProperty (ECPropertyP& pProperty, bool resolveConfli
                 return ECObjectsStatus::CaseCollision;
                 }
             }
-
         pProperty->SetBaseProperty (baseProperty);
-        }
-
-    // Check if the property is exists in an Interface
-    ECPropertyP interfaceProperty = GetInterfacePropertyP(pProperty->GetName().c_str());
-    if (NULL != interfaceProperty)
-        {
-        if (!pProperty->_Implements(*interfaceProperty->GetAsInterfaceProperty()))
-            {
-            LOG.errorv("Interface Violation: Failed to add property '%s' to class %s because it is a different type of property than defined in the interface class %s", pProperty->GetName().c_str(), GetFullName(), interfaceProperty->GetClass().GetFullName());
-            return ECObjectsStatus::DataTypeMismatch;
-            }
-        
-        if (!interfaceProperty->GetName().Equals(pProperty->GetName()))
-            {
-            LOG.errorv("Interface Violation: Failed to add property '%s' due to case-collision between %s:%s and %s:%s.", pProperty->GetClass().GetFullName(), pProperty->GetName().c_str(), interfaceProperty->GetClass().GetFullName(), interfaceProperty->GetName().c_str());
-            return ECObjectsStatus::CaseCollision;
-            }
         }
 
     m_propertyMap.insert (bpair<Utf8CP, ECPropertyP> (pProperty->GetName().c_str(), pProperty));
@@ -802,32 +765,6 @@ ECPropertyP ECClass::GetBaseClassPropertyP (Utf8CP propertyName) const
         ECPropertyP baseProperty = baseClass->GetPropertyP (propertyName);
         if (NULL != baseProperty)
             return baseProperty;
-        }
-
-    return NULL;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECInterfacePropertyP ECClass::GetInterfacePropertyP(Utf8CP propertyName) const
-    {
-    for (const ECInterfaceClassP& interfaceClass : m_interfaces)
-        {
-        ECPropertyP ecProperty = interfaceClass->GetPropertyP(propertyName);
-        if (NULL == ecProperty)
-            continue;
-
-        ECInterfacePropertyP interfaceProperty = ecProperty->GetAsInterfacePropertyP();
-        if (NULL != interfaceProperty)
-            return interfaceProperty;
-        }
-
-    for (const ECClassP& baseClass : m_baseClasses)
-        {
-        ECInterfacePropertyP interfaceProperty = baseClass->GetInterfacePropertyP(propertyName);
-        if (NULL != interfaceProperty)
-            return interfaceProperty;
         }
 
     return NULL;
@@ -1495,141 +1432,6 @@ void    ECClass::RemoveBaseClasses ()
     m_baseClasses.clear ();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::AddInterface(ECInterfaceClassCR interfaceClass)
-    {
-    return _AddInterface(interfaceClass, true);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::_AddInterface(ECInterfaceClassCR interfaceClass, bool validate)
-    {
-    if (&(interfaceClass.GetSchema()) != &(this->GetSchema()))
-        {
-        if (!ECSchema::IsSchemaReferenced(this->GetSchema(), interfaceClass.GetSchema()))
-            {
-            LOG.errorv("Failed to add ECInterfaceClass '%s' as an interface because the schema '%s' is not a referenced schema within '%s'.", 
-                       interfaceClass.GetFullName(), interfaceClass.GetSchema().GetName().c_str(), GetSchema().GetName().c_str());
-            return ECObjectsStatus::SchemaNotFound;
-            }
-        }
-
-    if (!interfaceClass.CanBeAppliedTo(*this))
-        return ECObjectsStatus::InterfaceUnacceptable;
-
-    if (ClassesAreEqualByName(this, &interfaceClass))
-        {
-        LOG.errorv("Failed to add ECInterfaceClass '%s' as an interface to '%s' because they have the same name.", interfaceClass.GetFullName(), GetFullName());
-        return ECObjectsStatus::InterfaceUnacceptable;
-        }
-
-    
-    for (ECInterfaceClassP existingInterface : m_interfaces)
-        {
-        if (existingInterface == (ECInterfaceClassP) &interfaceClass)
-            {
-            LOG.errorv("Failed to add ECInterfaceClass '%s' as an interface to '%s' because it already exists as an interface", interfaceClass.GetFullName(), GetFullName());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-            }
-        }
-    
-    if (validate)
-        {
-        ECObjectsStatus status = ValidateInterface(interfaceClass);
-        if (ECObjectsStatus::Success != status)
-            return status;
-        }
-
-    m_interfaces.push_back((ECInterfaceClassP) &interfaceClass);
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::_Verify(bool resolveIssues) const
-    {
-    if (m_interfaces.size() == 0)
-        return true;
-
-    bool isVerified = true;
-    for (auto interfaceClass : m_interfaces)
-        {
-        if (ECObjectsStatus::Success != ValidateInterface(*interfaceClass))
-            isVerified = false;
-        }
-
-    return isVerified;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::ValidateInterface(ECInterfaceClassCR interfaceClass) const
-    {
-    ECPropertyIterable propIterable = interfaceClass.GetProperties();
-
-    for (ECPropertyP prop : propIterable)
-        {
-        ECPropertyP thisProperty;
-        // This is a case-insensitive search
-        if (NULL != (thisProperty = this->GetPropertyP(prop->GetName())))
-            {
-            if (!thisProperty->_Implements(*prop->GetAsInterfaceProperty()))
-                {
-                LOG.errorv("The property %s of class %s is a different type of property in interface class %s", thisProperty->GetName().c_str(), interfaceClass.GetName().c_str(), GetName().c_str());
-                return ECObjectsStatus::DataTypeMismatch;
-                }
-
-            // If the property names do not have the same case, this is an error
-            if (!prop->GetName().Equals(thisProperty->GetName()))
-                {
-                LOG.errorv("Failed to add ECInterfaceClass due to case-collision between %s:%s and %s:%s.", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                return ECObjectsStatus::CaseCollision;
-                }
-            }
-        else
-            {
-            LOG.errorv("Interface Violation: The ECInterfaceClass '%s' does not implement the property '%s' in class '%s'.", interfaceClass.GetFullName(), prop->GetName().c_str(), GetFullName());
-            return ECObjectsStatus::InterfaceUnacceptable;
-            }
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECClass::RemoveInterface(ECClassCR interfaceClass)
-    {
-    bool interfaceRemoved = false;
-
-    ECInterfaceClassesList::iterator interfaceIterator;
-    for (interfaceIterator = m_interfaces.begin(); interfaceIterator != m_interfaces.end(); interfaceIterator++)
-        {
-        if (*interfaceIterator == (ECClassP) &interfaceClass)
-            {
-            m_interfaces.erase(interfaceIterator);
-            interfaceRemoved = true;
-            break;
-            }
-        }
-
-    if (!interfaceRemoved)
-        {
-        LOG.errorv("Class '%s' is not an interface on class '%s'", interfaceClass.GetName().c_str(), GetName().c_str());
-        return ECObjectsStatus::ClassNotFound;
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1655,54 +1457,13 @@ bool ECClass::Is (ECClassCP targetClass) const
     {
     if (NULL == targetClass)
         return false;
-
-    if (targetClass->IsInterfaceClass())
-        return Is(targetClass->GetInterfaceClassCP());
     
     if (ClassesAreEqualByName(this, targetClass))
         return true;
-
+            
     return TraverseBaseClasses(&ClassesAreEqualByName, true, targetClass);
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::Is(ECInterfaceClassCP targetClass) const
-    {
-    if (NULL == targetClass)
-        return false;
-
-    if (ClassesAreEqualByName(this, targetClass))
-        return true;
-
-    for (ECInterfaceClassCP interfaceClass : m_interfaces)
-        {
-        if (ClassesAreEqualByName(interfaceClass, targetClass))
-            return true;
-        }
-
-    return TraverseBaseClasses(&FindInterface, true, targetClass);
-    }
     
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::FindInterface(ECClassCP thisClass, const void * arg)
-    {
-    ECClassCP thatClass = static_cast<ECClassCP> (arg);
-    if (NULL == arg)
-        return true;
-
-    for (ECInterfaceClassCP interfaceClass : thisClass->GetInterfaceClasses())
-        {
-        if (ClassesAreEqualByName(interfaceClass, thatClass))
-            return true;
-        }
-
-    return false;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1829,28 +1590,6 @@ bool ECClass::TraverseBaseClasses (TraversalDelegate traverseMethod, bool recurs
     return false;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::TraverseInterfaces(TraversalDelegate traverseMethod, bool recursive, const void* arg) const
-    {
-    if (m_interfaces.size() == 0)
-        return false;
-
-    for (const ECInterfaceClassP& interfaceClass : m_interfaces)
-        {
-        if (traverseMethod(interfaceClass, arg))
-            return true;
-
-        if (recursive)
-            {
-            if (interfaceClass->TraverseInterfaces(traverseMethod, recursive, arg))
-                return true;
-            }
-        }
-    return false;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1904,7 +1643,7 @@ void ECClass::_ReadCommentsInSameLine(BeXmlNodeR childNode, bvector<Utf8String>&
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties)
+SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
     {
     bvector<Utf8String> comments;
 
@@ -1940,20 +1679,6 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
-        else if (0 == strcmp(childNodeName, EC_INTERFACEPROPERTY_ELEMENT))
-            {
-            PrimitiveECInterfacePropertyP ecProperty = new PrimitiveECInterfaceProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
-            if (SchemaReadStatus::Success != status)
-                return status;
-
-            if (context.GetPreserveXmlComments())
-                {
-                _ReadCommentsInSameLine(*childNode, comments);
-                Utf8String contentIdentifier = ecProperty->GetName();
-                m_contentXmlComments[contentIdentifier] = comments;
-                }
-            }
         else if (!isSchemaSupplemental && (0 == strcmp (childNodeName, EC_BASE_CLASS_ELEMENT)))
             {
             SchemaReadStatus status = _ReadBaseClassFromXml(childNode, context, conversionSchema);
@@ -1964,19 +1689,6 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 {
                 _ReadCommentsInSameLine(*childNode, comments);
                 Utf8String contentIdentifier = EC_BASE_CLASS_ELEMENT;
-                m_contentXmlComments[contentIdentifier] = comments;
-                }
-            }
-        else if (0 == strcmp(childNodeName, EC_INTERFACE_ELEMENT))
-            {
-            SchemaReadStatus status = _ReadInterfaceFromXml(childNode, context);
-            if (SchemaReadStatus::Success != status)
-                return status;
-
-            if (context.GetPreserveXmlComments())
-                {
-                _ReadCommentsInSameLine(*childNode, comments);
-                Utf8String contentIdentifier = EC_INTERFACE_ELEMENT;
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
@@ -2045,23 +1757,7 @@ SchemaReadStatus ECClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadCo
                 m_contentXmlComments[contentIdentifier] = comments;
                 }
             }
-        else if (0 == strcmp(childNodeName, EC_NAVIGATION_INTERFACEPROPERTY_ELEMENT)) // EC3.1 and higher
-            {
-            NavigationECInterfacePropertyP ecProperty = new NavigationECInterfaceProperty(*this);
-            SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
-            if (SchemaReadStatus::Success != status)
-                return status;
-            navigationProperties.push_back(ecProperty);
-
-            if (context.GetPreserveXmlComments())
-                {
-                _ReadCommentsInSameLine(*childNode, comments);
-
-                Utf8String contentIdentifier = ecProperty->GetName();
-                m_contentXmlComments[contentIdentifier] = comments;
-                }
-            }
-        else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 and higher
+        else if (0 == strcmp(childNodeName, EC_NAVIGATIONPROPERTY_ELEMENT)) // also EC3.0 only
             {
             NavigationECPropertyP ecProperty = new NavigationECProperty(*this);
             SchemaReadStatus status = _ReadPropertyFromXmlAndAddToClass(ecProperty, childNode, context, conversionSchema, childNodeName);
@@ -2217,60 +1913,7 @@ SchemaReadStatus ECClass::_ReadPropertyFromXmlAndAddToClass( ECPropertyP ecPrope
     return SchemaReadStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                    10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECClass::_ReadInterfaceFromXml(BeXmlNodeP childNode, ECSchemaReadContextR context)
-    {
-    Utf8String qualifiedClassName;
-    childNode->GetContent(qualifiedClassName);
 
-    // Parse the potentially qualified class name into an alias and short class name
-    Utf8String alias;
-    Utf8String className;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, qualifiedClassName))
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be parsed.",
-                   GetName().c_str(), EC_INTERFACE_ELEMENT, qualifiedClassName.c_str());
-
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
-    if (NULL == resolvedSchema)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the alias '%s' that can not be resolved to a referenced schema.",
-                   GetName().c_str(), EC_INTERFACE_ELEMENT, alias.c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    context.ResolveClassName(className, *resolvedSchema);
-    ECClassCP resolvedClass = resolvedSchema->GetClassCP(className.c_str());
-    if (NULL == resolvedClass)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains a %s element with the value '%s' that can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
-                   GetName().c_str(), EC_INTERFACE_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    ECInterfaceClassCP interfaceClass = resolvedClass->GetInterfaceClassCP();
-    if (nullptr == interfaceClass)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECClass '%s' contains an %s element with the value '%s' that can not be resolved to an ECInterfaceClass named '%s' in the ECSchema '%s'",
-                   GetName().c_str(), EC_INTERFACE_ELEMENT, qualifiedClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    ECObjectsStatus stat;
-    if (ECObjectsStatus::Success != (stat = _AddInterface(*interfaceClass, false)))
-        {
-        LOG.errorv("Invalid ECSchemaXML: Unable to add ECClass '%s:%s' as an interface class to ECClass '%s:%s'",
-                   interfaceClass->GetSchema().GetFullSchemaName().c_str(), interfaceClass->GetName().c_str(),
-                   GetSchema().GetFullSchemaName().c_str(), GetName().c_str());
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-    return SchemaReadStatus::Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
@@ -2309,22 +1952,6 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
             xmlWriter.WriteAttribute(iter->first, iter->second);
         }
     
-    for (const ECInterfaceClassP& interfaceClass : m_interfaces)
-        {
-        auto comments = m_contentXmlComments.find(EC_INTERFACE_ELEMENT);
-        if (comments != m_contentXmlComments.end())
-            {
-            for (auto comment : comments->second)
-                {
-                xmlWriter.WriteComment(comment.c_str());
-                }
-            }
-
-        xmlWriter.WriteElementStart(EC_INTERFACE_ELEMENT);
-        xmlWriter.WriteText((ECClass::GetQualifiedClassName(GetSchema(), *interfaceClass)).c_str());
-        xmlWriter.WriteElementEnd();
-        }
-
     for (const ECClassP& baseClass: m_baseClasses)
         {
         auto comments = m_contentXmlComments.find(EC_BASE_CLASS_ELEMENT);
@@ -2352,7 +1979,7 @@ SchemaWriteStatus ECClass::_WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVer
         }
     WriteCustomAttributes (xmlWriter);
             
-    for (ECPropertyP prop: this->GetProperties(false))
+    for (ECPropertyP prop: GetProperties(false))
         { 
         auto comments = m_contentXmlComments.find(prop->GetName());
 
@@ -2615,490 +2242,6 @@ SchemaReadStatus ECCustomAttributeClass::_ReadXmlAttributes(BeXmlNodeR classNode
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECInterfaceClass::ECInterfaceClass(ECSchemaCR schema) : ECClass(schema), m_appliesTo(nullptr), m_appliesToAny(true)
-    { }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECInterfaceClass::_Verify(bool resolveIssues) const
-    {
-    bool valid = true;
-
-    if (ECObjectsStatus::Success != ValidateAppliesTo())
-        valid = false;
-
-    return valid;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::ValidateAppliesTo() const
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-
-    for (ECInterfaceClassCP baseInterface : m_interfaces)
-        {
-        if (baseInterface->AppliesToAny())
-            continue;
-
-        if (m_appliesToAny)
-            {
-            LOG.errorv("Interface Violation: The appliesTo attribute on the interface '%s' is set to 'Any' when it inherits from the interface '%s' which is more restrictive.", GetFullName(), baseInterface->GetFullName());
-            status = ECObjectsStatus::Error;
-            }
-
-        ECEntityClassCP appliesToBaseClass = baseInterface->GetAppliesTo();
-        if (!m_appliesTo->Is(appliesToBaseClass))
-            {
-            LOG.errorv("Interface Violation: The interface '%s' cannot implement the interface '%s' because the appliesTo attribute is more restrictive", GetFullName(), baseInterface->GetFullName());
-            status = ECObjectsStatus::Error;
-            }
-        }
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::ValidateAppliesTo(ECEntityClassCP ecClass) const
-    {
-    if (nullptr == ecClass)
-        return ECObjectsStatus::Error;
-
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    for (ECInterfaceClassCP baseInterface : m_interfaces)
-        {
-        if (baseInterface->AppliesToAny())
-            continue;
-
-        ECEntityClassCP appliesToBaseClass = baseInterface->GetAppliesTo();
-        if (!ecClass->Is(appliesToBaseClass))
-            {
-            LOG.errorv("Interface Violation: The interface '%s' cannot implement the interface '%s' because the appliesTo attribute is more restrictive", GetFullName(), baseInterface->GetFullName());
-            status = ECObjectsStatus::Error;
-            }
-        }
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECInterfaceClass::_ReadXmlAttributes(BeXmlNodeR classNode)
-    {
-    SchemaReadStatus status;
-    if (SchemaReadStatus::Success != (status = T_Super::_ReadXmlAttributes(classNode)))
-        return status;
-
-    Utf8String appliesTo;
-    if (BEXML_Success != classNode.GetAttributeStringValue(appliesTo, CUSTOM_ATTRIBUTE_APPLIES_TO) || Utf8String::IsNullOrEmpty(appliesTo.c_str()))
-        {
-        LOG.errorv("Invalid ECSchemaXML: The ECInterfaceClass '%s' must have an %s attribute.", GetFullName(), CUSTOM_ATTRIBUTE_APPLIES_TO);
-        return SchemaReadStatus::InvalidECSchemaXml;
-        }
-
-    m_appliesToString = appliesTo;
-    return SchemaReadStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaReadStatus ECInterfaceClass::_ReadXmlContents(BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties)
-    {
-    // Need to wait until all class stubs are loaded before setting.
-    if (ECObjectsStatus::Success != SetAppliesTo(m_appliesToString))
-        return SchemaReadStatus::InvalidECSchemaXml;
-
-    return T_Super::_ReadXmlContents(classNode, context, conversionSchema, navigationProperties);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-SchemaWriteStatus ECInterfaceClass::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const
-    {
-    if (ecXmlVersion < ECVersion::V3_1)
-        return SchemaWriteStatus::FailedToCreateXml;
-
-    bmap<Utf8CP, Utf8CP> additionalAttributes;
-    if (nullptr != m_appliesTo)
-        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = ECClass::GetQualifiedClassName(m_appliesTo->GetSchema(), *m_appliesTo).c_str();
-    else if (m_appliesToAny)
-        additionalAttributes[CUSTOM_ATTRIBUTE_APPLIES_TO] = "Any";
-
-    SchemaWriteStatus status;
-    if (SchemaWriteStatus::Success != (status = T_Super::_WriteXml(xmlWriter, ecXmlVersion, EC_INTERFACECLASS_ELEMENT, &additionalAttributes, true)))
-        return status;
-
-    return SchemaWriteStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::CanPropertyBeOverridden(ECInterfacePropertyCR baseProperty, ECInterfacePropertyCR newProperty) const
-    {
-    if (!newProperty._CanInterfaceOverride(baseProperty))
-        {
-        LOG.errorv("The datatype of ECProperty %s.%s (%s) does not match the datatype of ECProperty %s.%s (%s)... which it overrides.",
-                   newProperty.GetClass().GetFullName(), newProperty.GetName().c_str(), newProperty.GetTypeName().c_str(),
-                   baseProperty.GetClass().GetFullName(), baseProperty.GetName().c_str(), baseProperty.GetTypeName().c_str());
-
-        return ECObjectsStatus::DataTypeMismatch;
-        }
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::_AddInterface(ECInterfaceClassCR interfaceClass, bool validate)
-    {
-    if (&(interfaceClass.GetSchema()) != &(this->GetSchema()))
-        {
-        if (!ECSchema::IsSchemaReferenced(this->GetSchema(), interfaceClass.GetSchema()))
-            {
-            LOG.errorv("Failed to add ECInterfaceClass '%s' as a base interface to '%s' because the schema '%s' is not a referenced schema within '%s'.",
-                       interfaceClass.GetFullName(), GetFullName(), interfaceClass.GetSchema().GetName().c_str(), GetSchema().GetName().c_str());
-            return ECObjectsStatus::SchemaNotFound;
-            }
-        }
-
-    if (this == &interfaceClass || ClassesAreEqualByName(this, &interfaceClass))
-        {
-        LOG.errorv("Failed to add ECInterfaceClass '%s' as a base interface to '%s' because circular references are not allowed",
-                   interfaceClass.GetFullName(), GetFullName());
-        return ECObjectsStatus::InterfaceUnacceptable;
-        }
-
-    ECInterfaceClassesList::const_iterator interfaceClassIterator;
-    for (interfaceClassIterator = m_interfaces.begin(); interfaceClassIterator != m_interfaces.end(); interfaceClassIterator++)
-        {
-        if (*interfaceClassIterator == (ECInterfaceClassP) &interfaceClass)
-            {
-            LOG.errorv("Failed to add ECInterfaceClass '%s' as an interface to '%s' because it already exists as an interface", interfaceClass.GetFullName(), GetFullName());
-            return ECObjectsStatus::NamedItemAlreadyExists;
-            }
-        }
-
-    if (validate && !interfaceClass.AppliesToAny())
-        {
-        if (m_appliesToAny || !m_appliesTo->Is(interfaceClass.GetAppliesTo()))
-            {
-            LOG.errorv("Applies To Violation: The ECInterfaceClass '%s' cannot be added as a base interface to '%s' because the applies to class '%s' does not derive from '%s'",
-                       interfaceClass.GetFullName(), GetFullName(), m_appliesToAny ? "Any" : GetAppliesTo()->GetFullName(), interfaceClass.GetAppliesTo()->GetFullName());
-            return ECObjectsStatus::InterfaceUnacceptable;
-            }
-        }
-
-    PropertyList interfaceProperties;
-    interfaceClass.GetProperties(true, &interfaceProperties);
-
-    for (ECPropertyP prop : interfaceProperties)
-        {
-        ECPropertyP thisProperty;
-        // This is a case-insensitive search
-        if (nullptr != (thisProperty = this->GetPropertyP(prop->GetName())))
-            {
-            ECObjectsStatus status = CanPropertyBeOverridden(*prop->GetAsInterfaceProperty(), *thisProperty->GetAsInterfaceProperty());
-            if (ECObjectsStatus::Success != CanPropertyBeOverridden(*prop->GetAsInterfaceProperty(), *thisProperty->GetAsInterfaceProperty()))
-                return status;
-
-            // Case-sensitive search
-            if (!prop->GetName().Equals(thisProperty->GetName()))
-                {
-                LOG.errorv("Failed to add base class due to case-collision between %s:%s and %s:%s.", prop->GetClass().GetFullName(), prop->GetName().c_str(), GetFullName(), thisProperty->GetName().c_str());
-                return ECObjectsStatus::CaseCollision;
-                }
-            }
-        }
-
-    m_interfaces.push_back((ECInterfaceClassP) &interfaceClass);
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::GetProperties(bool includeBaseInterface, PropertyList* propertyList) const
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    for (ECPropertyP prop : m_propertyList)
-        propertyList->push_back(prop);
-
-    if (m_interfaces.empty())
-        return status;
-
-    // replicate managed code behavior - specific ordering expected. Probably slower, but at least correct.
-    PropertyList inheritedProperties;
-    for (ECInterfaceClassCP interfaceClass : m_interfaces)
-        {
-        for (ECPropertyP const& baseProp : interfaceClass->GetProperties(true))
-            {
-            if (!containsProperty(baseProp->GetName().c_str(), *propertyList) && !containsProperty(baseProp->GetName().c_str(), inheritedProperties))
-                inheritedProperties.push_back(baseProp);
-            }
-        }
-        
-    // inherited properties come before this class's properties
-    propertyList->reserve(propertyList->size() + inheritedProperties.size());
-    propertyList->insert(propertyList->begin(), inheritedProperties.begin(), inheritedProperties.end());
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-size_t ECInterfaceClass::GetPropertyCount(bool includeBaseInterfaces) const
-    {
-    size_t nProperties = m_propertyList.size();
-    if (includeBaseInterfaces)
-        {
-        for (const ECInterfaceClassP& interfaceClass : m_interfaces)
-            nProperties += interfaceClass->GetPropertyCount(true);
-        }
-
-    return nProperties;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECPropertyP ECInterfaceClass::GetPropertyP
-(
-Utf8StringCR propertyName,
-bool includeBaseInterfaces
-) const
-    {
-    return  GetPropertyP (propertyName.c_str(), includeBaseInterfaces);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECPropertyP ECInterfaceClass::GetPropertyP (Utf8CP name, bool includeBaseInterfaces) const
-    {
-    PropertyMap::const_iterator found = m_propertyMap.find(name);
-    if (m_propertyMap.end() != found)
-        {
-        return found->second;
-        }
-    else if (includeBaseInterfaces)
-        {
-        for (ECInterfaceClassCP ecClass: m_interfaces)
-            {
-            ECPropertyP prop = ecClass->GetPropertyP (name, true);
-            if (NULL != prop)
-                return prop;
-            }
-        }
-
-    return NULL;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::AddProperty(ECPropertyP& pProperty, bool resolveConflicts)
-    {
-    if (!pProperty->GetIsInterfaceProperty())
-        return ECObjectsStatus::PropertyNotSupported;
-
-    PropertyMap::const_iterator propertyIterator = m_propertyMap.find(pProperty->GetName().c_str());
-    if (m_propertyMap.end() != propertyIterator)
-        {
-        LOG.errorv("Cannot create property '%s' because it already exists in this ECClass (%s:%s)", pProperty->GetName().c_str(), pProperty->GetClass().GetSchema().GetFullSchemaName().c_str(),
-                   pProperty->GetClass().GetName().c_str());
-        return ECObjectsStatus::NamedItemAlreadyExists;
-        }
-
-    ECPropertyP baseProperty = GetPropertyP(pProperty->GetName());
-    if (nullptr != baseProperty)
-        {
-        ECObjectsStatus status = CanPropertyBeOverridden(*baseProperty->GetAsInterfaceProperty(), *pProperty->GetAsInterfaceProperty());
-        if (ECObjectsStatus::Success != status)
-            return status;
-
-        if (!baseProperty->GetName().Equals(pProperty->GetName()))
-            {
-            LOG.errorv("Case-collision between %s:%s and %s:%s", baseProperty->GetClass().GetFullName(), baseProperty->GetName().c_str(), GetFullName(), pProperty->GetName().c_str());
-            return ECObjectsStatus::CaseCollision;
-            }
-        pProperty->SetBaseProperty(baseProperty);
-        }
-
-    m_propertyMap.insert(bpair<Utf8CP, ECPropertyP>(pProperty->GetName().c_str(), pProperty));
-    m_propertyList.push_back(pProperty);
-
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::SetAppliesTo(Utf8StringCR value)
-    {
-    if (0 == value.compare("Any"))
-        {
-        m_appliesToAny = true;
-        return ECObjectsStatus::Success;
-        }
-
-    Utf8String alias;
-    Utf8String className;
-    if (ECObjectsStatus::Success != ECClass::ParseClassName(alias, className, value))
-        {
-        LOG.errorv("Invalid ECSchemaXML: The %s attribute value '%s' is invalid on ECInterfaceClass %s.", CUSTOM_ATTRIBUTE_APPLIES_TO, value.c_str(), GetFullName());
-        return ECObjectsStatus::Error;
-        }
-
-    ECSchemaCP resolvedSchema = GetSchema().GetSchemaByAliasP(alias);
-    if (NULL == resolvedSchema)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The %s attribute with the value '%s' con not resolve the alias '%s' as a referenced schema in the ECSchema '%s'.",
-                   CUSTOM_ATTRIBUTE_APPLIES_TO, value.c_str(), alias.c_str(), GetSchema().GetName().c_str());
-        return ECObjectsStatus::SchemaNotFound;
-        }
-
-    ECClassCP resolvedClass = resolvedSchema->GetClassCP(className.c_str());
-    if (NULL == resolvedClass)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The %s attribute with the value '%s' can not be resolved to an ECClass named '%s' in the ECSchema '%s'",
-                   CUSTOM_ATTRIBUTE_APPLIES_TO, value.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
-        return ECObjectsStatus::ClassNotFound;
-        }
-
-    ECEntityClassCP appliesToClass = resolvedClass->GetEntityClassCP();
-    if (NULL == appliesToClass)
-        {
-        LOG.errorv("Invalid ECSchemaXML: The %s attribute with the value '%s' resolved to an ECClass named %s:%s, but is not an ECEntityClass which is required.",
-                   CUSTOM_ATTRIBUTE_APPLIES_TO, value.c_str(), resolvedSchema->GetName().c_str(), className.c_str());
-        return ECObjectsStatus::ClassNotFound;
-        }
-
-    m_appliesToAny = false;
-    m_appliesTo = appliesToClass;
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::SetAppliesToAny()
-    {
-    ECObjectsStatus status = ECObjectsStatus::Success;
-    for (auto const& baseInterface : m_interfaces)
-        {
-        if (!baseInterface->AppliesToAny())
-            {
-            LOG.errorv("Interface Violation: Cannot set 'Any' as the appliesTo attribute on interface '%s' because the implemented interface '%s' has a more narrow appliesTo, '%s'",
-                       GetFullName(), baseInterface->GetFullName(), baseInterface->GetAppliesTo()->GetFullName());
-            status = ECObjectsStatus::Error;
-            }
-        }
-
-    if (ECObjectsStatus::Success == status)
-        {
-        m_appliesToAny = true;
-        m_appliesTo = nullptr;
-        }
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::SetAppliesTo(ECEntityClassCR ecClass)
-    {
-    ECObjectsStatus status;
-    if (ECObjectsStatus::Success != (status = ValidateAppliesTo(&ecClass)))
-        return status;
-    
-    m_appliesToAny = false;
-    m_appliesTo = &ecClass;
-    return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECInterfaceClass::CanBeAppliedTo(ECClassCR ecClass) const
-    {
-    if (m_appliesToAny || nullptr == m_appliesTo)
-        return true;
-
-    if (!ecClass.Is(m_appliesTo))
-        {
-        LOG.errorv("Interface Violation: The interface '%s' can not be applied to the class '%s' because the class is not nor derived from '%s'.", 
-                    GetFullName(), ecClass.GetFullName(), m_appliesTo->GetFullName());
-        return false;
-        }
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-bool ECInterfaceClass::Is(ECInterfaceClassCP targetClass) const
-    {
-    if (NULL == targetClass)
-        return false;
-
-    if (ClassesAreEqualByName(this, targetClass))
-        return true;
-
-    return TraverseInterfaces(&FindInterface, true, targetClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::CreatePrimitiveInterfaceProperty(PrimitiveECInterfacePropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType)
-    {
-    ecProperty = new PrimitiveECInterfaceProperty(*this);
-    ecProperty->SetType(primitiveType);
-    
-    ECObjectsStatus status = ECClass::AddProperty(ecProperty, name);
-    if (ECObjectsStatus::Success != status)
-        {
-        delete ecProperty;
-        ecProperty = nullptr;
-        }
-
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECInterfaceClass::CreateNavigationInterfaceProperty(NavigationECInterfacePropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
-    {
-    ecProperty = new NavigationECInterfaceProperty(*this);
-    ecProperty->SetType(type);
-    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
-    if (ECObjectsStatus::Success == status)
-        status = ECClass::AddProperty(ecProperty, name);
-
-    if (ECObjectsStatus::Success != status)
-        {
-        delete ecProperty;
-        ecProperty = nullptr;
-        }
-    return status;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 ECStructClass::ECStructClass(ECSchemaCR schema) : ECClass(schema)
@@ -3343,7 +2486,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
     {
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
-        ECClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
+        ECEntityClassCP baseAbstractConstraint = baseConstraint.GetAbstractConstraint();
         if (!GetAbstractConstraint()->Is(baseAbstractConstraint))
             {
             LOG.errorv("Abstract Constraint Violation: The abstract constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s' as specified in Class '%s'",
@@ -3408,7 +2551,7 @@ static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::_ValidateAbstractConstraint(ECClassCP abstractConstraint, bool resolveIssues) 
+ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues) 
     {
     if (abstractConstraint == nullptr)
         {
@@ -3446,18 +2589,11 @@ ECObjectsStatus ECRelationshipConstraint::_ValidateAbstractConstraint(ECClassCP 
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
 
-    if (!abstractConstraint->IsEntityClass() && !abstractConstraint->IsInterfaceClass())
-        {
-        LOG.errorv("Abstract Constraint Violation: The ECClass '%s' is not a valid abstract constraint. An Abstract Constraint must be either an ECEntityClass or ECInterfaceClass.",
-                   abstractConstraint->GetFullName());
-        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-        }
-
     bool valid = true;
     for (const auto &baseClass : m_relClass->GetBaseClasses())
         {
         ECRelationshipClassCP baseRelClass = baseClass->GetRelationshipClassCP();
-        ECClassCP baseAbstractConstraint = (m_isSource) ? baseRelClass->GetSource().GetAbstractConstraint()
+        ECEntityClassCP baseAbstractConstraint = (m_isSource) ? baseRelClass->GetSource().GetAbstractConstraint()
                                                         : baseRelClass->GetTarget().GetAbstractConstraint();
 
         if (baseAbstractConstraint != nullptr && !abstractConstraint->Is(baseAbstractConstraint))
@@ -3520,7 +2656,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECClassCR cons
     if (!m_relClass->HasBaseClasses())
         return ECObjectsStatus::Success;
 
-    ECClassCP abstractConstraint = GetAbstractConstraint();
+    ECEntityClassCP abstractConstraint = GetAbstractConstraint();
     if (abstractConstraint != nullptr && !constraintClass.Is(abstractConstraint))
         {
         Utf8String errorMessage;
@@ -3742,10 +2878,10 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
                 CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        
-        if (!constraintClass->IsEntityClass() && !constraintClass->IsInterfaceClass())
+        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
+        if (nullptr == constraintAsEntity)
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass or ECInterfaceClass named '%s' in the ECSchema '%s'",
+            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
                          CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
@@ -3843,49 +2979,29 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP value, bo
                     ABSTRACTCONSTRAINT_ATTRIBUTE, value, className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
-    
-    ECInterfaceClassCP interfaceClass = constraintClass->GetInterfaceClassCP();
-    ECEntityClassCP entityClass = constraintClass->GetEntityClassCP();
-    if (nullptr == interfaceClass && nullptr == entityClass)
+    ECEntityClassCP abstractConstraint = constraintClass->GetEntityClassCP();
+    if (nullptr == abstractConstraint)
         {
-        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains an %s attribute with the value '%s' that does not resolve to an ECEntityClass or ECInterfaceClass named '%s' in the ECSchema '%s'",
-                    ABSTRACTCONSTRAINT_ATTRIBUTE, value, className.c_str(), resolvedSchema->GetName().c_str());
+        LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains an %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                    ABSTRACTCONSTRAINT_ATTRIBUTE, value.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
     
     if (validate)
-        return (nullptr == interfaceClass) ? SetAbstractConstraint(*entityClass) : SetAbstractConstraint(*interfaceClass);
+        return SetAbstractConstraint(*abstractConstraint);
     
-    m_abstractConstraint = constraintClass;
+    m_abstractConstraint = abstractConstraint;
     return ECObjectsStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECInterfaceClassCR abstractConstraint)
-    {
-    ECClassCR ecClass = abstractConstraint;
-    return _SetAbstractConstraint(ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  11/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint)
-    {
-    ECClassCR ecClass = abstractConstraint;
-    return _SetAbstractConstraint(ecClass);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::_SetAbstractConstraint(ECClassCR abstractConstraint)
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint)
     {
     if (m_verify)
         {
-        ECObjectsStatus status = _ValidateAbstractConstraint(&abstractConstraint);
+        ECObjectsStatus status = ValidateAbstractConstraint(&abstractConstraint);
         if (ECObjectsStatus::Success != status)
             return status;
         }
@@ -3899,7 +3015,7 @@ ECObjectsStatus ECRelationshipConstraint::_SetAbstractConstraint(ECClassCR abstr
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
+ECEntityClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
     {
     if (m_abstractConstraint != nullptr)
         return m_abstractConstraint;
@@ -3908,7 +3024,7 @@ ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
         {
         ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
                                                                         : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-        ECClassCP abstractConstraint = baseClassConstraint->GetAbstractConstraint();
+        ECEntityClassCP abstractConstraint = baseClassConstraint->GetAbstractConstraint();
         if (abstractConstraint != nullptr)
             return abstractConstraint;
         }
@@ -3930,45 +3046,22 @@ bool ECRelationshipConstraint::IsAbstractConstraintDefined() const
     return GetAbstractConstraint() != nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECInterfaceClassCR classConstraint)
-    {
-    ECClassCR ecClass = classConstraint;
-    return _AddClass(ecClass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                03/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint)
     {
-    ECClassCR ecClass = classConstraint;
-    return _AddClass(ecClass);
+
+    ECRelationshipConstraintClassP ecRelationShipconstraintClass;
+    return  AddConstraintClass(ecRelationShipconstraintClass, classConstraint);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                       MUHAMMAD.ZAIGHUM                             01/2015
+* @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::_AddClass(ECClassCR ecClass)
+ECObjectsStatus ECRelationshipConstraint::RemoveClass (ECEntityClassCR classConstraint)
     {
-    if (!(ecClass.IsEntityClass() || ecClass.IsInterfaceClass()))
-        return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
-    if (m_verify)
-        {
-        if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
-            return ECObjectsStatus::RelationshipConstraintsNotCompatible;
-
-        ECObjectsStatus validationStatus = ValidateClassConstraint(ecClass);
-        if (validationStatus != ECObjectsStatus::Success)
-            return validationStatus;
-        }
-    else
-        m_verified = false;
-
-    return  m_constraintClasses.Add(ecClass);
+    return m_constraintClasses.Remove(classConstraint);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4029,18 +3122,8 @@ bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
         if (constraintClass->GetName().EqualsI("AnyClass"))
             return true;
         
-        if (ECClass::ClassesAreEqualByName(constraintClass, &ecClass))
+        if (ECClass::ClassesAreEqualByName(&constraintClass, &ecClass) || (m_isPolymorphic && ecClass.Is(&constraintClass)))
             return true;
-
-        if (m_isPolymorphic)
-            {
-            ECInterfaceClassCP interfaceClass = ecClass.GetInterfaceClassCP();
-            ECInterfaceClassCP interfaceConsraint = constraintClass->GetInterfaceClassCP();
-            if (nullptr != interfaceClass && nullptr != interfaceConsraint && interfaceClass->Is(interfaceConsraint))
-                return true;
-            else if (ecClass.Is(constraintClass))
-                return true;
-            }
         }
     return false;
     }
@@ -4477,7 +3560,7 @@ SchemaReadStatus ECRelationshipClass::_ReadXmlAttributes (BeXmlNodeR classNode)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                02/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<ECPropertyP>& navigationProperties)
+SchemaReadStatus ECRelationshipClass::_ReadXmlContents (BeXmlNodeR classNode, ECSchemaReadContextR context, ECSchemaCP conversionSchema, bvector<NavigationECPropertyP>& navigationProperties)
     {
     SchemaReadStatus status = T_Super::_ReadXmlContents (classNode, context, conversionSchema, navigationProperties);
     if (status != SchemaReadStatus::Success)
@@ -4562,11 +3645,9 @@ ECObjectsStatus ECRelationshipClass::_RemoveBaseClass(ECClassCR baseClass)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECRelationshipClass::GetIsVerified()
+bool ECRelationshipClass::Verify()
     {
-    if (!m_source->m_verified || !m_target->m_verified)
-        m_verified = false;
-
+    m_verified = IsValid(false);
     return m_verified;
     }
 
@@ -4642,6 +3723,43 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
         }
 
     return (!compareValue || GetStrengthDirection() == value);
+    }
+   
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  12/2012
++---------------+---------------+---------------+---------------+---------------+------*/
+bool            ECClass::Is(Utf8CP name) const
+    {
+    // NEEDSWORK: this is ambiguous without schema name...collisions between unrelated class names are not wholly unexpected.
+    if (0 == GetName().CompareTo(name))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(name))
+            return true;
+        }
+
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/13
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ECClass::Is (Utf8CP schemaname, Utf8CP classname) const
+    {
+    if (0 == GetName().CompareTo (classname) && 0 == GetSchema().GetName().CompareTo (schemaname))
+        return true;
+
+    const ECBaseClassesList& baseClass = GetBaseClasses();
+    for (ECBaseClassesList::const_iterator iter = baseClass.begin(); iter != baseClass.end(); ++iter)
+        {
+        if ((*iter)->Is(schemaname, classname))
+            return true;
+        }
+
+    return false;
     }
 
 //*---------------------------------------------------------------------------------**//**
@@ -4805,7 +3923,7 @@ uint32_t ECRelationshipConstraintClassList::size()const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                             Muhammad.Zaighum                   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constraintClass)
+ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECEntityClassCR constraintClass)
     {
     for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
         {
@@ -4824,7 +3942,7 @@ ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECClassCR constraintCl
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraintClassList::Add(ECClassCR ecClass)
     {
-    if (!ecClass.IsEntityClass() && !ecClass.IsInterfaceClass())
+    if (!ecClass.IsEntityClass())
         return ECObjectsStatus::DataTypeMismatch;
 
     if (&(ecClass.GetSchema()) != &(m_relClass->GetSchema()))

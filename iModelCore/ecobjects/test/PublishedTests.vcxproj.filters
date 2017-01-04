@@ -84,9 +84,6 @@
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ECInterfaceTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\StrictSchemaTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
