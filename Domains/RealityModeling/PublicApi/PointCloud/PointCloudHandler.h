@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/PointCloud/PointCloudHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -99,7 +99,7 @@ protected:
     //! Destruct a PointCloudModel object.
     ~PointCloudModel();
 
-    virtual void _AddSceneGraphics(Dgn::SceneContextR) const override;
+    virtual void _AddTerrainGraphics(Dgn::TerrainContextR) const override;
     virtual void _OnFitView(Dgn::FitContextR) override;
     virtual void _DropGraphicsForViewport(Dgn::DgnViewportCR viewport) override;
     virtual void _WriteJsonProperties(Json::Value&) const override;

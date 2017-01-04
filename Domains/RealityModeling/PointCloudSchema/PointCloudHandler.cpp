@@ -2,7 +2,7 @@
 |
 |     $Source: PointCloudSchema/PointCloudHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <PointCloudInternal.h>
@@ -248,7 +248,7 @@ AxisAlignedBox3d PointCloudModel::_QueryModelRange() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                       Eric.Paquet     4/2015
 //----------------------------------------------------------------------------------------
-void PointCloudModel::_AddSceneGraphics(Dgn::SceneContextR context) const
+void PointCloudModel::_AddTerrainGraphics(Dgn::TerrainContextR context) const
     {
     if (GetPointCloudSceneP() == nullptr || NULL == context.GetViewport() ||
         !PointCloudProgressiveDisplay::ShouldDrawInContext(context))
