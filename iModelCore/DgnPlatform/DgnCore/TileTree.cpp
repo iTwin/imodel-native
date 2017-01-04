@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -639,7 +639,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
                 }
             }
 
-        if (allChildrenReady)
+        if (_CanSubstituteChildren(allChildrenReady))
             {
             for (auto const& child : *children)
                 child->Draw(args, depth+1);

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -187,6 +187,11 @@ public:
 
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
     virtual double _GetMaximumSize() const = 0;
+
+    //! Return whether this node's children should be drawn in its place if this node is too coarse to be drawn
+    //! @param[in] allChildrenReady true if all of the children are in the "Ready" state
+    //! @return true to substitute children for this node
+    virtual bool _CanSubstituteChildren(bool allChildrenReady) const { return allChildrenReady || !IsDisplayable(); }
 };
 
 /*=================================================================================**//**
