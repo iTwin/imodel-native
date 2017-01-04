@@ -43,7 +43,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     DEllipse3d ellipseData = DEllipse3d::From(1, 2, 3,/**/  0, 0, 2, /**/ 0, 3, 0, /**/ 0.0, Angle::TwoPi());
     ICurvePrimitivePtr curvePrimitive = ICurvePrimitive::CreateArc(ellipseData);
     GeometricPrimitivePtr elmGeom = GeometricPrimitive::Create(*curvePrimitive);
-    EXPECT_TRUE(elmGeom.IsValid());
+    ASSERT_TRUE(elmGeom.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::CurvePrimitive == elmGeom->GetGeometryType());
     ICurvePrimitivePtr getAsCurvePrimitive = elmGeom->GetAsICurvePrimitive();
     EXPECT_TRUE(getAsCurvePrimitive.IsValid());
@@ -59,7 +59,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     //
     CurveVectorPtr curveVector = GeomHelper::computeShape();
     GeometricPrimitivePtr elmGeom2 = GeometricPrimitive::Create(*curveVector);
-    EXPECT_TRUE(elmGeom2.IsValid());
+    ASSERT_TRUE(elmGeom2.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::CurveVector == elmGeom2->GetGeometryType());
     CurveVectorPtr getAsCurveVector = elmGeom2->GetAsCurveVector();
     EXPECT_TRUE(getAsCurveVector.IsValid());
@@ -78,7 +78,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     DgnConeDetail cylinderDetail(DPoint3d::From(0, 0, 0), DPoint3d::From(0, 0, dz), radius, radius, true);
     ISolidPrimitivePtr solidPrimitive = ISolidPrimitive::CreateDgnCone(cylinderDetail);
     GeometricPrimitivePtr elmGeom3 = GeometricPrimitive::Create(*solidPrimitive);
-    EXPECT_TRUE(elmGeom3.IsValid());
+    ASSERT_TRUE(elmGeom3.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::SolidPrimitive == elmGeom3->GetGeometryType());
     ISolidPrimitivePtr getAsSolid = elmGeom3->GetAsISolidPrimitive();
     EXPECT_TRUE(getAsSolid.IsValid());
@@ -95,7 +95,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     double a = 1000.0 / 3.0;
     MSBsplineSurfacePtr surface = GeomHelper::CreateGridSurface(DPoint3d::From(0, 0, 0), a, a, 3, 4, 4);
     GeometricPrimitivePtr elmGeom4 = GeometricPrimitive::Create(*surface);
-    EXPECT_TRUE(elmGeom4.IsValid());
+    ASSERT_TRUE(elmGeom4.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::BsplineSurface == elmGeom4->GetGeometryType());
     MSBsplineSurfacePtr getAsMesh = elmGeom4->GetAsMSBsplineSurface();
     EXPECT_TRUE(getAsMesh.IsValid());
@@ -114,7 +114,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     faceBuilder->AddSweptNGon(4, 1.0, 0.0, 2.0, true, true);
     PolyfaceHeaderPtr mesh = faceBuilder->GetClientMeshPtr();
     GeometricPrimitivePtr elmGeom5 = GeometricPrimitive::Create(*mesh);
-    EXPECT_TRUE(elmGeom5.IsValid());
+    ASSERT_TRUE(elmGeom5.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::Polyface == elmGeom5->GetGeometryType());
     PolyfaceHeaderPtr getAsPolyFace = elmGeom5->GetAsPolyfaceHeader();
     EXPECT_TRUE(getAsPolyFace.IsValid());
@@ -131,7 +131,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     IBRepEntityPtr out;
     EXPECT_EQ(BentleyStatus::SUCCESS, BRepUtil::Create::BodyFromBSurface(out, *surface));
     GeometricPrimitivePtr elmGeom6 = GeometricPrimitive::Create(out);
-    EXPECT_TRUE(elmGeom6.IsValid());
+    ASSERT_TRUE(elmGeom6.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::BRepEntity == elmGeom6->GetGeometryType());
     IBRepEntityPtr getAsIBRepEntity = elmGeom6->GetAsIBRepEntity();
     EXPECT_TRUE(getAsIBRepEntity.IsValid());
@@ -147,10 +147,10 @@ TEST_F(GeometricPrimitiveTests, Create)
     //
     TextStringPtr text = GeomHelper::CreateTextString();
     GeometricPrimitivePtr elmGeom7 = GeometricPrimitive::Create(*text);
-    EXPECT_TRUE(elmGeom7.IsValid());
+    ASSERT_TRUE(elmGeom7.IsValid());
     EXPECT_TRUE(GeometricPrimitive::GeometryType::TextString == elmGeom7->GetGeometryType());
     TextStringPtr getAsTexTString = elmGeom7->GetAsTextString();
-    EXPECT_TRUE(getAsTexTString.IsValid());
+    ASSERT_TRUE(getAsTexTString.IsValid());
     EXPECT_STREQ(text->GetText().c_str(), getAsTexTString->GetText().c_str());
     EXPECT_FALSE(elmGeom7->IsWire());
     EXPECT_FALSE(elmGeom7->IsSheet());
