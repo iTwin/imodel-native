@@ -865,10 +865,10 @@ Utf8String ClassMap::GetUpdatableViewName() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumnFactory const& ClassMap::GetColumnFactory() const
+ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     {
     if (m_columnFactory == nullptr)
-        m_columnFactory = std::make_unique<DbColumnFactory>(*this);
+        m_columnFactory = std::make_unique<ClassMapColumnFactory>(*this);
 
     return *m_columnFactory;
     }

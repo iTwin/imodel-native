@@ -382,9 +382,6 @@
       <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="Nullable.h" />
-    <ClInclude Include="DbColumnFactory.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -414,6 +411,9 @@
     </ClInclude>
     <ClInclude Include="ECSql\StructECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassMapColumnFactory.h">
+      <Filter>ECDbMap</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -727,9 +727,6 @@
     <ClCompile Include="ECDbSqlFunctions.cpp">
       <Filter>ECDb</Filter>
     </ClCompile>
-    <ClCompile Include="DbColumnFactory.cpp">
-      <Filter>ECDbMap</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\PointECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
@@ -756,6 +753,9 @@
     </ClCompile>
     <ClCompile Include="ECSql\StructECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassMapColumnFactory.cpp">
+      <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

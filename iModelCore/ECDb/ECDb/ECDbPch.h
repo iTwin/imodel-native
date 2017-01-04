@@ -43,7 +43,7 @@
 #include "ClassMapper.h"
 #include "ECSchemaComparer.h"
 #include "LightweightCache.h"
-#include "DbColumnFactory.h"
+#include "ClassMapColumnFactory.h"
 #include "ViewGenerator.h"
 #include "ECDbSchemaPersistenceHelper.h"
 #include "ECDbSchemaReader.h"

@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/DbColumnFactory.h $
+|     $Source: ECDb/ClassMapColumnFactory.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //======================================================================================
 // @bsiclass                                                     Affan.Khan      01/2015
 //===============+===============+===============+===============+===============+======
-struct DbColumnFactory final : NonCopyableClass
+struct ClassMapColumnFactory final : NonCopyableClass
     {
     private:
         ClassMap const& m_classMap;
@@ -45,7 +45,7 @@ struct DbColumnFactory final : NonCopyableClass
         ECDbCR GetECDb() const;
 
     public:
-        explicit DbColumnFactory(ClassMap const& classMap);
+        explicit ClassMapColumnFactory(ClassMap const& classMap);
 
         //This function either create a column or grab a existing column
         DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const;

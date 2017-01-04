@@ -12,7 +12,7 @@
 #include "ClassMappingInfo.h"
 #include "IssueReporter.h"
 #include <Bentley/NonCopyableClass.h>
-#include "DbColumnFactory.h"
+#include "ClassMapColumnFactory.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct ECDbMap;
@@ -121,7 +121,7 @@ struct ClassMap : RefCountedBase
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
-        mutable std::unique_ptr<DbColumnFactory> m_columnFactory;
+        mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
         std::unique_ptr<TablePerHierarchyHelper> m_tphHelper;
         bool m_isDirty;
 
@@ -164,7 +164,7 @@ struct ClassMap : RefCountedBase
         BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         Type GetType() const { return m_type; }
         bool IsDirty() const { return m_isDirty; }
-        DbColumnFactory const& GetColumnFactory() const;
+        ClassMapColumnFactory const& GetColumnFactory() const;
         std::vector<DbTable*>& GetTables() const { return m_tables; }
         DbTable& GetPrimaryTable() const { BeAssert(!GetTables().empty()); return *GetTables().front(); }
         DbTable& GetJoinedTable() const { BeAssert(!GetTables().empty()); return *GetTables().back(); }
