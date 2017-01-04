@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -49,8 +49,6 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    DgnDb::VerifyClientThread();
-
     if (m_loads)
         m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
 
