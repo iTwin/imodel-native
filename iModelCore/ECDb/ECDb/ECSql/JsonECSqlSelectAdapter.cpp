@@ -584,6 +584,7 @@ bool JsonECSqlSelectAdapter::FormattedJsonFromECValue(JsonValueR jsonValue, ECVa
     BeAssert(m_formatOptions.m_propertyFormatter.IsValid());
     if (!m_formatOptions.m_propertyFormatter->FormattedStringFromECValue(strValue, ecValue, ecProperty, isArrayMember))
         return false;
+
     jsonValue = strValue;
     return true;
     }
@@ -605,6 +606,7 @@ bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue co
         jsonValue = encoded;
         return true;
         }
+
     return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     // TODO: Raw binary values needs to be Base64 encoded here
     }
@@ -615,13 +617,13 @@ bool JsonECSqlSelectAdapter::JsonFromBinary(JsonValueR jsonValue, IECSqlValue co
 bool JsonECSqlSelectAdapter::JsonFromCG(JsonValueR jsonValue, IECSqlValue const& ecsqlValue, ECPropertyCR ecProperty, bool isArrayMember) const
     {
     IGeometryPtr geometry = ecsqlValue.GetGeometry();
-    POSTCONDITION(geometry.IsValid() && "Could not read Common Geometry", false);
+    if (geometry == nullptr)
+        {
+        BeAssert(false && "Could not read Common Geometry");
+        return false;
+        }
 
-    bool preferNativeDgnTypes = false;
-    bool bStatus = BentleyGeometryJson::TryGeometryToJsonValue(jsonValue, *geometry, preferNativeDgnTypes);
-    POSTCONDITION(bStatus && "Could not convert Common Geometry to JSON", false);
-
-    return true;
+    return BentleyGeometryJson::TryGeometryToJsonValue(jsonValue, *geometry, false);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -635,12 +637,10 @@ bool JsonECSqlSelectAdapter::JsonFromBoolean(JsonValueR jsonValue, IECSqlValue c
         jsonValue = value;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetBoolean(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetBoolean(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -654,13 +654,11 @@ bool JsonECSqlSelectAdapter::JsonFromDateTime(JsonValueR jsonValue, IECSqlValue 
         jsonValue = dateTime.ToString();
         return true;
         }
-    else
-        {
-        // TODO: Need to make the formatting locale aware. 
-        ECValue ecValue;
-        ecValue.SetDateTime(dateTime);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    // TODO: Need to make the formatting locale aware. 
+    ECValue ecValue;
+    ecValue.SetDateTime(dateTime);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -674,12 +672,10 @@ bool JsonECSqlSelectAdapter::JsonFromDouble(JsonValueR jsonValue, IECSqlValue co
         jsonValue = value;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetDouble(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetDouble(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -693,12 +689,10 @@ bool JsonECSqlSelectAdapter::JsonFromInt(JsonValueR jsonValue, IECSqlValue const
         jsonValue = value;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetInteger(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetInteger(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -712,12 +706,10 @@ bool JsonECSqlSelectAdapter::JsonFromInt64(JsonValueR jsonValue, IECSqlValue con
         jsonValue = BeJsonUtilities::StringValueFromInt64(value); // Javascript has issues with holding Int64 values!!!
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetLong(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetLong(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,12 +724,10 @@ bool JsonECSqlSelectAdapter::JsonFromPoint2d(JsonValueR jsonValue, IECSqlValue c
         jsonValue["y"] = value.y;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetPoint2d(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetPoint2d(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -753,12 +743,10 @@ bool JsonECSqlSelectAdapter::JsonFromPoint3d(JsonValueR jsonValue, IECSqlValue c
         jsonValue["z"] = value.z;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetPoint3d(value);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetPoint3d(value);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,12 +760,10 @@ bool JsonECSqlSelectAdapter::JsonFromString(JsonValueR jsonValue, IECSqlValue co
         jsonValue = strValue;
         return true;
         }
-    else
-        {
-        ECValue ecValue;
-        ecValue.SetUtf8CP(strValue, false);
-        return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
-        }
+
+    ECValue ecValue;
+    ecValue.SetUtf8CP(strValue, false);
+    return FormattedJsonFromECValue(jsonValue, ecValue, ecProperty, isArrayMember);
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -7,9 +7,6 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-#TFS 518176 will adress this (Raman)
-JsonUpdaterTests.CommonGeometryJsonSerialization
-
 #TFS 519203
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
