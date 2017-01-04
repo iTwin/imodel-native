@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -23,46 +23,6 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECRelati
     {}
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    11/2013
-//---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType persType)
-    {
-    DbTable& table = GetPrimaryTable();
-    const bool wasEditMode = table.GetEditHandle().CanEdit();
-    if (!wasEditMode)
-        table.GetEditHandleR().BeginEdit();
-
-    DbColumn* column = table.FindColumnP(columnName);
-    if (column != nullptr)
-        {
-        if (!Enum::Intersects(column->GetKind(), columnId))
-            column->AddKind(columnId);
-
-        return column;
-        }
-
-    persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
-    //Following protect creating virtual id/fk columns in persisted tables.
-    if (table.GetPersistenceType() == PersistenceType::Physical)
-        {
-        if (persType == PersistenceType::Virtual)
-            {
-            if (columnId == DbColumn::Kind::SourceECInstanceId || columnId == DbColumn::Kind::TargetECInstanceId)
-                {
-                BeAssert(false);
-                return nullptr;
-                }
-            }
-        }
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnId, persType);
-
-    if (!wasEditMode)
-        table.GetEditHandleR().EndEdit();
-
-    return column;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                        12/13
 //---------------------------------------------------------------------------------------
 //static
@@ -75,36 +35,6 @@ bool RelationshipClassMap::ConstraintIncludesAnyClass(ECN::ECRelationshipConstra
         }
 
     return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    01/2014
-//---------------------------------------------------------------------------------------
-void RelationshipClassMap::DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECRelationshipConstraintCR constraint) const
-    {
-    //A constraint class id column is needed if 
-    // * the map strategy implies that multiple classes are stored in the same table or
-    // * the constraint includes the AnyClass or 
-    // * it has more than one classes including subclasses in case of a polymorphic constraint. 
-    //So we first determine whether a constraint class id column is needed
-    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
-    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 || ConstraintIncludesAnyClass(constraintClasses);
-    //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
-    //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
-    //is set to true;
-    if (!addConstraintClassIdColumnNeeded && constraint.GetIsPolymorphic())
-        addConstraintClassIdColumnNeeded = true;
-
-    //if no class id column on the end is required, store the class id directly so that it can be used as literal in the native SQL
-    if (!addConstraintClassIdColumnNeeded)
-        {
-        BeAssert(constraintClasses.size() == 1);
-        ECClassCP constraintClass = constraintClasses[0];
-        BeAssert(constraintClass->HasId());
-        defaultConstraintClassId = constraintClass->GetId();
-        }
-    else
-        defaultConstraintClassId = ECClassId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1716,6 +1646,77 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
     m_targetConstraintMap.SetECClassIdPropMap(targetECClassIdPropMap.get());
 
     return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    11/2013
+//---------------------------------------------------------------------------------------
+DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType persType)
+    {
+    DbTable& table = GetPrimaryTable();
+    const bool wasEditMode = table.GetEditHandle().CanEdit();
+    if (!wasEditMode)
+        table.GetEditHandleR().BeginEdit();
+
+    DbColumn* column = table.FindColumnP(columnName);
+    if (column != nullptr)
+        {
+        if (!Enum::Intersects(column->GetKind(), columnId))
+            column->AddKind(columnId);
+
+        return column;
+        }
+
+    persType = table.IsOwnedByECDb() ? persType : PersistenceType::Virtual;
+    //Following protect creating virtual id/fk columns in persisted tables.
+    if (table.GetPersistenceType() == PersistenceType::Physical)
+        {
+        if (persType == PersistenceType::Virtual)
+            {
+            if (columnId == DbColumn::Kind::SourceECInstanceId || columnId == DbColumn::Kind::TargetECInstanceId)
+                {
+                BeAssert(false);
+                return nullptr;
+                }
+            }
+        }
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnId, persType);
+
+    if (!wasEditMode)
+        table.GetEditHandleR().EndEdit();
+
+    return column;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                    01/2014
+//---------------------------------------------------------------------------------------
+void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECRelationshipConstraintCR constraint) const
+    {
+    //A constraint class id column is needed if 
+    // * the map strategy implies that multiple classes are stored in the same table or
+    // * the constraint includes the AnyClass or 
+    // * it has more than one classes including subclasses in case of a polymorphic constraint. 
+    //So we first determine whether a constraint class id column is needed
+    ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
+    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 || ConstraintIncludesAnyClass(constraintClasses);
+    //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
+    //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
+    //is set to true;
+    if (!addConstraintClassIdColumnNeeded && constraint.GetIsPolymorphic())
+        addConstraintClassIdColumnNeeded = true;
+
+    //if no class id column on the end is required, store the class id directly so that it can be used as literal in the native SQL
+    if (!addConstraintClassIdColumnNeeded)
+        {
+        BeAssert(constraintClasses.size() == 1);
+        ECClassCP constraintClass = constraintClasses[0];
+        BeAssert(constraintClass->HasId());
+        defaultConstraintClassId = constraintClass->GetId();
+        }
+    else
+        defaultConstraintClassId = ECClassId();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

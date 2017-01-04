@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,6 @@ struct RelationshipConstraintMap : NonCopyableClass
         void SetECInstanceIdPropMap(ConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(ConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
-
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
         bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint() const { return m_constraint; }
@@ -61,9 +60,6 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_targetConstraintMap;
 
         RelationshipClassMap(ECDb const&, Type, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
-        DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
-        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
-
         RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
 
     public:
@@ -208,15 +204,16 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
 
         void AddIndices(ClassMappingContext&, bool allowDuplicateRelationship);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
+        DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
+        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
+
 
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
-
         static Utf8String DetermineConstraintECInstanceIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
-
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
     public:

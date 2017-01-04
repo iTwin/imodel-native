@@ -24,7 +24,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         mutable std::set<DbColumn const*> m_usedColumnSet;
         bool m_usesSharedColumnStrategy;
 
-       void Initialize();
+        void Initialize();
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
         BentleyStatus ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId, int retryCount) const;
@@ -53,5 +53,15 @@ struct ClassMapColumnFactory final : NonCopyableClass
         void Debug() const;
     };
 
-
+//======================================================================================
+// @bsiclass                                                     Affan.Khan      01/2015
+//===============+===============+===============+===============+===============+======
+//struct RelationshipClassEndTableMapColumnFactory final : NonCopyableClass
+//    {
+//    public:
+//        explicit RelationshipClassEndTableMapColumnFactory(RelationshipClassEndTableMap const& relationshipMap);
+//        DbColumn* AllocateForeignECInstanceId();
+//        DbCOlumn* AllocateForeignRelECClassId();
+//        DbCOlumn* AllocateForeignECClassId();
+//    };
 END_BENTLEY_SQLITE_EC_NAMESPACE
