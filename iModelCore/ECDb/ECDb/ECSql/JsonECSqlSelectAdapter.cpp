@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/JsonECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -841,11 +841,7 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitive(JsonValueR jsonValue, IECSqlValue
             }
             case PRIMITIVETYPE_IGeometry:
             {
-            // TODO: Unhandled for now. Not asserting due to ATPs. 
-            ECClassCR ecClass = ecProperty.GetClass();
-            ECSchemaCR ecSchema = ecClass.GetSchema();
-            LOG.errorv("Cannot handle IGeometry primitive types. Property %s:%s:%s", ecSchema.GetName().c_str(), ecClass.GetName().c_str(), ecProperty.GetName().c_str());
-            status = true;
+            status = JsonFromCG(jsonValue, ecsqlValue, ecProperty, isArrayMember);
             break;
             }
             default:
