@@ -52,7 +52,7 @@ private:
             void Init(ECSqlColumnInfoCR parentColumnInfo);
 
             BentleyStatus SetValue(ECN::IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata);
-            void Reset();
+            void Reset() { m_value.Clear(); }
         };
 
 private:
@@ -69,23 +69,23 @@ private:
     mutable ArrayElementValue m_arrayElement;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return false; } //arrays are always considered to be not-null (seems to be EC contract)
+    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
 
     //IECSqlArrayValue
     virtual void _MoveNext(bool onInitializingIterator) const override;
-    virtual bool _IsAtEnd() const override;
-    virtual IECSqlValue const* _GetCurrent() const override;
-    virtual int _GetArrayLength() const override;
+    virtual bool _IsAtEnd() const override { return m_currentArrayIndex >= _GetArrayLength(); }
+    virtual IECSqlValue const* _GetCurrent() const override { BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength()); return &m_arrayElement; }
+    virtual int _GetArrayLength() const override { return m_arrayInfo.GetCount(); }
 
     //ECSqlField
     virtual ECSqlStatus _OnAfterReset() override;
     virtual ECSqlStatus _OnAfterStep() override;
 
     void DoReset() const;
-    ECN::IECInstanceCP GetArrayValueECInstance() const;
+    ECN::IECInstanceCP GetArrayValueECInstance() const { return m_arrayValueECInstance.get(); }
 
 public:
     PrimitiveArrayECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);

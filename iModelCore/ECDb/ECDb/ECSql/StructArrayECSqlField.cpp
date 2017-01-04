@@ -338,6 +338,20 @@ StructJsonECSqlValue::StructJsonECSqlValue(ECDbCR ecdb, Json::Value const& json,
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//---------------------------------------------------------------------------------------
+bool StructJsonECSqlValue::_IsNull() const
+    {
+    for (std::unique_ptr<JsonECSqlValue> const& member : m_members)
+        {
+        if (!member->IsNull())
+            return false;
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
 IECSqlValue const& StructJsonECSqlValue::_GetValue(int columnIndex) const

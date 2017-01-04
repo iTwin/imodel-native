@@ -77,6 +77,7 @@ struct StructJsonECSqlValue : public JsonECSqlValue, public IECSqlStructValue
 private:
     std::vector<std::unique_ptr<JsonECSqlValue>> m_members;
 
+    virtual bool _IsNull() const override;
     virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
 
     virtual int _GetMemberCount() const override { return (int) m_members.size(); }
@@ -136,7 +137,7 @@ private:
     mutable std::unique_ptr<ArrayJsonECSqlValue> m_value;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return false; } // EC contract: arrays are never null
+    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override { return *m_value; }
