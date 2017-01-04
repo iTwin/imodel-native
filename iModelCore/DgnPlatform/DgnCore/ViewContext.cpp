@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ViewContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -289,9 +289,12 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     if (!source.HasGeometry())
         return ERROR;
 
-    DPoint3d origin;
-    source.GetPlacementTransform().GetTranslation(origin);
-    double pixelSize = (nullptr != m_viewport ? m_viewport->GetPixelSizeAtPoint(&origin) : 0.0);
+    double pixelSize = 0.0;
+    if (nullptr != m_viewport)
+        {
+        DPoint3d origin = source.CalculateRange3d().GetCenter();
+        pixelSize = m_viewport->GetPixelSizeAtPoint(&origin);
+        }
 
     Render::GraphicPtr graphic = _GetCachedGraphic(source, pixelSize);
     if (!graphic.IsValid())
