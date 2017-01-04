@@ -14,13 +14,11 @@ DGNPLATFORM_TYPEDEFS(GenericGroup)
 DGNPLATFORM_TYPEDEFS(GenericGroupModel)
 DGNPLATFORM_TYPEDEFS(GenericSpatialLocation)
 DGNPLATFORM_TYPEDEFS(GenericPhysicalObject)
-DGNPLATFORM_TYPEDEFS(GenericNonPhysicalObject)
 
 DGNPLATFORM_REF_COUNTED_PTR(GenericGroup)
 DGNPLATFORM_REF_COUNTED_PTR(GenericGroupModel)
 DGNPLATFORM_REF_COUNTED_PTR(GenericSpatialLocation)
 DGNPLATFORM_REF_COUNTED_PTR(GenericPhysicalObject)
-DGNPLATFORM_REF_COUNTED_PTR(GenericNonPhysicalObject)
 
 #define GENERIC_DOMAIN_ECSCHEMA_PATH        L"ECSchemas/Dgn/Generic.01.00.ecschema.xml"
 #define GENERIC_DOMAIN_NAME                 "Generic"
@@ -28,7 +26,6 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericNonPhysicalObject)
 
 #define GENERIC_CLASS_Graphic3d             "Graphic3d"
 #define GENERIC_CLASS_PhysicalObject        "PhysicalObject"
-#define GENERIC_CLASS_NonPhysicalObject     "NonPhysicalObject"
 #define GENERIC_CLASS_SpatialLocation       "SpatialLocation"
 #define GENERIC_CLASS_Group                 "Group"
 #define GENERIC_CLASS_GroupModel            "GroupModel"
@@ -68,27 +65,6 @@ struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3d : GraphicalElement3d
 
 public:
     explicit GenericGraphic3d(CreateParams const& params) : T_Super(params) {} 
-};
-
-//=======================================================================================
-//! A generic NonPhysicalObject is used by a conversion process when:
-//! - It did not have enough information to pick another domain
-//! - It determined the element represents a NonPhysicalObject
-// @bsiclass                                                    Shaun.Sewall    01/2016
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE GenericNonPhysicalObject : DgnElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(GENERIC_CLASS_NonPhysicalObject, DgnElement);
-
-public:
-    explicit GenericNonPhysicalObject(CreateParams const& params) : T_Super(params) {}
-
-    //! Create an instance of a GenericNonPhysicalObject from CreateParams.
-    static GenericNonPhysicalObjectPtr Create(CreateParams const& params) {return new GenericNonPhysicalObject(params);}
-
-    //! Create an instance of a GenericNonPhysicalObject
-    //! @param[in] model The model for the new GenericNonPhysicalObject.
-    DGNPLATFORM_EXPORT static GenericNonPhysicalObjectPtr Create(DgnModelR model);
 };
 
 //=======================================================================================
@@ -197,13 +173,6 @@ namespace generic_ElementHandler
     struct EXPORT_VTABLE_ATTRIBUTE GenericGraphic3dHandler : dgn_ElementHandler::Geometric3d
     {
         ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_Graphic3d, GenericGraphic3d, GenericGraphic3dHandler, dgn_ElementHandler::Geometric3d, DGNPLATFORM_EXPORT)
-    };
-
-    //! The ElementHandler for GenericNonPhysicalObject
-    //! @private
-    struct EXPORT_VTABLE_ATTRIBUTE GenericNonPhysicalObjectHandler : dgn_ElementHandler::Element
-    {
-        ELEMENTHANDLER_DECLARE_MEMBERS(GENERIC_CLASS_NonPhysicalObject, GenericNonPhysicalObject, GenericNonPhysicalObjectHandler, dgn_ElementHandler::Element, DGNPLATFORM_EXPORT)
     };
 
     //! The ElementHandler for GenericPhysicalObject
