@@ -2,7 +2,7 @@
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TilePublisher.h"
@@ -1927,6 +1927,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
+
+    rootRange = DRange3d::NullRange();
+    for (auto const& kvp : m_modelRanges)
+        rootRange.Extend(kvp.second);
 
     return Status::Success;
     }
