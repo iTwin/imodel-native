@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDb.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -296,7 +296,7 @@ public:
     //! @return BE_SQLITE_OK in case of success. Error codes otherwise
     DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, BeSQLite::EC::ECInstanceId sourceId, BeSQLite::EC::ECInstanceId targetId);
 
-    DGNPLATFORM_EXPORT BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
+    BeSQLite::DbResult DeleteECRelationships(Utf8CP relClassECSqlName, DgnElementId sourceId, DgnElementId targetId)
         {
         return DeleteECRelationships(relClassECSqlName, BeSQLite::EC::ECInstanceId(sourceId.GetValue()), BeSQLite::EC::ECInstanceId(targetId.GetValue()));
         }
@@ -344,8 +344,9 @@ public:
 /** @} */
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    //!Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements.
-    //!Otherwise preparation of the ECSQL will fail.
+    //!Gets the permission token which all code within DgnPlatform has to pass to non-SELECT ECSQL statements
+    //!or other non-read EC CRUD operations.
+    //!Otherwise the preparation of the ECSQL or the write operation will fail.
     //!@return ECSQL write token. Is never nullptr but is returned as pointer as this is how you pass it to the ECSQL APIs. 
     BeSQLite::EC::ECSqlWriteToken const* GetECSqlWriteToken() const; //not inlined as it must not be called externally
     //!Gets the permission token to perform a data-modifying ECSchema import/update

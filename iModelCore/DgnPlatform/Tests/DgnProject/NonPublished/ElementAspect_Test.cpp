@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementAspect_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -638,4 +638,81 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
         maspectWithHandler1->SetValue("TestMultiAspectProperty", ECN::ECValue("foo"));  
         ASSERT_NE(DgnDbStatus::Success, DgnElement::GenericMultiAspect::AddAspect(*editEl, *maspectWithHandler1));
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik      12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
+    {
+    // Open Source Db
+    SetupSeedProject();
+    DgnAuthorityId auth1Id;
+    m_db->Schemas().CreateECClassViewsInDb();
+    ECN::ECClassCP uaspectclassNoHandler = m_db->Schemas().GetECClass("DgnPlatformTest", "TestUniqueAspectNoHandler");
+    ASSERT_TRUE(nullptr != uaspectclassNoHandler);
+
+    auto uaspectclassWithHandler = TestUniqueAspect::GetECClass(*m_db);
+    ASSERT_TRUE(nullptr != uaspectclassWithHandler);
+    BeFileName fileName = m_db->GetFileName();
+    DgnElementCPtr persistEl;
+    if (true)
+    {
+        TestElementPtr tempEl = TestElement::Create(*m_db, m_defaultModelId, m_defaultCategoryId, "TestElement1");
+
+        auto uaspect = uaspectclassNoHandler->GetDefaultStandaloneEnabler()->CreateInstance();
+        uaspect->SetValue("TestUniqueAspectProperty", ECN::ECValue("foo"));
+
+        ASSERT_EQ(nullptr, DgnElement::GenericUniqueAspect::GetAspect(*tempEl, *uaspectclassNoHandler));
+
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*tempEl, *uaspect));
+        // Check that we can find the aspect that we just added to the non-persistent element
+        auto foundProps = DgnElement::GenericUniqueAspect::GetAspectP(*tempEl, *uaspectclassNoHandler);
+        ASSERT_TRUE(foundProps != nullptr);
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestUniqueAspectProperty"));
+        ASSERT_STREQ("foo", value.ToString().c_str());
+
+        persistEl = tempEl->Insert();
+        m_db->SaveChanges();
+    }
+
+    ASSERT_TRUE(persistEl.IsValid());
+
+    if (true)
+    {
+        // Check that we can find the same aspect from the persistent element 
+        auto editEl = m_db->Elements().GetForEdit<DgnElement>(persistEl->GetElementId());
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspectNoHandler WHERE Element.Id=?");
+        stmt->BindId(1, editEl->GetElementId());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_STREQ("foo", stmt->GetValueText(0));
+
+        //update
+        auto foundProps = DgnElement::GenericUniqueAspect::GetAspectP(*editEl, *uaspectclassNoHandler);
+        ASSERT_TRUE(foundProps != nullptr);
+        //  Modify a property on one of the aspects
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->SetValue("TestUniqueAspectProperty", ECN::ECValue("foo-changed")));
+        ASSERT_EQ(DgnDbStatus::Success, DgnElement::GenericUniqueAspect::SetAspect(*editEl, *foundProps));
+        foundProps = DgnElement::GenericUniqueAspect::GetAspectP(*editEl, *uaspectclassNoHandler);
+        ASSERT_TRUE(foundProps != nullptr);
+        ECN::ECValue value;
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, foundProps->GetValue(value, "TestUniqueAspectProperty"));
+        ASSERT_STREQ("foo-changed", value.ToString().c_str());
+        ASSERT_TRUE(editEl->Update().IsValid());
+        m_db->SaveChanges();
+        m_db->CloseDb();
+    }
+
+    if (true)
+    {
+        m_db = nullptr;
+        OpenDb(m_db,fileName, Db::OpenMode::ReadWrite, true);
+        auto el = m_db->Elements().GetForEdit<DgnElement>(persistEl->GetElementId());
+        BeSQLite::EC::CachedECSqlStatementPtr stmt = m_db->GetPreparedECSqlStatement("SELECT TestUniqueAspectProperty FROM DgnPlatformTest.TestUniqueAspectNoHandler WHERE Element.Id=?");
+        stmt->BindId(1, el->GetElementId());
+        ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
+        ASSERT_STREQ("foo-changed", stmt->GetValueText(0));
+    }
+
     }
