@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -3676,7 +3676,7 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
         return DgnDbStatus::BadArg;
 
     BlobIO blobIO;
-    if (SUCCESS != db.OpenBlobIO(blobIO, *ecClass, propertyName, elementId, true))
+    if (SUCCESS != db.OpenBlobIO(blobIO, *ecClass, propertyName, elementId, true, db.GetECSqlWriteToken()))
         return DgnDbStatus::WriteError;
 
     if (SUCCESS != snappyTo.SaveToRow(blobIO))
