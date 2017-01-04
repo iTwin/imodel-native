@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/EcPresentationRules/SearchResultInstanceNodesSpecification.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct QuerySpecificationVisitor
+struct EXPORT_VTABLE_ATTRIBUTE QuerySpecificationVisitor
 {
 friend struct StringQuerySpecification;
 friend struct ECPropertyValueQuerySpecification;
@@ -32,7 +32,7 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                     Grigas.Petraitis                01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct QuerySpecification
+struct EXPORT_VTABLE_ATTRIBUTE QuerySpecification
 {
 private:
     Utf8String m_schemaName;
