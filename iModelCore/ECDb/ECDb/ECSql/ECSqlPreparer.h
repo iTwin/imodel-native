@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPreparer.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,7 +57,6 @@ struct ECSqlExpPreparer
         static ECSqlStatus PrepareCrossJoinExp(ECSqlPrepareContext&, CrossJoinExp const&);
         static ECSqlStatus PrepareFromExp(ECSqlPrepareContext&, FromExp const*);
         static ECSqlStatus PrepareFunctionCallExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, FunctionCallExp const&);
-        static ECSqlStatus PrepareGetPointCoordinateFunctionExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, GetPointCoordinateFunctionExp const&);
         static ECSqlStatus PrepareGroupByExp(ECSqlPrepareContext&, GroupByExp const*);
         static ECSqlStatus PrepareHavingExp(ECSqlPrepareContext&, HavingExp const*);
         static ECSqlStatus PrepareLikeRhsValueExp(NativeSqlBuilder::List&, ECSqlPrepareContext&, LikeRhsValueExp const*);

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -124,7 +124,6 @@ private:
     BentleyStatus ParseAndAddFunctionArg(FunctionCallExp&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseGeneralSetFct(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseGetPointCoordinateFctSpec(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const&, Utf8StringCR functionName) const;
     BentleyStatus ParseGroupByClause(std::unique_ptr<GroupByExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseHavingClause(std::unique_ptr<HavingExp>&, connectivity::OSQLParseNode const*) const;
