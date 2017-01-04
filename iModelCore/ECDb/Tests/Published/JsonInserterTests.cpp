@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonInserterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -166,6 +166,48 @@ TEST_F(JsonInserterTests, InsertRapidJson)
         ASSERT_TRUE(false) << "Inserted and Retrieved Json doesn't match";
         }
     }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle           01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonInserterTests, InsertPartialPointJson)
+    {
+    ECDbCR ecdb = SetupECDb("InsertPartialPointJson.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    std::vector<std::pair<Utf8CP, bool>> testDataset
+        {
+                {R"json( { "P2D" : { "x": 3.14, "y" : -2.0 } } )json", true},
+                {R"json( { "P2D" : { "x": 3.14 } } )json", false},
+                {R"json( { "P2D" : { "y": 3.14 } } )json", false},
+                {R"json( { "P2D" : { "z": 3.14 } } )json", false},
+                {R"json( { "P3D" : { "x": 3.14, "y" : -2.0, "z": 0.0 } } )json", true},
+                {R"json( { "P3D" : { "x": 3.14 } } )json", false},
+                {R"json( { "P3D" : { "y": 3.14 } } )json", false},
+                {R"json( { "P3D" : { "z": 3.14 } } )json", false},
+                {R"json( { "P3D" : { "x": 3.14, "z": 3.14 } } )json", false}
+        };
+
+    JsonInserter inserter(ecdb, *testClass, nullptr);
+    ASSERT_TRUE(inserter.IsValid());
+
+    for (std::pair<Utf8CP, bool> const& testItem : testDataset)
+        {
+        Json::Value json;
+        Json::Reader reader;
+        ASSERT_TRUE(reader.Parse(testItem.first, json, false));
+
+        ECInstanceKey newKey;
+        if (testItem.second)
+            ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(newKey, json)) << testItem.first;
+        else
+            ASSERT_EQ(BE_SQLITE_ERROR, inserter.Insert(newKey, json)) << testItem.first;
+        }
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  04/16
