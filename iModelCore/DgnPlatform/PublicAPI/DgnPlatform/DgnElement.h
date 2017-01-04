@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -115,7 +115,7 @@ public:
 #if !defined (DOCUMENTATION_GENERATOR)
 //=======================================================================================
 // A cache of ECInstanceUpdaters
-// THIS MUST NOT BE EXPORTED, AS IT DOES NOT REQUIRE THE CALLER TO SUPPLY THE ECSQLWRITETOKEN
+// THIS MUST NOT BE EXPORTED, AS IT DOES NOT REQUIRE THE CALLER TO SUPPLY THE ECCRUDWRITETOKEN
 //=======================================================================================
 struct ECInstanceUpdaterCache
     {
@@ -790,17 +790,17 @@ public:
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
         //! @note The caller will call _UpdateProperties immediately after calling this method.
-        virtual DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
+        virtual DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must override this method to delete an existing instance in the Db, plus any ECRelationship that associates it with the host element.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
-        virtual DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
+        virtual DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to update the instance properties.
         //! @param el   The host element
         //! @param writeToken The token for updating element-related data
-        virtual DgnDbStatus _UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) = 0;
+        virtual DgnDbStatus _UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) = 0;
 
         //! The subclass must implement this method to load properties from the Db.
         //! @param el   The host element
@@ -845,8 +845,8 @@ public:
         DEFINE_T_SUPER(Aspect)
     protected:
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
-        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
 
     public:
         //! Load the specified instance
@@ -880,7 +880,7 @@ public:
         Utf8CP _GetECClassName() const override {return m_ecclassName.c_str();}
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
 
         //! Use this constructor when you want to load a multiaspect
         GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id);
@@ -936,8 +936,8 @@ public:
         static UniqueAspect* Load(DgnElementCR, DgnClassId);
         DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceKey _QueryExistingInstanceKey(DgnElementCR) override;
         static void SetAspect0(DgnElementCR el, UniqueAspect& aspect);
-        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
-        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override final;
+        DGNPLATFORM_EXPORT DgnDbStatus _DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
 
     public:
         //! The reason why GenerateGeometricPrimitive is being called
@@ -991,7 +991,7 @@ public:
         Utf8CP _GetECClassName() const override {return m_ecclassName.c_str();}
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
-        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
 
         GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName())
             {}
@@ -3003,7 +3003,7 @@ struct DgnElements : DgnDbTable, MemoryConsumer
     };
 
 private:
-    // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECSQLWRITETOKEN
+    // THIS MUST NOT BE EXPORTED, AS IT BYPASSES THE ECCRUDWRITETOKEN
     struct AutoHandledPropertyUpdaterCache : ECInstanceUpdaterCache
         {
         void _GetPropertiesToBind(bvector<ECN::ECPropertyCP>&, DgnDbR, ECN::ECClassCR) override;
