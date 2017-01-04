@@ -44,17 +44,19 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
         Error
         };
 
-    ECInstanceKey blobIoInstanceKey;
     BeFileName seedFilePath;
+    ECInstanceKey blobIoInstanceKey;
     {
     SetupECDb("ecsqlwritetoken_seed.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
     seedFilePath.AssignUtf8(GetECDb().GetDbFileName());
 
+    //insert a row with zeroblob which is preprequisite for using blobio
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ecsql.PSA(Bi) VALUES(zeroblob(10))"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(blobIoInstanceKey));
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(blobIoInstanceKey)) << stmt.GetECSql();
     stmt.Finalize();
+    GetECDb().SaveChanges();
     GetECDb().CloseDb();
     }
 
@@ -65,13 +67,13 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
     ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "ecsqlwritetoken_restricted.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     bvector<Utf8CP> selectECSqls;
-    selectECSqls.push_back("SELECT * FROM ecsql.PSA");
+    selectECSqls.push_back("SELECT * FROM ecsql.P");
     selectECSqls.push_back("SELECT * FROM ecsql.PSAHasP");
 
     bvector<Utf8CP> nonSelectECSqls;
-    nonSelectECSqls.push_back("INSERT INTO ecsql.PSA(L,S) VALUES(1000,'fasda')");
-    nonSelectECSqls.push_back("UPDATE ecsql.PSA SET L=1123");
-    nonSelectECSqls.push_back("DELETE FROM ecsql.PSA");
+    nonSelectECSqls.push_back("INSERT INTO ecsql.P(L,S) VALUES(1000,'fasda')");
+    nonSelectECSqls.push_back("UPDATE ecsql.P SET L=1123");
+    nonSelectECSqls.push_back("DELETE FROM ecsql.P");
 
     auto runSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql)
         {
@@ -138,7 +140,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
 
     auto runAdapters = [] (ECDbCR ecdb, ECSqlWriteToken const* writeToken, ExpectedResult expected)
         {
-        ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+        ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
         ASSERT_TRUE(testClass != nullptr);
         Utf8CP writeTokenStr = writeToken != nullptr ? "yes" : "no";
 
