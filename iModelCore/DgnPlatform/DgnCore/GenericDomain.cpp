@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GenericDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -24,6 +24,7 @@ namespace generic_ElementHandler
     {
     HANDLER_DEFINE_MEMBERS(GenericGroupHandler)
     HANDLER_DEFINE_MEMBERS(GenericSpatialLocationHandler)
+    HANDLER_DEFINE_MEMBERS(GenericNonPhysicalObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericPhysicalObjectHandler)
     HANDLER_DEFINE_MEMBERS(GenericGraphic3dHandler)
     };
@@ -38,6 +39,7 @@ GenericDomain::GenericDomain() : DgnDomain(GENERIC_DOMAIN_NAME, "Generic Domain"
     RegisterHandler(generic_ModelHandler::GenericGroupModelHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericGroupHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericSpatialLocationHandler::GetHandler());
+    RegisterHandler(generic_ElementHandler::GenericNonPhysicalObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
     RegisterHandler(generic_ElementHandler::GenericGraphic3dHandler::GetHandler());
     }
@@ -78,6 +80,22 @@ GenericPhysicalObjectPtr GenericPhysicalObject::Create(PhysicalModelR model, Dgn
         }
 
     return new GenericPhysicalObject(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, categoryId));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    02/2016
+//---------------------------------------------------------------------------------------
+GenericNonPhysicalObjectPtr GenericNonPhysicalObject::Create(DgnModelR model)
+    {
+    DgnClassId classId = model.GetDgnDb().Domains().GetClassId(generic_ElementHandler::GenericNonPhysicalObjectHandler::GetHandler());
+
+    if (!classId.IsValid())
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+
+    return new GenericNonPhysicalObject(CreateParams(model.GetDgnDb(), model.GetModelId(), classId));
     }
 
 //---------------------------------------------------------------------------------------
