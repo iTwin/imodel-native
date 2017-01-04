@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Cache/ArgumentParserTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,8 @@ R"(<saml:Assertion MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names
             </saml:Conditions>
         </saml:Assertion>)";
 Utf8String s_tokenFilePath;
+Utf8String s_schemasDir;
+Utf8String s_schemasDirWithSeperator;
 
 char* GetTestTokenPath()
     {
@@ -50,6 +52,32 @@ char* GetTestTokenPath()
 
     s_tokenFilePath = path.GetNameUtf8();
     return (char*) s_tokenFilePath.c_str();
+    }
+
+BeFileName GetTestSchemasDirPath()
+    {
+    BeFileName path;
+    BeTest::GetHost().GetOutputRoot(path);
+    path.AppendToPath(L"TestSchemasDir");
+
+    if (!path.DoesPathExist())
+        EXPECT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(path));
+
+    return path;
+    }
+
+char* GetTestSchemasDir()
+    {
+    if (s_schemasDir.empty())
+        s_schemasDir = GetTestSchemasDirPath().GetNameUtf8();
+    return (char*) s_schemasDir.c_str();
+    }
+
+char* GetTestSchemasDirWithSeperator()
+    {
+    if (s_schemasDirWithSeperator.empty())
+        s_schemasDirWithSeperator = GetTestSchemasDirPath().AppendSeparator().GetNameUtf8();
+    return (char*) s_schemasDirWithSeperator.c_str();
     }
 
 void PrintTo(const TestArgs& value, ::std::ostream* os)
@@ -346,6 +374,121 @@ TEST_P(ArgumentParserTests_CreateAndUpgradeWithDefaultParams, Parse_UpgradeCache
     EXPECT_EQ(nullptr, testData[0].upgrade.environment);
     }
 
+struct ArgumentParserTests_CreateWithSchemas : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_CreateWithSchemas, ValuesIn(vector<TestArgs>{
+        {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDir()},
+        {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDirWithSeperator()},
+    }));
+
+TEST_P(ArgumentParserTests_CreateWithSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_FALSE(testData[0].upgrade.IsValid());
+    EXPECT_TRUE(testData[0].create.IsValid());
+
+    EXPECT_STREQ(GetTestSchemasDirPath().AppendSeparator().c_str(), testData[0].create.schemasDir.c_str());
+    EXPECT_EQ("", testData[0].create.serverUrl);
+    EXPECT_EQ("", testData[0].create.id);
+    EXPECT_EQ(Credentials(), testData[0].create.credentials);
+    EXPECT_EQ(nullptr, testData[0].create.token);
+    EXPECT_EQ(nullptr, testData[0].create.environment);
+    }
+
+struct ArgumentParserTests_UpgradeFromSchemas : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeFromSchemas, ValuesIn(vector<TestArgs>{
+        {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDir(), "--upgradecache", "-url", "URL", "-r", "R"},
+        {"Foo.exe", "--createcache", "-schemas", GetTestSchemasDirWithSeperator(), "--upgradecache", "-url", "URL", "-r", "R"},
+    }));
+
+TEST_P(ArgumentParserTests_UpgradeFromSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_TRUE(testData[0].create.IsValid());
+    EXPECT_TRUE(testData[0].upgrade.IsValid());
+
+    EXPECT_STREQ(GetTestSchemasDirPath().AppendSeparator().c_str(), testData[0].create.schemasDir.c_str());
+    EXPECT_EQ("", testData[0].create.serverUrl);
+    EXPECT_EQ("", testData[0].create.id);
+    EXPECT_EQ(Credentials(), testData[0].create.credentials);
+    EXPECT_EQ(nullptr, testData[0].create.token);
+    EXPECT_EQ(nullptr, testData[0].create.environment);
+
+    EXPECT_STREQ(L"", testData[0].upgrade.schemasDir.c_str());
+    EXPECT_EQ("URL", testData[0].upgrade.serverUrl);
+    EXPECT_EQ("R", testData[0].upgrade.id);
+    EXPECT_EQ(Credentials(), testData[0].upgrade.credentials);
+    EXPECT_EQ(nullptr, testData[0].upgrade.token);
+    EXPECT_EQ(nullptr, testData[0].upgrade.environment);
+    }
+
+struct ArgumentParserTests_UpgradeToSchemas : TestWithParam<TestArgs> {};
+INSTANTIATE_TEST_CASE_P(, ArgumentParserTests_UpgradeToSchemas, ValuesIn(vector<TestArgs>{
+        {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "--upgradecache", "-schemas", GetTestSchemasDir() },
+    }));
+
+TEST_P(ArgumentParserTests_UpgradeToSchemas, Parse_ValidParameters_FillsTestDataAndReturnsZero)
+    {
+    auto args = GetParam();
+
+    int logLevel;
+    BeFileName workDir;
+    bvector<TestRepositories> testData;
+    std::stringstream err;
+    std::stringstream out;
+
+    EXPECT_EQ(0, ArgumentParser::Parse((int) args.size(), args.data(), logLevel, workDir, testData, &err, &out));
+    EXPECT_TRUE(workDir.empty());
+    EXPECT_EQ("", err.str());
+    EXPECT_EQ("", out.str());
+
+    ASSERT_EQ(1, testData.size());
+
+    EXPECT_TRUE(testData[0].create.IsValid());
+    EXPECT_TRUE(testData[0].upgrade.IsValid());
+
+    EXPECT_STREQ(L"", testData[0].create.schemasDir.c_str());
+    EXPECT_EQ("URL", testData[0].create.serverUrl);
+    EXPECT_EQ("R", testData[0].create.id);
+    EXPECT_EQ(Credentials(), testData[0].create.credentials);
+    EXPECT_EQ(nullptr, testData[0].create.token);
+    EXPECT_EQ(nullptr, testData[0].create.environment);
+
+    EXPECT_STREQ(GetTestSchemasDirPath().AppendSeparator().c_str(), testData[0].upgrade.schemasDir.c_str());
+    EXPECT_EQ("", testData[0].upgrade.serverUrl);
+    EXPECT_EQ("", testData[0].upgrade.id);
+    EXPECT_EQ(Credentials(), testData[0].upgrade.credentials);
+    EXPECT_EQ(nullptr, testData[0].upgrade.token);
+    EXPECT_EQ(nullptr, testData[0].upgrade.environment);
+    }
+
 struct ArgumentParserTests_InvalidParameters : TestWithParam<TestArgs> {};
 INSTANTIATE_TEST_CASE_P(NoParameters, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
         {"Foo.exe"},
@@ -380,6 +523,12 @@ INSTANTIATE_TEST_CASE_P(MissingValues, ArgumentParserTests_InvalidParameters, Va
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic"},
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "-imsenv"},
         {"Foo.exe", "--createcache", "-url", "URL", "-r", "R", "-auth:basic", "--upgradecache", "-url", "URL2", "-r", "R2", "-u", "U2", "-p", "P2"},
+    }));
+INSTANTIATE_TEST_CASE_P(CreateWithSchemasNonExistingDir, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
+        {"Foo.exe", "--createcache", "-schemas", "C:\\nonexistingdir\\"},
+        {"Foo.exe", "--createcache", "-schemas", "C:\\nonexistingdir"},
+        {"Foo.exe", "--createcache", "-schemas", "foo_not_a_dir"},
+        {"Foo.exe", "--createcache", "-schemas", GetTestTokenPath()},
     }));
 INSTANTIATE_TEST_CASE_P(UknownParameters, ArgumentParserTests_InvalidParameters, ValuesIn(vector<TestArgs>{
         {"Foo.exe", "--foo", "--createcache", "-url", "URL", "-r", "R"},
