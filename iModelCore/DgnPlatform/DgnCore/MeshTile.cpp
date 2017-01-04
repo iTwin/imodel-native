@@ -2910,6 +2910,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     }
                 }
             }
+
         if (!doSurfacesOnly)
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
