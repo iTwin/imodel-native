@@ -78,5 +78,3 @@ ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentUsingDifferent
 
 PassportTests.*
     # bim0200dev, x86, DEBUG, CRASHES
-
-WSRepositoryClientTests.SendChangesetRequest_RequestOptionsNotIncluded_RequestTimeOutsAreDefaults 
