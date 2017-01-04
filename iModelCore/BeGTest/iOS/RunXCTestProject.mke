@@ -55,12 +55,11 @@ always:
 # Note we often get an error when copying resources to the device the first time we try to run a given set of tests. 
 # The solution is simply to re-try the command.
 
-%ifdef CLANG_SANITIZE
-%if $(CLANG_SANITIZE) == "address"
-BETEST_SCHEME='BeTestiOS Sanitize Address'
-%else
 BETEST_SCHEME='BeTestiOS'
-%endif
+%ifdef CLANG_SANITIZE
+	%if $(CLANG_SANITIZE) == "address"
+		BETEST_SCHEME='BeTestiOS Sanitize Address'
+	%endif
 %endif
 
 always:
