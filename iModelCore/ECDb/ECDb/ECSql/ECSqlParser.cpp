@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlParser.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -764,13 +764,9 @@ BentleyStatus ECSqlParser::ParseFctSpec(unique_ptr<ValueExp>& exp, OSQLParseNode
         return ERROR;
         }
 
-    if (GetPointCoordinateFunctionExp::IsPointCoordinateFunction(functionName))
-        return ParseGetPointCoordinateFctSpec(exp, *parseNode, functionName);
-
     const size_t childCount = parseNode->count();
     if (childCount == 5)
         return ParseSetFct(exp, *parseNode, functionName, false);
-
 
     unique_ptr<FunctionCallExp> functionCallExp = std::make_unique<FunctionCallExp>(functionName);
     //parse function args. (if child parse node count is < 4, function doesn't have args)
@@ -822,38 +818,6 @@ BentleyStatus ECSqlParser::ParseSetFct(unique_ptr<ValueExp>& exp, OSQLParseNode 
         }
 
     exp = move(functionCallExp);
-    return SUCCESS;
-    }
-
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    11/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECSqlParser::ParseGetPointCoordinateFctSpec(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const& parseNode, Utf8StringCR functionName) const
-    {
-    if (parseNode.count() != 4)
-        {
-        GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function %s requires exactly one argument.", functionName.c_str());
-        return ERROR;
-        }
-
-    OSQLParseNode* argumentsNode = parseNode.getChild(2);
-    if (SQL_ISRULE(argumentsNode, function_args_commalist))
-        {
-        if (argumentsNode->count() != 1)
-            {
-            GetIssueReporter().Report(ECDbIssueSeverity::Error, "Function %s requires exactly one argument.", functionName.c_str());
-            return ERROR;
-            }
-
-        argumentsNode = argumentsNode->getChild(0);
-        }
-
-    unique_ptr<ValueExp> argExp = nullptr;
-    if (SUCCESS != ParseFunctionArg(argExp, *argumentsNode))
-        return ERROR;
-
-    exp = unique_ptr<ValueExp>(new GetPointCoordinateFunctionExp(functionName, std::move(argExp)));
     return SUCCESS;
     }
 

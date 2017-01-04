@@ -4441,14 +4441,14 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetX(Center), GetY(Center), GetZ(Center) FROM ts.Sub1 LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Center.X, Center.Y, Center.Z FROM ts.Sub1 LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1.0, stmt.GetValueDouble(0));
     ASSERT_EQ(2.0, stmt.GetValueDouble(1));
     ASSERT_EQ(3.0, stmt.GetValueDouble(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE GetX(Center) > 0 AND GetY(Center) > 0 AND GetZ(Center) > 0"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE Center.X > 0 AND Center.Y > 0 AND Center.Z > 0"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }

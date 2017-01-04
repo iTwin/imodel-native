@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPolicyManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -55,8 +55,8 @@ ECDbPolicy ECDbPolicyManager::GetPolicy(ECDbPolicyAssertion const& assertion)
             case ECDbPolicyAssertion::Type::ClassIsValidInECSql:
                 return DoGetPolicy(static_cast<ClassIsValidInECSqlPolicyAssertion const&> (assertion));
 
-            case ECDbPolicyAssertion::Type::ECSqlPermission:
-                return DoGetPolicy(static_cast<ECSqlPermissionPolicyAssertion const&> (assertion));
+            case ECDbPolicyAssertion::Type::ECCrudPermission:
+                return DoGetPolicy(static_cast<ECCrudPermissionPolicyAssertion const&> (assertion));
 
             case ECDbPolicyAssertion::Type::MayModifyDbSchema:
                 return DoGetPolicy(static_cast<MayModifyDbSchemaPolicyAssertion const&> (assertion));
@@ -162,18 +162,18 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion con
 // @bsimethod                                 Krischan.Eberle                    11/2016
 //---------------------------------------------------------------------------------------
 //static
-ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECSqlPermissionPolicyAssertion const& assertion)
+ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const& assertion)
     {
-    if (assertion.GetECSqlType() == ECSqlType::Select)
+    if (!assertion.IsWriteOperation())
         return ECDbPolicy::CreateSupported(); //reading is always allowed
 
     ECDbCR ecdb = assertion.GetECDb();
     if (ecdb.IsReadonly())
-        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot execute an ECSQL INSERT, UPDATE, DELETE on a file opened in read-only mode"));
+        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
 
     ECSqlWriteToken const* expectedToken = ecdb.GetECDbImplR().GetTokenManager().GetECSqlWriteToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
-        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot execute an ECSQL INSERT, UPDATE, DELETE without ECSqlWriteToken."));
+        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data without ECSqlWriteToken."));
 
     return ECDbPolicy::CreateSupported();
     }

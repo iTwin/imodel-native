@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementBase.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -66,7 +66,7 @@ ECSqlStatus ECSqlStatementBase::_Prepare(ECSqlPrepareContext& ctx, Utf8CP ecsql)
     //Step 2: translate into SQLite SQL and prepare SQLite statement
     ECSqlPreparedStatement& preparedStatement = CreatePreparedStatement(ctx.GetECDb(), *exp);
 
-    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECSqlPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType(), ctx.GetWriteToken()));
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ctx.GetECDb(), preparedStatement.GetType() != ECSqlType::Select, ctx.GetWriteToken()));
     if (!policy.IsSupported())
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage().c_str());

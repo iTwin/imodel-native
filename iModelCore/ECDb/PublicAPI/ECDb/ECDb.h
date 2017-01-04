@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECDb.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,14 +175,18 @@ public:
     //! @param[in] propertyAccessString The access string in @p ecClass to the ECProperty holding the blob to be opened.
     //! @param[in] ecInstanceId The ECInstanceId of the instance holding the blob.
     //! @param[in] writable If true, blob is opened for read/write access, otherwise it is opened readonly.
+    //! @param[in] writeToken Token required if @p writable is true and if 
+    //!            the ECDb file was set-up with the option "ECSQL write token validation".
+    //!            If @p writable is false or if the option is not set, nullptr can be passed for @p writeToken.
     //! @return SUCCESS in case of success. ERROR in these cases:
     //!     - @p blobIO is already opened
     //!     - @p ecClass is not mapped to a table
     //!     - No ECProperty found in @p ecClass for @p propertyAccessString
     //!     - ECProperty is not primitive and not of type ECN::PRIMITIVETYPE_Binary or ECN::PRIMITIVETYPE_IGeometry
     //!     - ECProperty is mapped to an overflow column or not mapped to a column at all
+    //!     - Write token validation failed
     //! @see BeSQLite::BlobIO
-    ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable) const;
+    ECDB_EXPORT BentleyStatus OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecInstanceId, bool writable, ECSqlWriteToken const* writeToken = nullptr) const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
     //! Clears the ECDb cache (not exported until we decided whether we need consumers to call it directly or not)

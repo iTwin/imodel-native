@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECSqlOverview.doxpage $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -234,14 +234,6 @@
     <c>SELECT AssetID FROM stco.Hardware <b>EXCEPT</b> SELECT AssetID FROM ONLY stco.Computer</c>|Selects all Hardware and all its subclasses except for Computers (and not its subclasses)
 
     See <a href="files/ecdb/StartupCompany.01.00.00.ecschema.xml" target="_blank">ECSQL Example ECSchema</a> on which the above examples are based.
-
-    @section ECSQLSamplesBuiltinFunctions ECSQL Built-in Functions
-
-    Function|Description
-    --------|-----------
-    <c>GetX</c>|Returns the X coordinate of a Point2d or Point3d ECProperty. E.g. <c>...WHERE GetX(MyLowerLeftPoint)>=?</c>
-    <c>GetY</c>|Returns the Y coordinate of a Point2d or Point3d ECProperty. E.g. <c>...WHERE GetY(MyLowerLeftPoint)>=?</c>
-    <c>GetZ</c>|Returns the Z coordinate of a Point3d ECProperty. E.g. <c>...WHERE GetZ(MyLowerLeftPoint)>=?</c>
 
     @section ECSQLSamplesSQLiteFunctions Using SQLite SQL Functions
     Any built-in or custom SQLite SQL function can be used in ECSQL to operate on the primitive types
