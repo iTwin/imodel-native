@@ -1138,8 +1138,8 @@ ECDiffNodeP ECSchemaDiffTool::DiffRelationshipConstraint(ECDiffNodeR parent, ECR
     if (left.GetRoleLabel() != right.GetRoleLabel())
         diff->Add (DiffNodeId::RoleLabel)->SetValue (left.GetRoleLabel().c_str(), right.GetRoleLabel().c_str());
 
-    ECClassCP leftAbstract = left.GetAbstractConstraint();
-    ECClassCP rightAbstract = right.GetAbstractConstraint();
+    ECEntityClassCP leftAbstract = left.GetAbstractConstraint();
+    ECEntityClassCP rightAbstract = right.GetAbstractConstraint();
     if (nullptr != leftAbstract && nullptr != rightAbstract && (strcmp(leftAbstract->GetFullName(), rightAbstract->GetFullName()) != 0))
         diff->Add(DiffNodeId::AbstractConstraint)->SetValue(leftAbstract->GetFullName(), rightAbstract->GetFullName());
 
@@ -2220,11 +2220,7 @@ MergeStatus ECSchemaMergeTool::MergeRelationshipConstraint (ECDiffNodeR diff, EC
         mergedConstraint.SetAbstractConstraint(v->GetValueString().c_str());
     else
         if (defaultContraint)
-            {
-            ECInterfaceClassCP interfaceClass = defaultContraint->GetAbstractConstraint()->GetInterfaceClassCP();
-            ECEntityClassCP entityClass = defaultContraint->GetAbstractConstraint()->GetEntityClassCP();
-            (nullptr == interfaceClass) ? mergedConstraint.SetAbstractConstraint(*entityClass) : mergedConstraint.SetAbstractConstraint(*interfaceClass);
-            }
+            mergedConstraint.SetAbstractConstraint(*defaultContraint->GetAbstractConstraint());
 
     set<Utf8String> constraintClasses;
     if (defaultContraint)
