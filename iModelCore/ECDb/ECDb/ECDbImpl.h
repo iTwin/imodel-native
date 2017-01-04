@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -132,7 +132,7 @@ private:
 
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
-    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const;
+    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECSqlWriteToken const*) const;
 
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;
