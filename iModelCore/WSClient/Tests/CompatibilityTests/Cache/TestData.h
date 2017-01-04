@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Cache/TestData.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -18,6 +18,8 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 struct TestRepository
     {
+    BeFileName schemasDir;
+
     Utf8String serverUrl;
     Utf8String id;
 
@@ -27,7 +29,9 @@ struct TestRepository
 
     bool IsValid() const
         {
-        return !serverUrl.empty() && !id.empty();
+        return 
+            !serverUrl.empty() && !id.empty() && schemasDir.empty() ||
+            serverUrl.empty() && id.empty() && !schemasDir.empty();
         }
     };
 

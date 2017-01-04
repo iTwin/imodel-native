@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Cache/ArgumentParser.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -114,12 +114,14 @@ std::ostream* err
             {
             if (!GetArgValue(argc, argv, i, argValue, err))
                 return -1;
+            currentRepo->schemasDir.clear();
             currentRepo->serverUrl = argValue;
             }
         else if (0 == strcmp(arg, "-r"))
             {
             if (!GetArgValue(argc, argv, i, argValue, err))
                 return -1;
+            currentRepo->schemasDir.clear();
             currentRepo->id = argValue;
             }
         else if (0 == Utf8String(arg).find("-auth:"))
@@ -127,6 +129,7 @@ std::ostream* err
             if (!GetArgValue(argc, argv, i, argValue, err))
                 return -1;
 
+            currentRepo->schemasDir.clear();
             currentRepo->credentials = Credentials();
             currentRepo->token = nullptr;
             currentRepo->environment = nullptr;
@@ -136,6 +139,21 @@ std::ostream* err
                 PrintError(err, Utf8PrintfString("Invalid format: %s %s", arg, argValue).c_str());
                 return -1;
                 }
+            }
+        else if (0 == strcmp(arg, "-schemas"))
+            {
+            if (!GetArgValue(argc, argv, i, argValue, err))
+                return -1;
+            BeFileName dir(argValue);
+            if (!dir.DoesPathExist() || !dir.IsDirectory())
+                {
+                PrintError(err, Utf8PrintfString("Not a folder: %s %s", arg, argValue).c_str());
+                return -1;
+                }
+
+            *currentRepo = TestRepository();
+            currentRepo->schemasDir = dir;
+            currentRepo->schemasDir.AppendSeparator();
             }
         else
             {
@@ -292,16 +310,20 @@ void ArgumentParser::PrintHelp(std::ostream* out)
 
     *out << "WSClient compatibility test tool version " << BUILD_VERSION << std::endl;
     *out << std::endl;
-    *out << "Usage:" << std::endl;
-    *out << "  WSClientCompatibilityTests --createcache   -url URL -r REPOID [-auth:XXX VALUE]]" << std::endl;
-    *out << "                            [--upgradecache [-url URL -r REPOID  -auth:XXX VALUE]]" << std::endl;
-    *out << "                            [--createcache ...]" << std::endl;
+    *out << "Usage with servers:" << std::endl;
+    *out << "  WSClientCompatibilityTests --createcache   <parameters>" << std::endl;
+    *out << "                            [--upgradecache [<parameters>]" << std::endl;
+    *out << "                            [--createcache   <parameters> ...]" << std::endl;
+    *out << "  <parameters>: -url URL -r REPOID [-auth:XXX VALUE]]" << std::endl;
+    *out << "  <parameters>: -schemas PATH" << std::endl;
+    *out << "Usage with schemas:" << std::endl;
+    *out << "  WSClientCompatibilityTests --createcache -schemas PATH --upgradecache ..." << std::endl;
     *out << "Tests:" << std::endl;
     *out << "  --createcache      Run cache creation test" << std::endl;
     *out << "  --upgradecache     Run cache upgrade test. Upgrade will use --createcache test as base. Parameters for upgrade are optional - they default to base ones." << std::endl;
-    *out << "Parameters:" << std::endl;
-    *out << "  -url URL           Required WSG server URL" << std::endl;
-    *out << "  -r REPOID          Required repository ID" << std::endl;
+    *out << "Parameters for server connection:" << std::endl;
+    *out << "  -url URL           WSG server URL" << std::endl;
+    *out << "  -r REPOID          repository ID" << std::endl;
     *out << "  -auth:basic user:pass" << std::endl;
     *out << "                     Authenticate using credentials." << std::endl;
     *out << "  -auth:dev:ims  user:pass" << std::endl;
@@ -312,14 +334,17 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -auth:qa:token   C:\\token.xml" << std::endl;
     *out << "  -auth:prod:token C:\\token.xml" << std::endl;
     *out << "                     Authenticate using XML IMS SAML token. Token is read from file" << std::endl;
+    *out << "Parameters when stubbing server with local schema list:" << std::endl;
+    *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;
     *out << "  --workdir C:\\t\\    Set working directory for tests. Defaults to application folder" << std::endl;
     *out << "  --silent           Disable console logging. File logging can be enabled with standard logging.config.xml in application folder" << std::endl;
     *out << "  --help             Print this help text" << std::endl;
     *out << "Examples:" << std::endl;
-    *out << R"(  WSClientCompatibilityTests --createcache -url https://foo.com -r My.Repo -auth:qa:ims user:pass --workdir C:\Tests\)" << std::endl;
-    *out << R"(  WSClientCompatibilityTests --createcache -url https://viltest2-8/ws24 -r Bentley.PW--VILTEST2-51.bentley.com~3APW_Mobile_Connect -auth:basic admin:admin --upgradecache -url https://viltest3-16/ws25)" << std::endl;
-    *out << R"(  WSClientCompatibilityTests --createcache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --workdir C:\Tests\ --createcache -url https://foo.com -r Repo -auth:basic John:Jonson)" << std::endl;
+    *out << std::endl;
+    *out << R"(  WSClientCompatibilityTests --workdir C:\LastKnownGoodSchemas\ --createcache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
+    *out << R"(  WSClientCompatibilityTests --createcache -schemas C:\LastKnownGoodSchemas\ --upgradecache -url https://qa-wsg20-eus.cloudapp.net -r BentleyCONNECT.PersonalPublishing--CONNECT.PersonalPublishing -auth:qa:ims bentleyvilnius@gmail.com:Q!w2e3r4t5)" << std::endl;
     *out << std::endl;
     *out << std::endl;
     *out << std::endl;

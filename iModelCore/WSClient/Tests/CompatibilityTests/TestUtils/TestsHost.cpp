@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,7 @@
 #include <MobileDgn/MobileDgnL10N.h>
 
 #include "../../UnitTests/Published/Utils/TestAppPathProvider.h"
+#include "../Cache/Logging.h"
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
@@ -97,6 +98,8 @@ void TestsHost::InitLogging(int logLevel)
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
+
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCCTESTS, Bentley::NativeLogging::LOG_INFO);
     }
 
 void* TestsHost::_InvokeP(char const* function_and_args)

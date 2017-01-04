@@ -8,6 +8,8 @@
     <ClCompile Include="Cache\ArgumentParserTests.cpp" />
     <ClCompile Include="Cache\RepositoryCompatibilityTests.cpp" />
     <ClCompile Include="Cache\TestData.cpp" />
+    <ClCompile Include="Cache\DiskRepositoryClient.cpp" />
+    <ClCompile Include="Cache\DiskRepositoryClientTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestUtils\TestsHelper.h" />
@@ -15,6 +17,8 @@
     <ClInclude Include="Cache\ArgumentParser.h" />
     <ClInclude Include="Cache\RepositoryCompatibilityTests.h" />
     <ClInclude Include="Cache\TestData.h" />
+    <ClInclude Include="Cache\DiskRepositoryClient.h" />
+    <ClInclude Include="Cache\Logging.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />

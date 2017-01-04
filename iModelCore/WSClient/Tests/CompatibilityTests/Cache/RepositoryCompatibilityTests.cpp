@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/Cache/RepositoryCompatibilityTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,11 +10,11 @@
 
 #include <WebServices/Cache/CachingDataSource.h>
 #include <MobileDgn/Utils/Http/ProxyHttpHandler.h>
-#include <Bentley/BeFileListIterator.h>
 
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 #include "../TestUtils/TestsHelper.h"
 #include "ArgumentParser.h"
+#include "DiskRepositoryClient.h"
 
 bvector<TestRepositories> s_createTestData;
 bvector<TestRepositories> s_upgradeTestData;
@@ -100,6 +100,9 @@ BeFileName GetNewOutputPath(Utf8StringCR testName, Utf8StringCR repositoryId)
 
 IWSRepositoryClientPtr CreateClient(TestRepository& repository)
     {
+    if (!repository.schemasDir.empty())
+        return std::make_shared<DiskRepositoryClient>(repository.schemasDir);
+
     auto httpHandler = s_proxy;
     if (repository.environment)
         {
@@ -125,9 +128,9 @@ IWSRepositoryClientPtr CreateClient(TestRepository& repository)
     return client;
     }
 
-void CreateTestPaths(TestRepository& repository, Utf8CP testName, BeFileName& cachePathOut, CacheEnvironment& envOut)
+void CreateTestPaths(IWSRepositoryClientPtr client, Utf8CP testName, BeFileName& cachePathOut, CacheEnvironment& envOut)
     {
-    cachePathOut = GetNewOutputPath(testName, repository.id);
+    cachePathOut = GetNewOutputPath(testName, client->GetRepositoryId());
 
     CreateDateStampFile(testName, cachePathOut);
 
@@ -143,13 +146,13 @@ INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Create, ::testing::Values
 TEST_P(RepositoryCompatibilityTests_Create, Create)
     {
     auto repository = GetParam().create;
+    auto client = CreateClient(repository);
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(repository, "Create", path, env);
+    CreateTestPaths(client, "Create", path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
-    auto client = CreateClient(repository);
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(createResult.IsSuccess());
     }
@@ -158,24 +161,30 @@ struct RepositoryCompatibilityTests_Upgrade : RepositoryCompatibilityTests {};
 INSTANTIATE_TEST_CASE_P(, RepositoryCompatibilityTests_Upgrade, ::testing::ValuesIn(s_upgradeTestData));
 TEST_P(RepositoryCompatibilityTests_Upgrade, Upgrade)
     {
+    // Create base cache
     auto repository = GetParam().create;
+    auto client = CreateClient(repository);
 
     BeFileName path;
     CacheEnvironment env;
-    CreateTestPaths(repository, "Upgrade", path, env);
+    CreateTestPaths(client, "Upgrade", path, env);
     ASSERT_FALSE(path.DoesPathExist());
 
-    auto client = CreateClient(repository);
     auto createResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(createResult.IsSuccess());
-    createResult.GetValue()->GetCacheAccessThread()->ExecuteAsync([=]
+
+    // Force close
+    IDataSourceCache* cache = nullptr;
+    auto task = createResult.GetValue()->GetCacheAccessThread()->ExecuteAsync([&]
         {
-        createResult.GetValue()->StartCacheTransaction().GetCache().Close();
-        })->Wait();
+        cache = &createResult.GetValue()->StartCacheTransaction().GetCache();
+        });
+    task->Wait();
+    cache->Close();
     createResult = CachingDataSource::OpenResult();
 
+    // Open connection for upgrade
     repository = GetParam().upgrade;
-
     client = CreateClient(repository);
     auto openResult = CachingDataSource::OpenOrCreate(client, path, env)->GetResult();
     ASSERT_TRUE(openResult.IsSuccess());
