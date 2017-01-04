@@ -171,9 +171,9 @@ ECDbPolicy ECDbPolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const&
     if (ecdb.IsReadonly())
         return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
 
-    ECSqlWriteToken const* expectedToken = ecdb.GetECDbImplR().GetTokenManager().GetECSqlWriteToken();
+    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetTokenManager().GetECCrudWriteToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
-        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data without ECSqlWriteToken."));
+        return ECDbPolicy::CreateNotSupported(Utf8String("Cannot modify EC data without ECCrudWriteToken."));
 
     return ECDbPolicy::CreateSupported();
     }

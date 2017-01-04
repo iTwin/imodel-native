@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceDeleter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceDeleter::ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken)
+ECInstanceDeleter::ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false) 
     { 
     Initialize(writeToken); 
@@ -23,7 +23,7 @@ ECInstanceDeleter::ECInstanceDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlW
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceDeleter::Initialize(ECSqlWriteToken const* writeToken)
+void ECInstanceDeleter::Initialize(ECCrudWriteToken const* writeToken)
     {
     Utf8String ecsql("DELETE FROM ONLY ");
     ecsql.append(m_ecClass.GetECSqlName()).append(" WHERE ECInstanceId=?");

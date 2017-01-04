@@ -337,7 +337,7 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECSqlWriteToken const* writeToken) const
+BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
     if (blobIO.IsValid())
         return ERROR;

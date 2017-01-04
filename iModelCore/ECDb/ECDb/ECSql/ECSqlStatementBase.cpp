@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle        01/14
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token)
+ECSqlStatus ECSqlStatementBase::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token)
     {
     if (IsPrepared())
         {

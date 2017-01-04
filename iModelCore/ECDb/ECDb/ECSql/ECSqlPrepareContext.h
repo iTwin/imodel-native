@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -194,7 +194,7 @@ struct ECSqlPrepareContext
 
     private:
         ECDbCR m_ecdb;
-        ECSqlWriteToken const* m_writeToken;
+        ECCrudWriteToken const* m_writeToken;
 
         ECSqlStatementBase& m_ecsqlStatement;
         ECSqlPrepareContext const* m_parentCtx;
@@ -208,12 +208,12 @@ struct ECSqlPrepareContext
         ECN::ECClassId m_joinedTableClassId;
         int m_nextParamterIndex;
     public:
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECSqlWriteToken const*);
-        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId, ECSqlWriteToken const*);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECCrudWriteToken const*);
+        ECSqlPrepareContext(ECDbCR, ECSqlStatementBase&, ECN::ECClassId joinedTableClassId, ECCrudWriteToken const*);
         //ECSqlPrepareContext is copyable. Using compiler-generated copy ctor and assignment op.
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        ECSqlWriteToken const* GetWriteToken() const { return m_writeToken; }
+        ECCrudWriteToken const* GetWriteToken() const { return m_writeToken; }
 
         ECSqlPrepareContext const* GetParentContext() const { return m_parentCtx; }
         ECN::ArrayECPropertyCP GetParentArrayProperty() const { return m_parentArrayProperty; }

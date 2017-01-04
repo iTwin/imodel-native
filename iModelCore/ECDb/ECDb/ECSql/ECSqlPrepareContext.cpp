@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlPrepareContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -17,7 +17,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    10/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECSqlWriteToken const* writeToken)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
     m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
     {}
@@ -25,7 +25,7 @@ ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& prepar
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                    12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECSqlWriteToken const* writeToken)
+ECSqlPrepareContext::ECSqlPrepareContext(ECDbCR ecdb, ECSqlStatementBase& preparedStatment, ECClassId joinedTableClassId, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_writeToken(writeToken), m_ecsqlStatement(preparedStatment), m_parentCtx(nullptr), m_parentArrayProperty(nullptr),
     m_parentColumnInfo(nullptr), m_nativeStatementIsNoop(false), m_joinedTableClassId(joinedTableClassId), m_joinedTableInfo(nullptr), m_nextParamterIndex(-1)
     {}

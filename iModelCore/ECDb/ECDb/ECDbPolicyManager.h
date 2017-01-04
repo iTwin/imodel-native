@@ -128,16 +128,16 @@ struct ECCrudPermissionPolicyAssertion : ECDbPolicyAssertion
     private:
         ECDbCR m_ecdb;
         bool m_isWriteOperation;
-        ECSqlWriteToken const* m_token;
+        ECCrudWriteToken const* m_token;
 
     public:
-        ECCrudPermissionPolicyAssertion(ECDbCR ecdb, bool isWriteOperation, ECSqlWriteToken const* token)
+        ECCrudPermissionPolicyAssertion(ECDbCR ecdb, bool isWriteOperation, ECCrudWriteToken const* token)
             : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECCrudPermission), m_ecdb(ecdb), m_isWriteOperation(isWriteOperation), m_token(token)
             {}
 
         ECDbCR GetECDb() const { return m_ecdb; }
         bool IsWriteOperation() const { return m_isWriteOperation; }
-        ECSqlWriteToken const* GetToken() const { return m_token; }
+        ECCrudWriteToken const* GetToken() const { return m_token; }
     };
 
 //=======================================================================================

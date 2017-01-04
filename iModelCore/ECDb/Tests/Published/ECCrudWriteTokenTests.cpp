@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/Published/ECSqlWriteTokenTests.cpp $
+|  $Source: Tests/Published/ECCrudWriteTokenTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -14,21 +14,21 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECSqlWriteTokenTestFixture : public ECDbTestFixture
+struct ECCrudWriteTokenTestFixture : public ECDbTestFixture
     {
 protected:
     struct RestrictedECDb : ECDb
         {
         private:
-            ECSqlWriteToken const* m_token;
+            ECCrudWriteToken const* m_token;
 
         public:
             explicit RestrictedECDb() : ECDb()
                 {
-                m_token = &EnableECSqlWriteTokenValidation();
+                m_token = &EnableECCrudWriteTokenValidation();
                 }
 
-            ECSqlWriteToken const* GetToken() const { return m_token; }
+            ECCrudWriteToken const* GetToken() const { return m_token; }
         };
     };
 
@@ -36,7 +36,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlWriteTokenTestFixture, Test)
+TEST_F(ECCrudWriteTokenTestFixture, Test)
 {
     enum class ExpectedResult
         {
@@ -47,7 +47,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
     BeFileName seedFilePath;
     ECInstanceKey blobIoInstanceKey;
     {
-    SetupECDb("ecsqlwritetoken_seed.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    SetupECDb("eccrudwritetoken_seed.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
     ASSERT_TRUE(GetECDb().IsDbOpen());
     seedFilePath.AssignUtf8(GetECDb().GetDbFileName());
 
@@ -61,10 +61,10 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
     }
 
     ECDb readonlyECDb, permittedECDb;
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(readonlyECDb, "ecsqlwritetoken_readonly.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(permittedECDb, "ecsqlwritetoken_permitted.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(readonlyECDb, "eccrudwritetoken_readonly.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::Readonly)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(permittedECDb, "eccrudwritetoken_permitted.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     RestrictedECDb restrictedECDb;
-    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "ecsqlwritetoken_restricted.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(restrictedECDb, "eccrudwritetoken_restricted.ecdb", seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
 
     bvector<Utf8CP> selectECSqls;
     selectECSqls.push_back("SELECT * FROM ecsql.P");
@@ -91,7 +91,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
         runSelectECSql(restrictedECDb, selectECSql);
         }
 
-    auto runNonSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* writeToken, ExpectedResult expected)
+    auto runNonSelectECSql = [] (ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
         ECSqlStatement stmt;
         ECSqlStatus stat = stmt.Prepare(ecdb, ecsql, writeToken);
@@ -112,7 +112,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
         runNonSelectECSql(restrictedECDb, nonSelectECSql, restrictedECDb.GetToken(), ExpectedResult::Success);
         }
 
-    auto runNonSelectECSqlFromCache = [] (ECDbCR ecdb, ECSqlStatementCache& cache, Utf8CP ecsql, ECSqlWriteToken const* writeToken, ExpectedResult expected)
+    auto runNonSelectECSqlFromCache = [] (ECDbCR ecdb, ECSqlStatementCache& cache, Utf8CP ecsql, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
         Utf8CP writeTokenStr = writeToken != nullptr ? "yes" : "no";
         CachedECSqlStatementPtr stmt = cache.GetPreparedStatement(ecdb, ecsql, writeToken);
@@ -138,7 +138,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
         }
 
 
-    auto runAdapters = [] (ECDbCR ecdb, ECSqlWriteToken const* writeToken, ExpectedResult expected)
+    auto runAdapters = [] (ECDbCR ecdb, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
         ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "P");
         ASSERT_TRUE(testClass != nullptr);
@@ -187,7 +187,7 @@ TEST_F(ECSqlWriteTokenTestFixture, Test)
         Readonly,
         ReadWrite
         };
-    auto openBlobIO = [] (ECDbCR ecdb, ECInstanceKey const& key, BlobIoOpenMode openMode, ECSqlWriteToken const* writeToken, ExpectedResult expected)
+    auto openBlobIO = [] (ECDbCR ecdb, ECInstanceKey const& key, BlobIoOpenMode openMode, ECCrudWriteToken const* writeToken, ExpectedResult expected)
         {
         ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
         ASSERT_TRUE(testClass != nullptr);
