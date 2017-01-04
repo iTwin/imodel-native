@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSRepositoryClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1733,7 +1733,7 @@ TEST_F(WSRepositoryClientTests, SendChangesetRequest_RequestOptionsNotIncluded_R
     GetHandler().ForRequest(2, [=] (Http::RequestCR request)
         {
         EXPECT_EQ(IWSRepositoryClient::Timeout::Connection::Default, request.GetConnectionTimeoutSeconds());
-        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::GetObject, request.GetTransferTimeoutSeconds());
+        EXPECT_EQ(IWSRepositoryClient::Timeout::Transfer::Default, request.GetTransferTimeoutSeconds());
         return StubHttpResponse();
         });
 
