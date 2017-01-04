@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/h/HStlStuff.h $
 //:>
-//:>  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -184,6 +184,17 @@ public:
         return (*this);
         }
 
+    iterator_type&              operator=                           (const iterator_type& other)
+        {
+        if (this != &other)
+            {
+            m_BinaryFunction = other.m_BinaryFunction;
+            m_rAccumulated = other.m_rAccumulated;
+            }
+
+        return (*this);
+        }
+
     iterator_type&              operator*()                         {
         return (*this);
         }
@@ -195,7 +206,7 @@ public:
         }
 
 private:
-    const BinaryFunction        m_BinaryFunction;
+    BinaryFunction              m_BinaryFunction;
     T&                          m_rAccumulated;
     };
 
