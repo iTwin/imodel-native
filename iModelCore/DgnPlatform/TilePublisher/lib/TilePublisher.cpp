@@ -1926,6 +1926,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
 
+    rootRange = DRange3d::NullRange();
+    for (auto const& kvp : m_modelRanges)
+        rootRange.Extend(kvp.second);
+
     return Status::Success;
     }
 
