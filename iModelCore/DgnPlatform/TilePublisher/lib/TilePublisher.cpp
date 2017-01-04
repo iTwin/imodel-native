@@ -271,7 +271,7 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
     WString rootName;
     BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_context.GetBinaryDataFileExtension()).c_str(), nullptr);
+    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), GetBinaryDataFileExtension(m_tile.ContainsParts())).c_str(), nullptr);
     }
 
 
@@ -329,8 +329,6 @@ PublisherContext::Status TilePublisher::Publish()
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
-
-    m_context.SetIsComposite (!publishableGeometry.Parts().empty());              // file will be single batched 3d model or composite (if instanced parts are present).
 
     std::FILE*  outputFile = _wfopen(GetBinaryDataFileName().c_str(), L"wb");
 
@@ -1579,7 +1577,7 @@ bool PublisherContext::IsGeolocated () const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, bool publishIncremental)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental), m_isComposite(false)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_publishIncremental (publishIncremental)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -1783,7 +1781,7 @@ void PublisherContext::WriteMetadataTree (DRange3dR range, Json::Value& root, Ti
 
     if (!contentRange.IsNull())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetBinaryDataFileExtension()));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, TilePublisher::GetBinaryDataFileExtension(tile.ContainsParts())));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }

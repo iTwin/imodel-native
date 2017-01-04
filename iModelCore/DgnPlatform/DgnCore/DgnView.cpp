@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnView.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -585,7 +585,7 @@ DgnDbStatus CategorySelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA("CategorySelectorRefersToCategories") " WHERE SourceECInstanceId=?", GetDgnDb().GetECCrudWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -603,7 +603,7 @@ DgnDbStatus CategorySelector::WriteCategories()
         return DgnDbStatus::MissingId;
         }
 
-    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA("CategorySelectorRefersToCategories") " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECSqlWriteToken());
+    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA("CategorySelectorRefersToCategories") " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -737,7 +737,7 @@ DgnDbStatus ModelSelector::_OnUpdate(DgnElementCR el)
     if (DgnDbStatus::Success != status)
         return status;
 
-    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
+    auto delExisting = GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " WHERE SourceECInstanceId=?", GetDgnDb().GetECCrudWriteToken());
     delExisting->BindId(1, GetElementId());
     delExisting->Step();
 
@@ -755,7 +755,7 @@ DgnDbStatus ModelSelector::WriteModels()
         return DgnDbStatus::MissingId;
         }
 
-    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECSqlWriteToken());
+    auto statement = GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_REL_ModelSelectorRefersToModels) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 

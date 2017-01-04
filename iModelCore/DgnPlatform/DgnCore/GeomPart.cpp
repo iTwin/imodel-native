@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/GeomPart.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -158,7 +158,7 @@ BentleyStatus DgnGeometryPart::InsertElementUsesGeometryParts(DgnDbR db, DgnElem
         return BentleyStatus::ERROR;
 
     CachedECSqlStatementPtr statementPtr = db.GetNonSelectPreparedECSqlStatement(
-        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", db.GetECSqlWriteToken());
+        "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " (SourceECInstanceId,TargetECInstanceId) VALUES (?,?)", db.GetECCrudWriteToken());
 
     if (!statementPtr.IsValid())
         return BentleyStatus::ERROR;

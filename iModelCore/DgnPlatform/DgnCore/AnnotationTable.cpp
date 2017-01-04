@@ -2,7 +2,7 @@
 |
 |  $Source: DgnCore/AnnotationTable.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -594,7 +594,7 @@ BentleyStatus AnnotationTableAspect::InsertInDb()
     if (sqlString.empty())
         sqlString = buildECSqlInsertString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, relClassId);
 
-    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECCrudWriteToken());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
@@ -620,7 +620,7 @@ BentleyStatus AnnotationTableAspect::UpdateInDb()
     if (sqlString.empty())
         sqlString = buildECSqlUpdateString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_propertyNames, typeData.m_isUniqueAspect);
 
-    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = m_table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), m_table.GetDgnDb().GetECCrudWriteToken());
     if (UNEXPECTED_CONDITION ( ! statement.IsValid()))
         return ERROR;
 
@@ -649,7 +649,7 @@ BentleyStatus AnnotationTableAspect::DeleteAspectFromDb (AnnotationTableAspectTy
     if (sqlString.empty())
         sqlString = buildECSqlDeleteString (BIS_ECSCHEMA_NAME, typeData.m_ecClassName, typeData.m_isUniqueAspect);
 
-    CachedECSqlStatementPtr statement = table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), table.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = table.GetDgnDb().GetNonSelectPreparedECSqlStatement(sqlString.c_str(), table.GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return ERROR;
 

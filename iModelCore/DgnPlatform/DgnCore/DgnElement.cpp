@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1422,7 +1422,7 @@ DgnDbStatus DgnElement::SaveUserProperties() const
     {
     BeAssert(m_userProperties);
 
-    CachedECSqlStatementPtr stmt = GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?", GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = GetDgnDb().GetNonSelectPreparedECSqlStatement("UPDATE " BIS_SCHEMA(BIS_CLASS_Element) " SET UserProperties=? WHERE ECInstanceId=?", GetDgnDb().GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
     Utf8String str;
@@ -1799,7 +1799,7 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
         "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) 
-        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECSqlWriteToken());
+        " (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId,MemberPriority) VALUES(?,?,?,?,?)", group.GetDgnDb().GetECCrudWriteToken());
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1818,7 +1818,7 @@ DgnDbStatus ElementGroupsMembers::Insert(DgnElementCR group, DgnElementCR member
 DgnDbStatus ElementGroupsMembers::Delete(DgnElementCR group, DgnElementCR member)
     {
     CachedECSqlStatementPtr statement = group.GetDgnDb().GetNonSelectPreparedECSqlStatement(
-        "DELETE FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", group.GetDgnDb().GetECSqlWriteToken());
+        "DELETE FROM " BIS_SCHEMA(BIS_REL_ElementGroupsMembers) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", group.GetDgnDb().GetECCrudWriteToken());
 
     if (!statement.IsValid())
         return DgnDbStatus::BadRequest;
@@ -1931,10 +1931,10 @@ DgnElement::Aspect::Aspect()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::Aspect::InsertThis(DgnElementCR el)
     {
-    DgnDbStatus status = _InsertInstance(el, el.GetDgnDb().GetECSqlWriteToken());
+    DgnDbStatus status = _InsertInstance(el, el.GetDgnDb().GetECCrudWriteToken());
     if (DgnDbStatus::Success != status)
         return status;
-    return _UpdateProperties(el, el.GetDgnDb().GetECSqlWriteToken()); 
+    return _UpdateProperties(el, el.GetDgnDb().GetECCrudWriteToken()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1976,7 +1976,7 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
 
     if (ChangeType::Delete == m_changeType)
         {
-        _DeleteInstance(modified, original.GetDgnDb().GetECSqlWriteToken());
+        _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
         }
     else
         {
@@ -1984,14 +1984,14 @@ DgnElement::AppData::DropMe DgnElement::Aspect::_OnUpdated(DgnElementCR modified
         ECInstanceKey existing = _QueryExistingInstanceKey(modified);
         if (existing.IsValid() && (existing.GetECClassId() != GetECClassId(db)))
             {
-            _DeleteInstance(modified, original.GetDgnDb().GetECSqlWriteToken());
+            _DeleteInstance(modified, original.GetDgnDb().GetECCrudWriteToken());
             existing = ECInstanceKey();  //  trigger an insert below
             }
             
         if (!existing.IsValid())
             InsertThis(modified);
         else
-            _UpdateProperties(modified, original.GetDgnDb().GetECSqlWriteToken());
+            _UpdateProperties(modified, original.GetDgnDb().GetECCrudWriteToken());
         }
 
     m_changeType = ChangeType::None; // (Just in case)
@@ -2097,7 +2097,7 @@ DgnElement::AppData::DropMe MultiAspectMux::_OnUpdated(DgnElementCR modified, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE ECInstanceId=?", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
@@ -2109,7 +2109,7 @@ DgnDbStatus DgnElement::MultiAspect::_DeleteInstance(DgnElementCR el, BeSQLite::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     if (stmt == nullptr)
@@ -2312,7 +2312,7 @@ DgnElement::UniqueAspect* DgnElement::UniqueAspect::Load(DgnElementCR el, DgnCla
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("INSERT INTO %s (Element.Id,Element.RelECClassId) VALUES (?,?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     if (!stmt.IsValid())
@@ -2333,7 +2333,7 @@ DgnDbStatus DgnElement::UniqueAspect::_InsertInstance(DgnElementCR el, BeSQLite:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus DgnElement::UniqueAspect::_DeleteInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // I am assuming that the ElementOwnsAspects ECRelationship is either just a foreign key column on the aspect or that ECSql somehow deletes the relationship instance automatically.
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("DELETE FROM %s WHERE Element.Id=?", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
@@ -2681,7 +2681,7 @@ DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(DgnAuthor
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (Element.Id,Element.RelECClassId,AuthorityId,ExternalKey) VALUES (?,?,?,?)", element.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (Element.Id,Element.RelECClassId,AuthorityId,ExternalKey) VALUES (?,?,?,?)", element.GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnElement::AppData::DropMe::Yes;
 
@@ -2723,7 +2723,7 @@ DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnEle
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, DgnAuthorityId authorityId)
     {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND AuthorityId=?", element.GetDgnDb().GetECSqlWriteToken());
+    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND AuthorityId=?", element.GetDgnDb().GetECCrudWriteToken());
     if (!statement.IsValid())
         return DgnDbStatus::WriteError;
 
@@ -3676,7 +3676,7 @@ DgnDbStatus GeometryStream::WriteGeometryStream(SnappyToBlob& snappyTo, DgnDbR d
         return DgnDbStatus::BadArg;
 
     BlobIO blobIO;
-    if (SUCCESS != db.OpenBlobIO(blobIO, *ecClass, propertyName, elementId, true))
+    if (SUCCESS != db.OpenBlobIO(blobIO, *ecClass, propertyName, elementId, true, db.GetECCrudWriteToken()))
         return DgnDbStatus::WriteError;
 
     if (SUCCESS != snappyTo.SaveToRow(blobIO))
@@ -3743,7 +3743,7 @@ DgnDbStatus GeometricElement::UpdateGeomStream() const
 
     if (!partsToRemove.empty())
         {
-        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", db.GetECSqlWriteToken());
+        CachedECSqlStatementPtr statement = db.GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_REL_ElementUsesGeometryParts) " WHERE SourceECInstanceId=? AND TargetECInstanceId=?", db.GetECCrudWriteToken());
         if (!statement.IsValid())
             return DgnDbStatus::BadRequest;
 
@@ -3800,7 +3800,7 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_LoadProperties(Dgn::DgnElementCR e
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*)
+DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*)
     {
     if (!m_instance.IsValid() || !m_instanceId.IsValid())
         {
@@ -3879,7 +3879,7 @@ DgnDbStatus DgnElement::GenericMultiAspect::_LoadProperties(Dgn::DgnElementCR el
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Sam.Wilson      12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const*)
+DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*)
     {
     if (!m_instance.IsValid() || !m_instanceId.IsValid())
         {
