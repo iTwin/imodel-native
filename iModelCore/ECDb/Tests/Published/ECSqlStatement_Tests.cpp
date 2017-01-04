@@ -3527,6 +3527,37 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GetValueWithPartialPoints)
+    {
+    ECDbCR ecdb = SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    
+    //The coordinates of partial points being NULL in the ECDb file will be returned as 0 as this is what SQLite
+    //implicitly returns when calling GetValueDouble on a NULL column.
+    ASSERT_TRUE(DPoint2d::From(1.0, 0.0).AlmostEqual(selStmt.GetValuePoint2d(0))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 2.0, 0.0).AlmostEqual(selStmt.GetValuePoint3d(1))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint2d::From(0.0, 3.0).AlmostEqual(selStmt.GetValuePoint2d(2))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 0.0, 4.0).AlmostEqual(selStmt.GetValuePoint3d(3))) << selStmt.GetECSql();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
