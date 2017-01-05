@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/BcDtmProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -62,6 +62,14 @@ BcDtmProvider::BcDtmProvider(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM& bcDtm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BcDtmProvider::~BcDtmProvider()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre               12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr BcDtmProvider::GetBcDTM()
+    {
+    return m_pBcDtm;
     }
 
 /*---------------------------------------------------------------------------------**//**

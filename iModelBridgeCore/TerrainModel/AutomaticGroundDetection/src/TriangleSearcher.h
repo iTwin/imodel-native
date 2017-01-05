@@ -2,10 +2,14 @@
 |
 |     $Source: AutomaticGroundDetection/src/TriangleSearcher.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
+
+#include "GroundDetectionTypes.h"
+
+#pragma warning( disable : 4005 )  
 
 #define _DEBUG
 #include <CGAL/Simple_cartesian.h>
@@ -17,9 +21,9 @@ typedef CGAL::Simple_cartesian<double> K;
 typedef K::FT FT;
 typedef K::Point_3 CPoint;
 typedef K::Triangle_3 CTriangle;
-typedef bvector<Triangle>::iterator Iterator;
+typedef bvector<CTriangle>::iterator Iterator;
 typedef CGAL::AABB_triangle_primitive<K, Iterator> CPrimitive;
-typedef CGAL::AABB_traits<K, Primitive> AABB_triangle_traits;
+typedef CGAL::AABB_traits<K, CPrimitive> AABB_triangle_traits;
 typedef CGAL::AABB_tree<AABB_triangle_traits> CTree;
 
 BEGIN_GROUND_DETECTION_NAMESPACE
@@ -39,7 +43,7 @@ struct TriangleSearcher : public RefCountedBase
 
     public:
 
-        //static TriangleSearcherPtr Create();
+        static TriangleSearcherPtr Create();
                
         void AddTriangle(CTriangle& triangle);
 
