@@ -11,6 +11,7 @@
     <ClCompile Include="Cache\ArgumentParserTests.cpp" />
     <ClCompile Include="Cache\DiskRepositoryClient.cpp" />
     <ClCompile Include="Cache\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="TestUtils\GenericLogProvider.cpp" />
     <ClCompile Include="Cache\RepositoryCompatibilityTests.cpp" />
     <ClCompile Include="Cache\TestData.cpp" />
     <ClCompile Include="TestUtils\TestMain.cpp" />
@@ -20,9 +21,11 @@
   <ItemGroup>
     <ClInclude Include="Cache\ArgumentParser.h" />
     <ClInclude Include="Cache\DiskRepositoryClient.h" />
+    <ClInclude Include="TestUtils\GenericLogProvider.h" />
     <ClInclude Include="Cache\Logging.h" />
     <ClInclude Include="Cache\RepositoryCompatibilityTests.h" />
     <ClInclude Include="Cache\TestData.h" />
+    <ClInclude Include="TestUtils\GenericLogProviderActivator.h" />
     <ClInclude Include="TestUtils\TestsHelper.h" />
     <ClInclude Include="TestUtils\TestsHost.h" />
   </ItemGroup>

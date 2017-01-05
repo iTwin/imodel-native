@@ -11,6 +11,7 @@
 #include <MobileDgn/MobileDgnCommon.h>
 #include <MobileDgn/MobileDgnL10N.h>
 
+#include "GenericLogProviderActivator.h"
 #include "../../UnitTests/Published/Utils/TestAppPathProvider.h"
 #include "../Cache/Logging.h"
 
@@ -72,20 +73,17 @@ void TestsHost::InitLogging(int logLevel)
     if (NativeLogging::LoggingConfig::IsProviderActive())
         NativeLogging::LoggingConfig::DeactivateProvider();
 
-    BeFileName configFile = m_programDir;
-    configFile.AppendToPath(LOGGING_CONFIG_FILE_NAME);
-    if (configFile.DoesPathExist())
+    bool silent = logLevel == 0;
+
+    // Log LOG_ERROR as test failures. We should consider LOG_WARNING as failures in future as well.
+    GenericLogProviderActivator::Activate([=] (Bentley::NativeLogging::SEVERITY sev, WCharCP msg)
         {
-        NativeLogging::LoggingConfig::SetOption(LOGGING_OPTION_CONFIG_FILE, configFile);
-        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
-        return;
-        }
+        if (sev >= Bentley::NativeLogging::LOG_ERROR)
+            ADD_FAILURE() << msg;
 
-    if (logLevel == 0)
-        return;
-
-    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetMaxMessageSize(100000);
+        if (!silent)
+            fwprintf(stdout, msg);
+        });
 
     NativeLogging::LoggingConfig::SetSeverity("BeAssert", Bentley::NativeLogging::LOG_WARNING);
     NativeLogging::LoggingConfig::SetSeverity("BeSQLite", Bentley::NativeLogging::LOG_WARNING);
