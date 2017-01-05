@@ -35,6 +35,8 @@ void PrimitiveArrayECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex
 //---------------------------------------------------------------------------------------
 IECSqlBinder& PrimitiveArrayECSqlBinder::_AddArrayElement()
     {
+    BeAssert(m_arrayInstance != nullptr);
+
     const ECSqlStatus stat = ArrayConstraintValidator::ValidateMaximum(GetECDb(), GetTypeInfo(), GetCurrentArrayLength() + 1);
     if (!stat.IsSuccess())
         return NoopECSqlBinder::Get();
@@ -42,11 +44,10 @@ IECSqlBinder& PrimitiveArrayECSqlBinder::_AddArrayElement()
     m_currentArrayIndex++;
     uint32_t currentArrayIndex = (uint32_t) m_currentArrayIndex;
 
-    auto arrayInstance = GetInstance(true);
     if (currentArrayIndex >= m_initialCapacity)
-        arrayInstance->AddArrayElements(ARRAY_PROPERTY_INDEX, 1);
+        m_arrayInstance->AddArrayElements(ARRAY_PROPERTY_INDEX, 1);
 
-    m_arrayElementBinder.Initialize(currentArrayIndex, *arrayInstance);
+    m_arrayElementBinder.Initialize(currentArrayIndex, *m_arrayInstance);
     return m_arrayElementBinder;
     }
 
@@ -84,6 +85,13 @@ IECSqlArrayBinder& PrimitiveArrayECSqlBinder::_BindArray(uint32_t initialCapacit
     {
     _OnClearBindings();
     m_initialCapacity = initialCapacity;
+
+    if (m_arrayInstance == nullptr)
+        m_arrayInstance = m_arrayStorageClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    if (m_initialCapacity > 0)
+        m_arrayInstance->AddArrayElements(ARRAY_PROPERTY_INDEX, m_initialCapacity);
+
     return *this;
     }
 
@@ -92,17 +100,18 @@ IECSqlArrayBinder& PrimitiveArrayECSqlBinder::_BindArray(uint32_t initialCapacit
 //---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveArrayECSqlBinder::_OnBeforeStep()
     {
-    const auto stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), GetCurrentArrayLength());
+    const ECSqlStatus stat = ArrayConstraintValidator::Validate(GetECDb(), GetTypeInfo(), GetCurrentArrayLength());
     if (!stat.IsSuccess())
         return stat;
 
     PrimitiveECSqlBinder blobBinder(GetECSqlStatementR (), ECSqlTypeInfo(PRIMITIVETYPE_Binary));
     blobBinder.SetSqliteIndex(m_sqliteIndex);
 
-    if (m_instance == nullptr)
+    if (m_currentArrayIndex < 0)
         return blobBinder.BindNull();
-    else
-        return blobBinder.BindBlob(m_instance->GetData(), m_instance->GetBytesUsed(), IECSqlBinder::MakeCopy::No);
+
+    BeAssert(m_arrayInstance != nullptr);
+    return blobBinder.BindBlob(m_arrayInstance->GetData(), m_arrayInstance->GetBytesUsed(), IECSqlBinder::MakeCopy::No);
     }
 
 //---------------------------------------------------------------------------------------
@@ -110,26 +119,12 @@ ECSqlStatus PrimitiveArrayECSqlBinder::_OnBeforeStep()
 //---------------------------------------------------------------------------------------
 void PrimitiveArrayECSqlBinder::_OnClearBindings()
     {
-    m_instance = nullptr;
+    if (m_arrayInstance != nullptr)
+        m_arrayInstance->ClearValues();
+
     m_currentArrayIndex = -1;
     m_initialCapacity = 0;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan          01/2014
-//---------------------------------------------------------------------------------------
-StandaloneECInstanceP PrimitiveArrayECSqlBinder::GetInstance(bool create) const
-    {
-    if (create && m_instance.IsNull())
-        {
-        m_instance = m_arrayStorageClass->GetDefaultStandaloneEnabler()->CreateInstance();
-        if (m_initialCapacity > 0)
-            m_instance->AddArrayElements(ARRAY_PROPERTY_INDEX, m_initialCapacity);
-        }
-
-    return m_instance.get();
-    }
-
 
 
 //====================================PrimitiveArrayToColumnECSqlBinder::ArrayElementBinder===================================================

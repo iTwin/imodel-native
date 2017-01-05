@@ -61,7 +61,7 @@ private:
 private:
     const uint32_t ARRAY_PROPERTY_INDEX = 1;
 
-    mutable ECN::StandaloneECInstancePtr m_instance;
+    mutable ECN::StandaloneECInstancePtr m_arrayInstance;
     mutable ArrayElementBinder m_arrayElementBinder;
     mutable int m_currentArrayIndex;
     ECN::ECClassCP m_arrayStorageClass;
@@ -79,7 +79,6 @@ private:
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
     uint32_t GetCurrentArrayLength() const { return (uint32_t) (m_currentArrayIndex + 1); }
-    ECN::StandaloneECInstanceP GetInstance(bool create) const;
 
 public:
     PrimitiveArrayECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
