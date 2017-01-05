@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BentleyConfig.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,6 +22,7 @@
     #define BENTLEYCONFIG_OS_APPLE
     #define BENTLEYCONFIG_OS_UNIX
     #define BENTLEYCONFIG_DISPLAY_APPLE
+    #define BENTLEYCONFIG_GETENV 
 
     #include <TargetConditionals.h>
     #if TARGET_OS_IPHONE || TARGET_IPHONE_SIMULATOR
@@ -41,6 +42,7 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGLES
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_ANDROID
+    #define BENTLEYCONFIG_GETENV 
 
 #elif defined (_WIN32)
 
@@ -58,11 +60,13 @@
         // BENTLEYCONFIG_OS_WINRT will only be set for WinRTx86 and WinRTx64 (Store/Metro apps)
         #define BENTLEYCONFIG_OS_WINRT
         #define BENTLEYCONFIG_DISPLAY_METRO
+        // getenv is NOT available
     #else
         #define BENTLEYCONFIG_GRAPHICS_SUPPORT_QV_THREAD
         #define BENTLEYCONFIG_SUPPORT_PRELOADING_DISK_CACHE
         #define BENTLEYCONFIG_PARASOLID
         #define BENTLEYCONFIG_DISPLAY_WIN32
+        #define BENTLEYCONFIG_GETENV 
     #endif
 
 #elif defined (__linux)
@@ -71,6 +75,7 @@
     #define BENTLEYCONFIG_GRAPHICS_OPENGL
     #define BENTLEYCONFIG_DISPLAY_WX
     #define BENTLEYCONFIG_VIRTUAL_MEMORY
+    #define BENTLEYCONFIG_GETENV 
 
 #elif defined (__EMSCRIPTEN__)
 
