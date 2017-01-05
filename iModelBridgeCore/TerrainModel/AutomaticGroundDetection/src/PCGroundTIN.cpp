@@ -1205,7 +1205,7 @@ StatusInt PCGroundTIN::_CreateInitialTIN()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 static bool s_testOneQuery = false;
-static bool s_outputPreview = false;
+static bool s_outputPreview = true;
 
 void PCGroundTIN::OutputDtmPreview()
     {    
@@ -1330,9 +1330,11 @@ StatusInt  PCGroundTIN::_DensifyTIN()
         if (!m_pReport->CheckContinueOnProgress())
             return ERROR;//User abort
 
+        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+
         int currentIteration = 1;
-        for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
-            {
+        for (PrepareFirstIteration(); ptsAccumPtr->ShouldContinue() && PrepareNextIteration(); currentIteration++)
+            {            
             OutputDtmPreview();
 
             m_pReport->StartCurrentIteration(currentIteration);
@@ -1363,6 +1365,10 @@ StatusInt  PCGroundTIN::_DensifyTIN()
                     itr != pTriangle->GetPointToAdd().end() && nbSeedPointsToAdded < PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD; 
                     ++itr, nbSeedPointsToAdded++)
                     AddPoint(*itr);
+
+                if (!ptsAccumPtr->ShouldContinue())
+                    break;
+                
 
                 //Display some stat while processing to help debug
     /*

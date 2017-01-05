@@ -31,4 +31,12 @@ void IGroundPointsAccumulator::OutputPreview(PolyfaceQueryCR currentGround) cons
     return _OutputPreview(currentGround);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IGroundPointsAccumulator::ShouldContinue() const
+    {
+    return _ShouldContinue();
+    }
+
 END_GROUND_DETECTION_NAMESPACE

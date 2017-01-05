@@ -23,16 +23,19 @@ struct IGroundPointsAccumulator : public RefCountedBase
     {
     protected : 
 
-        virtual void _AddPoints(const bvector<DPoint3d>& points) = 0;
+        virtual void _AddPoints(const bvector<DPoint3d>& points) = 0;        
 
         virtual void _OutputPreview(PolyfaceQueryCR currentGround) const = 0;
 
+        virtual bool _ShouldContinue() const = 0;
 
     public : 
     
         void AddPoints(const bvector<DPoint3d>& points);        
 
         void OutputPreview(PolyfaceQueryCR currentGround) const;
+
+        bool ShouldContinue() const;
     };
 
 END_GROUND_DETECTION_NAMESPACE
