@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaResourceKeyHelper.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -56,6 +56,13 @@ Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(ECEnumerationCR ecEnu
                                   ecEnumeration.GetInvariantDisplayLabel().c_str());
     }
 
+Utf8String SchemaResourceKeyHelper::GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity)
+    {
+    return GetTypeDisplayLabelKey(kindOfQuantity.GetSchema().GetName().c_str(),
+                                  kindOfQuantity.GetName().c_str(),
+                                  kindOfQuantity.GetInvariantDisplayLabel().c_str());
+    }
+
 Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECClassCR ecClass)
     {
     return GetTypeDescriptionKey(ecClass.GetSchema().GetName().c_str(),
@@ -68,6 +75,13 @@ Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(ECEnumerationCR ecEnum
     return GetTypeDescriptionKey(ecEnumeration.GetSchema().GetName().c_str(),
                                  ecEnumeration.GetName().c_str(),
                                  ecEnumeration.GetInvariantDescription().c_str());
+    }
+
+Utf8String SchemaResourceKeyHelper::GetTypeDescriptionKey(KindOfQuantityCR kindOfQuantity)
+    {
+    return GetTypeDescriptionKey(kindOfQuantity.GetSchema().GetName().c_str(),
+                                 kindOfQuantity.GetName().c_str(),
+                                 kindOfQuantity.GetInvariantDescription().c_str());
     }
 
 Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty)
@@ -99,7 +113,6 @@ Utf8String SchemaResourceKeyHelper::GetTypeChildDisplayLabelKey(ECEnumeratorCR e
                                        enumeratorName.c_str(),
                                        ecEnumerator.GetInvariantDisplayLabel().c_str());
     }
-
 
 Utf8String SchemaResourceKeyHelper::GetRelationshipSourceRoleLabelKey(ECRelationshipClassCR relClass, Utf8CP invariant)
     {

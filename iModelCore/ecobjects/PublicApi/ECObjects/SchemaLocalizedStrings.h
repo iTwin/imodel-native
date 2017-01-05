@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaLocalizedStrings.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,6 +46,8 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDisplayLabel(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDescription(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDisplayLabel(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDescription(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const;

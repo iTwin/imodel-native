@@ -2,7 +2,7 @@
 |
 |     $Source: tools/SchemaResourceGenerator/SchemaResourceGenerator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECObjects/ECObjectsAPI.h>
@@ -426,6 +426,21 @@ static bool WriteXliff(Options const& options)
             }
 
         xmlWriter->WriteElementEnd();//group
+        }
+
+    if (schema->GetKindOfQuantityCount() > 0)
+        {
+        xmlWriter->WriteElementStart("group");
+        xmlWriter->WriteAttribute("resname", "KindOfQuantities");
+        
+        for (KindOfQuantityCP koq : schema->GetKindOfQuantities())
+            {
+            key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(*koq);
+            WriteResource(*xmlWriter, key.c_str(), koq->GetInvariantDisplayLabel().c_str());
+
+            key = SchemaResourceKeyHelper::GetTypeDescriptionKey(*koq);
+            WriteResource(*xmlWriter, key.c_str(), koq->GetInvariantDescription().c_str());
+            }
         }
 
     xmlWriter->WriteElementEnd();//body

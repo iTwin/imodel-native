@@ -2,7 +2,7 @@
 |
 |     $Source: src/KindOfQuantity.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -92,6 +92,22 @@ ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQ
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR KindOfQuantity::GetDisplayLabel() const
+    {
+    return GetSchema().GetLocalizedStrings().GetKindOfQuantityDisplayLabel(*this, GetInvariantDisplayLabel()); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                12/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR KindOfQuantity::GetDescription() const 
+    { 
+    return GetSchema().GetLocalizedStrings().GetKindOfQuantityDescription(*this, m_description); 
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -108,8 +124,8 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
     xmlWriter.WriteElementStart(elementName);
     
     xmlWriter.WriteAttribute(TYPE_NAME_ATTRIBUTE, GetName().c_str());
-    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetDescription().c_str());
-    auto& displayLabel = GetDisplayLabel();
+    xmlWriter.WriteAttribute(DESCRIPTION_ATTRIBUTE, GetInvariantDescription().c_str());
+    auto& displayLabel = GetInvariantDisplayLabel();
     if (!displayLabel.empty())
         xmlWriter.WriteAttribute(DISPLAY_LABEL_ATTRIBUTE, displayLabel.c_str());
 

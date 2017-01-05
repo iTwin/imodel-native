@@ -1133,6 +1133,30 @@ ECObjectsStatus ECSchema::CopyEnumeration(ECEnumerationP & targetEnumeration, EC
     return ECObjectsStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECSchema::CopyKindOfQuantity(KindOfQuantityP & targetKOQ, KindOfQuantityCR sourceKOQ)
+    {
+    if (m_immutable) return ECObjectsStatus::SchemaIsImmutable;
+
+    ECObjectsStatus status;
+    status = CreateKindOfQuantity(targetKOQ, sourceKOQ.GetName().c_str());
+    if (ECObjectsStatus::Success != status)
+        return status;
+
+    if (sourceKOQ.GetIsDisplayLabelDefined())
+        targetKOQ->SetDisplayLabel(sourceKOQ.GetInvariantDisplayLabel().c_str());
+
+    targetKOQ->SetDescription(sourceKOQ.GetInvariantDescription().c_str());
+
+    targetKOQ->SetDefaultPresentationUnit(sourceKOQ.GetDefaultPresentationUnit().c_str());
+    targetKOQ->SetPersistenceUnit(sourceKOQ.GetPersistenceUnit().c_str());
+    targetKOQ->SetPrecision(sourceKOQ.GetPrecision());
+
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1397,6 +1421,14 @@ ECSchemaPtr& schemaOut
         {
         ECEnumerationP copyEnumeration;
         status = schemaOut->CopyEnumeration(copyEnumeration, *ecEnumeration);
+        if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
+            return status;
+        }
+
+    for (auto koq : m_kindOfQuantityContainer)
+        {
+        KindOfQuantityP copyKOQ;
+        status = schemaOut->CopyKindOfQuantity(copyKOQ, *koq);
         if (ECObjectsStatus::Success != status && ECObjectsStatus::NamedItemAlreadyExists != status)
             return status;
         }

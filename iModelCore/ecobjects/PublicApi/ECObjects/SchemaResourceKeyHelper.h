@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ECObjects/SchemaResourceKeyHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -89,6 +89,8 @@ struct SchemaResourceKeyHelper
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(ECEnumerationCR ecEnumeration);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECClassCR ecClass);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECEnumerationCR ecEnumeration);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(KindOfQuantityCR kindOfQuantity);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDescriptionKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECEnumeratorCR ecEnumerator);

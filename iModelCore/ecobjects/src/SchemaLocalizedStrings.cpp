@@ -2,7 +2,7 @@
 |
 |     $Source: src/SchemaLocalizedStrings.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -83,6 +83,18 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDisplayLabel(ECEnumerationCR 
     }
 
 //--------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                    12/2016
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetKindOfQuantityDisplayLabel(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDisplayLabel) const
+    {
+    if (m_empty)
+        return invariantDisplayLabel;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDisplayLabelKey(kindOfQuantity);
+    return GetLocalizedString(key.c_str(), invariantDisplayLabel);
+    }
+
+//--------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                      04/2015
 //--------------------------------------------------------------------------------------
 Utf8StringCR SchemaLocalizedStrings::GetClassDescription(ECClassCP ecClass, Utf8StringCR invariantDescription) const
@@ -105,6 +117,18 @@ Utf8StringCR SchemaLocalizedStrings::GetEnumerationDescription(ECEnumerationCR e
 
     Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(ecEnumeration);
 
+    return GetLocalizedString(key.c_str(), invariantDescription);
+    }
+
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                    12/2016
+//--------------------------------------------------------------------------------------
+Utf8StringCR SchemaLocalizedStrings::GetKindOfQuantityDescription(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDescription) const
+    {
+    if (m_empty)
+        return invariantDescription;
+
+    Utf8String key = SchemaResourceKeyHelper::GetTypeDescriptionKey(kindOfQuantity);
     return GetLocalizedString(key.c_str(), invariantDescription);
     }
 

@@ -2,7 +2,7 @@
 |
 |     $Source: src/SupplementalSchema.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -470,7 +470,7 @@ bvector<ECSchemaP>& localizationSchemas
             return SupplementedSchemaStatus::Metadata_Missing;
         if (!metaData.IsValid())
             return SupplementedSchemaStatus::Metadata_Missing;
-        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionRead(), primarySchema.GetVersionMinor(), SchemaMatchType::Latest))
+        if (!metaData->IsForPrimarySchema(primarySchema.GetName(), primarySchema.GetVersionRead(), primarySchema.GetVersionMinor(), SchemaMatchType::LatestWriteCompatible))
             continue;
 
         if (SchemaLocalizedStrings::IsLocalizationSupplementalSchema(supplemental))

@@ -1810,22 +1810,27 @@ struct KindOfQuantity : NonCopyableClass
         ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
 
         //! Whether the display label is explicitly defined or not
-        bool GetIsDisplayLabelDefined() const { return m_validatedName.IsDisplayLabelDefined(); }
-        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
-        Utf8StringCR GetDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+        bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
+        
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
         ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
-        Utf8StringCR GetInvariantDisplayLabel() const { return m_validatedName.GetDisplayLabel(); }
+
+        //! Gets the invariant display label of this KindOfQuantity. If no display label has been set explicitly, it will return the name of the KindOfQuantity.
+        Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
+
+        //! Gets the display label of this KindOfQuantity.  If no display label has been set explicitly, it will return the name of the KindOfQuantity
+        ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDescription(Utf8CP value) { m_description = value; }
-        
-        Utf8StringCR GetDescription() const {/*TODO: should this be localized?*/ return m_description; };
+        void SetDescription(Utf8CP value) {m_description = value;}
 
         //! Gets the invariant description of this KindOfQuantity.
-        Utf8StringCR GetInvariantDescription() const { return m_description; };
+        Utf8StringCR GetInvariantDescription() const {return m_description;}
 
+        //! Get the description of this KindOfQuantity
+        ECOBJECTS_EXPORT Utf8StringCR GetDescription() const;
 
         //! Sets the Unit of measurement used for persisting the information
         //! @param[in]  value  The new value to apply
@@ -3442,6 +3447,11 @@ public:
     //! @param[out] targetEnumeration If successful, will contain a new ECEnumeration object that is a copy of the sourceEnumeration
     //! @param[in]  sourceEnumeration The enumeration to copy
     ECOBJECTS_EXPORT ECObjectsStatus        CopyEnumeration(ECEnumerationP& targetEnumeration, ECEnumerationCR sourceEnumeration);
+
+    //! Given a source kind of quantity, will copy that kind of quantity into this schema if it does not already exist
+    //! @param[out] targetKOQ If successful, will contain a new KindOfQuantity object that is a copy of the sourceKOQ
+    //! @param[in]  sourceKOQ The kind of quantity to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ);
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema

@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/SchemaLocalizationTests.cpp $
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -66,6 +66,42 @@ void VerifyLocalized(ECSchemaPtr testSchema, Utf8CP prePostFix)
     EXPECT_STREQ(itemDescription, itemClass->GetInvariantDescription().c_str());
     EXPECT_STREQ(PseudoLocalizeString(prePostFix, itemDescription).c_str(), itemClass->GetDescription().c_str());
 
+    // Test Enumeration
+    if (2 == testSchema->GetVersionRead())
+        {
+        ECEnumerationCP lengthEnum = testSchema->GetEnumerationCP("LengthType");
+        Utf8CP lengthLabel = "LengthType";
+        Utf8CP lengthDescription = "Enum of length types";
+        EXPECT_STREQ(lengthLabel, lengthEnum->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ(PseudoLocalizeString(prePostFix, lengthLabel).c_str(), lengthEnum->GetDisplayLabel().c_str());
+        EXPECT_STREQ(lengthDescription, lengthEnum->GetInvariantDescription().c_str());
+        EXPECT_STREQ(PseudoLocalizeString(prePostFix, lengthDescription).c_str(), lengthEnum->GetDescription().c_str());
+
+        for (ECEnumeratorCP enumerator : lengthEnum->GetEnumerators())
+            {
+            EXPECT_TRUE(enumerator->IsString());
+
+            Utf8CP displayLabel = "";
+            if ("0" == enumerator->GetString())
+                displayLabel = "None";
+            else if ("1" == enumerator->GetString())
+                displayLabel = "Constant";
+            else if ("2" == enumerator->GetString())
+                displayLabel = "Tapered";
+
+            EXPECT_STREQ(displayLabel, enumerator->GetInvariantDisplayLabel().c_str());
+            EXPECT_STREQ(PseudoLocalizeString(prePostFix, displayLabel).c_str(), enumerator->GetDisplayLabel().c_str());
+            }
+
+        KindOfQuantityCP koq = testSchema->GetKindOfQuantityCP("LengthKind");
+        Utf8CP koqLabel = "LengthKind";
+        Utf8CP koqDescription = "Kind of a Description here";
+        EXPECT_STREQ(koqLabel, koq->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ(PseudoLocalizeString(prePostFix, koqLabel).c_str(), koq->GetDisplayLabel().c_str());
+        EXPECT_STREQ(koqDescription, koq->GetInvariantDescription().c_str());
+        EXPECT_STREQ(PseudoLocalizeString(prePostFix, koqDescription).c_str(), koq->GetDescription().c_str());
+        }
+
     // Test Rel Class Role Labels
     Utf8CP sourceRoleLabel = "Door to room";
     Utf8CP targetRoleLabel = "Door for room";
@@ -101,7 +137,8 @@ void VerifyLocalized(ECSchemaPtr testSchema, Utf8CP prePostFix)
     // Class
 
     ECClassP doorClass = testSchema->GetClassP("Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "House", "ExtendedInfo", "ExtraInfo[1]", prePostFix);
+    if (1 == testSchema->GetVersionRead())
+        VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "House", "ExtendedInfo", "ExtraInfo[1]", prePostFix);
     VerifyCaString(*doorClass, doorClass->GetFullName(), "wood", "House", "ExtendedInfo", "ContentInfo[0].DisplayName", prePostFix);
     // Relationship Constraints
     ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP("RoomHasDoor")->GetRelationshipClassCP();
@@ -110,7 +147,8 @@ void VerifyLocalized(ECSchemaPtr testSchema, Utf8CP prePostFix)
     // Property
     doorLengthProp = testSchema->GetClassCP("Door")->GetPropertyP(lengthString, false);
     VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Length of door", "House", "ExtendedInfo", "Purpose", prePostFix);
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "EditorCustomAttributes", "StandardValues", "ValueMap[1].DisplayString", prePostFix);
+    if (1 == testSchema->GetVersionRead())
+        VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "EditorCustomAttributes", "StandardValues", "ValueMap[1].DisplayString", prePostFix);
     }
 
 void VerifyNotLocalized(ECSchemaPtr testSchema)
@@ -131,6 +169,42 @@ void VerifyNotLocalized(ECSchemaPtr testSchema)
     EXPECT_STREQ(itemLabel, itemClass->GetDisplayLabel().c_str());
     EXPECT_STREQ(itemDescription, itemClass->GetInvariantDescription().c_str());
     EXPECT_STREQ(itemDescription, itemClass->GetDescription().c_str());
+
+    // Test Enumeration
+    if (2 == testSchema->GetVersionRead())
+        {
+        ECEnumerationCP lengthEnum = testSchema->GetEnumerationCP("LengthType");
+        Utf8CP lengthLabel = "LengthType";
+        Utf8CP lengthDescription = "Enum of length types";
+        EXPECT_STREQ(lengthLabel, lengthEnum->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ(lengthLabel, lengthEnum->GetDisplayLabel().c_str());
+        EXPECT_STREQ(lengthDescription, lengthEnum->GetInvariantDescription().c_str());
+        EXPECT_STREQ(lengthDescription, lengthEnum->GetDescription().c_str());
+
+        for (ECEnumeratorCP enumerator : lengthEnum->GetEnumerators())
+            {
+            EXPECT_TRUE(enumerator->IsString());
+
+            Utf8CP displayLabel = "";
+            if ("0" == enumerator->GetString())
+                displayLabel = "None";
+            else if ("1" == enumerator->GetString())
+                displayLabel = "Constant";
+            else if ("2" == enumerator->GetString())
+                displayLabel = "Tapered";
+
+            EXPECT_STREQ(displayLabel, enumerator->GetInvariantDisplayLabel().c_str());
+            EXPECT_STREQ(displayLabel, enumerator->GetDisplayLabel().c_str());
+            }
+
+        KindOfQuantityCP koq = testSchema->GetKindOfQuantityCP("LengthKind");
+        Utf8CP koqLabel = "LengthKind";
+        Utf8CP koqDescription = "Kind of a Description here";
+        EXPECT_STREQ(koqLabel, koq->GetInvariantDisplayLabel().c_str());
+        EXPECT_STREQ(koqLabel, koq->GetDisplayLabel().c_str());
+        EXPECT_STREQ(koqDescription, koq->GetInvariantDescription().c_str());
+        EXPECT_STREQ(koqDescription, koq->GetDescription().c_str());
+        }
 
     // Test Rel Class Role Labels
     Utf8CP sourceRoleLabel = "Door to room";
@@ -165,15 +239,18 @@ void VerifyNotLocalized(ECSchemaPtr testSchema)
     VerifyCaString(*testSchema, testSchema->GetFullSchemaName().c_str(), "A whole House", "House", "ExtendedInfo", "Purpose");
     // Class
     ECClassP doorClass = testSchema->GetClassP("Door");
-    VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "House", "ExtendedInfo", "ExtraInfo[1]");
+    if (1 == testSchema->GetVersionRead())
+        VerifyCaString(*doorClass, doorClass->GetFullName(), "squar", "House", "ExtendedInfo", "ExtraInfo[1]");
     VerifyCaString(*doorClass, doorClass->GetFullName(), "wood", "House", "ExtendedInfo", "ContentInfo[0].DisplayName");
     // Relationship Constraints
     ECRelationshipClassCP roomHasDoorRelClass = testSchema->GetClassCP("RoomHasDoor")->GetRelationshipClassCP();
     VerifyCaString(roomHasDoorRelClass->GetSource(), roomHasDoorRelClass->GetFullName(), "This is a room", "House", "ExtendedInfo", "Purpose");
     VerifyCaString(roomHasDoorRelClass->GetTarget(), roomHasDoorRelClass->GetFullName(), "This is a door", "House", "ExtendedInfo", "Purpose");
+
     // Property
     VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Length of door", "House", "ExtendedInfo", "Purpose");
-    VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "EditorCustomAttributes", "StandardValues", "ValueMap[1].DisplayString");
+    if (1 == testSchema->GetVersionRead())
+        VerifyCaString(*doorLengthProp, doorLengthProp->GetName().c_str(), "Constant", "EditorCustomAttributes", "StandardValues", "ValueMap[1].DisplayString");
     }
 
 //---------------------------------------------------------------------------------------//
@@ -187,8 +264,8 @@ TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplemental)
     schemaContext->AddCulture(L"ur-PK");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
-    EXPECT_TRUE(testSchema->IsSupplemented());
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema->IsSupplemented());
     
     VerifyLocalized(testSchema, PK);
     }
@@ -205,8 +282,8 @@ TEST_F(SchemaLocalizationTests, CopyingALocalizedSchema)
     schemaContext->AddCulture(L"en-GB");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
-    EXPECT_TRUE(testSchema->IsSupplemented());
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, GB);
 
     ECSchemaPtr copyTestSchema;
@@ -227,8 +304,8 @@ TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchema)
     schemaContext->AddCulture(L"it");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
-    EXPECT_TRUE(testSchema->IsSupplemented());
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, IT);
 
     ECSchemaPtr copyTestSchema;
@@ -252,7 +329,92 @@ TEST_F(SchemaLocalizationTests, CustomStringsNotOverridden)
     schemaContext->AddCulture(L"ur");
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
     SchemaKey key("House", 01, 00);
-    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema->IsSupplemented());
+    VerifyLocalized(testSchema, PK);
+
+    testSchema->SetDisplayLabel("Banana");
+    EXPECT_STREQ("Banana", testSchema->GetDisplayLabel().c_str());
+    EXPECT_STREQ("Banana", testSchema->GetInvariantDisplayLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------//
+// Tests that localization supplemental schemas are properly applied
+// @bsimethod                                    Colin.Kerr                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaLocalizationTests, SupplementingLocalizationSupplementalEC3)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddCulture(L"ur-PK");
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key("House", 2, 0, 0);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    ASSERT_TRUE(testSchema->IsSupplemented());
+
+    VerifyLocalized(testSchema, PK);
+    }
+
+//---------------------------------------------------------------------------------------//
+// Tests that copied schemas have the same invariant strings as the original schema ensuring 
+// that the localized strings are not set as the invariant strings.  
+// @bsimethod                                    Colin.Kerr                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaLocalizationTests, CopyingALocalizedSchemaEC3)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddCulture(L"en-GB");
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key("House", 2, 0, 0);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+    VerifyLocalized(testSchema, GB);
+
+    ECSchemaPtr copyTestSchema;
+    EXPECT_EQ(ECObjectsStatus::Success, testSchema->CopySchema(copyTestSchema));
+    EXPECT_FALSE(copyTestSchema->IsSupplemented());
+    VerifyNotLocalized(copyTestSchema); //Fails on IOS, TODO: Debug
+    }
+
+//---------------------------------------------------------------------------------------//
+// Tests that the invariant strings are serialized NOT the localized strings
+// @bsimethod                                    Colin.Kerr                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaLocalizationTests, XmlSerializeALocalizedSchemaEC3)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddCulture(L"it-IT");
+    schemaContext->AddCulture(L"it");
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key("House", 2, 0, 0);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+    VerifyLocalized(testSchema, IT);
+
+    ECSchemaPtr copyTestSchema;
+    Utf8String     schemaXml;
+    EXPECT_EQ(SchemaWriteStatus::Success, testSchema->WriteToXmlString(schemaXml));
+    ECSchemaReadContextPtr deserializedSchemaContext = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(copyTestSchema, schemaXml.c_str(), *deserializedSchemaContext));
+    EXPECT_FALSE(copyTestSchema->IsSupplemented());
+    VerifyNotLocalized(copyTestSchema); //Fails on IOS, TODO: Debug
+    }
+
+//---------------------------------------------------------------------------------------//
+// Tests that custom display strings are not overridden by the localized strings
+// @bsimethod                                    Colin.Kerr                       04/2015
+//+---------------+---------------+---------------+---------------+---------------+------//
+TEST_F(SchemaLocalizationTests, CustomStringsNotOverriddenEC3)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddCulture(L"ur-PK");
+    schemaContext->AddCulture(L"ur");
+    schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key("House", 2, 0, 0);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
     EXPECT_TRUE(testSchema->IsSupplemented());
     VerifyLocalized(testSchema, PK);
 
