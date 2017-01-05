@@ -8,7 +8,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     DgnDbPtr projectPtr = CreateProject(L"BasicAlignmentTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId modelId = QueryFirstAlignmentModelId(*projectPtr);
+    DgnModelId modelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
 
     // Create Alignment
@@ -50,7 +50,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentPairEditorTest)
     DgnDbPtr projectPtr = CreateProject(L"AlignmentPairEditorTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId modelId = QueryFirstAlignmentModelId(*projectPtr);
+    DgnModelId modelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
 
     // Create Horizontal 
@@ -89,7 +89,7 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
     DgnDbPtr projectPtr = CreateProject(L"AlignmentSegmationTest.bim");
     ASSERT_TRUE(projectPtr.IsValid());
 
-    DgnModelId modelId = QueryFirstAlignmentModelId(*projectPtr);
+    DgnModelId modelId = QueryFirstModelIdOfType(*projectPtr, AlignmentModel::QueryClassId(*projectPtr));
     auto alignModelPtr = AlignmentModel::Get(*projectPtr, modelId);
 
     // Create Alignment

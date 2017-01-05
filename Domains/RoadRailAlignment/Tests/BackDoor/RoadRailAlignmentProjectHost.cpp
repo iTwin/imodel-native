@@ -144,7 +144,7 @@ DgnDbPtr RoadRailAlignmentProjectHost::CreateProject(WCharCP baseName)
     {
     CreateDgnDbParams createDgnDbParams;
     createDgnDbParams.SetOverwriteExisting(true);
-    createDgnDbParams.SetRootSubjectLabel("RoadRailAlignmentProject");
+    createDgnDbParams.SetRootSubjectName("RoadRailAlignmentProject");
     createDgnDbParams.SetRootSubjectDescription("Created by RoadRailAlignmentProjectHost");
     createDgnDbParams.SetStartDefaultTxn(DefaultTxn::Exclusive);
 
@@ -243,23 +243,21 @@ void RoadRailAlignmentTestsFixture::TearDownTestCase()
     m_host = nullptr;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                           Shaun.Sewall           09/2016
-//---------------------------------------------------------------------------------------
-DgnModelId RoadRailAlignmentTestsFixture::QueryFirstAlignmentModelId(DgnDbR db)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnModelId RoadRailAlignmentTestsFixture::QueryFirstModelIdOfType(DgnDbR db, DgnClassId classId)
     {
-    for (auto const& modelEntry : db.Models().MakeIterator())
-        {
-        if ((DgnModel::RepositoryModelId() == modelEntry.GetModelId()) || (DgnModel::DictionaryId() == modelEntry.GetModelId()))
-            continue;
+    ECSqlStatement stmt;
+    stmt.Prepare(db, "SELECT ECInstanceId FROM " BIS_SCHEMA(BIS_CLASS_Model) " WHERE ECClassId = ? LIMIT 1;");
+    BeAssert(stmt.IsPrepared());
 
-        DgnModelPtr model = db.Models().GetModel(modelEntry.GetModelId());
-        if (model->IsGeometricModel() && dynamic_cast<AlignmentModelP>(model.get()))
-            return modelEntry.GetModelId();
-        }
+    stmt.BindId(1, classId);
 
-    BeAssert(false && "No AlignmentModel found");
-    return DgnModelId();
+    if (DbResult::BE_SQLITE_ROW != stmt.Step())
+        return DgnModelId();
+
+    return stmt.GetValueId<DgnModelId>(0);
     }
 
 //---------------------------------------------------------------------------------------

@@ -59,7 +59,7 @@ protected:
 public:
     static RoadRailAlignmentProjectHost& GetHost() { return *m_host; }
 
-    static Dgn::DgnModelId QueryFirstAlignmentModelId(Dgn::DgnDbR db);
+    static Dgn::DgnModelId QueryFirstModelIdOfType(Dgn::DgnDbR db, Dgn::DgnClassId classId);
 
     //! Creates and caches a fresh "created" file to make the whole process faster
     static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);

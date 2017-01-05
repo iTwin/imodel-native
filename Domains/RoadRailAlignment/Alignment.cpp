@@ -2,7 +2,7 @@
 |
 |     $Source: Alignment.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -53,7 +53,7 @@ DgnElementIdSet Alignment::QueryReferingSpatialElements() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentHorizontalCPtr Alignment::QueryHorizontal() const
     {
-    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " WHERE ParentId = ?");
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " WHERE Parent.Id = ?");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
@@ -110,7 +110,7 @@ DgnDbStatus Alignment::SetMainVertical(AlignmentCR alignment, AlignmentVerticalC
 DgnElementIdSet Alignment::QueryAlignmentVerticalIds() const
     {
     ECSqlStatement stmt;
-    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " WHERE ParentId = ?");
+    stmt.Prepare(GetDgnDb(), "SELECT ECInstanceId FROM " BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " WHERE Parent.Id = ?");
     BeAssert(stmt.IsPrepared());
 
     stmt.BindId(1, GetElementId());
@@ -129,9 +129,9 @@ AlignmentPairPtr Alignment::QueryMainPair() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT horiz.HorizontalGeometry, vert.VerticalGeometry FROM "
         BRRA_SCHEMA(BRRA_CLASS_AlignmentHorizontal) " horiz LEFT JOIN "
-        BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " mainVert ON horiz.ParentId = mainVert.SourceECInstanceId LEFT JOIN "
+        BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " mainVert ON horiz.Parent.Id = mainVert.SourceECInstanceId LEFT JOIN "
         BRRA_SCHEMA(BRRA_CLASS_AlignmentVertical) " vert ON mainVert.TargetECInstanceId = vert.ECInstanceId "
-        "WHERE horiz.ParentId = ?;");
+        "WHERE horiz.Parent.Id = ?;");
     BeAssert(stmtPtr.IsValid());
 
     stmtPtr->BindId(1, GetElementId());
