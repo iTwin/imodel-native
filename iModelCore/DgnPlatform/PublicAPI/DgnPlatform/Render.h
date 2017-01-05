@@ -1716,6 +1716,9 @@ public:
     DGNPLATFORM_EXPORT double Update(Render::TargetCR target, double frameTime);
 
     void Reset() {m_numFrames=0; m_averageFrameTime=0.0;}   //!< Reset the accumulated statistics
+    uint32_t GetFramesPerSecond() const { return 0.0 != m_averageFrameTime ? static_cast<uint32_t>(1.0/m_averageFrameTime) : 0; }
+    double GetAverageFrameTime() const { return m_averageFrameTime; }
+    uint32_t GetNumFramesRecorded() const { return m_numFrames; }
 };
 
 //=======================================================================================
