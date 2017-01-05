@@ -5,7 +5,9 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#include <Bentley/Bentley.h>
+
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     #include <windows.h>
     #include <objbase.h>
     #include <process.h>
@@ -41,7 +43,7 @@
 
 USING_NAMESPACE_BENTLEY
 
-#if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS) 
     static DWORD toKey(void* k) {return (DWORD) (intptr_t)k;}
     static void* toPtr(DWORD k) {return (void*) (intptr_t)k;}
 #elif defined (__unix__)
@@ -60,17 +62,15 @@ BeMutex* s_systemCS;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void* BeThreadLocalStorage::Create()
+void* BeThreadLocalStorage::Create(BeThreadLocalStorage::Destructor destructor)
     {
-#if defined (BENTLEY_WIN32)
-    DWORD key = TlsAlloc();
-#elif defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     // note: FLS acts the same as TLS if you don't create fibers
-    DWORD key = FlsAlloc(NULL);
+    DWORD key = FlsAlloc(destructor);
 #elif defined (__unix__)
     #if defined (BETHREAD_USE_PTHREAD)
         pthread_key_t key;
-        pthread_key_create(&key, NULL);
+        pthread_key_create(&key, destructor);
     #else
         void* key = NULL;
     #endif
@@ -85,9 +85,7 @@ void* BeThreadLocalStorage::Create()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeThreadLocalStorage::Delete(void* key)
     {
-#if defined (BENTLEY_WIN32)
-    TlsFree(toKey(key));
-#elif defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     // note: FLS acts the same as TLS if you don't create fibers
     FlsFree(toKey(key));
 #elif defined (__unix__)
@@ -104,9 +102,7 @@ void BeThreadLocalStorage::Delete(void* key)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BeThreadLocalStorage::SetValue(void* key, void* v)
     {
-#if defined (BENTLEY_WIN32)
-    TlsSetValue(toKey(key), v);
-#elif defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     // note: FLS acts the same as TLS if you don't create fibers
     FlsSetValue(toKey(key), v);
 #elif defined (__unix__)
@@ -125,9 +121,7 @@ void BeThreadLocalStorage::SetValue(void* key, void* v)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void* BeThreadLocalStorage::GetValue(void* key)
     {
-#if defined (BENTLEY_WIN32)
-    return TlsGetValue(toKey(key));
-#elif defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
     // note: FLS acts the same as TLS if you don't create fibers
     return FlsGetValue(toKey(key));
 #elif defined (__unix__)
@@ -247,7 +241,7 @@ intptr_t BeThreadUtilities::GetCurrentThreadId()
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
     {
-#if defined (BENTLEY_WIN32)||defined (BENTLEY_WINRT)
+#if defined (BENTLEYCONFIG_OS_WINDOWS)
 
     _clearfp();
     _fpreset();
@@ -333,7 +327,7 @@ BeMutex& BeSystemMutexHolder::GetSystemMutex()
 void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
     {
 #if !defined (NDEBUG)
- #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
+ #if defined (BENTLEYCONFIG_OS_WINDOWS)
     // see http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
     #pragma pack(push,8)
     struct THREADNAME_INFO
@@ -372,7 +366,7 @@ BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart sta
         pthread_detach(threadHandle);
     pthread_attr_destroy(&threadAttr);
     return (0 == retval) ? SUCCESS : ERROR;
-#elif defined(BENTLEY_WIN32) || defined(BENTLEY_WINRT)
+#elif defined(BENTLEYCONFIG_OS_WINDOWS)
     uintptr_t handle = _beginthreadex(nullptr, (unsigned) stackSize, startAddr, arg, 0, nullptr);
     if (0 == handle)
         return ERROR;

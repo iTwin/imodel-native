@@ -126,7 +126,7 @@ TEST(BeTimeUtilitiesTests, AdjustUnixMillisForLocalTime)
     int64_t retUtcMillis;
     int64_t retLocalMillis;
     DateTime dateTimeLocal(DateTime::Kind::Utc, dateTimeTemp.GetYear(), dateTimeTemp.GetMonth(), dateTimeTemp.GetDay(), dateTimeTemp.GetHour(),
-                dateTimeTemp.GetMinute(), dateTimeTemp.GetSecond(), dateTimeTemp.GetHectoNanosecond());
+                dateTimeTemp.GetMinute(), dateTimeTemp.GetSecond(), dateTimeTemp.GetMillisecond());
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeUtc.ToUnixMilliseconds(retUtcMillis));
     ASSERT_EQ(BentleyStatus::SUCCESS, dateTimeLocal.ToUnixMilliseconds(retLocalMillis));
     uint64_t localMillis = static_cast <uint64_t>(retLocalMillis - retUtcMillis);

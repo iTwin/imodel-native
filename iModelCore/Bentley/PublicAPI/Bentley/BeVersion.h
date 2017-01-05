@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/Bentley/BeVersion.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,6 +13,7 @@
 BEGIN_BENTLEY_NAMESPACE
 
 #define VERSION_FORMAT "%" PRIu16 ".%" PRIu16 ".%" PRIu16 ".%" PRIu16
+#define VERSION_FORMAT_MAJOR_MINOR "%" PRIu16 ".%" PRIu16
 #define VERSION_PARSE_FORMAT "%d.%d.%d.%d"
 
 typedef struct BeVersion& BeVersionR;
@@ -79,17 +80,24 @@ public:
 
     bool IsEmpty() const { return 0 == GetInt64(VERSION_All); }
 
-    //!Generates a string from this BeVersion.
-    //!@param[in] format Format string. <b>Only "%" PRIu16 is permitted as format specifier for the version digits.</b>
-    //!@return Version string
+    //! Generates a string from this BeVersion.
+    //! @param[in] format Format string. <b>Only "%" PRIu16 is permitted as format specifier for the version digits.</b>
+    //! @return Version string
     Utf8String ToString(Utf8CP format = VERSION_FORMAT) const
         {
         return Utf8PrintfString(format, m_major, m_minor, m_sub1, m_sub2);
         }
 
-    //!Parses version string into a BeVersion.
-    //!@param[in] versionStr Version string
-    //!@param[in] format Format string. <b>Only %d is permitted as format specifier for the version digits.</b>
+    //! Generates a 2-part version string from this BeVersion that only uses the major and minor version numbers.
+    //! @param[in] format Format string. <b>Only "%" PRIu16 is permitted as format specifier for the version digits.</b>
+    Utf8String ToMajorMinorString(Utf8CP format = VERSION_FORMAT_MAJOR_MINOR) const
+        {
+        return Utf8PrintfString(format, m_major, m_minor);
+        }
+
+    //! Parses version string into a BeVersion.
+    //! @param[in] versionStr Version string
+    //! @param[in] format Format string. <b>Only %d is permitted as format specifier for the version digits.</b>
     void FromString(Utf8CP versionStr, Utf8CP format = VERSION_PARSE_FORMAT)
         {
         int major = 0, minor = 0, sub1 = 0, sub2 = 0;
