@@ -330,7 +330,9 @@ PublisherContext::Status TilePublisher::Publish()
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
 
-    std::FILE*  outputFile = _wfopen(GetBinaryDataFileName().c_str(), L"wb");
+    BeFileName      fileName = GetBinaryDataFileName();
+
+    std::FILE*  outputFile = _wfopen(fileName.c_str(), L"wb");
 
     if (nullptr == outputFile)
         {
@@ -372,14 +374,22 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
     {
     Json::Value     jsonMesh = Json::objectValue;
     Json::Value     primitives;
+    bool            doBatchIds = false;
+
+    for (auto& tileMesh : tileMeshes)
+        if (tileMesh->ValidIdsPresent())
+            {
+            doBatchIds = true;
+            break;
+            }
 
     for (auto& tileMesh : tileMeshes)
         {
         if (!tileMesh->Triangles().empty())
-            AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++);
+            AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
         if (!tileMesh->Polylines().empty())
-            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex++); 
+            AddPolylinePrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds); 
         }
     BeAssert (!primitives.empty());
     jsonMesh["primitives"] = primitives;
@@ -1384,7 +1394,7 @@ void TilePublisher::AddMeshPointRange (Json::Value& positionValue, DRange3dCR po
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
+void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
     if (mesh.Triangles().empty())
         return;
@@ -1406,13 +1416,13 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 
     Json::Value         primitive = Json::objectValue;
 
-    if (mesh.ValidIdsPresent())
+    if (doBatchIds)
         AddMeshBatchIds(tileData, primitive, mesh.EntityIds(), idStr);
 
     DRange3d        pointRange = DRange3d::From(mesh.Points());
     bool            isTextured = false;
 
-    primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), mesh.ValidIdsPresent());
+    primitive["material"] = AddMeshMaterial (tileData, isTextured, mesh.GetDisplayParams(), mesh, idStr.c_str(), doBatchIds);
     primitive["mode"] = GLTF_TRIANGLES;
 
     Utf8String      accPositionId =  AddMeshVertexAttribute (tileData, &mesh.Points().front().x, "Position", idStr.c_str(), 3, mesh.Points().size(), "VEC3", VertexEncoding::StandardQuantization, &pointRange.low.x, &pointRange.high.x);
@@ -1442,7 +1452,7 @@ void TilePublisher::AddMeshPrimitive(Json::Value& primitivesNode, PublishTileDat
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     011/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index)
+void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds)
     {
     if (mesh.Polylines().empty())
         return;
@@ -1530,7 +1540,7 @@ void TilePublisher::AddPolylinePrimitive(Json::Value& primitivesNode, PublishTil
     primitive["attributes"]["VERTEXDELTA"]  = AddMeshVertexAttribute (tileData, &vertexDeltas.front().x, "VertexDelta", idStr.c_str(), 3, vertexDeltas.size(), "VEC3", VertexEncoding::StandardQuantization, &vertexDeltaRange.low.x, &vertexDeltaRange.high.x);
     primitive["indices"] = AddMeshIndices (tileData, "Index", indices, idStr);
 
-    if (mesh.ValidIdsPresent())
+    if (doBatchIds)
         AddMeshBatchIds(tileData, primitive, entityIds, idStr);
 
     AddMeshPointRange(tileData.m_json["accessors"][accPositionId], pointRange);
