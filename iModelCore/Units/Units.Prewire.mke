@@ -1,8 +1,8 @@
 #*--------------------------------------------------------------------------------------+
 #
-#     $Source: units.prewire.mke $
+#     $Source: Units.Prewire.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
 %include mdl.mki
@@ -11,7 +11,7 @@
 # Wire in my own public header files.
 always:
    ~linkdir "$(BuildContextPublicApiDir)Units=$(unitsPublicAPISrc)"
-
+   ~linkdir "$(BuildContextPublicApiDir)Formatting=$(SrcRoot)Units/PublicAPI/Formatting"
 
 
 
