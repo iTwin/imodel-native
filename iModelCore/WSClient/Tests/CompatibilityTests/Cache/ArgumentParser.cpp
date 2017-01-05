@@ -338,7 +338,7 @@ void ArgumentParser::PrintHelp(std::ostream* out)
     *out << "  -schemas C:\\s\\     Path to folder containing all repository schemas. Can be used to test upgrade from last known good schemas to server" << std::endl;
     *out << "Other:" << std::endl;
     *out << "  --workdir C:\\t\\    Set working directory for tests. Defaults to application folder" << std::endl;
-    *out << "  --silent           Disable console logging. File logging can be enabled with standard logging.config.xml in application folder" << std::endl;
+    *out << "  --silent           Disable console logging. This still allows using --gtest_output to get full error messages to output file." << std::endl;
     *out << "  --help             Print this help text" << std::endl;
     *out << "Examples:" << std::endl;
     *out << R"(  WSClientCompatibilityTests --workdir C:\Tests\ --createcache -url https://foo.com -r Repo -auth:basic John:Jonson)" << std::endl;

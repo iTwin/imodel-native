@@ -10,6 +10,7 @@
     <ClCompile Include="Cache\TestData.cpp" />
     <ClCompile Include="Cache\DiskRepositoryClient.cpp" />
     <ClCompile Include="Cache\DiskRepositoryClientTests.cpp" />
+    <ClCompile Include="TestUtils\GenericLogProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="TestUtils\TestsHelper.h" />
@@ -19,6 +20,8 @@
     <ClInclude Include="Cache\TestData.h" />
     <ClInclude Include="Cache\DiskRepositoryClient.h" />
     <ClInclude Include="Cache\Logging.h" />
+    <ClInclude Include="TestUtils\GenericLogProvider.h" />
+    <ClInclude Include="TestUtils\GenericLogProviderActivator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="CompatibilityTests.mke" />
