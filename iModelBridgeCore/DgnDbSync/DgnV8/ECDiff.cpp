@@ -1225,7 +1225,7 @@ ECDiffNodeP ECSchemaDiffTool::AppendRelationshipConstraint(ECDiffNodeR parent, E
     diff->Add (DiffNodeId::AbstractConstraint)->GetValue(direction).SetValue (relationshipConstraint.GetAbstractConstraint()->GetFullName());
     AppendCustomAttributes (*diff, relationshipConstraint, direction);
 
-    if (!relationshipConstraint.GetClasses().empty())
+    if (!relationshipConstraint.GetConstraintClasses().empty())
         {
         ECDiffNodeP constraintClasses = diff->Add (DiffNodeId::ConstraintClasses);
         int index = 0;
