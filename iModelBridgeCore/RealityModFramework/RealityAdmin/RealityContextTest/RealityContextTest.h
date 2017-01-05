@@ -2,7 +2,7 @@
 |
 |     $Source: RealityAdmin/RealityContextTest/RealityContextTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -107,10 +107,11 @@ public:
     std::default_random_engine  m_generator;
     std::uniform_real_distribution<double> m_distribution;
     Stats                       m_stats;
+    int                         m_userCount;
 
     UserManager();
     ~UserManager();
-    void Perform(int userCount);
+    void Perform();
     void SetupCurl(User* bench, Utf8StringCR url, Utf8StringCP retString = nullptr, FILE* fp = nullptr, Utf8StringCR postFields = Utf8String());
     void Repopulate();
     };

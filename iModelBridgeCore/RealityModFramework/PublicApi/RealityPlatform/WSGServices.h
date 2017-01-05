@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/RealityPlatform/WSGServices.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,7 +60,7 @@ public:
     WSGURL();
 
     //! Creates a WSG URL from the various provided components
-    WSGURL(Utf8String server, Utf8String protocol, Utf8String pluginName, Utf8String schema, Utf8String interface, Utf8String className, Utf8String id, bool objectContent);
+    WSGURL(Utf8String server, Utf8String protocol, Utf8String pluginName, Utf8String schema, Utf8String _interface, Utf8String className, Utf8String id, bool objectContent);
 
     //! Get/Set the server name. The string provided or returned only contains
     //! the server name without trailling or leading slashes and without the communication protocol
@@ -152,7 +152,7 @@ protected:
     StatusInt SetProtocol(Utf8String protocol);
     StatusInt SetClassName(Utf8String className);
     StatusInt SetSchema(Utf8String schema);
-    StatusInt SetInterface(WSGInterface interface);
+    StatusInt SetInterface(WSGInterface _interface);
 
 
     virtual bool _PrepareHttpRequestStringAndPayload() const;
@@ -164,7 +164,7 @@ protected:
     Utf8String m_className;
     WSGInterface m_interface;
     Utf8String m_id;
-    bool m_objectContent;
+    bool m_objectContent = false;
 
 
     mutable bool m_validRequestString;
@@ -266,7 +266,7 @@ protected:
 struct WSGObjectListPagedRequest: public WSGPagedRequest
     {
 public:
-    WSGObjectRequest(Utf8String server, Utf8String protocol, Utf8String pluginName, Utf8String schema, Utf8String className);
+    WSGObjectListPagedRequest(Utf8String server, Utf8String protocol, Utf8String pluginName, Utf8String schema, Utf8String className);
 
     
     }
@@ -298,7 +298,7 @@ public:
     bvector<Utf8String> GetSchemaNames(Utf8String serverName, Utf8String pluginName) const;
 
     //! Returns the list of classes exposed by the indicated schema for the plugin
-    GetClassNames(Utf8String pluginName, Utf8String schemaName);
+    bvector<Utf8String> GetClassNames(Utf8String pluginName, Utf8String schemaName);
 
     //! Returns the JSON fragment applying to the class definition of the requested class
     Utf8String GetJSONClassDefinition(Utf8String pluginName, Utf8String schemaName, Utf8String className);
