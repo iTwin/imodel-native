@@ -91,3 +91,9 @@ GUNITTEST_LIBS + $(MOBILEDGNSDK_LIB_DIR)$(libprefix)WebServicesClient$(libext)
 GUNITTEST_NOEXEC = 1
 
 %include $(SrcRoot)bsicommon/sharedmki/gunittest.mki
+
+#---------------------------------------------------------------------------------------+
+#   Deliver
+#---------------------------------------------------------------------------------------+
+$(BuildContext)Delivery/$(BEGTEST_NAME)$(exeext) : $(o)$(BEGTEST_NAME)$(exeext)
+    $(LinkFirstDepToFirstTarget)
