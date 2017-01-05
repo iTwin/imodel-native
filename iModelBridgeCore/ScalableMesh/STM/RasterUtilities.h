@@ -8,6 +8,7 @@
 
 #include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
 #include <ImagePP\all\h\HRFUtility.h>
+#include <ImagePP\all\h\HGFHMRStdWorldCluster.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -15,13 +16,13 @@ class RasterUtilities
     {
     private: 
 
-        static HGFHMRStdWorldCluster* s_cluster;
+        static ImagePP::HGFHMRStdWorldCluster* s_cluster;
 
     public:
 
         static HPMPool* s_rasterMemPool;
 
-        static HGFHMRStdWorldCluster* GetWorldCluster();
+        static ImagePP::HGFHMRStdWorldCluster* GetWorldCluster();
         static HFCPtr<HRFRasterFile> LoadRasterFile(WString path);
         static HFCPtr<ImagePP::HRARaster> LoadRaster(WString path);
         static HFCPtr<ImagePP::HRARaster> LoadRaster(WString path, GeoCoordinates::BaseGCSCPtr targetCS, DRange2d extentInTargetCS);
