@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/RevisionManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -558,12 +558,17 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
 
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        ECClassCR primaryClass = entry.GetPrimaryClass();
-        if (entry.IsJoinedTable() || !primaryClass.Is(elemClass))
+        if (!entry.IsMapped())
+            continue;
+
+        ECClassCP primaryClass = entry.GetPrimaryClass();
+        BeAssert(primaryClass != nullptr);
+
+        if (entry.IsJoinedTable() || !primaryClass->Is(elemClass))
             continue;
 
         DbOpcode dbOpcode = entry.GetDbOpcode();
-        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(primaryClass); // Note: ColumnIterator needs to be in the stack to access column
+        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
         DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
         DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::New);
@@ -593,11 +598,16 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
 
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        ECClassCR primaryClass = entry.GetPrimaryClass();
-        if (entry.IsJoinedTable() || !primaryClass.Is(elemClass))
+        if (!entry.IsMapped())
             continue;
 
-        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(primaryClass); // Note: ColumnIterator needs to be in the stack to access column
+        ECClassCP primaryClass = entry.GetPrimaryClass();
+        BeAssert(primaryClass != nullptr);
+
+        if (entry.IsJoinedTable() || !primaryClass->Is(elemClass))
+            continue;
+
+        ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
         DgnModelId modelId;
         switch (entry.GetDbOpcode())
@@ -623,8 +633,13 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     // Any models directly changed?
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
-        ECClassCR primaryClass = entry.GetPrimaryClass();
-        if (entry.IsJoinedTable() || !primaryClass.Is(modelClass))
+        if (!entry.IsMapped())
+            continue;
+
+        ECClassCP primaryClass = entry.GetPrimaryClass();
+        BeAssert(primaryClass != nullptr);
+
+        if (entry.IsJoinedTable() || !primaryClass->Is(modelClass))
             continue;
 
         lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);

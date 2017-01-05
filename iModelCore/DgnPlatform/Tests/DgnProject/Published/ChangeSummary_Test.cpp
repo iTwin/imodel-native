@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/ChangeSummary_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -14,7 +14,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 // The counts recorded by change summary are quite sensitive to changes in the schema and implementation...
 // Turn this on for debugging.
-// #define DUMP_CHANGE_SUMMARY 1
+#define DUMP_CHANGE_SUMMARY 1
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
@@ -797,20 +797,34 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
         ChangeSummary after setting ParentId:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:7;Generic:PhysicalObject:256;Update;No
-                LastMod;2.45749e+06;2.45749e+06
-                Origin.X;1;1
-                Origin.Y;1;1
-                Origin.Z;1;1
-                ParentId;NULL;1099511627782
-                Pitch;0;0
-                Roll;0;0
-                Yaw;0;0
-        0:7;dgn:ElementOwnsChildElements:147;Insert;No
-                SourceECClassId;NULL;Generic:PhysicalObject:256
-                SourceECInstanceId;NULL;0:6
-                TargetECClassId;NULL;Generic:PhysicalObject:256
-                TargetECInstanceId;NULL;0:7
+        0:10;Generic:PhysicalObject:327;Update;No
+                LastMod;2.45776e+06;2.45776e+06
+                Parent.Id;NULL;1099511627785
+                Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:174
+        0:10;BisCore:ElementOwnsChildElements:174;Insert;No
+                LastMod;NULL;2.45776e+06
+                Parent.Id;NULL;1099511627785
+                Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:174
+                SourceECClassId;NULL;Generic:PhysicalObject:327
+                SourceECInstanceId;NULL;0:9
+                TargetECClassId;NULL;Generic:PhysicalObject:327
+                TargetECInstanceId;NULL;0:10
+        0:10;BisCore:ElementEncapsulatesElements:245;Insert;No
+                LastMod;NULL;2.45776e+06
+                Parent.Id;NULL;1099511627785
+                Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:174
+                SourceECClassId;NULL;Generic:PhysicalObject:327
+                SourceECInstanceId;NULL;0:9
+                TargetECClassId;NULL;Generic:PhysicalObject:327
+                TargetECInstanceId;NULL;0:10
+        0:10;BisCore:PhysicalElementAssemblesElements:279;Insert;No
+                LastMod;NULL;2.45776e+06
+                Parent.Id;NULL;1099511627785
+                Parent.RelECClassId;NULL;BisCore:ElementOwnsChildElements:174
+                SourceECClassId;NULL;Generic:PhysicalObject:327
+                SourceECInstanceId;NULL;0:9
+                TargetECClassId;NULL;Generic:PhysicalObject:327
+                TargetECInstanceId;NULL;0:10
     */
     EXPECT_EQ(4, changeSummary.MakeInstanceIterator().QueryCount());
     EXPECT_TRUE(ChangeSummaryContainsInstance(changeSummary, ECInstanceId(childElementId.GetValueUnchecked()), BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements, DbOpcode::Insert)); // Captured due to change of FK relationship (ParentId column)
@@ -852,7 +866,7 @@ TEST_F(ChangeSummaryTestFixture, ElementChildRelationshipChanges)
     ASSERT_EQ(parentElementId.GetValueUnchecked(), value.GetValueUInt64());
     ASSERT_EQ(parentElementId.GetValueUnchecked(), instance.GetNewValue("Parent.Id").GetValueUInt64());
 
-    EXPECT_EQ(4, relInstance.MakeValueIterator().QueryCount());
+    EXPECT_EQ(7, relInstance.MakeValueIterator().QueryCount());
     EXPECT_EQ(3, instance.MakeValueIterator().QueryCount());
     }
 
