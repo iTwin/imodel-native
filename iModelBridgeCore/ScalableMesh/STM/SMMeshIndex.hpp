@@ -2959,7 +2959,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Update
     BcDTMPtr dtm = nodeP->GetBcDTM().get();
     if (dtm == nullptr || dtm->GetTrianglesCount() == 0) return;
     BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*dtm);
-    en->SetMaxTriangles(2000000);
+    en->SetMaxTriangles(dtm->GetBcDTM()->GetTrianglesCount());
     bvector<DPoint3d> newVertices;
     bvector<int32_t> newIndices;
     std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-5, 0));
