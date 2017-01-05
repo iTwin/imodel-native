@@ -110,7 +110,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_SmallArray)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));*/
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
