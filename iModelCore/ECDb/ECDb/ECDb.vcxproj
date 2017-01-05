@@ -311,6 +311,8 @@
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir)PublicAPI\;$(ProjectDir)ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>
+    </NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>ECDb.exe</NMakeOutput>
