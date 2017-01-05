@@ -546,7 +546,7 @@ public:
     //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = {{0,0},{-1,-1}}, Point2dCR targetSize={0,0});
+    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize={0,0});
 };
 
 //=======================================================================================
@@ -555,6 +555,7 @@ public:
 struct TileViewport : DgnViewport
 {
     BSIRect m_rect;
+    Transform m_toParent = Transform::FromIdentity();
     Render::GraphicListPtr m_terrain;
     virtual void _QueueScene() = 0;
     virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;

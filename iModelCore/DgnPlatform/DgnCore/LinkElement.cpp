@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/LinkElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -132,7 +132,7 @@ BentleyStatus LinkElement::AddToSource(DgnDbR dgndb, DgnElementId linkId, DgnEle
         }
 
     Utf8CP ecSql = "INSERT INTO " BIS_SCHEMA(BIS_REL_ElementHasLinks) " (SourceECInstanceId, TargetECInstanceId) VALUES(?, ?)";
-    CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql, dgndb.GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql, dgndb.GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
     stmt->BindId(1, sourceElementId);
@@ -526,7 +526,7 @@ BentleyStatus LinkElement::DoRemoveAllFromSource(DgnDbR dgndb, DgnElementId sour
     Utf8CP ecSqlFmt = "DELETE FROM ONLY " BIS_SCHEMA(BIS_REL_ElementHasLinks) " WHERE InVirtualSet(?, TargetECInstanceId)";
     Utf8PrintfString ecSql(ecSqlFmt, schemaName, className);
 
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECSqlWriteToken());
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
     stmt->BindInt64(1, (int64_t) &removeLinkIds);
@@ -554,7 +554,7 @@ BentleyStatus LinkElement::DoPurgeOrphaned(DgnDbCR dgndb, Utf8CP schemaName, Utf
     Utf8CP ecSqlFmt = "DELETE FROM ONLY %s.%s WHERE InVirtualSet(?, ECInstanceId)";
     Utf8PrintfString ecSql(ecSqlFmt, schemaName, className);
 
-    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECSqlWriteToken());
+    BeSQLite::EC::CachedECSqlStatementPtr stmt = dgndb.GetNonSelectPreparedECSqlStatement(ecSql.c_str(), dgndb.GetECCrudWriteToken());
     BeAssert(stmt.IsValid());
 
     stmt->BindInt64(1, (int64_t) &unusedIds);

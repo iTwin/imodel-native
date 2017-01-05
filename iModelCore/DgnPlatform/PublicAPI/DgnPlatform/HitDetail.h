@@ -158,6 +158,7 @@ struct HitDetail : RefCountedBase
 {
 protected:
     DgnViewportR        m_viewport;
+    DgnViewportP        m_sheetViewport; // null unless this hit was generated from a view attachment on a sheet
     DgnElementId        m_elementId;
     HitSource           m_locateSource;         // Operation that generated the hit.
     DPoint3d            m_testPoint;            // the point that was used to search (world coordinates).
@@ -177,7 +178,7 @@ protected:
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewportP, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
 

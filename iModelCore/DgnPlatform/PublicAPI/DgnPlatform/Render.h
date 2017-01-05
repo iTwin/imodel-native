@@ -1680,6 +1680,7 @@ struct System
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, TransformCR, ClipVectorCP) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element

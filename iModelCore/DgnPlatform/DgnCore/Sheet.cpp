@@ -156,9 +156,8 @@ double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedB
         BeAssert(false);
         return 1.0;
         }
-    auto viewExtents = viewDef->GetExtents();
 
-    return viewExtents.x / placement.GetWidth();
+    return viewDef->GetExtents().x / placement.GetWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,19 +280,16 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
     {
-    double tileSizeX = root.m_sizeNPC.x / (1 << id.m_level); // the x size of a tile for this level, in NPC
-    double tileSizeY = root.m_sizeNPC.y / (1 << id.m_level); // the y size of a tile for this level, in NPC
-
-    double east  = id.m_column * tileSizeX;
-    double west  = east + tileSizeX;
-    double north = id.m_row * tileSizeY;
-    double south = north + tileSizeY;
+    double tileSize = 1.0/ (1 << id.m_level); // the size of a tile for this level, in NPC
+    double east  = id.m_column * tileSize;
+    double west  = east + tileSize;
+    double north = id.m_row * tileSize;
+    double south = north + tileSize;
 
     m_corners.m_pts[0].Init(east, south, 0.0); 
     m_corners.m_pts[1].Init(west, south, 0.0); 
     m_corners.m_pts[2].Init(east, north, 0.0); 
     m_corners.m_pts[3].Init(west, north, 0.0); 
-
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
@@ -342,7 +338,6 @@ void Attachment::Tree::Draw(RenderContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->m_rect.Init(0, 0, m_pixels, m_pixels);
         m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         }
@@ -356,9 +351,8 @@ void Attachment::Tree::Draw(RenderContextR context)
     // the scene is available, draw its tiles
     DrawInView(context);
 
-#define DEBUG_ATTACHMENT_RANGE
 #ifdef DEBUG_ATTACHMENT_RANGE
-    ElementAlignedBox3d range(0,0,0, 1.0,1.0,1.0);
+    ElementAlignedBox3d range(0,0,0, 1.0/m_scale.x,1.0/m_scale.y,1.0);
     GetLocation().Multiply(&range.low, &range.low, 2);
 
     Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
@@ -378,28 +372,27 @@ void Attachment::Tree::Draw(RenderContextR context)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Attachment::Tree::Pick(PickContext& context)
     {
+    if (context.WasAborted())
+        return true;
+
     if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
         return false;
 
     Transform sheetToTile;
     sheetToTile.InverseOf(GetLocation());
-    Frustum box = context.GetFrustum().TransformBy(sheetToTile);
+    Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
 
     if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
         return false;
 
-    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(GetLocation());
-    context.WorldToView(frust.m_pts, frust.m_pts, 8);
-    Transform attachViewToSheetView = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
-    attachViewToSheetView.ScaleMatrixColumns(m_sizeNPC.x/m_pixels, m_sizeNPC.y/m_pixels, 1.0/frust.m_pts[NPC_LeftTopFront].z);
-
-    return context._ProcessSheetAttachment(*m_viewport, attachViewToSheetView);
+    return context._ProcessSheetAttachment(*m_viewport);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
+Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
+                T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -420,9 +413,25 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     // we use square tiles. If the view's aspect ratio isn't square, expand the short side in tile (NPC) space. We'll clip out the extra area below.
     double aspect = view->GetViewDefinition().GetAspectRatio();
     if (aspect<1.0)
-        m_sizeNPC.Init(1.0/aspect, 1.0);
+        m_scale.Init(1.0/aspect, 1.0);
     else
-        m_sizeNPC.Init(1.0, aspect);
+        m_scale.Init(1.0, aspect);
+
+    // now expand the frustum in one direction so that the view is square (so we can use square tiles)
+    m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
+    m_viewport->ChangeViewController(*view);
+    m_viewport->SetupFromViewController();
+
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
+    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    m_viewport->SetupFromFrustum(frust);
+
+    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
+    DPoint2d clipPts[5];
+    memset(clipPts, 0, sizeof(clipPts)); 
+    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
+    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
 
     auto& def=view->GetViewDefinition();
 
@@ -443,22 +452,15 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     auto& box = attach->GetPlacement().GetElementBox();
     auto range = attach->GetPlacement().CalculateRange();
     range.low.z = 0.0; // make sure we're exactly on the sheet.
-    Transform location = Transform::From(range.low);
-    location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
-    SetLocation(location);
-
-    // set a clip volume around view, in tile (NPC) coorindates. 0.0 -> 1.0 on both axes
-    DPoint2d clipPts[5];
-    memset(clipPts, 0, sizeof(clipPts)); 
-    clipPts[1].x = clipPts[2].x = clipPts[2].y = clipPts[3].y = 1.0;
-    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
+    m_viewport->m_toParent = Transform::From(range.low);
+    m_viewport->m_toParent.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    SetLocation(m_viewport->m_toParent);
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
     m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
     m_loResBiasDistance = m_hiResBiasDistance * 2.0;
-    m_viewport->ChangeViewController(*view);
     }
 
 /*---------------------------------------------------------------------------------**//**

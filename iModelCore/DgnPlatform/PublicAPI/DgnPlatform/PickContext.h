@@ -82,7 +82,7 @@ public:
 struct PickContext : ViewContext, IPickGeom, IGeometryProcessor
 {
     DEFINE_T_SUPER(ViewContext)
-    friend struct SheetPicker;
+    friend struct SheetAttachmentPicker;
 
 private:
     bool              m_doneSearching;
@@ -97,13 +97,15 @@ private:
     DPoint4d          m_pickPointView;
     double            m_pickAperture;
     double            m_pickApertureSquared;
+    double            m_pixelScale = 1.0; // only changes for sheet attachments
     uint32_t          m_overflowCount;
     LocateOptions     m_options;
     StopLocateTest*   m_stopTester;
+    DgnViewportP      m_sheetViewport = nullptr;
     GeometrySourceCP  m_currentGeomSource;
     IElemTopologyCPtr m_currElemTopo;
-    DMap4dCP          m_attachToSheet = nullptr;
 
+    void SetPickAperture(double val) {m_pickAperture=val; m_pickApertureSquared=val*val;}
     IPickGeomP _GetIPickGeom () override {return this;}
     StatusInt _OutputGeometry(GeometrySourceCR) override;
     bool _CheckStop() override;
@@ -124,7 +126,7 @@ private:
     bool TestCurveVector(CurveVectorCR, HitPriority, SimplifyGraphic const&);
     bool TestCurveVectorInterior(CurveVectorCR, HitPriority priority, SimplifyGraphic const&);
 
-    void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportR viewport);
+    void InitNpcSubRect(DPoint3dCR pickPointWorld, double pickAperture, DgnViewportCR viewport);
     void InitSearch(DPoint3dCR pickPointWorld, double pickApertureScreen, HitListP);
     bool PointWithinTolerance(DPoint4dCR testPt);
     DRay3d GetBoresite(SimplifyGraphic const&) const;
@@ -163,7 +165,7 @@ public:
     void _AddHit(HitDetailR) override;
     IElemTopologyCP _GetElemTopology() const override {return (m_currElemTopo.IsValid() ? m_currElemTopo.get() : nullptr);}
     void _SetElemTopology(IElemTopologyCP topo) override {m_currElemTopo = topo;}
-    virtual bool _ProcessSheetAttachment(DgnViewportR, TransformCR attachViewToSheetView);
+    virtual bool _ProcessSheetAttachment(TileViewport&);
 
     DGNVIEW_EXPORT PickContext(LocateOptions const& options, StopLocateTest* stopTester=nullptr);
     DGNVIEW_EXPORT bool PickElements(DgnViewportR, DPoint3dCR pickPointWorld, double pickApertureDevice, HitListP hitList);

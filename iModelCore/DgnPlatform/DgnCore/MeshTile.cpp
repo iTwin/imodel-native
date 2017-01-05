@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2820,6 +2820,7 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
                 }
 
             meshPart->AddInstance (TileMeshInstance(geom->GetEntityId(), geom->GetTransform()));
+            m_containsParts = true;
             }
         else
             {
@@ -2829,14 +2830,6 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     TileMeshList    uninstancedMeshes = GenerateMeshes (db, normalMode, twoSidedTriangles, doSurfacesOnly, true, filter, uninstancedGeometry);
 
     meshes.insert (meshes.end(), uninstancedMeshes.begin(), uninstancedMeshes.end());
-
-    static bool                 s_omitInstances = false, s_omitUninstanced = false;
-
-    if (s_omitInstances)
-        publishedTileGeometry.Parts().clear();
-
-    if (s_omitUninstanced)
-        publishedTileGeometry.Meshes().clear();
 
     return publishedTileGeometry;
     }
@@ -2917,6 +2910,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     }
                 }
             }
+
         if (!doSurfacesOnly)
             {
             auto                tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions (tolerance, TileGeometry::NormalMode::Never));
@@ -2987,8 +2981,12 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString TileUtil::GetRootNameForModel(DgnModelCR model)
     {
-    static const WString s_prefix(L"Model_");
-    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    WString name(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    name.append(1, '_');
+    WChar idBuf[17];
+    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), model.GetModelId().GetValue(), HexFormatOptions::None);
+    name.append(idBuf);
+    return name;
     }
 
  

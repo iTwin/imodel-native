@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Annotations/TextAnnotationElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -51,7 +51,7 @@ private:
 protected:
     TextAnnotationPtr m_annotation;
     
-    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECSqlWriteToken const*) override;
+    DGNPLATFORM_EXPORT virtual DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _LoadProperties(DgnElementCR) override;
     
 public:

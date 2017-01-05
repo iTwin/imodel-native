@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -393,7 +393,7 @@ DgnDbStatus TestUniqueAspect::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "=? WHERE(Element.Id=?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     stmt->BindText(1, m_testUniqueAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
@@ -417,7 +417,7 @@ DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     CachedECSqlStatementPtr stmt = el.GetDgnDb().GetNonSelectPreparedECSqlStatement(Utf8PrintfString("UPDATE %s SET " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=? WHERE(ECInstanceId=?)", GetFullEcSqlClassName().c_str()).c_str(), writeToken);
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
