@@ -1698,19 +1698,35 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
     {
     NavigationECPropertyCP baseNavProperty = baseProperty.GetAsNavigationProperty();
     if (nullptr == baseNavProperty)
+        {
+        LOG.errorv("The property %s:%s cannot be overriden by a NavigationECProperty %s:%s because it is not a NavigationECProperty.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
+        }
 
     ECRelatedInstanceDirection baseDirection = baseNavProperty->GetDirection();
     if (GetDirection() != baseDirection)
+        {
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overriden by %s:%s because they have different directions.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
+        }
 
     // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
     if (nullptr == m_relationshipClass)
         return true;
 
     ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
+    if (!m_relationshipClass->Is(baseRelClass))
+        {
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overriden by %s:%s because the relationship %s on property %s:%s is not derived from the relationship %s on property %s:%s.",
+                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str(),
+                   m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str(),
+                   baseRelClass->GetFullName(), baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str());
+        return false;
+        }
 
-    return m_relationshipClass->Is(baseRelClass);
+    return true;
     }
 
 //---------------------------------------------------------------------------------------

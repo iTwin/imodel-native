@@ -1322,7 +1322,6 @@ protected:
     virtual ECSchemaCP                  _GetContainerSchema() const override;
 
     virtual ECObjectsStatus GetProperties(bool includeBaseProperties, PropertyList* propertyList) const;
-    virtual bool Verify(bool resolveIssues = false) const;
     // schemas index class by name so publicly name can not be reset
     ECObjectsStatus SetName (Utf8StringCR name);
 
@@ -1492,8 +1491,6 @@ public:
     //! Returns true if the class is the type specified or derived from it.
     ECOBJECTS_EXPORT bool Is(ECClassCP targetClass) const;
 
-    //! Returns true if the class name  is of the type specified or derived from it.
-    ECOBJECTS_EXPORT bool Is(Utf8CP name) const;
     //! Returns true if this class matches the specified schema and class name, or is derived from a matching class
     ECOBJECTS_EXPORT bool Is(Utf8CP schemaName, Utf8CP className) const;
 
@@ -2039,7 +2036,7 @@ static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
 struct ECRelationshipConstraintClassList : NonCopyableClass
 {
 private:
-    bvector<ECClassCP> m_constraintClasses;
+    bvector<ECEntityClassCP> m_constraintClasses;
     ECRelationshipClassP m_relClass;
     
 public:
@@ -2052,18 +2049,18 @@ public:
 
     private:
         Impl *m_pimpl;
-        iterator(bvector<ECClassCP>::const_iterator x);
+        iterator(bvector<ECEntityClassCP>::const_iterator x);
 
     public:
         iterator(const iterator &);
         iterator& operator=(const iterator & rhs);
         iterator();
 
-        ECOBJECTS_EXPORT ECClassCP  operator->()const; //!< Returns the value at the current location
+        ECOBJECTS_EXPORT ECEntityClassCP  operator->()const; //!< Returns the value at the current location
         ECOBJECTS_EXPORT iterator&  operator++(); //!< Increments the iterator
         ECOBJECTS_EXPORT bool       operator!=(iterator const& rhs) const; //!< Checks for inequality
         ECOBJECTS_EXPORT bool       operator==(iterator const& rhs) const; //!< Checks for equality
-        ECOBJECTS_EXPORT ECClassCP  operator* () const; //!< Returns the value at the current location
+        ECOBJECTS_EXPORT ECEntityClassCP  operator* () const; //!< Returns the value at the current location
         ECOBJECTS_EXPORT ~iterator();
     };
 
@@ -2071,17 +2068,17 @@ public:
     ECRelationshipConstraintClassList(ECRelationshipClassP relClass) : m_relClass(relClass) {}
     ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
     ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
-    ECOBJECTS_EXPORT ECClassCP operator[](size_t x)const; //!< Array operator overloaded
+    ECOBJECTS_EXPORT ECEntityClassCP operator[](size_t x)const; //!< Array operator overloaded
     //! Adds the specified class to the constraint.
     //! @param[in] ecClass  The class to add
-    ECOBJECTS_EXPORT ECObjectsStatus Add(ECClassCR ecClass);
+    ECOBJECTS_EXPORT ECObjectsStatus Add(ECEntityClassCR ecClass);
     //! Clears the vector Constraint classes
     ECOBJECTS_EXPORT ECObjectsStatus clear();
     //! Clears the vector Constraint classes
     ECOBJECTS_EXPORT uint32_t size() const;
     //! Removes specified ECClass from constraint class vector
     //! @param[in] constraintClass The class to remove
-    ECOBJECTS_EXPORT ECObjectsStatus Remove(ECClassCR constraintClass);
+    ECOBJECTS_EXPORT ECObjectsStatus Remove(ECEntityClassCR constraintClass);
     ~ECRelationshipConstraintClassList();
 };
 
@@ -2103,7 +2100,7 @@ private:
     bool                        m_verify;
     bool                        m_verified;
     Utf8String                  m_roleLabel;
-    ECClassCP                   m_abstractConstraint;
+    ECEntityClassCP             m_abstractConstraint;
     ECRelationshipClassP        m_relClass;
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipConstraintClassList    m_constraintClasses;
@@ -2112,9 +2109,6 @@ private:
     ECObjectsStatus             SetMultiplicity(Utf8CP multiplicity, bool validate);
 
     ECObjectsStatus             SetAbstractConstraint(Utf8CP value, bool validate);
-    ECObjectsStatus             _SetAbstractConstraint(ECClassCR abstractConstraint);
-
-    ECObjectsStatus             _AddClass(ECClassCR classConstraint);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
@@ -2125,12 +2119,12 @@ private:
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
     bool                        IsValid(bool resolveIssues);
-    ECObjectsStatus             _ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
+    ECObjectsStatus             ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
     ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
-    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false);
+    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false) {return ValidateAbstractConstraint(GetAbstractConstraint(), resolveIssues);}
     ECObjectsStatus             ValidateRoleLabel(bool resolveIssues = false);
     ECObjectsStatus             ValidateClassConstraint() const;
-    ECObjectsStatus             ValidateClassConstraint(ECClassCR constraintClass) const;
+    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
     ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
     ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
@@ -2209,7 +2203,7 @@ public:
     //! If one does not exist and there is only one constraint class that constraint class will be returned. If all the previous fail to find a valid class
     //! nullptr will be returned.
     //! @return The abstract constraint ECClass if one is defined, if not found nullptr is returned.
-    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
+    ECOBJECTS_EXPORT ECEntityClassCP const GetAbstractConstraint() const;
     
     //! Determine whether the abstract constraint is set in this constraint of the relationship or inherited from a constraint in a base relationship
     ECOBJECTS_EXPORT bool IsAbstractConstraintDefined() const;
@@ -2224,7 +2218,7 @@ public:
 
     //! Remove the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove from the constraint class list
-    ECObjectsStatus RemoveClass(ECClassCR classConstraint) { return m_constraintClasses.Remove(classConstraint); }
+    ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint) { return m_constraintClasses.Remove(classConstraint); }
 
     //! Returns the classes applied to the constraint.
     //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
@@ -2289,6 +2283,7 @@ private:
 
     bool                                ValidateStrengthConstraint(StrengthType value, bool compareValue=true) const;
     bool                                ValidateStrengthDirectionConstraint(ECRelatedInstanceDirection value, bool compareValue = true) const;
+    bool                                Verify(bool resolveIssues = false) const;
 
 protected:
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const override;
@@ -2301,8 +2296,6 @@ protected:
     virtual ECObjectsStatus             _AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts = false, bool validate = true) override;
     virtual ECObjectsStatus             _RemoveBaseClass(ECClassCR baseClass) override;
     virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::RelationshipClass; }
-
-    virtual bool                        _Verify(bool resolveIssues = false) const override;
 
 //__PUBLISH_SECTION_START__
 public:

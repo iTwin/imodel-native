@@ -734,7 +734,11 @@ bool ECSchema::Validate(bool resolveIssues)
     bool isValid = true;
     for (ECClassP ecClass : GetClasses())
         {
-        if (!ecClass->_Verify(resolveIssues))
+        ECRelationshipClassP relClass = ecClass->GetRelationshipClassP();
+        if (nullptr == relClass)
+            continue;
+
+        if (!relClass->Verify(resolveIssues))
             isValid = false;
         }
 
