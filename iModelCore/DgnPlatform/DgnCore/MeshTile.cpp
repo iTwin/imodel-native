@@ -2980,8 +2980,12 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString TileUtil::GetRootNameForModel(DgnModelCR model)
     {
-    static const WString s_prefix(L"Model_");
-    return s_prefix + WString(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    WString name(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    name.append(1, '_');
+    WChar idBuf[17];
+    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), model.GetModelId().GetValue(), HexFormatOptions::None);
+    name.append(idBuf);
+    return name;
     }
 
  
