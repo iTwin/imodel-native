@@ -2,7 +2,7 @@
 |
 |     $Source: ILinearElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <LinearReferencingInternal.h>
@@ -36,13 +36,17 @@ ILinearlyLocated::ILinearlyLocated():
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ILinearlyLocated::_SetLinearElementId(DgnElementId linearElementId)
     {
+    DgnDbStatus status;
+
     if (linearElementId.IsValid())
-        ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
+        status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, ECValue(linearElementId.GetValue()));
     else
         {
         ECValue val; val.SetToNull();
-        ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
+        status = ToElementR().SetPropertyValue(BLR_PROP_ILinearlyLocated_ILinearElement, val);
         }
+
+    BeAssert(DgnDbStatus::Success == status);
     }
 
 /*---------------------------------------------------------------------------------**//**

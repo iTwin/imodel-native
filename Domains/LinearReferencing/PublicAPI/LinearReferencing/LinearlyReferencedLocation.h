@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/LinearReferencing/LinearlyReferencedLocation.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -59,7 +59,7 @@ protected:
     virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedAtLocation; }
     virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 
-    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) override;
+    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
     virtual bool _HasChanges() const override;
@@ -93,7 +93,7 @@ protected:
     virtual Utf8CP _GetECClassName() const override { return BLR_CLASS_LinearlyReferencedFromToLocation; }
     virtual Utf8CP _GetSuperECClassName() const override { return T_Super::_GetECClassName(); }
 
-    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken) override;
+    virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
     virtual bool _HasChanges() const override;

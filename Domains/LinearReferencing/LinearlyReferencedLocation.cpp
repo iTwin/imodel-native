@@ -2,7 +2,7 @@
 |
 |     $Source: LinearlyReferencedLocation.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <LinearReferencingInternal.h>
@@ -51,7 +51,7 @@ bool LinearlyReferencedAtLocation::_HasChanges() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
+DgnDbStatus LinearlyReferencedAtLocation::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " "
@@ -153,7 +153,7 @@ bool LinearlyReferencedFromToLocation::_HasChanges() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
+DgnDbStatus LinearlyReferencedFromToLocation::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedFromToLocation) " "
