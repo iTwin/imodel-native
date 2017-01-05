@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlSelectTestDataset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlSelectTestDataset.h"
@@ -2037,13 +2037,13 @@ ECSqlTestDataset ECSqlSelectTestDataset::OrderByTests (int rowCountPerClass)
     ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY UPPER (S)";
     ECSqlTestFrameworkHelper::AddSelect (dataset, ecsql, 1, 10);
 
-    ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetX(P3D) DESC";
+    ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY P3D.X DESC";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 10);
 
-    ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY GetZ(P3D) ASC";
+    ecsql = "SELECT I FROM ecsql.PSA WHERE I < L ORDER BY P3D.Z ASC";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 1, 10);
 
-    ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY GetZ(P2D)";
+    ecsql = "SELECT I, S FROM ecsql.PSA ORDER BY P2D.Z";
     ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     //constant value exp as order by -> no-op
@@ -2430,14 +2430,14 @@ ECSqlTestDataset ECSqlSelectTestDataset::PointTests( int rowCountPerClass )
     ecsql = "SELECT I FROM ecsql.PSA WHERE P3D BETWEEN POINT3D (0,0,0) AND POINT3D (10,10,10)";
     ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
 
-    ecsql = "SELECT GetX(P2D), GetY(P2D) FROM ecsql.PSA";
+    ecsql = "SELECT P2D.X, P2D.Y FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 2, rowCountPerClass);
 
-    ecsql = "SELECT GetX(P3D), GetY(P3D), GetZ(P3D) FROM ecsql.PSA";
+    ecsql = "SELECT P3D.X, P3D.Y, P3D.Z FROM ecsql.PSA";
     ECSqlTestFrameworkHelper::AddSelect(dataset, ecsql, 3, rowCountPerClass);
 
-    ecsql = "SELECT GetZ(P2D) FROM ecsql.PSA";
-    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::NotYetSupported);
+    ecsql = "SELECT P2D.Z FROM ecsql.PSA";
+    ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql, ECSqlExpectedResult::Category::Invalid);
 
     return dataset;
     }

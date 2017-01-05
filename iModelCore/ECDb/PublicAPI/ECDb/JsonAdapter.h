@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/JsonAdapter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -545,7 +545,7 @@ struct JsonInserter : NonCopyableClass
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @remarks Holds some cached state to speed up future inserts of the same class. Keep the 
         //! inserter around when inserting many instances of the same class. 
-        JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken) : m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass, writeToken) {}
+        JsonInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecClass(ecClass), m_ecinstanceInserter(ecdb, ecClass, writeToken) {}
 
         //! Indicates whether this JsonInserter is valid and can be used to insert JSON instances.
         //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
@@ -596,7 +596,7 @@ struct JsonUpdater : NonCopyableClass
         //!            Pass without ECSQLOPTIONS keyword.
         //! @remarks Holds some cached state to speed up future updates of the same class. Keep the 
         //! inserter around when updating many instances of the same class. 
-        JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, writeToken, ecsqlOptions) {}
+        JsonUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions = nullptr) : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceUpdater(ecdb, ecClass, writeToken, ecsqlOptions) {}
 
         //! Indicates whether this JsonUpdater is valid and can be used to update JSON instances.
         //! It is not valid, if @p ecClass is not mapped or not instantiable for example.
@@ -654,7 +654,7 @@ struct JsonDeleter : NonCopyableClass
         //! If the option is not set, nullptr can be passed for @p writeToken.
         //! @remarks Holds some cached state to speed up future deletes of the same class. Keep the 
         //! deleter around when deleting many instances of the same class. 
-        JsonDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken) : m_ecinstanceDeleter(ecdb, ecClass, writeToken) {}
+        JsonDeleter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken) : m_ecinstanceDeleter(ecdb, ecClass, writeToken) {}
 
         //! Indicates whether this JsonDeleter is valid and can be used to delete instances.
         //! It is not valid, if @p ecClass is not mapped for example.

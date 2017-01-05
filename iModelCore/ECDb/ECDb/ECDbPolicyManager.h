@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbPolicyManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -60,14 +60,10 @@ struct ECDbPolicy
 struct ECDbPolicyAssertion
     {
     public:
-        //=======================================================================================
-        //! Available policy assertions
-        // @bsiclass                                                Krischan.Eberle      12/2013
-        //+===============+===============+===============+===============+===============+======
         enum class Type
             {
-            ClassIsValidInECSql, //!< @see ClassIsValidInECSqlPolicyAssertion
-            ECSqlPermission,
+            ClassIsValidInECSql,
+            ECCrudPermission,
             MayModifyDbSchema
             };
 
@@ -127,21 +123,21 @@ struct ClassIsValidInECSqlPolicyAssertion : ECDbPolicyAssertion
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct ECSqlPermissionPolicyAssertion : ECDbPolicyAssertion
+struct ECCrudPermissionPolicyAssertion : ECDbPolicyAssertion
     {
     private:
         ECDbCR m_ecdb;
-        ECSqlType m_ecsqlType;
-        ECSqlWriteToken const* m_token;
+        bool m_isWriteOperation;
+        ECCrudWriteToken const* m_token;
 
     public:
-        ECSqlPermissionPolicyAssertion(ECDbCR ecdb, ECSqlType ecsqlType, ECSqlWriteToken const* token)
-            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECSqlPermission), m_ecdb(ecdb), m_ecsqlType(ecsqlType), m_token(token)
+        ECCrudPermissionPolicyAssertion(ECDbCR ecdb, bool isWriteOperation, ECCrudWriteToken const* token)
+            : ECDbPolicyAssertion(ECDbPolicyAssertion::Type::ECCrudPermission), m_ecdb(ecdb), m_isWriteOperation(isWriteOperation), m_token(token)
             {}
 
         ECDbCR GetECDb() const { return m_ecdb; }
-        ECSqlType GetECSqlType() const { return m_ecsqlType; }
-        ECSqlWriteToken const* GetToken() const { return m_token; }
+        bool IsWriteOperation() const { return m_isWriteOperation; }
+        ECCrudWriteToken const* GetToken() const { return m_token; }
     };
 
 //=======================================================================================
@@ -173,7 +169,7 @@ struct ECDbPolicyManager
         ~ECDbPolicyManager();
 
         static ECDbPolicy DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const&);
-        static ECDbPolicy DoGetPolicy(ECSqlPermissionPolicyAssertion const&);
+        static ECDbPolicy DoGetPolicy(ECCrudPermissionPolicyAssertion const&);
         static ECDbPolicy DoGetPolicy(MayModifyDbSchemaPolicyAssertion const&);
 
     public:

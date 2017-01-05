@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonReaderTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -198,6 +198,58 @@ TEST_F(JsonReaderTests, JsonValueStruct)
         WriteJsonToFile(afterImportFile.GetName(), jsonValue);
         ASSERT_TRUE(false) << "Inserted and Retrieved Json doesn't match";
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(JsonReaderTests, PartialPoints)
+    {
+    ECDbCR ecdb = SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
+    JsonECSqlSelectAdapter adapter(selStmt);
+
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    Json::Value actualJson;
+    ASSERT_TRUE(adapter.GetRowInstance(actualJson));
+    selStmt.Finalize();
+
+    //ECSqlStatement fills the NULL coordinates with the SQLite defaults for NULL which is 0
+    ASSERT_STREQ("1,0", actualJson["P2D"].asCString());
+    ASSERT_STREQ("0,2,0", actualJson["P3D"].asCString());
+    ASSERT_STREQ("0,3", actualJson["PStructProp"]["p2d"].asCString());
+    ASSERT_STREQ("0,0,4", actualJson["PStructProp"]["p3d"].asCString());
+
+    JsonReader reader(ecdb, testClass->GetId());
+    actualJson = Json::Value();
+    ASSERT_EQ(SUCCESS, reader.ReadInstance(actualJson, key.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
+
+    ASSERT_DOUBLE_EQ(1.0, actualJson["P2D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["P2D"]["y"].asDouble());
+
+    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(2.0, actualJson["P3D"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["P3D"]["z"].asDouble());
+
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p2d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(3.0, actualJson["PStructProp"]["p2d"]["y"].asDouble());
+
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["x"].asDouble());
+    ASSERT_DOUBLE_EQ(0.0, actualJson["PStructProp"]["p3d"]["y"].asDouble());
+    ASSERT_DOUBLE_EQ(4.0, actualJson["PStructProp"]["p3d"]["z"].asDouble());
     }
 
 END_ECDBUNITTESTS_NAMESPACE

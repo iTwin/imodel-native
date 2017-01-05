@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -121,9 +121,9 @@ void ECDb::_OnRemoveFunction(DbFunction& func) const { m_pimpl->OnRemoveFunction
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSqlWriteToken const& ECDb::EnableECSqlWriteTokenValidation() 
+ECCrudWriteToken const& ECDb::EnableECCrudWriteTokenValidation() 
     {
-    return m_pimpl->m_tokenManager.EnableECSqlWriteTokenValidation(); 
+    return m_pimpl->m_tokenManager.EnableECCrudWriteTokenValidation(); 
     }
 
 //--------------------------------------------------------------------------------------
@@ -175,9 +175,9 @@ void ECDb::AddAppData(AppData::Key const& key, AppData* appData, bool deleteOnCl
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2016
 //---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const
+BentleyStatus ECDb::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
-    return m_pimpl->OpenBlobIO(blobIO, ecClass, propertyAccessString, ecinstanceId, writable);
+    return m_pimpl->OpenBlobIO(blobIO, ecClass, propertyAccessString, ecinstanceId, writable, writeToken);
     }
 
 //--------------------------------------------------------------------------------------

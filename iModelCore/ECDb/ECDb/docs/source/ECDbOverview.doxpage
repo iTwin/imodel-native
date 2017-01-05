@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/source/ECDbOverview.doxpage $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -443,6 +443,9 @@
     the Navigation Property has subclasses. Callers must make sure
     to set the RelECClassId along with the Id when inserting an ECInstance. ECDb does not enforce that, nor validate the specified
     values.
+    Likewise ECDb's referential integrity does not clean up the RelECClassId values. If for an ECRelationshipClass with OnDelete action 'SetNull', a parent is deleted,
+    the navigation property's Id value is set to NULL, but the RelECClassId's value is not changed.
+    
 
     @see BentleyApi::BeSQLite::EC::ECSqlStatement::BindNavigationValue
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -63,7 +63,7 @@ void ECSqlStatement::Finalize() { m_pimpl->Finalize(); }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token) { return m_pimpl->Prepare(ecdb, ecsql, token); }
+ECSqlStatus ECSqlStatement::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) { return m_pimpl->Prepare(ecdb, ecsql, token); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      06/2013

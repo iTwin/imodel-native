@@ -3527,6 +3527,37 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GetValueWithPartialPoints)
+    {
+    ECDbCR ecdb = SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    
+    //The coordinates of partial points being NULL in the ECDb file will be returned as 0 as this is what SQLite
+    //implicitly returns when calling GetValueDouble on a NULL column.
+    ASSERT_TRUE(DPoint2d::From(1.0, 0.0).AlmostEqual(selStmt.GetValuePoint2d(0))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 2.0, 0.0).AlmostEqual(selStmt.GetValuePoint3d(1))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint2d::From(0.0, 3.0).AlmostEqual(selStmt.GetValuePoint2d(2))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 0.0, 4.0).AlmostEqual(selStmt.GetValuePoint3d(3))) << selStmt.GetECSql();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4441,14 +4472,14 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetX(Center), GetY(Center), GetZ(Center) FROM ts.Sub1 LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Center.X, Center.Y, Center.Z FROM ts.Sub1 LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1.0, stmt.GetValueDouble(0));
     ASSERT_EQ(2.0, stmt.GetValueDouble(1));
     ASSERT_EQ(3.0, stmt.GetValueDouble(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE GetX(Center) > 0 AND GetY(Center) > 0 AND GetZ(Center) > 0"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE Center.X > 0 AND Center.Y > 0 AND Center.Z > 0"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ECSqlStatement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -69,7 +69,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! the ECDb file was set-up with the option "ECSQL write token validation".
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return ECSqlStatus::Success or error codes
-        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECSqlWriteToken const* token);
+        ECDB_EXPORT ECSqlStatus Prepare(ECDb const& ecdb, Utf8CP ecsql, ECCrudWriteToken const* token);
 
         //! Indicates whether this statement is already prepared or not.
         //! @return true, if it is prepared. false otherwise
@@ -554,7 +554,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache : NonCopyableClass
         //! the ECDb file was set-up with the "require ECSQL write token" option.
         //! If the option is not set, nullptr can be passed for @p token.
         //! @return Prepared and ready-to-use statement or nullptr in case of preparation or other errors
-        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECSqlWriteToken const* token) const;
+        ECDB_EXPORT CachedECSqlStatementPtr GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const;
 
         //! Returns whether the cache is currently empty or not.
         //! @return true if cache is empty, false otherwise

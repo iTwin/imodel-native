@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlCommonTestDataset.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlCommonTestDataset.h"
@@ -312,6 +312,37 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereBasicsTests (ECSqlType ecsqlType, 
         ecsql.Sprintf("%s WHERE P3D", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
+        ecsql.Sprintf("%s WHERE P2D.X >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P2D.Y >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P2D.Z >= -11.111", pClassECSqlStub.c_str());
+        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
+
+        ecsql.Sprintf("%s WHERE P3D.X >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P3D.Y >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P3D.Z >= -11.111", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE P2D.X >= P3D.X AND P2D.Y >= P3D.Y", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        //with parentheses around
+        ecsql.Sprintf("%s WHERE (P2D.X) >= (P3D.X) AND (P2D.Y) >= (P3D.Y)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (P2D.X >= P3D.X) AND (P2D.Y >= P3D.Y)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
+        ecsql.Sprintf("%s WHERE (P2D.X >= P3D.X AND P2D.Y >= P3D.Y)", pClassECSqlStub.c_str());
+        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
+
         ecsql.Sprintf("%s WHERE ?", pClassECSqlStub.c_str());
         ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
@@ -612,58 +643,6 @@ ECSqlTestDataset ECSqlCommonTestDataset::WhereFunctionTests (ECSqlType ecsqlType
         auto& testItem = ECSqlTestFrameworkHelper::AddPrepareFailing (dataset, ecsql.c_str (), ECSqlExpectedResult::Category::Invalid);
         testItem.AddParameterValue (ECSqlTestItem::ParameterValue (ECValue (DateTime (2012,1,1))));
         }
-
-        ecsql.Sprintf("%s WHERE GetX(P2D) >= -11.111", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetY(P2D) >= -11.111", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetZ(P2D) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-        
-        ecsql.Sprintf("%s WHERE GetX(P3D) >= -11.111", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetY(P3D) >= -11.111", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetZ(P3D) >= -11.111", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D)", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        //with parentheses around function calls
-        ecsql.Sprintf("%s WHERE (GetX(P2D)) >= (GetX(P3D)) AND (GetY(P2D)) >= (GetY(P3D))", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE (GetX(P2D) >= GetX(P3D)) AND (GetY(P2D) >= GetY(P3D))", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE (GetX(P2D) >= GetX(P3D) AND GetY(P2D) >= GetY(P3D))", pClassECSqlStub.c_str());
-        AddTestItem(dataset, ecsqlType, ecsql.c_str(), rowCountPerClass);
-
-        ecsql.Sprintf("%s WHERE GetX(?) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetY(?) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetZ(?) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetX(NULL) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetX(Bi) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetX(D) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
-
-        ecsql.Sprintf("%s WHERE GetX(S) >= -11.111", pClassECSqlStub.c_str());
-        ECSqlTestFrameworkHelper::AddPrepareFailing(dataset, ecsql.c_str(), ECSqlExpectedResult::Category::Invalid);
 
         ecsql.Sprintf("%s WHERE InVirtualSet(?, ECInstanceId)", pClassECSqlStub.c_str());
         AddTestItem(dataset, ecsqlType, ecsql.c_str(), 0);
