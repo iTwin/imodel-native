@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ChangeSummary.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,7 +24,7 @@ ECDB_TYPEDEFS(ColumnMap);
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 typedef RefCountedPtr<TableMap> TableMapPtr;
-typedef bmap<Utf8String, ColumnMap> ColumnMapByAccessString;
+typedef bmap<Utf8String, ColumnMapP> ColumnMapByAccessString;
 
 //=======================================================================================
 //! @private internal use only
@@ -43,42 +43,6 @@ private:
 public:
     IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}
-};
-
-//=======================================================================================
-//! Information on mappings to a column
-// @bsiclass                                              Ramanujam.Raman      07/2015
-//=======================================================================================
-struct ColumnMap
-{
-private:
-    Utf8String m_physicalColumnName;
-    Utf8String m_overflowColumnName;
-    bool m_isOverflowColumn = false;
-    int m_physicalColumnIndex = -1;
-public:
-    //! Constructor
-    ColumnMap() {}
-
-    //! Constructor
-    ColumnMap(Utf8StringCR physicalColumnName, int physicalColumnIndex, bool isOverflowColumn, Utf8StringCR overflowColumnName)
-        : m_physicalColumnName(physicalColumnName), m_physicalColumnIndex(physicalColumnIndex), m_isOverflowColumn(isOverflowColumn), m_overflowColumnName(overflowColumnName)
-        {}
-
-    //! Gets the name of the physical column
-    Utf8StringCR GetPhysicalName() const { return m_physicalColumnName; }
-
-    //! Gets the index of the physical column in the table
-    int GetPhysicalIndex() const { return m_physicalColumnIndex; }
-
-    //! Returns true if it's a overflow column.
-    bool IsOverflow() const { return m_isOverflowColumn; }
-
-    //! Gets the name of the overflow column (if applicable)
-    Utf8StringCR GetOverflowName() const { return m_overflowColumnName; }
-
-    //! Returns true if the column has been initialized
-    bool IsValid() const { return m_physicalColumnIndex >= 0; }
 };
 
 //=======================================================================================
@@ -120,26 +84,25 @@ struct ChangeIterator
         ChangeIteratorCR m_iterator;
         Changes::Change m_change;
 
-        SqlChangeCP m_sqlChange = nullptr;
-        TableMapCP m_tableMap = nullptr;
+        SqlChangeCP m_sqlChange;
+        TableMapCP m_tableMap;
         ECInstanceId m_primaryInstanceId;
-        ECN::ECClassCP m_primaryClass = nullptr;
-
-        bool m_isValid = false;
+        ECN::ECClassCP m_primaryClass;
+        static const Utf8String s_emptyString;
 
         RowEntry(ChangeIteratorCR iterator, Changes::Change const& change);
 
         void Initialize();
-        bool MoveToMappedChange();
-        bool InitPrimaryInstance();
-        ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const;
+        void InitPrimaryInstance();
         void InitSqlChange();
         void FreeSqlChange();
+        void Reset();
 
     public:
         ECDB_EXPORT ~RowEntry();
 
-        bool IsValid() const { return m_isValid; }
+        //! Returns true if the entry points to a row that's mapped to a ECClass
+        ECDB_EXPORT bool IsMapped() const;
 
         //! Get the table name of the current change
         ECDB_EXPORT Utf8StringCR GetTableName() const;
@@ -151,7 +114,7 @@ struct ChangeIterator
         ECDB_EXPORT DbOpcode GetDbOpcode() const;
 
         //! Get the primary class of the current change
-        ECN::ECClassCR GetPrimaryClass() const { return *m_primaryClass; }
+        ECN::ECClassCP GetPrimaryClass() const { return m_primaryClass; }
 
         //! Get the (primary) instance id of the current change
         ECInstanceId GetPrimaryInstanceId() const { return m_primaryInstanceId; }
@@ -159,19 +122,23 @@ struct ChangeIterator
         //! Make an iterator over the changed columns of the specified class
         ECDB_EXPORT ColumnIterator MakeColumnIterator(ECN::ECClassCR ecClass) const;
 
+        //! Make an iterator over the changed columns of the primary class mapped to the table
+        ECDB_EXPORT ColumnIterator MakePrimaryColumnIterator() const;
+
         //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
         ECDB_EXPORT int GetIndirect() const;
 
         ECDB_EXPORT RowEntry& operator++();
 
         RowEntry const& operator* () const { return *this; }
-        bool operator!=(RowEntry const& rhs) const { return (m_change != rhs.m_change) || (m_isValid != rhs.m_isValid); }
-        bool operator==(RowEntry const& rhs) const { return (m_change == rhs.m_change) && (m_isValid == rhs.m_isValid); }
+        bool operator!=(RowEntry const& rhs) const { return m_change != rhs.m_change; }
+        bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
         SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
         TableMapCP GetTableMap() const { return m_tableMap; } //!< @private
-        DbDupValue QueryValueFromDb(Utf8StringCR physicalColumnName) const; //!< @private
+        ChangeIteratorCR GetIterator() const {return m_iterator;}  //!< @private
+        ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
     };
 
     //! An entry in the ColumnInterator
@@ -183,16 +150,19 @@ struct ChangeIterator
         ECDbCR m_ecdb;
         SqlChangeCP m_sqlChange;
         ColumnIteratorCR m_columnIterator;
-        ColumnMapByAccessString const& m_columnMaps;
         ColumnMapByAccessString::const_iterator m_columnMapIterator;
+        bool m_isValid = false;
+        static const Utf8String s_emptyString;
 
-        ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString const& columnMaps, ColumnMapByAccessString::const_iterator columnMapIterator);
+        ColumnEntry(ColumnIteratorCR columnIterator);
+        ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString::const_iterator columnMapIterator);
 
         DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap) const;
         
     public:
-        Utf8StringCR GetPropertyAccessString() const { return m_columnMapIterator->first; }
-
+        //! Get the access string for the EC property corresponding to this column
+        ECDB_EXPORT Utf8StringCR GetPropertyAccessString() const;
+            
         //! Get the old or new value from the change
         ECDB_EXPORT DbDupValue GetValue(Changes::Change::Stage stage) const;
 
@@ -202,15 +172,11 @@ struct ChangeIterator
         //! Returns true if the column stores the primary key
         ECDB_EXPORT bool IsPrimaryKeyColumn() const;
 
-        ColumnEntry& operator++()
-            {
-            m_columnMapIterator++;
-            return *this;
-            }
+        ECDB_EXPORT ColumnEntry& operator++();
 
-        ColumnEntry const& operator*() const { return *this; }  //!< @private
-        bool operator!=(ColumnEntry const& rhs) const { return m_columnMapIterator != rhs.m_columnMapIterator; }
-        bool operator==(ColumnEntry const& rhs) const { return m_columnMapIterator == rhs.m_columnMapIterator; }
+        ColumnEntry const& operator*() const { return *this; }
+        ECDB_EXPORT bool operator!=(ColumnEntry const& rhs) const;
+        ECDB_EXPORT bool operator==(ColumnEntry const& rhs) const;
     };
 
     //! Iterator to go over changed columns
@@ -224,11 +190,9 @@ struct ChangeIterator
         SqlChangeCP m_sqlChange;
         TableClassMapCP m_tableClassMap;
 
-        ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCR ecClass);
+        ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCP ecClass);
 
     public:
-        ECDB_EXPORT ECN::ECClassCR GetClass() const;
-
         //! Get the column for the specified property access string
         ECDB_EXPORT ColumnEntry GetColumn(Utf8CP propertyAccessString) const;
 
@@ -239,7 +203,6 @@ struct ChangeIterator
 
         RowEntryCR GetRowEntry() const { return m_rowEntry; } //!< @private
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
-        TableClassMapCP GetTableClassMap() const { return m_tableClassMap; } //!< @private
         SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
     };
 

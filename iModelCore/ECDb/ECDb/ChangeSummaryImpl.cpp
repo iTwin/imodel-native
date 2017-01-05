@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeSummaryImpl.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -19,6 +19,8 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 int ChangeSummary::s_count = 0;
 IsChangedInstanceSqlFunction* ChangeSummary::s_isChangedInstanceSqlFunction = nullptr;
+const Utf8String ChangeIterator::RowEntry::s_emptyString = "";
+const Utf8String ChangeIterator::ColumnEntry::s_emptyString = "";
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
@@ -226,11 +228,32 @@ TableClassMapCP TableMap::GetTableClassMap(ECClassCR ecClass) const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     04/2016
+// @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
 TableClassMap::TableClassMap(ECDbCR ecdb, TableMapCR tableMap, ECN::ECClassCR ecClass) : m_ecdb(ecdb), m_tableMap(tableMap), m_class(ecClass)
     {
     Initialize();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+TableClassMap::~TableClassMap()
+    {
+    FreeColumnMaps();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+void TableClassMap::FreeColumnMaps()
+    {
+    for (auto it = m_columnMapByAccessString.begin(); it != m_columnMapByAccessString.end(); it++)
+        {
+        ColumnMapP columnMap = it->second;
+        delete columnMap;
+        }
+    m_columnMapByAccessString.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -289,7 +312,7 @@ void TableClassMap::AddColumnMapsForProperty(SingleColumnDataPropertyMap const& 
     Utf8StringCR physicalColumnName = isOverflowColumn ? column.GetPhysicalOverflowColumn()->GetName() : column.GetName();
     int physicalColumnIndex = m_tableMap.GetColumnIndexByName(physicalColumnName);
 
-    m_columnMapByAccessString[singleColumnMap.GetAccessString()] = ColumnMap(physicalColumnName, physicalColumnIndex, isOverflowColumn, overflowColumnName);
+    m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(physicalColumnName, physicalColumnIndex, isOverflowColumn, overflowColumnName);
     }
 
 //---------------------------------------------------------------------------------------
@@ -297,18 +320,8 @@ void TableClassMap::AddColumnMapsForProperty(SingleColumnDataPropertyMap const& 
 //---------------------------------------------------------------------------------------
 bool TableClassMap::ContainsColumn(Utf8CP propertyAccessString) const
     {
-    bmap<Utf8String, ColumnMap>::const_iterator iter = m_columnMapByAccessString.find(propertyAccessString);
+    ColumnMapByAccessString::const_iterator iter = m_columnMapByAccessString.find(propertyAccessString);
     return iter != m_columnMapByAccessString.end();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     04/2016
-//---------------------------------------------------------------------------------------
-ColumnMap const& TableClassMap::GetColumn(Utf8CP propertyAccessString) const
-    {
-    bmap<Utf8String, ColumnMap>::const_iterator iter = m_columnMapByAccessString.find(propertyAccessString);
-    BeAssert(iter != m_columnMapByAccessString.end());
-    return iter->second;
     }
 
 //---------------------------------------------------------------------------------------
@@ -802,204 +815,7 @@ ChangeExtractor::ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ChangeExtractor::~ChangeExtractor()
-    { 
-    FreeTableMap(); 
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-// static
-ClassMapCP ChangeExtractor::GetClassMap(ECDbCR ecdb, ECClassId classId)
-    {
-    ECN::ECClassCP ecClass = ecdb.Schemas().GetECClass(classId);
-    if (ecClass == nullptr)
-        {
-        BeAssert(false && "Couldn't determine the class corresponding to the change.");
-        return nullptr;
-        }
-
-    ClassMapCP classMap = ecdb.Schemas().GetDbMap().GetClassMap(*ecClass);
-    return classMap;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-TableMapCP ChangeExtractor::GetTableMap(Utf8StringCR tableName) const
-    {
-    if (m_tableMapByName.find(tableName.c_str()) == m_tableMapByName.end())
-        {
-        AddTableToMap(tableName);
-        BeAssert(m_tableMapByName.find(tableName.c_str()) != m_tableMapByName.end());
-        }
-
-    return m_tableMapByName[tableName.c_str()].get();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::AddTableToMap(Utf8StringCR tableName) const
-    {
-    TableMapPtr tableMap = TableMap::Create(m_ecdb, tableName);
-    BeAssert(tableMap.IsValid());
-
-    m_tableMapByName[tableName.c_str()] = tableMap;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::FreeTableMap()
-    {
-    m_tableMapByName.clear();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-ECClassId ChangeExtractor::GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const
-    {
-    const DbOpcode dbOpcode = m_sqlChange->GetDbOpcode();
-    if (dbOpcode == DbOpcode::Insert || dbOpcode == DbOpcode::Delete)
-        return m_sqlChange->GetValueId<ECClassId>(m_tableMap->GetColumnIndexByName(classIdColumnName));
-
-    /* if (dbOpcode == DbOpcode::Update) */
-    return m_tableMap->QueryValueId<ECClassId>(classIdColumnName, instanceId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-bool ChangeExtractor::RecordInstance(TableClassMapCR tableClassMap, ECInstanceId instanceId, DbOpcode dbOpcode)
-    {
-    Utf8StringCR tableName = m_tableMap->GetTableName();
-    ECClassId classId = tableClassMap.GetClass().GetId();
-
-    bool instanceExisted = m_instancesTable.ContainsInstance(classId, instanceId);
-
-    ChangeSummary::Instance instance(m_changeSummary, classId, instanceId, dbOpcode, m_sqlChange->GetIndirect(), tableName);
-    m_instancesTable.InsertOrUpdate(instance);
-
-    bool updatedProperties = false;
-    auto const& columnMaps = tableClassMap.GetColumnMapByAccessString();
-    for (auto it = columnMaps.begin(); it != columnMaps.end(); it++)
-        {
-        Utf8StringCR accessString = it->first;
-        ColumnMap const& columnMap = it->second;
-
-        if (m_sqlChange->IsPrimaryKeyColumn(columnMap.GetPhysicalIndex()))
-            continue; // Primary key columns are always included in an update
-
-        if (RecordColumValue(instance, columnMap, accessString)) // Returns true if there was an update
-            updatedProperties = true;
-        }
-
-    if (dbOpcode == DbOpcode::Update && !instanceExisted && !updatedProperties)
-        {
-        // TODO: Clean up and simplify this logic for end table cases. 
-        MapStrategy mapStrategy = tableClassMap.GetClassMap()->GetMapStrategy().GetStrategy();
-        bool isEndTableRel = (mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
-                              mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
-
-        // If recording an update for the first time, and none of the properties have really been updated, remove record of the updated instance
-        if (!isEndTableRel)
-            {
-            m_instancesTable.Delete(classId, instanceId);
-            return false;
-            }
-        }
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-bool ChangeExtractor::RecordColumValue(ChangeSummary::InstanceCR instance, ColumnMap const& columnMap, Utf8StringCR accessString)
-    {
-    ECN::ECClassId classId = instance.GetClassId();
-    ECInstanceId instanceId = instance.GetInstanceId();
-    
-    DbValue oldValue(nullptr), newValue(nullptr);
-    m_sqlChange->GetValues(oldValue, newValue, columnMap.GetPhysicalIndex());
-
-    DbDupValue oldDupValue(nullptr), newDupValue(nullptr); // declared early 'cos these need to be held in memory
-    if (columnMap.IsOverflow())
-        {
-        oldDupValue = ExtractOverflowValue(oldValue, columnMap);
-        newDupValue = ExtractOverflowValue(newValue, columnMap);
-
-        oldValue = DbValue(oldDupValue.GetSqlValueP());
-        newValue = DbValue(newDupValue.GetSqlValueP());
-        }
-    
-    bool hasOldValue = oldValue.IsValid() && !oldValue.IsNull();
-    bool hasNewValue = newValue.IsValid() && !newValue.IsNull();
-    
-    // TOOD: Need to re-examine this logic - why do we need this? Also, we do hvae
-    // to check the overflow case. 
-    DbOpcode dbOpcode = instance.GetDbOpcode();
-    if (dbOpcode != m_sqlChange->GetDbOpcode())
-        {
-        /*
-        * Note: In the case of FKEY relationships, an insert or delete can be caused by an update
-        * to the table. In these cases, all the old or new values necessary may not be part of
-        * change record since update records only changed values.
-        * We make an attempt to retrieve these values from the current state of the Db.
-        */
-        BeAssert(!columnMap.IsOverflow());
-        BeAssert(dbOpcode == DbOpcode::Insert || dbOpcode == DbOpcode::Delete);
-        BeAssert(m_sqlChange->GetDbOpcode() == DbOpcode::Update);
-
-        if (dbOpcode == DbOpcode::Insert && !hasNewValue)
-            {
-            newValue = m_tableMap->QueryValueFromDb(columnMap.GetPhysicalName(), instanceId);
-            hasNewValue = newValue.IsValid() && !newValue.IsNull();
-            }
-        else if (dbOpcode == DbOpcode::Delete && !hasOldValue)
-            {
-            oldValue = m_tableMap->QueryValueFromDb(columnMap.GetPhysicalName(), instanceId);
-            hasOldValue = oldValue.IsValid() && !oldValue.IsNull();
-            }
-        }
-
-    if (!hasOldValue && !hasNewValue) // Do not persist entirely empty fields
-        return false;
-
-    m_valuesTable.Insert(classId, instanceId, accessString.c_str(), oldValue, newValue);
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-DbDupValue ChangeExtractor::ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap)
-    {
-    if (!columnValue.IsValid() || columnValue.IsNull())
-        return DbDupValue(nullptr);
-
-    // TODO: Avoid using the common shared cache
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT json_extract(?,?)");
-    BeAssert(stmt.IsValid());
-
-    Utf8PrintfString extractPropExpr("$.%s", columnMap.GetOverflowName().c_str());
-
-    stmt->BindDbValue(1, columnValue);
-    stmt->BindText(2, extractPropExpr.c_str(), Statement::MakeCopy::No);
-
-    DbResult result = stmt->Step();
-    BeAssert(result == BE_SQLITE_ROW);
-
-    return stmt->GetDbValue(0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap) const
+int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntryCR rowEntry) const
     {
     if (propertyMap == nullptr)
         return -1;
@@ -1009,127 +825,197 @@ int ChangeExtractor::GetFirstColumnIndex(PropertyMap const* propertyMap) const
     if (columnsDisp.GetColumns().size() != 1)
         return -1;
 
-    return m_tableMap->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
+    return rowEntry.GetTableMap()->GetColumnIndexByName(columnsDisp.GetColumns()[0]->GetName());
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
+// @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes, bool includeRelationshipInstances)
+BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances)
     {
     // Pass 1
-    BentleyStatus status = ExtractFromSqlChanges(changes, ExtractOption::InstancesOnly);
+    BentleyStatus status = FromChangeSet(changeSet, ExtractOption::InstancesOnly);
     if (SUCCESS != status || !includeRelationshipInstances)
         return status;
 
     // Pass 2
-    return ExtractFromSqlChanges(changes, ExtractOption::RelationshipInstancesOnly);
+    return FromChangeSet(changeSet, ExtractOption::RelationshipInstancesOnly);
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
+// @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChanges(Changes& changes, ExtractOption extractOption)
+BentleyStatus ChangeExtractor::FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption)
     {
-    for (Changes::Change const& change : changes)
+    ChangeIterator iter(m_ecdb, changeSet);
+    for (ChangeIterator::RowEntry const& rowEntry : iter)
         {
-        SqlChange sqlChange(change);
-        BentleyStatus status = ExtractFromSqlChange(sqlChange, extractOption);
-        if (SUCCESS != status)
-            return status;
-        }
+        if (!rowEntry.IsMapped())
+            {
+            if (rowEntry.GetTableName().StartsWith("ec_"))
+                {
+                rowEntry.GetSqlChange()->GetChange().Dump(m_ecdb, false, 1);
+                BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summaries are not reliable.");
+                return ERROR;
+                }
 
-    return SUCCESS;
-    }
+            BeAssert(false && "Found unmapped entries in the change set. Change summary will not be complete!");
+            return ERROR;
+            }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus ChangeExtractor::ExtractFromSqlChange(SqlChange const& sqlChange, ExtractOption extractOption)
-    {
-    m_extractOption = extractOption;
-    m_sqlChange = &sqlChange;
+        ECClassCP primaryClass = rowEntry.GetPrimaryClass();
+        ECInstanceId primaryInstanceId = rowEntry.GetPrimaryInstanceId();
+        if (primaryClass == nullptr || !primaryInstanceId.IsValid())
+            {
+            BeAssert(false && "Couldn't determine the primary instance corresponding to a change.");
+            return ERROR;
+            }
 
-    Utf8StringCR tableName = m_sqlChange->GetTableName();
-    if (tableName.StartsWith("ec_"))
-        {
-        sqlChange.GetChange().Dump(m_ecdb, false, 1);
-        BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summary cannot be created.");
-        return ERROR;
-        }
-
-    m_tableMap = GetTableMap(tableName);
-    BeAssert(m_tableMap != nullptr);
-    if (!m_tableMap->IsMapped())
-        {
-        LOG.infov("ChangeSummary skipping table %s since it's not mapped", m_tableMap->GetTableName().c_str());
-        return SUCCESS;
-        }
-
-    ECInstanceId primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetECInstanceIdColumn().GetPhysicalIndex());
-    BeAssert(primaryInstanceId.IsValid());
-
-    if (m_sqlChange->GetDbOpcode() == DbOpcode::Update && !m_tableMap->QueryInstance(primaryInstanceId))
-        {
-        // Note: The instance doesn't exist anymore, and has been deleted in future change to the Db.
-        // Processing updates requires that the instance is still available in the Db to extract sufficient EC information, 
-        // especially since a SqlChangeSet records only the updated columns but not the entire row. 
-        BeAssert(false && "SqlChangeSet does not span all modifications made to the Db");
-        return ERROR;
-        }
-
-    ECClassId primaryClassId;
-    if (m_tableMap->ContainsECClassIdColumn())
-        primaryClassId = GetClassIdFromChangeOrTable(m_tableMap->GetECClassIdColumn().GetPhysicalName().c_str(), primaryInstanceId);
-    else
-        primaryClassId = m_tableMap->GetECClassId();
-
-    ECN::ECClassCP primaryClass = m_ecdb.Schemas().GetECClass(primaryClassId);
-    if (primaryClass == nullptr)
-        {
-        BeAssert(false && "Couldn't determine the class corresponding to the change.");
-        return ERROR;
-        }
-
-    TableClassMapCP tableClassMap = m_tableMap->GetTableClassMap(*primaryClass);
-    if (!tableClassMap->IsMapped())
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (m_extractOption == ExtractOption::InstancesOnly && !tableClassMap->GetClassMap()->IsRelationshipClassMap())
-        {
-        ExtractInstance(*tableClassMap, primaryInstanceId);
-        return SUCCESS;
-        }
+        if (extractOption == ExtractOption::InstancesOnly && !primaryClass->IsRelationshipClass())
+            {
+            ExtractInstance(rowEntry);
+            continue;
+            }
         
-    if (m_extractOption == ExtractOption::RelationshipInstancesOnly)
-        {
-        ExtractRelInstance(*tableClassMap, primaryInstanceId);
-        return SUCCESS;
+        if (extractOption == ExtractOption::RelationshipInstancesOnly)
+            {
+            ExtractRelInstances(rowEntry);
+            continue;
+            }
         }
 
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
+// @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractInstance(TableClassMapCR tableClassMap, ECInstanceId instanceId)
+void ChangeExtractor::ExtractInstance(ChangeIterator::RowEntryCR rowEntry)
     {
-    RecordInstance(tableClassMap, instanceId, m_sqlChange->GetDbOpcode());
+    ChangeSummary::Instance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
+    bool recordOnlyIfUpdatedProperties = (rowEntry.GetDbOpcode() == DbOpcode::Update);
+    RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+void ChangeExtractor::ExtractRelInstances(ChangeIterator::RowEntryCR rowEntry)
+    {
+    ECClassCP primaryClass = rowEntry.GetPrimaryClass();
+
+    ClassMap const* classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(*primaryClass);
+    BeAssert(classMap != nullptr);
+
+    ClassMap::Type type = classMap->GetType();
+    if (type == ClassMap::Type::RelationshipLinkTable)
+        {
+        BeAssert(nullptr != dynamic_cast<RelationshipClassLinkTableMap const*> (classMap));
+        RelationshipClassLinkTableMap const* relClassMap = static_cast<RelationshipClassLinkTableMap const*>(classMap);
+
+        ExtractRelInstanceInLinkTable(rowEntry, *relClassMap);
+        return;
+        }
+
+    bvector<ECClassId> const& relClassIds = rowEntry.GetTableMap()->GetMappedForeignKeyRelationshipClasses();
+    for (ECClassId relClassId : relClassIds)
+        {
+        ECN::ECClassCP relClass = m_ecdb.Schemas().GetECClass(relClassId);
+        BeAssert(relClass != nullptr);
+
+        RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass));
+        BeAssert(relClassMap != nullptr);
+
+        ExtractRelInstanceInEndTable(rowEntry, *relClassMap);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassLinkTableMap const& relClassMap)
+    {
+    ChangeSummary::Instance instance(m_changeSummary, rowEntry.GetPrimaryClass()->GetId(), rowEntry.GetPrimaryInstanceId(), rowEntry.GetDbOpcode(), rowEntry.GetIndirect(), rowEntry.GetTableName());
+
+    ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
+    GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, rowEntry, relClassMap, instance.GetInstanceId(), ECRelationshipEnd_Source);
+
+    ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
+    GetRelEndInstanceKeys(oldTargetInstanceKey, newTargetInstanceKey, rowEntry, relClassMap, instance.GetInstanceId(), ECRelationshipEnd_Target);
+
+    RecordRelInstance(instance, rowEntry, oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-bool ChangeExtractor::RecordRelInstance(TableClassMapCR tableClassMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
-    {
-    if (!RecordInstance(tableClassMap, instanceId, dbOpcode))
-        return false;
+void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassEndTableMap const& relClassMap)
+    {    
+    ECClassId relClassId = relClassMap.GetClass().GetId();
+    ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
+    ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
 
-    ECClassId classId = tableClassMap.GetClass().GetId();
+    // Check that this end of the relationship matches the actual class found.
+    ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
+    if (!ClassIdMatchesConstraint(relClassId, thisEnd, thisEndClassId))
+        return;
+
+    ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
+
+    ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
+    ECN::ECRelationshipEnd referencedEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    GetRelEndInstanceKeys(oldOtherEndInstanceKey, newOtherEndInstanceKey, rowEntry, relClassMap, relInstanceId, referencedEnd);
+
+    if (!newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
+        return;
+
+    // Check if the other end of the relationship matches the actual class found. 
+    if (newOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newOtherEndInstanceKey.GetECClassId()))
+        return;
+    if (oldOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldOtherEndInstanceKey.GetECClassId()))
+        return;
+
+    DbOpcode relDbOpcode;
+    if (newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
+        relDbOpcode = DbOpcode::Insert;
+    else if (!newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid())
+        relDbOpcode = DbOpcode::Delete;
+    else /* if (newOtherEndInstanceKey.IsValid() && oldOtherEndInstanceKey.IsValid()) */
+        relDbOpcode = DbOpcode::Update;
+
+    ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
+    ECInstanceKey invalidKey;
+    oldSourceInstanceKey = newSourceInstanceKey = oldTargetInstanceKey = newTargetInstanceKey = nullptr;
+    if (thisEnd == ECRelationshipEnd_Source)
+        {
+        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
+        oldTargetInstanceKey = &oldOtherEndInstanceKey;
+        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
+        newTargetInstanceKey = &newOtherEndInstanceKey;
+        }
+    else
+        {
+        oldSourceInstanceKey = &oldOtherEndInstanceKey;
+        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &thisEndInstanceKey : &invalidKey;
+        newSourceInstanceKey = &newOtherEndInstanceKey;
+        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &thisEndInstanceKey : &invalidKey;
+        }
+
+    ChangeSummary::Instance instance(m_changeSummary, relClassId, relInstanceId, relDbOpcode, rowEntry.GetIndirect(), rowEntry.GetTableName());
+
+    RecordRelInstance(instance, rowEntry, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     10/2015
+//---------------------------------------------------------------------------------------
+bool ChangeExtractor::RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey)
+    {
+    bool recordOnlyIfUpdatedProperties = false; // Even if any of the properties of the relationship is not updated, the relationship needs to be recorded since the source/target keys would have changed (to get here)
+    RecordInstance(instance, rowEntry, recordOnlyIfUpdatedProperties);
+
+    ECClassId classId = instance.GetClassId();
+    ECInstanceId instanceId = instance.GetInstanceId();
 
     m_valuesTable.Insert(classId, instanceId, "SourceECClassId", oldSourceKey.IsValid() ? oldSourceKey.GetECClassId() : ECClassId(), newSourceKey.IsValid() ? newSourceKey.GetECClassId() : ECClassId());
     m_valuesTable.Insert(classId, instanceId, "SourceECInstanceId", oldSourceKey.IsValid() ? oldSourceKey.GetECInstanceId() : ECInstanceId(), newSourceKey.IsValid() ? newSourceKey.GetECInstanceId() : ECInstanceId());
@@ -1140,133 +1026,84 @@ bool ChangeExtractor::RecordRelInstance(TableClassMapCR tableClassMap, ECInstanc
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
+// @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstance(TableClassMapCR tableClassMap, ECInstanceId relInstanceId)
+void ChangeExtractor::RecordInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, bool recordOnlyIfUpdatedProperties)
     {
-    ClassMap::Type type = tableClassMap.GetClassMap()->GetType();
+    ECN::ECClassId classId = instance.GetClassId();
+    ECInstanceId instanceId = instance.GetInstanceId();
 
-    if (type == ClassMap::Type::RelationshipLinkTable)
+    bool removeIfNotUpdatedProperties = false;
+    if (recordOnlyIfUpdatedProperties)
+        removeIfNotUpdatedProperties = !m_instancesTable.ContainsInstance(classId, instanceId);
+
+    m_instancesTable.InsertOrUpdate(instance);
+
+    bool updatedProperties = false;
+    for (ChangeIterator::ColumnEntry const& columnEntry : rowEntry.MakePrimaryColumnIterator())
         {
-        ExtractRelInstanceInLinkTable(tableClassMap, relInstanceId);
-        return;
+        if (columnEntry.IsPrimaryKeyColumn())
+            continue;  // Primary key columns need not be included in the values table
+
+        if (RecordValue(instance, columnEntry))
+            updatedProperties = true;
         }
 
-    bvector<ECClassId> const& relClassIds = m_tableMap->GetMappedForeignKeyRelationshipClasses();
-    for (ECClassId relClassId : relClassIds)
+    if (removeIfNotUpdatedProperties && !updatedProperties)
         {
-        ECN::ECClassCP relClass = m_ecdb.Schemas().GetECClass(relClassId);
-        BeAssert(relClass != nullptr);
-
-        TableClassMapCP tableRelClassMap = m_tableMap->GetTableClassMap(*relClass);
-        if (!tableRelClassMap->IsMapped())
-            {
-            BeAssert(false); // Can this really happen??
-            continue;
-            }
-
-        ExtractRelInstanceInEndTable(*tableRelClassMap, relInstanceId, tableClassMap.GetClass().GetId());
+        // If recording an update for the first time, and none of the properties have really been updated, remove record of the updated instance
+        m_instancesTable.Delete(classId, instanceId);
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+bool ChangeExtractor::RecordValue(ChangeSummary::InstanceCR instance, ChangeIterator::ColumnEntryCR columnEntry)
+    {
+    DbOpcode dbOpcode = instance.GetDbOpcode();
+
+    DbDupValue oldValue(nullptr);
+    if (dbOpcode != DbOpcode::Insert)
+        oldValue = columnEntry.GetValue(Changes::Change::Stage::Old);
+
+    DbDupValue newValue(nullptr);
+    if (dbOpcode != DbOpcode::Delete)
+        newValue = columnEntry.GetValue(Changes::Change::Stage::New);
+
+    bool hasOldValue = oldValue.IsValid() && !oldValue.IsNull();
+    bool hasNewValue = newValue.IsValid() && !newValue.IsNull();
+
+    if (!hasOldValue && !hasNewValue) // Do not persist entirely empty fields
+        return false;
+
+    m_valuesTable.Insert(instance.GetClassId(), instance.GetInstanceId(), columnEntry.GetPropertyAccessString().c_str(), oldValue, newValue);
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInEndTable(TableClassMapCR tableRelClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId)
-    {
-    BeAssert(nullptr != dynamic_cast<RelationshipClassEndTableMap const*> (tableRelClassMap.GetClassMap()));
-    RelationshipClassEndTableMap const* relClassMap = static_cast<RelationshipClassEndTableMap const*>(tableRelClassMap.GetClassMap());
-
-    // Check that this end of the relationship matches the actual class found.
-    ECClassId relClassId = relClassMap->GetClass().GetId();
-    ECN::ECRelationshipEnd foreignEnd = relClassMap->GetForeignEnd();
-    if (!ClassIdMatchesConstraint(relClassId, foreignEnd, foreignEndClassId))
-        return;
-
-    ECInstanceKey foreignEndInstanceKey(foreignEndClassId, relInstanceId);
-
-    ECInstanceKey oldReferencedEndInstanceKey, newReferencedEndInstanceKey;
-    ECN::ECRelationshipEnd referencedEnd = (foreignEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    GetRelEndInstanceKeys(oldReferencedEndInstanceKey, newReferencedEndInstanceKey, *relClassMap, relInstanceId, referencedEnd);
-
-    if (!newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
-        return;
-
-    // Check if the other end of the relationship matches the actual class found. 
-    if (newReferencedEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newReferencedEndInstanceKey.GetECClassId()))
-        return;
-    if (oldReferencedEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldReferencedEndInstanceKey.GetECClassId()))
-        return;
-
-    DbOpcode relDbOpcode;
-    if (newReferencedEndInstanceKey.IsValid() && !oldReferencedEndInstanceKey.IsValid())
-        relDbOpcode = DbOpcode::Insert;
-    else if (!newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid())
-        relDbOpcode = DbOpcode::Delete;
-    else /* if (newReferencedEndInstanceKey.IsValid() && oldReferencedEndInstanceKey.IsValid()) */
-        relDbOpcode = DbOpcode::Update;
-
-    ECInstanceKeyCP oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey;
-    ECInstanceKey invalidKey;
-    oldSourceInstanceKey = newSourceInstanceKey = oldTargetInstanceKey = newTargetInstanceKey = nullptr;
-    if (foreignEnd == ECRelationshipEnd_Source)
-        {
-        oldSourceInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
-        oldTargetInstanceKey = &oldReferencedEndInstanceKey;
-        newSourceInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
-        newTargetInstanceKey = &newReferencedEndInstanceKey;
-        }
-    else
-        {
-        oldSourceInstanceKey = &oldReferencedEndInstanceKey;
-        oldTargetInstanceKey = (relDbOpcode != DbOpcode::Insert) ? &foreignEndInstanceKey : &invalidKey;
-        newSourceInstanceKey = &newReferencedEndInstanceKey;
-        newTargetInstanceKey = (relDbOpcode != DbOpcode::Delete) ? &foreignEndInstanceKey : &invalidKey;
-        }
-
-    RecordRelInstance(tableRelClassMap, foreignEndInstanceKey.GetECInstanceId(), relDbOpcode, *oldSourceInstanceKey, *newSourceInstanceKey, *oldTargetInstanceKey, *newTargetInstanceKey);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInLinkTable(TableClassMapCR tableClassMap, ECInstanceId relInstanceId)
-    {
-    BeAssert(nullptr != dynamic_cast<RelationshipClassLinkTableMap const*> (tableClassMap.GetClassMap()));
-    RelationshipClassLinkTableMap const* relClassMap = static_cast<RelationshipClassLinkTableMap const*>(tableClassMap.GetClassMap());
-
-    ECInstanceKey oldSourceInstanceKey, newSourceInstanceKey;
-    GetRelEndInstanceKeys(oldSourceInstanceKey, newSourceInstanceKey, *relClassMap, relInstanceId, ECRelationshipEnd_Source);
-
-    ECInstanceKey oldTargetInstanceKey, newTargetInstanceKey;
-    GetRelEndInstanceKeys(oldTargetInstanceKey, newTargetInstanceKey, *relClassMap, relInstanceId, ECRelationshipEnd_Target);
-
-    RecordRelInstance(tableClassMap, relInstanceId, m_sqlChange->GetDbOpcode(), oldSourceInstanceKey, newSourceInstanceKey, oldTargetInstanceKey, newTargetInstanceKey);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     10/2015
-//---------------------------------------------------------------------------------------
-void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
+void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const
     {
     oldInstanceKey = newInstanceKey = ECInstanceKey();
 
-    int instanceIdColumnIndex = GetFirstColumnIndex(relClassMap.GetConstraintECInstanceIdPropMap(relEnd));
+    int instanceIdColumnIndex = GetFirstColumnIndex(relClassMap.GetConstraintECInstanceIdPropMap(relEnd), rowEntry);
     BeAssert(instanceIdColumnIndex >= 0);
 
     ECInstanceId oldEndInstanceId, newEndInstanceId;
-    m_sqlChange->GetValueIds(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
+    rowEntry.GetSqlChange()->GetValueIds(oldEndInstanceId, newEndInstanceId, instanceIdColumnIndex);
 
     if (newEndInstanceId.IsValid())
         {
-        ECClassId newClassId = GetRelEndClassId(relClassMap, relInstanceId, relEnd, newEndInstanceId);
+        ECClassId newClassId = GetRelEndClassId(rowEntry, relClassMap, relInstanceId, relEnd, newEndInstanceId);
         BeAssert(newClassId.IsValid());
         newInstanceKey = ECInstanceKey(newClassId, newEndInstanceId);
         }
 
     if (oldEndInstanceId.IsValid())
         {
-        ECClassId oldClassId = GetRelEndClassId(relClassMap, relInstanceId, relEnd, oldEndInstanceId);
+        ECClassId oldClassId = GetRelEndClassId(rowEntry, relClassMap, relInstanceId, relEnd, oldEndInstanceId);
         BeAssert(oldClassId.IsValid());
         oldInstanceKey = ECInstanceKey(oldClassId, oldEndInstanceId);
         }
@@ -1275,7 +1112,7 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const
+ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const
     {
     ConstraintECClassIdPropertyMap const* classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
@@ -1340,17 +1177,18 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(RelationshipClassMapCR relClass
             return classId;
 
         // Search in the end table
-        classId = GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), endInstanceId);
+        classId = rowEntry.GetIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), endInstanceId);
         BeAssert(classId.IsValid());
+
         return classId;
         }
 
     // Case #3: End could be in many tables
     Utf8StringCR classIdColumnName = classIdColumn->GetName();
-    int classIdColumnIndex = m_tableMap->GetColumnIndexByName(classIdColumnName);
+    int classIdColumnIndex = rowEntry.GetTableMap()->GetColumnIndexByName(classIdColumnName);
     BeAssert(classIdColumnIndex >= 0);
 
-    ECClassId classId = GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
+    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
     BeAssert(classId.IsValid());
     return classId;
     }
@@ -1461,9 +1299,7 @@ ChangeSummary::~ChangeSummary()
 BentleyStatus ChangeSummary::FromChangeSet(IChangeSet& changeSet, ChangeSummary::Options const& options)
     {
     Initialize();
-
-    Changes changes = changeSet.GetChanges();
-    return m_changeExtractor->ExtractFromSqlChanges(changes, options.GetIncludeRelationshipInstances());
+    return m_changeExtractor->FromChangeSet(changeSet, options.GetIncludeRelationshipInstances());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2064,51 +1900,62 @@ ChangeIterator::RowEntry::~RowEntry()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
+void ChangeIterator::RowEntry::Reset()
+    {
+    m_sqlChange = nullptr;
+    m_tableMap = nullptr;
+    m_primaryInstanceId = ECInstanceId();
+    m_primaryClass = nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
 void ChangeIterator::RowEntry::Initialize()
     {
-    m_isValid = MoveToMappedChange();
-    if (!m_isValid)
+    Reset();
+    if (!m_change.IsValid())
         return;
 
-    m_isValid = InitPrimaryInstance();
+    InitSqlChange();
+
+    Utf8StringCR tableName = m_sqlChange->GetTableName();
+    if (tableName.StartsWith("ec_"))
+        return;
+
+    m_tableMap = m_iterator.GetTableMap(tableName);
+    BeAssert(m_tableMap != nullptr);
+
+    if (m_tableMap->IsMapped())
+        InitPrimaryInstance();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-bool ChangeIterator::RowEntry::MoveToMappedChange()
+bool ChangeIterator::RowEntry::IsMapped() const
     {
-    while (m_change.IsValid())
-        {
-        InitSqlChange();
-
-        Utf8StringCR tableName = m_sqlChange->GetTableName();
-        if (tableName.StartsWith("ec_"))
-            {
-            m_sqlChange->GetChange().Dump(GetDb(), false, 1);
-            BeAssert(false && "ChangeSet includes changes to the ECSchema. Change summaries are not reliable.");
-            return false;
-            }
-
-        m_tableMap = m_iterator.GetTableMap(tableName);
-        BeAssert(m_tableMap != nullptr);
-        if (m_tableMap->IsMapped())
-            return true;
-
-        LOG.infov("ChangeSummary skipping table %s since it's not mapped", m_tableMap->GetTableName().c_str());
-        ++m_change;
-        }
-
-    return false;
+    return m_primaryClass != nullptr;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-bool ChangeIterator::RowEntry::InitPrimaryInstance()
+void ChangeIterator::RowEntry::InitPrimaryInstance()
     {
+    BeAssert(m_tableMap->IsMapped());
+
     m_primaryInstanceId = m_sqlChange->GetValueId<ECInstanceId>(m_tableMap->GetECInstanceIdColumn().GetPhysicalIndex());
     BeAssert(m_primaryInstanceId.IsValid());
+
+    if (m_sqlChange->GetDbOpcode() == DbOpcode::Update && !m_tableMap->QueryInstance(m_primaryInstanceId))
+        {
+        // Note: The instance doesn't exist anymore, and has been deleted in future change to the Db.
+        // Processing updates requires that the instance is still available in the Db to extract sufficient EC information, 
+        // especially since a SqlChangeSet records only the updated columns but not the entire row. 
+        BeAssert(false && "SqlChangeSet does not span all modifications made to the Db");
+        return;
+        }
 
     ECClassId primaryClassId;
     if (m_tableMap->ContainsECClassIdColumn())
@@ -2117,13 +1964,7 @@ bool ChangeIterator::RowEntry::InitPrimaryInstance()
         primaryClassId = m_tableMap->GetECClassId();
 
     m_primaryClass = m_ecdb.Schemas().GetECClass(primaryClassId);
-    if (m_primaryClass == nullptr)
-        {
-        BeAssert(false && "Couldn't determine the class corresponding to the change.");
-        return false;
-        }
-
-    return true;
+    BeAssert(m_primaryClass != nullptr && "Couldn't determine the class corresponding to the change.");
     }
 
 //---------------------------------------------------------------------------------------
@@ -2163,7 +2004,13 @@ void ChangeIterator::RowEntry::FreeSqlChange()
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
 Utf8StringCR ChangeIterator::RowEntry::GetTableName() const
-    { 
+    {
+    if (m_tableMap == nullptr)
+        {
+        BeAssert(false);
+        return s_emptyString;
+        }
+
     return m_tableMap->GetDbTable()->GetName(); 
     }
 
@@ -2171,7 +2018,13 @@ Utf8StringCR ChangeIterator::RowEntry::GetTableName() const
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
 bool ChangeIterator::RowEntry::IsJoinedTable() const
-    { 
+    {
+    if (m_tableMap == nullptr)
+        {
+        BeAssert(false);
+        return false;
+        }
+
     return m_tableMap->GetDbTable()->GetType() == DbTable::Type::Joined; 
     }
 
@@ -2179,7 +2032,8 @@ bool ChangeIterator::RowEntry::IsJoinedTable() const
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
 DbOpcode ChangeIterator::RowEntry::GetDbOpcode() const
-    { 
+    {
+    BeAssert(m_sqlChange != nullptr);
     return m_sqlChange->GetDbOpcode(); 
     }
 
@@ -2188,14 +2042,23 @@ DbOpcode ChangeIterator::RowEntry::GetDbOpcode() const
 //---------------------------------------------------------------------------------------
 ChangeIterator::ColumnIterator ChangeIterator::RowEntry::MakeColumnIterator(ECClassCR ecClass) const
     {
-    return ChangeIterator::ColumnIterator(*this, ecClass);
+    return ChangeIterator::ColumnIterator(*this, &ecClass);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::ColumnIterator ChangeIterator::RowEntry::MakePrimaryColumnIterator() const
+    {
+    return ChangeIterator::ColumnIterator(*this, GetPrimaryClass());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
 int ChangeIterator::RowEntry::GetIndirect() const
-    { 
+    {
+    BeAssert(m_sqlChange != nullptr);
     return m_sqlChange->GetIndirect(); 
     }
 
@@ -2204,7 +2067,7 @@ int ChangeIterator::RowEntry::GetIndirect() const
 //---------------------------------------------------------------------------------------
 ChangeIterator::RowEntry& ChangeIterator::RowEntry::operator++()
     {
-   ++ m_change;
+    ++m_change;
     Initialize();
     return *this;
     }
@@ -2212,26 +2075,13 @@ ChangeIterator::RowEntry& ChangeIterator::RowEntry::operator++()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-DbDupValue ChangeIterator::RowEntry::QueryValueFromDb(Utf8StringCR physicalColumnName) const
+ChangeIterator::ColumnIterator::ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCP ecClass) : m_rowEntry(rowEntry), m_ecdb(rowEntry.GetDb()), m_sqlChange(rowEntry.GetSqlChange()), m_tableClassMap(nullptr)
     {
-    return m_tableMap->QueryValueFromDb(physicalColumnName, m_primaryInstanceId);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
-ChangeIterator::ColumnIterator::ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCR ecClass) : m_rowEntry(rowEntry), m_ecdb(rowEntry.GetDb()), m_sqlChange(rowEntry.GetSqlChange())
-    {
-    m_tableClassMap = rowEntry.GetTableMap()->GetTableClassMap(ecClass);
-    BeAssert(m_tableClassMap->IsMapped());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     12/2016
-//---------------------------------------------------------------------------------------
-ECClassCR ChangeIterator::ColumnIterator::GetClass() const
-    {
-    return m_tableClassMap->GetClass();
+    if (ecClass != nullptr)
+        {
+        m_tableClassMap = rowEntry.GetTableMap()->GetTableClassMap(*ecClass);
+        BeAssert(m_tableClassMap != nullptr && m_tableClassMap->IsMapped());
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -2239,9 +2089,10 @@ ECClassCR ChangeIterator::ColumnIterator::GetClass() const
 //---------------------------------------------------------------------------------------
 ChangeIterator::ColumnEntry ChangeIterator::ColumnIterator::GetColumn(Utf8CP propertyAccessString) const
     {
-    ColumnMapByAccessString const& columnMaps = m_tableClassMap->GetColumnMapByAccessString();
-    ColumnMapByAccessString::const_iterator it = columnMaps.find(propertyAccessString);
-    return ChangeIterator::ColumnEntry(*this, columnMaps, it);
+    if (m_tableClassMap == nullptr)
+        return ChangeIterator::ColumnEntry(*this);
+
+    return ChangeIterator::ColumnEntry(*this, m_tableClassMap->GetColumnMapByAccessString().find(propertyAccessString));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2249,8 +2100,10 @@ ChangeIterator::ColumnEntry ChangeIterator::ColumnIterator::GetColumn(Utf8CP pro
 //---------------------------------------------------------------------------------------
 ChangeIterator::ColumnEntry ChangeIterator::ColumnIterator::begin() const
     {
-    ColumnMapByAccessString const& columnMaps = m_tableClassMap->GetColumnMapByAccessString();
-    return ChangeIterator::ColumnEntry(*this, columnMaps, columnMaps.begin());
+    if (m_tableClassMap == nullptr)
+        return ChangeIterator::ColumnEntry(*this);
+
+    return ChangeIterator::ColumnEntry(*this, m_tableClassMap->GetColumnMapByAccessString().begin());
     }
 
 //---------------------------------------------------------------------------------------
@@ -2258,15 +2111,24 @@ ChangeIterator::ColumnEntry ChangeIterator::ColumnIterator::begin() const
 //---------------------------------------------------------------------------------------
 ChangeIterator::ColumnEntry ChangeIterator::ColumnIterator::end() const
     {
-    ColumnMapByAccessString const& columnMaps = m_tableClassMap->GetColumnMapByAccessString();
-    return ChangeIterator::ColumnEntry(*this, columnMaps, columnMaps.end());
+    if (m_tableClassMap == nullptr)
+        return ChangeIterator::ColumnEntry(*this);
+
+    return ChangeIterator::ColumnEntry(*this, m_tableClassMap->GetColumnMapByAccessString().end());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
-ChangeIterator::ColumnEntry::ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString const& columnMaps, ColumnMapByAccessString::const_iterator columnMapIterator)
-    : m_ecdb(columnIterator.GetDb()), m_sqlChange(columnIterator.GetSqlChange()), m_columnIterator(columnIterator), m_columnMaps(columnMaps), m_columnMapIterator(columnMapIterator)
+ChangeIterator::ColumnEntry::ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString::const_iterator columnMapIterator)
+    : m_columnIterator(columnIterator), m_ecdb(columnIterator.GetDb()), m_sqlChange(columnIterator.GetSqlChange()), m_columnMapIterator(columnMapIterator), m_isValid(true)
+    {
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::ColumnEntry::ColumnEntry(ColumnIteratorCR columnIterator) : m_columnIterator(columnIterator), m_ecdb(columnIterator.GetDb()), m_isValid(false)
     {
     }
 
@@ -2275,6 +2137,8 @@ ChangeIterator::ColumnEntry::ColumnEntry(ColumnIteratorCR columnIterator, Column
 //---------------------------------------------------------------------------------------
 DbDupValue ChangeIterator::ColumnEntry::ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap) const
     {
+    BeAssert(m_isValid);
+
     if (!columnValue.IsValid() || columnValue.IsNull())
         return DbDupValue(nullptr);
 
@@ -2296,13 +2160,36 @@ DbDupValue ChangeIterator::ColumnEntry::ExtractOverflowValue(DbValue const& colu
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     12/2016
 //---------------------------------------------------------------------------------------
+Utf8StringCR ChangeIterator::ColumnEntry::GetPropertyAccessString() const
+    {
+    if (!m_isValid)
+        {
+        BeAssert(false);
+        return s_emptyString;
+        }
+
+    return m_columnMapIterator->first;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
 DbDupValue ChangeIterator::ColumnEntry::QueryValueFromDb() const
     {
-    ColumnMap const& columnMap = m_columnMapIterator->second;
-    DbDupValue value = m_columnIterator.GetRowEntry().QueryValueFromDb(columnMap.GetPhysicalName());
+    if (!m_isValid)
+        {
+        BeAssert(false);
+        return DbDupValue(nullptr);
+        }
 
-    if (columnMap.IsOverflow())
-        return ExtractOverflowValue(value, columnMap);
+    ColumnMapCP columnMap = m_columnMapIterator->second;
+    BeAssert(columnMap != nullptr);
+
+    RowEntryCR rowEntry = m_columnIterator.GetRowEntry();
+    DbDupValue value = rowEntry.GetTableMap()->QueryValueFromDb(columnMap->GetPhysicalName(), rowEntry.GetPrimaryInstanceId());
+
+    if (columnMap->IsOverflow())
+        return ExtractOverflowValue(value, *columnMap);
 
     return value;
     }
@@ -2312,11 +2199,18 @@ DbDupValue ChangeIterator::ColumnEntry::QueryValueFromDb() const
 //---------------------------------------------------------------------------------------
 DbDupValue ChangeIterator::ColumnEntry::GetValue(Changes::Change::Stage stage) const
     {
-    ColumnMap const& columnMap = m_columnMapIterator->second;
+    if (!m_isValid)
+        {
+        BeAssert(false);
+        return DbDupValue(nullptr);
+        }
 
-    DbValue value = m_sqlChange->GetChange().GetValue(columnMap.GetPhysicalIndex(), stage);
-    if (columnMap.IsOverflow())
-        return ExtractOverflowValue(value, columnMap);
+    ColumnMapCP columnMap = m_columnMapIterator->second;
+    BeAssert(columnMap != nullptr);
+
+    DbValue value = m_sqlChange->GetChange().GetValue(columnMap->GetPhysicalIndex(), stage);
+    if (columnMap->IsOverflow())
+        return ExtractOverflowValue(value, *columnMap);
 
     return DbDupValue(value.GetSqlValueP());        
     }
@@ -2326,9 +2220,48 @@ DbDupValue ChangeIterator::ColumnEntry::GetValue(Changes::Change::Stage stage) c
 //---------------------------------------------------------------------------------------
 bool ChangeIterator::ColumnEntry::IsPrimaryKeyColumn() const
     {
-    ColumnMap const& columnMap = m_columnMapIterator->second;
-    int idx = columnMap.GetPhysicalIndex();
+    if (!m_isValid)
+        {
+        BeAssert(false);
+        return false;
+        }
+
+    ColumnMapCP columnMap = m_columnMapIterator->second;
+    BeAssert(columnMap != nullptr);
+
+    int idx = columnMap->GetPhysicalIndex();
     return m_sqlChange->IsPrimaryKeyColumn(idx);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+ChangeIterator::ColumnEntry& ChangeIterator::ColumnEntry::operator++()
+    {
+    if (!m_isValid)
+        {
+        BeAssert(false);
+        return *this;
+        }
+
+    m_columnMapIterator++;
+    return *this;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+bool ChangeIterator::ColumnEntry::operator!=(ColumnEntry const& rhs) const 
+    { 
+    return (m_isValid != rhs.m_isValid) || (m_columnMapIterator != rhs.m_columnMapIterator); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     12/2016
+//---------------------------------------------------------------------------------------
+bool ChangeIterator::ColumnEntry::operator==(ColumnEntry const& rhs) const 
+    { 
+    return (m_isValid == rhs.m_isValid) && (m_columnMapIterator == rhs.m_columnMapIterator);
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ChangeSummaryImpl.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -12,6 +12,42 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 typedef RefCountedPtr<TableClassMap> TableClassMapPtr;
+
+//=======================================================================================
+//! Information on mappings to a column
+// @bsiclass                                              Ramanujam.Raman      07/2015
+//=======================================================================================
+struct ColumnMap
+    {
+    private:
+        Utf8String m_physicalColumnName;
+        Utf8String m_overflowColumnName;
+        bool m_isOverflowColumn = false;
+        int m_physicalColumnIndex = -1;
+    public:
+        //! Constructor
+        ColumnMap() {}
+
+        //! Constructor
+        ColumnMap(Utf8StringCR physicalColumnName, int physicalColumnIndex, bool isOverflowColumn, Utf8StringCR overflowColumnName)
+            : m_physicalColumnName(physicalColumnName), m_physicalColumnIndex(physicalColumnIndex), m_isOverflowColumn(isOverflowColumn), m_overflowColumnName(overflowColumnName)
+            {}
+
+        //! Gets the name of the physical column
+        Utf8StringCR GetPhysicalName() const { return m_physicalColumnName; }
+
+        //! Gets the index of the physical column in the table
+        int GetPhysicalIndex() const { return m_physicalColumnIndex; }
+
+        //! Returns true if it's a overflow column.
+        bool IsOverflow() const { return m_isOverflowColumn; }
+
+        //! Gets the name of the overflow column (if applicable)
+        Utf8StringCR GetOverflowName() const { return m_overflowColumnName; }
+
+        //! Returns true if the column has been initialized
+        bool IsValid() const { return m_physicalColumnIndex >= 0; }
+    };
 
 //=======================================================================================
 //! Information on mappings to a table
@@ -74,13 +110,13 @@ struct TableMap : RefCounted<NonCopyableClass>
 
         //! @private
         //! Queries the value stored in the table at the specified column, for the specified instanceId
-        DbDupValue QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const;
+        DbDupValue QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId whereInstanceIdIs) const;
 
         //! @private
         //! Queries the id value stored in the table at the specified column, for the specified instanceId
-        template <class T_Id> T_Id QueryValueId(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const
+        template <class T_Id> T_Id QueryValueId(Utf8StringCR physicalColumnName, ECInstanceId whereInstanceIdIs) const
             {
-            DbDupValue value = QueryValueFromDb(physicalColumnName, instanceId);
+            DbDupValue value = QueryValueFromDb(physicalColumnName, whereInstanceIdIs);
             if (!value.IsValid() || value.IsNull())
                 return T_Id();
             return value.GetValueId<T_Id>();
@@ -113,6 +149,8 @@ struct TableClassMap : RefCounted<NonCopyableClass>
         void Initialize();
         void InitPropertyColumnMaps();
         void AddColumnMapsForProperty(SingleColumnDataPropertyMap const&);
+        void FreeColumnMaps();
+
     public:
         //! @private
         //! Create the table map for the primary table of the specified class
@@ -122,13 +160,10 @@ struct TableClassMap : RefCounted<NonCopyableClass>
         bool IsMapped() const { return m_classMap != nullptr; }
 
         //! Destructor
-        ~TableClassMap() {}
+        ~TableClassMap();
 
         //! Returns true if the table contains a column for the specified property (access string)
         bool ContainsColumn(Utf8CP propertyAccessString) const;
-
-        //! Gets column map for the specified property (access string)
-        ColumnMap const& GetColumn(Utf8CP propertyAccessString) const;
 
         ECN::ECClassCR GetClass() const { return m_class; }
 
@@ -268,51 +303,32 @@ struct ChangeExtractor : NonCopyableClass
 
     private:
         ChangeSummaryCR m_changeSummary;
-        ExtractOption m_extractOption;
 
         ECDbCR m_ecdb;
         mutable TableMapByName m_tableMapByName; // TODO: REmove to ChangeIterator
         InstancesTable& m_instancesTable;
         ValuesTable& m_valuesTable;
 
-        SqlChange const* m_sqlChange;
-        TableMap const* m_tableMap;
+        BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
 
-        static ClassMapCP GetClassMap(ECDbCR, ECN::ECClassId);
-
-        ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId instanceId) const;
-        bool ChangeUpdatesClass(TableClassMapCR classMap) const;
-        int GetFirstColumnIndex(PropertyMap const*) const;
-
-        BentleyStatus ExtractFromSqlChanges(Changes& sqlChanges, ExtractOption extractOption);
-        BentleyStatus ExtractFromSqlChange(SqlChange const& sqlChange, ExtractOption extractOption);
-
-        void ExtractInstance(TableClassMapCR tableClassMap, ECInstanceId instanceId);
-
-        void ExtractRelInstance(TableClassMapCR tableClassMap, ECInstanceId relInstanceId);
-        void ExtractRelInstanceInEndTable(TableClassMapCR tableClassMap, ECInstanceId relInstanceId, ECN::ECClassId foreignEndClassId);
-        void ExtractRelInstanceInLinkTable(TableClassMapCR tableClassMap, ECInstanceId relInstanceId);
-        void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
-        ECN::ECClassId GetRelEndClassId(RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
+        void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
+        ECN::ECClassId GetRelEndClassId(ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
         static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
+        int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntryCR rowEntry) const;
 
+        void ExtractInstance(ChangeIterator::RowEntryCR rowEntry);
+        void RecordInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, bool recordOnlyIfUpdatedProperties);
+        bool RecordValue(ChangeSummary::InstanceCR instance, ChangeIterator::ColumnEntryCR columnEntry);
+
+        void ExtractRelInstances(ChangeIterator::RowEntryCR rowEntry);
+        void ExtractRelInstanceInLinkTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassLinkTableMap const& relClassMap);
+        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassEndTableMap const& relClassMap);
         bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const;
-
-        bool RecordInstance(TableClassMapCR tableClassMap, ECInstanceId instanceId, DbOpcode dbOpcode);
-        bool RecordColumValue(ChangeSummary::InstanceCR instance, ColumnMap const& columnMap, Utf8StringCR accessString);
-
-        bool RecordRelInstance(TableClassMapCR classMap, ECInstanceId instanceId, DbOpcode dbOpcode, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
-
-        TableMap const* GetTableMap(Utf8StringCR tableName) const; // TODO: Remove
-        void AddTableToMap(Utf8StringCR tableName) const; // TODO: Remove
-        void FreeTableMap(); // TODO: Remove
-        DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap); // TODO: Remove
+        bool RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
 
     public:
         ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR instancesTable, ValuesTableR valuesTable);
-        ~ChangeExtractor();
-
-        BentleyStatus ExtractFromSqlChanges(Changes& changes, bool includeRelationshipInstances);
+        BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
