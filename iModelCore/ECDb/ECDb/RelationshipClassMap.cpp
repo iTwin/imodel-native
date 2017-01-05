@@ -1720,13 +1720,22 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     else
         defaultConstraintClassId = ECClassId();
     }
-
+//************************RelationshipClassEndTableMap::ColumnFactory********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
 	{
-	DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
+	DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? 
+		DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
+
 	const DbColumn::Type colType = DbColumn::Type::Integer;
 	return table.CreateColumn(colName, colType, position, colKind, persType);
 	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
 DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType)
 	{
 	const DbColumn::Type colType = DbColumn::Type::Integer;
