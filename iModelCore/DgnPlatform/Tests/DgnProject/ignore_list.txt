@@ -43,7 +43,6 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 #TFS 630732
 
 DgnECNavigatorTest.GetElemtmentInfo
-DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
 
 ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman - must somehow use an API that has access to the write token in order to insert data into a BIM using ECSql
 
