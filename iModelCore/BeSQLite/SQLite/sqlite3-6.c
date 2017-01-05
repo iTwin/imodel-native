@@ -12224,20 +12224,20 @@ SQLITE_PRIVATE int sqlite3IcuInit(sqlite3 *db){
     void *pContext;                           /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
+    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,          0, icuRegexpFunc},
 
-    {"lower",  1, SQLITE_UTF16,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF16,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF16, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF16, (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
 
-    {"lower",  1, SQLITE_UTF8,         0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8,         0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
 
-    {"like",   2, SQLITE_UTF8,         0, icuLikeFunc},
-    {"like",   3, SQLITE_UTF8,         0, icuLikeFunc},
+    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
 
     {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
   };
@@ -18936,9 +18936,7 @@ static int sessionSerializeValue(
   
         if( aBuf ){
           sessionVarintPut(&aBuf[1], n);
-          memcpy(&aBuf[nVarint + 1], eType==SQLITE_TEXT ? 
-              sqlite3_value_text(pValue) : sqlite3_value_blob(pValue), n
-          );
+          if( n ) memcpy(&aBuf[nVarint + 1], z, n);
         }
   
         nByte = 1 + nVarint + n;
@@ -20354,7 +20352,7 @@ static void sessionAppendBlob(
   int nBlob, 
   int *pRc
 ){
-  if( 0==sessionBufferGrow(p, nBlob, pRc) ){
+  if( nBlob>0 && 0==sessionBufferGrow(p, nBlob, pRc) ){
     memcpy(&p->aBuf[p->nBuf], aBlob, nBlob);
     p->nBuf += nBlob;
   }
@@ -20540,13 +20538,13 @@ static int sessionAppendUpdate(
       }
 
       default: {
-        int nByte;
-        int nHdr = 1 + sessionVarintGet(&pCsr[1], &nByte);
+        int n;
+        int nHdr = 1 + sessionVarintGet(&pCsr[1], &n);
         assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
-        nAdvance = nHdr + nByte;
+        nAdvance = nHdr + n;
         if( eType==sqlite3_column_type(pStmt, i) 
-         && nByte==sqlite3_column_bytes(pStmt, i) 
-         && 0==memcmp(&pCsr[nHdr], sqlite3_column_blob(pStmt, i), nByte)
+         && n==sqlite3_column_bytes(pStmt, i) 
+         && (n==0 || 0==memcmp(&pCsr[nHdr], sqlite3_column_blob(pStmt, i), n))
         ){
           break;
         }
@@ -23255,13 +23253,15 @@ SQLITE_EXTENSION_INIT1
 #ifdef sqlite3Isdigit
    /* Use the SQLite core versions if this routine is part of the
    ** SQLite amalgamation */
-#  define safe_isdigit(x) sqlite3Isdigit(x)
-#  define safe_isalnum(x) sqlite3Isalnum(x)
+#  define safe_isdigit(x)  sqlite3Isdigit(x)
+#  define safe_isalnum(x)  sqlite3Isalnum(x)
+#  define safe_isxdigit(x) sqlite3Isxdigit(x)
 #else
    /* Use the standard library for separate compilation */
 #include <ctype.h>  /* amalgamator: keep */
-#  define safe_isdigit(x) isdigit((unsigned char)(x))
-#  define safe_isalnum(x) isalnum((unsigned char)(x))
+#  define safe_isdigit(x)  isdigit((unsigned char)(x))
+#  define safe_isalnum(x)  isalnum((unsigned char)(x))
+#  define safe_isxdigit(x) isxdigit((unsigned char)(x))
 #endif
 
 /*
@@ -23799,12 +23799,13 @@ static void jsonReturn(
             c = z[++i];
             if( c=='u' ){
               u32 v = 0, k;
-              for(k=0; k<4 && i<n-2; i++, k++){
+              for(k=0; k<4; i++, k++){
+                assert( i<n-2 );
                 c = z[i+1];
-                if( c>='0' && c<='9' ) v = v*16 + c - '0';
-                else if( c>='A' && c<='F' ) v = v*16 + c - 'A' + 10;
-                else if( c>='a' && c<='f' ) v = v*16 + c - 'a' + 10;
-                else break;
+                assert( safe_isxdigit(c) );
+                if( c<='9' ) v = v*16 + c - '0';
+                else if( c<='F' ) v = v*16 + c - 'A' + 10;
+                else v = v*16 + c - 'a' + 10;
               }
               if( v==0 ) break;
               if( v<=0x7f ){
@@ -23909,6 +23910,15 @@ static int jsonParseAddNode(
 }
 
 /*
+** Return true if z[] begins with 4 (or more) hexadecimal digits
+*/
+static int jsonIs4Hex(const char *z){
+  int i;
+  for(i=0; i<4; i++) if( !safe_isxdigit(z[i]) ) return 0;
+  return 1;
+}
+
+/*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
 ** index of the first character past the end of the value parsed.
 **
@@ -23982,8 +23992,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( c==0 ) return -1;
       if( c=='\\' ){
         c = pParse->zJson[++j];
-        if( c==0 ) return -1;
-        jnFlags = JNODE_ESCAPE;
+        if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
+           || c=='n' || c=='r' || c=='t'
+           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
+          jnFlags = JNODE_ESCAPE;
+        }else{
+          return -1;
+        }
       }else if( c=='"' ){
         break;
       }
@@ -24851,7 +24866,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -25129,9 +25144,9 @@ static int jsonEachColumn(
       /* For json_each() path and root are the same so fall through
       ** into the root case */
     }
-    case JEACH_ROOT: {
+    default: {
       const char *zRoot = p->zRoot;
-       if( zRoot==0 ) zRoot = "$";
+      if( zRoot==0 ) zRoot = "$";
       sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
