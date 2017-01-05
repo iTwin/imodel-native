@@ -2,7 +2,7 @@
 |
 |     $Source: ElementAspects.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
@@ -63,7 +63,7 @@ DgnDbStatus StatusAspect::_LoadProperties(DgnElementCR el)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECSqlWriteToken const* writeToken)
+DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECCrudWriteToken const* writeToken)
     {
     auto stmtPtr = el.GetDgnDb().GetPreparedECSqlStatement(
         "UPDATE " BRRP_SCHEMA(BRRP_CLASS_StatusAspect) " SET " BRRP_PROP_StatusAspect_Status " = ? WHERE Element.Id = ?;");
