@@ -69,9 +69,9 @@ protected:
     BentleyStatus RunSelectJson(ECN::PrimitiveType arrayType, uint32_t arraySize, int rowCount);
 
 
-    ECN::StandaloneECInstancePtr CreateECDArray(ECN::ECEntityClassCR arrayClass, uint32_t propIndex, ECN::PrimitiveType arrayType, uint32_t arraySize);
+    ECN::StandaloneECInstancePtr CreateECDArray(uint32_t& propIndex, ECN::PrimitiveType arrayType);
+    BentleyStatus PopulateECDArray(IECInstanceR ecdArray, uint32_t propIndex, ECN::PrimitiveType arrayType, uint32_t arraySize);
     void LogTiming(StopWatch&, Utf8CP logMessageHeader, ECN::PrimitiveType, uint32_t arraySize, int rowCount);
-    static BentleyStatus CreateECDClass(ECSchemaPtr&, ECN::ECEntityClassCP&, uint32_t& propIndex, ECN::PrimitiveType);
     static Utf8CP PrimitiveTypeToString(ECN::PrimitiveType);
 
     DateTime const& GetTestDate() const { return m_testDate; }
@@ -110,7 +110,7 @@ TEST_F(PerformancePrimArrayJsonVsECDTests, SelectJson_SmallArray)
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Long, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Double, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_String, arraySize, rowCount));
-    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));
+    ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Point3d, arraySize, rowCount));*/
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_Binary, arraySize, rowCount));
     ASSERT_EQ(SUCCESS, RunSelectJson(PrimitiveType::PRIMITIVETYPE_IGeometry, arraySize, rowCount));
     }
@@ -275,10 +275,11 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)"))
         return ERROR;
 
+    rapidjson::Document json;
+    json.SetArray();
+
     for (int i = 0; i < rowCount; i++)
         {
-        rapidjson::Document json;
-        json.SetArray();
         for (uint32_t j = 0; j < arraySize; j++)
             {
             rapidjson::Value arrayElementJson;
@@ -373,6 +374,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
 
         stmt.Reset();
         stmt.ClearBindings();
+        json.Clear();
         }
 
     stmt.Finalize();
@@ -403,9 +405,10 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT val FROM " JSONTABLE_NAME))
         return ERROR;
 
+    rapidjson::Document arrayJson;
+
     while (BE_SQLITE_ROW == stmt.Step())
         {
-        rapidjson::Document arrayJson;
         if (arrayJson.Parse<0>(stmt.GetValueText(0)).HasParseError())
             return ERROR;
 
@@ -536,6 +539,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
                         return ERROR;
                 }
             }
+
+        arrayJson.Clear();
         }
 
     stmt.Finalize();
@@ -570,12 +575,6 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
     if (SUCCESS != SetupTest(fileName, ECDb::OpenParams(Db::OpenMode::ReadWrite)))
         return ERROR;
 
-    ECSchemaPtr ecdSchema = nullptr;
-    ECEntityClassCP ecdClass = nullptr;
-    uint32_t propIndex = 0;
-    if (SUCCESS != CreateECDClass(ecdSchema, ecdClass, propIndex, arrayType))
-        return ERROR;
-
     timer.Start();
 
     Utf8CP insertSql = nullptr;
@@ -598,10 +597,14 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), insertSql))
         return ERROR;
 
+    uint32_t propIndex = 0;
+    StandaloneECInstancePtr arrayInstance = CreateECDArray(propIndex, arrayType);
+    if (arrayInstance == nullptr)
+        return ERROR;
+
     for (int i = 0; i < rowCount; i++)
         {
-        StandaloneECInstancePtr arrayInstance = CreateECDArray(*ecdClass, propIndex, arrayType, arraySize);
-        if (arrayInstance == nullptr)
+        if (SUCCESS != PopulateECDArray(*arrayInstance, propIndex, arrayType, arraySize))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt.BindBlob(1, arrayInstance->GetData(), arrayInstance->GetBytesUsed(), Statement::MakeCopy::No))
@@ -612,6 +615,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
 
         stmt.Reset();
         stmt.ClearBindings();
+        arrayInstance->ClearValues();
         }
 
     stmt.Finalize();
@@ -619,73 +623,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       01/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-StandaloneECInstancePtr PerformancePrimArrayJsonVsECDTests::CreateECDArray(ECEntityClassCR ecdClass, uint32_t propIndex, PrimitiveType arrayType, uint32_t arraySize)
-    {
-    ECValue arrayElementVal;
-    switch (arrayType)
-        {
-            case PRIMITIVETYPE_Binary:
-                arrayElementVal.SetBinary(GetTestBlob(), GetTestBlobSize());
-                break;
 
-            case PRIMITIVETYPE_Boolean:
-                arrayElementVal.SetBoolean(BOOLVALUE);
-                break;
-
-            case PRIMITIVETYPE_DateTime:
-                arrayElementVal.SetDateTime(GetTestDate());
-                break;
-
-            case PRIMITIVETYPE_Double:
-                arrayElementVal.SetDouble(DOUBLEVALUE);
-                break;
-
-            case PRIMITIVETYPE_IGeometry:
-                arrayElementVal.SetIGeometry(GetTestGeometry());
-                break;
-
-            case PRIMITIVETYPE_Integer:
-                arrayElementVal.SetInteger(INTVALUE);
-                break;
-
-            case PRIMITIVETYPE_Long:
-                arrayElementVal.SetLong(INT64VALUE);
-                break;
-
-            case PRIMITIVETYPE_String:
-                arrayElementVal.SetUtf8CP(STRINGVALUE);
-                break;
-
-            case PRIMITIVETYPE_Point2d:
-                arrayElementVal.SetPoint2d(GetTestPoint2d());
-                break;
-
-            case PRIMITIVETYPE_Point3d:
-                arrayElementVal.SetPoint3d(GetTestPoint3d());
-                break;
-
-            default:
-                return nullptr;
-        }
-
-    StandaloneECInstancePtr arrayInstance = ecdClass.GetDefaultStandaloneEnabler()->CreateInstance();
-    if (arrayInstance == nullptr)
-        return nullptr;
-
-    for (uint32_t j = 0; j < arraySize; j++)
-        {
-        if (ECObjectsStatus::Success != arrayInstance->AddArrayElements(propIndex, 1))
-            return nullptr;
-
-        if (ECObjectsStatus::Success != arrayInstance->SetValue(propIndex, arrayElementVal, j))
-            return nullptr;
-        }
-
-    return arrayInstance;
-    }
 
 
 //---------------------------------------------------------------------------------------
@@ -694,7 +632,7 @@ StandaloneECInstancePtr PerformancePrimArrayJsonVsECDTests::CreateECDArray(ECEnt
 BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arrayType, uint32_t arraySize, int rowCount, ECDPersistenceMode mode)
     {
     Utf8String fileName;
-    fileName.Sprintf("%_select_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
+    fileName.Sprintf("%s_select_%s_array_%" PRIu32 "_opcount_%d.ecdb", 
                      mode == ECDPersistenceMode::AsIs ? "ecd" : "ecdbase64json",
                      PrimitiveTypeToString(arrayType), arraySize, rowCount);
 
@@ -708,10 +646,12 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
     if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)))
         return ERROR;
 
-    ECSchemaPtr ecdSchema = nullptr;
-    ECEntityClassCP ecdClass = nullptr;
     uint32_t propIndex = 0;
-    if (SUCCESS != CreateECDClass(ecdSchema, ecdClass, propIndex, arrayType))
+    StandaloneECInstancePtr arrayInstance = CreateECDArray(propIndex, arrayType);
+    if (arrayInstance == nullptr)
+        return ERROR;
+
+    if (SUCCESS != PopulateECDArray(*arrayInstance, propIndex, arrayType, arraySize))
         return ERROR;
 
     Utf8CP selSql = nullptr;
@@ -743,27 +683,23 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
         if (arrayBlob == nullptr)
             return ERROR;
 
-            if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
-                return ERROR;
+        if (!ECDBuffer::IsCompatibleVersion(nullptr, arrayBlob))
+            return ERROR;
 
-            StandaloneECInstancePtr arrayInstance = ecdClass->GetDefaultStandaloneEnabler()->CreateSharedInstance(arrayBlob, arrayBlobSize);
-            if (arrayInstance == nullptr)
-                return ERROR;
+        ECValue arrayVal;
+        if (ECObjectsStatus::Success != arrayInstance->GetValue(arrayVal, propIndex))
+            return ERROR;
 
-            ECValue arrayVal;
-            if (ECObjectsStatus::Success != arrayInstance->GetValue(arrayVal, propIndex))
-                return ERROR;
+        ArrayInfo const& arrayInfo = arrayVal.GetArrayInfo();
+        const uint32_t actualArraySize = arrayInfo.GetCount();
+        if (arraySize != actualArraySize)
+            return ERROR;
 
-            ArrayInfo const& arrayInfo = arrayVal.GetArrayInfo();
-            const uint32_t actualArraySize = arrayInfo.GetCount();
-            if (arraySize != actualArraySize)
-                return ERROR;
-
-            for (uint32_t i = 0; i < actualArraySize; i++)
-                {
-                ECValue val;
-                if (ECObjectsStatus::Success != arrayInstance->GetValue(val, propIndex, i))
-                    return SUCCESS;
+        for (uint32_t i = 0; i < actualArraySize; i++)
+            {
+            ECValue val;
+            if (ECObjectsStatus::Success != arrayInstance->GetValue(val, propIndex, i))
+                return SUCCESS;
 
             switch (arrayType)
                 {
@@ -796,7 +732,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
                     if (!val.GetDateTime().Equals(GetTestDate()))
                         return ERROR;
-                    
+
                     break;
                     }
 
@@ -885,25 +821,88 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle       07/2016
+// @bsimethod                                      Krischan.Eberle       01/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus PerformancePrimArrayJsonVsECDTests::CreateECDClass(ECSchemaPtr& schema, ECN::ECEntityClassCP& ecdClass, uint32_t& propIndex, ECN::PrimitiveType arrayType)
+StandaloneECInstancePtr PerformancePrimArrayJsonVsECDTests::CreateECDArray(uint32_t& propIndex, PrimitiveType arrayType)
     {
+    ECSchemaPtr schema = nullptr;
     if (ECObjectsStatus::Success != ECSchema::CreateSchema(schema, "ECDSchema", "ts", 1, 0, 0))
-        return ERROR;
+        return nullptr;
 
     ECEntityClassP ecdClassP = nullptr;
     if (ECObjectsStatus::Success != schema->CreateEntityClass(ecdClassP, "PrimArrayClass"))
-        return ERROR;
+        return nullptr;
 
     PrimitiveArrayECPropertyP arrayProp = nullptr;
     if (ECObjectsStatus::Success != ecdClassP->CreatePrimitiveArrayProperty(arrayProp, "PrimArrayClass", arrayType))
-        return ERROR;
+        return nullptr;
 
-    ecdClass = ecdClassP;
-    if (ECObjectsStatus::Success != ecdClass->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "PrimArrayClass"))
-        return ERROR;
+    if (ECObjectsStatus::Success != ecdClassP->GetDefaultStandaloneEnabler()->GetPropertyIndex(propIndex, "PrimArrayClass"))
+        return nullptr;
+
+    return ecdClassP->GetDefaultStandaloneEnabler()->CreateInstance();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle       01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus PerformancePrimArrayJsonVsECDTests::PopulateECDArray(IECInstanceR arrayInstance, uint32_t propIndex, ECN::PrimitiveType arrayType, uint32_t arraySize)
+    {
+    ECValue arrayElementVal;
+    switch (arrayType)
+        {
+            case PRIMITIVETYPE_Binary:
+                arrayElementVal.SetBinary(GetTestBlob(), GetTestBlobSize());
+                break;
+
+            case PRIMITIVETYPE_Boolean:
+                arrayElementVal.SetBoolean(BOOLVALUE);
+                break;
+
+            case PRIMITIVETYPE_DateTime:
+                arrayElementVal.SetDateTime(GetTestDate());
+                break;
+
+            case PRIMITIVETYPE_Double:
+                arrayElementVal.SetDouble(DOUBLEVALUE);
+                break;
+
+            case PRIMITIVETYPE_IGeometry:
+                arrayElementVal.SetIGeometry(GetTestGeometry());
+                break;
+
+            case PRIMITIVETYPE_Integer:
+                arrayElementVal.SetInteger(INTVALUE);
+                break;
+
+            case PRIMITIVETYPE_Long:
+                arrayElementVal.SetLong(INT64VALUE);
+                break;
+
+            case PRIMITIVETYPE_String:
+                arrayElementVal.SetUtf8CP(STRINGVALUE);
+                break;
+
+            case PRIMITIVETYPE_Point2d:
+                arrayElementVal.SetPoint2d(GetTestPoint2d());
+                break;
+
+            case PRIMITIVETYPE_Point3d:
+                arrayElementVal.SetPoint3d(GetTestPoint3d());
+                break;
+
+            default:
+                return ERROR;
+        }
+
+    for (uint32_t j = 0; j < arraySize; j++)
+        {
+        if (ECObjectsStatus::Success != arrayInstance.AddArrayElements(propIndex, 1))
+            return ERROR;
+
+        if (ECObjectsStatus::Success != arrayInstance.SetValue(propIndex, arrayElementVal, j))
+            return ERROR;
+        }
 
     return SUCCESS;
     }
