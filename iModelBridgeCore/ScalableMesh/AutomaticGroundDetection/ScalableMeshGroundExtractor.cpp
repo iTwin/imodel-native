@@ -58,6 +58,11 @@ BeFileName GetTempXyzFilePath()
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundPreviewer - Begin
 +----------------------------------------------------------------------------*/
+bool IScalableMeshGroundPreviewer::IsCurrentPreviewEnough() const
+    {
+    return _IsCurrentPreviewEnough();
+    }
+
 StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGround)
     {
     return _UpdatePreview(currentGround);
@@ -133,8 +138,17 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
 
         virtual void _OutputPreview(PolyfaceQueryCR currentGround) const override
             {
-            m_groundPreviewer->UpdatePreview(currentGround);
+            if (m_groundPreviewer.IsValid())
+                m_groundPreviewer->UpdatePreview(currentGround);
             }
+
+        virtual bool _ShouldContinue() const override
+            {
+            if (m_groundPreviewer.IsValid())
+                return !m_groundPreviewer->IsCurrentPreviewEnough();
+
+            return true;
+            }        
 
     public :
 
@@ -495,17 +509,17 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
     else
         {        
-        /*Small Melaka
+        /*Small Melaka*/
         m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
         m_extractionArea.push_back(DPoint3d::From(194165.08343336626, 243603.61276573580, -3.6304642277846142));
         m_extractionArea.push_back(DPoint3d::From(194270.10891005833, 243574.39524382990, -4.7820067383618152));
         m_extractionArea.push_back(DPoint3d::From(194276.55219083698, 243624.66656828567, -4.6135505912207009));
         m_extractionArea.push_back(DPoint3d::From(194147.68657526391, 243662.26264426752, -3.6141459398750158));
         m_extractionArea.push_back(DPoint3d::From(194146.39791910816, 243662.47747898742, -3.6220131969348586));
-        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));       
-        */
+        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));               
 
-        /*Big Melaka
+        /*Big Melaka*/
+        /*
         m_extractionArea.push_back(DPoint3d::From(194534.61905953390, 243398.93278513860, -5.8858629763999488));
         m_extractionArea.push_back(DPoint3d::From(194475.43182124716, 243320.97185519966, -5.5277979698057607));
         m_extractionArea.push_back(DPoint3d::From(194520.70126835266, 243294.30101074686, -5.7520366628632473));
@@ -524,6 +538,7 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
 */
 
         //Small nagpur
+/*
         m_extractionArea.push_back(DPoint3d::From(298487.32047431514, 2331963.9819948073, 239.52607983687085));
         m_extractionArea.push_back(DPoint3d::From(298520.54010478914, 2332041.1416489473, 239.85987082856627));
         m_extractionArea.push_back(DPoint3d::From(298556.39099312248, 2332025.8413337343, 238.89883979226761));
@@ -531,6 +546,7 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.push_back(DPoint3d::From(298503.60138231976, 2331953.4527456285, 238.32288249351404));
         m_extractionArea.push_back(DPoint3d::From(298496.20096959040, 2331955.0979408128, 240.18742513359939));
         m_extractionArea.push_back(DPoint3d::From(298487.32047431514, 2331963.9819948073, 239.52607983687085));
+*/
         }
 
     return SUCCESS;

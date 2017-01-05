@@ -96,13 +96,17 @@ struct IScalableMeshGroundPreviewer abstract : virtual public RefCountedBase
 private:
 
 protected:
+    
+    virtual bool      _IsCurrentPreviewEnough() const = 0;
 
-    //Synchonization with data sources functions
-    virtual StatusInt _UpdatePreview(PolyfaceQueryCR currentGround) = 0;
-
+    virtual StatusInt _UpdatePreview(PolyfaceQueryCR currentGround) = 0;    
+    
 public:
 
+    BENTLEY_SM_EXPORT bool      IsCurrentPreviewEnough() const;
+
     BENTLEY_SM_EXPORT StatusInt UpdatePreview(PolyfaceQueryCR currentGround);
+        
 };
 
 
