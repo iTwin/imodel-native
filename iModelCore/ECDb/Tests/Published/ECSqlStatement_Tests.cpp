@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlStatement_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -292,6 +292,320 @@ TEST_F(ECSqlStatementTestFixture, IntersectTests)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                 01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, IsNull)
+    {
+    ECDbCR ecdb = SetupECDb("ecsqlisnull.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+              <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+              <ECStructClass typeName="PrimStruct">
+                    <ECProperty propertyName="i" typeName="int" />
+                    <ECProperty propertyName="l" typeName="long" />
+                    <ECProperty propertyName="p2d" typeName="Point2d" />
+                    <ECProperty propertyName="p3d" typeName="Point3d" />
+                    <ECProperty propertyName="geom" typeName="Bentley.Geometry.Common.IGeometry" />
+              </ECStructClass>
+              <ECStructClass typeName="MyStruct">
+                    <ECStructProperty propertyName="pstruct" typeName="PrimStruct" />
+                    <ECArrayProperty propertyName="l_array" typeName="long" />
+                    <ECArrayProperty propertyName="geom_array" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECStructArrayProperty propertyName="struct_array" typeName="PrimStruct" />
+              </ECStructClass>
+              <ECEntityClass typeName="Class_NoSharedCols">
+                    <ECProperty propertyName="I" typeName="int" />
+                    <ECProperty propertyName="L" typeName="long" />
+                    <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECProperty propertyName="P2D" typeName="Point2d" />
+                    <ECProperty propertyName="P3D" typeName="Point3d" />
+                    <ECArrayProperty propertyName="L_Array" typeName="long" />
+                    <ECArrayProperty propertyName="Geom_Array" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECStructProperty propertyName="Struct" typeName="MyStruct" />
+                    <ECStructArrayProperty propertyName="Struct_Array" typeName="MyStruct" />
+             </ECEntityClass>
+             <ECEntityClass typeName="Class_SharedCols_NoOverflow">
+                   <ECCustomAttributes>
+                        <ClassMap xmlns='ECDbMap.02.00'>
+                             <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                              <SharedColumnCount>100</SharedColumnCount>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="I" typeName="int" />
+                    <ECProperty propertyName="L" typeName="long" />
+                    <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECProperty propertyName="P2D" typeName="Point2d" />
+                    <ECProperty propertyName="P3D" typeName="Point3d" />
+                    <ECArrayProperty propertyName="L_Array" typeName="long" />
+                    <ECArrayProperty propertyName="Geom_Array" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECStructProperty propertyName="Struct" typeName="MyStruct" />
+                    <ECStructArrayProperty propertyName="Struct_Array" typeName="MyStruct" />
+             </ECEntityClass>
+             <ECEntityClass typeName="Class_SharedCols_Overflow">
+                   <ECCustomAttributes>
+                        <ClassMap xmlns='ECDbMap.02.00'>
+                             <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <ShareColumns xmlns='ECDbMap.02.00'>
+                              <SharedColumnCount>1</SharedColumnCount>
+                        </ShareColumns>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="I" typeName="int" />
+                    <ECProperty propertyName="L" typeName="long" />
+                    <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECProperty propertyName="P2D" typeName="Point2d" />
+                    <ECProperty propertyName="P3D" typeName="Point3d" />
+                    <ECArrayProperty propertyName="L_Array" typeName="long" />
+                    <ECArrayProperty propertyName="Geom_Array" typeName="Bentley.Geometry.Common.IGeometry" />
+                    <ECStructProperty propertyName="Struct" typeName="MyStruct" />
+                    <ECStructArrayProperty propertyName="Struct_Array" typeName="MyStruct" />
+             </ECEntityClass>
+        </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+    std::vector<Utf8CP> testClassNames {"Class_NoSharedCols", "Class_SharedCols_NoOverflow", "Class_SharedCols_Overflow"};
+
+
+    //*** all values null
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(ECInstanceId) VALUES(NULL)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT Struct, Struct.struct_array, Struct_Array, "
+                      "I, Geom, P2D, P2D.X, P2D.Y, P3D, P3D.X, P3D.Y, P3D.Z, "
+                      "Struct.pstruct, Struct.pstruct.i, Struct.pstruct.geom, Struct.pstruct.p2d, Struct.pstruct.p2d.X, Struct.pstruct.p2d.Y, "
+                      "Struct.pstruct.p3d, Struct.pstruct.p3d.X, Struct.pstruct.p3d.Y, Struct.pstruct.p3d.Z, "
+                      "Struct.l_array FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            {
+            ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+            }
+
+        IECSqlStructValue const& structVal = stmt.GetValueStruct(0);
+        ASSERT_EQ((int) ecdb.Schemas().GetECClass("TestSchema", "MyStruct")->GetPropertyCount(), structVal.GetMemberCount());
+        for (int i = 0; i < structVal.GetMemberCount(); i++)
+            {
+            ASSERT_TRUE(structVal.GetValue(i).IsNull());
+            }
+
+        IECSqlArrayValue const& structMemberStructArrayVal = stmt.GetValueArray(1);
+        ASSERT_EQ(0, structMemberStructArrayVal.GetArrayLength());
+
+        IECSqlArrayValue const& structArrayVal = stmt.GetValueArray(2);
+        ASSERT_EQ(0, structArrayVal.GetArrayLength());
+        }
+
+    //*** empty arrays
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(L_Array, Struct.L_Array, Struct.Struct_Array, Struct_Array) "
+                      "VALUES(?,?,?,?)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        stmt.BindArray(1, 0);
+        stmt.BindArray(2, 0);
+        stmt.BindArray(3, 0);
+        stmt.BindArray(4, 0);
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT L_Array, Struct.l_array, Struct.struct_array, Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            {
+            ASSERT_TRUE(stmt.IsValueNull(i)) << "no values bound to " << stmt.GetECSql();
+            IECSqlArrayValue const& arrayVal = stmt.GetValueArray(i);
+            ASSERT_EQ(0, arrayVal.GetArrayLength());
+            }
+        }
+
+    //*** array with one null element
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(L_Array, Struct.l_array, Struct.struct_array, Struct_Array) "
+                      "VALUES(?,?,?,?)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        for (int i = 1; i <= 4; i++)
+            {
+            IECSqlArrayBinder& arrayBinder = stmt.BindArray(i, 1);
+            IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+            arrayElementBinder.BindNull();
+            }
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT L_Array, Struct.l_array, Struct.struct_array, Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            {
+            IECSqlValue const& val = stmt.GetValue(i);
+            ASSERT_FALSE(val.IsNull()) << i << " " << stmt.GetECSql();
+            IECSqlArrayValue const& arrayVal = val.GetArray();
+            ASSERT_EQ(1, arrayVal.GetArrayLength());
+            IECSqlValue const* elementVal = *arrayVal.begin();
+            ASSERT_TRUE(elementVal != nullptr) << i << " " << stmt.GetECSql();
+            ASSERT_TRUE(elementVal->IsNull()) << i << " " << stmt.GetECSql();
+
+            if (val.GetColumnInfo().GetDataType().IsStructArray())
+                {
+                IECSqlStructValue const& structVal = elementVal->GetStruct();
+                ASSERT_EQ(val.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
+                for (int j = 0; j < structVal.GetMemberCount(); j++)
+                    {
+                    ASSERT_TRUE(structVal.GetValue(j).IsNull());
+                    }
+                }
+            }
+        }
+
+    //*** nested struct array being null
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(Struct_Array) VALUES(?)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        IECSqlArrayBinder& arrayBinder = stmt.BindArray(1, 1);
+        IECSqlStructBinder& elementBinder = arrayBinder.AddArrayElement().BindStruct();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.GetMember("struct_array").BindNull());
+        
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+        ASSERT_FALSE(stmt.IsValueNull(0));
+        IECSqlArrayValue const& arrayVal = stmt.GetValueArray(0);
+        ASSERT_EQ(1, arrayVal.GetArrayLength());
+        IECSqlValue const* elementVal = *arrayVal.begin();
+        ASSERT_TRUE(elementVal != nullptr) << stmt.GetECSql();
+        ASSERT_TRUE(elementVal->IsNull()) << stmt.GetECSql();
+
+        IECSqlStructValue const& structVal = elementVal->GetStruct();
+        ASSERT_EQ(stmt.GetColumnInfo(0).GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structVal.GetMemberCount());
+        for (int i = 0; i < structVal.GetMemberCount(); i++)
+            {
+            ASSERT_TRUE(structVal.GetValue(i).IsNull());
+            }
+        }
+
+    //*** nested struct being partially set
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(Struct_Array) VALUES(?)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        IECSqlArrayBinder& arrayBinder = stmt.BindArray(1, 1);
+        IECSqlStructBinder& elementBinder = arrayBinder.AddArrayElement().BindStruct();
+        //Set StructArray[0].struct_array[0].i=3
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder.GetMember("struct_array").BindArray(1).AddArrayElement().BindStruct().GetMember("i").BindInt(3));
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT Struct_Array FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+
+        ASSERT_FALSE(stmt.IsValueNull(0));
+        IECSqlArrayValue const& arrayVal = stmt.GetValueArray(0);
+        ASSERT_EQ(1, arrayVal.GetArrayLength());
+        IECSqlValue const* elementVal = *arrayVal.begin();
+        ASSERT_TRUE(elementVal != nullptr) << stmt.GetECSql();
+        ASSERT_FALSE(elementVal->IsNull()) << stmt.GetECSql();
+
+        IECSqlStructValue const& structArrayElementVal = elementVal->GetStruct();
+        ASSERT_EQ(stmt.GetColumnInfo(0).GetProperty()->GetAsStructArrayProperty()->GetStructElementType().GetPropertyCount(), structArrayElementVal.GetMemberCount());
+        for (int i = 0; i < structArrayElementVal.GetMemberCount(); i++)
+            {
+            IECSqlValue const& memberVal = structArrayElementVal.GetValue(i);
+            if (memberVal.GetColumnInfo().GetProperty()->GetName().Equals("struct_array"))
+                {
+                for (int j = 0; j < memberVal.GetStruct().GetMemberCount(); j++)
+                    {
+                    IECSqlValue const& nestedMemberVal = memberVal.GetStruct().GetValue(j);
+                    if (nestedMemberVal.GetColumnInfo().GetProperty()->GetName().Equals("i"))
+                        ASSERT_EQ(3, nestedMemberVal.GetInt());
+                    else
+                        ASSERT_TRUE(nestedMemberVal.IsNull());
+                    }
+                }
+            else
+                ASSERT_TRUE(memberVal.IsNull()) << i;
+            }
+        }
+    
+    // points partially null
+    for (Utf8CP testClassName : testClassNames)
+        {
+        Utf8String ecsql;
+        ecsql.Sprintf("INSERT INTO ts.%s(P2D.X, P3D.Y, Struct.pstruct.p2d.X, Struct.pstruct.p3d.Y) VALUES(?,?,?,?)", testClassName);
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(1, 3.14)) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(2, 3.14)) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(3, 3.14)) << ecsql.c_str();
+        ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(4, 3.14)) << ecsql.c_str();
+
+        ECInstanceKey key;
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+        stmt.Finalize();
+
+        ecsql.Sprintf("SELECT P2D, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, Struct.pstruct.p2d.X, Struct.pstruct.p2d.Y, Struct.pstruct.p3d.X, Struct.pstruct.p3d.Y, Struct.pstruct.p3d.Z FROM ts.%s WHERE ECInstanceId=%s",
+                      testClassName, key.GetECInstanceId().ToString().c_str());
+
+        std::set<Utf8String> notNullItems {"P2D", "P2D.X", "P3D.Y", "Struct.pstruct.p2d.X", "Struct.pstruct.p3d.Y"};
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, ecsql.c_str())) << ecsql.c_str();
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetECSql();
+        for (int i = 0; i < stmt.GetColumnCount(); i++)
+            {
+            IECSqlValue const& val = stmt.GetValue(i);
+            Utf8String propPath = val.GetColumnInfo().GetPropertyPath().ToString();
+            const bool expectedToBeNull = notNullItems.find(propPath) == notNullItems.end();
+            ASSERT_EQ(expectedToBeNull, val.IsNull()) << "Select clause item " << i << " in " << stmt.GetECSql();
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                 09/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, NullLiteralForPoints)
@@ -461,9 +775,9 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForPrimArrays)
         {
         ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsPrimitiveArray());
         ASSERT_EQ(expected, colVal.GetColumnInfo().GetDataType().GetPrimitiveType());
-        ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
         if (checkIsNull)
             {
+            ASSERT_TRUE(colVal.IsNull());
             ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
             }
         };
@@ -537,9 +851,9 @@ TEST_F(ECSqlStatementTestFixture, NullLiteralForStructArrays)
         {
         ASSERT_TRUE(colVal.GetColumnInfo().GetDataType().IsStructArray());
         ASSERT_TRUE(&colVal.GetColumnInfo().GetProperty()->GetAsStructArrayProperty()->GetStructElementType() == &expected);
-        ASSERT_FALSE(colVal.IsNull());//arrays are never NULL
         if (checkIsNull)
             {
+            ASSERT_TRUE(colVal.IsNull());
             ASSERT_EQ(0, colVal.GetArray().GetArrayLength());
             }
         };
@@ -3213,6 +3527,37 @@ TEST_F(ECSqlStatementTestFixture, IssueListener)
     }
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                01/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GetValueWithPartialPoints)
+    {
+    ECDbCR ecdb = SetupECDb("jsonreaderpartialpoints.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    ECClassCP testClass = ecdb.Schemas().GetECClass("ECSqlTest", "PSA");
+    ASSERT_TRUE(testClass != nullptr);
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ecsql.PSA(P2D.X,P3D.Y,PStructProp.p2d.y,PStructProp.p3d.z) VALUES(1.0, 2.0, 3.0, 4.0)"));
+    ECInstanceKey key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    stmt.Finalize();
+
+    ECSqlStatement selStmt;
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.Prepare(ecdb, "SELECT P2D,P3D,PStructProp.p2d,PStructProp.p3d FROM ecsql.PSA WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, selStmt.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, selStmt.Step());
+    
+    //The coordinates of partial points being NULL in the ECDb file will be returned as 0 as this is what SQLite
+    //implicitly returns when calling GetValueDouble on a NULL column.
+    ASSERT_TRUE(DPoint2d::From(1.0, 0.0).AlmostEqual(selStmt.GetValuePoint2d(0))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 2.0, 0.0).AlmostEqual(selStmt.GetValuePoint3d(1))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint2d::From(0.0, 3.0).AlmostEqual(selStmt.GetValuePoint2d(2))) << selStmt.GetECSql();
+    ASSERT_TRUE(DPoint3d::From(0.0, 0.0, 4.0).AlmostEqual(selStmt.GetValuePoint3d(3))) << selStmt.GetECSql();
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  01/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -3397,6 +3742,82 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
             }
         }
     ASSERT_EQ(2, rowCount);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GeometryAndOverflowColumns)
+    {
+    ECDbCR ecdb = SetupECDb("ecsql_geometry.ecdb", SchemaItem(R"xml(
+                            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                              <ECEntityClass typeName="Element">
+                                 <ECCustomAttributes>
+                                    <ClassMap xmlns='ECDbMap.02.00'>
+                                       <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                    <ShareColumns xmlns='ECDbMap.02.00'>
+                                        <SharedColumnCount>3</SharedColumnCount>
+                                    </ShareColumns>
+                                 </ECCustomAttributes>
+                                <ECProperty propertyName="Geom" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECArrayProperty propertyName="GeomArray" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Geom_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECArrayProperty propertyName="GeomArray_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
+                              </ECEntityClass>
+                            </ECSchema>)xml"));
+    ASSERT_TRUE(ecdb.IsDbOpen());
+
+    std::vector<IGeometryPtr> expectedGeoms {IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0))),
+        IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(1.0, 1.0, 1.0, 2.0, 2.0, 2.0))),
+        IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(2.0, 2.0, 2.0, 3.0, 3.0, 3.0)))};
+
+    IGeometryPtr expectedGeomSingle = expectedGeoms[0];
+
+    ECInstanceKey key;
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "INSERT INTO ts.Element(Geom,GeomArray,Geom_Overflow,GeomArray_Overflow) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(1, *expectedGeomSingle));
+    IECSqlArrayBinder& arrayBinder = statement.BindArray(2, 3);
+    for (IGeometryPtr& geom : expectedGeoms)
+        {
+        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        }
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindGeometry(3, *expectedGeomSingle));
+    IECSqlArrayBinder& arrayBinder2 = statement.BindArray(4, 3);
+    for (IGeometryPtr& geom : expectedGeoms)
+        {
+        IECSqlBinder& arrayElementBinder = arrayBinder2.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder.BindGeometry(*geom));
+        }
+
+    ASSERT_EQ(BE_SQLITE_DONE, statement.Step(key)) << statement.GetECSql() << " " << statement.GetNativeSql();
+    }
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT Geom,GeomArray,Geom_Overflow,GeomArray_Overflow FROM ts.Element WHERE ECInstanceId=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, key.GetECInstanceId()));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step()) << statement.GetECSql();
+
+    AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(0), "Geometry property");
+    size_t arrayIndex = 0;
+    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(1))
+        {
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property");
+        arrayIndex++;
+        }
+    AssertGeometry(*expectedGeomSingle, *statement.GetValueGeometry(2), "Geometry property overflow");
+    arrayIndex = 0;
+    for (IECSqlValue const* arrayElementVal : statement.GetValueArray(3))
+        {
+        AssertGeometry(*expectedGeoms[arrayIndex], *arrayElementVal->GetGeometry(), "Geometry array property overflow");
+        arrayIndex++;
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -4051,14 +4472,14 @@ TEST_F(ECSqlStatementTestFixture, PointsMappedToSharedColumns)
     ASSERT_STREQ(expectedNativeSql.c_str(), stmt.GetNativeSql());
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT GetX(Center), GetY(Center), GetZ(Center) FROM ts.Sub1 LIMIT 1"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Center.X, Center.Y, Center.Z FROM ts.Sub1 LIMIT 1"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1.0, stmt.GetValueDouble(0));
     ASSERT_EQ(2.0, stmt.GetValueDouble(1));
     ASSERT_EQ(3.0, stmt.GetValueDouble(2));
 
     stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE GetX(Center) > 0 AND GetY(Center) > 0 AND GetZ(Center) > 0"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT count(*) FROM ts.Sub1 WHERE Center.X > 0 AND Center.Y > 0 AND Center.Z > 0"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(1, stmt.GetValueInt(0));
     }
@@ -4077,11 +4498,14 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
                                        <MapStrategy>TablePerHierarchy</MapStrategy>
                                     </ClassMap>
                                     <ShareColumns xmlns='ECDbMap.02.00'>
-                                        <SharedColumnCount>3</SharedColumnCount>
+                                        <SharedColumnCount>6</SharedColumnCount>
                                     </ShareColumns>
                                  </ECCustomAttributes>
                                 <ECProperty propertyName="Prop1" typeName="Binary" />
                                 <ECProperty propertyName="Prop2" typeName="Bentley.Geometry.Common.IGeometry" />
+                                <ECProperty propertyName="Prop3" typeName="String" />
+                                <ECArrayProperty propertyName="Prop4" typeName="Binary" />
+                                <ECStructArrayProperty propertyName="Prop5" typeName="ecdbmap:DbIndex" />
                                 <ECProperty propertyName="Prop1_Overflow" typeName="Binary" />
                                 <ECProperty propertyName="Prop2_Overflow" typeName="Bentley.Geometry.Common.IGeometry" />
                               </ECEntityClass>
@@ -4089,14 +4513,14 @@ TEST_F(ECSqlStatementTestFixture, BindZeroBlob)
     ASSERT_TRUE(GetECDb().IsDbOpen());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Element(Prop1,Prop2,Prop1_Overflow,Prop2_Overflow) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO ts.Element(Prop1,Prop2,Prop3,Prop4,Prop5,Prop1_Overflow,Prop2_Overflow) VALUES(?,?,?,?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(2, 10)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql();
-
-    //ECInstanceKey key;
-    //ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(key)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(3, 10)) << stmt.GetECSql() << "BindZeroBlob against string prop is ok as blob and strings are compatible in SQLite";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(4, 10)) << stmt.GetECSql() << "BindZeroBlob against prim array is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(5, 10)) << stmt.GetECSql() << "BindZeroBlob against struct array is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(6, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
+    ASSERT_EQ(ECSqlStatus::Error, stmt.BindZeroBlob(7, 10)) << stmt.GetECSql() << "BindZeroBlob against property mapped to overflow col is never allowed";
     }
 
 //---------------------------------------------------------------------------------------
@@ -4237,7 +4661,7 @@ TEST_F(ECSqlStatementTestFixture, BlobIOForInvalidProperties)
     ECInstanceKey key;
         {
         ECSqlStatement stmt;
-        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroblob is not supported for overflow columns.
+        //zeroblob function doesn't work for IGeometry props because of type mismatch. BindZeroBlob is not supported for overflow columns.
         //But as we want to test the error handling of OpenBlobIO this is sufficient.
         ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "INSERT INTO TestSchema.Element(Prop1,Prop2,Prop1_Overflow) VALUES(zeroblob(10),?,zeroblob(10))"));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindZeroBlob(1, 10)) << stmt.GetECSql();

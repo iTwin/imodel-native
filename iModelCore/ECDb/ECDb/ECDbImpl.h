@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ECSqlWriteToken final
+struct ECCrudWriteToken final
     {};
 
 struct DbSchemaModificationToken final
@@ -27,14 +27,14 @@ struct DbSchemaModificationToken final
 struct TokenManager final : NonCopyableClass
     {
 private:
-    std::unique_ptr<ECSqlWriteToken> m_ecsqlWriteToken;
+    std::unique_ptr<ECCrudWriteToken> m_eccrudWriteToken;
     std::unique_ptr<DbSchemaModificationToken> m_dbSchemaModificationToken;
 
 public:
-    TokenManager() : m_ecsqlWriteToken(nullptr), m_dbSchemaModificationToken(nullptr) {}
+    TokenManager() : m_eccrudWriteToken(nullptr), m_dbSchemaModificationToken(nullptr) {}
 
-    ECSqlWriteToken const& EnableECSqlWriteTokenValidation() { m_ecsqlWriteToken = std::unique_ptr<ECSqlWriteToken>(new ECSqlWriteToken()); return *m_ecsqlWriteToken; }
-    ECSqlWriteToken const* GetECSqlWriteToken() const { return m_ecsqlWriteToken.get(); }
+    ECCrudWriteToken const& EnableECCrudWriteTokenValidation() { m_eccrudWriteToken = std::unique_ptr<ECCrudWriteToken>(new ECCrudWriteToken()); return *m_eccrudWriteToken; }
+    ECCrudWriteToken const* GetECCrudWriteToken() const { return m_eccrudWriteToken.get(); }
 
     DbSchemaModificationToken const& EnableDbSchemaModificationTokenValidation() { m_dbSchemaModificationToken = std::unique_ptr<DbSchemaModificationToken>(new DbSchemaModificationToken()); return *m_dbSchemaModificationToken; }
     DbSchemaModificationToken const* GetDbSchemaModificationToken() const { return m_dbSchemaModificationToken.get(); }
@@ -132,7 +132,7 @@ private:
 
     void AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appData, bool deleteOnClearCache) const;
 
-    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const;
+    BentleyStatus OpenBlobIO(BlobIO&, ECN::ECClassCR, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const*) const;
 
     void ClearECDbCache() const;
     DbResult OnDbOpening() const;

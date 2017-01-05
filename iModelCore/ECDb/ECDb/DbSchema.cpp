@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/DbSchema.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -112,7 +112,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
 
         for (DbColumn const* dbColumn : table->GetColumns())
             {
-            if (dbColumn->GetPersistenceType() == PersistenceType::Persisted)
+            if (dbColumn->GetPersistenceType() == PersistenceType::Physical)
                 oldColumnList.insert(&dbColumn->GetName());
             }
 
@@ -147,7 +147,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         for (Utf8StringCP addColumn : added)
             {
             auto itor = newColumnList.find(addColumn);
-            if (table->CreateColumn(*addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted) == nullptr)
+            if (table->CreateColumn(*addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Physical) == nullptr)
                 {
                 BeAssert("Failed to create column");
                 return ERROR;
@@ -694,7 +694,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
         m_ecdb.TryExecuteSql(dropIndexSql.c_str());
 
         //indexes on virtual tables are ignored
-        if (index.GetTable().GetPersistenceType() == PersistenceType::Persisted)
+        if (index.GetTable().GetPersistenceType() == PersistenceType::Physical)
             {
             Utf8String ddl, comparableIndexDef;
             if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
@@ -913,7 +913,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
         DbColumnId id = stmt->GetValueId<DbColumnId>(0);
         Utf8CP name = stmt->GetValueText(1);
         const DbColumn::Type type = Enum::FromInt<DbColumn::Type>(stmt->GetValueInt(2));
-        const PersistenceType persistenceType = stmt->GetValueBoolean(3) ? PersistenceType::Virtual : PersistenceType::Persisted;
+        const PersistenceType persistenceType = stmt->GetValueBoolean(3) ? PersistenceType::Virtual : PersistenceType::Physical;
 
         const bool hasNotNullConstraint = stmt->GetValueBoolean(notNullColIx);
         const bool hasUniqueConstraint = stmt->GetValueBoolean(uniqueColIx);
@@ -981,7 +981,7 @@ BentleyStatus DbSchema::LoadTable(Utf8StringCR name, DbTable*& tableP) const
 
     DbTableId id = stmt->GetValueId<DbTableId>(0);
     DbTable::Type tableType = Enum::FromInt<DbTable::Type>(stmt->GetValueInt(1));
-    PersistenceType persistenceType = stmt->GetValueBoolean(2) ? PersistenceType::Virtual : PersistenceType::Persisted;
+    PersistenceType persistenceType = stmt->GetValueBoolean(2) ? PersistenceType::Virtual : PersistenceType::Physical;
     ECClassId exclusiveRootClassId;
     if (!stmt->IsColumnNull(3))
         exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
@@ -1211,15 +1211,15 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         }
 
     //Overflow property check
-    if (Enum::Intersects(kind, DbColumn::Kind::Overflow))
+    if (Enum::Intersects(kind, DbColumn::Kind::PhysicalOverflow))
         {
-        if (kind != DbColumn::Kind::Overflow)
+        if (kind != DbColumn::Kind::PhysicalOverflow)
             {
             BeAssert(false && "OverflowMaster should be the only flag on a column");
             return nullptr;
             }
 
-        if (GetFilteredColumnFirst(DbColumn::Kind::Overflow) != nullptr)
+        if (GetFilteredColumnFirst(DbColumn::Kind::PhysicalOverflow) != nullptr)
             {
             BeAssert(false && "There can only be exactly one overflow column per table");
             return nullptr;
@@ -1261,7 +1261,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
     else
         m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
 
-    if (kind == DbColumn::Kind::Overflow)
+    if (kind == DbColumn::Kind::PhysicalOverflow)
         m_overflowColumn = newColumnP;
 
     if (Enum::Contains(kind, DbColumn::Kind::ECClassId))
@@ -1331,13 +1331,13 @@ BentleyStatus DbTable::CreateSharedColumns(TablePerHierarchyInfo const& tphInfo)
         Utf8String generatedName;
         m_sharedColumnNameGenerator.Generate(generatedName);
         BeAssert(FindColumn(generatedName.c_str()) == nullptr);
-        if (nullptr == CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Persisted))
+        if (nullptr == CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical))
             return ERROR;
         }
 
     //the overflow column will hold its data as JSON. So the column data type is TEXT.
     Utf8StringCR customOverflowColname = tphInfo.GetOverflowColumnName();
-    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::Overflow, PersistenceType::Persisted))
+    if (nullptr == CreateColumn(customOverflowColname.empty() ? Utf8String(COL_Overflow) : customOverflowColname, DbColumn::Type::Text, DbColumn::Kind::PhysicalOverflow, PersistenceType::Physical))
         return ERROR;
 
     return SUCCESS;
@@ -1352,7 +1352,7 @@ DbColumn* DbTable::CreateOverflowSlaveColumn(DbColumn::Type colType)
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
 
-    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::OverflowSlave, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
+    return CreateColumn(generatedName, colType, Enum::Or(DbColumn::Kind::InOverflow, DbColumn::Kind::SharedDataColumn), PersistenceType::Virtual);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1495,7 +1495,7 @@ bool DbColumn::IsUnique() const
 //---------------------------------------------------------------------------------------
 DbColumn const* DbColumn::GetPhysicalOverflowColumn() const
     {
-    if (Enum::Intersects(m_kind, Kind::OverflowSlave))
+    if (Enum::Intersects(m_kind, Kind::InOverflow))
         {
         BeAssert(m_table.GetPhysicalOverflowColumn() != nullptr);
         return m_table.GetPhysicalOverflowColumn();
@@ -1520,9 +1520,9 @@ BentleyStatus DbColumn::SetKind(Kind kind)
     if (GetTableR().GetEditHandleR().AssertNotInEditMode())
         return BentleyStatus::ERROR;
 
-    if (m_kind == DbColumn::Kind::Overflow)
+    if (m_kind == DbColumn::Kind::PhysicalOverflow)
         {
-        BeAssert(false && "Cannot change Kind for a OverflowMaster column");
+        BeAssert(false && "Cannot change Kind for a Overflow physical column");
         return ERROR;
         }
 
@@ -1538,7 +1538,7 @@ BentleyStatus DbColumn::MakeNonVirtual()
     if (m_table.GetEditHandleR().AssertNotInEditMode())
         return ERROR;
 
-    if (m_persistenceType == PersistenceType::Persisted)
+    if (m_persistenceType == PersistenceType::Physical)
         return SUCCESS;
 
     if (m_table.GetPersistenceType() == PersistenceType::Virtual)
@@ -1547,37 +1547,8 @@ BentleyStatus DbColumn::MakeNonVirtual()
         return ERROR;
         }
 
-    m_persistenceType = PersistenceType::Persisted;
+    m_persistenceType = PersistenceType::Physical;
     return SUCCESS;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        10/2014
-//---------------------------------------------------------------------------------------
-//static 
-DbColumn::Type DbColumn::PrimitiveTypeToColumnType(ECN::PrimitiveType type)
-    {
-    switch (type)
-        {
-            case ECN::PrimitiveType::PRIMITIVETYPE_Binary:
-            case ECN::PrimitiveType::PRIMITIVETYPE_IGeometry:;
-                return DbColumn::Type::Blob;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Boolean:
-                return DbColumn::Type::Boolean;
-            case ECN::PrimitiveType::PRIMITIVETYPE_DateTime:
-                return DbColumn::Type::TimeStamp;
-            case ECN::PrimitiveType::PRIMITIVETYPE_Double:
-                return DbColumn::Type::Real;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_Integer:
-            case ECN::PrimitiveType::PRIMITIVETYPE_Long:
-                return DbColumn::Type::Integer;
-
-            case ECN::PrimitiveType::PRIMITIVETYPE_String:
-                return DbColumn::Type::Text;
-        }
-
-    BeAssert(false && "Type not supported");
-    return DbColumn::Type::Any;
     }
 
 //---------------------------------------------------------------------------------------
@@ -2065,12 +2036,12 @@ DbTable* TableMapper::FindOrCreateTable(DbSchema& dbSchema, Utf8StringCR tableNa
 //static
 DbTable* TableMapper::CreateTableForOtherStrategies(DbSchema& dbSchema, Utf8StringCR tableName, DbTable::Type tableType, bool isVirtual, Utf8StringCR primaryKeyColumnName, ECN::ECClassId const& exclusiveRootClassId, DbTable const* primaryTable)
     {
-    DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Persisted, exclusiveRootClassId, primaryTable);
+    DbTable* table = dbSchema.CreateTable(tableName.c_str(), tableType, isVirtual ? PersistenceType::Virtual : PersistenceType::Physical, exclusiveRootClassId, primaryTable);
     
     DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName.empty() ? Utf8String("ECInstanceId") //default name for PK column
                                                                             : primaryKeyColumnName, 
-                                             DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Persisted);
-    if (table->GetPersistenceType() == PersistenceType::Persisted)
+                                             DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
+    if (table->GetPersistenceType() == PersistenceType::Physical)
         {
         std::vector<DbColumn*> pkColumns {pkColumn};
         if (SUCCESS != table->CreatePrimaryKeyConstraint(pkColumns))
@@ -2101,7 +2072,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
 
     //Tables with map strategy Existing are not considered to be exclusively owned by an ECClass. Maybe there are
     //cases where schema authors want to map two ECClasses to the same existing table.
-    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Persisted, ECClassId(), nullptr);
+    DbTable* table = dbSchema.CreateTable(existingTableName, DbTable::Type::Existing, PersistenceType::Physical, ECClassId(), nullptr);
     if (table == nullptr)
         return nullptr;
 
@@ -2120,7 +2091,7 @@ DbTable* TableMapper::CreateTableForExistingTableStrategy(DbSchema& dbSchema, Ut
     std::vector<size_t> pkOrdinals;
     for (SqliteColumnInfo const& colInfo : existingColumnInfos)
         {
-        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Physical);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");

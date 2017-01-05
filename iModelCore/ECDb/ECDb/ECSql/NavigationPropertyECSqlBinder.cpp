@@ -2,12 +2,10 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "NavigationPropertyECSqlBinder.h"
-#include "IdECSqlBinder.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -31,7 +29,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
         return ERROR;
         }
 
-    NavigationPropertyMap const* navPropMap = static_cast<NavigationPropertyMap const*> (typeInfo.GetPropertyMap());
+    NavigationPropertyMap const* navPropMap = typeInfo.GetPropertyMap()->GetAs<NavigationPropertyMap>();
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();

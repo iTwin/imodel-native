@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/DbColumnFactory.cpp $
+|     $Source: ECDb/ClassMapColumnFactory.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       12 / 2016
 //------------------------------------------------------------------------------------------
-DbColumnFactory::DbColumnFactory(ClassMap const& classMap) 
+ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) 
     : m_classMap(classMap), m_usesSharedColumnStrategy(classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes)
     {
     Initialize();
@@ -24,7 +24,7 @@ DbColumnFactory::DbColumnFactory(ClassMap const& classMap)
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void DbColumnFactory::Initialize()
+void ClassMapColumnFactory::Initialize()
     {
     bmap<ECN::ECClassCP, ClassMap const*> relevantClassMaps;
     if (ComputeRelevantClassMaps(relevantClassMaps) != SUCCESS)
@@ -60,22 +60,22 @@ void DbColumnFactory::Initialize()
                     continue;
                 }
 
-            SingleColumnDataPropertyMap const* dataPropertyMap = static_cast<SingleColumnDataPropertyMap const*>(propertyMap);
-            auto columnItor = m_usedColumnMap.find(propertyMap->GetAccessString());
+            SingleColumnDataPropertyMap const* singleColDataPropertyMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
+            auto columnItor = m_usedColumnMap.find(singleColDataPropertyMap->GetAccessString());
             if (columnItor != m_usedColumnMap.end())
                 {
-                if (columnItor->second.find(&dataPropertyMap->GetColumn()) != columnItor->second.end())
+                if (columnItor->second.find(&singleColDataPropertyMap->GetColumn()) != columnItor->second.end())
                     continue;
                 }
 
-            AddColumnToCache(dataPropertyMap->GetColumn(), dataPropertyMap->GetAccessString());
+            AddColumnToCache(singleColDataPropertyMap->GetColumn(), singleColDataPropertyMap->GetAccessString());
             }
         }
     }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     DbColumn* outColumn = nullptr;
     if (m_usesSharedColumnStrategy)
@@ -93,7 +93,7 @@ DbColumn* DbColumnFactory::CreateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const
     {
     auto itor = m_usedColumnMap.find(accessString);
     if (itor == m_usedColumnMap.end())
@@ -116,7 +116,7 @@ DbColumn* DbColumnFactory::AllocateDataColumn(ECN::ECPropertyCR property, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //-----------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     DbColumn* existingColumn = GetTable().FindColumnP(params.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUseByClassMap(*existingColumn) &&
@@ -166,7 +166,7 @@ DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, DbColu
             return nullptr;
         }
 
-    DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Persisted);
+    DbColumn* newColumn = GetTable().CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Physical);
     if (newColumn == nullptr)
         {
         BeAssert(false && "Failed to create column");
@@ -189,7 +189,7 @@ DbColumn* DbColumnFactory::ApplyDefaultStrategy(ECN::ECPropertyCR ecProp, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbColumn* DbColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR prop, DbColumn::Type colType, DbColumn::CreateParams const& params) const
+DbColumn* ClassMapColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR prop, DbColumn::Type colType, DbColumn::CreateParams const& params) const
     {
     //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
     if (params.IsColumnNameFromPropertyMapCA())
@@ -252,7 +252,7 @@ DbColumn* DbColumnFactory::ApplySharedColumnStrategy(ECN::ECPropertyCR prop, DbC
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId classId, int retryCount) const
+BentleyStatus ClassMapColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, Utf8StringCR requestedColumnName, ECN::ECClassId classId, int retryCount) const
     {
     if (retryCount > 0)
         {
@@ -284,7 +284,7 @@ BentleyStatus DbColumnFactory::ResolveColumnName(Utf8StringR resolvedColumName, 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECClassId DbColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString) const
+ECClassId ClassMapColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString) const
     {
     const size_t dotPosition = propAccessString.find(".");
     ECPropertyCP property = nullptr;
@@ -309,7 +309,7 @@ ECClassId DbColumnFactory::GetPersistenceClassId(ECN::ECPropertyCR ecProp, Utf8S
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool DbColumnFactory::TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const
+bool ClassMapColumnFactory::TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const
     {
     reusableColumn = nullptr;
     for (DbColumn const* column : GetTable().GetColumns())
@@ -328,7 +328,7 @@ bool DbColumnFactory::TryFindReusableSharedDataColumn(DbColumn const*& reusableC
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void DbColumnFactory::AddColumnToCache(DbColumn const& column, Utf8StringCR accessString) const
+void ClassMapColumnFactory::AddColumnToCache(DbColumn const& column, Utf8StringCR accessString) const
     {
     m_usedColumnMap[accessString].insert(&column);
     m_usedColumnSet.insert(&column);
@@ -337,7 +337,7 @@ void DbColumnFactory::AddColumnToCache(DbColumn const& column, Utf8StringCR acce
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-bool DbColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& params) const
+bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& params) const
     {
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
@@ -355,7 +355,7 @@ bool DbColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColumn::Ty
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-BentleyStatus DbColumnFactory::ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const
+BentleyStatus ClassMapColumnFactory::ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const
     {
     contextGraph.clear();
     if (!m_classMap.GetMapStrategy().GetTphInfo().IsValid())
@@ -474,17 +474,17 @@ BentleyStatus DbColumnFactory::ComputeRelevantClassMaps(bmap<ECN::ECClassCP, Cla
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-DbTable& DbColumnFactory::GetTable() const  { return m_classMap.GetJoinedTable();  }
+DbTable& ClassMapColumnFactory::GetTable() const  { return m_classMap.GetJoinedTable();  }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-ECDbCR DbColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
+ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       01 / 2015
 //------------------------------------------------------------------------------------------
-void DbColumnFactory::Debug() const
+void ClassMapColumnFactory::Debug() const
     {
     NativeSqlBuilder sql;
     sql.Append("ClassMap : ").AppendLine(GetClassMap().GetClass().GetFullName());

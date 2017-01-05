@@ -17,10 +17,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
-        DbTable const* m_table;
-        PropertyMap::Type m_filter;
-        bool m_doNotSkipSystemPropertyMaps;
+        DbTable const* m_table = nullptr;
+        PropertyMap::Type m_filter = PropertyMap::Type::All;
+        bool m_doNotSkipSystemPropertyMaps = false;
         mutable std::vector<DbColumn const*> m_columns;
+        mutable size_t m_virtualColumnCount = 0;
+        mutable size_t m_overflowColumnCount = 0;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
@@ -28,17 +30,19 @@ struct GetColumnsPropertyMapVisitor final : IPropertyMapVisitor
 
     public:
         GetColumnsPropertyMapVisitor(DbTable const& table, PropertyMap::Type filter = PropertyMap::Type::All)
-            : IPropertyMapVisitor(), m_table(&table), m_filter(filter), m_doNotSkipSystemPropertyMaps(false)
+            : IPropertyMapVisitor(), m_table(&table), m_filter(filter)
             {}
         GetColumnsPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool doNotSkipSystemPropertyMaps = false)
-            :IPropertyMapVisitor(), m_table(nullptr), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipSystemPropertyMaps)
+            :IPropertyMapVisitor(), m_filter(filter), m_doNotSkipSystemPropertyMaps(doNotSkipSystemPropertyMaps)
             {}
 
         ~GetColumnsPropertyMapVisitor() {}
 
         std::vector<DbColumn const*> const& GetColumns() const { return m_columns; }
         DbColumn const* GetSingleColumn() const;
-        bool AllColumnsAreVirtual() const;
+
+        size_t GetVirtualColumnCount() const { return m_virtualColumnCount ; }
+        size_t GetOverflowColumnCount() const { return m_overflowColumnCount; }
     };
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16

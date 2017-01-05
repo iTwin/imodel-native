@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/RelationshipClassMap.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -32,7 +32,6 @@ struct RelationshipConstraintMap : NonCopyableClass
         void SetECInstanceIdPropMap(ConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(ConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
-
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
         bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint() const { return m_constraint; }
@@ -61,9 +60,6 @@ struct RelationshipClassMap : ClassMap
         RelationshipConstraintMap m_targetConstraintMap;
 
         RelationshipClassMap(ECDb const&, Type, ECN::ECRelationshipClassCR, MapStrategyExtendedInfo const&, bool setIsDirty);
-        DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
-        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
-
         RelationshipConstraintMap& GetConstraintMapR(ECN::ECRelationshipEnd constraintEnd);
 
     public:
@@ -90,26 +86,61 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 /*=================================================================================**//**
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
-struct RelationshipClassEndTableMap : RelationshipClassMap
+struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
     private:
-        struct ColumnLists : NonCopyableClass
-            {
-            std::vector<DbColumn const*> m_relECClassIdColumnsPerFkTable; //Rel ECClassId
-            std::vector<DbColumn const*> m_ecInstanceIdColumnsPerFkTable; //ForeignEnd ECInstanceId
-            std::vector<DbColumn const*> m_classIdColumnsPerFkTable; //ForeignEnd ECClassId
-            std::vector<DbColumn const*> m_relClassIdColumnsPerFkTable; //ForeignEnd ECClassId
-            std::vector<DbColumn const*> m_fkColumnsPerFkTable; //ReferencedEnd ECInstanceId
-            //The referenced end class id cols are either from the FK table, or if the referenced table has its own class id column, that one is taken.
-            //WIP_FOR_AFFAN: Is this safe enough? Does consuming code know that the prop map has columns to another table??
-            std::vector<DbColumn const*> m_referencedEndECClassIdColumns; //ReferencedEnd ECClassId in the referenced table or fk table
-            static void push_back(std::vector<DbColumn const*>& list, DbColumn const* column)
-                {
-                BeAssert(column != nullptr);
-                if (std::find(list.begin(), list.end(), column) == list.end())
-                    list.push_back(column);
-                }
-            };
+		//======================================================================================
+		// @bsiclass                                                     Affan.Khan      01/2015
+		//===============+===============+===============+===============+===============+======
+		struct ColumnFactory final : NonCopyableClass
+			{
+			private:
+				RelationshipClassEndTableMap const& m_relMap;
+				RelationshipMappingInfo const& m_relInfo;
+			public:
+				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
+					:m_relMap(relMap), m_relInfo(relInfo) {}
+				DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
+				DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
+			};
+
+		struct ColumnLists final : NonCopyableClass
+			{
+			private:
+				//Following is not created
+				std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
+				std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
+
+				//Following are actully create for each secondary table.
+				std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
+				std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
+
+				//Following is not really created but just referenced 
+				std::vector<DbColumn const*> m_primaryTableFkECClassIdColumns;     //Point to primary table ECClassId and we just store reference to it to act as FkECClassId.
+				static void push_back(std::vector<DbColumn const*>& list, DbColumn const* column)
+					{
+					BeAssert(column != nullptr);
+					if (std::find(list.begin(), list.end(), column) == list.end())
+						list.push_back(column);
+					}
+				ColumnFactory m_columnFactory;
+
+			public:
+				void AddECInstanceIdColumn(DbColumn const& column) { push_back(m_secondaryTableECInstanceIdColumns, &column); }
+				void AddECClassIdColumn(DbColumn const& column) { push_back(m_secondaryTableECClassIdColumns, &column); }
+				void AddFkECInstanceIdColumn(DbColumn const& column) { push_back(m_secondaryTableFkECInstanceIdColumns, &column); }
+				void AddFkRelECClassIdColumn(DbColumn const& column) { push_back(m_secondaryTableFkRelECClassIdColumns, &column); }
+				void AddFkECClassIdColumn(DbColumn const& column) { push_back(m_primaryTableFkECClassIdColumns, &column); }
+				std::vector<DbColumn const*> const& GetECInstanceIdColumns() const { return m_secondaryTableECInstanceIdColumns; }
+				std::vector<DbColumn const*> const& GetECClassIdColumns() const { return m_secondaryTableECClassIdColumns; }
+				std::vector<DbColumn const*> const& GetFkECInstanceIdColumns() const { return m_secondaryTableFkECInstanceIdColumns; }
+				std::vector<DbColumn const*> const& GetFkRelECClassIdColumns() const { return m_secondaryTableFkRelECClassIdColumns; }
+				std::vector<DbColumn const*> const& GetFkECClassIdColumns() const { return m_primaryTableFkECClassIdColumns; }
+				ColumnFactory& GetColumnFactory() { return m_columnFactory; }		
+				ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
+					:m_columnFactory(relMap, relInfo)
+					{}
+			};
 
         struct ForeignKeyColumnInfo : NonCopyableClass
             {
@@ -153,7 +184,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         void AddIndexToRelationshipEnd();
 
         virtual ClassMappingStatus _Map(ClassMappingContext&) override;
-        DbColumn* CreateRelECClassIdColumn(DbTable&, Utf8StringCR colName, bool makeNotNull) const;
+        DbColumn* CreateRelECClassIdColumn(ColumnFactory&, DbTable&, Utf8StringCR colName, bool makeNotNull) const;
 
         BentleyStatus DetermineKeyAndConstraintColumns(ColumnLists&, RelationshipMappingInfo const&);
         BentleyStatus DetermineFkColumns(ColumnLists&, RelationshipMappingInfo const&);
@@ -167,7 +198,6 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
 
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind) const;
-
     public:
         ~RelationshipClassEndTableMap() {}
 
@@ -188,7 +218,7 @@ struct RelationshipClassEndTableMap : RelationshipClassMap
 /*==========================================================================
 * @bsiclass                                                 Ramanujam.Raman      06/2012
 +===============+===============+===============+===============+===============+======*/
-struct RelationshipClassLinkTableMap : RelationshipClassMap
+struct RelationshipClassLinkTableMap final : RelationshipClassMap
     {
     private:
         enum class RelationshipIndexSpec
@@ -208,15 +238,16 @@ struct RelationshipClassLinkTableMap : RelationshipClassMap
 
         void AddIndices(ClassMappingContext&, bool allowDuplicateRelationship);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
+        DbColumn* CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnId, PersistenceType);
+        void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECClassId& defaultConstraintClassId, ECN::ECRelationshipConstraintCR constraint) const;
+
 
         virtual BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(RelationshipMappingInfo const&, ECN::ECRelationshipEnd relationshipEnd);
 
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
-
         static Utf8String DetermineConstraintECInstanceIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(RelationshipMappingInfo::LinkTableMappingInfo const&, ECN::ECRelationshipEnd);
-
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
 
     public:

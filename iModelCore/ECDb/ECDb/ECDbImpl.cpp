@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbImpl.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -337,10 +337,17 @@ void ECDb::Impl::AddAppData(ECDb::AppData::Key const& key, ECDb::AppData* appDat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  12/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable) const
+BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf8CP propertyAccessString, BeInt64Id ecinstanceId, bool writable, ECCrudWriteToken const* writeToken) const
     {
     if (blobIO.IsValid())
         return ERROR;
+
+    ECDbPolicy policy = ECDbPolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
+    if (!policy.IsSupported())
+        {
+        GetIssueReporter().Report(ECDbIssueSeverity::Error, policy.GetNotSupportedMessage().c_str());
+        return ERROR;
+        }
 
     //all this method does is to determine the table and column name for the given class name and property access string.
     //the code is verbose because serious validation is done to ensure that the BlobIO is only used for ECProperties
@@ -377,10 +384,10 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
         return ERROR;
         }
 
-    PrimitivePropertyMap const* primPropMap = static_cast<PrimitivePropertyMap const*> (propMap);
+    PrimitivePropertyMap const* primPropMap = propMap->GetAs<PrimitivePropertyMap>();
     DbColumn const& col = primPropMap->GetColumn();
 
-    if (col.IsOverflowSlave())
+    if (col.IsInOverflow())
         {
         LOG.errorv("Cannot open BlobIO for ECProperty '%s.%s' as it is mapped to an overflow column.",
                    ecClass.GetFullName(), propertyAccessString);

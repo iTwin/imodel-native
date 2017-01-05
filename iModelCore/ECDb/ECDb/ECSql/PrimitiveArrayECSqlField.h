@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveArrayMappedToSingleColumnECSqlField.h $
+|     $Source: ECDb/ECSql/PrimitiveArrayECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveArrayMappedToSingleColumnECSqlField : public ECSqlField, public IECSqlArrayValue
+struct PrimitiveArrayECSqlField : public ECSqlField, public IECSqlArrayValue
     {
 private:
     struct ArrayElementValue : public IECSqlValue, IECSqlPrimitiveValue
@@ -26,8 +26,8 @@ private:
 
         private:
             //IECSqlValue
-            virtual bool _IsNull() const override;
-            virtual ECSqlColumnInfoCR _GetColumnInfo() const override;
+            virtual bool _IsNull() const override { return m_value.IsNull(); }
+            virtual ECSqlColumnInfoCR _GetColumnInfo() const override { return m_columnInfo; }
             virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
             virtual IECSqlStructValue const& _GetStruct() const override;
             virtual IECSqlArrayValue const& _GetArray() const override;
@@ -44,7 +44,6 @@ private:
             virtual DPoint2d _GetPoint2d() const override;
             virtual DPoint3d _GetPoint3d() const override;
             virtual IGeometryPtr _GetGeometry() const override;
-            virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
             bool CanRead(ECN::PrimitiveType requestedType) const;
 
@@ -53,7 +52,7 @@ private:
             void Init(ECSqlColumnInfoCR parentColumnInfo);
 
             BentleyStatus SetValue(ECN::IECInstanceCR instance, uint32_t arrayIndex, DateTime::Info const& dateTimeMetadata);
-            void Reset();
+            void Reset() { m_value.Clear(); }
         };
 
 private:
@@ -70,27 +69,27 @@ private:
     mutable ArrayElementValue m_arrayElement;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return false; } //arrays are always considered to be not-null (seems to be EC contract)
+    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override { return *this; }
 
     //IECSqlArrayValue
     virtual void _MoveNext(bool onInitializingIterator) const override;
-    virtual bool _IsAtEnd() const override;
-    virtual IECSqlValue const* _GetCurrent() const override;
-    virtual int _GetArrayLength() const override;
+    virtual bool _IsAtEnd() const override { return m_currentArrayIndex >= _GetArrayLength(); }
+    virtual IECSqlValue const* _GetCurrent() const override { BeAssert(m_currentArrayIndex >= 0 && m_currentArrayIndex < _GetArrayLength()); return &m_arrayElement; }
+    virtual int _GetArrayLength() const override { return m_arrayInfo.GetCount(); }
 
     //ECSqlField
     virtual ECSqlStatus _OnAfterReset() override;
     virtual ECSqlStatus _OnAfterStep() override;
 
     void DoReset() const;
-    ECN::IECInstanceCP GetArrayValueECInstance() const;
+    ECN::IECInstanceCP GetArrayValueECInstance() const { return m_arrayValueECInstance.get(); }
 
 public:
-    PrimitiveArrayMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
-    ~PrimitiveArrayMappedToSingleColumnECSqlField() {}
+    PrimitiveArrayECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex, ECN::ECClassCR primitiveArraySystemClass);
+    ~PrimitiveArrayECSqlField() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

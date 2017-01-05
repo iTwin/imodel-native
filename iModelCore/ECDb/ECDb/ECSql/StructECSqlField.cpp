@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.cpp $
+|     $Source: ECDb/ECSql/StructECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -12,7 +12,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-bool StructMappedToColumnsECSqlField::_IsNull() const
+bool StructECSqlField::_IsNull() const
     {
     for (std::unique_ptr<ECSqlField> const& field : m_structFields)
         {
@@ -26,7 +26,7 @@ bool StructMappedToColumnsECSqlField::_IsNull() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive() const
+IECSqlPrimitiveValue const& StructECSqlField::_GetPrimitive() const
     {
     ReportError(ECSqlStatus::Error, "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
     BeAssert(false && "GetPrimitive cannot be called for a struct column. Call GetStruct instead.");
@@ -36,7 +36,7 @@ IECSqlPrimitiveValue const& StructMappedToColumnsECSqlField::_GetPrimitive() con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray() const
+IECSqlArrayValue const& StructECSqlField::_GetArray() const
     {
     ReportError(ECSqlStatus::Error, "GetArray cannot be called for a struct column. Call GetStruct instead.");
     BeAssert(false && "GetArray cannot be called for a struct column. Call GetStruct instead.");
@@ -46,7 +46,7 @@ IECSqlArrayValue const& StructMappedToColumnsECSqlField::_GetArray() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue(int columnIndex) const
+IECSqlValue const& StructECSqlField::_GetValue(int columnIndex) const
     {
     if (columnIndex < 0 || columnIndex >= _GetMemberCount())
         {
@@ -62,7 +62,7 @@ IECSqlValue const& StructMappedToColumnsECSqlField::_GetValue(int columnIndex) c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Affan.Khan      09/2013
 //---------------------------------------------------------------------------------------
-void StructMappedToColumnsECSqlField::AppendField(std::unique_ptr<ECSqlField> field)
+void StructECSqlField::AppendField(std::unique_ptr<ECSqlField> field)
     {
     if (field == nullptr)
         {

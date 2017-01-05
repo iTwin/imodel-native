@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveArrayToColumnECSqlBinder.h $
+|     $Source: ECDb/ECSql/PrimitiveArrayECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -10,14 +10,14 @@
 
 #include "ECSqlBinder.h"
 #include "IECSqlPrimitiveBinder.h"
-#include "PrimitiveToSingleColumnECSqlBinder.h"
+#include "PrimitiveECSqlBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveArrayToColumnECSqlBinder : public ECSqlBinder, IECSqlArrayBinder
+struct PrimitiveArrayECSqlBinder : public ECSqlBinder, IECSqlArrayBinder
     {
 private:
     //=======================================================================================
@@ -61,7 +61,7 @@ private:
 private:
     const uint32_t ARRAY_PROPERTY_INDEX = 1;
 
-    mutable ECN::StandaloneECInstancePtr m_instance;
+    mutable ECN::StandaloneECInstancePtr m_arrayInstance;
     mutable ArrayElementBinder m_arrayElementBinder;
     mutable int m_currentArrayIndex;
     ECN::ECClassCP m_arrayStorageClass;
@@ -79,11 +79,10 @@ private:
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
     uint32_t GetCurrentArrayLength() const { return (uint32_t) (m_currentArrayIndex + 1); }
-    ECN::StandaloneECInstanceP GetInstance(bool create) const;
 
 public:
-    PrimitiveArrayToColumnECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
-    ~PrimitiveArrayToColumnECSqlBinder() {}
+    PrimitiveArrayECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo);
+    ~PrimitiveArrayECSqlBinder() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

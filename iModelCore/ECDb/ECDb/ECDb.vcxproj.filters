@@ -112,23 +112,11 @@
     <ClInclude Include="ECSql\ECSqlField.h">
       <Filter>ECSql\Fields</Filter>
     </ClInclude>
-    <ClInclude Include="ECsql\PointMappedToColumnsECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
-    </ClInclude>
-    <ClInclude Include="ECsql\PrimitiveArrayMappedToSingleColumnECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
-    </ClInclude>
-    <ClInclude Include="ECsql\PrimitiveMappedToSingleColumnECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ECSqlPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlPrepareContext.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
     </ClInclude>
     <ClInclude Include="ECDbProfileManager.h">
       <Filter>ECDbProfile</Filter>
@@ -152,9 +140,6 @@
       <Filter>ECSql\ECSqlParser</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClInclude>
     <ClInclude Include="ECSql\ECSqlBinderFactory.h">
@@ -242,9 +227,6 @@
     <ClInclude Include="ECSql\ECSqlPropertyNameExpPreparer.h">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECInstanceId.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -255,9 +237,6 @@
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
     <ClInclude Include="ECDbLogger.h" />
-    <ClInclude Include="ECSql\PrimitiveToSingleColumnECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
     <ClInclude Include="ECSchemaValidator.h">
       <Filter>ECDbSchemaManager</Filter>
     </ClInclude>
@@ -352,12 +331,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClInclude>
-    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h">
-      <Filter>ECSql\Fields</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbApi.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -409,11 +382,38 @@
       <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="Nullable.h" />
-    <ClInclude Include="DbColumnFactory.h">
-      <Filter>ECDbMap</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h">
       <Filter>PublicApi</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\PointECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\PrimitiveArrayECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\PrimitiveECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructArrayECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructECSqlField.h">
+      <Filter>ECSql\Fields</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\PrimitiveArrayECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\PrimitiveECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructArrayECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ECSql\StructECSqlBinder.h">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClInclude>
+    <ClInclude Include="ClassMapColumnFactory.h">
+      <Filter>ECDbMap</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -470,23 +470,11 @@
     <ClCompile Include="ECSql\ECSqlField.cpp">
       <Filter>ECSql\Fields</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\PrimitiveArrayMappedToSingleColumnECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\PrimitiveMappedToSingleColumnECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
-    </ClCompile>
-    <ClCompile Include="ECsql\PointMappedToColumnsECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECSqlPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlPrepareContext.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
     </ClCompile>
     <ClCompile Include="ECDbProfileManager.cpp">
       <Filter>ECDbProfile</Filter>
@@ -513,9 +501,6 @@
       <Filter>ECSql\ECSqlParser</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp">
       <Filter>ECSql\ParameterBinding</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlBinderFactory.cpp">
@@ -624,9 +609,6 @@
     <ClCompile Include="ECSql\ECSqlPropertyNameExpPreparer.cpp">
       <Filter>ECSql\ECSqlPrepare</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\PrimitiveArrayToColumnECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
     <ClCompile Include="ECSql\ECInstanceECSqlSelectAdapter.cpp">
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
@@ -643,9 +625,6 @@
       <Filter>ECSql\Adapters</Filter>
     </ClCompile>
     <ClCompile Include="ECDbLogger.cpp" />
-    <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
     <ClCompile Include="ECSchemaValidator.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
@@ -699,12 +678,6 @@
     <ClCompile Include="ECDbSchemaPersistenceHelper.cpp">
       <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
-    <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp">
-      <Filter>ECSql\ParameterBinding</Filter>
-    </ClCompile>
-    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp">
-      <Filter>ECSql\Fields</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbExpressionSymbolProvider.cpp" />
     <ClCompile Include="DbSchema.cpp">
       <Filter>ECDbMap</Filter>
@@ -754,7 +727,34 @@
     <ClCompile Include="ECDbSqlFunctions.cpp">
       <Filter>ECDb</Filter>
     </ClCompile>
-    <ClCompile Include="DbColumnFactory.cpp">
+    <ClCompile Include="ECSql\PointECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\PrimitiveArrayECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\PrimitiveECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructArrayECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructECSqlField.cpp">
+      <Filter>ECSql\Fields</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\PrimitiveArrayECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\PrimitiveECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructArrayECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ECSql\StructECSqlBinder.cpp">
+      <Filter>ECSql\ParameterBinding</Filter>
+    </ClCompile>
+    <ClCompile Include="ClassMapColumnFactory.cpp">
       <Filter>ECDbMap</Filter>
     </ClCompile>
   </ItemGroup>

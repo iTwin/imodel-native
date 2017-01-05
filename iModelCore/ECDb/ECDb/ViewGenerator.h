@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ViewGenerator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -111,13 +111,10 @@ struct ViewGenerator
                     Result() : m_propertyMap(nullptr) {}
                     explicit Result(SingleColumnDataPropertyMap const& propertyMap) :m_propertyMap(&propertyMap) {}
 
-                    Utf8CP GetAccessString() const { return GetPropertyMap().GetAccessString().c_str(); }
                     SingleColumnDataPropertyMap const& GetPropertyMap() const { BeAssert(m_propertyMap != nullptr); return *m_propertyMap; }
-                    NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
-                    NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
-                    Utf8CP GetSql() const { return m_sql.ToString(); }
                     DbColumn const& GetColumn() const { return GetPropertyMap().GetColumn(); }
-                    DbTable const& GetTable() const { return GetColumn().GetTable(); }
+                    NativeSqlBuilder const& GetSqlBuilder() const { return m_sql; }
+                    NativeSqlBuilder& GetSqlBuilderR() { return m_sql; }
                 };
 
             private:

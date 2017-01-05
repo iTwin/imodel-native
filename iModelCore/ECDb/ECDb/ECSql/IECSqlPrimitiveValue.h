@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/IECSqlPrimitiveValue.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -31,7 +31,6 @@ struct IECSqlPrimitiveValue
         virtual int _GetInt() const = 0;
         virtual int64_t _GetInt64() const = 0;
         virtual IGeometryPtr _GetGeometry() const = 0;
-        virtual void const* _GetGeometryBlob(int* blobSize) const = 0;
         virtual DPoint2d _GetPoint2d() const = 0;
         virtual DPoint3d _GetPoint3d() const = 0;
         virtual Utf8CP _GetText() const = 0;

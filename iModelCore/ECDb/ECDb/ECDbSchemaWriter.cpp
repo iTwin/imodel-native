@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -669,7 +669,7 @@ BentleyStatus ECDbSchemaWriter::InsertECRelationshipConstraintEntry(ECRelationsh
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
         return ERROR;
 
-    if (BE_SQLITE_OK != stmt->BindInt(2, endpoint))
+    if (BE_SQLITE_OK != stmt->BindInt(2, (int) endpoint))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindInt(3, relationshipConstraint.GetMultiplicity().GetLowerLimit()))
@@ -1838,7 +1838,9 @@ BentleyStatus ECDbSchemaWriter::DeleteECProperty(ECPropertyChange& propertyChang
             //For shared column do not delete column itself.
             if (column->IsShared())
                 {
-                if (!sharedColumnFound) sharedColumnFound = true;
+                if (!sharedColumnFound) 
+                    sharedColumnFound = true;
+
                 continue;
                 }
 

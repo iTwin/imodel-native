@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECSqlStatementTestFixture.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECSqlStatementTestFixture.h"
@@ -16,189 +16,185 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // @bsimethod                                     Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void ECSqlStatementTestFixture::BindFromJson (BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& binder)
+void ECSqlStatementTestFixture::BindFromJson(BentleyStatus& succeeded, ECSqlStatement const& statement, JsonValueCR jsonValue, IECSqlBinder& binder)
     {
     succeeded = ERROR;
-    BeTest::SetFailOnAssert (false);
+    BeTest::SetFailOnAssert(false);
 
     ECSqlStatus stat = ECSqlStatus::Success;
-    switch (jsonValue.type ())
+    switch (jsonValue.type())
         {
             case Json::nullValue:
-                stat = binder.BindNull ();
+                stat = binder.BindNull();
                 break;
             case Json::booleanValue:
-                stat = binder.BindBoolean (jsonValue.asBool ());
+                stat = binder.BindBoolean(jsonValue.asBool());
                 break;
             case Json::realValue:
-                stat = binder.BindDouble (jsonValue.asDouble ());
+                stat = binder.BindDouble(jsonValue.asDouble());
                 break;
             case Json::intValue:
-                stat = binder.BindInt64 (jsonValue.asInt64 ());
+                stat = binder.BindInt64(jsonValue.asInt64());
                 break;
             case Json::stringValue:
-                stat = binder.BindText (jsonValue.asCString (), IECSqlBinder::MakeCopy::Yes);
+                stat = binder.BindText(jsonValue.asCString(), IECSqlBinder::MakeCopy::Yes);
                 break;
 
             case Json::objectValue:
+            {
+            //special primitive types which don't match directly to JSON primitives
+            if (jsonValue.isMember("type"))
                 {
-                //special primitive types which don't match directly to JSON primitives
-                if (jsonValue.isMember ("type"))
+                Utf8String type = jsonValue["type"].asString();
+                if (type.EqualsI("datetime"))
                     {
-                    Utf8String type = jsonValue["type"].asString ();
-                    if (type.EqualsI ("datetime"))
-                        {
-                        DateTime dt;
-                        DateTime::FromString (dt, jsonValue["datetime"].asCString ());
-                        stat = binder.BindDateTime (dt);
-                        }
-                    else if (type.EqualsI ("point2d"))
-                        stat = binder.BindPoint2d (DPoint2d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble ()));
-                    else if (type.EqualsI ("point3d"))
-                        stat = binder.BindPoint3d (DPoint3d::From (jsonValue["x"].asDouble (), jsonValue["y"].asDouble (), jsonValue["z"].asDouble ()));
+                    DateTime dt;
+                    DateTime::FromString(dt, jsonValue["datetime"].asCString());
+                    stat = binder.BindDateTime(dt);
                     }
-                else //struct
-                    {
-                    IECSqlStructBinder& structBinder = binder.BindStruct ();
-                    for (Utf8StringCR memberName : jsonValue.getMemberNames ())
-                        {
-                        Json::Value const& member = jsonValue[memberName.c_str ()];
-                        auto& memberBinder = structBinder.GetMember (memberName.c_str ());
-
-                        BindFromJson (succeeded, statement, member, memberBinder);
-                        if (succeeded != SUCCESS)
-                            return;
-                        }
-                    stat = ECSqlStatus::Success;
-                    }
-                break;
+                else if (type.EqualsI("point2d"))
+                    stat = binder.BindPoint2d(DPoint2d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble()));
+                else if (type.EqualsI("point3d"))
+                    stat = binder.BindPoint3d(DPoint3d::From(jsonValue["x"].asDouble(), jsonValue["y"].asDouble(), jsonValue["z"].asDouble()));
                 }
-            case Json::arrayValue:
+            else //struct
                 {
-                IECSqlArrayBinder& arrayBinder = binder.BindArray ((uint32_t) jsonValue.size ());
-                for (JsonValueCR arrayElement : jsonValue)
+                IECSqlStructBinder& structBinder = binder.BindStruct();
+                for (Utf8StringCR memberName : jsonValue.getMemberNames())
                     {
-                    IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement ();
-                    BindFromJson (succeeded, statement, arrayElement, arrayElementBinder);
+                    Json::Value const& member = jsonValue[memberName.c_str()];
+                    auto& memberBinder = structBinder.GetMember(memberName.c_str());
+
+                    BindFromJson(succeeded, statement, member, memberBinder);
                     if (succeeded != SUCCESS)
                         return;
                     }
                 stat = ECSqlStatus::Success;
                 }
+            break;
+            }
+            case Json::arrayValue:
+            {
+            IECSqlArrayBinder& arrayBinder = binder.BindArray((uint32_t) jsonValue.size());
+            for (JsonValueCR arrayElement : jsonValue)
+                {
+                IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+                BindFromJson(succeeded, statement, arrayElement, arrayElementBinder);
+                if (succeeded != SUCCESS)
+                    return;
+                }
+            stat = ECSqlStatus::Success;
+            }
         }
 
     succeeded = stat == ECSqlStatus::Success ? SUCCESS : ERROR;
-    BeTest::SetFailOnAssert (true);
+    BeTest::SetFailOnAssert(true);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                  04/14
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-void ECSqlStatementTestFixture::VerifyECSqlValue (ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& actualValue)
+void ECSqlStatementTestFixture::VerifyECSqlValue(ECSqlStatement const& statement, JsonValueCR expectedValue, IECSqlValue const& actualValue)
     {
-    auto const& typeInfo = actualValue.GetColumnInfo ().GetDataType ();
-    Utf8String name (actualValue.GetColumnInfo ().GetProperty ()->GetName ());
-    if (expectedValue.isNull ())
+    ECTypeDescriptor const& typeInfo = actualValue.GetColumnInfo().GetDataType();
+    Utf8StringCR name = actualValue.GetColumnInfo().GetProperty()->GetName();
+    if (expectedValue.isNull())
         {
-        if (typeInfo.IsArray ())
-            ASSERT_FALSE (actualValue.IsNull ()) << "Property: " << name.c_str () << "> For arrays IECSqlValue::IsNull is always expected to return false";
-        else
-            ASSERT_TRUE (actualValue.IsNull ()) << "Property: " << name.c_str ();
-
+        ASSERT_TRUE(actualValue.IsNull()) << "Property: " << name.c_str();
         return;
         }
 
-    const auto expectedType = expectedValue.type ();
+    const Json::ValueType expectedType = expectedValue.type();
     if (expectedType != Json::ValueType::objectValue && expectedType != Json::ValueType::arrayValue)
         {
-        ASSERT_TRUE (typeInfo.IsPrimitive ()) << "Property: " << name.c_str ();;
-        auto actualPrimType = typeInfo.GetPrimitiveType ();
+        ASSERT_TRUE(typeInfo.IsPrimitive()) << "Property: " << name.c_str();;
+        PrimitiveType actualPrimType = typeInfo.GetPrimitiveType();
 
         switch (expectedType)
             {
                 case Json::ValueType::booleanValue:
-                    {
-                    ASSERT_EQ (PRIMITIVETYPE_Boolean, actualPrimType) << "Property: " << name.c_str ();;
-                    ASSERT_EQ (expectedValue.asBool (), actualValue.GetBoolean ()) << "Property: " << name.c_str ();;
-                    break;
-                    }
+                {
+                ASSERT_EQ(PRIMITIVETYPE_Boolean, actualPrimType) << "Property: " << name.c_str();
+                ASSERT_EQ(expectedValue.asBool(), actualValue.GetBoolean()) << "Property: " << name.c_str();
+                break;
+                }
                 case Json::ValueType::realValue:
-                    {
-                    ASSERT_EQ (PRIMITIVETYPE_Double, actualPrimType) << "Property: " << name.c_str ();;
-                    ASSERT_EQ (expectedValue.asDouble (), actualValue.GetDouble ()) << "Property: " << name.c_str ();;
-                    break;
-                    }
+                {
+                ASSERT_EQ(PRIMITIVETYPE_Double, actualPrimType) << "Property: " << name.c_str();;
+                ASSERT_EQ(expectedValue.asDouble(), actualValue.GetDouble()) << "Property: " << name.c_str();;
+                break;
+                }
                 case Json::ValueType::intValue:
-                    {
-                    ASSERT_TRUE (PRIMITIVETYPE_Integer == actualPrimType || PRIMITIVETYPE_Long == actualPrimType) << "Property: " << name.c_str ();;
-                    ASSERT_EQ (expectedValue.asInt64 (), actualValue.GetInt64 ()) << "Property: " << name.c_str ();;
-                    break;
-                    }
+                {
+                ASSERT_TRUE(PRIMITIVETYPE_Integer == actualPrimType || PRIMITIVETYPE_Long == actualPrimType) << "Property: " << name.c_str();;
+                ASSERT_EQ(expectedValue.asInt64(), actualValue.GetInt64()) << "Property: " << name.c_str();;
+                break;
+                }
                 case Json::ValueType::stringValue:
-                    {
-                    ASSERT_EQ (PRIMITIVETYPE_String, actualPrimType) << "Property: " << name.c_str ();;
-                    ASSERT_STREQ (expectedValue.asCString (), actualValue.GetText ()) << "Property: " << name.c_str ();;
-                    break;
-                    }
+                {
+                ASSERT_EQ(PRIMITIVETYPE_String, actualPrimType) << "Property: " << name.c_str();;
+                ASSERT_STREQ(expectedValue.asCString(), actualValue.GetText()) << "Property: " << name.c_str();;
+                break;
+                }
             }
         return;
         }
 
     if (expectedType == Json::ValueType::objectValue)
         {
-        if (expectedValue.isMember ("type"))
+        if (expectedValue.isMember("type"))
             {
-            Utf8String typeStr = expectedValue["type"].asString ();
-            if (typeStr.EqualsI ("datetime"))
+            Utf8String typeStr = expectedValue["type"].asString();
+            if (typeStr.EqualsI("datetime"))
                 {
-                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_DateTime) << "Property: " << name.c_str ();;
-                ASSERT_STREQ (expectedValue["datetime"].asCString (), actualValue.GetDateTime ().ToString().c_str ()) << "Property: " << name.c_str ();;
+                ASSERT_TRUE(typeInfo.IsPrimitive() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_DateTime) << "Property: " << name.c_str();;
+                ASSERT_STREQ(expectedValue["datetime"].asCString(), actualValue.GetDateTime().ToString().c_str()) << "Property: " << name.c_str();;
                 }
-            else if (typeStr.EqualsI ("point2d"))
+            else if (typeStr.EqualsI("point2d"))
                 {
-                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point2d) << "Property: " << name.c_str ();;
-                DPoint2d actualVal = actualValue.GetPoint2d ();
-                ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
-                ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;
+                ASSERT_TRUE(typeInfo.IsPrimitive() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_Point2d) << "Property: " << name.c_str();;
+                DPoint2d actualVal = actualValue.GetPoint2d();
+                ASSERT_EQ(expectedValue["x"].asDouble(), actualVal.x) << "Property: " << name.c_str();;
+                ASSERT_EQ(expectedValue["y"].asDouble(), actualVal.y) << "Property: " << name.c_str();;
                 }
-            else if (typeStr.EqualsI ("point3d"))
+            else if (typeStr.EqualsI("point3d"))
                 {
-                ASSERT_TRUE (typeInfo.IsPrimitive () && typeInfo.GetPrimitiveType () == PRIMITIVETYPE_Point3d) << "Property: " << name.c_str ();;
-                DPoint3d actualVal = actualValue.GetPoint3d ();
-                ASSERT_EQ (expectedValue["x"].asDouble (), actualVal.x) << "Property: " << name.c_str ();;
-                ASSERT_EQ (expectedValue["y"].asDouble (), actualVal.y) << "Property: " << name.c_str ();;
-                ASSERT_EQ (expectedValue["z"].asDouble (), actualVal.z) << "Property: " << name.c_str ();;
+                ASSERT_TRUE(typeInfo.IsPrimitive() && typeInfo.GetPrimitiveType() == PRIMITIVETYPE_Point3d) << "Property: " << name.c_str();;
+                DPoint3d actualVal = actualValue.GetPoint3d();
+                ASSERT_EQ(expectedValue["x"].asDouble(), actualVal.x) << "Property: " << name.c_str();;
+                ASSERT_EQ(expectedValue["y"].asDouble(), actualVal.y) << "Property: " << name.c_str();;
+                ASSERT_EQ(expectedValue["z"].asDouble(), actualVal.z) << "Property: " << name.c_str();;
                 }
             }
         else //structs
             {
-            ASSERT_TRUE (typeInfo.IsStruct ());
-            IECSqlStructValue const& actualStructValue = actualValue.GetStruct ();
-            const int structMemberCount = actualStructValue.GetMemberCount ();
+            ASSERT_TRUE(typeInfo.IsStruct());
+            IECSqlStructValue const& actualStructValue = actualValue.GetStruct();
+            const int structMemberCount = actualStructValue.GetMemberCount();
             for (int i = 0; i < structMemberCount; i++)
                 {
-                auto const& actualMemberValue = actualStructValue.GetValue (i);
-                Utf8String memberName (actualMemberValue.GetColumnInfo ().GetProperty ()->GetName ());
-                Json::Value expectedMemberValue = expectedValue.get (memberName, Json::Value (Json::nullValue));
-                VerifyECSqlValue (statement, expectedMemberValue, actualMemberValue);
+                auto const& actualMemberValue = actualStructValue.GetValue(i);
+                Utf8String memberName(actualMemberValue.GetColumnInfo().GetProperty()->GetName());
+                Json::Value expectedMemberValue = expectedValue.get(memberName, Json::Value(Json::nullValue));
+                VerifyECSqlValue(statement, expectedMemberValue, actualMemberValue);
                 }
             }
 
         return;
         }
 
-    ASSERT_EQ (Json::ValueType::arrayValue, expectedType);
-    IECSqlArrayValue const& actualArrayValue = actualValue.GetArray ();
+    ASSERT_EQ(Json::ValueType::arrayValue, expectedType);
+    IECSqlArrayValue const& actualArrayValue = actualValue.GetArray();
     int actualArrayLength = 0;
     for (IECSqlValue const* actualArrayElement : actualArrayValue)
         {
-        ASSERT_TRUE (actualArrayElement != nullptr);
+        ASSERT_TRUE(actualArrayElement != nullptr);
         actualArrayLength++;
-        VerifyECSqlValue (statement, expectedValue[actualArrayLength - 1], *actualArrayElement);
+        VerifyECSqlValue(statement, expectedValue[actualArrayLength - 1], *actualArrayElement);
         }
 
-    ASSERT_EQ ((int) expectedValue.size (), actualArrayLength);
+    ASSERT_EQ((int) expectedValue.size(), actualArrayLength);
     }
 
 END_ECDBUNITTESTS_NAMESPACE

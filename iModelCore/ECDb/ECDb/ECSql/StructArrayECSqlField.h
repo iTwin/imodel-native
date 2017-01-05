@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayJsonECSqlField.h $
+|     $Source: ECDb/ECSql/StructArrayECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,7 +62,6 @@ private:
     virtual DPoint2d _GetPoint2d() const override;
     virtual DPoint3d _GetPoint3d() const override;
     virtual IGeometryPtr _GetGeometry() const override;
-    virtual void const* _GetGeometryBlob(int* blobSize) const override;
 
     bool CanCallGetFor(ECN::PrimitiveType requestedType) const;
 public:
@@ -78,6 +77,7 @@ struct StructJsonECSqlValue : public JsonECSqlValue, public IECSqlStructValue
 private:
     std::vector<std::unique_ptr<JsonECSqlValue>> m_members;
 
+    virtual bool _IsNull() const override;
     virtual IECSqlStructValue const& _GetStruct() const override { return *this; }
 
     virtual int _GetMemberCount() const override { return (int) m_members.size(); }
@@ -129,7 +129,7 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      02/2016
 //+===============+===============+===============+===============+===============+======
-struct StructArrayJsonECSqlField : public ECSqlField
+struct StructArrayECSqlField : public ECSqlField
     {
 private:
     int m_sqliteColumnIndex;
@@ -137,7 +137,7 @@ private:
     mutable std::unique_ptr<ArrayJsonECSqlValue> m_value;
 
     //IECSqlValue
-    virtual bool _IsNull() const override { return false; } // EC contract: arrays are never null
+    virtual bool _IsNull() const override { return GetSqliteStatement().IsColumnNull(m_sqliteColumnIndex); }
     virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override { return *m_value; }
@@ -149,8 +149,8 @@ private:
     void DoReset() const;
 
 public:
-    StructArrayJsonECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex);
-    ~StructArrayJsonECSqlField() {}
+    StructArrayECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int sqliteColumnIndex);
+    ~StructArrayECSqlField() {}
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

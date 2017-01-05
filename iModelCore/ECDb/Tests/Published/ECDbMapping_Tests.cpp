@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbMapping_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -2296,21 +2296,20 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertWithNoParameters)
         "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
         "</ECSchema>"));
 
-
-    //Point2D(3,4) (23,43,32)
     ASSERT_TRUE(ecdb.IsDbOpen());
     ASSERT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().CreateECClassViewsInDb());
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN) "
-                                                 "VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true, 12.34, 45.45, 56.34, 67.44, 14.44, 22312.34, 34.14, 86.54, 34.23, 23.55, 64.34, 34.45, null, null, null)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom) "
+                                                 "VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true, 12.34, 45.45, 56.34, 67.44, 14.44, 22312.34, 34.14, 86.54, 34.23, 23.55, 64.34, 34.45, null, null, null, null)"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C1'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D.X, P2D.Y, P3D.X, P3D.Y, P3D.Z, ST1P.D1, ST1P.P2D.X, ST1P.P2D.Y, ST1P.ST2P.D2, ST1P.ST2P.P3D.X, ST1P.ST2P.P3D.Y, ST1P.ST2P.P3D.Z, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C1'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     int idx = 0;
     ASSERT_STREQ("C1", stmt.GetValueText(idx++));   //Code
@@ -2334,10 +2333,11 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertWithNoParameters)
     ASSERT_EQ(64.34, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(34.45, stmt.GetValueDouble(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));       //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));       //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));       //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));       //BIN is null
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));       //Geom is null
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16
@@ -2419,9 +2419,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertExplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     }
 
@@ -2579,9 +2579,9 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertImplicitNullsUsingECSql)
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Y
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //ST1P.ST2P.P3D.Z
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());//==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfP3d
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfP3d
     ASSERT_EQ(0, stmt.GetValueArray(idx).GetArrayLength());// ==[]
-    ASSERT_EQ(false, stmt.IsValueNull(idx++));  //arrayOfST1
+    ASSERT_EQ(true, stmt.IsValueNull(idx++));  //arrayOfST1
     ASSERT_EQ(true, stmt.IsValueNull(idx++));   //BIN is null
     
     }
@@ -2629,6 +2629,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
         "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
+        "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
         "</ECSchema>"));
 
@@ -2639,8 +2640,8 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     ecdb.SaveChanges();
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, arrayOfST1, I, arrayOfP3d, L, ST1P, D, DT, B, P2D, P3D, BIN) "
-                                                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, arrayOfST1, I, arrayOfP3d, L, ST1P, D, DT, B, P2D, P3D, BIN, Geom) "
+                                                 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
     int idx = 1;
     Utf8CP pCode = "C8";
     Utf8CP pS = "SampleText";
@@ -2661,6 +2662,7 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     DPoint2d pArrayOfST1_P2D[] = {DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35)};
     double pArrayOfST1_D2[] = {12.3, -45.72, -31.11};
     DPoint3d pArrayOfST1_P3D[] = {DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16)};
+    IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pCode, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pS, IECSqlBinder::MakeCopy::No));
@@ -2711,12 +2713,13 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(idx++, pP2D));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindGeometry(idx++, *geom));
 
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     ecdb.SaveChanges();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN FROM  ts.TestElement WHERE Code = 'C8'"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT Code, S, I, L, D, DT, B, P2D, P3D, ST1P, arrayOfP3d, arrayOfST1, BIN, Geom FROM  ts.TestElement WHERE Code = 'C8'"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     idx = 0;
     ASSERT_STREQ(pCode, stmt.GetValueText(idx++));  //Code
@@ -2756,6 +2759,8 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
         }
     ASSERT_EQ(3, i);
     ASSERT_EQ(0, memcmp(&bin, stmt.GetValueBlob(idx++), bin.size()));  //Bin
+    IGeometryPtr actualGeom = stmt.GetValueGeometry(idx++);
+    ASSERT_TRUE(actualGeom->IsSameStructureAndGeometry(*geom));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         11/16

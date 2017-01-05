@@ -35,8 +35,8 @@ private:
         NativeSqlBuilder::List m_pkColumnNamesNativeSqlSnippets; 
         NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
         NativeSqlBuilder::List m_pkValuesNativeSqlSnippets;
-        std::map<std::size_t, std::vector<std::size_t>> m_overflowPropertyIndexes;
-        std::map<std::size_t, std::vector<DataPropertyMap const*>> m_overflowProperties;
+        std::map<size_t, std::vector<size_t>> m_overflowPropertyComponentIndexes;
+        std::map<size_t, std::vector<SingleColumnDataPropertyMap const*>> m_overflowPropertyMaps;
         };
 
 

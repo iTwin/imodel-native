@@ -803,8 +803,8 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
             tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
         }
 
-    if (tables[PersistenceType::Persisted].size() > 0)
-        return tables[PersistenceType::Persisted].size();
+    if (tables[PersistenceType::Physical].size() > 0)
+        return tables[PersistenceType::Physical].size();
 
     if (tables[PersistenceType::Virtual].size() > 0)
         return 1;

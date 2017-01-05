@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayJsonECSqlBinder.h $
+|     $Source: ECDb/ECSql/StructArrayECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -140,7 +140,7 @@ public:
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      01/2014
 //+===============+===============+===============+===============+===============+======
-struct StructArrayJsonECSqlBinder : public ECSqlBinder, public IECSqlArrayBinder
+struct StructArrayECSqlBinder : public ECSqlBinder, public IECSqlArrayBinder
     {
 private:
     int m_sqliteIndex;
@@ -158,8 +158,8 @@ private:
     virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override { return m_binder->BindArray(initialCapacity); }
 
 public:
-    StructArrayJsonECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);
-    ~StructArrayJsonECSqlBinder() {}
+    StructArrayECSqlBinder(ECSqlStatementBase&, ECSqlTypeInfo const&);
+    ~StructArrayECSqlBinder() {}
     };
 
 

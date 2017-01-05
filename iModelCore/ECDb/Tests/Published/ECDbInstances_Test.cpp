@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbInstances_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -220,9 +220,6 @@ TEST_F(ECDbInstances, InsertECInstancesWithNullValues)
             ECPropertyCP prop = statement.GetColumnInfo(i).GetProperty();
             Utf8StringCR propName = prop->GetName();
             bool expectedIsNull = propName.CompareTo(nonNullPropertyName) != 0 && !propName.Equals("ECInstanceId") && !propName.Equals("ECClassId");
-            if (prop->GetIsArray())
-                expectedIsNull = false; // arrays are never Null
-
             bool actualIsNull = statement.IsValueNull(i);
             EXPECT_EQ(expectedIsNull, actualIsNull) << "ECSqlStatement::IsNullValue failed for property index " << i << " (property name " << propName.c_str() << ")";
             }

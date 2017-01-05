@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMappingInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -357,7 +357,7 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema()
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
     {
-    IECInstancePtr ca = m_ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
+    IECInstancePtr ca = m_ecClass.GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     if (ca == nullptr)
         return SUCCESS;
 
@@ -380,7 +380,7 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
 
             }
 
-        m_classHasCurrentTimeStampProperty = prop;
+        m_classHasCurrentTimeStampProperty = primProp;
         }
 
     return SUCCESS;
@@ -996,7 +996,7 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(E
         finalListOfTables[table->GetPersistenceType()].insert(table);
         }
 
-    return finalListOfTables[PersistenceType::Persisted];
+    return finalListOfTables[PersistenceType::Physical];
     }
 
 

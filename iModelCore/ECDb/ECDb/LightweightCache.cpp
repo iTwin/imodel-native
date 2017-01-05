@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/LightweightCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -135,7 +135,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         {
         ECClassId relationshipId = stmt->GetValueId<ECClassId>(0);
         BeAssert(!stmt->IsColumnNull(1));
-        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        const ECRelationshipEnd ecRelEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
+        RelationshipEnd end = ecRelEnd == ECRelationshipEnd_Source ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto relIt = relClassIds.find(relationshipId);
         if (relIt == relClassIds.end())
@@ -178,7 +179,8 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         {
         ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
         BeAssert(!stmt->IsColumnNull(1));
-        RelationshipEnd end = stmt->GetValueInt(1) == 0 ? RelationshipEnd::Source : RelationshipEnd::Target;
+        const ECRelationshipEnd ecRelEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
+        RelationshipEnd end = ecRelEnd == ECRelationshipEnd_Source ? RelationshipEnd::Source : RelationshipEnd::Target;
 
         auto constraintIt = constraintClassIds.find(constraintClassId);
         if (constraintIt == constraintClassIds.end())
@@ -321,7 +323,7 @@ Partition const* StorageDescription::GetPartition(DbTable const& table) const
 //------------------------------------------------------------------------------------------
 BentleyStatus StorageDescription::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic, bool fullyQualifyColumnName, Utf8CP tableAlias) const
     {
-    if (table.GetPersistenceType() != PersistenceType::Persisted)
+    if (table.GetPersistenceType() != PersistenceType::Physical)
         return SUCCESS; //table is virtual -> noop
 
     Partition const* partition = GetHorizontalPartition(table);
@@ -520,7 +522,7 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(table.GetPersistenceType() == PersistenceType::Persisted);
+    BeAssert(table.GetPersistenceType() == PersistenceType::Physical);
     if (table.GetPersistenceType() == PersistenceType::Virtual)
         return nullptr;
 

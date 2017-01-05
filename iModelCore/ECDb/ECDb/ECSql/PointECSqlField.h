@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/PrimitiveMappedToSingleColumnECSqlField.h $
+|     $Source: ECDb/ECSql/PointECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,18 +11,20 @@
 #include "IECSqlPrimitiveValue.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveMappedToSingleColumnECSqlField : public ECSqlField, public IECSqlPrimitiveValue
+struct PointECSqlField : public ECSqlField, IECSqlPrimitiveValue
     {
 private:
-    int m_sqliteColumnIndex;
-    DateTime::Info m_datetimeMetadata;
+    int m_xColumnIndex;
+    int m_yColumnIndex;
+    int m_zColumnIndex;
 
     virtual bool _IsNull() const override;
 
-    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override { return *this; }
+    virtual IECSqlPrimitiveValue const& _GetPrimitive() const override;
     virtual IECSqlStructValue const& _GetStruct() const override;
     virtual IECSqlArrayValue const& _GetArray() const override;
 
@@ -37,10 +39,13 @@ private:
     virtual DPoint2d _GetPoint2d() const override;
     virtual DPoint3d _GetPoint3d() const override;
     virtual IGeometryPtr _GetGeometry() const override;
-    virtual void const* _GetGeometryBlob(int* blobSize) const override;
+
+    bool IsPoint3d() const { return m_zColumnIndex >= 0; }
 
 public:
-    PrimitiveMappedToSingleColumnECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int ecsqlColumnIndex);
-    ~PrimitiveMappedToSingleColumnECSqlField() {}
+    PointECSqlField(ECSqlStatementBase&, ECSqlColumnInfo const&, int xColumnIndex, int yColumnIndex, int zColumnIndex);
+    PointECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo, int xColumnIndex, int yColumnIndex) : PointECSqlField (stmt, colInfo, xColumnIndex, yColumnIndex, -1) {}
+    ~PointECSqlField() {}
     };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE

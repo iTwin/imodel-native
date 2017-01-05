@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceInserter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -25,14 +25,14 @@ private:
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
 
-    void Initialize(ECSqlWriteToken const*);
+    void Initialize(ECCrudWriteToken const*);
 
     DbResult InsertRelationship(ECInstanceKey& newInstanceKey, ECN::IECRelationshipInstanceCR, bool autogenerateECInstanceId, ECInstanceId const* userProvidedECInstanceId) const;
 
     static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("insert", instance, errorMessage); }
 
 public:
-    Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken);
+    Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken);
 
     DbResult Insert(ECInstanceKey& newInstanceKey, IECInstanceCR, bool autogenerateECInstanceId = true, ECInstanceId const* userprovidedECInstanceId = nullptr) const;
     DbResult Insert(ECN::IECInstanceR instance, bool autogenerateECInstanceId = true) const;
@@ -48,7 +48,7 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken)
+ECInstanceInserter::ECInstanceInserter(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken)
     : m_impl(new ECInstanceInserter::Impl(ecdb, ecClass, writeToken))
     {}
 
@@ -99,7 +99,7 @@ DbResult ECInstanceInserter::Insert(ECN::IECInstanceR instance, bool autogenerat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle      06/2014
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken)
+ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_ecinstanceIdBindingInfo(nullptr), m_needsCalculatedPropertyEvaluation(false), m_isValid(false)
     {
     Initialize(writeToken);
@@ -108,7 +108,7 @@ ECInstanceInserter::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken c
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceInserter::Impl::Initialize(ECSqlWriteToken const* writeToken)
+void ECInstanceInserter::Impl::Initialize(ECCrudWriteToken const* writeToken)
     {
     Utf8String ecsql("INSERT INTO ");
     //add ECInstanceId. If NULL is bound to it, ECDb will auto-generate one

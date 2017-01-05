@@ -1,20 +1,18 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.cpp $
+|     $Source: ECDb/ECSql/StructECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "StructToColumnsECSqlBinder.h"
-#include "ECSqlTypeInfo.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
+StructECSqlBinder::StructECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
     : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder()
     {}
 
@@ -22,11 +20,11 @@ StructToColumnsECSqlBinder::StructToColumnsECSqlBinder(ECSqlStatementBase& ecsql
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
-BentleyStatus StructToColumnsECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
+BentleyStatus StructECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
     {
     ECSqlTypeInfo const& typeInfo = GetTypeInfo();
     BeAssert(typeInfo.GetPropertyMap() != nullptr && typeInfo.GetPropertyMap()->GetType() == PropertyMap::Type::Struct && "Struct parameters are expected to always have a PropertyNameExp as target expression");
-    StructPropertyMap const* structPropMap = static_cast<StructPropertyMap const*> (typeInfo.GetPropertyMap());
+    StructPropertyMap const* structPropMap = typeInfo.GetPropertyMap()->GetAs<StructPropertyMap>();
 
     int totalMappedSqliteParameterCount = 0;
     for (PropertyMap const* memberPropMap : *structPropMap) //GetChildren ensures the correct and always same order
@@ -56,7 +54,7 @@ BentleyStatus StructToColumnsECSqlBinder::Initialize(ECSqlPrepareContext& ctx)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-void StructToColumnsECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
+void StructECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteIndex)
     {
     BeAssert(ecsqlParameterComponentIndex >= 0 && (size_t) ecsqlParameterComponentIndex < m_ecsqlComponentIndexToMemberBinderMapping.size());
     auto const& mapping = m_ecsqlComponentIndexToMemberBinderMapping[(size_t) ecsqlParameterComponentIndex];
@@ -68,7 +66,7 @@ void StructToColumnsECSqlBinder::_SetSqliteIndex(int ecsqlParameterComponentInde
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2015
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructToColumnsECSqlBinder::_OnBeforeStep()
+ECSqlStatus StructECSqlBinder::_OnBeforeStep()
     {
     for (auto const& kvPair : m_memberBinders)
         {
@@ -83,7 +81,7 @@ ECSqlStatus StructToColumnsECSqlBinder::_OnBeforeStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2015
 //---------------------------------------------------------------------------------------
-void StructToColumnsECSqlBinder::_OnClearBindings()
+void StructECSqlBinder::_OnClearBindings()
     {
     for (auto const& kvPair : m_memberBinders)
         {
@@ -94,7 +92,7 @@ void StructToColumnsECSqlBinder::_OnClearBindings()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructToColumnsECSqlBinder::_BindNull()
+ECSqlStatus StructECSqlBinder::_BindNull()
     {
     for (auto const& kvPair : m_memberBinders)
         {
@@ -109,7 +107,7 @@ ECSqlStatus StructToColumnsECSqlBinder::_BindNull()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& StructToColumnsECSqlBinder::_BindPrimitive()
+IECSqlPrimitiveBinder& StructECSqlBinder::_BindPrimitive()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
     return NoopECSqlBinder::Get().BindPrimitive();
@@ -118,7 +116,7 @@ IECSqlPrimitiveBinder& StructToColumnsECSqlBinder::_BindPrimitive()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlArrayBinder& StructECSqlBinder::_BindArray(uint32_t initialCapacity)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to ECStruct parameter.");
     return NoopECSqlBinder::Get().BindArray(initialCapacity);
@@ -127,7 +125,7 @@ IECSqlArrayBinder& StructToColumnsECSqlBinder::_BindArray(uint32_t initialCapaci
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructToColumnsECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
+IECSqlBinder& StructECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
     {
     auto memberProp = GetTypeInfo().GetStructType().GetPropertyP(structMemberPropertyName, true);
     if (memberProp == nullptr)
@@ -143,7 +141,7 @@ IECSqlBinder& StructToColumnsECSqlBinder::_GetMember(Utf8CP structMemberProperty
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructToColumnsECSqlBinder::_GetMember(ECN::ECPropertyId structMemberPropertyId)
+IECSqlBinder& StructECSqlBinder::_GetMember(ECN::ECPropertyId structMemberPropertyId)
     {
     auto it = m_memberBinders.find(structMemberPropertyId);
     if (it == m_memberBinders.end())

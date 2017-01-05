@@ -82,12 +82,12 @@ Exp::FinalizeParseStatus BinaryBooleanExp::_FinalizeParsing(ECSqlParseContext& c
 
         if (expWithVaryingTypeInfo != nullptr)
             {
-            for (auto child : expWithVaryingTypeInfo->GetChildren())
+            for (Exp const* child : expWithVaryingTypeInfo->GetChildren())
                 {
                 BeAssert(dynamic_cast<ComputedExp const*> (child) != nullptr);
-                auto childComputedExp = static_cast<ComputedExp const*> (child);
+                ComputedExp const* childComputedExp = static_cast<ComputedExp const*> (child);
 
-                auto stat = CanCompareTypes(ctx, *expWithRegularTypeInfo, *childComputedExp);
+                Exp::FinalizeParseStatus stat = CanCompareTypes(ctx, *expWithRegularTypeInfo, *childComputedExp);
                 if (stat != Exp::FinalizeParseStatus::Completed)
                     return stat;
                 }

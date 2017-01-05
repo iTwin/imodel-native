@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructMappedToColumnsECSqlField.h $
+|     $Source: ECDb/ECSql/StructECSqlField.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,14 +13,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Affan.Khan      07/2013
 //+===============+===============+===============+===============+===============+======
-struct StructMappedToColumnsECSqlField : public ECSqlField, public IECSqlStructValue
+struct StructECSqlField : public ECSqlField, public IECSqlStructValue
     {
     friend struct ECSqlFieldFactory;
 
     private:
         std::vector<std::unique_ptr<ECSqlField>> m_structFields;
 
-        StructMappedToColumnsECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
+        StructECSqlField(ECSqlStatementBase& stmt, ECSqlColumnInfo const& colInfo) : ECSqlField(stmt, colInfo, false, false) {}
         //Before calling this, the child field must be complete. You must not add child fields to the child fields afterwards
         //Otherwise the flags m_needsInit and m_needsReset might become wrong
         void AppendField(std::unique_ptr<ECSqlField> field);

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ClassMappingInfo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -57,7 +57,7 @@ private:
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
     bool m_mapsToVirtualTable;
-    ECN::ECPropertyCP m_classHasCurrentTimeStampProperty;
+    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
 
 protected:
     ECDb const& m_ecdb;
@@ -96,7 +96,7 @@ public:
     std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
-    ECN::ECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
+    ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     //! Virtual tables are not persisted   
     bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
     };

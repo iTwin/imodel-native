@@ -20,10 +20,10 @@ struct ECSqlUpdatePreparer
 private:
     struct NativeSqlSnippets
         {
-        std::map<size_t, std::vector<size_t>> m_overflowPropertyIndexes;
-        std::map<size_t, std::vector<DataPropertyMap const*>> m_overflowProperties;
         NativeSqlBuilder::ListOfLists m_propertyNamesNativeSqlSnippets;
         NativeSqlBuilder::ListOfLists m_valuesNativeSqlSnippets;
+        std::map<size_t, std::vector<size_t>> m_overflowPropertyComponentIndexes;
+        std::map<size_t, std::vector<SingleColumnDataPropertyMap const*>> m_overflowPropertyMaps;
         };
 
     //static class

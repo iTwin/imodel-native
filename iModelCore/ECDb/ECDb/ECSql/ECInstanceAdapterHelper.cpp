@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceAdapterHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -521,7 +521,7 @@ bool ECInstanceAdapterHelper::IsOrContainsCalculatedProperty(ECN::ECPropertyCR p
 bool ECInstanceAdapterHelper::TryGetCurrentTimeStampProperty(ECN::ECPropertyCP& currentTimeStampProp, ECN::ECClassCR ecClass)
     {
     currentTimeStampProp = nullptr;
-    auto ca = ecClass.GetCustomAttributeLocal("ClassHasCurrentTimeStampProperty");
+    auto ca = ecClass.GetCustomAttributeLocal("CoreCustomAttributes", "ClassHasCurrentTimeStampProperty");
     if (ca == nullptr)
         return false;
 

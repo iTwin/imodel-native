@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlUpdatePreparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -78,11 +78,11 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         return status;
 
     //Skip overflow properties
-    auto propertyListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_propertyNamesNativeSqlSnippets, snippets.m_overflowPropertyIndexes);
-    auto valueListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_valuesNativeSqlSnippets, snippets.m_overflowPropertyIndexes);
+    auto propertyListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_propertyNamesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
+    auto valueListSnippets = NativeSqlBuilder::FlattenJaggedList(snippets.m_valuesNativeSqlSnippets, snippets.m_overflowPropertyComponentIndexes);
     if (propertyListSnippets.size() != valueListSnippets.size())
         {
-        BeAssert(false && "Error");
+        BeAssert(false);
         return ECSqlStatus::Error;
         }
 
@@ -95,7 +95,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         nativeSqlBuilder.Append(propertyListSnippets[i]).Append(BooleanSqlOperator::EqualTo).Append(valueListSnippets[i]);
         }
 
-    if (!snippets.m_overflowPropertyIndexes.empty())
+    if (!snippets.m_overflowPropertyComponentIndexes.empty())
         {
         if (!propertyListSnippets.empty())
             nativeSqlBuilder.AppendComma();
@@ -105,8 +105,8 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         nativeSqlBuilder.Append("json_set(ifnull(").AppendEscaped(overflowColumn->GetName().c_str()).AppendComma().Append("'{}')");
 
         std::vector<size_t> overflowIndexes;
-        std::transform(std::begin(snippets.m_overflowPropertyIndexes), std::end(snippets.m_overflowPropertyIndexes), std::back_inserter(overflowIndexes),
-                  [] (decltype(snippets.m_overflowPropertyIndexes)::value_type const& pair)
+        std::transform(std::begin(snippets.m_overflowPropertyComponentIndexes), std::end(snippets.m_overflowPropertyComponentIndexes), std::back_inserter(overflowIndexes),
+                  [] (decltype(snippets.m_overflowPropertyComponentIndexes)::value_type const& pair)
             {
             return pair.first;
             });
@@ -116,16 +116,15 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
             {
             NativeSqlBuilder::List const& propertyNamesNativeSqlSnippets = snippets.m_propertyNamesNativeSqlSnippets[i];
             NativeSqlBuilder::List const& valuesNativeSqlSnippets = snippets.m_valuesNativeSqlSnippets[i];
-            std::vector<size_t> const& overflowComponentIndexes = snippets.m_overflowPropertyIndexes[i];
-            std::vector<DataPropertyMap const*> const& overflowProperties = snippets.m_overflowProperties[i];
+            std::vector<size_t> const& overflowComponentIndexes = snippets.m_overflowPropertyComponentIndexes[i];
+            std::vector<SingleColumnDataPropertyMap const*> const& overflowPropertyMaps = snippets.m_overflowPropertyMaps[i];
             for (size_t j = 0; j < overflowComponentIndexes.size(); j++)
                 {
                 const size_t k = overflowComponentIndexes[j];
-                ECPropertyCR property = overflowProperties[j]->GetProperty();
 
                 nativeSqlBuilder.Append(",'$.").Append(propertyNamesNativeSqlSnippets[k]).Append("',");
 
-                const bool addBlobToBase64Func = property.GetIsPrimitiveArray() || (property.GetIsPrimitive() && property.GetAsPrimitiveProperty()->GetType() == PRIMITIVETYPE_Binary);
+                const bool addBlobToBase64Func = overflowPropertyMaps[j]->GetColumnDataType() == DbColumn::Type::Blob;
                 if (addBlobToBase64Func)
                     nativeSqlBuilder.Append(SQLFUNC_BlobToBase64 "(");
 
@@ -203,7 +202,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
         DbTable const* table = &classMap.GetPrimaryTable();
         DbColumn const& classIdColumn = table->GetECClassIdColumn();
 
-        if (classIdColumn.GetPersistenceType() == PersistenceType::Persisted)
+        if (classIdColumn.GetPersistenceType() == PersistenceType::Physical)
             {
             if (ctx.IsParentOfJoinedTable())
                 {
@@ -289,19 +288,19 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
     for (auto childExp : assignmentListExp->GetChildren())
         {
         BeAssert(childExp != nullptr);
-        auto assignmentExp = static_cast<AssignmentExp const*> (childExp);
+        AssignmentExp const* assignmentExp = static_cast<AssignmentExp const*> (childExp);
         if (assignmentExp->GetPropertyNameExp()->GetPropertyMap().IsData())
             {
             size_t component = 0;
             SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
             assignmentExp->GetPropertyNameExp()->GetPropertyMap().AcceptVisitor(visitor);
-            for (auto childPropertyMap : visitor.Results())
+            for (PropertyMap const* childPropertyMap : visitor.Results())
                 {               
-                DataPropertyMap const* childDataPropertyMap = static_cast<DataPropertyMap const*>(childPropertyMap);
-                if (childDataPropertyMap->GetOverflowState() == DataPropertyMap::OverflowState::Yes)
+                SingleColumnDataPropertyMap const* childDataPropertyMap = childPropertyMap->GetAs<SingleColumnDataPropertyMap>();
+                if (childDataPropertyMap->GetColumn().IsInOverflow())
                     {
-                    snippets.m_overflowPropertyIndexes[index].push_back(component);
-                    snippets.m_overflowProperties[index].push_back(childDataPropertyMap);
+                    snippets.m_overflowPropertyComponentIndexes[index].push_back(component);
+                    snippets.m_overflowPropertyMaps[index].push_back(childDataPropertyMap);
                     }
 
                 component++;

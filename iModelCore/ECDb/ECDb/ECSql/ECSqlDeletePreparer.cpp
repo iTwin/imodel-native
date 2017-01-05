@@ -190,7 +190,7 @@ ECSqlStatus ECSqlDeletePreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& de
     ClassMap const& classMap = classNameExp.GetInfo().GetMap();
     DbTable const* table = &classMap.GetPrimaryTable();
     DbColumn const& classIdColumn = table->GetECClassIdColumn();
-    if (classIdColumn.GetPersistenceType() != PersistenceType::Persisted)
+    if (classIdColumn.GetPersistenceType() != PersistenceType::Physical)
         return ECSqlStatus::Success; //no class id column exists -> no system where clause
 
     Utf8String classIdFilter;

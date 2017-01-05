@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructArrayJsonECSqlField.cpp $
+|     $Source: ECDb/ECSql/StructArrayECSqlField.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -297,34 +297,15 @@ IGeometryPtr PrimitiveJsonECSqlValue::_GetGeometry() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-void const* PrimitiveJsonECSqlValue::_GetGeometryBlob(int* blobSize) const
-    {
-    if (GetJson().isNull() || !CanCallGetFor(PRIMITIVETYPE_IGeometry))
-        return NoopECSqlValue::GetSingleton().GetGeometryBlob(blobSize);
-
-    IGeometryPtr geom = _GetGeometry();
-
-    //As the API contract says that IECSqlValue owns the geometry blob, we need to cache the blob
-    //in this object
-    BentleyGeometryFlatBuffer::GeometryToBytes(*geom, m_blobCache);
-    if (m_blobCache.empty())
-        {
-        Utf8String msg;
-        msg.Sprintf("IECSqlValue::GetGeometryBlob failed for '%s'. Invalid JSON format for IGeometry.",
-                    GetColumnInfo().GetPropertyPath().ToString().c_str());
-        ReportError(msg.c_str());
-        return NoopECSqlValue::GetSingleton().GetGeometryBlob(blobSize);
-        }
-
-    return m_blobCache.data();
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      03/2016
-//+---------------+---------------+---------------+---------------+---------------+------
 bool PrimitiveJsonECSqlValue::CanCallGetFor(ECN::PrimitiveType getMethodType) const
     {
     const PrimitiveType actualDataType = GetColumnInfo().GetDataType().GetPrimitiveType();
+    if (getMethodType == PRIMITIVETYPE_Binary)
+        {
+        if (actualDataType == PRIMITIVETYPE_Binary || actualDataType == PRIMITIVETYPE_IGeometry)
+            return true;
+        }
+
     if (actualDataType != getMethodType)
         {
         Utf8String msg;
@@ -354,6 +335,20 @@ StructJsonECSqlValue::StructJsonECSqlValue(ECDbCR ecdb, Json::Value const& json,
         ECSqlColumnInfo memberColInfo = ECSqlColumnInfo::CreateChild(GetColumnInfo(), *structMemberProp);
         m_members.push_back(JsonECSqlValueFactory::CreateValue(ecdb, val, memberColInfo));
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
+//---------------------------------------------------------------------------------------
+bool StructJsonECSqlValue::_IsNull() const
+    {
+    for (std::unique_ptr<JsonECSqlValue> const& member : m_members)
+        {
+        if (!member->IsNull())
+            return false;
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -453,14 +448,14 @@ IECSqlValue const* ArrayJsonECSqlValue::_GetCurrent() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //---------------------------------------------------------------------------------------
-StructArrayJsonECSqlField::StructArrayJsonECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
+StructArrayECSqlField::StructArrayECSqlField(ECSqlStatementBase& ecsqlStatement, ECSqlColumnInfo const& ecsqlColumnInfo, int sqliteColumnIndex)
     : ECSqlField(ecsqlStatement, ecsqlColumnInfo, true, true), m_sqliteColumnIndex(sqliteColumnIndex), m_json(Json::arrayValue), m_value(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayJsonECSqlField::_OnAfterStep()
+ECSqlStatus StructArrayECSqlField::_OnAfterStep()
     {
     DoReset();
 
@@ -484,7 +479,7 @@ ECSqlStatus StructArrayJsonECSqlField::_OnAfterStep()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus StructArrayJsonECSqlField::_OnAfterReset()
+ECSqlStatus StructArrayECSqlField::_OnAfterReset()
     {
     DoReset();
     return ECSqlStatus::Success;
@@ -493,7 +488,7 @@ ECSqlStatus StructArrayJsonECSqlField::_OnAfterReset()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      02/2016
 //---------------------------------------------------------------------------------------
-void StructArrayJsonECSqlField::DoReset() const
+void StructArrayECSqlField::DoReset() const
     {
     m_json.clear();
     m_value = nullptr;
@@ -502,7 +497,7 @@ void StructArrayJsonECSqlField::DoReset() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlPrimitiveValue const& StructArrayJsonECSqlField::_GetPrimitive() const
+IECSqlPrimitiveValue const& StructArrayECSqlField::_GetPrimitive() const
     {
     ReportError(ECSqlStatus::Error, "Type mismatch. Cannot call primitive IECSqlValue getters on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetPrimitive();
@@ -511,7 +506,7 @@ IECSqlPrimitiveValue const& StructArrayJsonECSqlField::_GetPrimitive() const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructValue const& StructArrayJsonECSqlField::_GetStruct() const
+IECSqlStructValue const& StructArrayECSqlField::_GetStruct() const
     {
     ReportError(ECSqlStatus::Error, "Type mismatch. Cannot call GetStruct on struct array IECSqlValue.");
     return NoopECSqlValue::GetSingleton().GetStruct();

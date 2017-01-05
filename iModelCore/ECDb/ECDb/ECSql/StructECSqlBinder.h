@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ECDb/ECSql/StructToColumnsECSqlBinder.h $
+|     $Source: ECDb/ECSql/StructECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
+struct StructECSqlBinder : public ECSqlBinder, IECSqlStructBinder
     {
     friend struct ECSqlBinderFactory;
 
@@ -42,7 +42,7 @@ struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         std::map<ECN::ECPropertyId, std::unique_ptr<ECSqlBinder>> m_memberBinders;
         std::vector<MemberBinderInfo> m_ecsqlComponentIndexToMemberBinderMapping;
 
-        StructToColumnsECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
+        StructECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo);
         BentleyStatus Initialize(ECSqlPrepareContext&);
 
         //only needed at prepare time to set up the binder
@@ -59,7 +59,7 @@ struct StructToColumnsECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
     public:
-        ~StructToColumnsECSqlBinder() {}
+        ~StructECSqlBinder() {}
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

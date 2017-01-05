@@ -21,10 +21,10 @@
   <ItemGroup>
     <ClCompile Include="ChangeSummary.cpp" />
     <ClCompile Include="ClassMap.cpp" />
+    <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapper.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
-    <ClCompile Include="DbColumnFactory.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
@@ -101,18 +101,18 @@
     <ClCompile Include="ECSql\Parser\SqlFlex.cpp" />
     <ClCompile Include="ECSql\Parser\SqlNode.cpp" />
     <ClCompile Include="ECSql\ECSqlStatementImpl.cpp" />
-    <ClCompile Include="ECsql\PointMappedToColumnsECSqlField.cpp" />
     <ClCompile Include="ECSql\PointECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\PrimitiveArrayMappedToSingleColumnECSqlField.cpp" />
-    <ClCompile Include="ECSql\PrimitiveArrayToColumnECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\PrimitiveMappedToSingleColumnECSqlField.cpp" />
-    <ClCompile Include="ECSql\PrimitiveToSingleColumnECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PointECSqlField.cpp" />
+    <ClCompile Include="ECSql\PrimitiveArrayECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PrimitiveArrayECSqlField.cpp" />
+    <ClCompile Include="ECSql\PrimitiveECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\PrimitiveECSqlField.cpp" />
     <ClCompile Include="ECSql\PropertyNameExp.cpp" />
     <ClCompile Include="ECSql\SelectStatementExp.cpp" />
-    <ClCompile Include="ECSql\StructArrayJsonECSqlBinder.cpp" />
-    <ClCompile Include="ECSql\StructArrayJsonECSqlField.cpp" />
-    <ClCompile Include="ECSql\StructMappedToColumnsECSqlField.cpp" />
-    <ClCompile Include="ECSql\StructToColumnsECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructArrayECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructArrayECSqlField.cpp" />
+    <ClCompile Include="ECSql\StructECSqlBinder.cpp" />
+    <ClCompile Include="ECSql\StructECSqlField.cpp" />
     <ClCompile Include="ECSql\UpdateStatementExp.cpp" />
     <ClCompile Include="ECSql\ValueExp.cpp" />
     <ClCompile Include="ECSql\WhereExp.cpp" />
@@ -144,10 +144,10 @@
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ClassMap.h" />
+    <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapper.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
-    <ClInclude Include="DbColumnFactory.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
@@ -211,18 +211,18 @@
     <ClInclude Include="ECSql\Parser\TextEncoding.h" />
     <ClInclude Include="ECSql\ECSqlStatementImpl.h" />
     <ClInclude Include="ECSql\PointECSqlBinder.h" />
-    <ClInclude Include="ECsql\PointMappedToColumnsECSqlField.h" />
-    <ClInclude Include="ECsql\PrimitiveArrayMappedToSingleColumnECSqlField.h" />
-    <ClInclude Include="ECSql\PrimitiveArrayToColumnECSqlBinder.h" />
-    <ClInclude Include="ECsql\PrimitiveMappedToSingleColumnECSqlField.h" />
+    <ClInclude Include="ECSql\PointECSqlField.h" />
+    <ClInclude Include="ECSql\PrimitiveArrayECSqlBinder.h" />
+    <ClInclude Include="ECSql\PrimitiveArrayECSqlField.h" />
     <ClInclude Include="ECSql\ECSqlBinder.h" />
-    <ClInclude Include="ECSql\PrimitiveToSingleColumnECSqlBinder.h" />
+    <ClInclude Include="ECSql\PrimitiveECSqlBinder.h" />
+    <ClInclude Include="ECSql\PrimitiveECSqlField.h" />
     <ClInclude Include="ECSql\PropertyNameExp.h" />
     <ClInclude Include="ECSql\SelectStatementExp.h" />
-    <ClInclude Include="ECSql\StructArrayJsonECSqlBinder.h" />
-    <ClInclude Include="ECSql\StructArrayJsonECSqlField.h" />
-    <ClInclude Include="ECSql\StructMappedToColumnsECSqlField.h" />
-    <ClInclude Include="ECSql\StructToColumnsECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructArrayECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructArrayECSqlField.h" />
+    <ClInclude Include="ECSql\StructECSqlBinder.h" />
+    <ClInclude Include="ECSql\StructECSqlField.h" />
     <ClInclude Include="ECSql\UpdateStatementExp.h" />
     <ClInclude Include="ECSql\ValueExp.h" />
     <ClInclude Include="ECSql\WhereExp.h" />
@@ -311,6 +311,8 @@
     <NMakeReBuildCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c &amp; python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -$(DEFAULT_TARGET_PROCESSOR_ARCHITECTURE)</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>python.exe $(SrcRoot)bsicommon\build\BentleyBuild.py -v4 rebuild BeSQLite ECDbLibrary -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(ProjectDir)PublicAPI\;$(ProjectDir)ECSql\;$(ProjectDir);$(OutRoot)Winx64\BuildContexts\ECDb\VendorAPI\;$(OutRoot)Winx64\BuildContexts\ECDb\PublicAPI\;$(VCInstallDir)INCLUDE\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes>
+    </NMakeForcedIncludes>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeOutput>ECDb.exe</NMakeOutput>

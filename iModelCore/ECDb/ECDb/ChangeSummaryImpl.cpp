@@ -303,7 +303,7 @@ void TableClassMap::InitPropertyColumnMaps()
 void TableClassMap::AddColumnMapsForProperty(SingleColumnDataPropertyMap const& singleColumnMap)
     {
     DbColumn const& column = singleColumnMap.GetColumn();
-    bool isOverflowColumn = column.IsOverflowSlave();
+    bool isOverflowColumn = column.IsInOverflow();
 
     if (column.GetPersistenceType() == PersistenceType::Virtual && !isOverflowColumn)
         return; // TODO: This is to filter virtual Navigation property's RelECClassId column - needs a better check from Affan. 

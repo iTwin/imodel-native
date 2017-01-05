@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceUpdater.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -25,17 +25,17 @@ private:
     bool m_needsCalculatedPropertyEvaluation;
     bool m_isValid;
 
-    void Initialize(ECSqlWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(writeToken, properties, nullptr, ecsqlOptions); }
-    void Initialize(ECSqlWriteToken const*, bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
-    void Initialize(ECSqlWriteToken const*, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
+    void Initialize(ECCrudWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions) { Initialize(writeToken, properties, nullptr, ecsqlOptions); }
+    void Initialize(ECCrudWriteToken const*, bvector<uint32_t> const& propertyIndexes, Utf8CP ecsqlOptions);
+    void Initialize(ECCrudWriteToken const*, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions);
 
     static void LogFailure(ECN::IECInstanceCR instance, Utf8CP errorMessage) { ECInstanceAdapterHelper::LogFailure("update", instance, errorMessage); }
 
 public:
-    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, IECInstanceCR, ECSqlWriteToken const*, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions);
-    Impl(ECDbCR, ECClassCR, ECSqlWriteToken const*, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECCrudWriteToken const*, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, IECInstanceCR, ECCrudWriteToken const*, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECCrudWriteToken const*, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions);
+    Impl(ECDbCR, ECClassCR, ECCrudWriteToken const*, bvector<ECPropertyCP> const& properties, Utf8CP ecsqlOptions);
     ~Impl() {}
 
     DbResult Update(IECInstanceCR instance) const;
@@ -49,28 +49,28 @@ public:
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02 / 14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_impl(new Impl(ecdb, ecClass, writeToken, ecsqlOptions))
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::IECInstanceCR instance, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_impl(new Impl(ecdb, instance, writeToken, ecsqlOptions))
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     : m_impl(new Impl(ecdb, ecClass, writeToken, propertyIndexesToBind, ecsqlOptions))
     {}
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& properties, Utf8CP ecsqlOptions)
+ECInstanceUpdater::ECInstanceUpdater(ECDbCR ecdb, ECN::ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& properties, Utf8CP ecsqlOptions)
     : m_impl(new Impl(ecdb, ecClass, writeToken, properties, ecsqlOptions))
     {}
 
@@ -104,7 +104,7 @@ DbResult ECInstanceUpdater::Update(ECN::IECInstanceCR instance) const { return m
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   06/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
@@ -119,7 +119,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECSqlWriteToken const* writeToken, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECCrudWriteToken const* writeToken, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(instance.GetClass()), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     bvector<ECPropertyCP> properties;
@@ -137,7 +137,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, IECInstanceCR instance, ECSqlWriteTok
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(writeToken, propertyIndexesToBind, ecsqlOptions);
@@ -146,7 +146,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   09/14
 //+---------------+---------------+---------------+---------------+---------------+------
-ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
+ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECCrudWriteToken const* writeToken, bvector<ECN::ECPropertyCP> const& propertiesToBind, Utf8CP ecsqlOptions)
     : m_ecdb(ecdb), m_ecClass(ecClass), m_isValid(false), m_needsCalculatedPropertyEvaluation(false)
     {
     Initialize(writeToken, propertiesToBind, ecsqlOptions);
@@ -155,7 +155,7 @@ ECInstanceUpdater::Impl::Impl(ECDbCR ecdb, ECClassCR ecClass, ECSqlWriteToken co
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald                   08/14
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceUpdater::Impl::Initialize(ECSqlWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
+void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bvector<uint32_t> const& propertyIndexesToBind, Utf8CP ecsqlOptions)
     {
     bvector<ECPropertyCP> properties;
     bvector<Utf8CP> propertyAccessStrings;
@@ -191,7 +191,7 @@ void ECInstanceUpdater::Impl::Initialize(ECSqlWriteToken const* writeToken, bvec
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   05/16
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECInstanceUpdater::Impl::Initialize(ECSqlWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions)
+void ECInstanceUpdater::Impl::Initialize(ECCrudWriteToken const* writeToken, bvector<ECPropertyCP> const& properties, bvector<Utf8CP> const* propertyAccessStrings, Utf8CP ecsqlOptions)
     {
     const bool hasAccessStrings = propertyAccessStrings != nullptr && !propertyAccessStrings->empty();
     if (hasAccessStrings && properties.size() != propertyAccessStrings->size())

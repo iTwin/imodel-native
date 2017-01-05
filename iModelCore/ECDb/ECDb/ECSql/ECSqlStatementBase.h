@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlStatementBase.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -25,7 +25,7 @@ struct ECSqlStatementBase
     private:
         std::unique_ptr<ECSqlPreparedStatement> m_preparedStatement;
 
-        virtual ECSqlPrepareContext _InitializePrepare(ECDb const&, ECSqlWriteToken const*) = 0;
+        virtual ECSqlPrepareContext _InitializePrepare(ECDb const&, ECCrudWriteToken const*) = 0;
 
         ECSqlPreparedStatement& CreatePreparedStatement(ECDb const&, Exp const&);
 
@@ -40,7 +40,7 @@ struct ECSqlStatementBase
     public:
         virtual ~ECSqlStatementBase() {}
         //Public API mirrors
-        ECSqlStatus Prepare(ECDb const&, Utf8CP ecsql, ECSqlWriteToken const*);
+        ECSqlStatus Prepare(ECDb const&, Utf8CP ecsql, ECCrudWriteToken const*);
         bool IsPrepared() const { return GetPreparedStatementP() != nullptr; }
 
         IECSqlBinder& GetBinder(int parameterIndex) const;
@@ -81,7 +81,7 @@ struct ParentOfJoinedTableECSqlStatement : public ECSqlStatementBase
         ECN::ECClassId m_classId;
         IECSqlBinder* m_ecInstanceIdBinder;
 
-        virtual ECSqlPrepareContext _InitializePrepare(ECDb const& ecdb, ECSqlWriteToken const* token) override { return ECSqlPrepareContext(ecdb, *this, m_classId, token); }
+        virtual ECSqlPrepareContext _InitializePrepare(ECDb const& ecdb, ECCrudWriteToken const* token) override { return ECSqlPrepareContext(ecdb, *this, m_classId, token); }
 
     public:
         explicit ParentOfJoinedTableECSqlStatement(ECN::ECClassId joinTableClassId) : ECSqlStatementBase(), m_classId(joinTableClassId), m_ecInstanceIdBinder(nullptr) {}

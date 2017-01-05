@@ -2,11 +2,10 @@
 |
 |     $Source: ECDb/ECSql/ECInstanceECSqlSelectAdapter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "ECInstanceAdapterHelper.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -35,7 +34,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) cons
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECPropertyCP prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
-        if (prop->GetName().Equals("ECInstanceId"))
+        if (prop->GetName().Equals(ECDbSystemSchemaHelper::ECINSTANCEID_PROPNAME))
             {
             id = m_ecSqlStatement.GetValueId<ECInstanceId>(i);
             return SUCCESS;
@@ -338,10 +337,16 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             break;
             }
             case ECN::PRIMITIVETYPE_Binary:
+            case ECN::PRIMITIVETYPE_IGeometry:
             {
             int size = 0;
             const Byte* b = (const Byte *) value.GetBlob(&size);
-            val.SetBinary(b, size, false);
+
+            if (primitiveType == PRIMITIVETYPE_Binary)
+                val.SetBinary(b, (size_t) size, false);
+            else
+                val.SetIGeometry(b, (size_t) size, false);
+
             break;
             }
             case ECN::PRIMITIVETYPE_Point2d:
@@ -362,13 +367,6 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetPrimitiveValue(ECValueR val, ECN:
             const uint64_t jdMsec = value.GetDateTimeJulianDaysMsec(metadata);
             const int64_t ceTicks = DateTime::JulianDayToCommonEraTicks(jdMsec);
             val.SetDateTimeTicks(ceTicks, metadata);
-            break;
-            }
-            case ECN::PRIMITIVETYPE_IGeometry:
-            {
-            int bgfbSize = -1;
-            void const* bgfb = value.GetGeometryBlob(&bgfbSize);
-            val.SetBinary(static_cast<Byte const*> (bgfb), (size_t) bgfbSize, false);
             break;
             }
         }
@@ -417,8 +415,10 @@ BentleyStatus ECInstanceECSqlSelectAdapter::SetNavigationValue(IECInstanceR inst
     ECClassId relClassId;
     ECInstanceId navId = value.GetNavigation<ECInstanceId>(&relClassId);
     ECValue navValue;
-    if (ECObjectsStatus::Success != navValue.SetNavigationInfo(navId, relClassId))
-        return ERROR;
+    if (relClassId.IsValid())
+        navValue = ECValue(navId, relClassId);
+    else
+        navValue = ECValue(navId);
 
     return instance.SetValue(prop->GetName().c_str(), navValue) == ECObjectsStatus::Success ? SUCCESS : ERROR;
     }

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlSelectTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
@@ -68,11 +68,11 @@ TEST (ECSqlSelectTests, RelationalOperatorsOnPointProperties)
     BIND_POINT3D (2, DPoint3d::From (9.5, 10.5, 11.5));
     STATEMENT_EXECUTE_SUCCESS ();
 
-    STATEMENT_PREPARE_SUCCESS ("SELECT GetX(P2D) FROM ecsql.P WHERE GetX(P2D)>=12");
+    STATEMENT_PREPARE_SUCCESS ("SELECT P2D.X FROM ecsql.P WHERE P2D.X>=12");
     ASSERT_STATEMENT_EXECUTE (DbResult::BE_SQLITE_ROW);
     ASSERT_DOUBLE (0, 12.5);
 
-    STATEMENT_PREPARE_SUCCESS ("SELECT GetX(P3D),GetY(P3D),GetZ(P3D) FROM ecsql.P WHERE GetX(P3D)>=2 AND GetY(P3D)<=5");
+    STATEMENT_PREPARE_SUCCESS ("SELECT P3D.X,P3D.Y,P3D.Z FROM ecsql.P WHERE P3D.X>=2 AND P3D.Y<=5");
     ASSERT_STATEMENT_EXECUTE (DbResult::BE_SQLITE_ROW);
     ASSERT_DOUBLE (0, 3);
     ASSERT_DOUBLE (1, 4);
