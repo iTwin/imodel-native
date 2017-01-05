@@ -2849,7 +2849,7 @@ void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelations
     {
     if (containAnyClass)
         *containAnyClass = false;
-    for (auto ecClass : constraintEnd.GetClasses())
+    for (auto ecClass : constraintEnd.GetConstraintClasses())
         {
         if (containAnyClass && !(*containAnyClass) && ecClass->GetName() == "AnyClass" && ecClass->GetSchema().GetName() == "Bentley_Standard_Classes")
             *containAnyClass = true;

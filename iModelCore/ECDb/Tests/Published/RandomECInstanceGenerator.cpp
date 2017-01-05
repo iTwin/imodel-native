@@ -490,7 +490,7 @@ IECInstancePtr RandomECInstanceGenerator::CreateInstance(ECClassCR ecClass)
 //---------------------------------------------------------------------------------------
 void RandomECInstanceGenerator::GetConstraintClasses(std::set<ECClassCP>& constraintClasses, ECRelationshipConstraintCR constraint)
     {
-    for(auto constraintClass: constraint.GetClasses())
+    for(auto constraintClass: constraint.GetConstraintClasses())
         {
         if (constraintClasses.find(constraintClass) != constraintClasses.end())
             continue;

@@ -141,7 +141,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECR
 RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod() const
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
-        || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty())
+        || GetRelationshipClass().GetSource().GetConstraintClasses().empty() || GetRelationshipClass().GetTarget().GetConstraintClasses().empty())
         return ReferentialIntegrityMethod::None;
 
     if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding || GetRelationshipClass().GetStrength() == StrengthType::Holding)
@@ -248,7 +248,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     //Create ForeignEnd ClassId propertyMap
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    RefCountedPtr<ConstraintECClassIdPropertyMap> foreignEndClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, foreignEndConstraint.GetClasses()[0]->GetId(), GetForeignEnd(), columns.GetECClassIdColumns());
+    RefCountedPtr<ConstraintECClassIdPropertyMap> foreignEndClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, foreignEndConstraint.GetConstraintClasses()[0]->GetId(), GetForeignEnd(), columns.GetECClassIdColumns());
     if (foreignEndClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -276,7 +276,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //FK ClassId PropMap (aka referenced end classid prop map)
     ECRelationshipConstraintCR referenceEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    RefCountedPtr<ConstraintECClassIdPropertyMap> referenceClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, referenceEndConstraint.GetClasses()[0]->GetId(), GetReferencedEnd(), columns.GetFkECClassIdColumns());
+    RefCountedPtr<ConstraintECClassIdPropertyMap> referenceClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, referenceEndConstraint.GetConstraintClasses()[0]->GetId(), GetReferencedEnd(), columns.GetFkECClassIdColumns());
     if (referenceClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -760,8 +760,8 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
         return BentleyStatus::ERROR;
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
-    ECClassId defaultSourceECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetClasses().front()->GetId();
-    ECClassId defaultTargetECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetClasses().front()->GetId();
+    ECClassId defaultSourceECClassId = relationshipClass.GetSource().GetConstraintClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetConstraintClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = relationshipClass.GetTarget().GetConstraintClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetConstraintClasses().front()->GetId();
 
     //SourceECInstanceId
     std::vector<DbColumn const*> const* mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
@@ -1233,7 +1233,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     ECRelationshipClassCP relationship = mapInfo.GetECClass().GetRelationshipClassCP();
     BeAssert(relationship != nullptr);
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
-    ECClass const* foreignEndClass = foreignEndConstraint.GetClasses()[0];
+    ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
     size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(foreignEndConstraint);
 
@@ -1585,8 +1585,8 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
     auto const& sourceConstraint = relationshipClass.GetSource();
     auto const& targetConstraint = relationshipClass.GetTarget();
 
-    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses().empty() ? ECClassId() : sourceConstraint.GetClasses().front()->GetId();
-    ECClassId defaultTargetECClassId = targetConstraint.GetClasses().empty() ? ECClassId() : targetConstraint.GetClasses().front()->GetId();
+    ECClassId defaultSourceECClassId = sourceConstraint.GetConstraintClasses().empty() ? ECClassId() : sourceConstraint.GetConstraintClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = targetConstraint.GetConstraintClasses().empty() ? ECClassId() : targetConstraint.GetConstraintClasses().front()->GetId();
 
     auto mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
     if (mapColumns == nullptr)

@@ -33,7 +33,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(ConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
-        bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+        bool IsSingleAbstractClass() const { return m_constraint.GetConstraintClasses().size() == 1 && m_constraint.GetConstraintClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint() const { return m_constraint; }
     };
 
