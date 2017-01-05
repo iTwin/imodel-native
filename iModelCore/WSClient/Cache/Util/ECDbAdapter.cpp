@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbAdapter.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -202,7 +202,7 @@ ECRelationshipClassCP ECDbAdapter::GetECRelationshipClass(ObjectIdCR objectId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ECDbAdapter::DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic)
     {
-    for (auto constraintClass : constraint.GetClasses())
+    for (auto constraintClass : constraint.GetConstraintClasses())
         {
         if ((!allowPolymorphic || !constraint.GetIsPolymorphic()) && &ecClass == constraintClass)
             {
@@ -443,17 +443,17 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
     int relClassDist = INT_MAX;
     for (ECRelationshipClassCP candidateRelClass : FindRelationshipClasses(sourceClassId, targetClassId))
         {
-        ECConstraintClassesList candidateClasses;
+        ECRelationshipConstraintClassList candidateClasses;
 
         if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
             && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
             {
-            candidateClasses = candidateRelClass->GetSource().GetClasses();
+            candidateClasses = candidateRelClass->GetSource().GetConstraintClasses();
             }
         else if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
                  && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
             {
-            candidateClasses = candidateRelClass->GetTarget().GetClasses();
+            candidateClasses = candidateRelClass->GetTarget().GetConstraintClasses();
             }
 
         for (auto candClass : candidateClasses)
