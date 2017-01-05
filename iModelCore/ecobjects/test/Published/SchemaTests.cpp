@@ -1334,22 +1334,22 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->SetDescription("Relates the test class to the related class");
     relationshipClass->SetDisplayLabel("TestRelationshipClass");
 
-    EXPECT_EQ(0, relationshipClass->GetSource().GetClasses().size());
-    EXPECT_EQ(0, relationshipClass->GetTarget().GetClasses().size());
+    EXPECT_EQ(0, relationshipClass->GetSource().GetConstraintClasses().size());
+    EXPECT_EQ(0, relationshipClass->GetTarget().GetConstraintClasses().size());
 
     relationshipClass->GetSource().AddClass(*class1);
-    EXPECT_EQ(1, relationshipClass->GetSource().GetClasses().size());
+    EXPECT_EQ(1, relationshipClass->GetSource().GetConstraintClasses().size());
 
     relationshipClass->GetTarget().AddClass(*relatedClass);
-    EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
+    EXPECT_EQ(1, relationshipClass->GetTarget().GetConstraintClasses().size());
     relationshipClass->GetTarget().AddClass(*relatedClass);
-    EXPECT_EQ(1, relationshipClass->GetTarget().GetClasses().size());
+    EXPECT_EQ(1, relationshipClass->GetTarget().GetConstraintClasses().size());
 
     relationshipClass->GetTarget().SetAbstractConstraint(*baseClass);
     EXPECT_EQ(baseClass->GetName().c_str(), relationshipClass->GetTarget().GetAbstractConstraint()->GetName().c_str());
 
     relationshipClass->GetTarget().AddClass(*class2);
-    EXPECT_EQ(2, relationshipClass->GetTarget().GetClasses().size());
+    EXPECT_EQ(2, relationshipClass->GetTarget().GetConstraintClasses().size());
 
     EXPECT_EQ(0, relationshipClass->GetSource().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(0, relationshipClass->GetTarget().GetMultiplicity().GetLowerLimit());

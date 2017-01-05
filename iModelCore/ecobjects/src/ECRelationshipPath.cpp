@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECRelationshipPath.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -311,8 +311,7 @@ bool ECRelationshipPath::ValidateConstraint (ECRelationshipConstraintCR constrai
 
     bool isValid = false;
     bool isPolymorphic = constraint.GetIsPolymorphic();
-    const ECConstraintClassesList& expectedClasses = constraint.GetClasses();
-    for (ECClassCP expectedClass : expectedClasses)
+    for (ECClassCP expectedClass : constraint.GetConstraintClasses())
         {
         isValid = isPolymorphic ? checkClass->Is (expectedClass) : (checkClass == expectedClass);
         if (isValid)

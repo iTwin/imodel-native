@@ -2886,8 +2886,13 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
-        if (ECObjectsStatus::Success != m_constraintClasses.Add(*constraintAsEntity))
-            return SchemaReadStatus::InvalidECSchemaXml;
+        bool alreadyExists = false;
+        for (auto ecClass : m_constraintClasses)
+            if (ECClass::ClassesAreEqualByName(ecClass, constraintAsEntity))
+                alreadyExists = true;
+
+        if (!alreadyExists)
+            m_constraintClasses.push_back(constraintAsEntity);
 
         for (BeXmlNodeP keyNode = constraintClassNode->GetFirstChild(); nullptr != keyNode; keyNode = keyNode->GetNextSibling())
             {
@@ -3030,7 +3035,7 @@ ECEntityClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
         }
 
     if (m_constraintClasses.size() == 1)
-        return m_constraintClasses[0]->GetEntityClassCP();
+        return m_constraintClasses[0];
 
     return nullptr;
     }
@@ -3063,20 +3068,40 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
     else
         m_verified = false;
 
-    return  m_constraintClasses.Add(classConstraint);
+    if (&(classConstraint.GetSchema()) != &(m_relClass->GetSchema()))
+        {
+        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
+        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find(classConstraint.GetSchema().GetSchemaKey());
+        if (schemaIterator == referencedSchemas.end())
+            return ECObjectsStatus::SchemaNotFound;
+        }
+
+    for (auto ecClass : m_constraintClasses)
+        {
+        if (ECClass::ClassesAreEqualByName(ecClass, &classConstraint))
+            return ECObjectsStatus::Success;
+        }
+
+    m_constraintClasses.push_back(classConstraint.GetEntityClassCP());
+
+    return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Muhammad.Zaighum                 11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-const ECConstraintClassesList ECRelationshipConstraint::GetClasses() const
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConstraint)
     {
-    ECConstraintClassesList listOfClasses;
-    for (auto const &constraintClassIterator : GetConstraintClasses())
-        {
-        listOfClasses.push_back (const_cast<ECEntityClassP>(constraintClassIterator));
+    for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
+        { 
+        if (ECClass::ClassesAreEqualByName(*itor, &classConstraint))
+            {
+            m_constraintClasses.erase(itor);
+            return ECObjectsStatus::Success;
+            }
         }
-    return listOfClasses;
+    
+    return ECObjectsStatus::ClassNotFound;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3096,21 +3121,6 @@ ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraint
             }
         }
 
-    return m_constraintClasses;
-    }
-ECRelationshipConstraintClassList& ECRelationshipConstraint::GetConstraintClassesR() 
-    {
-    if (m_constraintClasses.size() == 0)
-        {
-        for (auto const& relBaseClass : m_relClass->GetBaseClasses())
-            {
-            ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                       : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-            ECRelationshipConstraintClassList& baseConstraints = baseClassConstraint->GetConstraintClassesR();
-            if (baseConstraints.size() > 0)
-                return baseConstraints;
-            }
-        }
     return m_constraintClasses;
     }
 
@@ -3724,211 +3734,6 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
         }
 
     return (!compareValue || GetStrengthDirection() == value);
-    }
-
-//*---------------------------------------------------------------------------------**//**
-//* @bsiclass                            Muhammad.Zaighum                   11/14
-//+---------------+---------------+---------------+---------------+---------------+------*/
-struct ECRelationshipConstraintClassList::iterator::Impl
-    {
-    typedef bvector<ECEntityClassCP>::const_iterator const_iterator;
-    private:
-        const_iterator m_iterator;
-
-    public:
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                             Muhammad.Zaighum                   11/14
-    +---------------+---------------+---------------+---------------+---------------+------*/
-        Impl (const_iterator& iterator)
-            :m_iterator (iterator)
-            {
-            }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                             Muhammad.Zaighum                   11/14
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    const_iterator const& GetIterator () const { return m_iterator; }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                             Muhammad.Zaighum                   11/14
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    const_iterator& GetIteratorR ()  { return m_iterator; }
-
-    /*---------------------------------------------------------------------------------**//**
-    * @bsimethod                             Muhammad.Zaighum                   11/14
-    +---------------+---------------+---------------+---------------+---------------+------*/
-    Impl& operator = (Impl& rhs)
-        {
-        m_iterator = rhs.GetIterator();
-        return *this;
-        }
-    };
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::iterator (bvector<ECEntityClassCP>::const_iterator x)
-:m_pimpl (new Impl (x))
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::iterator(const ECRelationshipConstraintClassList::iterator & it)
-:m_pimpl (new Impl (it.m_pimpl->GetIteratorR()))
-    {
-    } 
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator::operator = (ECRelationshipConstraintClassList::iterator const& rhs)
-    {
-    *(this->m_pimpl) =  *(rhs.m_pimpl);
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::iterator()
-    {}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator& ECRelationshipConstraintClassList::iterator:: operator++()
-    {
-    ++(m_pimpl->GetIteratorR());
-    return *this;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipConstraintClassList::iterator::operator==(const iterator& rhs)const
-    {
-    return m_pimpl->GetIteratorR () == rhs.m_pimpl->GetIteratorR ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ECRelationshipConstraintClassList::iterator::operator!=(const iterator& rhs)const
-    {
-    return m_pimpl->GetIteratorR () != rhs.m_pimpl->GetIteratorR ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEntityClassCP ECRelationshipConstraintClassList::iterator::operator*()const
-    {
-    return *m_pimpl->GetIteratorR ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator::~iterator()
-    {
-    delete m_pimpl;
-    m_pimpl = nullptr;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEntityClassCP ECRelationshipConstraintClassList::iterator::operator->()const
-    {
-    return *m_pimpl->GetIteratorR ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::begin()const
-    {
-    return iterator(m_constraintClasses.begin());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::iterator ECRelationshipConstraintClassList::end()const
-    {
-    return iterator(m_constraintClasses.end());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEntityClassCP ECRelationshipConstraintClassList::operator[](size_t x)const
-    {
-    return m_constraintClasses.at(x);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::clear()
-    {
-    m_constraintClasses.clear();
-    return ECObjectsStatus::Success;
-    }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ECRelationshipConstraintClassList::size()const
-    {
-    return (uint32_t)m_constraintClasses.size();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Remove(ECEntityClassCR constraintClass)
-    {
-    for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
-        {
-        if (*itor == &constraintClass)
-            {
-            m_constraintClasses.erase(itor);
-            return ECObjectsStatus::Success;
-            }
-        }
-
-    return ECObjectsStatus::ClassNotFound;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad.Zaighum                   11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraintClassList::Add(ECEntityClassCR ecClass)
-    {
-    if (&(ecClass.GetSchema()) != &(m_relClass->GetSchema()))
-        {
-        ECSchemaReferenceListCR referencedSchemas = m_relClass->GetSchema().GetReferencedSchemas();
-        ECSchemaReferenceList::const_iterator schemaIterator = referencedSchemas.find(ecClass.GetSchema().GetSchemaKey());
-        if (schemaIterator == referencedSchemas.end())
-            return ECObjectsStatus::SchemaNotFound;
-        }
-
-    for (auto constraintClass : m_constraintClasses)
-        {
-        if (constraintClass == &ecClass)
-            return ECObjectsStatus::Success;
-        }
-    
-    m_constraintClasses.push_back(&ecClass);
-    return ECObjectsStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                   Muhammad.Zaighum                 11/14
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList::~ECRelationshipConstraintClassList()
-    {
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE

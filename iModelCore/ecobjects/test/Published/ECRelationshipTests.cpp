@@ -823,12 +823,12 @@ TEST_F(ECRelationshipTests, TestInheritedAbstractConstraint)
     EXPECT_STREQ("A", relationClass3->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The abstract constraint should still be inherited from the base relationship even though there is only one constraint class.";
 
     relationClass3->GetTarget().AddClass(*entityClassC);
-    EXPECT_EQ(1, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";
+    EXPECT_EQ(1, relationClass3->GetTarget().GetConstraintClasses().size()) << "The number of constraint classes should increase to 1 when EntityClassC.";
     relationClass3->GetTarget().AddClass(*entityClassD);
-    EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The number of constraint classes should increase to 2 when EntityClassD.";
+    EXPECT_EQ(2, relationClass3->GetTarget().GetConstraintClasses().size()) << "The number of constraint classes should increase to 2 when EntityClassD.";
 
     relationClass3->GetTarget().AddClass(*unrelatedClass);
-    EXPECT_EQ(2, relationClass3->GetTarget().GetClasses().size()) << "The UnrelatedClass should not be added to the constraint since it violates the abstract constraint.";
+    EXPECT_EQ(2, relationClass3->GetTarget().GetConstraintClasses().size()) << "The UnrelatedClass should not be added to the constraint since it violates the abstract constraint.";
     }
 
 //---------------------------------------------------------------------------------------

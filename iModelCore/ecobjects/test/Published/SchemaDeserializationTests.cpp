@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/SchemaDeserializationTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -1271,11 +1271,11 @@ TEST_F(SchemaDeserializationTest, TestMultipleConstraintClasses)
     ECRelationshipClassCP relClass = ecSchema->GetClassCP("ClassHasClass1Or2")->GetRelationshipClassCP();
     ASSERT_TRUE(relClass != nullptr);
     ASSERT_EQ(1, relClass->GetSource().GetConstraintClasses().size());
-    ASSERT_STREQ("Class", relClass->GetSource().GetClasses()[0]->GetName().c_str());
+    ASSERT_STREQ("Class", relClass->GetSource().GetConstraintClasses()[0]->GetName().c_str());
 
     ASSERT_EQ(2, relClass->GetTarget().GetConstraintClasses().size());
-    ASSERT_STREQ("Class1", relClass->GetTarget().GetClasses()[0]->GetName().c_str());
-    ASSERT_STREQ("Class2", relClass->GetTarget().GetClasses()[1]->GetName().c_str());
+    ASSERT_STREQ("Class1", relClass->GetTarget().GetConstraintClasses()[0]->GetName().c_str());
+    ASSERT_STREQ("Class2", relClass->GetTarget().GetConstraintClasses()[1]->GetName().c_str());
     }
 
 //---------------------------------------------------------------------------------------

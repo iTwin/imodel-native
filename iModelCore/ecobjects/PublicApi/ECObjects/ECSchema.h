@@ -1223,7 +1223,7 @@ public:
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
-typedef bvector<ECEntityClassP> ECConstraintClassesList;
+typedef bvector<ECEntityClassCP> ECRelationshipConstraintClassList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
@@ -2035,59 +2035,6 @@ static RelationshipMultiplicity s_oneOneMultiplicity(1, 1);
 static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
 
 //=======================================================================================
-//! This class holds the list of source or target Constraint on ECRelationships
-//! @bsiclass
-//=======================================================================================
-struct ECRelationshipConstraintClassList : NonCopyableClass
-{
-private:
-    bvector<ECEntityClassCP> m_constraintClasses;
-    ECRelationshipClassP m_relClass;
-    
-public:
-    struct iterator
-    {
-    friend struct ECRelationshipConstraintClassList;// TODO: specify begin and end functions;
-
-    public:
-        struct Impl;
-
-    private:
-        Impl *m_pimpl;
-        iterator(bvector<ECEntityClassCP>::const_iterator x);
-
-    public:
-        iterator(const iterator &);
-        iterator& operator=(const iterator & rhs);
-        iterator();
-
-        ECOBJECTS_EXPORT ECEntityClassCP  operator->()const; //!< Returns the value at the current location
-        ECOBJECTS_EXPORT iterator&  operator++(); //!< Increments the iterator
-        ECOBJECTS_EXPORT bool       operator!=(iterator const& rhs) const; //!< Checks for inequality
-        ECOBJECTS_EXPORT bool       operator==(iterator const& rhs) const; //!< Checks for equality
-        ECOBJECTS_EXPORT ECEntityClassCP  operator* () const; //!< Returns the value at the current location
-        ECOBJECTS_EXPORT ~iterator();
-    };
-
-public:
-    ECRelationshipConstraintClassList(ECRelationshipClassP relClass) : m_relClass(relClass) {}
-    ECOBJECTS_EXPORT iterator begin() const;    //!< Returns the beginning of the iterator
-    ECOBJECTS_EXPORT iterator end() const;      //!< Returns the end of the iterator
-    ECOBJECTS_EXPORT ECEntityClassCP operator[](size_t x)const; //!< Array operator overloaded
-    //! Adds the specified class to the constraint.
-    //! @param[in] ecClass  The class to add
-    ECOBJECTS_EXPORT ECObjectsStatus Add(ECEntityClassCR ecClass);
-    //! Clears the vector Constraint classes
-    ECOBJECTS_EXPORT ECObjectsStatus clear();
-    //! Clears the vector Constraint classes
-    ECOBJECTS_EXPORT uint32_t size() const;
-    //! Removes specified ECClass from constraint class vector
-    //! @param[in] constraintClass The class to remove
-    ECOBJECTS_EXPORT ECObjectsStatus Remove(ECEntityClassCR constraintClass);
-    ~ECRelationshipConstraintClassList();
-};
-
-//=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
@@ -2134,7 +2081,7 @@ private:
     ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
-        : m_constraintClasses(relationshipClass), m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
+        : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
             m_isPolymorphic(true), m_abstractConstraint(nullptr) {}
 
 /*__PUBLISH_SECTION_END__*/
@@ -2219,23 +2166,18 @@ public:
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
     //! @note If the class does not derive from the abstract constraint it will fail to be added and ECObjectsStatus::Error will be returned.
-    ECOBJECTS_EXPORT ECObjectsStatus            AddClass(ECEntityClassCR classConstraint);
+    ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECEntityClassCR classConstraint);
 
     //! Remove the specified class from the constraint.
     //! @param[in] classConstraint  The class to remove from the constraint class list
-    ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint) { return m_constraintClasses.Remove(classConstraint); }
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
 
-    //! Returns the classes applied to the constraint.
-    //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
-    ECOBJECTS_EXPORT const ECConstraintClassesList GetClasses() const;
+    //! Removes all constraint classes.
+    void RemoveConstraintClasses() {m_constraintClasses.clear();}
 
     //! Returns the classes applied to the constraint.
     //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
     ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
-
-    //! Returns the classes applied to the constraint.
-    //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
-    ECOBJECTS_EXPORT ECRelationshipConstraintClassList& GetConstraintClassesR();
 
     //! Determine whether the constraint classes are defined in this constraint of the relationship and not inherited from a constraint in a base relationship.
     bool AreConstraintClassesDefinedLocally() const {return m_constraintClasses.size() > 0;}

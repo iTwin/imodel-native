@@ -2,7 +2,7 @@
 |
 |     $Source: test/Published/StrictSchemaTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -597,13 +597,13 @@ TEST_F(RelationshipClassTests, NonAbstractRelationshipClassConstraintsDefinition
 
     EXPECT_EQ(ECClassModifier::None, relClass1->GetClassModifier());
 
-    ASSERT_TRUE(relClass1->GetSource().GetClasses().size() > 0)
+    ASSERT_TRUE(relClass1->GetSource().GetConstraintClasses().size() > 0)
              << "'RelationshipClass SourceConstraint does not have a well-defined class";
 
-    ASSERT_TRUE(relClass1->GetTarget().GetClasses().size() > 0)
+    ASSERT_TRUE(relClass1->GetTarget().GetConstraintClasses().size() > 0)
              << "'RelationshipClass TargetConstraint does not have a well-defined class";
 
-    for (auto source : relClass1->GetSource().GetClasses())
+    for (auto source : relClass1->GetSource().GetConstraintClasses())
         {        
         ASSERT_NE(ECClassType::Relationship, source->GetClassType()) 
                << "'RelationshipConstraint may not have RelationshipClass";
