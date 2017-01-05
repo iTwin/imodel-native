@@ -619,7 +619,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
             double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
             DPoint3d center = args.GetTileCenter(*this);
             double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
-            tooCoarse = pixelSize > _GetMaximumSize();
+            tooCoarse = pixelSize > _GetMaximumSize() * args.GetTileSizeModifier();
             }
         }
 
@@ -999,5 +999,14 @@ double DrawArgs::ComputeTileDistance(TileCR tile) const
     DPoint3d centroid = DPoint3d::FromInterpolate(tile.GetRange().low, 0.5, tile.GetRange().high);
     m_root.GetLocation().Multiply(centroid);
     return centroid.DistanceSquared(m_context.GetViewportR().GetCamera().GetEyePoint());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double DrawArgs::GetTileSizeModifier() const
+    {
+    TargetCP target = m_context.GetViewportR().GetRenderTarget();
+    return nullptr != target ? target->GetTileSizeModifier() : 1.0;
     }
 

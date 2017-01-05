@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnViewport.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -143,7 +143,7 @@ protected:
     Byte m_dynamicsTransparency = 64;
     Byte m_flashingTransparency = 100;
     size_t m_maxUndoSteps = 20;
-    uint32_t m_minimumFrameRate = Render::Target::FRAME_RATE_MIN_DEFAULT;
+    uint32_t m_minimumFrameRate = Render::Target::DefaultMinimumFrameRate();
     DPoint3d m_viewOrg;                  // view origin, potentially expanded
     DVec3d m_viewDelta;                // view delta, potentially expanded
     DPoint3d m_viewOrgUnexpanded;        // view origin (from ViewController, unexpanded)

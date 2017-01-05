@@ -2,55 +2,19 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
 
 BEGIN_UNNAMED_NAMESPACE
     static Render::Queue* s_renderQueue = nullptr;
-    static int s_gps;
-    static int s_sceneTarget;
-    static double s_frameRateGoal;
 END_UNNAMED_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Render::Target::VerifyRenderThread() {DgnDb::VerifyRenderThread();}
-void Render::Target::Debug::SaveGPS(int gps, double fr) {s_gps=gps; s_frameRateGoal=fr; Show();}
-void Render::Target::Debug::SaveSceneTarget(int val) {s_sceneTarget=val; Show();}
-void Render::Target::Debug::Show()
-    {
-#if defined (DEBUG_LOGGING) 
-    NativeLogging::LoggingManager::GetLogger("GPS")->debugv("GPS=%d, Scene=%d, FR=%lf", s_gps, s_sceneTarget, s_frameRateGoal);
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 
-    {
-    if (0 == count)
-        return;
-
-    if (seconds < .00001)
-        seconds = .00001;
-
-    uint32_t gps = (uint32_t) ((double) count / seconds);
-    Render::Target::Debug::SaveGPS(gps, m_frameRateGoal);
-
-    // Typically GPS increases as progressive display continues. We cannot let CreateScene graphics
-    // be affected by the progressive display rate.  
-    //
-    // The GPS from the beginning of progressive is likely to be less
-    // than the GPS from the end of progressive display. Therefore,
-    // we reset the progressive display value by saving the create scene value.
-    m_graphicsPerSecondNonScene.store(gps);
-    if (!isFromProgressiveDisplay)
-        m_graphicsPerSecondScene.store(gps);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      06/16
@@ -296,6 +260,7 @@ uint32_t DgnViewport::SetMinimumTargetFrameRate(uint32_t frameRate)
     m_minimumFrameRate = frameRate;
     if (m_renderTarget.IsValid())
         m_minimumFrameRate = m_renderTarget->SetMinimumFrameRate(m_minimumFrameRate);
+
     return m_minimumFrameRate;
     }
 
@@ -534,87 +499,66 @@ GraphicBuilderPtr GraphicBuilder::CreateSubGraphic(TransformCR subToGraphic) con
     return m_builder->_CreateSubGraphic(subToGraphic);
     }
 
-#ifdef FRAMERATE_DEBUG
-#   define FRAMERATE_DEBUG_PRINTF DEBUG_PRINTF
-#   define FRAMERATE_WARN_PRINTF WARN_PRINTF
-#else
-#   define FRAMERATE_DEBUG_PRINTF(...)
-#   define FRAMERATE_WARN_PRINTF(...)
-#endif
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/16
+* @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-double Render::FrameRateAdjuster::AdjustFrameRate(Render::TargetCR target, double lowestScore)
+double TileSizeAdjuster::Update(Render::TargetCR target, double frameTime)
     {
-    double frameRateGoal = target.GetFrameRateGoal();
-
-    // We have to have enough draw events before we can tell how well we are doing.
-    if (m_drawCount < 10)
-        return frameRateGoal;
-
-    double successPct = (m_drawCount - m_abortCount) / (double)m_drawCount;
-
-    auto viewRect = target.GetDevice()->GetWindow()->_GetViewRect();
-    double pixelsPerNpc = viewRect.Width(); // use pixels across as an approximation. Maybe we should measure the diagonal?
-    double pixelsPerInch = target.GetDevice()->PixelsFromInches(1.0);
-    double inchesPerNpc = pixelsPerNpc / pixelsPerInch; // inches/NPC = pixels/NPC * inches/pixel
-    
-    double smallestRangeDrawnNpc = sqrt(lowestScore);
-
-    // from here on, all measurements are in inches
-    double smallestRangeDrawn = smallestRangeDrawnNpc * inchesPerNpc;   // size of the diagonal of the smallest range returned by the query
-
-    static const double FINE_ELEMENT_RES = 1 / 16.0; 
-
-    FRAMERATE_DEBUG_PRINTF("[%d] frameRateGoal=%lf smallestRangeDrawn=%lf successPct=%lf", target.GetId(), frameRateGoal, smallestRangeDrawn, successPct);
-
-    static volatile double s_longTermSuccessRate = 0.80;
-
-    if ((m_drawCount >= 10 * frameRateGoal) && (successPct > s_longTermSuccessRate))
+    double modifier = target.GetTileSizeModifier();
+    if (m_numFrames >= m_frameWindow)
         {
-        // After a long string of successes, reset the stats. Otherwise, we won't notice when aborts start happening again.
+        modifier = Compute(target, modifier);
         Reset();
-        FRAMERATE_DEBUG_PRINTF("Reset stats");
-        return frameRateGoal;
         }
 
-    static volatile double s_shortTermSuccessRate = 0.95;
+    Record(frameTime);
+    return modifier;
+    }
 
-    if (successPct <= s_shortTermSuccessRate)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileSizeAdjuster::Record(double frameTime)
+    {
+    BeAssert(m_numFrames < m_frameWindow);
+    double sum = m_averageFrameTime * m_numFrames;
+    ++m_numFrames;
+    m_averageFrameTime = (sum + frameTime) / m_numFrames;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
+    {
+    BeAssert(m_numFrames == m_frameWindow);
+    BeAssert(0 < target.GetMinimumFrameRate());
+
+    double maxFrameTime = 1.0 / target.GetMinimumFrameRate();
+    uint32_t observedFps = static_cast<uint32_t>(1.0 / m_averageFrameTime);
+    double minMod = 1.0, maxMod = target.GetMaximumTileSizeModifier();
+    double step = (maxMod-minMod)/8.0;
+    if (m_averageFrameTime <= maxFrameTime)
         {
-        Reset();
+        // If we're doing *really* well (at least 5 fps better than minimum), decrease the tile size modifier a bit
+        double newMod = curMod;
+        if (5 <= observedFps - target.GetMinimumFrameRate())
+            newMod -= step;
 
-        // We have been failing too often to draw the whole scene in the time allotted for a frame. 
-        // About all we can do is allow more time per frame. I can only hope that the update planner does not increase the element count!!
-        if (frameRateGoal > target.GetMinimumFrameRate())
-            {
-            --frameRateGoal;
-            FRAMERATE_WARN_PRINTF("ABORTS TOO MUCH => -frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
-            }
-
-        return frameRateGoal;
+        return std::max(newMod, minMod);
         }
 
-    // If we got here, we know that we have been able draw all elements in the scene in the time allotted at least most of the time.
-    
-    if (0 == (m_drawCount % (int)frameRateGoal))
+    // For every 5 fps below minimum, increase the tilesize modifier by another chunk
+    step *= ((target.GetMinimumFrameRate() - observedFps) / 5) + 1;
+
+    double newMod = curMod + step;
+    newMod = std::min(newMod, maxMod);
+    if (newMod > curMod)
         {
-        // If we have been succeeding for 1 second or more, then maybe we should increase the frame rate.
-        // That would have the benefit of making everything smoother. However, that would also have the effect of making the update planner reduce
-        // the number of elements per scene, that is, increase dropout. That would be OK if we are currently drawing too many small elements anyway.
-        // If we are not drawing small elements, then don't increase the frame rate, as the rejected elements would be too noticable.
-        if (smallestRangeDrawn < FINE_ELEMENT_RES)
-            {
-            Reset();
-            if (frameRateGoal < FRAME_RATE_MAX)
-                {
-                ++frameRateGoal;
-                FRAMERATE_WARN_PRINTF("SUCCESS @ FINE => +frameRateGoal -> %lf (smallestRangeDrawn=%lf)", frameRateGoal, smallestRangeDrawn);
-                }
-            }
+        WARN_PRINTF("Increasing tilesize mod to %f (avgFrameTime=%f av fps=%f)", newMod, m_averageFrameTime, 1.0/m_averageFrameTime);
         }
 
-    return frameRateGoal;
+    return newMod;
     }
 
 /*-----------------------------------------------------------------------------------**//**
@@ -630,3 +574,4 @@ Transform   Render::Material::Trans2x3::GetTransform() const
 
     return transform;
     }
+

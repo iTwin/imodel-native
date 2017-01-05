@@ -1628,7 +1628,7 @@ public:
 #if defined (BENTLEYCONFIG_DISPLAY_WIN32)
     virtual HDC__* GetDC() const {return nullptr;} //!< Note this may return null even on Windows, depending on the associated Render::System
 #endif
-    virtual TargetPtr _CreateTarget(double frameRateGoal) = 0;
+    virtual TargetPtr _CreateTarget(double tileSizeModifier) = 0;
     double PixelsFromInches(double inches) const {PixelsPerInch ppi=_GetPixelsPerInch(); return inches * (ppi.height + ppi.width)/2;}
     Window const* GetWindow() const {return m_window.get();}
 };
@@ -1696,30 +1696,26 @@ struct System
 };
 
 //=======================================================================================
-//! Provides an algorithm for dynamically adjusting the frame rate goal of a
-//! Render::Target based on the ratio of successfully drawn to aborted frames and other
-//! factors.
+//! Provides an algorithm for dynamically adjusting the tile size modifier of a
+//! Render::Target based on observed frame rate.
 // @bsistruct                                                   Paul.Connelly   06/16
 //=======================================================================================
-struct FrameRateAdjuster
+struct TileSizeAdjuster
 {
 private:
-    uint32_t m_drawCount = 0;
-    uint32_t m_abortCount = 0;
+    uint32_t    m_frameWindow;  // # of frames to record before performing adjustment
+    uint32_t    m_numFrames;    // # of frames recorded thus far
+    double      m_averageFrameTime;   // average # of seconds to render each frame thus far
 
+    void Record(double frameTime);
+    double Compute(Render::TargetCR target, double curModifier) const;
 public:
-    static uint32_t const FRAME_RATE_MIN = 1;
-    static uint32_t const FRAME_RATE_MAX = 30;
+    explicit TileSizeAdjuster(uint32_t frameWindow=15) : m_frameWindow(frameWindow) { Reset(); }
 
-    //! Computes an adjusted frame rate goal based on factors like draw/abort ratio, smallest attempted element size, etc
-    //! @param[in] target The target who's frame rate goal is to be adjusted
-    //! @param[in] lowestScore The smallest attempted element size (NPC squared)
-    //! @return The adjusted frame rate goal
-    DGNPLATFORM_EXPORT double AdjustFrameRate(Render::TargetCR target, double lowestScore);
+    //! Call after each rendered frame. Returns an adjusted tile size modifier.
+    DGNPLATFORM_EXPORT double Update(Render::TargetCR target, double frameTime);
 
-    void Reset() {m_drawCount = m_abortCount = 0;}    //!< Reset abort/draw counts
-    void IncrementDrawCount() {++m_drawCount;}        //!< Increment the number of frames drawn
-    void IncrementAbortCount() {++m_abortCount;}      //!< Increment the number of drawn frames aborted
+    void Reset() {m_numFrames=0; m_averageFrameTime=0.0;}   //!< Reset the accumulated statistics
 };
 
 //=======================================================================================
@@ -1741,10 +1737,8 @@ protected:
     GraphicListPtr m_currentScene;
     GraphicListPtr m_dynamics;
     Decorations m_decorations;
-    double m_frameRateGoal; // frames per second
+    double m_tileSizeModifier;
     uint32_t m_minimumFrameRate;
-    BeAtomic<uint32_t> m_graphicsPerSecondScene;
-    BeAtomic<uint32_t> m_graphicsPerSecondNonScene;
 
     virtual void _OnResized() {}
     virtual void* _ResolveOverrides(OvrGraphicParamsCR) = 0;
@@ -1752,18 +1746,12 @@ protected:
     virtual BSIRect _GetViewRect() const = 0;
     virtual DVec2d _GetDpiScale() const = 0;
 
-    DGNVIEW_EXPORT Target(SystemR, double frameRateGoal);
+    DGNVIEW_EXPORT Target(SystemR, double tileSizeModifier);
     DGNVIEW_EXPORT ~Target();
     DGNPLATFORM_EXPORT static void VerifyRenderThread();
     static double Get2dFrustumDepth() {return DgnUnits::OneMeter();}
 
 public:
-    struct Debug
-    {
-        static void SaveGPS(int, double);
-        DGNPLATFORM_EXPORT static void SaveSceneTarget(int);
-        static void Show();
-    };
     virtual void _OnDestroy() {}
     virtual void _ChangeScene(GraphicListR scene, ClipPrimitiveCP activeVolume, double lowestScore) {VerifyRenderThread(); m_currentScene = &scene; m_activeVolume=activeVolume;}
     virtual void _ChangeDynamics(GraphicListP dynamics) {VerifyRenderThread(); m_dynamics = dynamics;}
@@ -1798,26 +1786,24 @@ public:
     SystemR GetSystem() {return m_system;}
     void SetTileTarget() {m_tileTarget=true;}
 
-    static double DefaultFrameRateGoal()
+    static constexpr double DefaultTileSizeModifier()
         {
 #ifdef BENTLEYCONFIG_GRAPHICS_DIRECTX // *** WIP - we are trying to predict the likely graphics performance of the box.
-        return 20.0; // Plan for the best on Windows (desktop) computers.
+        return 1.0; // Plan for the best on Windows (desktop) computers.
 #else
-        return 10.0; // Plan for the worst on mobile devices
+        return 2.5; // Plan for the worst on mobile devices
 #endif
         }
 
+    static constexpr uint32_t DefaultMinimumFrameRate() { return 15; }
+
     static int32_t GetMaxDisplayPriority() {return (1<<23)-32;}
     static double DepthFromDisplayPriority(int32_t priority){return Get2dFrustumDepth() * (double) priority / (double) GetMaxDisplayPriority();}
-    double GetFrameRateGoal() const {return m_frameRateGoal;}
-    void SetFrameRateGoal(double goal) {m_frameRateGoal = goal;}
-    static int const FRAME_RATE_MIN_DEFAULT = 5;
+    double GetTileSizeModifier() const {return m_tileSizeModifier;}
+    void SetTileSizeModifier(double mod) {m_tileSizeModifier=mod;}
     uint32_t GetMinimumFrameRate() const {return m_minimumFrameRate;}
     uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
-    uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
-    uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
-    DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
+    double GetMaximumTileSizeModifier() const {return 8.0;}
 
     //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture

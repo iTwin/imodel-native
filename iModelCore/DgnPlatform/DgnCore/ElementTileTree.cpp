@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementTileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -2320,7 +2320,7 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return 512; // ###TODO: come up with a decent value, and account for device ppi
+    return 256; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 /*---------------------------------------------------------------------------------**//**

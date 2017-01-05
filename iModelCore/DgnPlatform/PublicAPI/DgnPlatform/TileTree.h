@@ -471,6 +471,7 @@ struct DrawArgs
     TransformCR GetLocation() const {return m_location;}
     DGNPLATFORM_EXPORT void InsertMissing(TileCR tile);
     double ComputeTileDistance(TileCR tile) const;
+    double GetTileSizeModifier() const;
 };
 
 //=======================================================================================
