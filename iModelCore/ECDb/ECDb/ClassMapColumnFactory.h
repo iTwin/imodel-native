@@ -53,15 +53,5 @@ struct ClassMapColumnFactory final : NonCopyableClass
         void Debug() const;
     };
 
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-//struct RelationshipClassEndTableMapColumnFactory final : NonCopyableClass
-//    {
-//    public:
-//        explicit RelationshipClassEndTableMapColumnFactory(RelationshipClassEndTableMap const& relationshipMap);
-//        DbColumn* AllocateForeignECInstanceId();
-//        DbCOlumn* AllocateForeignRelECClassId();
-//        DbCOlumn* AllocateForeignECClassId();
-//    };
+
 END_BENTLEY_SQLITE_EC_NAMESPACE
