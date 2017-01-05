@@ -38,13 +38,13 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     return pRasterFile;
     }
 
+HGFHMRStdWorldCluster* RasterUtilities::s_cluster = nullptr;
 
-HGFHMRStdWorldCluster* s_cluster;
-
-HGFHMRStdWorldCluster* GetCluster()
+HGFHMRStdWorldCluster* RasterUtilities::GetWorldCluster()
     {
     if (s_cluster == nullptr)
         s_cluster = new HGFHMRStdWorldCluster();
+
     return s_cluster;
     }
 
@@ -53,7 +53,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path)
     {
     if (s_rasterMemPool == nullptr)
         s_rasterMemPool = new HPMPool(30000, HPMPool::None);
-    auto cluster = GetCluster();
+    auto cluster = GetWorldCluster();
 
     HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
     HFCPtr<HRSObjectStore> pObjectStore;
@@ -77,7 +77,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
 
     if (s_rasterMemPool == nullptr)
         s_rasterMemPool = new HPMPool(30000, HPMPool::None);
-    auto cluster = GetCluster();
+    auto cluster = GetWorldCluster();
 
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
@@ -181,7 +181,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
     rasterSource->SetShape(imageReprojectShape);
 
    
-    HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
+    HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetWorldCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
     mosaicPtr->Add(rasterSource);
     return mosaicPtr.GetPtr();
 

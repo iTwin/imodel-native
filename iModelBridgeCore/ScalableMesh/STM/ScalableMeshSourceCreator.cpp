@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:41:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -790,9 +790,8 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
                                              fileGCS,
                                              targetScalableMeshData);
     if (filteredSources.empty()) return BSISUCCESS;
-    /*s_rasterMemPool = new HPMPool(30000, HPMPool::None);*/
-    auto cluster = new HGFHMRStdWorldCluster();
-    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
+            
+    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(RasterUtilities::GetWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
     
     for (auto& source : filteredSources)
@@ -845,8 +844,7 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
         rasterList.push_back(pRaster.GetPtr());
         pRaster = 0;
         }
-    pMosaicP->Add(rasterList);
-    delete cluster;
+    pMosaicP->Add(rasterList);    
     rasterList.clear();
     return status;
     }
