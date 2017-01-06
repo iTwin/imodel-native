@@ -11,7 +11,6 @@
 #include <Bentley/Bentley.h>
 #include <Bentley/WString.h>
 #include <Bentley/RefCounted.h>
-#include <mutex>
 #include <ctype.h>
 #include <ctime>
 #include <chrono>
