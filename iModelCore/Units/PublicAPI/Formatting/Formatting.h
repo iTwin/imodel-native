@@ -22,6 +22,12 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormat)
 
+//===================================================
+//
+// Enumerations
+//
+//===================================================
+
 enum class ParameterCode
     {
     FormatName = 50,
@@ -222,6 +228,7 @@ enum class StdFormatCode
     };
 
 
+
 // A collection of improtant "global" constants that are used across the whole formatting domain
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  11/2016                                                
@@ -384,158 +391,157 @@ public:
         }
     };
 
-#if defined(FUNCTION_NOT_USED)
-    static Utf8String ShowSignOptionName(ShowSignOption opt)
+static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
+
+static DecimalPrecision DecimalPrecisionByIndex(size_t num)
+    {
+    switch (num)
         {
-        switch (opt)
-            {
-            case ShowSignOption::OnlyNegative: return "OnlyNegative";
-            case ShowSignOption::SignAlways: return "SignAlways";
-            case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
-            default: return "NoSign";
-            }
+        case 1: return DecimalPrecision::Precision1;
+        case 2: return DecimalPrecision::Precision2;
+        case 3: return DecimalPrecision::Precision3;
+        case 4: return DecimalPrecision::Precision4;
+        case 5: return DecimalPrecision::Precision5;
+        case 6: return DecimalPrecision::Precision6;
+        case 7: return DecimalPrecision::Precision7;
+        case 8: return DecimalPrecision::Precision8;
+        case 9: return DecimalPrecision::Precision9;
+        case 10: return DecimalPrecision::Precision10;
+        case 11: return DecimalPrecision::Precision11;
+        case 12: return DecimalPrecision::Precision12;
+        default: return DecimalPrecision::Precision0;
         }
-#endif
+    }
 
-    static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
-
-    static DecimalPrecision DecimalPrecisionByIndex(size_t num)
-        {
-        switch (num)
-            {
-            case 1: return DecimalPrecision::Precision1;
-            case 2: return DecimalPrecision::Precision2;
-            case 3: return DecimalPrecision::Precision3;
-            case 4: return DecimalPrecision::Precision4;
-            case 5: return DecimalPrecision::Precision5;
-            case 6: return DecimalPrecision::Precision6;
-            case 7: return DecimalPrecision::Precision7;
-            case 8: return DecimalPrecision::Precision8;
-            case 9: return DecimalPrecision::Precision9;
-            case 10: return DecimalPrecision::Precision10;
-            case 11: return DecimalPrecision::Precision11;
-            case 12: return DecimalPrecision::Precision12;
-            default: return DecimalPrecision::Precision0;
-            }
-        }
-
-    //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
-    static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
-        {
-        static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
-        if (0 <= index && sizeof(FactorSet) / sizeof(double) > index)
-            return FactorSet[index];
-        return FactorSet[DecimalPrecisionToInt(decP)];
-        }
+//static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
+static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
+    {
+    static double FactorSet[13] = { 1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5, 1.0e6, 1.0e7, 1.0e8, 1.0e9, 1.0e10, 1.0e11, 1.0e12 };
+    if (0 <= index && sizeof(FactorSet) / sizeof(double) > index)
+        return FactorSet[index];
+    return FactorSet[DecimalPrecisionToInt(decP)];
+    }
 
 
-    static const CharCP GetParameterCategoryName(ParameterCategory parcat)
-        {
-        static const CharCP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
-            "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping" };
-        return CategoryNames[static_cast<int>(parcat)];
-        }
+static Utf8CP GetParameterCategoryName(ParameterCategory parcat)
+    {
+    static Utf8CP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
+        "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping" };
+    return CategoryNames[static_cast<int>(parcat)];
+    }
 
 #if defined(FUNCTION_NOT_USED)
-    static int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
+
+static Utf8String ShowSignOptionName(ShowSignOption opt)
+    {
+    switch (opt)
+        {
+        case ShowSignOption::OnlyNegative: return "OnlyNegative";
+        case ShowSignOption::SignAlways: return "SignAlways";
+        case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
+        default: return "NoSign";
+        }
+    }
+
+static int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
 #endif
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   David Fox-Rabinovitz 11/16
-    //----------------------------------------------------------------------------------------
-    static Utf8String PresentationTypeName(PresentationType type)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String PresentationTypeName(PresentationType type)
+    {
+    switch (type)
         {
-        switch (type)
-            {
-            case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
-            case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
-            case PresentationType::ScientificNorm: return FormatConstant::FPN_Scientific();
-            default:
-            case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
-            }
+        case PresentationType::Fractional: return FormatConstant::FPN_Fractional();
+        case PresentationType::Scientific: return FormatConstant::FPN_Scientific();
+        case PresentationType::ScientificNorm: return FormatConstant::FPN_Scientific();
+        default:
+        case PresentationType::Decimal: return FormatConstant::FPN_Decimal();
         }
+    }
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   David Fox-Rabinovitz 11/16
-    //----------------------------------------------------------------------------------------
-    static Utf8String SignOptionName(ShowSignOption opt)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String SignOptionName(ShowSignOption opt)
+    {
+    switch (opt)
         {
-        switch (opt)
-            {
-            case ShowSignOption::NoSign: return FormatConstant::FPN_NoSign();
-            case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
-            case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
-            default:
-            case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
-            }
+        case ShowSignOption::NoSign: return FormatConstant::FPN_NoSign();
+        case ShowSignOption::SignAlways: return FormatConstant::FPN_SignAlways();
+        case ShowSignOption::NegativeParentheses: return FormatConstant::FPN_NegativeParenths();
+        default:
+        case ShowSignOption::OnlyNegative: return FormatConstant::FPN_OnlyNegative();
         }
+    }
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   David Fox-Rabinovitz 11/16
-    //----------------------------------------------------------------------------------------
-    static Utf8String DecimalPrecisionName(DecimalPrecision prec)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String DecimalPrecisionName(DecimalPrecision prec)
+    {
+    switch (prec)
         {
-        switch (prec)
-            {
-            case DecimalPrecision::Precision1: return FormatConstant::FPN_Precision1();
-            case DecimalPrecision::Precision2: return FormatConstant::FPN_Precision2();
-            case DecimalPrecision::Precision3: return FormatConstant::FPN_Precision3();
-            case DecimalPrecision::Precision4: return FormatConstant::FPN_Precision4();
-            case DecimalPrecision::Precision5: return FormatConstant::FPN_Precision5();
-            case DecimalPrecision::Precision6: return FormatConstant::FPN_Precision6();
-            case DecimalPrecision::Precision7: return FormatConstant::FPN_Precision7();
-            case DecimalPrecision::Precision8: return FormatConstant::FPN_Precision8();
-            case DecimalPrecision::Precision9: return FormatConstant::FPN_Precision9();
-            case DecimalPrecision::Precision10: return FormatConstant::FPN_Precision10();
-            case DecimalPrecision::Precision11: return FormatConstant::FPN_Precision11();
-            case DecimalPrecision::Precision12: return FormatConstant::FPN_Precision12();
-            default:
-            case DecimalPrecision::Precision0: return FormatConstant::FPN_Precision0();
-            }
+        case DecimalPrecision::Precision1: return FormatConstant::FPN_Precision1();
+        case DecimalPrecision::Precision2: return FormatConstant::FPN_Precision2();
+        case DecimalPrecision::Precision3: return FormatConstant::FPN_Precision3();
+        case DecimalPrecision::Precision4: return FormatConstant::FPN_Precision4();
+        case DecimalPrecision::Precision5: return FormatConstant::FPN_Precision5();
+        case DecimalPrecision::Precision6: return FormatConstant::FPN_Precision6();
+        case DecimalPrecision::Precision7: return FormatConstant::FPN_Precision7();
+        case DecimalPrecision::Precision8: return FormatConstant::FPN_Precision8();
+        case DecimalPrecision::Precision9: return FormatConstant::FPN_Precision9();
+        case DecimalPrecision::Precision10: return FormatConstant::FPN_Precision10();
+        case DecimalPrecision::Precision11: return FormatConstant::FPN_Precision11();
+        case DecimalPrecision::Precision12: return FormatConstant::FPN_Precision12();
+        default:
+        case DecimalPrecision::Precision0: return FormatConstant::FPN_Precision0();
         }
+    }
 
-    //----------------------------------------------------------------------------------------
-    // @bsimethod                                                   David Fox-Rabinovitz 11/16
-    //----------------------------------------------------------------------------------------
-    static Utf8String FractionallPrecisionName(FractionalPrecision prec)
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//----------------------------------------------------------------------------------------
+static Utf8String FractionallPrecisionName(FractionalPrecision prec)
+    {
+    switch (prec)
         {
-        switch (prec)
-            {
-            case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec2();
-            case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec2();
-            default:
-            case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
-            }
+        case FractionalPrecision::Half: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Quarter: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Eighth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Sixteenth: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_32: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_64: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_128: return FormatConstant::FPN_FractPrec2();
+        case FractionalPrecision::Over_256: return FormatConstant::FPN_FractPrec2();
+        default:
+        case FractionalPrecision::Whole: return FormatConstant::FPN_FractPrec1();
         }
+    }
 
-    static FractionalPrecision FractionalPrecisionByDenominator(size_t prec)
+static FractionalPrecision FractionalPrecisionByDenominator(size_t prec)
+    {
+    switch (prec)
         {
-        switch (prec)
-            {
-            case 2: return FractionalPrecision::Half;
-            case 4: return FractionalPrecision::Quarter;
-            case 8: return FractionalPrecision::Eighth;
-            case 16: return FractionalPrecision::Sixteenth;
-            case 32: return FractionalPrecision::Over_32;
-            case 64: return FractionalPrecision::Over_64;
-            case 128: return FractionalPrecision::Over_128;
-            case 256: return FractionalPrecision::Over_256;
-            case 1:
-            default:return FractionalPrecision::Whole;
-            }
+        case 2: return FractionalPrecision::Half;
+        case 4: return FractionalPrecision::Quarter;
+        case 8: return FractionalPrecision::Eighth;
+        case 16: return FractionalPrecision::Sixteenth;
+        case 32: return FractionalPrecision::Over_32;
+        case 64: return FractionalPrecision::Over_64;
+        case 128: return FractionalPrecision::Over_128;
+        case 256: return FractionalPrecision::Over_256;
+        case 1:
+        default:return FractionalPrecision::Whole;
         }
+    }
 
 
-    static int FormatTraitsBit(FormatTraits zcValue)
-        {
-        return static_cast<int>(zcValue);
-        }
+static int FormatTraitsBit(FormatTraits zcValue)
+    {
+    return static_cast<int>(zcValue);
+    }
 
 struct StdFormatName
     {
@@ -660,7 +666,7 @@ struct NumericFormat
     {
 private:
     Utf8String          m_name;                  // name or ID of the format
-    Utf8CP              m_alias;                 // short alternative name (alias)
+    Utf8String          m_alias;                 // short alternative name (alias)
     double              m_minTreshold;
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
@@ -710,8 +716,8 @@ public:
     UNITS_EXPORT bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
     UNITS_EXPORT bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
 
-    UNITS_EXPORT void SetAlias(Utf8CP alias) { m_alias = alias;}
-    UNITS_EXPORT Utf8CP SetAlias() { return m_alias; }
+    UNITS_EXPORT void SetAlias(Utf8StringCR alias);
+    UNITS_EXPORT Utf8String GetAlias() { return m_alias; }
     UNITS_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
     UNITS_EXPORT DecimalPrecision GetDecimalPrecision() { return m_decPrecision; }
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);// {return DecimalPrecisionToInt(m_decPrecision); };
@@ -740,20 +746,20 @@ public:
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
     UNITS_EXPORT int FormatDouble(double dval, CharP buf, int bufLen, int prec = -1, double round = -1.0);
+    UNITS_EXPORT static Utf8String RefFormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatDouble(double dval, int prec = -1, double round = -1.0);
     UNITS_EXPORT int FormatBinaryByte (unsigned char n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatBinaryShort (short int n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatBinaryInt (int n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatBinaryDouble (double x, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT static int RightAlignedCopy(CharP dest, int destLen, bool termZero, CharCP src, int srcLen);
-    UNITS_EXPORT static Utf8String FormatDouble(double dval, Utf8P stdName, int prec = -1, double round = -1.0);
     UNITS_EXPORT Utf8String FormatRoundedDouble(double dval, double round);
     UNITS_EXPORT Utf8String FormatInteger(int ival);
     UNITS_EXPORT Utf8String ByteToBinaryText(unsigned char n);
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
-    UNITS_EXPORT Utf8StringCR GetName() { return m_name; };
+    UNITS_EXPORT Utf8String GetName() { return m_name; };
     };
 
 //=======================================================================================
@@ -826,38 +832,50 @@ private:
         AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
         AddFormat(new NumericFormat("DefaultFractional", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fract");
         AddFormat(new NumericFormat("SIgnedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
-        AddFormat(new NumericFormat("DefaultExp", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
-        AddFormat(new NumericFormat("SignedExp", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
+        AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
+        AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
         AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
         }
     StdFormatSet() { StdInit(); }
     static StdFormatSet Set() { static StdFormatSet set; return set; }
-    public:
+public:
 
-        static size_t GetFormatSetSize()
+    static NumericFormatP DefaultDecimal()
+        {
+        NumericFormatP fmtP;
+        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
             {
-            return Set().m_formatSet.size();
+            fmtP = *itr;
+            if (PresentationType::Decimal == fmtP->GetPresentationType())
+                return fmtP;
             }
+        return nullptr;
+        }
 
-        static NumericFormatP FindFormat(Utf8CP name)
+    static size_t GetFormatSetSize()
+        {
+        return Set().m_formatSet.size();
+        }
+
+    static NumericFormatP FindFormat(Utf8CP name)
+        {
+        NumericFormatP fmtP;
+        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
             {
-            NumericFormatP fmtP;
-            for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
-                {
-                fmtP = *itr;
-                if (fmtP->GetName() == name || fmtP->SetAlias() == name)
-                    return fmtP;
-                }
+            fmtP = *itr;
+            if (fmtP->GetName() == name || fmtP->GetAlias() == name)
+                return fmtP;
+            }
+        return nullptr;
+        }
+
+    static NumericFormatP FindFormatByIndex(size_t indx)
+        {
+        if (indx >= Set().GetFormatSetSize())
             return nullptr;
-            }
-
-        static NumericFormatP FindFormatByIndex(size_t indx)
-            {
-            if (indx >= Set().GetFormatSetSize())
-                return nullptr;
-            NumericFormatP fmt = Set().m_formatSet.at(indx);
-            return fmt;
-            }
+        NumericFormatP fmt = Set().m_formatSet.at(indx);
+        return fmt;
+        }
     };
 
 // Format parameter traits
@@ -896,7 +914,7 @@ public:
     UNITS_EXPORT Utf8StringCR GetName() { return m_paramName; }
     UNITS_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
     UNITS_EXPORT ParameterCategory GetCategory() { return m_category; }
-    UNITS_EXPORT CharCP GetCategoryName() { return GetParameterCategoryName(m_category); }
+    UNITS_EXPORT Utf8CP GetCategoryName() { return GetParameterCategoryName(m_category); }
     UNITS_EXPORT ParameterCode GetParameterCode() { return m_paramCode; }
     UNITS_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
 };
@@ -923,52 +941,6 @@ public:
     UNITS_EXPORT Utf8StringCR CodeToName(ParameterCode paramCode);
     UNITS_EXPORT Utf8StringP SerializeFormatDefinition(NumericFormat format);
     };
-
-//=======================================================================================
-// @bsiclass
-//=======================================================================================
-//struct UnicodeConstant
-//    {
-//private:
-//    static const unsigned char m_twoByteMask = 0xE0;      // 11100000 - complement will select 5 upper bits
-//    static const unsigned char m_twoByteMark = 0xC0;      // 11000000
-//    static const unsigned char m_threeByteMask = 0xF0;    // 11110000  - complement will select 4 upper bits
-//    static const unsigned char m_threeByteMark = 0xE0;    // 11100000
-//    static const unsigned char m_fourByteMask = 0xF8;     // 11111000  - complement will select 3 upper bits
-//    static const unsigned char m_fourByteMark = 0xF0;     // 11110000
-//    static const unsigned char m_trailingByteMask = 0xC0; // 11000000 - complement will select trailing bits
-//    static const unsigned char m_trailingByteMark = 0x80; // 10000000 - indicator of the trailing bytes and also an ASCII char
-//    static const unsigned char m_trailingBits = 0x3F;     // 00111111
-//    static const size_t m_upperBitShift = 6;
-//    bool m_isLittleEndian;
-//
-//    static bool CheckEndian()
-//        {
-//        union { short int s; char b[4]; } un;
-//        un.s = 1;
-//        return (un.b[0] == (char)1);
-//        }
-//
-//
-//public:
-//    UNITS_EXPORT UnicodeConstant() { m_isLittleEndian = CheckEndian(); }
-//    UNITS_EXPORT const char Get2ByteMask() { return m_twoByteMask; }                 // 11100000 - complement will select 5 upper bits
-//    UNITS_EXPORT const char Get3ByteMask() { return m_threeByteMask; }				  // 11000000
-//    UNITS_EXPORT const char Get4ByteMask() { return m_fourByteMask; }				  // 11110000  - complement will select 4 upper bits
-//    UNITS_EXPORT const char Get2ByteMark() { return m_twoByteMark; }				  // 11100000
-//    UNITS_EXPORT const char Get3ByteMark() { return m_threeByteMark; }				  // 11111000  - complement will select 3 upper bits
-//    UNITS_EXPORT const char Get4ByteMark() { return m_fourByteMark; }				  // 11110000
-//    UNITS_EXPORT const char GetTrailingByteMask() { return m_trailingByteMask; }	  // 11000000 - complement will select trailing bits
-//    UNITS_EXPORT const char GetTrailingByteMark() { return m_trailingByteMark; }	  // 10000000 - indicator of the trailing bytes and also an ASCII char
-//    UNITS_EXPORT const char GetTrailingBitsMask() { return m_trailingBits; }		  // 00111111
-//    UNITS_EXPORT const size_t GetSequenceLength(unsigned char c);
-//    UNITS_EXPORT bool IsTrailingByteValid(unsigned char c);
-//    UNITS_EXPORT bool GetTrailingBits(unsigned char c, CharP outBits);
-//    UNITS_EXPORT bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
-//    UNITS_EXPORT int GetTrailingShift() { return m_upperBitShift; }
-//    UNITS_EXPORT bool IsLittleEndian(); 
-//    UNITS_EXPORT bool ForceBigEndian();
-//    };
 
 //=======================================================================================
 // @bsiclass
@@ -1009,7 +981,7 @@ private:
     UNITS_EXPORT size_t TrueIndex(size_t index, size_t wordSize);
     UNITS_EXPORT int AddTrailingByte();
     UNITS_EXPORT size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
-    UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
+    //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
 
 public:
     //! Construct a cursor attached to the given Utf8 string 

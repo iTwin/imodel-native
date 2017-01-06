@@ -18,6 +18,58 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 TEST(FormattingTest, Simple)
     {
+   ///* double testV = 1000.0 * sqrt(2.0);
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8));     
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7));     
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6)); 
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0));
+
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0));
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0));
+
+   // LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05));
+   // LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05));
+   // LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05));
+   // LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05));
+   // LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05));
+   // LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05));*/
+
+    //NumericFormatP fmtP = StdFormatSet::FindFormat("real");
+    //fmtP->SetKeepTrailingZeroes(true);
+    //fmtP->SetUse1000Separator(true);
+    /*LOG.info("With Separator and trailing zeroes");
+    LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->RefFormatDouble(5.0*testV, "real", 7, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->RefFormatDouble(3.0*testV, "real", 6, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->RefFormatDouble(7.0*testV, "real", 5, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->RefFormatDouble(9.0*testV, "real", 4, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->RefFormatDouble(2.0*testV, "real", 3, 0.05));
+    fmtP->SetKeepTrailingZeroes(false);
+    fmtP->SetUse1000Separator(false);
+    LOG.info("With Separator and trailing zeroes turnes off again");
+    LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->RefFormatDouble(-5.0*testV, "real", 7, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->RefFormatDouble(-3.0*testV, "real", 6, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->RefFormatDouble(-7.0*testV, "real", 5, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->RefFormatDouble(-9.0*testV, "real", 4, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->RefFormatDouble(-2.0*testV, "real", 3, 0.05));
+*/
+
+
+    //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
+    //fmtD.SetKeepTrailingZeroes(true);
+
+
     FormatDictionary fd = FormatDictionary();
     NumericFormat numFmt = NumericFormat("Default");
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);

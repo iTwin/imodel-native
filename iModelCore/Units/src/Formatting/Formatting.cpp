@@ -59,6 +59,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //    
 //    }
 
+
 //===================================================
 //
 // NumericFormatMethods
@@ -70,7 +71,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //----------------------------------------------------------------------------------------
 void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
     {
-    m_name = name;
+    m_name = Utf8String(name);
     m_decPrecision = DecimalPrecisionByIndex(precision);
     m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = FormatConstant::DefaultPresentaitonType();
@@ -85,7 +86,7 @@ void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
 //----------------------------------------------------------------------------------------
 void NumericFormat::Init(Utf8StringCR name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
-    m_name = name;
+    m_name = Utf8String(name);
     m_presentationType = presType;
     m_signOption = signOpt;
     m_formatTraits = formatTraits;
@@ -105,6 +106,10 @@ void NumericFormat::Init(Utf8StringCR name, PresentationType presType, ShowSignO
     m_roundFactor = 0.0;
     }
 
+void NumericFormat::SetAlias(Utf8StringCR alias)
+    { 
+    m_alias = Utf8String(alias);
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -133,7 +138,8 @@ bool NumericFormat::AcceptableDifference(double dval1, double dval2, double maxD
 //----------------------------------------------------------------------------------------
 NumericFormat::NumericFormat(NumericFormatCR other)
     {
-    m_name = other.m_name;
+    m_name = Utf8String(other.m_name);
+    m_alias = Utf8String(other.m_alias);
     m_decPrecision = other.m_decPrecision;
     m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = other.m_presentationType;
@@ -228,6 +234,7 @@ void NumericFormat::SetPrecisionByValue(int prec)
 void NumericFormat::SetKeepTrailingZeroes(bool keep)
     {
     size_t temp = static_cast<int>(m_formatTraits);
+
     if (keep)
         temp |= static_cast<int>(FormatTraits::TrailingZeroes);
     else
@@ -609,7 +616,7 @@ int NumericFormat::FormatDouble(double dval, CharP buf, int bufLen, int prec, do
     bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
 
-    if (IsApplyRounding())
+    if (IsApplyRounding() || !IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
 
     if (sci)
@@ -719,12 +726,15 @@ Utf8String NumericFormat::FormatRoundedDouble(double dval, double round)
 //    return NumericFormat((StdFormatNameR)sfn, prec, round);
 //    }
 
-Utf8String NumericFormat::FormatDouble(double dval, Utf8P stdName, int prec, double round)
+Utf8String NumericFormat::RefFormatDouble(double dval, Utf8P stdName, int prec, double round)
     {
     NumericFormatP fmtP = StdFormatSet::FindFormat(stdName);
+    if (nullptr == fmtP)  // invalid name
+        fmtP = StdFormatSet::DefaultDecimal();
+    if (nullptr == fmtP)
+        return "";
     return fmtP->FormatDouble(dval, prec, round);
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -846,6 +856,7 @@ Utf8String NumericFormat::FormatDouble(double dval, Utf8P stdName, int prec, dou
      FormatBinaryDouble(x, buf, sizeof(buf), useSeparator);
      return Utf8String(buf);
  }
+
 
 //===================================================
 //
