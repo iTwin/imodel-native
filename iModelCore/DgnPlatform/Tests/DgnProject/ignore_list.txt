@@ -20,13 +20,6 @@ ElementAspectTests.ImportElementsWithAspect
 # no prepublished files
 DgnDbTest.GetCoordinateSystemProperties # on merge from graphite0505; notified John
 
-#WIP: Umar - Test Refactoring to remove pre-published data dependency
-RevisionTestFixture.Codes
-
-#TFS 628937
-DgnChangeSummaryTestFixture.ValidateChangeSummaries
-ChangeSummaryTestFixture.QueryMultipleSessions
-
 #TFS 557952: FindSection method in Csvfile.h does not work properly
 CsvFileTests.FindSection
 CsvFileTests.GetColumnContentsFromSection
@@ -42,9 +35,15 @@ DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
 #TFS 630732
 
-DgnECNavigatorTest.GetElemtmentInfo
-DgnScriptTest.RunScripts #WIP MH, investigating as it Crashes on IosArm64.
+DgnECNavigatorTest.GetElementInfo
 
-ChangeSummaryTestFixture.RelationshipChangesFromCurrentTransaction # Raman - must somehow use an API that has access to the write token in order to insert data into a BIM using ECSql
+EcutilsTests.ConvertECValueToJson
+    # bim0200, x86, NDEBUG
+    # [ RUN      ] EcutilsTests.ConvertECValueToJson
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\Ecutils_Tests.cpp(107): error:       Expected: BentleyStatus::BSISUCCESS
+    #       Which is: 0
+    # To be equal to: ECUtils::ConvertECValueToJson(obj, EcValue2)
+    #       Which is: 32768
+    # [  FAILED  ] EcutilsTests.ConvertECValueToJson (1 ms)
 
-DependencyRevisionTest.Merge # Raman - Needs to be adjusted for overflow column support
+ElementAspectTests.GenericUniqueAspect_CRUD #TFS 642436

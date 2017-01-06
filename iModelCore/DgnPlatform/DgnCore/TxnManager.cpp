@@ -199,13 +199,14 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
     if (!relClass.IsRelationshipClass())
         return DgnDbStatus::BadArg;
 
-    ChangeSummary::TableMapPtr tinfo = ChangeSummary::GetPrimaryTableMap(m_dgndb, relClass);
-    if (!tinfo.IsValid())
+    Utf8String tableName;
+    bool isTablePerHierarchy;
+    if (SUCCESS != ChangeSummary::GetMappedPrimaryTable(tableName, isTablePerHierarchy, relClass, m_dgndb))
         return DgnDbStatus::BadArg;
 
     dgn_TxnTable::RelationshipLinkTable* rlt;
 
-    auto handler = FindTxnTable(tinfo->GetTableName().c_str());
+    auto handler = FindTxnTable(tableName.c_str());
     if (handler != nullptr)
         {
         //  Somebody is already tracking this table
@@ -235,7 +236,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
 
     // Nobody is tracking this table.
     // *** TBD: 
-    // if (tinfo.m_tablePerHierarchy)
+    // if (isTablePerHierarchy)
     //  {
     //  auto multi = new dgn_TxnTable::MultiRelationshipLinkTable(*this);
     //  multi->m_ecclasses.insert(&relClass);
@@ -249,7 +250,7 @@ DgnDbStatus TxnManager::BeginTrackingRelationship(ECN::ECClassCR relClass)
         }
 
     m_tables.push_back(handler);
-    m_tablesByName.Insert(tinfo->GetTableName().c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
+    m_tablesByName.Insert(tableName.c_str(), handler);           // (takes ownership of handlers by adding a reference to it)
 
     return DgnDbStatus::Success;
     }
@@ -645,11 +646,11 @@ RevisionStatus TxnManager::MergeRevision(DgnRevisionCR revision)
 
     OnChangesApplied(changes, TxnAction::Merge);
 
-    if (HasChanges() || QueryNextTxnId(TxnManager::TxnId(0)).IsValid()) // has local changes
-        {
-        if (SUCCESS != PropagateChanges())
-            status = RevisionStatus::MergePropagationError;
-        }
+    // Note: We do need to run the propagation irrespective of whether there are local changes or
+    // not. This is to ensure the order of merges don't affect the final state (use 
+    // DependencyRevisionTest.Merge test to validate this)
+    if (SUCCESS != PropagateChanges())
+        status = RevisionStatus::MergePropagationError;
 
     UndoChangeSet indirectChanges;
     if (HasChanges())
@@ -1181,7 +1182,7 @@ DgnDbStatus TxnManager::DeleteFromStartTo(TxnId lastId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Ramanujam.Raman   07/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId startTxnId)
+BentleyStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId startTxnId)
     {
     BeAssert(&changeSummary.GetDb() == &m_dgndb);
 
@@ -1189,13 +1190,13 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     if (!startTxnId.IsValid() || startTxnId >= endTxnId)
         {
         BeAssert(false && "Invalid starting transaction");
-        return DgnDbStatus::BadArg;
+        return ERROR;
         }
 
     if (HasChanges() || InDynamicTxn())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
-        return DgnDbStatus::TransactionActive;
+        return ERROR;
         }
 
     DbResult result;
@@ -1213,7 +1214,7 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
         if (result != BE_SQLITE_OK)
             {
             BeAssert(false); // Failed to group sqlite changesets due to either schema changes- see error codes in sqlite3changegroup_add()
-            return DgnDbStatus::SQLiteError;
+            return ERROR;
             }
         }
 
@@ -1222,15 +1223,11 @@ DgnDbStatus TxnManager::GetChangeSummary(ChangeSummary& changeSummary, TxnId sta
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false && "Failed to merge SqlChangeSet-s into a single SqlChangeSet");
-        return DgnDbStatus::SQLiteError;
+        return ERROR;
         }
 
     changeSummary.Free();
-    BentleyStatus status = changeSummary.FromChangeSet(mergedSqlChangeSet);
-    BeAssert(status == SUCCESS);
-    UNUSED_VARIABLE(status);
-
-    return DgnDbStatus::Success;
+    return changeSummary.FromChangeSet(mergedSqlChangeSet);
     }
 
 /*---------------------------------------------------------------------------------**//**

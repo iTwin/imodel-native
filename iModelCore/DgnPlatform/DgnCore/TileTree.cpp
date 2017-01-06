@@ -50,8 +50,6 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    DgnDb::VerifyClientThread();
-
     m_tile->SetIsQueued(); // mark as queued so we don't request it again.
 
     TileLoaderPtr me(this);
