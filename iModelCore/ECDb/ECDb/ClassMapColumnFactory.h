@@ -23,7 +23,7 @@ struct ClassMapColumnFactory final : NonCopyableClass
         mutable std::map<Utf8String, std::set<DbColumn const*>, CompareIUtf8Ascii> m_usedColumnMap;
         mutable std::set<DbColumn const*> m_usedColumnSet;
         bool m_usesSharedColumnStrategy;
-
+		mutable std::vector<const ClassMap*> m_compoundFilter;
         void Initialize();
 
         ECN::ECClassId GetPersistenceClassId(ECN::ECPropertyCR, Utf8StringCR accessString) const;
@@ -34,22 +34,22 @@ struct ClassMapColumnFactory final : NonCopyableClass
         DbColumn* ApplySharedColumnStrategy(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&) const;
 
         bool TryFindReusableSharedDataColumn(DbColumn const*& reusableColumn) const;
-        bool IsColumnInUseByClassMap(DbColumn const& column) const { return m_usedColumnSet.find(&column) != m_usedColumnSet.end(); }
+		bool IsColumnInUseByClassMap(DbColumn const& column) const;
         bool IsCompatible(DbColumn const& avaliableColumn, DbColumn::Type type, DbColumn::CreateParams const& param) const;
 
         void AddColumnToCache(DbColumn const&, Utf8StringCR) const;
         BentleyStatus ComputeRelevantClassMaps(bmap<ECN::ECClassCP, ClassMap const*>& contextGraph) const;
-
+		void SetupCompoundFilter(bset<const ClassMap*> const* additionalFilter) const;
+		void RemoveCompoundFilter() const;
         ClassMap const& GetClassMap() const { return m_classMap; }
         DbTable& GetTable() const;
         ECDbCR GetECDb() const;
 
     public:
         explicit ClassMapColumnFactory(ClassMap const& classMap);
-
+		void Refresh() { m_usedColumnMap.clear(); m_usedColumnSet.clear(); Initialize(); }
         //This function either create a column or grab a existing column
-        DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString) const;
-
+        DbColumn* AllocateDataColumn(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bset<const ClassMap*> const* additionalFilter = nullptr) const;
         void Debug() const;
     };
 

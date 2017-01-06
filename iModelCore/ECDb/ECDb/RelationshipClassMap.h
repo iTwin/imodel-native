@@ -97,11 +97,15 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 			private:
 				RelationshipClassEndTableMap const& m_relMap;
 				RelationshipMappingInfo const& m_relInfo;
+				bmap<DbTable const*, bset<ClassMapCP>> m_constraintClassMaps;
+				void Initialize();
+
 			public:
-				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
-					:m_relMap(relMap), m_relInfo(relInfo) {}
+				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo);				
+				~ColumnFactory(){}
 				DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
 				DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
+		
 			};
 
 		struct ColumnLists final : NonCopyableClass
@@ -213,6 +217,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         static ClassMapPtr Create(ECDb const& ecdb, ECN::ECRelationshipClassCR ecRelClass, MapStrategyExtendedInfo const& mapStrategy, bool setIsDirty) { return new RelationshipClassEndTableMap(ecdb, ecRelClass, mapStrategy, setIsDirty); }
         virtual ReferentialIntegrityMethod _GetDataIntegrityEnforcementMethod() const override;
         virtual bool _RequiresJoin(ECN::ECRelationshipEnd) const override;
+		Utf8String BuildQualifiedAccessString(Utf8StringCR accessString) const  
+			{
+			Utf8String temp = GetRelationshipClass().GetFullName();
+			temp.append(".").append(accessString);
+			return temp;
+			}
     };
 
 /*==========================================================================

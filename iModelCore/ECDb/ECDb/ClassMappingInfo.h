@@ -119,10 +119,7 @@ public:
         public:
             FkMappingInfo(ECN::ECRelationshipEnd fkEnd, bool usePkAsFk)
                 : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(false), m_onDeleteAction(ForeignKeyDbConstraint::ActionType::NotSpecified), m_onUpdateAction(ForeignKeyDbConstraint::ActionType::NotSpecified)
-                {
-                //until it is implemented we always create a physical FK
-                m_isPhysicalFk = true;
-                }
+                {}
 
             FkMappingInfo(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
                 : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(true), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)

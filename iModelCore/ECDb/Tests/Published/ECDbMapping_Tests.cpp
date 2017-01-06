@@ -11569,6 +11569,53 @@ TEST_F(ECDbMappingTestFixture, AmbigousRelationshipProperty)
     }//===============
 
     }
+TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
+	{
+	SetupECDb("diamond_problem.ecdb",
+		SchemaItem("Diamond Problem",
+			"<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+			"  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+			"  <ECCustomAttributeClass typeName='Interface' appliesTo='EntityClass' modifier='Sealed' />"
+			"  <ECEntityClass typeName='PrimaryClassA'>"
+			"      <ECCustomAttributes>"
+			"          <ClassMap xmlns='ECDbMap.02.00'>"
+			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
+			"          </ClassMap>"
+			"          <ShareColumns xmlns='ECDbMap.02.00'>"
+			"              <SharedColumnCount>4</SharedColumnCount>" //
+			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+			"          </ShareColumns>"
+			"      </ECCustomAttributes>"
+			"      <ECProperty propertyName='P1' typeName='long' />"
+			"  </ECEntityClass>"
+			"  <ECEntityClass typeName='SecondaryClassA'>"
+			"      <ECCustomAttributes>"
+			"          <ClassMap xmlns='ECDbMap.02.00'>"
+			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
+			"          </ClassMap>"
+			"          <ShareColumns xmlns='ECDbMap.02.00'>"
+			"              <SharedColumnCount>4</SharedColumnCount>" //
+			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
+			"          </ShareColumns>"
+			"      </ECCustomAttributes>"
+			"      <ECProperty propertyName='T1' typeName='long' />"
+			"      <ECNavigationProperty propertyName='PrimaryClassA' relationshipName='PrimaryClassAHasSecondaryClassA' direction='Backward' />"
+			"  </ECEntityClass>"
+			"   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassA' strength='Referencing' modifier='Sealed'>"
+			"      <Source cardinality='(0,1)' polymorphic='False'>"
+			"          <Class class ='PrimaryClassA' />"
+			"      </Source>"
+			"      <Target cardinality='(0,N)' polymorphic='False'>"
+			"          <Class class ='SecondaryClassA' />"
+			"      </Target>"
+			"   </ECRelationshipClass>"
+			"</ECSchema>"));
+
+	ASSERT_TRUE(GetECDb().IsDbOpen());
+	GetECDb().Schemas().CreateECClassViewsInDb();
+	GetECDb().SaveChanges();
+
+	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
