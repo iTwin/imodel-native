@@ -6012,11 +6012,11 @@ TEST_F(ECSchemaUpdateTests, AddKoQAndUpdatePropertiesWithKoQ)
         ASSERT_TRUE(foo_homepage != nullptr);
         ASSERT_TRUE(foo_homepage->GetExtendedTypeName() == "URL");
 
-        ArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP foo_alternativeLengths = foo->GetPropertyP("AlternativeLengths")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_alternativeLengths != nullptr);
         ASSERT_TRUE(foo_alternativeLengths->GetKindOfQuantity() == myKindOfQuantity);
 
-        ArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP foo_favorites = foo->GetPropertyP("Favorites")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_favorites != nullptr);
         ASSERT_TRUE(foo_favorites->GetExtendedTypeName() == "URL");
 
@@ -6265,9 +6265,9 @@ TEST_F(ECSchemaUpdateTests, ModifyECArrayProperty_KOQToKOQ)
         ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
         ASSERT_TRUE(foo != nullptr);
 
-        ArrayECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP foo_length = foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_length != nullptr);
-        ArrayECPropertyCP foo_width = foo->GetPropertyP("Width")->GetAsArrayProperty();
+        PrimitiveArrayECPropertyCP foo_width = foo->GetPropertyP("Width")->GetAsPrimitiveArrayProperty();
         ASSERT_TRUE(foo_width != nullptr);
 
         ASSERT_TRUE(foo_length->GetKindOfQuantity() == KindOfQuantity2);
@@ -6304,7 +6304,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
     ECClassCP foo = GetECDb().Schemas().GetECClass("TestSchema", "Foo");
     ASSERT_TRUE(foo != nullptr);
 
-    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsArrayProperty()->GetKindOfQuantity());
+    ASSERT_EQ(koq, foo->GetPropertyP("Length")->GetAsPrimitiveArrayProperty()->GetKindOfQuantity());
 
     BeFileName filePath(GetECDb().GetDbFileName());
     GetECDb().CloseDb();
@@ -6325,7 +6325,7 @@ TEST_F(ECSchemaUpdateTests, RemoveKindOfQuantityFromECArrayProperty)
 
     //Verifying the property no longer has KOQ
     ASSERT_EQ(BE_SQLITE_OK, GetECDb().OpenBeSQLiteDb(m_updatedDbs[0].c_str(), Db::OpenParams(Db::OpenMode::ReadWrite)));
-    ArrayECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsArrayProperty();
+    PrimitiveArrayECPropertyCP foo_length = GetECDb().Schemas().GetECClass("TestSchema", "Foo")->GetPropertyP("Length")->GetAsPrimitiveArrayProperty();
     ASSERT_EQ("Length", foo_length->GetName());
     ASSERT_TRUE(foo_length->GetKindOfQuantity() == nullptr);
     }
