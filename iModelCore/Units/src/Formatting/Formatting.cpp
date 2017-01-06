@@ -69,9 +69,9 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
+void NumericFormat::DefaultInit(Utf8CP name, size_t precision)
     {
-    m_name = Utf8String(name);
+    m_name = name;
     m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = FormatConstant::DefaultPresentaitonType();
@@ -84,9 +84,9 @@ void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-void NumericFormat::Init(Utf8StringCR name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
+void NumericFormat::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
-    m_name = Utf8String(name);
+    m_name = name;
     m_presentationType = presType;
     m_signOption = signOpt;
     m_formatTraits = formatTraits;
@@ -106,9 +106,9 @@ void NumericFormat::Init(Utf8StringCR name, PresentationType presType, ShowSignO
     m_roundFactor = 0.0;
     }
 
-void NumericFormat::SetAlias(Utf8StringCR alias)
+void NumericFormat::SetAlias(Utf8CP alias)
     { 
-    m_alias = Utf8String(alias);
+    m_alias = alias;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -138,8 +138,8 @@ bool NumericFormat::AcceptableDifference(double dval1, double dval2, double maxD
 //----------------------------------------------------------------------------------------
 NumericFormat::NumericFormat(NumericFormatCR other)
     {
-    m_name = Utf8String(other.m_name);
-    m_alias = Utf8String(other.m_alias);
+    m_name = other.m_name;
+    m_alias = other.m_alias;
     m_decPrecision = other.m_decPrecision;
     m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = other.m_presentationType;
@@ -153,7 +153,7 @@ NumericFormat::NumericFormat(NumericFormatCR other)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
-NumericFormat::NumericFormat(Utf8StringCR name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
+NumericFormat::NumericFormat(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision)
     {
     Init(name, presType, signOpt, formatTraits, precision);   
     }
@@ -1361,5 +1361,17 @@ Utf8String FormatStopWatch::LastInterval(double factor)
     sprintf(buf, "%.4f UOR", m_lastInterval * factor);
     return Utf8String(buf);
     }
+
+
+Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
+{
+switch (opt)
+    {
+    case ShowSignOption::OnlyNegative: return "OnlyNegative";
+    case ShowSignOption::SignAlways: return "SignAlways";
+    case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
+    default: return "NoSign";
+    }
+}
 
 END_BENTLEY_FORMATTING_NAMESPACE

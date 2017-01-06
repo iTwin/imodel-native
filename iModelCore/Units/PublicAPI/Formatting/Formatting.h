@@ -21,7 +21,7 @@ FORMATTING_TYPEDEFS(FormatDictionary)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormat)
-
+FORMATTING_TYPEDEFS(StdFormatSet)
 //===================================================
 //
 // Enumerations
@@ -391,8 +391,11 @@ public:
         }
     };
 
+
 struct Utils
     {
+static Utf8String ShowSignOptionName(ShowSignOption opt);
+
 static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
 
 static DecimalPrecision DecimalPrecisionByIndex(size_t num)
@@ -424,7 +427,6 @@ static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1)
     return FactorSet[DecimalPrecisionToInt(decP)];
     }
 
-
 static Utf8CP GetParameterCategoryName(ParameterCategory parcat)
     {
     static Utf8CP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
@@ -432,21 +434,11 @@ static Utf8CP GetParameterCategoryName(ParameterCategory parcat)
     return CategoryNames[static_cast<int>(parcat)];
     }
 
-#if defined(FUNCTION_NOT_USED)
+//#if defined(FUNCTION_NOT_USED)
 
-static Utf8String ShowSignOptionName(ShowSignOption opt)
-    {
-    switch (opt)
-        {
-        case ShowSignOption::OnlyNegative: return "OnlyNegative";
-        case ShowSignOption::SignAlways: return "SignAlways";
-        case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
-        default: return "NoSign";
-        }
-    }
 
-static int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
-#endif
+int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
+//#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -682,17 +674,17 @@ private:
 
     double EffectiveRoundFactor(double rnd) { return IsIgnored(rnd) ? m_roundFactor : rnd; }
 
-    UNITS_EXPORT void DefaultInit(Utf8StringCR name, size_t precision);
-    UNITS_EXPORT void Init(Utf8StringCR name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
+    UNITS_EXPORT void DefaultInit(Utf8CP name, size_t precision);
+    UNITS_EXPORT void Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision);
     UNITS_EXPORT double RoundedValue(double dval, double round);
     UNITS_EXPORT int TrimTrailingZeroes(CharP buf, int index);
     UNITS_EXPORT int InsertChar(CharP buf, int index, char c, int num);
     UNITS_EXPORT NumericFormat() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
 public:
-    UNITS_EXPORT NumericFormat(Utf8StringCR name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
-    UNITS_EXPORT NumericFormat(Utf8StringCR name, size_t precision) { DefaultInit(name, precision); }
+    UNITS_EXPORT NumericFormat(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
+    UNITS_EXPORT NumericFormat(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
     UNITS_EXPORT NumericFormat(StdFormatNameR fmtType, size_t precision, double round = -1.0);
-    UNITS_EXPORT NumericFormat(Utf8StringCR name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormat(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormat(NumericFormatCR other);
     //UNITS_EXPORT static NumericFormat StdNumericFormat(Utf8P stdName, int prec, double round);
     UNITS_EXPORT void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
@@ -719,7 +711,7 @@ public:
     UNITS_EXPORT bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
     UNITS_EXPORT bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
 
-    UNITS_EXPORT void SetAlias(Utf8StringCR alias);
+    UNITS_EXPORT void SetAlias(Utf8CP alias);
     UNITS_EXPORT Utf8String GetAlias() { return m_alias; }
     UNITS_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
     UNITS_EXPORT DecimalPrecision GetDecimalPrecision() { return m_decPrecision; }
@@ -827,6 +819,7 @@ private:
         m_formatSet.push_back(fmtP);
         return fmtP;
         }
+
     void StdInit()
         {
         FormatTraits traits = FormatConstant::DefaultFormatTraits();
@@ -834,18 +827,20 @@ private:
         AddFormat(new NumericFormat("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
         AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
         AddFormat(new NumericFormat("DefaultFractional", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fract");
-        AddFormat(new NumericFormat("SIgnedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
+        AddFormat(new NumericFormat("SignedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
         AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
         AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
         AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
         }
     StdFormatSet() { StdInit(); }
-    static StdFormatSet Set() { static StdFormatSet set; return set; }
+    static StdFormatSet& Set() { static StdFormatSet set; return set; }
+    
 public:
 
     static NumericFormatP DefaultDecimal()
         {
         NumericFormatP fmtP;
+
         for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
             {
             fmtP = *itr;
@@ -862,8 +857,10 @@ public:
 
     static NumericFormatP FindFormat(Utf8CP name)
         {
-        NumericFormatP fmtP;
-        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
+        NumericFormatP fmtP = *Set().m_formatSet.begin();
+ 
+
+        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr )
             {
             fmtP = *itr;
             if (fmtP->GetName() == name || fmtP->GetAlias() == name)
@@ -872,13 +869,13 @@ public:
         return nullptr;
         }
 
-    static NumericFormatP FindFormatByIndex(size_t indx)
-        {
-        if (indx >= Set().GetFormatSetSize())
-            return nullptr;
-        NumericFormatP fmt = Set().m_formatSet.at(indx);
-        return fmt;
-        }
+    //static NumericFormatP FindFormatByIndex(size_t indx)
+    //    {
+    //    if (indx >= Set().GetFormatSetSize())
+    //        return nullptr;
+    //    NumericFormatP fmt = Set().m_formatSet.at(indx);
+    //    return fmt;
+    //    }
     };
 
 // Format parameter traits
