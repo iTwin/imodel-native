@@ -124,7 +124,7 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
 
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
     bool _CanSubstituteChildren(bool) const override {return true;}
 public:

@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterTileTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -139,7 +139,7 @@ public:
 
     bool _HasChildren() const override { return m_id.resolution > 0; }
 
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
 
     Utf8String _GetTileName() const override;
 

@@ -2,7 +2,7 @@
 |
 |     $Source: ThreeMxSchema/ThreeMxNode.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ThreeMxInternal.h"
@@ -27,7 +27,7 @@ Utf8String Node::GetChildFile() const
 * Draw this node. 
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Node::_DrawGraphics(DrawArgsR args, int depth) const
+void Node::_DrawGraphics(DrawArgsR args) const
     {
     static bool s_debugRange = false;
     if (s_debugRange)

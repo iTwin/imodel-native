@@ -2,7 +2,7 @@
 |
 |     $Source: RasterSchema/RasterTileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "RasterInternal.h"
@@ -88,7 +88,7 @@ Utf8String RasterTile::_GetTileName() const
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  9/2016
 //----------------------------------------------------------------------------------------
-void RasterTile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
+void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
         return;
