@@ -685,14 +685,11 @@ protected:
     virtual NavigationECPropertyP       _GetAsNavigationPropertyP()         { return nullptr; } // used to avoid dynamic_cast
 
     virtual bool                        _HasExtendedType() const { return false; }
-    virtual ExtendedTypeECPropertyCP    _GetAsExtendedTypePropertyCP() const { return nullptr; } // used to avoid dynamic_cast
-    virtual ExtendedTypeECPropertyP     _GetAsExtendedTypePropertyP() { return nullptr; } // used to avoid dynamic_cast
 
     // This method returns a wstring by value because it may be a computed string.  For instance struct properties may return a qualified typename with an alias
     // relative to the containing schema.
     virtual Utf8String                  _GetTypeName () const = 0;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) = 0;
-    
 
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const = 0;
 
@@ -842,61 +839,26 @@ public:
     StructArrayECPropertyP      GetAsStructArrayPropertyP()             { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
     NavigationECPropertyCP      GetAsNavigationProperty() const         { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
     NavigationECPropertyP       GetAsNavigationPropertyP()              { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
-    ExtendedTypeECPropertyCP    GetAsExtendedTypeProperty() const       { return _GetAsExtendedTypePropertyCP(); } //! <Returns the property as a const ExtendedTypeECProperty*
-    ExtendedTypeECPropertyP     GetAsExtendedTypePropertyP()            { return _GetAsExtendedTypePropertyP(); } //! <Returns the property as an ExtendedTypeECProperty*
-};
-
-//=======================================================================================
-//! The in-memory representation of an ExtendedTypeECProperty which enhances the ECProperty
-//! baseclass by the methods to support ExtendedType handling.
-//! @bsiclass
-//=======================================================================================
-struct ExtendedTypeECProperty : public ECProperty
- {
-private:
-    Utf8String    m_extendedTypeName;
-    KindOfQuantityCP m_kindOfQuantity;
-        
-protected:
-    ExtendedTypeECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_kindOfQuantity(nullptr) {};
-    virtual bool  _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
-    virtual ExtendedTypeECPropertyCP _GetAsExtendedTypePropertyCP () const override { return this; }
-    virtual ExtendedTypeECPropertyP  _GetAsExtendedTypePropertyP() override { return this; }
-
-    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
-    SchemaWriteStatus WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const;
-
-public:
-    //! Returns whether the ExtendedTypeName has been set explicitly and not inherited from base property
-    bool IsExtendedTypeDefinedLocally() const { return m_extendedTypeName.size() > 0; }
-    //! Gets the extended type name of this ECProperty
-    ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
-    //! Sets the Name of the Extended Type of this property.
-    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
-    //! Resets the extended type on this property.
-    ECOBJECTS_EXPORT bool RemoveExtendedTypeName();
-    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
-    ECOBJECTS_EXPORT bool IsKindOfQuantityDefinedLocally() const;
-    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
-    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
-    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
-    void SetKindOfQuantity(KindOfQuantityCP value) { m_kindOfQuantity = value; }
 };
 
 //=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct PrimitiveECProperty : public ExtendedTypeECProperty
+struct PrimitiveECProperty : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 friend struct ECClass;
 private:
-    PrimitiveType                               m_primitiveType;
-    ECEnumerationCP                             m_enumeration;
+    Utf8String          m_extendedTypeName;
+    KindOfQuantityCP    m_kindOfQuantity;
+    PrimitiveType       m_primitiveType;
+    ECEnumerationCP     m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;   // lazily-initialized
 
-    PrimitiveECProperty(ECClassCR ecClass) : m_primitiveType(PRIMITIVETYPE_String), ExtendedTypeECProperty(ecClass), m_enumeration(nullptr) {};
+    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+
+    PrimitiveECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr) {};
 
 protected:
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
@@ -907,21 +869,46 @@ protected:
     virtual Utf8String                  _GetTypeName () const override;
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     virtual ECObjectsStatus             _SetTypeName (Utf8StringCR typeName) override;
+    virtual bool                        _HasExtendedType() const override { return GetExtendedTypeName().size() > 0; }
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
-    virtual bool                                _IsCalculated() const override;
+    virtual bool                                _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
     virtual bool                                _SetCalculatedPropertySpecification (IECInstanceP expressionAttribute) override;
     virtual CustomAttributeContainerType        _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveProperty; }
 
 public:
     //! Sets the PrimitiveType of this ECProperty.  The default type is ::PRIMITIVETYPE_String
     ECOBJECTS_EXPORT ECObjectsStatus SetType(PrimitiveType value);
+    
     //! Gets the PrimitiveType of this ECProperty
-    ECOBJECTS_EXPORT PrimitiveType GetType() const;
+    PrimitiveType GetType() const {return m_primitiveType;}
+    
     //! Sets an ECEnumeration as type of this ECProperty.
     ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
+    
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
-    ECOBJECTS_EXPORT ECEnumerationCP GetEnumeration() const;
+    ECEnumerationCP GetEnumeration() const {return m_enumeration;}
+
+    //! Returns whether the ExtendedTypeName has been set explicitly and not inherited from base property
+    bool IsExtendedTypeDefinedLocally() const {return m_extendedTypeName.size() > 0;}
+
+    //! Gets the extended type name of this ECProperty, if it is not defined locally will be inherited from base property if one exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
+
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+
+    //! Resets the extended type on this property.
+    bool RemoveExtendedTypeName() {return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);}
+
+    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
+    bool IsKindOfQuantityDefinedLocally() const {return nullptr != m_kindOfQuantity;}
+
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
+    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
+
+    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
+    void SetKindOfQuantity(KindOfQuantityCP value) {m_kindOfQuantity = value;}
 };
 
 //=======================================================================================
@@ -963,7 +950,7 @@ public:
 //! The in-memory representation of an ECArrayProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ArrayECProperty /*abstract*/ : public ExtendedTypeECProperty
+struct EXPORT_VTABLE_ATTRIBUTE ArrayECProperty /*abstract*/ : public ECProperty
 {
     DEFINE_T_SUPER(ECProperty)
 friend struct ECClass;
@@ -974,11 +961,9 @@ private:
     mutable IECTypeAdapter*                     m_cachedMemberTypeAdapter;
 
 protected:
-    ArrayKind               m_arrayKind;
+    ArrayKind m_arrayKind;
 
-    ArrayECProperty(ECClassCR ecClass)
-        : ExtendedTypeECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL)
-        {};
+    ArrayECProperty(ECClassCR ecClass) : ECProperty(ecClass), m_minOccurs(0), m_maxOccurs(UINT_MAX), m_cachedMemberTypeAdapter(NULL) {};
 
     ECObjectsStatus                     SetMinOccurs(Utf8StringCR minOccurs);
     ECObjectsStatus                     SetMaxOccurs(Utf8StringCR maxOccurs);
@@ -999,21 +984,24 @@ public:
 /*__PUBLISH_SECTION_START__*/
 public:
     //! The ArrayKind of this ECProperty
-    ECOBJECTS_EXPORT ArrayKind GetKind() const;
+    ArrayKind GetKind() const {return m_arrayKind;}
 
-    //! Sets the Minimum number of array members.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetMinOccurs(uint32_t value);
-    //! Gets the Minimum number of array members.
-    ECOBJECTS_EXPORT uint32_t           GetMinOccurs() const;
-    //! Sets the Maximum number of array members.
+    //! Sets the minimum number of array members.
+    ECOBJECTS_EXPORT ECObjectsStatus SetMinOccurs(uint32_t value);
+
+    //! Gets the minimum number of array members.
+    uint32_t GetMinOccurs() const {return m_minOccurs;}
+    
+    //! Sets the maximum number of array members.
     ECOBJECTS_EXPORT ECObjectsStatus    SetMaxOccurs(uint32_t value);
-    //! Gets the Maximum number of array members.
-    ECOBJECTS_EXPORT uint32_t           GetMaxOccurs() const;
+    
+    //! Gets the maximum number of array members.
+    uint32_t GetMaxOccurs() const {return /* m_maxOccurs; */ UINT_MAX;} // D-106653
 
 //__PUBLISH_SECTION_END__
     //! Because of a legacy bug GetMaxOccurs always returns "unbounded". For components that need to persist
     //! the ECSchema as is, GetStoredMaxOccurs can be called as a workaround until the max occurs issue has been resolved.
-    uint32_t                            GetStoredMaxOccurs () const { return m_maxOccurs; }
+    uint32_t GetStoredMaxOccurs () const {return m_maxOccurs;}
 //__PUBLISH_SECTION_START__
     };
 
@@ -1027,39 +1015,68 @@ DEFINE_T_SUPER(ArrayECProperty)
 friend struct ECClass;
 
 private: 
-    PrimitiveType                               m_primitiveType;
-    ECEnumerationCP                             m_enumeration;
+    Utf8String          m_extendedTypeName;
+    KindOfQuantityCP    m_kindOfQuantity;
+    PrimitiveType       m_primitiveType;
+    ECEnumerationCP     m_enumeration;
     mutable CalculatedPropertySpecificationPtr  m_calculatedSpec;
 
+    SchemaReadStatus ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
+
 protected:
-    PrimitiveArrayECProperty(ECClassCR ecClass)
-        : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr)
+    PrimitiveArrayECProperty(ECClassCR ecClass) : ArrayECProperty(ecClass), m_primitiveType(PRIMITIVETYPE_String), m_enumeration(nullptr), m_kindOfQuantity(nullptr)
         {
         m_arrayKind = ARRAYKIND_Primitive;
         };
 
+    virtual SchemaReadStatus            _ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext) override;
     virtual Utf8String                  _GetTypeName() const override;
     virtual Utf8String                  _GetTypeNameForXml(ECVersion ecXmlVersion) const override;
     virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;
-    virtual bool                        _IsPrimitiveArray() const override { return true; }
-    virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const override { return this; }
-    virtual PrimitiveArrayECPropertyP   _GetAsPrimitiveArrayPropertyP()        override { return this; }
+    virtual bool                        _HasExtendedType() const override {return GetExtendedTypeName().size() > 0;}
+    virtual bool                        _IsPrimitiveArray() const override {return true;}
+    virtual PrimitiveArrayECPropertyCP  _GetAsPrimitiveArrayPropertyCP() const override {return this;}
+    virtual PrimitiveArrayECPropertyP   _GetAsPrimitiveArrayPropertyP()        override {return this;}
     virtual bool                        _CanOverride(ECPropertyCR baseProperty) const override;
-    virtual CustomAttributeContainerType _GetContainerType() const override { return CustomAttributeContainerType::PrimitiveArrayProperty; }
+    virtual CustomAttributeContainerType _GetContainerType() const override {return CustomAttributeContainerType::PrimitiveArrayProperty;}
 
     virtual CalculatedPropertySpecificationCP   _GetCalculatedPropertySpecification() const override;
-    virtual bool                                _IsCalculated() const override;
+    virtual bool                                _IsCalculated() const override {return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();}
     virtual bool                                _SetCalculatedPropertySpecification(IECInstanceP expressionAttribute) override;
 
 public:
     //! Sets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
-    ECOBJECTS_EXPORT ECObjectsStatus    SetPrimitiveElementType(PrimitiveType value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetPrimitiveElementType(PrimitiveType value);
+
     //! Gets the PrimitiveType if this ArrayProperty contains PrimitiveType elements
-    ECOBJECTS_EXPORT PrimitiveType      GetPrimitiveElementType() const;
+    PrimitiveType GetPrimitiveElementType() const {return m_primitiveType;}
+
     //! Sets an ECEnumeration as type of this ECProperty.
-    ECOBJECTS_EXPORT ECObjectsStatus    SetType(ECEnumerationCR value);
+    ECOBJECTS_EXPORT ECObjectsStatus SetType(ECEnumerationCR value);
+
     //! Gets the Enumeration of this ECProperty or nullptr if none used.
-    ECOBJECTS_EXPORT ECEnumerationCP    GetEnumeration() const;
+    ECEnumerationCP GetEnumeration() const {return m_enumeration;}
+
+    //! Returns whether the ExtendedTypeName has been set explicitly and not inherited from base property
+    bool IsExtendedTypeDefinedLocally() const {return m_extendedTypeName.size() > 0;}
+
+    //! Gets the extended type name of this ECProperty, if it is not defined locally will be inherited from base property if one exists.
+    ECOBJECTS_EXPORT Utf8StringCR GetExtendedTypeName() const;
+
+    //! Sets the Name of the Extended Type of this property.
+    ECOBJECTS_EXPORT ECObjectsStatus SetExtendedTypeName(Utf8CP extendedTypeName);
+
+    //! Resets the extended type on this property.
+    bool RemoveExtendedTypeName() {return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);}
+
+    //! Returns whether the KindOfQuantity has been set explicitly and not inherited from base property
+    bool IsKindOfQuantityDefinedLocally() const {return nullptr != m_kindOfQuantity;}
+
+    //! Gets the KindOfQuantity of this property or nullptr, if none has been set and cannot be inherited from base property
+    ECOBJECTS_EXPORT KindOfQuantityCP GetKindOfQuantity() const;
+
+    //! Sets the KindOfQuantity of this property, provide nullptr to unset.
+    void SetKindOfQuantity(KindOfQuantityCP value) {m_kindOfQuantity = value;}
 };
 
 
@@ -1073,11 +1090,11 @@ DEFINE_T_SUPER(ArrayECProperty)
 private:
     friend struct ECClass;
     ECStructClassCP m_structType;
-    StructArrayECProperty(ECClassCR ecClass)
-        : ArrayECProperty(ecClass)
+    StructArrayECProperty(ECClassCR ecClass) : ArrayECProperty(ecClass)
         {
         m_arrayKind = ARRAYKIND_Struct;
         };
+
 protected:
     virtual Utf8String                  _GetTypeName() const override;
     virtual ECObjectsStatus             _SetTypeName(Utf8StringCR typeName) override;

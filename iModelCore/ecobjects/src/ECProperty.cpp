@@ -592,15 +592,38 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
     return ReadExtendedTypeAndKindOfQuantityXml(propertyNode, context);
     }
 
+void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
+    {
+    PrimitiveArrayECPropertyCP primArrProp = ecProperty->GetAsPrimitiveArrayProperty();
+    PrimitiveECPropertyCP primProp = ecProperty->GetAsPrimitiveProperty();
+
+    if (nullptr == primArrProp && nullptr == primProp)
+        return;
+
+    if ((nullptr == primArrProp) ? primProp->IsExtendedTypeDefinedLocally() : primArrProp->IsExtendedTypeDefinedLocally())
+        {
+        Utf8String extendedTypeName = (nullptr == primArrProp) ? primProp->GetExtendedTypeName() : primArrProp->GetExtendedTypeName();
+        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, extendedTypeName.c_str()));
+        }
+
+    bool isKindOfQuantityDefined = (nullptr == primArrProp) ? primProp->IsKindOfQuantityDefinedLocally() : primArrProp->IsKindOfQuantityDefinedLocally();
+    if (ecXmlVersion >= ECVersion::V3_0 && isKindOfQuantityDefined)
+        {
+        auto kindOfQuantity = (nullptr == primArrProp) ? primProp->GetKindOfQuantity() : primArrProp->GetKindOfQuantity();
+        if (kindOfQuantity != nullptr)
+            {
+            attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, kindOfQuantity->GetQualifiedName(ecProperty->GetClass().GetSchema()).c_str()));
+            }
+        }
+    }
+
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                    Stefan.Apfel   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 SchemaWriteStatus PrimitiveECProperty::_WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion)
     {
     bvector<bpair<Utf8CP, Utf8CP>> attributes;
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(attributes, ecXmlVersion);
-    if (status != SchemaWriteStatus::Success)
-        return status;
+    getExtendedTypeAndKindOfQuantityAttributes(attributes, this, ecXmlVersion);
 
     return T_Super::_WriteXml(xmlWriter, EC_PROPERTY_ELEMENT, ecXmlVersion, &attributes);
     }
@@ -717,22 +740,6 @@ ECObjectsStatus PrimitiveECProperty::_SetTypeName (Utf8StringCR typeName)
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType PrimitiveECProperty::GetType () const
-    {
-    return m_primitiveType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationCP PrimitiveECProperty::GetEnumeration() const
-    {
-    return m_enumeration;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus PrimitiveECProperty::SetType (PrimitiveType primitiveType)
     {
     m_enumeration = nullptr;
@@ -766,25 +773,17 @@ ECObjectsStatus PrimitiveECProperty::SetType (ECEnumerationCR enumerationType)
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveECProperty::_IsCalculated() const
-    {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Colin.Kerr                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8StringCR ExtendedTypeECProperty::GetExtendedTypeName() const
+Utf8StringCR PrimitiveECProperty::GetExtendedTypeName() const
     {
     if (!IsExtendedTypeDefinedLocally())
         {
         ECPropertyCP baseProperty = GetBaseProperty();
         if (nullptr != baseProperty)
             {
-            ExtendedTypeECPropertyCP baseExtended = baseProperty->GetAsExtendedTypeProperty();
+            PrimitiveECPropertyCP baseExtended = baseProperty->GetAsPrimitiveProperty();
             if (nullptr != baseExtended)
                 return baseExtended->GetExtendedTypeName();
             }
@@ -796,7 +795,7 @@ Utf8StringCR ExtendedTypeECProperty::GetExtendedTypeName() const
 /*---------------------------------------------------------------------------------**//**
  @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+ECObjectsStatus PrimitiveECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
     {
     m_extendedTypeName.clear();
     if (!Utf8String::IsNullOrEmpty(extendedTypeName))
@@ -808,24 +807,16 @@ ECObjectsStatus ExtendedTypeECProperty::SetExtendedTypeName(Utf8CP extendedTypeN
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Caleb.Shafer              09/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ExtendedTypeECProperty::IsKindOfQuantityDefinedLocally() const
-    {
-    return m_kindOfQuantity != nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer              09/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-KindOfQuantityCP ExtendedTypeECProperty::GetKindOfQuantity() const
+KindOfQuantityCP PrimitiveECProperty::GetKindOfQuantity() const
     {
     if (m_kindOfQuantity == nullptr)
         {
         ECPropertyCP baseProperty = GetBaseProperty();
         if (nullptr != baseProperty)
             {
-            ExtendedTypeECPropertyCP baseExtended = baseProperty->GetAsExtendedTypeProperty();
-            if (nullptr != baseExtended)
-                return baseExtended->GetKindOfQuantity();
+            PrimitiveECPropertyCP basePrim = baseProperty->GetAsPrimitiveProperty();
+            if (nullptr != basePrim)
+                return basePrim->GetKindOfQuantity();
             }
         }
 
@@ -859,10 +850,10 @@ ECObjectsStatus ResolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaReadStatus PrimitiveECProperty::ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
     {
     Utf8String value;
     if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
@@ -890,36 +881,6 @@ SchemaReadStatus ExtendedTypeECProperty::ReadExtendedTypeAndKindOfQuantityXml(Be
 
     _AdjustMinMaxAfterTypeChange();
     return SchemaReadStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-SchemaWriteStatus ExtendedTypeECProperty::WriteExtendedTypeAndKindOfQuantityXml(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECVersion ecXmlVersion) const
-    {
-    if (this->IsExtendedTypeDefinedLocally())
-        {
-        attributes.push_back(make_bpair(EXTENDED_TYPE_NAME_ATTRIBUTE, GetExtendedTypeName().c_str()));
-        }
-
-    if (ecXmlVersion >= ECVersion::V3_0 && IsKindOfQuantityDefinedLocally())
-        {
-        auto kindOfQuantity = GetKindOfQuantity();
-        if (kindOfQuantity != nullptr)
-            {
-            attributes.push_back(make_bpair(KIND_OF_QUANTITY_ATTRIBUTE, kindOfQuantity->GetQualifiedName(this->GetClass().GetSchema()).c_str()));
-            }
-        }
-
-    return SchemaWriteStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ExtendedTypeECProperty::RemoveExtendedTypeName()
-    {
-    return ECObjectsStatus::Success == this->SetExtendedTypeName(nullptr);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1158,7 +1119,7 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
         return SchemaReadStatus::Success;
         }
 
-    return ReadExtendedTypeAndKindOfQuantityXml(propertyNode, context);
+    return SchemaReadStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1189,32 +1150,14 @@ SchemaWriteStatus ArrayECProperty::_WriteXml (BeXmlWriterR xmlWriter, ECVersion 
         else
             elementName = EC_STRUCTARRAYPROPERTY_ELEMENT;
         }
+    else // ARRAYKIND_Primitive
+        getExtendedTypeAndKindOfQuantityAttributes(additionalAttributes, this, ecXmlVersion);
 
-    auto status = WriteExtendedTypeAndKindOfQuantityXml(additionalAttributes, ecXmlVersion);
-    if (status != SchemaWriteStatus::Success)
-        return status;
-
-    status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
+    SchemaWriteStatus status = T_Super::_WriteXml (xmlWriter, elementName, ecXmlVersion, &additionalAttributes);
     if (status != SchemaWriteStatus::Success || m_forSupplementation) // If this property was created during supplementation, don't serialize it
         return status;
 
     return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ArrayKind ArrayECProperty::GetKind () const
-    {
-    return m_arrayKind;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ArrayECProperty::GetMinOccurs () const
-    {
-    return m_minOccurs;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1247,15 +1190,6 @@ ECObjectsStatus ArrayECProperty::SetMinOccurs (Utf8StringCR minOccurs)
         }    
     SetMinOccurs (iMinOccurs);
     return ECObjectsStatus::Success;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t ArrayECProperty::GetMaxOccurs () const
-    {
-    return /* m_maxOccurs; */ UINT_MAX; // D-106653
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1375,22 +1309,6 @@ ECObjectsStatus PrimitiveArrayECProperty::_SetTypeName (Utf8StringCR typeName)
     return ECObjectsStatus::ParseError;
     }
 
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-PrimitiveType PrimitiveArrayECProperty::GetPrimitiveElementType () const
-    {
-    return m_primitiveType;
-    }
-
-/*---------------------------------------------------------------------------------**//**
- @bsimethod                                                     
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECEnumerationCP PrimitiveArrayECProperty::GetEnumeration() const
-    {
-    return m_enumeration;
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer              09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -1428,14 +1346,6 @@ ECObjectsStatus PrimitiveArrayECProperty::SetType (ECEnumerationCR enumerationTy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PrimitiveArrayECProperty::_IsCalculated() const
-    {
-    return m_calculatedSpec.IsValid() || GetCustomAttribute ("Bentley_Standard_CustomAttributes", "CalculatedECPropertySpecification").IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/12
-+---------------+---------------+---------------+---------------+---------------+------*/
 CalculatedPropertySpecificationCP PrimitiveArrayECProperty::_GetCalculatedPropertySpecification() const
     {
     if (m_calculatedSpec.IsNull())
@@ -1450,6 +1360,101 @@ CalculatedPropertySpecificationCP PrimitiveArrayECProperty::_GetCalculatedProper
 bool PrimitiveArrayECProperty::_SetCalculatedPropertySpecification (IECInstanceP attr)
     {
     return setCalculatedPropertySpecification (m_calculatedSpec, attr, *this, GetPrimitiveElementType());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer              01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8StringCR PrimitiveArrayECProperty::GetExtendedTypeName() const
+    {
+    if (!IsExtendedTypeDefinedLocally())
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            {
+            PrimitiveArrayECPropertyCP baseExtended = baseProperty->GetAsPrimitiveArrayProperty();
+            if (nullptr != baseExtended)
+                return baseExtended->GetExtendedTypeName();
+            }
+        }
+
+    return m_extendedTypeName;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer              01/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus PrimitiveArrayECProperty::SetExtendedTypeName(Utf8CP extendedTypeName)
+    {
+    m_extendedTypeName.clear();
+    if (!Utf8String::IsNullOrEmpty(extendedTypeName))
+        m_extendedTypeName.assign(extendedTypeName);
+
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+KindOfQuantityCP PrimitiveArrayECProperty::GetKindOfQuantity() const
+    {
+    if (m_kindOfQuantity == nullptr)
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            {
+            PrimitiveArrayECPropertyCP baseArr = baseProperty->GetAsPrimitiveArrayProperty();
+            if (nullptr != baseArr)
+                return baseArr->GetKindOfQuantity();
+            }
+        }
+
+    return m_kindOfQuantity;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaReadStatus PrimitiveArrayECProperty::ReadExtendedTypeAndKindOfQuantityXml(BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext)
+    {
+    Utf8String value;
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, EXTENDED_TYPE_NAME_ATTRIBUTE))
+        {
+        this->SetExtendedTypeName(value.c_str());
+        }
+
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, KIND_OF_QUANTITY_ATTRIBUTE))
+        {
+        //split
+        KindOfQuantityCP kindOfQuantity;
+        if(ResolveKindOfQuantityType(kindOfQuantity, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
+            {
+            LOG.warningv("Could not resolve KindOfQuantity '%s' found on property '%s:%s.%s'.",
+                         value.c_str(),
+                         GetClass().GetSchema().GetName().c_str(),
+                         GetClass().GetName().c_str(),
+                         GetName().c_str());
+
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetKindOfQuantity(kindOfQuantity);
+        }
+
+    _AdjustMinMaxAfterTypeChange();
+    return SchemaReadStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer              01/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+SchemaReadStatus PrimitiveArrayECProperty::_ReadXml(BeXmlNodeR propertyNode, ECSchemaReadContextR context)
+    {
+    SchemaReadStatus status = T_Super::_ReadXml(propertyNode, context);
+    if (status != SchemaReadStatus::Success)
+        return status;
+
+    return ReadExtendedTypeAndKindOfQuantityXml(propertyNode, context);
     }
 
 //---------------------------------------------------------------------------------------

@@ -764,22 +764,22 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_EQ(SchemaReadStatus::Success, readStatus);
     ASSERT_TRUE(readSchema.IsValid());
 
-    ExtendedTypeECPropertyCP parentProp = readSchema->GetClassCP("ParentEntity")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    PrimitiveECPropertyCP parentProp = readSchema->GetClassCP("ParentEntity")->GetPropertyP("InheritedProperty", false)->GetAsPrimitiveProperty();
     ASSERT_TRUE(parentProp != nullptr);
     ASSERT_TRUE(parentProp->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("MyKindOfQuantity", parentProp->GetKindOfQuantity()->GetName().c_str());
     
-    ExtendedTypeECPropertyCP derivedProp1 = readSchema->GetClassCP("DerivedEntity1")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    PrimitiveECPropertyCP derivedProp1 = readSchema->GetClassCP("DerivedEntity1")->GetPropertyP("InheritedProperty", false)->GetAsPrimitiveProperty();
     ASSERT_TRUE(derivedProp1 != nullptr);
     ASSERT_FALSE(derivedProp1->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("MyKindOfQuantity", derivedProp1->GetKindOfQuantity()->GetName().c_str());
 
-    ExtendedTypeECPropertyCP derivedProp2 = readSchema->GetClassCP("DerivedEntity2")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    PrimitiveECPropertyCP derivedProp2 = readSchema->GetClassCP("DerivedEntity2")->GetPropertyP("InheritedProperty", false)->GetAsPrimitiveProperty();
     ASSERT_TRUE(derivedProp2 != nullptr);
     ASSERT_FALSE(derivedProp2->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("MyKindOfQuantity", derivedProp2->GetKindOfQuantity()->GetName().c_str());
 
-    ExtendedTypeECPropertyCP derivedProp3 = readSchema->GetClassCP("DerivedEntity3")->GetPropertyP("InheritedProperty", false)->GetAsExtendedTypeProperty();
+    PrimitiveECPropertyCP derivedProp3 = readSchema->GetClassCP("DerivedEntity3")->GetPropertyP("InheritedProperty", false)->GetAsPrimitiveProperty();
     ASSERT_TRUE(derivedProp3 != nullptr);
     ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
