@@ -586,7 +586,7 @@ static int s_forcedDepth = -1;   // change this to a non-negative value in debug
 * Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Draw(DrawArgsR args, int depth) const
+void Tile::Draw(DrawArgsR args) const
     {
     DgnDb::VerifyClientThread();
 
@@ -619,14 +619,14 @@ void Tile::Draw(DrawArgsR args, int depth) const
         if (_CanSubstituteChildren(allChildrenReady))
             {
             for (auto const& child : *children)
-                child->Draw(args, depth+1);
+                child->Draw(args);
 
             return;
             }
         }
     
     // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    _DrawGraphics(args, depth);
+    _DrawGraphics(args);
 
     // This node is not ready to be drawn. If all of its children are, draw them in its place.
     // ###TODO: This is a little awkward...the call to _DrawGraphics() above will have inserted a request to load this tile...these decisions should be centralized...
@@ -635,7 +635,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
         bool allChildrenReady = std::accumulate(children->begin(), children->end(), true, [](bool init, TilePtr const& arg) { return init && arg->IsReady(); });
         if (allChildrenReady)
             for (auto const& child : *children)
-                child->Draw(args, depth+1);
+                child->Draw(args);
         }
 
     if (!_HasChildren()) // this is a leaf node - we're done
@@ -865,7 +865,7 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void QuadTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
+void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
     {
     if (!IsReady())
         {
@@ -929,7 +929,7 @@ Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args, int depth) const
+void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
     if (!IsReady())
         {

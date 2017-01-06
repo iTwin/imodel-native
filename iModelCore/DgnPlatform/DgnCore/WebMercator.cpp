@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/WebMercator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -97,10 +97,10 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MapTile::_DrawGraphics(DrawArgsR args, int depth) const
+void MapTile::_DrawGraphics(DrawArgsR args) const
     {
     if (m_reprojected)  // if we were unable to re-project this tile, don't draw it.
-        T_Super::_DrawGraphics(args, depth);
+        T_Super::_DrawGraphics(args);
     }
 
 /*---------------------------------------------------------------------------------**//**

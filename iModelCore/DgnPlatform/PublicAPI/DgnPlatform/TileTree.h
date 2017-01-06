@@ -146,7 +146,7 @@ public:
     int GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d const& GetRange() const {return m_range;}
-    DGNPLATFORM_EXPORT void Draw(DrawArgsR, int depth) const;
+    DGNPLATFORM_EXPORT void Draw(DrawArgsR) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
@@ -176,8 +176,7 @@ public:
 
     //! Draw the Graphics of this Tile into args.
     //! @param[in] args The DrawArgs for the current display request.
-    //! @param[in] depth The depth of this tile in the tree. This is necessary to sort missing tiles depth-first.
-    virtual void _DrawGraphics(DrawArgsR args, int depth) const = 0;
+    virtual void _DrawGraphics(DrawArgsR args) const = 0;
 
     //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr) = 0;
@@ -288,7 +287,7 @@ public:
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
     //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
     //! @note This method must be called from the client thread
-    void Draw(DrawArgs& args) {m_rootTile->Draw(args, 0);}
+    void Draw(DrawArgs& args) {m_rootTile->Draw(args);}
 
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
     //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.
@@ -544,7 +543,7 @@ struct Tile : TileTree::Tile
     bool HasGraphics() const {return IsReady() && m_graphic.IsValid();}
     void SetIsLeaf() {m_isLeaf = true; /*m_children.clear();*/}
     ChildTiles const* _GetChildren(bool load) const override;
-    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
     Utf8String _GetTileName() const override {return Utf8PrintfString("%d/%d/%d", m_id.m_level, m_id.m_column, m_id.m_row);}
     Root& GetQuadRoot() const {return (Root&) m_root;}
     double _GetMaximumSize() const override {return GetQuadRoot().GetMaxPixelSize();}
@@ -609,7 +608,7 @@ public:
     virtual TileTree::TilePtr _CreateChild(TileId) const = 0;
     virtual bool _HasChildren() const override { return !m_isLeaf; }
     virtual ChildTiles const* _GetChildren(bool load) const override;
-    virtual void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    virtual void _DrawGraphics(TileTree::DrawArgsR) const override;
     virtual Utf8String _GetTileName() const override { return Utf8PrintfString("%d/%d/%d/%d", m_id.m_level, m_id.m_i, m_id.m_j, m_id.m_k); }
     
     TileId GetTileId() const { return m_id; }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/WebMercator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -64,7 +64,7 @@ struct MapTile : TileTree::QuadTree::Tile
     bool m_reprojected = false;  //! if true, this tile has been correctly reprojected into world coordinates. Otherwise, it is not displayable.
     StatusInt ReprojectCorners(GeoPoint*);
     MapTile(MapRootR mapRoot, TileTree::QuadTree::TileId id, MapTileCP parent);
-    void _DrawGraphics(TileTree::DrawArgsR, int depth) const override;
+    void _DrawGraphics(TileTree::DrawArgsR) const override;
     TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return new MapTile(GetMapRoot(), id, this);}
     MapRoot& GetMapRoot() const {return (MapRoot&) m_root;}
     TileTree::TileLoaderPtr _CreateTileLoader(TileTree::TileLoadStatePtr loads) override {return new Loader(GetRoot()._ConstructTileName(*this), *this, loads);}
