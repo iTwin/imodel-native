@@ -71,7 +71,7 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 void NumericFormat::DefaultInit(Utf8StringCR name, size_t precision)
     {
     m_name = name;
-    m_decPrecision = DecimalPrecisionByIndex(precision);
+    m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_minTreshold = FormatConstant::FPV_MinTreshold();
     m_presentationType = FormatConstant::DefaultPresentaitonType();
     m_signOption = FormatConstant::DefaultSignOption();
@@ -91,12 +91,12 @@ void NumericFormat::Init(Utf8StringCR name, PresentationType presType, ShowSignO
     m_formatTraits = formatTraits;
     if (PresentationType::Fractional == m_presentationType)
         {
-        m_fractPrecision = FractionalPrecisionByDenominator(precision);
+        m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
         m_decPrecision = FormatConstant::DefaultDecimalPrecision();
         }
     else
         {
-        m_decPrecision = DecimalPrecisionByIndex(precision);
+        m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         }
     m_minTreshold = FormatConstant::FPV_MinTreshold();
@@ -207,11 +207,11 @@ void NumericFormat::SetPrecisionByValue(int prec)
     {
     if (PresentationType::Fractional == m_presentationType)
         {
-        m_fractPrecision = FractionalPrecisionByDenominator(prec);
+        m_fractPrecision = Utils::FractionalPrecisionByDenominator(prec);
         }
     else
         {
-        m_decPrecision = DecimalPrecisionByIndex(prec);
+        m_decPrecision = Utils::DecimalPrecisionByIndex(prec);
         }
     }
 
@@ -575,14 +575,14 @@ int NumericFormat::InsertChar(CharP buf, int index, char c, int num)
 
 double NumericFormat::GetDecimalPrecisionFactor(int prec = -1) 
     { 
-    return DecimalPrecisionFactor(m_decPrecision, prec); 
+    return Utils::DecimalPrecisionFactor(m_decPrecision, prec); 
     }
 
 int  NumericFormat::GetDecimalPrecisionIndex(int prec = -1) 
     { 
-    if (0 <= prec && prec < DecimalPrecisionToInt(DecimalPrecision::Precision12))
+    if (0 <= prec && prec < Utils::DecimalPrecisionToInt(DecimalPrecision::Precision12))
         return prec;
-    return DecimalPrecisionToInt(m_decPrecision); 
+    return Utils::DecimalPrecisionToInt(m_decPrecision); 
     };
 
 //---------------------------------------------------------------------------------------
@@ -867,13 +867,13 @@ void FormatDictionary::InitLoad()
     AddParameter(FormatParameter(FormatConstant::FPN_Scientific(), ParameterCategory::Presentation, ParameterCode::Scientific, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_ScientificNorm(), ParameterCategory::Presentation, ParameterCode::ScientificNorm, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_Binary(), ParameterCategory::Presentation, ParameterCode::Binary, ParameterDataType::Flag));
-    AddParameter(FormatParameter(FormatConstant::FPN_DefaultZeroes(), ParameterCategory::Zeroes, ParameterCode::DefaultZeroes, FormatTraitsBit(FormatTraits::DefaultZeroes)));
-    AddParameter(FormatParameter(FormatConstant::FPN_LeadingZeroes(), ParameterCategory::Zeroes, ParameterCode::LeadingZeroes, FormatTraitsBit(FormatTraits::LeadingZeroes)));
-    AddParameter(FormatParameter(FormatConstant::FPN_TrailingZeroes(), ParameterCategory::Zeroes, ParameterCode::TrailingZeroes, FormatTraitsBit(FormatTraits::TrailingZeroes)));
-    AddParameter(FormatParameter(FormatConstant::FPN_KeepDecimalPoint(), ParameterCategory::Zeroes, ParameterCode::KeepDecimalPoint, FormatTraitsBit(FormatTraits::KeepDecimalPoint)));
-    AddParameter(FormatParameter(FormatConstant::FPN_ZeroEmpty(), ParameterCategory::Zeroes, ParameterCode::ZeroEmpty, FormatTraitsBit(FormatTraits::ZeroEmpty)));
-    AddParameter(FormatParameter(FormatConstant::FPN_KeepSingleZero(), ParameterCategory::Zeroes, ParameterCode::KeepSingleZero, FormatTraitsBit(FormatTraits::KeepSingleZero)));
-    AddParameter(FormatParameter(FormatConstant::FPN_ExponentZero(), ParameterCategory::Zeroes, ParameterCode::ExponentZero, FormatTraitsBit(FormatTraits::ExponentZero)));
+    AddParameter(FormatParameter(FormatConstant::FPN_DefaultZeroes(), ParameterCategory::Zeroes, ParameterCode::DefaultZeroes, Utils::FormatTraitsBit(FormatTraits::DefaultZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_LeadingZeroes(), ParameterCategory::Zeroes, ParameterCode::LeadingZeroes, Utils::FormatTraitsBit(FormatTraits::LeadingZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_TrailingZeroes(), ParameterCategory::Zeroes, ParameterCode::TrailingZeroes, Utils::FormatTraitsBit(FormatTraits::TrailingZeroes)));
+    AddParameter(FormatParameter(FormatConstant::FPN_KeepDecimalPoint(), ParameterCategory::Zeroes, ParameterCode::KeepDecimalPoint, Utils::FormatTraitsBit(FormatTraits::KeepDecimalPoint)));
+    AddParameter(FormatParameter(FormatConstant::FPN_ZeroEmpty(), ParameterCategory::Zeroes, ParameterCode::ZeroEmpty, Utils::FormatTraitsBit(FormatTraits::ZeroEmpty)));
+    AddParameter(FormatParameter(FormatConstant::FPN_KeepSingleZero(), ParameterCategory::Zeroes, ParameterCode::KeepSingleZero, Utils::FormatTraitsBit(FormatTraits::KeepSingleZero)));
+    AddParameter(FormatParameter(FormatConstant::FPN_ExponentZero(), ParameterCategory::Zeroes, ParameterCode::ExponentZero, Utils::FormatTraitsBit(FormatTraits::ExponentZero)));
     AddParameter(FormatParameter(FormatConstant::FPN_Precision0(), ParameterCategory::DecPrecision, ParameterCode::DecPrec0, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_Precision1(), ParameterCategory::DecPrecision, ParameterCode::DecPrec1, ParameterDataType::Flag));
     AddParameter(FormatParameter(FormatConstant::FPN_Precision2(), ParameterCategory::DecPrecision, ParameterCode::DecPrec2, ParameterDataType::Flag));
@@ -995,10 +995,10 @@ Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
     Utf8StringP str = new Utf8String();
 
     str->append(*ParameterValuePair(FormatConstant::FPN_FormatName(), format.GetName(), '\"', ""));
-    str->append(" " + PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
-    str->append(" " + SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
-    str->append(" " + DecimalPrecisionName(format.GetDecimalPrecision()));
-    str->append(" " + FractionallPrecisionName(format.GetFractionalPrecision()));
+    str->append(" " + Utils::PresentationTypeName(format.GetPresentationType())); // Decimal, Fractional, Sientific, ScientificNorm
+    str->append(" " + Utils::SignOptionName(format.GetSignOption()));             // NoSign, OnlyNegative, SignAlways, NegativeParenths
+    str->append(" " + Utils::DecimalPrecisionName(format.GetDecimalPrecision()));
+    str->append(" " + Utils::FractionallPrecisionName(format.GetFractionalPrecision()));
     if (format.IsKeepTrailingZeroes())
         str->append(" " + FormatConstant::FPN_TrailingZeroes());
     if (format.IsUseLeadingZeroes())

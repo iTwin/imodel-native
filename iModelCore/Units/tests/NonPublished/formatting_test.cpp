@@ -185,9 +185,9 @@ TEST(FormattingTest, Simple)
     LOG.info("testing Triads");
 
     NumericTriad tr = NumericTriad(1000.0, 3, 12, DecimalPrecision::Precision4);
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false));
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false));
-    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false));
+    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
+    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
+    LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
 
 
     EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());

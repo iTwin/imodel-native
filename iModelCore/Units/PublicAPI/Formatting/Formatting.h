@@ -384,6 +384,8 @@ public:
         }
     };
 
+struct Utils
+    {
 #if defined(FUNCTION_NOT_USED)
     static Utf8String ShowSignOptionName(ShowSignOption opt)
         {
@@ -536,6 +538,7 @@ public:
         {
         return static_cast<int>(zcValue);
         }
+    };
 
 struct StdFormatName
     {
@@ -896,7 +899,7 @@ public:
     UNITS_EXPORT Utf8StringCR GetName() { return m_paramName; }
     UNITS_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
     UNITS_EXPORT ParameterCategory GetCategory() { return m_category; }
-    UNITS_EXPORT CharCP GetCategoryName() { return GetParameterCategoryName(m_category); }
+    UNITS_EXPORT CharCP GetCategoryName() { return Utils::GetParameterCategoryName(m_category); }
     UNITS_EXPORT ParameterCode GetParameterCode() { return m_paramCode; }
     UNITS_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
 };
