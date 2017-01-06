@@ -434,7 +434,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
             }
 
         if (!fkTable.IsOwnedByECDb() || fkTable.GetPersistenceType() == PersistenceType::Virtual ||
-            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsInOverflow())
+            referencedTable->GetPersistenceType() == PersistenceType::Virtual || fkCol->IsShared() || fkCol->IsInOverflow())
             continue;
 
         fkTable.CreateForeignKeyConstraint(*fkCol, *referencedTablePKCol, onDelete, onUpdate);
@@ -893,7 +893,7 @@ void RelationshipClassEndTableMap::AddIndexToRelationshipEnd()
     for (SystemPropertyMap::PerTablePrimitivePropertyMap const* vmap : GetReferencedEndECInstanceIdPropMap()->GetDataPropertyMaps())
         {
         DbTable& persistenceEndTable = const_cast<DbTable&>(vmap->GetColumn().GetTable());
-        if (persistenceEndTable.GetType() == DbTable::Type::Existing)
+        if (persistenceEndTable.GetType() == DbTable::Type::Existing || vmap->GetColumn().IsShared() || vmap->GetColumn().IsInOverflow())
             continue;
 
         // name of the index
@@ -1746,7 +1746,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInsta
 	bset<ClassMapCP> const& classMaps = itor->second;
 	ClassMapCP firstClassMap = (*classMaps.begin());
 	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-	if (firstClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+	if (!firstClassMap->GetMapStrategy().IsTablePerHierarchy() ||
 		firstClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
 		{
 		return table.CreateColumn(colName, colType, position, colKind, persType);
@@ -1783,7 +1783,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
 	bset<ClassMapCP> const& classMaps = itor->second;
 	ClassMapCP firstClassMap = (*classMaps.begin());
 	//ECDB_RULE: If IsPhysicalFK is false and we do not have shared column support go a head and create a column
-	if (firstClassMap->GetMapStrategy().IsTablePerHierarchy() ||
+	if (!firstClassMap->GetMapStrategy().IsTablePerHierarchy() ||
 		firstClassMap->GetMapStrategy().GetTphInfo().GetShareColumnsMode() != TablePerHierarchyInfo::ShareColumnsMode::Yes)
 		{
 		return table.CreateColumn(colName, colType, colKind, persType);

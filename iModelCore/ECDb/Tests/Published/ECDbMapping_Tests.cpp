@@ -11582,7 +11582,7 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
 			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
 			"          </ClassMap>"
 			"          <ShareColumns xmlns='ECDbMap.02.00'>"
-			"              <SharedColumnCount>4</SharedColumnCount>" //
+			"              <SharedColumnCount>5</SharedColumnCount>" //
 			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
 			"          </ShareColumns>"
 			"      </ECCustomAttributes>"
@@ -11594,7 +11594,7 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
 			"              <MapStrategy>TablePerHierarchy</MapStrategy>"
 			"          </ClassMap>"
 			"          <ShareColumns xmlns='ECDbMap.02.00'>"
-			"              <SharedColumnCount>4</SharedColumnCount>" //
+			"              <SharedColumnCount>2</SharedColumnCount>" //
 			"              <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>"
 			"          </ShareColumns>"
 			"      </ECCustomAttributes>"

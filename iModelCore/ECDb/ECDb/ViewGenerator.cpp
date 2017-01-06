@@ -1334,7 +1334,11 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
     NavigationPropertyMap::IdPropertyMap const& idPropMap = relClassIdPropMap.GetParent()->GetAs<NavigationPropertyMap>()->GetIdPropertyMap();
 
     NativeSqlBuilder idColStrBuilder;
-    idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+	if (idPropMap.GetColumn().IsInOverflow())
+		idColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", idPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), idPropMap.GetColumn().GetName().c_str());
+	else
+		idColStrBuilder.Append(m_classIdentifier, idPropMap.GetColumn().GetName().c_str());
+
 
     NativeSqlBuilder relClassIdColStrBuilder;
     if (relClassIdPropMap.IsVirtual())
