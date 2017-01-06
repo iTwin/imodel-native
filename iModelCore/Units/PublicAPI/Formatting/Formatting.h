@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <Formatting/FormattingDefinitions.h>
-#pragma warning(disable: 4505) //Unreferenced local function has been removed
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericFormat)
@@ -23,7 +22,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(UnicodeConstant)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 FORMATTING_REFCOUNTED_TYPEDEFS(NumericFormat)
 
-#pragma region
 enum class ParameterCode
     {
     FormatName = 50,
@@ -223,8 +221,6 @@ enum class StdFormatCode
     DefaultInt = 600
     };
 
-#pragma endregion Enumerations
-
 
 // A collection of improtant "global" constants that are used across the whole formatting domain
 //=======================================================================================
@@ -388,7 +384,7 @@ public:
         }
     };
 
-#pragma region
+#if defined(FUNCTION_NOT_USED)
     static Utf8String ShowSignOptionName(ShowSignOption opt)
         {
         switch (opt)
@@ -399,6 +395,7 @@ public:
             default: return "NoSign";
             }
         }
+#endif
 
     static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
 
@@ -432,14 +429,16 @@ public:
         }
 
 
-    static const CharP GetParameterCategoryName(ParameterCategory parcat)
+    static const CharCP GetParameterCategoryName(ParameterCategory parcat)
         {
-        static const CharP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
+        static const CharCP CategoryNames[] = { "DataType", "Sign", "Presentation", "Zeroes", "DecPrecision", "FractPrecision", "RoundType",
             "FractionBar", "AngleFormat", "Alignment", "Separator", "Padding", "Mapping" };
         return CategoryNames[static_cast<int>(parcat)];
         }
 
+#if defined(FUNCTION_NOT_USED)
     static int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
+#endif
 
     //----------------------------------------------------------------------------------------
     // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -537,8 +536,6 @@ public:
         {
         return static_cast<int>(zcValue);
         }
-
-#pragma endregion CommonEnumConversion
 
 struct StdFormatName
     {

@@ -59,7 +59,12 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //    
 //    }
 
-#pragma region
+//===================================================
+//
+// NumericFormatMethods
+//
+//===================================================
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -842,9 +847,12 @@ Utf8String NumericFormat::FormatDouble(double dval, Utf8P stdName, int prec, dou
      return Utf8String(buf);
  }
 
-#pragma endregion NumericFormatMethods
+//===================================================
+//
+// FormatDictionaryMethods
+//
+//===================================================
 
-#pragma region
  //---------------------------------------------------------------------------------------
  // @bsimethod                                                   David Fox-Rabinovitz 11/16
  //---------------------------------------------------------------------------------------
@@ -1010,9 +1018,11 @@ Utf8StringP FormatDictionary::SerializeFormatDefinition(NumericFormat format)
     return str;
     }
 
-#pragma endregion FormatDictionaryMethods
-
-#pragma region
+//===================================================
+//
+// NumericTriadMethods
+//
+//===================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
@@ -1169,9 +1179,11 @@ Utf8String NumericTriad::FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowN
     return top;
     }
 
-#pragma endregion NumericTriadMethods
-
-#pragma region
+//===================================================
+//
+// FormattingScannerCursorMethods
+//
+//===================================================
 
 size_t FormattingScannerCursor::TrueIndex(size_t index, size_t wordSize)
     {
@@ -1293,9 +1305,13 @@ size_t FormattingScannerCursor::SkipBlanks()
         }
     return m_lastScannedCount;
     }
-#pragma endregion FormattingScannerCursorMethods
 
-#pragma region
+//===================================================
+//
+// FormatStopWatchMethods
+//
+//===================================================
+
 FormatStopWatch::FormatStopWatch()
 {
     m_start = std::chrono::steady_clock::now();
@@ -1334,7 +1350,5 @@ Utf8String FormatStopWatch::LastInterval(double factor)
     sprintf(buf, "%.4f UOR", m_lastInterval * factor);
     return Utf8String(buf);
     }
-
-#pragma endregion FormatStopWatchMethods
 
 END_BENTLEY_FORMATTING_NAMESPACE
