@@ -590,37 +590,16 @@ void Tile::Draw(DrawArgsR args, int depth) const
     {
     DgnDb::VerifyClientThread();
 
-    bool tooCoarse = true;
-
-    if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
+    Visibility visibility = GetVisibility(args);
+    if (Visibility::OutsideFrustum == visibility)
         {
-        Frustum box(m_range);
+        if (_HasChildren())
+            _UnloadChildren(args.m_purgeOlderThan);
 
-        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
-            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
-            {
-            if (_HasChildren())
-                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum or clip. Unload any loaded children if they're expired.
-
-            return;
-            }
-
-#if !defined(NDEBUG)
-        if (s_forcedDepth >= 0)
-            {
-            tooCoarse = (depth != s_forcedDepth);
-            }
-        else
-#endif
-            {
-            double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
-            DPoint3d center = args.GetTileCenter(*this);
-            double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
-            tooCoarse = pixelSize > _GetMaximumSize() * args.GetTileSizeModifier();
-            }
+        return;
         }
 
+    bool tooCoarse = Visibility::TooCoarse == visibility;
     auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
     if (tooCoarse && nullptr != children)
         {
@@ -662,7 +641,7 @@ void Tile::Draw(DrawArgsR args, int depth) const
     if (!_HasChildren()) // this is a leaf node - we're done
         {
         // This node may have initially had children, and then determined that it should be a leaf instead
-        // - if so, make sure its children have been unloaded
+        // - if so, make sure its children have been unloaded (ignoring expiration time since they're now useless)
         _UnloadChildren(std::chrono::steady_clock::now());
         return;
         }
@@ -673,6 +652,36 @@ void Tile::Draw(DrawArgsR args, int depth) const
         _UnloadChildren(args.m_purgeOlderThan);
         return;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
+    {
+    // some nodes are merely for structure and don't have any geometry
+    if (!IsDisplayable())
+        return Visibility::TooCoarse;
+
+    // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+    Frustum box(m_range);
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
+    if (isOutside || clipped)
+        return Visibility::OutsideFrustum;
+
+#if !defined(NDEBUG)
+    if (s_forcedDepth >= 0)
+        return GetDepth() == s_forcedDepth ? Visibility::Visible : Visibility::TooCoarse;
+#endif
+
+    double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
+    DPoint3d center = args.GetTileCenter(*this);
+    double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
+    if (pixelSize > _GetMaximumSize() * args.GetTileSizeModifier())
+        return Visibility::TooCoarse;
+    else
+        return Visibility::Visible;
     }
 
 /*---------------------------------------------------------------------------------**//**

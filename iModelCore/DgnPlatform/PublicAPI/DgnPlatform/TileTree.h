@@ -192,6 +192,15 @@ public:
     //! @param[in] allChildrenReady true if all of the children are in the "Ready" state
     //! @return true to substitute children for this node
     virtual bool _CanSubstituteChildren(bool allChildrenReady) const { return allChildrenReady || !IsDisplayable(); }
+
+    enum class Visibility
+    {
+        OutsideFrustum, // this tile is entirely outside of the viewing frustum
+        TooCoarse, // this tile is too coarse to be drawn
+        Visible, // this tile is of the correct size to be drawn
+    };
+
+    Visibility GetVisibility(DrawArgsCR args) const;
 };
 
 /*=================================================================================**//**
