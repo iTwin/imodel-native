@@ -357,7 +357,9 @@ protected:
     PCGroundTIN(GroundDetectionParameters& params, ProgressReport& report);
     virtual ~PCGroundTIN();
 
-    void                ComputeParameterFromTINPoints();
+    void ComputeParameterFromTINPoints();
+
+    void OutputDtmPreview();
     
     virtual GridCellEntryPtr _CreateGridCellEntry(DRange3d const& boundingBox);
     virtual bool _GetDistanceToTriangleFromPoint(double& distance, DPoint3d const& point) const;
@@ -378,9 +380,7 @@ private:
     virtual bool _IsAccepted(DPoint3d const& point) const override;
 
     void CreatePolyfaceQuery();
-
-    void OutputDtmPreview();
-
+    
     DRange3d                            m_boundingBoxMeter;
     bool                                m_shouldStopIteration;
     DiscreetHistogramPtr                m_pAnglesHisto;
