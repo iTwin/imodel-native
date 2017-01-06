@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -217,6 +217,10 @@ BENTLEYDLL_EXPORT static void Uninitialize ();
 //! @remarks Even if SetFailOnAssert is set to true, an assertion failure in a worker thread never triggers a failure in that thread, and it does not stop the calling code from running.
 //! Instead, the failure is logged and deferred. The failure is triggered later in the main thread, usually when the test finishes.
 BENTLEYDLL_EXPORT static void SetFailOnAssert (bool doFail, BeAssertFunctions::AssertType atype = BeAssertFunctions::AssertType::All);
+
+//! Query if the specified kinds of assertion failures are turned on or not.
+//! @return true if tests will break when assertion failures are detected or false if not.
+BENTLEYDLL_EXPORT static bool GetFailOnAssert (BeAssertFunctions::AssertType atype = BeAssertFunctions::AssertType::All);
 
 //! Returns a flag indicating the there was an assertion failure in the current test.
 BENTLEYDLL_EXPORT static bool GetAssertionFailed();
