@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Revision_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -24,7 +24,7 @@ USING_NAMESPACE_BENTLEY_DPTEST
 #define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"DgnCore"))
 
 // Turn this on for debugging.
-#define DUMP_REVISION 1
+// #define DUMP_REVISION 1
 // #define DUMP_CODES
 
 //=======================================================================================
