@@ -2,7 +2,7 @@
 |
 |     $Source: src/ECCustomAttribute.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -104,6 +104,38 @@ ECCustomAttributeCollection& returnList
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool IECCustomAttributeContainer::IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const
     {
+    return IsDefinedInternal(schemaName, className, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Carole.MacDonald                06/2010
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IECCustomAttributeContainer::IsDefined (ECClassCR classDefinition) const
+    {
+    return IsDefinedInternal(classDefinition, true);
+    }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                    Colin.Kerr                      01/2017
+//---------------+---------------+---------------+---------------+---------------+-----//
+bool IECCustomAttributeContainer::IsDefinedLocal(Utf8StringCR schemaName, Utf8StringCR className) const
+    {
+    return IsDefinedInternal(schemaName, className, false);
+    }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                    Colin.Kerr                      01/2017
+//---------------+---------------+---------------+---------------+---------------+-----//
+bool IECCustomAttributeContainer::IsDefinedLocal(ECClassCR classDefinition) const
+    {
+    return IsDefinedInternal(classDefinition, false);
+    }
+
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                    Colin.Kerr                      01/2017
+//---------------+---------------+---------------+---------------+---------------+-----//
+bool IECCustomAttributeContainer::IsDefinedInternal (Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses) const
+    {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
         {
@@ -113,6 +145,9 @@ bool IECCustomAttributeContainer::IsDefined (Utf8StringCR schemaName, Utf8String
             0 == schemaName.compare(classSchema.GetName()))
             return true;
         }
+
+    if (!includeBaseClasses)
+        return false;
 
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
@@ -125,13 +160,10 @@ bool IECCustomAttributeContainer::IsDefined (Utf8StringCR schemaName, Utf8String
     return false;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                06/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool IECCustomAttributeContainer::IsDefined
-(
-ECClassCR classDefinition
-) const
+//-------------------------------------------------------------------------------------//
+// @bsimethod                                    Colin.Kerr                      01/2017
+//---------------+---------------+---------------+---------------+---------------+-----//
+bool IECCustomAttributeContainer::IsDefinedInternal (ECClassCR classDefinition, bool includeBaseClasses) const
     {
     ECCustomAttributeCollection::const_iterator iter;
     for (iter = m_primaryCustomAttributes.begin(); iter != m_primaryCustomAttributes.end(); iter++)
@@ -140,6 +172,10 @@ ECClassCR classDefinition
         if (&classDefinition == &currentClass || ECClass::ClassesAreEqualByName(&classDefinition, &currentClass))
             return true;
         }
+
+    if (!includeBaseClasses)
+        return false;
+
     // check base containers
     bvector<IECCustomAttributeContainerP> baseContainers;
     _GetBaseContainers(baseContainers);

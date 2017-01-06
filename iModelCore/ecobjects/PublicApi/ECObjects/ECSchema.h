@@ -224,6 +224,8 @@ private:
 
     IECInstancePtr                      GetCustomAttributeInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses, bool includeSupplementalAttributes) const;
     IECInstancePtr                      GetCustomAttributeInternal(ECClassCR ecClass, bool includeBaseClasses, bool includeSupplementalAttributes) const;
+    bool                                IsDefinedInternal(Utf8StringCR schemaName, Utf8StringCR className, bool includeBaseClasses) const;
+    bool                                IsDefinedInternal(ECClassCR classDefinition, bool includeBaseClasses) const;
 
     ECObjectsStatus                     SetCustomAttributeInternal(ECCustomAttributeCollection& customAttributeCollection, IECInstanceR customAttributeInstance, bool requireSchemaReference = false);
     //! Does not check if the container's ECSchema references the requisite ECSchema(s). @see SupplementedSchemaBuilder::SetMergedCustomAttribute
@@ -261,10 +263,14 @@ public:
 
 //__PUBLISH_SECTION_START__
 public:
-    //! Returns true if the container has a custom attribute of a class of the specified name
+    //! Returns true if the container has a custom attribute of a class of the specified name in the current container or base containers
     ECOBJECTS_EXPORT bool               IsDefined (Utf8StringCR schemaName, Utf8StringCR className) const;
-    //! Returns true if the container has a custom attribute of a class of the specified class definition
+    //! Returns true if the container has a custom attribute of a class of the specified class definition in the current container or base containers
     ECOBJECTS_EXPORT bool               IsDefined (ECClassCR classDefinition) const;
+    //! Returns true if the container has a custom attribute of a class of the specified name in the current container, excluding base containers
+    ECOBJECTS_EXPORT bool               IsDefinedLocal(Utf8StringCR schemaName, Utf8StringCR className) const;
+    //! Returns true if the container has a custom attribute of a class of the specified class definition in the current container, excluding base containers
+    ECOBJECTS_EXPORT bool               IsDefinedLocal(ECClassCR classDefinition) const;
 
     //! Retrieves the custom attribute matching the class name.  Includes supplemental custom attributes
     //! and custom attributes from the base containers
@@ -1913,6 +1919,9 @@ public:
     // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
     // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
     ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
+    
+    //! Returns true if this class has the CoreCustomAttributes:IsMixin custom attribute applied.
+    bool IsMixin() { return IsDefinedLocal("CoreCustomAttributes", "IsMixin"); }
 };
 
 //---------------------------------------------------------------------------------------
