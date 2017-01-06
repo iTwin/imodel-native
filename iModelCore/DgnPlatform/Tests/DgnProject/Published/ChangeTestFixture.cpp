@@ -25,71 +25,30 @@ ChangeTestFixture::ChangeTestFixture(WCharCP testFileName, bool wantTestDomain) 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    06/2015
 //---------------------------------------------------------------------------------------
-void ChangeTestFixture::CreateSeedDgnDb(BeFileNameR seedPathname)
+void ChangeTestFixture::_SetupDgnDb()
     {
-    seedPathname = DgnDbTestDgnManager::GetOutputFilePath(L"ChangeTestSeed.bim");
-    if (seedPathname.DoesPathExist())
-        return;
+    SetupSeedProject(m_testFileName.c_str());
 
-    CreateDgnDbParams createDgnDbParams;
-    createDgnDbParams.SetRootSubjectName("ChangeTestFixture");
-    createDgnDbParams.SetOverwriteExisting(true);
-
-    DbResult createStatus;
-    DgnDbPtr seedDgnDb = DgnDb::CreateDgnDb(&createStatus, seedPathname, createDgnDbParams);
-    ASSERT_TRUE(seedDgnDb.IsValid()) << "Could not create seed project";
-
-    seedDgnDb->CloseDb();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    06/2015
-//---------------------------------------------------------------------------------------
-void ChangeTestFixture::_CreateDgnDb()
-    {
-    // Note: Since creating the DgnDb everytime consumes too much time, we instead
-    // just copy one we have created the first time around. 
-
-    //BeFileName pathname = DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str());
-    //if (pathname.DoesPathExist())
-    //    BeFileName::BeDeleteFile(pathname);
-
-    //BeFileName seedPathname;
-    //CreateSeedDgnDb(seedPathname);
-
-    //BeFileNameStatus fileStatus = BeFileName::BeCopyFile(seedPathname.c_str(), pathname.c_str());
-    //ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
-
-    //DbResult openStatus;
-    //DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    //m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
-    BeFileName newName(TEST_NAME, true);
-    newName.AppendString(L".ibim");
-
-    SetupSeedProject();
-    m_testDb = m_db;
-    m_testFileName = BeFileName(m_db->GetDbFileName(),true);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+    m_testFileName = BeFileName(m_db->GetDbFileName(), true);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
     if (m_wantTestDomain)
-        ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_testDb));
+        ASSERT_EQ(DgnDbStatus::Success, DgnPlatformTestDomain::ImportSchema(*m_db));
 
-    TestDataManager::MustBeBriefcase(m_testDb, Db::OpenMode::ReadWrite);
+    TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
 
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_testDb, "TestModel");
-    m_testModelId = model->GetModelId();
+    m_defaultAuthorityId = InsertDatabaseScopeAuthority("TestAuthority");
+    ASSERT_TRUE(m_defaultAuthorityId.IsValid());
 
-    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
-    ASSERT_TRUE(m_testModel.IsValid());
+    m_db->SaveChanges();
 
-    m_testCategoryId =  InsertCategory("TestCategory");
-    ASSERT_TRUE(m_testCategoryId.IsValid());
+    // Create a dummy revision to purge transaction table for the test
+    DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
+    BeAssert(rev.IsValid());
+    m_db->Revisions().FinishCreateRevision();
 
-    m_testAuthorityId = InsertDatabaseScopeAuthority("TestAuthority");
-    ASSERT_TRUE(m_testAuthorityId.IsValid());
-    
-    m_testAuthority = m_testDb->Authorities().Get<DatabaseScopeAuthority>(m_testAuthorityId);
-    ASSERT_TRUE(m_testAuthority.IsValid());
+    CloseDgnDb();
+    OpenDgnDb();    
     }
 
 //---------------------------------------------------------------------------------------
@@ -99,34 +58,14 @@ void ChangeTestFixture::OpenDgnDb()
     {
     DbResult openStatus;
     DgnDb::OpenParams openParams(Db::OpenMode::ReadWrite);
-    //m_testDb = DgnDb::OpenDgnDb(&openStatus, DgnDbTestDgnManager::GetOutputFilePath(m_testFileName.c_str()), openParams);
-    m_testDb = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
-    ASSERT_TRUE(m_testDb.IsValid()) << "Could not open test project";
+    m_db = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
+    ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    if (!m_testModelId.IsValid())
-        {
-        DgnCode partitionCode = PhysicalPartition::CreateCode(*m_testDb->Elements().GetRootSubject(), "TestModel");
-        m_testModelId = m_testDb->Models().QuerySubModelId(partitionCode);
-        ASSERT_TRUE(m_testModelId.IsValid());
-        }
+    m_defaultAuthority = m_db->Authorities().Get<DatabaseScopeAuthority>(m_defaultAuthorityId);
+    ASSERT_TRUE(m_defaultAuthority.IsValid());
 
-    m_testModel = m_testDb->Models().Get<PhysicalModel>(m_testModelId);
-    ASSERT_TRUE(m_testModel.IsValid());
-
-    if (!m_testAuthorityId.IsValid())
-        {
-        m_testAuthorityId = m_testDb->Authorities().QueryAuthorityId("TestAuthority");
-        ASSERT_TRUE(m_testAuthorityId.IsValid());
-        }
-
-    m_testAuthority = m_testDb->Authorities().Get<DatabaseScopeAuthority>(m_testAuthorityId);
-    ASSERT_TRUE(m_testAuthority.IsValid());
-
-    if (!m_testCategoryId.IsValid())
-        {
-        m_testCategoryId = DgnCategory::QueryCategoryId(*m_testDb, SpatialCategory::CreateCode(*m_testDb, "TestCategory"));
-        ASSERT_TRUE(m_testCategoryId.IsValid());
-        }
+    m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
+    ASSERT_TRUE(m_defaultModel.IsValid());
     }
 
 //---------------------------------------------------------------------------------------
@@ -134,10 +73,10 @@ void ChangeTestFixture::OpenDgnDb()
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CloseDgnDb()
     {
-    m_testDb->CloseDb();
-    m_testDb = nullptr;
-    m_testModel = nullptr;
-    m_testAuthority = nullptr;
+    m_db->CloseDb();
+    m_db = nullptr;
+    m_defaultModel = nullptr;
+    m_defaultAuthority = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -145,7 +84,7 @@ void ChangeTestFixture::CloseDgnDb()
 //---------------------------------------------------------------------------------------
 DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
     {
-    SpatialCategory category(*m_testDb, categoryName, DgnCategory::Rank::Application);
+    SpatialCategory category(*m_db, categoryName, DgnCategory::Rank::Application);
 
     DgnSubCategory::Appearance appearance;
     appearance.SetColor(ColorDef::White());
@@ -161,7 +100,7 @@ DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
 //---------------------------------------------------------------------------------------
 DgnAuthorityId ChangeTestFixture::InsertDatabaseScopeAuthority(Utf8CP authorityName)
     {
-    RefCountedPtr<DatabaseScopeAuthority> testAuthority = DatabaseScopeAuthority::Create(authorityName, *m_testDb);
+    RefCountedPtr<DatabaseScopeAuthority> testAuthority = DatabaseScopeAuthority::Create(authorityName, *m_db);
 
     DgnDbStatus status = testAuthority->Insert();
     BeAssert(status == DgnDbStatus::Success);
@@ -200,7 +139,7 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
     BentleyStatus status = builder->Finish(*testElement);
     BeAssert(status == SUCCESS);
 
-    DgnElementId elementId = m_testDb->Elements().Insert(*testElement)->GetElementId();
+    DgnElementId elementId = m_db->Elements().Insert(*testElement)->GetElementId();
     return elementId;
     }
 
@@ -209,33 +148,33 @@ DgnElementId ChangeTestFixture::InsertPhysicalElement(PhysicalModelR model, DgnC
 //---------------------------------------------------------------------------------------
 void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
     {
-    auto categories = new CategorySelector(*m_testDb,"");
-    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_testDb))
+    auto categories = new CategorySelector(*m_db,"");
+    for (ElementIteratorEntryCR categoryEntry : SpatialCategory::MakeIterator(*m_db))
         categories->AddCategory(categoryEntry.GetId<DgnCategoryId>());
 
-    auto style = new DisplayStyle3d(*m_testDb,"");
+    auto style = new DisplayStyle3d(*m_db,"");
     auto flags = style->GetViewFlags();
     flags.SetRenderMode(Render::RenderMode::SmoothShade);
     style->SetViewFlags(flags);
 
-    auto models = new ModelSelector(*m_testDb,"");
-    ModelIterator modIter = m_testDb->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
+    auto models = new ModelSelector(*m_db,"");
+    ModelIterator modIter = m_db->Models().MakeIterator(BIS_SCHEMA(BIS_CLASS_SpatialModel));
     for (ModelIteratorEntryCR entry : modIter)
         {
         auto id = entry.GetModelId();
-        auto model = m_testDb->Models().GetModel(id);
+        auto model = m_db->Models().GetModel(id);
 
         if (model.IsValid())
             models->AddModel(id);
         }
 
-    CameraViewDefinition view(*m_testDb, "Default", *categories, *style, *models);
+    CameraViewDefinition view(*m_db, "Default", *categories, *style, *models);
     view.SetStandardViewRotation(StandardView::Iso);
 
     ASSERT_TRUE(view.Insert().IsValid());
 
     DgnViewId viewId = view.GetViewId();
-    m_testDb->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+    m_db->SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     }
 
 //---------------------------------------------------------------------------------------
@@ -244,10 +183,10 @@ void ChangeTestFixture::CreateDefaultView(DgnModelId defaultModelId)
 void ChangeTestFixture::UpdateDgnDbExtents()
     {
     AxisAlignedBox3d physicalExtents;
-    physicalExtents = m_testDb->Units().ComputeProjectExtents();
-    m_testDb->Units().SetProjectExtents(physicalExtents);
+    physicalExtents = m_db->Units().ComputeProjectExtents();
+    m_db->Units().SetProjectExtents(physicalExtents);
 
-    auto view = ViewDefinition::Get(*m_testDb, "Default");
+    auto view = ViewDefinition::Get(*m_db, "Default");
     ASSERT_TRUE(view.IsValid());
     auto editView = view->MakeCopy<SpatialViewDefinition>();
     ASSERT_TRUE(editView.IsValid());

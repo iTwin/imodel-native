@@ -97,7 +97,7 @@ struct DgnECNavigatorTest :public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Ridha.Malik                   11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnECNavigatorTest, GetElemtmentInfo)
+TEST_F(DgnECNavigatorTest, GetElementInfo)
     {
     // Test need to be enhance when the issue of ElemtmentInfo get resolved 
     SetupSeedProject();

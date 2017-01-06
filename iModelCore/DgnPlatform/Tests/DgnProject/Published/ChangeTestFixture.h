@@ -11,25 +11,18 @@
 //=======================================================================================
 struct ChangeTestFixture : public DgnDbTestFixture
 {
-private:
-    void CreateSeedDgnDb(BeFileNameR seedPathname);
-
 protected:
-    DgnDbPtr m_testDb;
     BeFileName m_testFileName;
     bool    m_wantTestDomain;
 
-    DgnModelId m_testModelId;
-    PhysicalModelPtr m_testModel;
+    PhysicalModelPtr m_defaultModel;
 
-    DgnCategoryId m_testCategoryId;
+    DgnAuthorityId m_defaultAuthorityId;
+    DatabaseScopeAuthorityCPtr m_defaultAuthority;
 
-    DgnAuthorityId m_testAuthorityId;
-    DatabaseScopeAuthorityCPtr m_testAuthority;
+    virtual void _SetupDgnDb();
 
-    virtual void _CreateDgnDb();
-
-    void CreateDgnDb() { _CreateDgnDb(); m_testDb->SaveChanges("Saving DgnDb at start of test"); }
+    void SetupDgnDb() { _SetupDgnDb();}
     void OpenDgnDb();
     void CloseDgnDb();
         
@@ -41,11 +34,9 @@ protected:
     void UpdateDgnDbExtents();
 
 public:
-    //static void SetUpTestCase();
-    //static void TearDownTestCase();
     ChangeTestFixture(WCharCP testFileName, bool wantTestDomain=false);
     virtual ~ChangeTestFixture() {}
     virtual void SetUp() override {}
-    virtual void TearDown() override { if (m_testDb.IsValid()) m_testDb->SaveChanges("Saving DgnDb at end of test"); }
+    virtual void TearDown() override { if (m_db.IsValid()) m_db->SaveChanges("Saving DgnDb at end of test"); }
 };
 

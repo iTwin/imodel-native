@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/Revision_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ChangeTestFixture.h"
@@ -37,7 +37,7 @@ protected:
     int m_z = 0;
     WCharCP m_copyTestFileName = L"RevisionTestCopy.ibim";
 
-    virtual void _CreateDgnDb() override;
+    virtual void _SetupDgnDb() override;
 
     void InsertFloor(int xmax, int ymax);
     void ModifyElement(DgnElementId elementId);
@@ -71,7 +71,7 @@ protected:
 
     AnnotationTextStyleCPtr CreateTextStyle(Utf8CP name)
         {
-        AnnotationTextStyle style(*m_testDb);
+        AnnotationTextStyle style(*m_db);
         style.SetName(name);
         auto pStyle = style.Insert();
         EXPECT_TRUE(pStyle.IsValid());
@@ -88,8 +88,8 @@ protected:
 
     DgnElementCPtr InsertPhysicalElementByCode(DgnCode const& code)
         {
-        DgnClassId classId = m_testDb->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
-        GenericPhysicalObject elem(GenericPhysicalObject::CreateParams(*m_testDb, m_testModel->GetModelId(), classId, m_testCategoryId, Placement3d(), code, nullptr, DgnElementId()));
+        DgnClassId classId = m_db->Domains().GetClassId(generic_ElementHandler::GenericPhysicalObjectHandler::GetHandler());
+        GenericPhysicalObject elem(GenericPhysicalObject::CreateParams(*m_db, m_defaultModel->GetModelId(), classId, m_defaultCategoryId, Placement3d(), code, nullptr, DgnElementId()));
         return elem.Insert();
         }
 
@@ -108,12 +108,12 @@ public:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-void RevisionTestFixture::_CreateDgnDb()
+void RevisionTestFixture::_SetupDgnDb()
     {
-    T_Super::_CreateDgnDb();
+    T_Super::_SetupDgnDb();
 
     InsertFloor(1, 1);
-    CreateDefaultView(m_testModel->GetModelId());
+    CreateDefaultView(m_defaultModel->GetModelId());
     UpdateDgnDbExtents();
     }
 
@@ -125,7 +125,7 @@ void RevisionTestFixture::InsertFloor(int xmax, int ymax)
     int z = m_z++;
     for (int x = 0; x < xmax; x++)
         for (int y = 0; y < ymax; y++)
-            InsertPhysicalElement(*m_testModel, m_testCategoryId, x, y, z);
+            InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, x, y, z);
     }
 
 //---------------------------------------------------------------------------------------
@@ -137,7 +137,7 @@ void RevisionTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
     LOG.infov("---------------------------------------------------------");
     if (summary != nullptr)
         LOG.infov(summary);
-    revision.Dump(*m_testDb);
+    revision.Dump(*m_db);
     LOG.infov("---------------------------------------------------------");
 #endif
     }
@@ -147,7 +147,7 @@ void RevisionTestFixture::DumpRevision(DgnRevisionCR revision, Utf8CP summary)
 //---------------------------------------------------------------------------------------
 void RevisionTestFixture::ModifyElement(DgnElementId elementId)
     {
-    RefCountedPtr<PhysicalElement> testElement = m_testDb->Elements().GetForEdit<PhysicalElement>(elementId);
+    RefCountedPtr<PhysicalElement> testElement = m_db->Elements().GetForEdit<PhysicalElement>(elementId);
     ASSERT_TRUE(testElement.IsValid());
 
     Placement3d newPlacement = testElement->GetPlacement();
@@ -165,11 +165,11 @@ void RevisionTestFixture::ModifyElement(DgnElementId elementId)
 //---------------------------------------------------------------------------------------
 DgnRevisionPtr RevisionTestFixture::CreateRevision()
     {
-    DgnRevisionPtr revision = m_testDb->Revisions().StartCreateRevision();
+    DgnRevisionPtr revision = m_db->Revisions().StartCreateRevision();
     if (!revision.IsValid())
         return nullptr;
 
-    RevisionStatus status = m_testDb->Revisions().FinishCreateRevision();
+    RevisionStatus status = m_db->Revisions().FinishCreateRevision();
     if (RevisionStatus::Success != status)
         {
         BeAssert(false);
@@ -216,14 +216,14 @@ void RevisionTestFixture::RestoreTestFile()
 TEST_F(RevisionTestFixture, Workflow)
     {
     // Setup a model with a few elements
-    CreateDgnDb();
-    m_testDb->SaveChanges("Created Initial Model");
+    SetupDgnDb();
+    m_db->SaveChanges("Created Initial Model");
 
     // Create an initial revision
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
-    Utf8String initialParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String initialParentRevId = m_db->Revisions().GetParentRevisionId();
 
     // Create and save multiple revisions
     BackupTestFile();
@@ -233,7 +233,7 @@ TEST_F(RevisionTestFixture, Workflow)
     for (int revNum = 0; revNum < numRevisions; revNum++)
         {
         InsertFloor(dimension, dimension);
-        m_testDb->SaveChanges("Inserted floor");
+        m_db->SaveChanges("Inserted floor");
 
         DgnRevisionPtr revision = CreateRevision();
         ASSERT_TRUE(revision.IsValid());
@@ -249,59 +249,59 @@ TEST_F(RevisionTestFixture, Workflow)
     // Merge all the saved revisions
     for (DgnRevisionPtr const& rev : revisions)
         {
-        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+        RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
 
     // Check the updated revision id
-    Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String mergedParentRevId = m_db->Revisions().GetParentRevisionId();
     ASSERT_TRUE(mergedParentRevId != initialParentRevId);
 
     // Abandon changes, and test that the parent revision and elements do not change
-    m_testDb->AbandonChanges();
+    m_db->AbandonChanges();
 
-    Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String newParentRevId = m_db->Revisions().GetParentRevisionId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    01/2016
 //---------------------------------------------------------------------------------------
-TEST_F(RevisionTestFixture, DISABLED_MoreWorkflow)
+TEST_F(RevisionTestFixture, MoreWorkflow)
     {
     // Setup baseline
-    CreateDgnDb();
-    m_testDb->SaveChanges("Created Initial Model");
+    SetupDgnDb();
+    m_db->SaveChanges("Created Initial Model");
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
     // Create Revision 1 inserting an element into the test model
     BackupTestFile();
-    DgnElementId elementId = InsertPhysicalElement(*m_testModel, m_testCategoryId, 2, 2, 2);
+    DgnElementId elementId = InsertPhysicalElement(*m_defaultModel, m_defaultCategoryId, 2, 2, 2);
     ASSERT_TRUE(elementId.IsValid());
-    m_testDb->SaveChanges("Inserted an element");
+    m_db->SaveChanges("Inserted an element");
 
     DgnRevisionPtr revision1 = CreateRevision();
     ASSERT_TRUE(revision1.IsValid());
 
     // Create Revision 2 after deleting the same element
-    DgnElementCPtr el = m_testDb->Elements().Get<DgnElement>(elementId);
+    DgnElementCPtr el = m_db->Elements().Get<DgnElement>(elementId);
     ASSERT_TRUE(el.IsValid());
-    DgnDbStatus status = m_testDb->Elements().Delete(*el);
+    DgnDbStatus status = m_db->Elements().Delete(*el);
     ASSERT_TRUE(status == DgnDbStatus::Success);
     el = nullptr;
-    m_testDb->SaveChanges("Deleted same element");
+    m_db->SaveChanges("Deleted same element");
 
     DgnRevisionPtr revision2 = CreateRevision();
     ASSERT_TRUE(revision2.IsValid());
 
     // Create Revision 3 deleting the test model (the API causes Elements to get deleted)
     RestoreTestFile();
-    ASSERT_TRUE(m_testModel.IsValid());
-    status = m_testModel->Delete();
+    ASSERT_TRUE(m_defaultModel.IsValid());
+    status = m_defaultModel->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
-    m_testModel = nullptr;
-    m_testDb->SaveChanges("Deleted model and contained elements");
+    m_defaultModel = nullptr;
+    m_db->SaveChanges("Deleted model and contained elements");
 
     DgnRevisionPtr revision3 = CreateRevision();
     ASSERT_TRUE(revision3.IsValid());
@@ -310,35 +310,35 @@ TEST_F(RevisionTestFixture, DISABLED_MoreWorkflow)
 
     // Merge Rev1 first
     RestoreTestFile();
-    ASSERT_TRUE(m_testModel.IsValid());
-    revStatus = m_testDb->Revisions().MergeRevision(*revision1);
+    ASSERT_TRUE(m_defaultModel.IsValid());
+    revStatus = m_db->Revisions().MergeRevision(*revision1);
     ASSERT_TRUE(revStatus == RevisionStatus::Success);
 
     // Merge Rev2 next
-    revStatus = m_testDb->Revisions().MergeRevision(*revision2);
+    revStatus = m_db->Revisions().MergeRevision(*revision2);
     ASSERT_TRUE(revStatus == RevisionStatus::Success);
 
     // Merge Rev3 next - should fail since the parent does not match
     BeTest::SetFailOnAssert(false);
-    revStatus = m_testDb->Revisions().MergeRevision(*revision3);
+    revStatus = m_db->Revisions().MergeRevision(*revision3);
     BeTest::SetFailOnAssert(true);
     ASSERT_TRUE(revStatus == RevisionStatus::ParentMismatch);
 
     // Merge Rev3 first
     RestoreTestFile();
-    ASSERT_TRUE(m_testModel.IsValid());
-    revStatus = m_testDb->Revisions().MergeRevision(*revision3);
+    ASSERT_TRUE(m_defaultModel.IsValid());
+    revStatus = m_db->Revisions().MergeRevision(*revision3);
     ASSERT_TRUE(revStatus == RevisionStatus::Success);
     
     // Delete model and Merge Rev1 - should fail since the model does not exist
     RestoreTestFile();
-    status = m_testModel->Delete();
+    status = m_defaultModel->Delete();
     ASSERT_TRUE(status == DgnDbStatus::Success);
-    m_testModel = nullptr;
-    m_testDb->SaveChanges("Deleted model and contained elements");
+    m_defaultModel = nullptr;
+    m_db->SaveChanges("Deleted model and contained elements");
 
     BeTest::SetFailOnAssert(false);
-    revStatus = m_testDb->Revisions().MergeRevision(*revision1);
+    revStatus = m_db->Revisions().MergeRevision(*revision1);
     BeTest::SetFailOnAssert(true);
     ASSERT_TRUE(revStatus == RevisionStatus::MergeError);
     }
@@ -348,13 +348,13 @@ TEST_F(RevisionTestFixture, DISABLED_MoreWorkflow)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded)
     {
-    m_testDb->SaveChanges();
-    DgnRevisionPtr rev = m_testDb->Revisions().StartCreateRevision();
+    m_db->SaveChanges();
+    DgnRevisionPtr rev = m_db->Revisions().StartCreateRevision();
     BeAssert(rev.IsValid());
 
-    rev->ExtractCodes(assigned, discarded, *m_testDb);
+    rev->ExtractCodes(assigned, discarded, *m_db);
 
-    m_testDb->Revisions().FinishCreateRevision();
+    m_db->Revisions().FinishCreateRevision();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -363,15 +363,16 @@ void RevisionTestFixture::ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCode
 TEST_F(RevisionTestFixture, Codes)
     {
     // Creating the DgnDb allocates some codes (category, model, view...)
-    CreateDgnDb();
-    DgnDbR db = *m_testDb;
+    SetupDgnDb();
 
-    SpatialCategoryCPtr defaultCat = SpatialCategory::Get(db, m_testCategoryId);
-    DgnSubCategory subCat(DgnSubCategory::CreateParams(db, m_testCategoryId, "MySubCategory", DgnSubCategory::Appearance()));
+    DgnDbR db = *m_db;
+
+    SpatialCategoryCPtr defaultCat = SpatialCategory::Get(db, m_defaultCategoryId);
+    DgnSubCategory subCat(DgnSubCategory::CreateParams(db, m_defaultCategoryId, "MySubCategory", DgnSubCategory::Appearance()));
     auto cpSubCat = subCat.Insert();
     EXPECT_TRUE(cpSubCat.IsValid());
 
-    DgnModelPtr defaultModel = m_testModel;
+    DgnModelPtr defaultModel = m_defaultModel;
     ASSERT_TRUE(defaultCat.IsValid());
     ASSERT_TRUE(defaultModel.IsValid());
 
@@ -381,14 +382,9 @@ TEST_F(RevisionTestFixture, Codes)
 
     DgnCodeSet expectedCodes;
     ExpectCodes(expectedCodes, discardedCodes);
-
-    expectedCodes.insert(defaultCat->GetCode());
-    expectedCodes.insert(DgnSubCategory::Get(db, defaultCat->GetDefaultSubCategoryId())->GetCode());
+    
     expectedCodes.insert(subCat.GetCode());
     expectedCodes.insert(ViewDefinition::CreateCode(db, "Default"));
-    expectedCodes.insert(ModelSelector::CreateCode(db, "Default"));
-    expectedCodes.insert(CategorySelector::CreateCode(db, "Default"));
-    expectedCodes.insert(DisplayStyle::CreateCode(db, "Default"));
     ExpectCodes(expectedCodes, createdCodes);
 
     // Create some new elements with codes, and delete one with a code
@@ -566,8 +562,8 @@ struct DependencyRevisionTest : RevisionTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 TestElementCPtr DependencyRevisionTest::InsertElement(int32_t intProp1)
     {
-    DgnDbR db = m_testModel->GetDgnDb();
-    auto el = TestElement::Create(db, m_testModelId, m_testCategoryId);
+    DgnDbR db = m_defaultModel->GetDgnDb();
+    auto el = TestElement::Create(db, m_defaultModelId, m_defaultCategoryId);
     el->SetIntegerProperty(0, intProp1);
     auto cpEl = db.Elements().Insert(*el);
     EXPECT_TRUE(cpEl.IsValid());
@@ -579,7 +575,7 @@ TestElementCPtr DependencyRevisionTest::InsertElement(int32_t intProp1)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DependencyRevisionTest::UpdateRootProperty(int32_t intProp1, DgnElementId eId)
     {
-    auto el = m_testDb->Elements().GetForEdit<TestElement>(eId);
+    auto el = m_db->Elements().GetForEdit<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     el->SetIntegerProperty(0, intProp1);
     ASSERT_TRUE(el->Update().IsValid());
@@ -591,7 +587,7 @@ void DependencyRevisionTest::UpdateRootProperty(int32_t intProp1, DgnElementId e
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DependencyRevisionTest::VerifyRootProperty(DgnElementId eId, int32_t prop)
     {
-    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    auto el = m_db->Elements().Get<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(el->GetIntegerProperty(0), prop);
     }
@@ -601,7 +597,7 @@ void DependencyRevisionTest::VerifyRootProperty(DgnElementId eId, int32_t prop)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DependencyRevisionTest::UpdateDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
     {
-    auto el = m_testDb->Elements().GetForEdit<TestElement>(eId);
+    auto el = m_db->Elements().GetForEdit<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     el->SetIntegerProperty(index, value);
     ASSERT_TRUE(el->Update().IsValid());
@@ -613,7 +609,7 @@ void DependencyRevisionTest::UpdateDependentProperty(DgnElementId eId, uint8_t i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DependencyRevisionTest::VerifyDependentProperty(DgnElementId eId, uint8_t index, int32_t value)
     {
-    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    auto el = m_db->Elements().Get<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(el->GetIntegerProperty(index), value);
     }
@@ -623,7 +619,7 @@ void DependencyRevisionTest::VerifyDependentProperty(DgnElementId eId, uint8_t i
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DependencyRevisionTest::VerifyDependentProperties(DgnElementId eId, std::array<int32_t, 4> const& props)
     {
-    auto el = m_testDb->Elements().Get<TestElement>(eId);
+    auto el = m_db->Elements().Get<TestElement>(eId);
     ASSERT_TRUE(el.IsValid());
     EXPECT_EQ(el->GetIntegerProperty(0), props[0]);
     EXPECT_EQ(el->GetIntegerProperty(1), props[1]);
@@ -637,8 +633,8 @@ void DependencyRevisionTest::VerifyDependentProperties(DgnElementId eId, std::ar
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, TestDependency)
     {
-    CreateDgnDb();
-    auto& db = *m_testDb;
+    SetupDgnDb();
+    auto& db = *m_db;
     db.SaveChanges("Create initial model");
 
     // C.TestIntegerProperty2 is driven by A.TestIntegerProperty1
@@ -696,7 +692,7 @@ TEST_F(DependencyRevisionTest, TestDependency)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, SingleRevision)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     DgnElementId aId, bId, cId;
 
@@ -705,11 +701,11 @@ TEST_F(DependencyRevisionTest, SingleRevision)
     bId = InsertElement(456)->GetElementId();
     cId = InsertElement(789)->GetElementId();
 
-    TestElementDependency::Insert(*m_testDb, aId, cId, 2);
-    TestElementDependency::Insert(*m_testDb, bId, cId, 3);
+    TestElementDependency::Insert(*m_db, aId, cId, 2);
+    TestElementDependency::Insert(*m_db, bId, cId, 3);
 
     // Save initial state
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(cId, { 789, 0, 123, 456 });
     ASSERT_TRUE(CreateRevision().IsValid());
     BackupTestFile();
@@ -718,7 +714,7 @@ TEST_F(DependencyRevisionTest, SingleRevision)
     // Create a revision involving indirect changes
     UpdateRootProperty(321, aId);
     UpdateRootProperty(654, bId);
-    m_testDb->SaveChanges("Modify root properties");
+    m_db->SaveChanges("Modify root properties");
 
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     DgnRevisionPtr rev = CreateRevision();
@@ -728,8 +724,8 @@ TEST_F(DependencyRevisionTest, SingleRevision)
     // Restore the initial state of the db and apply the revision
     RestoreTestFile();
     VerifyDependentProperties(cId, { 789, 0, 123, 456 });
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
-    m_testDb->SaveChanges("Applied revision");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*rev));
+    m_db->SaveChanges("Applied revision");
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     VerifyRootProperty(aId, 321);
     VerifyRootProperty(bId, 654);
@@ -742,7 +738,7 @@ TEST_F(DependencyRevisionTest, SingleRevision)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, Merge)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     DgnElementId aId, bId, cId;
 
@@ -751,11 +747,11 @@ TEST_F(DependencyRevisionTest, Merge)
     bId = InsertElement(456)->GetElementId();
     cId = InsertElement(789)->GetElementId();
 
-    TestElementDependency::Insert(*m_testDb, aId, cId, 2);
-    TestElementDependency::Insert(*m_testDb, bId, cId, 3);
+    TestElementDependency::Insert(*m_db, aId, cId, 2);
+    TestElementDependency::Insert(*m_db, bId, cId, 3);
 
     // Save initial state
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(cId, { 789, 0, 123, 456 });
     ASSERT_TRUE(CreateRevision().IsValid());
     BackupTestFile();
@@ -763,64 +759,75 @@ TEST_F(DependencyRevisionTest, Merge)
 
     // Create a revision which modifies only element A
     UpdateRootProperty(321, aId);
-    m_testDb->SaveChanges("Modify element A");
+    m_db->SaveChanges("Modify element A");
     VerifyDependentProperties(cId, { 789, 0, 321, 456 });
     DgnRevisionPtr revA = CreateRevision();
     ASSERT_TRUE(revA.IsValid());
     VerifyRootProperty(aId, 321);
-    DumpRevision(*revA);
+    DumpRevision(*revA, "Revision A");
 
     // Restore initial state, merge in A, modify B, and save as revision AB
     RestoreTestFile();
     VerifyDependentProperties(cId, { 789, 0, 123, 456 });
     VerifyRootProperty(aId, 123);
     VerifyRootProperty(bId, 456);
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
-    m_testDb->SaveChanges("Merge A");
+    LOG.infov("Merging Revision A");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revA));
+    m_db->SaveChanges("Merge A");
     VerifyRootProperty(aId, 321);
     VerifyDependentProperties(cId, { 789, 0, 321, 456 });
-    EXPECT_TRUE(m_testDb->Memory().PurgeUntil(0));
+    EXPECT_TRUE(m_db->Memory().PurgeUntil(0));
     VerifyRootProperty(aId, 321);
 
     UpdateRootProperty(654, bId);
-    m_testDb->SaveChanges("Modify element B");
+    m_db->SaveChanges("Modify element B");
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     VerifyRootProperty(bId, 654);
 
     DgnRevisionPtr revAB = CreateRevision();
     ASSERT_TRUE(revAB.IsValid());
+    DumpRevision(*revAB, "Revision AB");
 
     // Restore initial state, modify B, merge in A, and save as revision BA
     RestoreTestFile();
     UpdateRootProperty(654, bId);
-    m_testDb->SaveChanges("Modify element B");
+    m_db->SaveChanges("Modify element B");
     VerifyDependentProperties(cId, { 789, 0, 123, 654 });
     VerifyRootProperty(bId, 654);
     VerifyRootProperty(aId, 123);
 
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
-    m_testDb->SaveChanges("Merge A");
+    LOG.infov("Merging Revision A");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revA));
+    m_db->SaveChanges("Merge A");
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     VerifyRootProperty(aId, 321);
     VerifyRootProperty(bId, 654);
 
     DgnRevisionPtr revBA = CreateRevision();
     ASSERT_TRUE(revBA.IsValid());
+    DumpRevision(*revBA, "Revision BA");
 
+    // Note: The tests below ensure that the order of merges A->AB or A->BA doesn't affect
+    // the final state of the properties of A, B and C. 
+    
     // Restore initial state, merge in AB
     RestoreTestFile();
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revAB));
-    m_testDb->SaveChanges("Merge AB");
+    LOG.infov("Merging Revision A");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revA));
+    LOG.infov("Merging Revision AB");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revAB));
+    m_db->SaveChanges("Merge AB");
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     VerifyRootProperty(aId, 321);
     VerifyRootProperty(bId, 654);
 
     // Restore initial state, merge in BA
     RestoreTestFile();
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revBA));
-    m_testDb->SaveChanges("Merge BA");
+    LOG.infov("Merging Revision A");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revA));
+    LOG.infov("Merging Revision BA");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revBA));
+    m_db->SaveChanges("Merge BA");
     VerifyDependentProperties(cId, { 789, 0, 321, 654 });
     VerifyRootProperty(aId, 321);
     VerifyRootProperty(bId, 654);
@@ -833,23 +840,23 @@ TEST_F(DependencyRevisionTest, Merge)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, Conflict)
     {
-    CreateDgnDb();
+    SetupDgnDb();
     DgnElementId aId = InsertElement(123)->GetElementId(),
                  bId = InsertElement(456)->GetElementId(),
                  cId = InsertElement(789)->GetElementId();
 
-    TestElementDependency::Insert(*m_testDb, aId, cId, 1);
-    TestElementDependency::Insert(*m_testDb, bId, cId, 1);
+    TestElementDependency::Insert(*m_db, aId, cId, 1);
+    TestElementDependency::Insert(*m_db, bId, cId, 1);
 
     m_dep.Reset();
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
     ASSERT_TRUE(CreateRevision().IsValid());
     BackupTestFile();
 
     m_dep.Reset();
     UpdateRootProperty(321, aId);
-    m_testDb->SaveChanges("Modify A");
+    m_db->SaveChanges("Modify A");
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
     DgnRevisionPtr revA = CreateRevision();
     ASSERT_TRUE(revA.IsValid());
@@ -857,15 +864,15 @@ TEST_F(DependencyRevisionTest, Conflict)
     m_dep.Reset();
     RestoreTestFile();
     UpdateRootProperty(654, bId);
-    m_testDb->SaveChanges("Modify B");
+    m_db->SaveChanges("Modify B");
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
 
     m_dep.Reset();
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*revA));
-    m_testDb->SaveChanges("Merge A");
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*revA));
+    m_db->SaveChanges("Merge A");
     VerifyRootProperty(aId, 321);
     UpdateRootProperty(987, bId);
-    m_testDb->SaveChanges("Modify B again");
+    m_db->SaveChanges("Modify B again");
     VerifyDependentProperties(cId, { 789, m_dep.GetMostRecentValue(), 0, 0 });
     }
 
@@ -877,15 +884,15 @@ TEST_F(DependencyRevisionTest, Conflict)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();
     DgnElementId depId = InsertElement(456)->GetElementId();
-    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+    TestElementDependency::Insert(*m_db, rootId, depId, 2);
 
     // Save initial state
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     ASSERT_TRUE(CreateRevision().IsValid());
     VerifyDependentProperties(depId, { 456, 0, 123, 0 });
     BackupTestFile();
@@ -895,7 +902,7 @@ TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
     VerifyDependentProperties(depId, { 456, 0, 789, 0 });
 
     // Saving changes will re-run dependency logic
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(depId, { 456, 0, 123, 0 });
 
     // Create a revision
@@ -905,8 +912,8 @@ TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
 
     // Apply revision to original state - expect same state + no conflicts
     RestoreTestFile();
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
-    m_testDb->SaveChanges();
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*rev));
+    m_db->SaveChanges();
     VerifyDependentProperties(depId, { 456, 0, 123, 0 });
     }
 
@@ -920,29 +927,29 @@ TEST_F(DependencyRevisionTest, DirectAndIndirectChangesToSameElement)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DependencyRevisionTest, UpdateCache)
     {
-    CreateDgnDb();
+    SetupDgnDb();
     
     // Initial state: create two elements
     DgnElementId aId = InsertElement(123)->GetElementId();
     DgnElementId bId = InsertElement(456)->GetElementId();
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     ASSERT_TRUE(CreateRevision().IsValid());
     BackupTestFile();
 
     // Revision: delete element A; modify element B
-    EXPECT_EQ(DgnDbStatus::Success, m_testDb->Elements().Get<TestElement>(aId)->Delete());
+    EXPECT_EQ(DgnDbStatus::Success, m_db->Elements().Get<TestElement>(aId)->Delete());
     UpdateRootProperty(654, bId);
-    m_testDb->SaveChanges("Revision");
+    m_db->SaveChanges("Revision");
     VerifyRootProperty(bId, 654);
-    EXPECT_TRUE(m_testDb->Elements().Get<TestElement>(aId).IsNull());
+    EXPECT_TRUE(m_db->Elements().Get<TestElement>(aId).IsNull());
 
     DgnRevisionPtr rev = CreateRevision();
     ASSERT_TRUE(rev.IsValid());
 
     // Restore initial state and verify it
     RestoreTestFile();
-    auto elA = m_testDb->Elements().Get<TestElement>(aId);
-    auto elB = m_testDb->Elements().Get<TestElement>(bId);
+    auto elA = m_db->Elements().Get<TestElement>(aId);
+    auto elB = m_db->Elements().Get<TestElement>(bId);
     ASSERT_TRUE(elA.IsValid());
     ASSERT_TRUE(elB.IsValid());
     EXPECT_TRUE(elA->IsPersistent());
@@ -951,9 +958,9 @@ TEST_F(DependencyRevisionTest, UpdateCache)
     VerifyRootProperty(bId, 456);
 
     // Apply revision and verify cache
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*rev));
-    EXPECT_TRUE(m_testDb->Elements().Get<TestElement>(aId).IsNull());
-    EXPECT_FALSE(m_testDb->Elements().Get<TestElement>(aId).IsValid());
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*rev));
+    EXPECT_TRUE(m_db->Elements().Get<TestElement>(aId).IsNull());
+    EXPECT_FALSE(m_db->Elements().Get<TestElement>(aId).IsValid());
     EXPECT_FALSE(elA->IsPersistent());
     EXPECT_TRUE(elB->IsPersistent());   // NB: The original element remains in the cache, now modified to match updated state...
     EXPECT_EQ(654, elB->GetIntegerProperty(0));
@@ -968,15 +975,15 @@ TEST_F(DependencyRevisionTest, UpdateCache)
 //---------------------------------------------------------------------------------------
 TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     // Value of dependent's TestIntegerProperty2 == root's TestIntegerProperty1
     DgnElementId rootId = InsertElement(123)->GetElementId();
     DgnElementId depId = InsertElement(456)->GetElementId();
-    TestElementDependency::Insert(*m_testDb, rootId, depId, 2);
+    TestElementDependency::Insert(*m_db, rootId, depId, 2);
 
     // Save initial state
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     ASSERT_TRUE(CreateRevision().IsValid());
     VerifyDependentProperties(depId, {456, 0, 123, 0});
     BackupTestFile();
@@ -984,7 +991,7 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     // Create a revision with some direct changes to the dependent property
     UpdateDependentProperty(depId, 2, 789);
     VerifyDependentProperties(depId, {456, 0, 789, 0});
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(depId, {456, 0, 123, 0});
 
     DgnRevisionPtr directChangesRev = CreateRevision();
@@ -994,7 +1001,7 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     // Create a revision with some indirect changes to the dependent property
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
-    m_testDb->SaveChanges("Revision");
+    m_db->SaveChanges("Revision");
     VerifyRootProperty(rootId, 654);
     VerifyDependentProperties(depId, {456, 0, 654, 0});
 
@@ -1005,25 +1012,19 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
     // Make direct changes, and merge the revision with indirect changes
     RestoreTestFile();
     UpdateDependentProperty(depId, 2, 789);
-    m_testDb->SaveChanges();
+    m_db->SaveChanges();
     VerifyDependentProperties(depId, {456, 0, 123, 0});
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*indirectChangesRev));
     VerifyDependentProperties(depId, {456, 0, 654, 0});
 
     // Make indirect changes, and merge the revision with direct changes
     RestoreTestFile();
     UpdateRootProperty(654, rootId);
-    m_testDb->SaveChanges("Revision");
+    m_db->SaveChanges("Revision");
     VerifyRootProperty(rootId, 654);
     VerifyDependentProperties(depId, {456, 0, 654, 0});
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*directChangesRev));
+    EXPECT_EQ(RevisionStatus::Success, m_db->Revisions().MergeRevision(*directChangesRev));
     VerifyDependentProperties(depId, {456, 0, 654, 0});
-
-    // Make no changes, and merge the revision with indirect changes
-    RestoreTestFile();
-    EXPECT_EQ(RevisionStatus::Success, m_testDb->Revisions().MergeRevision(*indirectChangesRev));
-    DgnRevisionPtr noChangesRevision = CreateRevision();
-    ASSERT_FALSE(noChangesRevision.IsValid());
     }
 
 #ifdef DEBUG_REVISION_TEST_MANUAL
@@ -1036,14 +1037,14 @@ TEST_F(DependencyRevisionTest, MergeDependencyPermutations)
 TEST_F(RevisionTestFixture, CreateAndMergePerformance)
     {
     // Setup a model with a few elements
-    CreateDgnDb();
-    m_testDb->SaveChanges("Created Initial Model");
+    SetupDgnDb();
+    m_db->SaveChanges("Created Initial Model");
 
     // Create an initial revision
     DgnRevisionPtr initialRevision = CreateRevision();
     ASSERT_TRUE(initialRevision.IsValid());
 
-    Utf8String initialParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String initialParentRevId = m_db->Revisions().GetParentRevisionId();
 
     StopWatch timer(false);
     double generateRevTime = 0.0;
@@ -1057,7 +1058,7 @@ TEST_F(RevisionTestFixture, CreateAndMergePerformance)
     for (int revNum = 0; revNum < numRevisions; revNum++)
         {
         InsertFloor(dimension, dimension);
-        m_testDb->SaveChanges("Inserted floor");
+        m_db->SaveChanges("Inserted floor");
 
         timer.Start();
         DgnRevisionPtr revision = CreateRevision();
@@ -1078,20 +1079,20 @@ TEST_F(RevisionTestFixture, CreateAndMergePerformance)
     timer.Start();
     for (DgnRevisionPtr const& rev : revisions)
         {
-        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+        RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
         ASSERT_TRUE(status == RevisionStatus::Success);
         }
     timer.Stop();
     mergeRevTime += timer.GetElapsedSeconds();
 
     // Check the updated revision id
-    Utf8String mergedParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String mergedParentRevId = m_db->Revisions().GetParentRevisionId();
     ASSERT_TRUE(mergedParentRevId != initialParentRevId);
 
     // Abandon changes, and test that the parent revision and elements do not change
-    m_testDb->AbandonChanges();
+    m_db->AbandonChanges();
 
-    Utf8String newParentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String newParentRevId = m_db->Revisions().GetParentRevisionId();
     ASSERT_TRUE(newParentRevId == mergedParentRevId);
 
     LOG.infov("Time taken to generate revisions is %f", generateRevTime);
@@ -1139,17 +1140,17 @@ TEST_F(RevisionTestFixture, MergeFolderWithRevisions)
         return aModTime < bModTime;
         });
 
-    Utf8String dbGuid = m_testDb->GetDbGuid().ToString();
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
     for (BeFileNameCR revPathname : revPathnames)
         {
-        Utf8String parentRevId = m_testDb->Revisions().GetParentRevisionId();
+        Utf8String parentRevId = m_db->Revisions().GetParentRevisionId();
         Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
         DgnRevisionPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
 
         fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
         ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-        RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+        RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
 
         if (status != RevisionStatus::Success)
             LOG.infov("Failed to merge revision: %s", revId.c_str());
@@ -1173,15 +1174,15 @@ TEST_F(RevisionTestFixture, MergeSpecificRevision)
     OpenDgnDb();
 
     BeFileName revPathname("D:\\temp\\Performance\\Failure\\DgnDbRev\\41469a8668091298800aae142eae402e6ac95842.rev", true); // 77th merge
-    Utf8String parentRevId = m_testDb->Revisions().GetParentRevisionId();
+    Utf8String parentRevId = m_db->Revisions().GetParentRevisionId();
     Utf8String revId(BeFileName::GetFileNameWithoutExtension(revPathname.c_str()));
-    Utf8String dbGuid = m_testDb->GetDbGuid().ToString();
+    Utf8String dbGuid = m_db->GetDbGuid().ToString();
     DgnRevisionPtr rev = DgnRevision::Create(nullptr, revId, parentRevId, dbGuid);
 
     fileStatus = BeFileName::BeCopyFile(revPathname.c_str(), rev->GetChangeStreamFile().c_str());
     ASSERT_TRUE(fileStatus == BeFileNameStatus::Success);
 
-    RevisionStatus status = m_testDb->Revisions().MergeRevision(*rev);
+    RevisionStatus status = m_db->Revisions().MergeRevision(*rev);
 
     if (status != RevisionStatus::Success)
         LOG.infov("Failed to merge revision: %s", revId.c_str());
