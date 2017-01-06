@@ -863,8 +863,13 @@ size_t  PCGroundTriangle::GetMemorySize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QueryAllPointsForTriangleWork::_DoWork()
     {
+    IGroundPointsAccumulatorPtr ptsAccumPtr(m_PCGroundTin.GetParamR().GetGroundPointsAccumulator());
+
+    if (!ptsAccumPtr->ShouldContinue())
+        return;
+
     try
-        {
+        {       
         m_PCGroundTriangle->PrefetchPoints();
         //Start densify work in a new queue
         DensifyTriangleWorkPtr pWork(DensifyTriangleWork::Create(m_PCGroundTin, *m_PCGroundTriangle));
@@ -891,14 +896,19 @@ size_t  QueryAllPointsForTriangleWork::_GetMemorySize()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DensifyTriangleWork::_DoWork()
     {
+    IGroundPointsAccumulatorPtr ptsAccumPtr(m_PCGroundTin.GetParamR().GetGroundPointsAccumulator());    
+
+    if (!ptsAccumPtr->ShouldContinue())
+        return;
+
     try
-        {
+        {        
         m_PCGroundTriangle->QueryPointToAddToTin();
         size_t nbSeedPointsToAdded(0);
         for (auto itr = m_PCGroundTriangle->GetPointToAdd().begin();
              itr != m_PCGroundTriangle->GetPointToAdd().end() && nbSeedPointsToAdded < PCGroundTIN::MAX_NB_SEEDPOINTS_TO_ADD;
-             ++itr, nbSeedPointsToAdded++)
-             m_PCGroundTin.AddPoint(*itr);
+             ++itr, nbSeedPointsToAdded++)            
+            m_PCGroundTin.AddPoint(*itr);            
 
         m_PCGroundTin.IncrementWorkDone();
         }
@@ -1799,13 +1809,13 @@ PointCloudThreadPool& PCGroundTINMT::GetThreadPool()
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     10/2015
+* @bsimethod                                    Mathieu.St-Pierre                10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 GroundDetectionThreadPoolPtr PCGroundTINMT::GetWorkThreadPool()
     {
     if (m_newThreadPool == NULL)
         {
-        unsigned int num_threads = std::thread::hardware_concurrency();            
+        unsigned int num_threads = std::thread::hardware_concurrency();
         m_newThreadPool = GroundDetectionThreadPool::Create(num_threads);
         }
 
@@ -1989,9 +1999,13 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
     if (!m_pReport->CheckContinueOnProgress())
         return ERROR;//User abort
 
+    IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+
     int currentIteration = 1;
     for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
         {
+        OutputDtmPreview();
+
         m_pReport->StartCurrentIteration(currentIteration);
         /*
         //Special case for first iteration
@@ -2065,6 +2079,8 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
         m_pReport->EndCurrentIteration();
 
             */
+        if (!ptsAccumPtr->ShouldContinue())
+            break;
         }
 
     //Display some stat while processing to help debug
