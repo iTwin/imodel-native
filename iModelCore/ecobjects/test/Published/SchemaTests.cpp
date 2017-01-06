@@ -2110,6 +2110,39 @@ TEST_F(ClassTest, TestPropertyEnumerationType)
     EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_String, classB->GetPropertyP("PrimArrProp")->GetAsPrimitiveArrayProperty()->GetPrimitiveElementType()) << "The property did not have the expected primitive type";
     }
 
+TEST_F(ClassTest, IsMixinReturnsTrueOnlyForClassWithAttributeLocallyDefined)
+    {
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaKey key = SchemaKey("CoreCustomAttributes", 1, 0, 0);
+    ECSchemaPtr coreCA = context->LocateSchema(key, SchemaMatchType::LatestWriteCompatible);
+    ASSERT_TRUE(coreCA.IsValid()) << "Failed to find the 'CoreCustomAttributes' schema";
+    ECCustomAttributeClassCP isMixinClass = coreCA->GetClassCP("IsMixin")->GetCustomAttributeClassCP();
+    ASSERT_NE(nullptr, isMixinClass) << "Failed to find 'CoreCustomAttributes:IsMixin' CA Class";
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "Flavors", "LISP", 1, 0, 0);
+    
+    ECEntityClassP vanilla;
+    ECEntityClassP pecans;
+    ECEntityClassP candiedPecans;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(vanilla, "VanillaIceCream")) << "Failed to create entity class 'VanillaIceCream'";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(pecans, "Pecans")) << "Falied to create mixin class 'Pecans'";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CreateEntityClass(candiedPecans, "CandiedPecans")) << "Failed to create mixin class 'CandiedPecans'";
+    candiedPecans->AddBaseClass(*pecans);
+
+    EXPECT_FALSE(pecans->IsMixin()) << "The class 'Pecans' returned true to IsMixin but the IsMixin custom attribute is not applied";
+    EXPECT_FALSE(candiedPecans->IsMixin()) << "The class 'CandiedPecans' returned true to IsMixin but the IsMixin custom attribute is not applied";
+
+    IECInstancePtr mixinCA0 = isMixinClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    pecans->SetCustomAttribute(*mixinCA0);
+    EXPECT_TRUE(pecans->IsMixin()) << "The class 'Pecans' returned false to IsMixin but the IsMixin custom attribute is applied locally";
+    EXPECT_FALSE(candiedPecans->IsMixin()) << "The class 'CandiedPecans' returned true to IsMixin but the IsMixin custom attribute is not applied locally";
+
+    IECInstancePtr mixinCA1 = isMixinClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    candiedPecans->SetCustomAttribute(*mixinCA1);
+    EXPECT_TRUE(candiedPecans->IsMixin()) << "The class 'CandiedPecans' returned false to IsMixin but the IsMixin custom attribute is applied locally";
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
