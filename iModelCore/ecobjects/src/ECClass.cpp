@@ -2559,7 +2559,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
             return ECObjectsStatus::Success;
 
         Utf8String errorMessage;
-        errorMessage.Sprintf("Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute.",
+        errorMessage.Sprintf("Abstract Constraint Violation: The %s-Constraint of '%s' does not contain or inherit an %s attribute. It is a required attribute if there is more than one constraint class for EC3.1 or higher.",
                              (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), ABSTRACTCONSTRAINT_ATTRIBUTE);
 
         if (m_relClass->GetSchema().GetOriginalECXmlVersionMajor() <= 3 && m_relClass->GetSchema().GetOriginalECXmlVersionMinor() == 0)
@@ -2569,9 +2569,12 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
             // Attempt to resolve the issue by finding a common base class between all constraint classes
             if (resolveIssues && m_constraintClasses.size() > 1)
                 {
+                LOG.warningv("Attempting to find a common base class between all constraint classes to use as the abstract constraint...");
+
                 ECEntityClassCP commonClass = nullptr;
                 FindCommonBaseClass(commonClass, m_constraintClasses[0]->GetEntityClassCP(), GetConstraintClasses());
-                if (commonClass != nullptr && ECObjectsStatus::Success == ValidateAbstractConstraint(commonClass))
+
+                if (nullptr != commonClass && ECObjectsStatus::Success == ValidateAbstractConstraint(commonClass))
                     {
                     if (ECObjectsStatus::Success == SetAbstractConstraint(*commonClass))
                         {
@@ -2581,6 +2584,9 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
                         return ECObjectsStatus::Success;
                         }
                     }
+                else
+                    LOG.warningv("Failed to find a common base class between the constraint classes of %s-Constraint on class '%s'", 
+                                (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName());
                 }
             }
         else
@@ -2617,7 +2623,8 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
         if (!constraint->Is(abstractConstraint))
             {
             Utf8String errorMsg;
-            errorMsg.Sprintf("Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'",
+            errorMsg.Sprintf("Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'. "
+                             "All constraint classes must be derived from the abstract constraint in EC3.1 or higher.",
                                 constraint->GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                                 abstractConstraint->GetFullName());
 
