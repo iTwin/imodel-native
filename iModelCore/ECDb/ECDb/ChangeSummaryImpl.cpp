@@ -1177,7 +1177,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntryCR rowE
             return classId;
 
         // Search in the end table
-        classId = rowEntry.GetIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), endInstanceId);
+        classId = rowEntry.GetChangeIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), endInstanceId);
         BeAssert(classId.IsValid());
 
         return classId;

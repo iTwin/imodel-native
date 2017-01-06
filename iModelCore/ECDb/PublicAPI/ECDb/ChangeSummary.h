@@ -62,12 +62,12 @@ public:
 //! ECRelationshipInstance-s - extracting and consolidating this information involves two 
 //! passes with this iterator.
 //!
-//! @see ChangeSummary
+//! @see ChangeSet, ChangeSummary
 //! @ingroup ECDbGroup
 //! @bsiclass                                               Ramanujam.Raman      12/2016
 //=======================================================================================
 struct ChangeIterator
-    {
+{
     DEFINE_POINTER_SUFFIX_TYPEDEFS(RowEntry);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnIterator);
     DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnEntry);
@@ -137,7 +137,7 @@ struct ChangeIterator
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
         SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
         TableMapCP GetTableMap() const { return m_tableMap; } //!< @private
-        ChangeIteratorCR GetIterator() const {return m_iterator;}  //!< @private
+        ChangeIteratorCR GetChangeIterator() const {return m_iterator;}  //!< @private
         ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
     };
 
@@ -201,8 +201,8 @@ struct ChangeIterator
         ECDB_EXPORT ColumnEntry begin() const;
         ECDB_EXPORT ColumnEntry end() const;
 
-        RowEntryCR GetRowEntry() const { return m_rowEntry; } //!< @private
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
+        RowEntryCR GetRowEntry() const { return m_rowEntry; } //!< @private
         SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
     };
 
@@ -229,11 +229,20 @@ struct ChangeIterator
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
         TableMapCP GetTableMap(Utf8StringCR tableName) const;  //!< @private
-    };
+};
 
 //=======================================================================================
-//! A set of changes to database rows interpreted as EC instances. 
-//! @see ChangeSet
+//! Utility to interpret a set of changes to the database as EC instances. 
+//! 
+//! @remarks The utility iterates over the raw Sqlite changes to consolidate and extract 
+//! information on the contained ECInstances and ECRelationshipInstances. 
+//! 
+//! Internally two passes are made over the changes with the @ref ChangeIterator. The
+//! second pass allows consolidation of instances and relationship instances that may be 
+//! spread across multiple tables. The results are stored in temporary tables, and this 
+//! allows iteration and queries of the changes as EC instances. 
+//! 
+//! @see ChangeSet, ChangeIterator
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
