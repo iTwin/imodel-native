@@ -413,14 +413,15 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
 //#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
 #define LARGEST_STRUCTURE_SIZE_DEFAULT 30 
-
+/*
 static double s_anglePercentile = 30;
 static double s_heightPercentile = 60;
+*/
 
-/*NEEDS_WORK_MST : For ground optimization
+/*NEEDS_WORK_MST : For ground optimization*/
 static double s_anglePercentile = 65;
 static double s_heightPercentile = 65;
-*/
+
 static bool   s_useMultiThread = true;
 
 static double s_time;
