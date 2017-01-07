@@ -297,6 +297,7 @@ static const size_t MAX_HISTO_STEP;
 static const size_t MAX_NB_SEEDPOINTS_TO_ADD;
 static const double SEED_BORDER_FACTOR;
 
+
 public:
     enum FindTriangleResult
         {
@@ -359,7 +360,7 @@ protected:
 
     void ComputeParameterFromTINPoints();
 
-    void OutputDtmPreview();
+    virtual void OutputDtmPreview(bool noDelay = false, BeMutex* newPointToAddMutex = nullptr);
     
     virtual GridCellEntryPtr _CreateGridCellEntry(DRange3d const& boundingBox);
     virtual bool _GetDistanceToTriangleFromPoint(double& distance, DPoint3d const& point) const;
@@ -388,6 +389,7 @@ private:
     short                               m_strikeToStopComputeParameters;
     double                              m_oldAllowedAngle;
     double                              m_oldAllowedHeight;
+    clock_t                             m_lastOutputPreviewTime; 
 
 }; // PCGroundTIN
 
@@ -399,12 +401,16 @@ struct    PCGroundTINMT : public PCGroundTIN
 DEFINE_T_SUPER(PCGroundTIN)
 
 public:
+    
     static const unsigned int MAX_NUMBER_THREAD;
 
     static PCGroundTINPtr Create(GroundDetectionParameters& params, ProgressReport& report);
 
    PointCloudThreadPool& GetThreadPool();
 
+protected : 
+
+   virtual void OutputDtmPreview(bool noDelay = false, BeMutex* newPointToAddMutex = nullptr) override;
 
 private:
         
