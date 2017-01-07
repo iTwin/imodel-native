@@ -428,6 +428,35 @@ static double s_time;
 static size_t s_nbPoints;
 static bool   s_activateLog = false;
 
+void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder)
+    {
+    BeFileName textureSubFolderName;
+    BeFileName extraLinearFeatureFileName;
+
+    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);
+
+    BeFileName coverageBreaklineFile(coverageTempDataFolder);
+    coverageBreaklineFile.AppendString(L"\\");
+    coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
+
+    if (coverageBreaklineFile.DoesPathExist())
+        {
+        BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
+        
+        DPoint3d pt;                
+        bvector<DPoint3d> addtionalSeedPts; 
+
+        for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
+            {             
+            DTMStatusInt status = dtmPtr->GetPoint(ptInd, pt);
+            assert(status == SUCCESS);
+            addtionalSeedPts.push_back(pt);
+            }
+
+        params->AddAdditionalSeedPoints(addtionalSeedPts);        
+        }    
+    }
+
 StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {    
     IGroundDetectionServices* serviceP(GroundDetectionManager::GetServices());
@@ -441,6 +470,8 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     params->SetHeightPercentileFactor(s_heightPercentile);
 
     params->SetUseMultiThread(s_useMultiThread);        
+    
+    AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
 
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
