@@ -13,7 +13,3 @@ nameToDefine    = __UNITS_BUILD__
 # PreCompiledHeader.mki uses CCompPDBName
 appName         = Units
 CCompPDBName    = $(appName)
-
-# So that you can include the PCH from source files in sub-directories.
-dirToSearch = $(SrcRoot)Units/src/
-%include cincapnd.mki
