@@ -2,7 +2,7 @@
 #
 #     $Source: mki/UnitsCompileOpts.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 nameToDefine    = __UNITS_BUILD__
@@ -13,3 +13,7 @@ nameToDefine    = __UNITS_BUILD__
 # PreCompiledHeader.mki uses CCompPDBName
 appName         = Units
 CCompPDBName    = $(appName)
+
+# So that you can include the PCH from source files in sub-directories.
+dirToSearch = $(SrcRoot)Units/src/
+%include cincapnd.mki
