@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <UnitsPCH.h>
+#include "../UnitsPCH.h"
 #include <Formatting/Formatting.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
