@@ -2121,6 +2121,8 @@ TEST_F(ClassTest, IsMixinReturnsTrueOnlyForClassWithAttributeLocallyDefined)
 
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "Flavors", "LISP", 1, 0, 0);
+
+    schema->AddReferencedSchema(*coreCA);
     
     ECEntityClassP vanilla;
     ECEntityClassP pecans;
