@@ -2320,7 +2320,7 @@ TileTree::TilePtr Tile::_CreateChild(TileTree::OctTree::TileId childId) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 double Tile::_GetMaximumSize() const
     {
-    return 256; // ###TODO: come up with a decent value, and account for device ppi
+    return 512; // ###TODO: come up with a decent value, and account for device ppi
     }
 
 /*---------------------------------------------------------------------------------**//**

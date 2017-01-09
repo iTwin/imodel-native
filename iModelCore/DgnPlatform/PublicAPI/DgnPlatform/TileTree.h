@@ -139,6 +139,7 @@ protected:
     mutable TimePoint m_childrenLastUsed; //! updated whenever this tile is used for display
 
     void SetAbandoned() const;
+    void UnloadChildren(TimePoint olderThan) const;
 public:
     Tile(RootR root, TileCP parent) : m_root(root), m_parent(parent), m_depth(nullptr==parent ? 0 : parent->GetDepth()+1), m_loadStatus(LoadStatus::NotLoaded) {}
     DGNPLATFORM_EXPORT void ExtendRange(DRange3dCR childRange) const;
@@ -146,7 +147,6 @@ public:
     int GetDepth() const {return m_depth;}
     DPoint3d GetCenter() const {return DPoint3d::FromInterpolate(m_range.low, .5, m_range.high);}
     ElementAlignedBox3d const& GetRange() const {return m_range;}
-    DGNPLATFORM_EXPORT void Draw(DrawArgsR) const;
     LoadStatus GetLoadStatus() const {return (LoadStatus) m_loadStatus.load();}
     void SetIsReady() {return m_loadStatus.store(LoadStatus::Ready);}
     void SetIsQueued() const {return m_loadStatus.store(LoadStatus::Queued);}
@@ -192,6 +192,7 @@ public:
     //! @return true to substitute children for this node
     virtual bool _CanSubstituteChildren(bool allChildrenReady) const { return allChildrenReady || !IsDisplayable(); }
 
+    //! Describes a Tile's visibility within a viewing frustum
     enum class Visibility
     {
         OutsideFrustum, // this tile is entirely outside of the viewing frustum
@@ -199,7 +200,13 @@ public:
         Visible, // this tile is of the correct size to be drawn
     };
 
+    //! Compute the visibility of this tile
     Visibility GetVisibility(DrawArgsCR args) const;
+
+    enum class SelectParent { Yes, No };
+
+    //! Populates a list of tiles to draw. Returns SelectParent::Yes to substitute this tile's parent in its place.
+    SelectParent SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
 };
 
 /*=================================================================================**//**
@@ -283,11 +290,6 @@ public:
     //! Delete, if present, the local SQLite file holding the cache of downloaded tiles.
     //! @note This will first delete the local RealityData::Cache, aborting all outstanding requests and waiting for the queue to empty.
     DGNPLATFORM_EXPORT BentleyStatus DeleteCacheFile();
-
-    //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
-    //! @note during the traversal, previously loaded but now unused tiles are purged if they are expired.
-    //! @note This method must be called from the client thread
-    void Draw(DrawArgs& args) {m_rootTile->Draw(args);}
 
     //! Traverse the tree and draw the appropriate set of tiles that intersect the view frustum.
     //! @note Tiles which should be drawn but which are not yet available will be scheduled for progressive display.

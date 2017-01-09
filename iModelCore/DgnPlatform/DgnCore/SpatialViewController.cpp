@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SpatialViewController.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -227,7 +227,7 @@ BentleyStatus SpatialViewController::_CreateScene(RenderContextR context)
         if (pair.second.IsValid())
             pair.second->DrawInView(context);
 
-    DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
+    //DEBUG_PRINTF("CreateScene: %f", timer.GetCurrentSeconds());
 
     return SUCCESS;
     }

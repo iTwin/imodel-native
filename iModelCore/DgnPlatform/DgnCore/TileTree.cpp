@@ -518,7 +518,7 @@ void Root::DoneTileLoad(TileLoadStatePtr state) const
     {
     BeAssert(nullptr != state);
     BeMutexHolder lock(m_cv.GetMutex());
-    BeAssert(m_activeLoads.end() != m_activeLoads.find(state));
+    // NB: If the load was canceled by RequestTiles(), it no longer exists in m_activeLoads
     m_activeLoads.erase(state);
     m_cv.notify_all();
     }
@@ -535,6 +535,19 @@ void Tile::SetAbandoned() const
 
     // this is actually a race condition, but it doesn't matter. If the loading thread misses the abandoned flag, the only consequence is we waste a little time.
     m_loadStatus.store(LoadStatus::Abandoned);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Tile::UnloadChildren(std::chrono::steady_clock::time_point olderThan) const
+    {
+    // This node may have initially had children and subsequently determined that it should be a leaf instead
+    // - unload its now-useless children unconditionally
+    if (!_HasChildren())
+        olderThan = std::chrono::steady_clock::now();
+
+    _UnloadChildren(olderThan);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -582,76 +595,97 @@ void Tile::ExtendRange(DRange3dCR childRange) const
 #if !defined(NDEBUG)
 static int s_forcedDepth = -1;   // change this to a non-negative value in debugger in order to freeze the LOD of all tile trees.
 #endif
+
 /*---------------------------------------------------------------------------------**//**
-* Draw this node. If it is too coarse, instead draw its children, if they are already loaded.
-* @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Tile::Draw(DrawArgsR args) const
+Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
     DgnDb::VerifyClientThread();
 
-    Visibility visibility = GetVisibility(args);
-    if (Visibility::OutsideFrustum == visibility)
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
         {
-        if (_HasChildren())
-            _UnloadChildren(args.m_purgeOlderThan);
-
-        return;
+        UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
         }
 
-    bool tooCoarse = Visibility::TooCoarse == visibility;
-    auto children = _GetChildren(true); // returns nullptr if this node's children are not yet valid
-    if (tooCoarse && nullptr != children)
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    if (!tooCoarse)
         {
-        // this node is too coarse for current view, don't draw it and instead draw its children
-        m_childrenLastUsed = args.m_now; // save the fact that we've used our children to delay purging them if this node becomes unused
-
-        bool allChildrenReady = true;
-        for (auto const& child : *children)
+        // We want to draw this tile. Can we?
+        auto selectParent = SelectParent::No;
+        bool substitutingChildren = false;
+        if (IsReady())
             {
-            if (!child->IsReady())
+            selected.push_back(this);
+            }
+        else if (IsNotFound())
+            {
+            selectParent = SelectParent::Yes;
+            }
+        else
+            {
+            // We can't draw this tile. Request it, and choose something to draw in its place
+            args.InsertMissing(*this);
+
+            // If children are already loaded and ready to draw, draw them in place of this one
+            auto children = _GetChildren(false);
+            bool allChildrenReady = nullptr != children && std::accumulate(children->begin(), children->end(), true, [](bool init, TilePtr const& arg) { return init && arg->IsReady(); });
+            if (nullptr != children && _CanSubstituteChildren(allChildrenReady))
                 {
-                allChildrenReady = false;
-                args.InsertMissing(*child);
+                m_childrenLastUsed = args.m_now;
+                substitutingChildren = true;
+                for (auto const& child : *children)
+                    selected.push_back(child);
+                }
+            else
+                {
+                selectParent = SelectParent::Yes;
                 }
             }
 
-        if (_CanSubstituteChildren(allChildrenReady))
+        if (!substitutingChildren)
+            UnloadChildren(args.m_purgeOlderThan);
+
+        return selectParent;
+        }
+
+    // This node is too coarse. Try to select its children instead.
+    auto children = _GetChildren(true);
+    if (nullptr != children)
+        {
+        m_childrenLastUsed = args.m_now;
+        bool drawParent = false;
+        size_t initialSize = selected.size();
+        for (auto const& child : *children)
             {
-            for (auto const& child : *children)
-                child->Draw(args);
-
-            return;
+            if (SelectParent::Yes == child->SelectTiles(selected, args))
+                {
+                drawParent = true;
+                // NB: We must continue iterating children so that they can be requested if missing...
+                }
             }
-        }
-    
-    // This node is either fine enough for the current view or has some unloaded children. We'll draw it.
-    _DrawGraphics(args);
 
-    // This node is not ready to be drawn. If all of its children are, draw them in its place.
-    // ###TODO: This is a little awkward...the call to _DrawGraphics() above will have inserted a request to load this tile...these decisions should be centralized...
-    if (!IsReady() && nullptr != children)
-        {
-        bool allChildrenReady = std::accumulate(children->begin(), children->end(), true, [](bool init, TilePtr const& arg) { return init && arg->IsReady(); });
-        if (allChildrenReady)
-            for (auto const& child : *children)
-                child->Draw(args);
+        // Selected children - we're done
+        if (!drawParent)
+            {
+            m_childrenLastUsed = args.m_now;
+            return SelectParent::No;
+            }
+
+        // Remove any tiles which were selected above - they will be replaced with this tile (or its parent)
+        selected.resize(initialSize);
         }
 
-    if (!_HasChildren()) // this is a leaf node - we're done
+    if (IsReady())
         {
-        // This node may have initially had children, and then determined that it should be a leaf instead
-        // - if so, make sure its children have been unloaded (ignoring expiration time since they're now useless)
-        _UnloadChildren(std::chrono::steady_clock::now());
-        return;
+        // We can draw this tile in place of its children
+        selected.push_back(this);
+        return SelectParent::No;
         }
 
-    if (!tooCoarse)
-        {
-        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
-        _UnloadChildren(args.m_purgeOlderThan);
-        return;
-        }
+    return SelectParent::Yes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -675,6 +709,9 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
         return GetDepth() == s_forcedDepth ? Visibility::Visible : Visibility::TooCoarse;
 #endif
 
+    if (!_HasChildren())
+        return Visibility::Visible; // it's a leaf node
+
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
     double pixelSize = radius / args.m_context.GetPixelSizeAtPoint(&center);
@@ -697,8 +734,13 @@ void Root::DrawInView(RenderContextR context)
 
     auto now = std::chrono::steady_clock::now();
     DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
-    Draw(args);
-    DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
+
+    bvector<TileCPtr> selectedTiles;
+    GetRootTile()->SelectTiles(selectedTiles, args);
+    for (auto const& selectedTile : selectedTiles)
+        selectedTile->_DrawGraphics(args);
+
+    //DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
     args.DrawGraphics(context);
 
@@ -766,7 +808,7 @@ void DrawArgs::DrawBranch(ViewFlags flags, Render::GraphicBranch& branch)
     if (branch.m_entries.empty())
         return;
 
-    DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
+    //DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
     branch.SetViewFlags(flags);
     auto drawBranch = m_context.CreateBranch(branch, &GetLocation(), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
@@ -817,6 +859,26 @@ void DrawArgs::RequestMissingTiles(RootR root)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Root::RequestTiles(MissingNodesCR missingNodes)
     {
+        uint32_t numCanceled = 0;
+        {
+        // First cancel any loading/queued tiles which are no longer needed
+        BeMutexHolder lock(m_cv.GetMutex());
+        for (auto iter = m_activeLoads.begin(); iter != m_activeLoads.end(); /**/)
+            {
+            auto& load = *iter;
+            if (!load->IsCanceled() && !missingNodes.Contains(load->GetTile()))
+                {
+                ++numCanceled;
+                load->SetCanceled();
+                iter = m_activeLoads.erase(iter);
+                }
+            else
+                {
+                ++iter;
+                }
+            }
+        }
+
     // This requests tiles ordered first by distance to camera, then by depth.
     for (auto const& missing : missingNodes)
         {
@@ -827,11 +889,8 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
             }
         }
 
-    // Now cancel any loading/queued tiles which are no longer needed
-    BeMutexHolder lock(m_cv.GetMutex());
-    for (auto& load : m_activeLoads)
-        if (!missingNodes.Contains(load->GetTile()))
-            load->SetCanceled();
+    DEBUG_PRINTF("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
+    UNUSED_VARIABLE(numCanceled);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -859,7 +918,7 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
             }
         }
 
-    return &m_children;
+    return m_children.empty() ? nullptr : &m_children;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,14 +926,7 @@ Tile::ChildTiles const* QuadTree::Tile::_GetChildren(bool create) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QuadTree::Tile::_DrawGraphics(DrawArgsR args) const
     {
-    if (!IsReady())
-        {
-        if (!IsNotFound())
-            args.InsertMissing(*this);
-
-        return;
-        }
-
+    BeAssert(IsReady());
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
     }
@@ -923,7 +975,7 @@ Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
             }
         }
 
-    return &m_children;
+    return m_children.empty() ? nullptr : &m_children;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -931,14 +983,7 @@ Tile::ChildTiles const* OctTree::Tile::_GetChildren(bool load) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void OctTree::Tile::_DrawGraphics(TileTree::DrawArgsR args) const
     {
-    if (!IsReady())
-        {
-        if (!IsNotFound())
-            args.InsertMissing(*this);
-
-        return;
-        }
-
+    BeAssert(IsReady());
     if (HasGraphics())
         args.m_graphics.Add(m_graphics);
     }
