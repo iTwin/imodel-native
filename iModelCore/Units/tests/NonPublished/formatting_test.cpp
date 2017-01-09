@@ -19,6 +19,37 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
+    ////  demo print
+#if defined FORMAT_DEBUG_PRINT
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real"));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 2));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 1));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 0));
+
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 7, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 6, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0));
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0));
+
+    LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", 3.0*testV, NumericFormat::RefFormatDouble(3.0*testV, "real", 6, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", 7.0*testV, NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05));
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05));
+    LOG.info("Scientific");
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
+#endif
+    /////  end of demo print
 
     EXPECT_STREQ ("1414.213562", NumericFormat::RefFormatDouble(testV, "real").c_str());
     EXPECT_STREQ ("1414.21356237", NumericFormat::RefFormatDouble(testV, "real", 8).c_str());
@@ -42,6 +73,8 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("9899.5", NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
     EXPECT_STREQ ("12727.9", NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
     EXPECT_STREQ ("2828.45", NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
+    EXPECT_STREQ ("2.82843e+03", NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
+    EXPECT_STREQ ("0.28284e+04", NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
 
     NumericFormatP fmtP = StdFormatSet::FindFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
@@ -54,6 +87,18 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("12,727.9000", fmtP->FormatDouble(9.0*testV, 4, 0.05).c_str());
     EXPECT_STREQ ("2,828.450", fmtP->FormatDouble(2.0*testV, 3, 0.05).c_str());
 
+    ///////////////////////////////////////
+#if defined FORMAT_DEBUG_PRINT
+    LOG.info("With Separator and trailing zeroes");
+    LOG.infov("Value1 %.6f  (real) %s ", testV, fmtP->FormatDouble(testV, 8, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 5.0*testV, fmtP->FormatDouble(5.0*testV, 7, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 3.0*testV, fmtP->FormatDouble(3.0*testV, 6, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 7.0*testV, fmtP->FormatDouble(7.0*testV, 5, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 9.0*testV, fmtP->FormatDouble(9.0*testV, 4, 0.05));
+    LOG.infov("Value1 %.6f  (real) %s ", 2.0*testV, fmtP->FormatDouble(2.0*testV, 3, 0.05));
+#endif
+    ///////////////////////////////////////
+
     fmtP->SetKeepTrailingZeroes(false);
     fmtP->SetUse1000Separator(false);
 
@@ -63,6 +108,38 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-9899.5", fmtP->FormatDouble(-7.0*testV, 5, 0.05).c_str());
     EXPECT_STREQ ("-12727.9", fmtP->FormatDouble(-9.0*testV, 4, 0.05).c_str());
     EXPECT_STREQ ("-2828.45", fmtP->FormatDouble(-2.0*testV, 3, 0.05).c_str());
+
+    ///////////////////////////
+#if defined FORMAT_DEBUG_PRINT
+    LOG.info("With Separator and trailing zeroes turnes off again");
+    LOG.infov("Value2 %.6f  (real) %s ", -testV, fmtP->FormatDouble(testV, 8, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -5.0*testV, fmtP->FormatDouble(-5.0*testV, 7, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -3.0*testV, fmtP->FormatDouble(-3.0*testV, 6, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05));
+    LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05));
+#endif
+    ///////////////////////////
+
+    int repet = 1000000;
+    double rval = -9.0*testV;
+    FormatStopWatch* sw = new FormatStopWatch();
+    Utf8String repStr;
+    for (int i = 0; i < repet; i++)
+        {
+        repStr = fmtP->FormatDouble(rval, 4, 0.05);
+        }
+    LOG.info("Tested fmtP->FormatDouble");
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
+    LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
+
+    for (int i = 0; i < repet; i++)
+        {
+        repStr = NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str();
+        }
+    LOG.info("Tested RefFormatDouble");
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
+    LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
 
     //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
     //fmtD.SetKeepTrailingZeroes(true);

@@ -184,6 +184,9 @@ NumericFormat::NumericFormat(StdFormatNameR fmtType, size_t precision, double ro
         case static_cast<int>(StdFormatCode::DefaultExp) :
             Init(fmtType.GetShortName(), PresentationType::Scientific, signOpt, traits, precision);
             break;
+        case static_cast<int>(StdFormatCode::NormalExp) :
+            Init(fmtType.GetShortName(), PresentationType::ScientificNorm, signOpt, traits, precision);
+            break;
         case static_cast<int>(StdFormatCode::SignedExp) :
             Init(fmtType.GetShortName(), PresentationType::Scientific, ShowSignOption::SignAlways, traits, precision);
             break;
@@ -405,8 +408,8 @@ int NumericFormat::IntPartToText (double n, CharP bufOut, int bufLen, bool useSe
 
     ind = sizeof(buf);
     memset(buf, 0, ind--);
-    if (sign == '(')
-        buf[--ind] = ')';
+    //if (sign == '(')
+    //    buf[--ind] = ')';
     int digs = 0;
     int rem;
     do {
@@ -423,8 +426,8 @@ int NumericFormat::IntPartToText (double n, CharP bufOut, int bufLen, bool useSe
             }
         } while (n > 0 && ind >= 0);
 
-    if (IsSignAlways() || ((IsOnlyNegative() || IsNegativeParentheses()) && sign != '+'))
-            buf[--ind] = sign;
+    //if (IsSignAlways() || ((IsOnlyNegative() || IsNegativeParentheses()) && sign != '+'))
+    //        buf[--ind] = sign;
 
     int textLen = sizeof(buf) - ind;
     if (textLen > (--bufLen))

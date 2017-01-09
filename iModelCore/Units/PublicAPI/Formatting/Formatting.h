@@ -223,6 +223,7 @@ enum class StdFormatCode
     DefaultFractional = 300,
     SignedFractional = 350,
     DefaultExp = 400,
+    NormalExp  = 450,
     SignedExp = 500,
     DefaultInt = 600
     };
@@ -585,6 +586,7 @@ private:
         m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::SignedFractional), "SignedFractional", "fractSign", true));
         m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultExp), "DefaultExp", "sci", true));
         m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::SignedExp), "SignedExp", "sciSign", true));
+        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::NormalExp), "NormalizedExp", "sciN", true));
         m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultInt), "DefaultInt", "int", true));
         }
 
@@ -828,8 +830,9 @@ private:
         AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
         AddFormat(new NumericFormat("DefaultFractional", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fract");
         AddFormat(new NumericFormat("SignedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
-        AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
+        AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
         AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
+        AddFormat(new NumericFormat("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
         AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
         }
     StdFormatSet() { StdInit(); }
