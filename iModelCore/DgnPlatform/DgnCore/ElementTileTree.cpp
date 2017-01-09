@@ -2040,12 +2040,18 @@ BentleyStatus Loader::_LoadTile()
         graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
+#if defined(DRAW_EMPTY_RANGE_BOXES)
+    if (graphic.IsNull())
+        graphic = system._CreateGraphic(Graphic::CreateParams());
+#endif
+
     // ###TODO: Doesn't handle case in which all graphics were instanced...
     if (graphic.IsValid())
         {
         if (root.WantDebugRanges())
             {
-            graphic->SetSymbology(tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange(), ColorDef::Green(), 0);
+            ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
+            graphic->SetSymbology(color, ColorDef::Green(), 0);
             graphic->AddRangeBox(tile.GetRange());
             }
 

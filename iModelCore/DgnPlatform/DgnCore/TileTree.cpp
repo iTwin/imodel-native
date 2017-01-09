@@ -637,7 +637,8 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args
                 m_childrenLastUsed = args.m_now;
                 substitutingChildren = true;
                 for (auto const& child : *children)
-                    selected.push_back(child);
+                    if (!child->IsCulled(args))
+                        selected.push_back(child);
                 }
             else
                 {
@@ -691,17 +692,28 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool Tile::IsCulled(DrawArgsCR args) const
+    {
+    if (!IsDisplayable())
+        return false;
+
+    // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+    Frustum box(m_range);
+    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
+    bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
+    return isOutside || clipped;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     {
     // some nodes are merely for structure and don't have any geometry
     if (!IsDisplayable())
         return Visibility::TooCoarse;
 
-    // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
-    Frustum box(m_range);
-    bool isOutside = FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation()));
-    bool clipped = !isOutside && (nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8));
-    if (isOutside || clipped)
+    if (IsCulled(args))
         return Visibility::OutsideFrustum;
 
 #if !defined(NDEBUG)
@@ -737,8 +749,33 @@ void Root::DrawInView(RenderContextR context)
 
     bvector<TileCPtr> selectedTiles;
     GetRootTile()->SelectTiles(selectedTiles, args);
+
+#if defined(DEBUG_TILE_DEPTHS)
+    bmap<int, uint32_t> debugMap;
+#endif
+
     for (auto const& selectedTile : selectedTiles)
+        {
+        BeAssert(!selectedTile->IsCulled(args));
         selectedTile->_DrawGraphics(args);
+
+#if defined(DEBUG_TILE_DEPTHS)
+        auto iter = debugMap.find(selectedTile->GetDepth());
+        if (iter == debugMap.end())
+            debugMap[selectedTile->GetDepth()] = 1;
+        else
+            iter->second += 1;
+#endif
+        }
+
+    DEBUG_PRINTF("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
+
+#if defined(DEBUG_TILE_DEPTHS)
+    for (auto const& kvp : debugMap)
+        {
+        DEBUG_PRINTF("%u @ %d", kvp.second, kvp.first);
+        }
+#endif
 
     //DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 
@@ -889,7 +926,7 @@ void Root::RequestTiles(MissingNodesCR missingNodes)
             }
         }
 
-    DEBUG_PRINTF("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
+    //DEBUG_PRINTF("Missing %u Loading %u Canceled %u", static_cast<uint32_t>(missingNodes.size()), static_cast<uint32_t>(m_activeLoads.size()), numCanceled);
     UNUSED_VARIABLE(numCanceled);
     }
 

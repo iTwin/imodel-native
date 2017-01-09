@@ -207,6 +207,9 @@ public:
 
     //! Populates a list of tiles to draw. Returns SelectParent::Yes to substitute this tile's parent in its place.
     SelectParent SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
+
+    //! Returns true if this tile is entirely outside of the viewing frustum or clipping planes
+    bool IsCulled(DrawArgsCR args) const;
 };
 
 /*=================================================================================**//**
