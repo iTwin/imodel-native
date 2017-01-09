@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/IntegrationTests/BeHttp/HttpRequestTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -113,7 +113,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success
 
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasInvalidCert_Fails)
     {
-    Request request("https://viltest2-8.bentley.com/");
+    Request request("https://qa-connect.bentley.com/");
     request.SetValidateCertificate(true);
 
     Response response = request.Perform().get();
@@ -124,7 +124,7 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasInvalidCert_Fails)
 
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasInvalidCert_Succeeds)
     {
-    Request request("https://viltest2-8.bentley.com/");
+    Request request("https://qa-connect.bentley.com/");
     request.SetValidateCertificate(false);
 
     Response response = request.Perform().get();
