@@ -742,16 +742,16 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR       GetName() const;
     //! Returns whether the DisplayLabel is explicitly set
     ECOBJECTS_EXPORT bool               GetIsDisplayLabelDefined() const;
-    //! Returns whether this property is a Struct property
+    //! Returns whether this property is a StructECProperty
     bool                                GetIsStruct() const { return _IsStruct(); }
-    //! Returns whether this property is an Array property (either a Primitive array or a StructArray)
-    //! Use either GetIsPrimitiveArray or GetIsStructArray to differentiate.
+    //! Returns whether this property is an ArrayECProperty (either a PrimitiveArrayECProperty or a StructArrayECProperty)
+    //! @remarks Use either GetIsPrimitiveArray() or GetIsStructArray() to differentiate.
     bool                                GetIsArray() const { return _IsArray(); }
-    //! Returns whether this property is a Primitive property
+    //! Returns whether this property is a PrimitiveECProperty
     bool                                GetIsPrimitive() const { return _IsPrimitive(); }
-    //! Returns whether this property is a StructArray property
+    //! Returns whether this property is a StructArrayECProperty
     bool                                GetIsStructArray() const { return _IsStructArray(); }
-    //! Returns whether this property is a Primitive array
+    //! Returns whether this property is a PrimitiveArrayECProperty
     bool                                GetIsPrimitiveArray() const { return _IsPrimitiveArray(); }
     //! Returns whether this property is a NavigationECProperty
     bool                                GetIsNavigation() const { return _IsNavigation(); }
@@ -841,10 +841,10 @@ public:
     PrimitiveArrayECPropertyP   GetAsPrimitiveArrayPropertyP()          { return _GetAsPrimitiveArrayPropertyP(); } //!< Returns the property as a PrimitiveArrayECProperty*
     StructECPropertyCP          GetAsStructProperty() const             { return _GetAsStructPropertyCP(); } //!< Returns the property as a const StructECProperty*
     StructECPropertyP           GetAsStructPropertyP()                  { return _GetAsStructPropertyP(); } //!< Returns the property as a StructECProperty*
-    StructArrayECPropertyCP     GetAsStructArrayProperty() const        { return _GetAsStructArrayPropertyCP(); } //! <Returns the property as a const StructArrayECProperty*
-    StructArrayECPropertyP      GetAsStructArrayPropertyP()             { return _GetAsStructArrayPropertyP(); } //! <Returns the property as a StructArrayECProperty*
-    NavigationECPropertyCP      GetAsNavigationProperty() const         { return _GetAsNavigationPropertyCP(); } //! <Returns the property as a const NavigationECProperty*
-    NavigationECPropertyP       GetAsNavigationPropertyP()              { return _GetAsNavigationPropertyP(); } //! <Returns the property as a NavigationECProperty*
+    StructArrayECPropertyCP     GetAsStructArrayProperty() const        { return _GetAsStructArrayPropertyCP(); } //!< Returns the property as a const StructArrayECProperty*
+    StructArrayECPropertyP      GetAsStructArrayPropertyP()             { return _GetAsStructArrayPropertyP(); } //!< Returns the property as a StructArrayECProperty*
+    NavigationECPropertyCP      GetAsNavigationProperty() const         { return _GetAsNavigationPropertyCP(); } //!< Returns the property as a const NavigationECProperty*
+    NavigationECPropertyP       GetAsNavigationPropertyP()              { return _GetAsNavigationPropertyP(); } //!< Returns the property as a NavigationECProperty*
 };
 
 //=======================================================================================
