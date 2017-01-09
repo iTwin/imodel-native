@@ -118,7 +118,7 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05));
     LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05));
     LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05));
-#endif
+
     ///////////////////////////
 
     int repet = 1000000;
@@ -130,7 +130,7 @@ TEST(FormattingTest, Simple)
         repStr = fmtP->FormatDouble(rval, 4, 0.05);
         }
     LOG.info("Tested fmtP->FormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr.c_str(), sw->LastIntervalMetrics(repet).c_str());
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     for (int i = 0; i < repet; i++)
@@ -143,7 +143,7 @@ TEST(FormattingTest, Simple)
 
     //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
     //fmtD.SetKeepTrailingZeroes(true);
-
+#endif
 
     FormatDictionary fd = FormatDictionary();
     NumericFormat numFmt = NumericFormat("Default");
