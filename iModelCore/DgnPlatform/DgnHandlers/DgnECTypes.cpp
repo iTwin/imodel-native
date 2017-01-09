@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/DgnECTypes.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -690,7 +690,7 @@ IDgnECTypeAdapterR IDgnECTypeAdapter::GetForArrayMember (ECN::ArrayECPropertyCR 
     IDgnECTypeAdapterP adapter = NULL;
     if (NULL != extendType)
         adapter = extendType->GetTypeAdapter();
-    else if (nullptr != arrayProperty.GetKindOfQuantity())
+    else if (arrayProperty.GetIsPrimitiveArray() && nullptr != arrayProperty.GetAsPrimitiveArrayProperty()->GetKindOfQuantity())
         adapter = &DgnECTypeRegistry::GetRegistry().GetBasicTypeAdapter (DgnECTypeRegistry::BasicType_ECUnits);
     
     if (NULL == adapter)

@@ -221,7 +221,9 @@ TEST_F(ViewAttachmentTest, CRUD)
 
     Placement2d placement = MakePlacement();
     DPoint2d p2d = DPoint2d::From(0, 9);
+
     // Test some invalid CreateParams
+    BeTest::SetFailOnAssert(false);
     // Invalid view id
     {
     IgnoreAssertionFailures expectAsserts;
@@ -240,6 +242,7 @@ TEST_F(ViewAttachmentTest, CRUD)
     Sheet::ViewAttachment attachment(GetDgnDb(), m_drawingModelId, m_viewId, m_attachmentCatId, placement);
     EXPECT_INVALID(attachment.Insert());
     }
+    BeTest::SetFailOnAssert(true);
 
     // Create a valid attachment with placment2d as an argument
     Sheet::ViewAttachment attachment(GetDgnDb(), m_sheetModelId, m_viewId, m_attachmentCatId, placement);

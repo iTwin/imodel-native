@@ -37,7 +37,7 @@ public:
 VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoint2d shapeArr[5], double height, Utf8CP label)
     {
     bvector<DPoint2d> shape(shapeArr, shapeArr + 5);
-    VolumeElementPtr volume = VolumeElement::Create(*(m_testModel->ToSpatialModel()), origin, shape, height, label);
+    VolumeElementPtr volume = VolumeElement::Create(*(m_defaultModel->ToSpatialModel()), origin, shape, height, label);
     return volume->Insert();
     }
 
@@ -46,18 +46,18 @@ VolumeElementCPtr VolumeElementTestFixture::InsertVolume(DPoint3dCR origin, DPoi
 //---------------------------------------------------------------------------------------
 GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR center, double dimension)
     {
-    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_testModel->ToPhysicalModelP()), m_testCategoryId);
+    GenericPhysicalObjectPtr physicalElementPtr = GenericPhysicalObject::Create(*(m_defaultModel->ToPhysicalModelP()), m_defaultCategoryId);
 
     DgnBoxDetail blockDetail = DgnBoxDetail::InitFromCenterAndSize(DPoint3d::FromZero(), DPoint3d::From(dimension, dimension, dimension), true);
     ISolidPrimitivePtr geomPtr = ISolidPrimitive::CreateDgnBox(blockDetail);
     BeAssert(geomPtr.IsValid());
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_testModel, m_testCategoryId, center, YawPitchRollAngles());
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*m_defaultModel, m_defaultCategoryId, center, YawPitchRollAngles());
     builder->Append(*geomPtr);
     BentleyStatus status = builder->Finish(*physicalElementPtr);
     BeAssert(status == SUCCESS);
 
-    GenericPhysicalObjectCPtr insertedElement = m_testDb->Elements().Insert<GenericPhysicalObject>(*physicalElementPtr);
+    GenericPhysicalObjectCPtr insertedElement = m_db->Elements().Insert<GenericPhysicalObject>(*physicalElementPtr);
     BeAssert(insertedElement.IsValid());
 
     return insertedElement;
@@ -68,7 +68,7 @@ GenericPhysicalObjectCPtr VolumeElementTestFixture::InsertBlock(DPoint3dCR cente
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, CrudTest)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     DPoint3d origin = {0.0, 0.0, 0.0};
     DPoint2d shapePointsArr[5] = {{0.0, 0.0}, {100.0, 0.0}, {100.0, 100.0}, {0.0, 100.0}, {0.0, 0.0}};
@@ -77,10 +77,10 @@ TEST_F(VolumeElementTestFixture, CrudTest)
     VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, name);
     ASSERT_TRUE(volume.IsValid());
 
-    DgnElementIdSet volIdSet = VolumeElement::QueryVolumes(*m_testDb);
+    DgnElementIdSet volIdSet = VolumeElement::QueryVolumes(*m_db);
     ASSERT_EQ(1, (int) volIdSet.size());
 
-    DgnElementId volId = VolumeElement::QueryVolumeByLabel(*m_testDb, name);
+    DgnElementId volId = VolumeElement::QueryVolumeByLabel(*m_db, name);
     ASSERT_EQ(volume->GetElementId(), volId);
 
     bvector<DPoint3d> actualShape;
@@ -103,7 +103,7 @@ TEST_F(VolumeElementTestFixture, CrudTest)
         ASSERT_TRUE(actualShape[ii].IsEqual(expectedPoint));
         }
 
-    VolumeElementPtr volumeEdit = VolumeElement::GetForEdit(*m_testDb, volume->GetElementId());
+    VolumeElementPtr volumeEdit = VolumeElement::GetForEdit(*m_db, volume->GetElementId());
     ASSERT_TRUE(volumeEdit.IsValid());
 
     // Update
@@ -137,7 +137,7 @@ TEST_F(VolumeElementTestFixture, CrudTest)
 //+---------------+---------------+---------------+---------------+---------------+-----
 TEST_F(VolumeElementTestFixture, QueryTest)
     {
-    CreateDgnDb();
+    SetupDgnDb();
 
     // Entirely inside
     GenericPhysicalObjectCPtr insideEl = InsertBlock(DPoint3d::From(37.5, 37.5, 37.5), 25.0);
@@ -159,16 +159,16 @@ TEST_F(VolumeElementTestFixture, QueryTest)
     VolumeElementCPtr volume = InsertVolume(origin, shapePointsArr, height, "QueryTestVolume");
     ASSERT_TRUE(volume.IsValid());
 
-    CreateDefaultView(m_testModel->GetModelId());
+    CreateDefaultView(m_defaultModel->GetModelId());
     UpdateDgnDbExtents();
-    m_testDb->SaveChanges("Finished inserts");
+    m_db->SaveChanges("Finished inserts");
     
     DgnElementIdSet idSet;
-    volume->FindElements(idSet, *m_testDb, false);
+    volume->FindElements(idSet, *m_db, false);
     ASSERT_EQ(2, (int) idSet.size());
 
     idSet.clear();
-    volume->FindElements(idSet, *m_testDb, true);
+    volume->FindElements(idSet, *m_db, true);
     ASSERT_EQ(3, (int) idSet.size());
 
     ASSERT_TRUE(volume->ContainsElement(*insideEl, false));
