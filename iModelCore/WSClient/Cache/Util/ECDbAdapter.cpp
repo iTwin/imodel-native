@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/Util/ECDbAdapter.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -460,13 +460,11 @@ ECRelationshipClassCP ECDbAdapter::FindClosestRelationshipClassWithSource(ECClas
         {
         bvector<ECClassP> candidateClasses;
 
-        if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward
-            && DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
+        if (DoesConstraintSupportECClass(candidateRelClass->GetTarget(), *sourceClass, true))
             {
             candidateClasses = candidateRelClass->GetSource().GetClasses();
             }
-        else if (candidateRelClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward
-                 && DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
+        else if (DoesConstraintSupportECClass(candidateRelClass->GetSource(), *sourceClass, true))
             {
             candidateClasses = candidateRelClass->GetTarget().GetClasses();
             }
