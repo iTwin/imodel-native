@@ -118,7 +118,7 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value2 %.6f  (real) %s ", -7.0*testV, fmtP->FormatDouble(-7.0*testV, 5, 0.05));
     LOG.infov("Value2 %.6f  (real) %s ", -9.0*testV, fmtP->FormatDouble(-9.0*testV, 4, 0.05));
     LOG.infov("Value2 %.6f  (real) %s ", -2.0*testV, fmtP->FormatDouble(-2.0*testV, 3, 0.05));
-#endif
+
     ///////////////////////////
 
     int repet = 1000000;
@@ -130,20 +130,20 @@ TEST(FormattingTest, Simple)
         repStr = fmtP->FormatDouble(rval, 4, 0.05);
         }
     LOG.info("Tested fmtP->FormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
-    LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet).c_str());
+    LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     for (int i = 0; i < repet; i++)
         {
         repStr = NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str();
         }
     LOG.info("Tested RefFormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
-    LOG.infov("Elapsed time %s", sw->LastInterval(1.0));
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet)).c_str();
+    LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
     //fmtD.SetKeepTrailingZeroes(true);
-
+#endif
 
     FormatDictionary fd = FormatDictionary();
     NumericFormat numFmt = NumericFormat("Default");
