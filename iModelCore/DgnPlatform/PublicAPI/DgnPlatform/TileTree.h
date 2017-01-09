@@ -624,7 +624,7 @@ public:
     bvector<Render::GraphicPtr> const& GetGraphics() const { return m_graphics; }
     bool IsLeaf() const { return m_isLeaf; }
 
-    void SetIsLeaf() { m_isLeaf = true; m_children.clear(); }
+    void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }
     void AddGraphic(Render::GraphicR graphic) { m_graphics.push_back(&graphic); }
 };
 
