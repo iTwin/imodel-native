@@ -2,7 +2,7 @@
 |
 |  $Source: DgnHandlers/DgnECTypeAdapters.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <DgnPlatformInternal.h>
@@ -3134,7 +3134,7 @@ bool ECUnitsTypeAdapter::_Validate (ECValueCR v, IDgnECTypeAdapterContextCR cont
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TryGetKindOfQuantity(ECPropertyCP ecProp, KindOfQuantityCP kindOfQuantity)
     {
-    kindOfQuantity = ecProp->GetIsPrimitive() ? ecProp->GetAsPrimitiveProperty()->GetKindOfQuantity() : ecProp->GetAsArrayProperty()->GetKindOfQuantity();
+    kindOfQuantity = ecProp->GetIsPrimitive() ? ecProp->GetAsPrimitiveProperty()->GetKindOfQuantity() : ecProp->GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
     return nullptr != kindOfQuantity;
     }
 

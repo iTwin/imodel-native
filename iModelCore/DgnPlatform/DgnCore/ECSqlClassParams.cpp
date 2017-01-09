@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ECSqlClassParams.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -297,7 +297,7 @@ void ECSqlClassParams::Initialize(IECSqlClassParamsProvider& provider)
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ECSqlClassInfo::GetInsertStmt(DgnDbCR dgndb) const
     {
-    return m_insert.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_insert.c_str(), dgndb.GetECSqlWriteToken());
+    return m_insert.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_insert.c_str(), dgndb.GetECCrudWriteToken());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -317,7 +317,7 @@ CachedECSqlStatementPtr ECSqlClassInfo::GetSelectStmt(DgnDbCR dgndb, ECInstanceI
 +---------------+---------------+---------------+---------------+---------------+------*/
 CachedECSqlStatementPtr ECSqlClassInfo::GetUpdateStmt(DgnDbCR dgndb, ECInstanceId id) const
     {
-    CachedECSqlStatementPtr stmt = m_update.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_update.c_str(), dgndb.GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = m_update.empty() ? nullptr : dgndb.GetNonSelectPreparedECSqlStatement(m_update.c_str(), dgndb.GetECCrudWriteToken());
     if (stmt.IsValid())
         stmt->BindId(m_updateParameterIndex, id);
 

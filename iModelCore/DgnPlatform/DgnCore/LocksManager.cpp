@@ -7,7 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include <DgnPlatform/DgnChangeSummary.h>
-#include "DgnChangeIterator.h"
 
 static const BeInt64Id s_dbId((uint64_t)1);
 

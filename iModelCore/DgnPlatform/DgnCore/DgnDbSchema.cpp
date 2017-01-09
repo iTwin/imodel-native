@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDbSchema.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -188,7 +188,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     // element handlers are not initialized yet, so insert DefinitionPartition directly
     Utf8PrintfString sql("INSERT INTO %s (ECInstanceId,Model.Id,Parent.Id,CodeAuthority.Id,CodeNamespace,CodeValue) VALUES(?,?,?,?,?,?)", className);
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, sql.c_str(), GetECCrudWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -275,7 +275,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
 
     // element handlers are not initialized yet, so insert root Subject directly
     ECSqlStatement statement;
-    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeAuthority.Id,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECSqlWriteToken()))
+    if (ECSqlStatus::Success != statement.Prepare(*this, "INSERT INTO " BIS_SCHEMA(BIS_CLASS_Subject) " (ECInstanceId,Model.Id,CodeAuthority.Id,CodeNamespace,CodeValue,Descr) VALUES(?,?,?,?,?,?)", GetECCrudWriteToken()))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
