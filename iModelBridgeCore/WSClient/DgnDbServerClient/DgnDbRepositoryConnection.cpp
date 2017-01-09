@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbRepositoryConnection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
@@ -400,15 +400,20 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::InitializeServerFile(FileInf
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuidCR fileId, ICancellationTokenPtr cancellationToken) const
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::LockRepository";
     DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    FileInfoPtr fileInfo = FileInfo::Create(fileId);
     return ExecutionManager::ExecuteWithRetry<void>([=]()
         {
-        return CreateNewServerFile(*fileInfo, cancellationToken)->Then<DgnDbServerStatusResult>([=](DgnDbServerFileResultCR result)
+        Json::Value repositoryLockJson = Json::objectValue;
+        repositoryLockJson[ServerSchema::Instance] = Json::objectValue;
+        repositoryLockJson[ServerSchema::Instance][ServerSchema::SchemaName] = ServerSchema::Schema::Repository;
+        repositoryLockJson[ServerSchema::Instance][ServerSchema::ClassName] = ServerSchema::Class::RepositoryLock;
+
+        return m_wsRepositoryClient->SendCreateObjectRequest(repositoryLockJson, BeFileName(), nullptr, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=](const WSCreateObjectResult& result)
             {
             if (!result.IsSuccess())
                 {
@@ -418,6 +423,33 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::LockRepository(BeGuidCR file
 
             double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
             DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            return DgnDbServerStatusResult::Success();
+            });
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::UnlockRepository(ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "DgnDbRepositoryConnection::LockRepository";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    return ExecutionManager::ExecuteWithRetry<void>([=] ()
+        {
+        ObjectId id = ObjectId::ObjectId(ServerSchema::Schema::Repository, ServerSchema::Class::RepositoryLock, ServerSchema::Class::RepositoryLock);
+        return m_wsRepositoryClient->SendDeleteObjectRequest(id, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=] (const WSDeleteObjectResult& result)
+            {
+            if (!result.IsSuccess())
+                {
+                DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+                return DgnDbServerStatusResult::Error(result.GetError());
+                }
+
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "");
             return DgnDbServerStatusResult::Success();
             });
         });
@@ -447,7 +479,7 @@ void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDb
         fileInitialized = masterFile->GetInitialized();
         
         if (!fileInitialized)
-            BeThreadUtilities::BeSleep(200);
+            BeThreadUtilities::BeSleep(1000);
         retriesLeft--;
         }
 
@@ -460,7 +492,7 @@ void DgnDbRepositoryConnection::WaitForInitializedBIMFile(BeGuid fileGuid, DgnDb
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
-//---------------------------------------------------------------------------------------
+//---------------------------------------------------------ef------------------------------
 DgnDbServerFileTaskPtr DgnDbRepositoryConnection::UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::UploadNewMasterFile";
