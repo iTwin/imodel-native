@@ -1011,7 +1011,8 @@ m_shouldStopIteration(false),
 m_strikeToStopComputeParameters(0),
 m_oldAllowedAngle(0.0),
 m_oldAllowedHeight(0.0),
-m_isFirstIteration(true)
+m_isFirstIteration(true), 
+m_lastOutputPreviewTime(0)
     {
     m_boundingBoxMeter = m_pGDGrid->GetBoundingBox();
     double minValue = m_boundingBoxMeter.low.z;
@@ -1208,6 +1209,15 @@ StatusInt PCGroundTIN::_CreateInitialTIN()
 
     m_pReport->EndPhase(L"END - Find Initial Seed Points");
 
+    bvector<DPoint3d> additionalSeedPoints;
+
+    m_pParams->GetAdditionalSeedPoints(additionalSeedPoints);
+
+    for (auto& seedPoint : additionalSeedPoints)
+        {
+        AddPoint(seedPoint);
+        }
+    
     return SUCCESS;
     }
 
@@ -1217,11 +1227,53 @@ StatusInt PCGroundTIN::_CreateInitialTIN()
 static bool s_testOneQuery = false;
 static bool s_outputPreview = true;
 
-void PCGroundTIN::OutputDtmPreview()
-    {    
-    if (s_outputPreview)
+static clock_t outputDelay = 10 * CLOCKS_PER_SEC;
+
+
+void PCGroundTIN::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
+    {            
+    if (s_outputPreview && 
+        (((clock() - m_lastOutputPreviewTime) > outputDelay) || noDelay))
         {
-        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
+        BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcDtmPtr(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
+
+        size_t newPointToAddSize;
+
+        if (newPointToAddMutex != nullptr)
+            {
+            newPointToAddMutex->lock();
+            newPointToAddSize = m_newPointToAdd.size();
+            newPointToAddMutex->unlock();
+            }
+        else
+            {
+            newPointToAddSize = m_newPointToAdd.size();
+            }
+
+        if (newPointToAddSize > 0)
+            {
+            bcDtmPtr = bcDtmPtr->Clone();
+
+            if (newPointToAddMutex != nullptr)
+                {
+                newPointToAddMutex->lock();
+                }
+
+            for (auto& point : m_newPointToAdd)
+                {
+                bcDtmPtr->AddPoint(point);
+                }
+
+            if (newPointToAddMutex != nullptr)
+                {
+                newPointToAddMutex->unlock();
+                }
+
+            DTMStatusInt status = bcDtmPtr->Triangulate();
+            assert(status == SUCCESS);
+            }
+
+        DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDtmPtr);
     
         en->SetExcludeAllRegions();
         en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
@@ -1233,6 +1285,8 @@ void PCGroundTIN::OutputDtmPreview()
             // Polyface returned.        
             ptsAccumPtr->OutputPreview(*pf);
             }
+
+        m_lastOutputPreviewTime = clock();        
         }
     }
 
@@ -1345,7 +1399,7 @@ StatusInt  PCGroundTIN::_DensifyTIN()
         int currentIteration = 1;
         for (PrepareFirstIteration(); ptsAccumPtr->ShouldContinue() && PrepareNextIteration(); currentIteration++)
             {            
-            OutputDtmPreview();
+            OutputDtmPreview(true);
 
             m_pReport->StartCurrentIteration(currentIteration);
 
@@ -1378,6 +1432,8 @@ StatusInt  PCGroundTIN::_DensifyTIN()
 
                 if (!ptsAccumPtr->ShouldContinue())
                     break;
+
+                OutputDtmPreview();
                 
 
                 //Display some stat while processing to help debug
@@ -1834,6 +1890,14 @@ PointCloudThreadPool& PCGroundTINMT::GetQueryThreadPool()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void PCGroundTINMT::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
+    {
+    __super::OutputDtmPreview(noDelay, &s_newPointToAddCS);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PCGroundTINMT::FlushThreadPoolWork()
@@ -1986,6 +2050,15 @@ StatusInt PCGroundTINMT::_CreateInitialTIN()
 
     m_pReport->EndPhase(L"END - Find Initial Seed Points");
 
+    bvector<DPoint3d> additionalSeedPoints;
+
+    m_pParams->GetAdditionalSeedPoints(additionalSeedPoints);
+
+    for (auto& seedPoint : additionalSeedPoints)
+        {
+        AddPoint(seedPoint);
+        }
+
     return SUCCESS;
     }
 
@@ -2004,7 +2077,7 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
     int currentIteration = 1;
     for (PrepareFirstIteration(); PrepareNextIteration(); currentIteration++)
         {
-        OutputDtmPreview();
+        OutputDtmPreview(true);
 
         m_pReport->StartCurrentIteration(currentIteration);
         /*
@@ -2054,8 +2127,25 @@ StatusInt  PCGroundTINMT::_DensifyTIN()
             //GetQueryThreadPool().QueueWork(*pWork);
             GetWorkThreadPool()->QueueWork(pWork);
             }
+       
+        struct OutputPreviewProgress : GroundDetectionThreadPool::IActiveWait
+            {
+            OutputPreviewProgress(PCGroundTINMT* groundTin)
+                {
+                m_groundTin = groundTin;
+                }
+            
+            virtual void Progress() override
+                {
+                m_groundTin->OutputDtmPreview(false, &m_groundTin->s_newPointToAddCS);
+                }
 
-        GetWorkThreadPool()->Start();
+            PCGroundTINMT* m_groundTin; 
+            };
+
+        OutputPreviewProgress previewProgress(this);
+
+        GetWorkThreadPool()->Start(&previewProgress);
         GetWorkThreadPool()->WaitAndStop();
         GetWorkThreadPool()->ClearQueueWork();    
 

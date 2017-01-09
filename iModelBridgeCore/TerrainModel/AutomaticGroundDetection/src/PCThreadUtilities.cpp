@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCThreadUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -892,7 +892,9 @@ bool PointCloudWorkerThread::TerminateRequested() const
 GroundDetectionThreadPool::GroundDetectionThreadPool(int numWorkingThreads)
 : m_numWorkingThreads(numWorkingThreads)//, m_isTerminating(false)
     {
-    m_workingThreads = new std::thread[m_numWorkingThreads];
+    m_futures = new std::future<void>[m_numWorkingThreads];
+
+    //m_workingThreads = new std::thread[m_numWorkingThreads];
         /*
         m_areWorkingThreadRunning = new std::atomic<bool>[m_maxThreads];
 
@@ -906,13 +908,9 @@ GroundDetectionThreadPool::GroundDetectionThreadPool(int numWorkingThreads)
 
 GroundDetectionThreadPool::~GroundDetectionThreadPool()
     {
-    for (size_t threadInd = 0; threadInd < m_numWorkingThreads; threadInd++)
-        {
-        if (m_workingThreads[threadInd].joinable())
-            m_workingThreads[threadInd].join();
-        }
-
-    delete[] m_workingThreads;    
+    WaitAndStop();
+   
+    delete[] m_futures;
     }
 
 void GroundDetectionThreadPool::ClearQueueWork()
@@ -927,27 +925,47 @@ void GroundDetectionThreadPool::QueueWork(GroundDetectionWorkPtr& work)
     m_workQueue.push_back(work);
     }
 
-void GroundDetectionThreadPool::Start()
+void GroundDetectionThreadPool::Start(IActiveWait* activeWait)
     { 
+    m_activeWait = activeWait;
+
     if (m_run == false)
-        {        
+        {                
         m_run = true;
         assert(m_currentWorkInd == 0);
 
         //Launch a group of threads
         for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
-            {                                                                    
-            m_workingThreads[threadId] = std::thread(&GroundDetectionThreadPool::WorkThread, this, /*DgnPlatformLib::QueryHost(), */threadId);            
+            {         
+            m_futures[threadId] = std::async(&GroundDetectionThreadPool::WorkThread, this, /*DgnPlatformLib::QueryHost(), */threadId);            
             }
         }
     }
 
 void GroundDetectionThreadPool::WaitAndStop()
     {         
+    std::chrono::milliseconds span(500);
+
     for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
         {
+        if (m_futures[threadId].valid())
+            {
+            if (m_activeWait == nullptr)
+                { 
+                m_futures[threadId].get();
+                }
+            else
+                {
+                while (m_futures[threadId].wait_for(span) == std::future_status::timeout)
+                    {
+                    m_activeWait->Progress();
+                    }
+                }
+            }
+/*
         if (m_workingThreads[threadId].joinable())
             m_workingThreads[threadId].join();                                
+*/
         }
     
     m_run = false;

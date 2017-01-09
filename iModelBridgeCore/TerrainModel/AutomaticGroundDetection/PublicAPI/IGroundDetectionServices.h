@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IGroundDetectionServices.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -125,6 +125,10 @@ public:
      GROUND_DETECTION_EXPORT IGroundPointsAccumulatorPtr GetGroundPointsAccumulator() const;        
      GROUND_DETECTION_EXPORT void                        SetGroundPointsAccumulator(IGroundPointsAccumulatorPtr& pointsAccumulator);        
 
+    //Seed options     
+     GROUND_DETECTION_EXPORT void AddAdditionalSeedPoints(const bvector<DPoint3d>& additionalSeedPoints);
+     GROUND_DETECTION_EXPORT void GetAdditionalSeedPoints(bvector<DPoint3d>& additionalSeedPoints) const;
+
     //DTM file options                 
      GROUND_DETECTION_EXPORT DTMFileOptions  GetCreateDtmFile() const;
      GROUND_DETECTION_EXPORT void            SetCreateDtmFile(DTMFileOptions createDtmFile);
@@ -180,6 +184,9 @@ private:
     Transform                           m_metersToUors;
     IPointsProviderCreatorPtr           m_pointProviderCreator; 
     IGroundPointsAccumulatorPtr         m_groundPointsAccumulator; 
+
+    //Seed options
+    bvector<DPoint3d> m_additionalSeedPoints;
    
     //Dtm file options                
     DTMFileOptions  m_createDtmFile;

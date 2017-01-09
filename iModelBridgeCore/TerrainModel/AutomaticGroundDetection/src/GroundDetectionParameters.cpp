@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionParameters.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -327,6 +327,16 @@ void                     GroundDetectionParameters::SetPointsProviderCreator(IPo
 
 IGroundPointsAccumulatorPtr GroundDetectionParameters::GetGroundPointsAccumulator() const     { return m_groundPointsAccumulator; }
 void                        GroundDetectionParameters::SetGroundPointsAccumulator(IGroundPointsAccumulatorPtr& pointsAccumulator)      { m_groundPointsAccumulator = pointsAccumulator; }
+
+void GroundDetectionParameters::AddAdditionalSeedPoints(const bvector<DPoint3d>& additionalSeedPoints)
+    {    
+    m_additionalSeedPoints.insert(m_additionalSeedPoints.end(), additionalSeedPoints.begin(), additionalSeedPoints.end());    
+    }
+
+void GroundDetectionParameters::GetAdditionalSeedPoints(bvector<DPoint3d>& additionalSeedPoints) const
+    {
+    additionalSeedPoints.insert(additionalSeedPoints.end(), m_additionalSeedPoints.begin(), m_additionalSeedPoints.end());    
+    }
 
 /*
 BeFileName GroundDetectionParameters::GetDtmFilename() const            { return m_dtmFileName; }
