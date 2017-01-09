@@ -93,14 +93,7 @@ void RasterTile::_DrawGraphics(TileTree::DrawArgsR args) const
     if (!m_reprojected)     // if we were unable to reproject this tile, don't try to draw it.
         return;
 
-    if (!IsReady())
-        {
-        if (!IsNotFound())
-            args.InsertMissing(*this);
-
-        return;
-        }
-
+    BeAssert(IsReady());
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
     }
