@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerUtils.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -39,6 +39,7 @@ namespace ServerSchema
         }
     namespace Class
         {
+        static Utf8CP RepositoryLock = "RepositoryLock";
         static Utf8CP Briefcase = "BIMBriefcase";
         static Utf8CP Revision = "Revision";
         static Utf8CP File = "BIMFile";

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbRepositoryConnection.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -353,11 +353,9 @@ public:
         IBriefcaseManager::ResponseOptions options = IBriefcaseManager::ResponseOptions::All, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Lock repository for master file replacement.
-    //! @param[in] fileId The db guid for the file that will be created.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the status of acquiring repository lock as result.
-    //! @note Part of master file replacement. Should be used only if repository should be locked while the new file is created. See UploadNewFile.
-    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr LockRepository(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Replace a master file on the server.
     //! @param[in] filePath The path to the BIM file to upload.
@@ -366,14 +364,20 @@ public:
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the uploaded file information as the result.
-    //! @note Part of master file replacement. See LockRepository.
+    //! @note Part of master file replacement. Needs repository to be locked before calling. See LockRepository.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerFileTaskPtr UploadNewMasterFile(BeFileNameCR filePath, FileInfoCR fileInfo, bool waitForInitialized = true, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Cancels master file creation and unlocks the repository.
+    //! Cancels master file creation.
     //! @param[in] cancellationToken
     //! @return Asynchronous task that is successful if file creation was canceled.
     //! @note This function should be used after DgnDbRepositoryConnection::UploadNewMasterFile or DgnDbClient::CreateNewRepository has failed.
+    //! This method does not unlock the repository and allows the same user to attempt master file replacement again.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr CancelMasterFileCreation(ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Unlock repository.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the status of releasing repository lock as result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerStatusTaskPtr UnlockRepository(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns all master files available in the server.
     //! @param[in] cancellationToken
