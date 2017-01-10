@@ -714,13 +714,19 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         if (SystemPropertyMap::PerTablePrimitivePropertyMap const* classIdPropertyMap = relationMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table))
             {
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
-            if (classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && 
+            if ((classIdPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical|| classIdPropertyMap->GetColumn().IsInOverflow()) &&
                 (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {    
                 NativeSqlBuilder classIdFilter;
                 Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
                 relationMap.GetClass().GetId().ToString(classIdStr);
-                classIdFilter.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped(classIdPropertyMap->GetColumn().GetName().c_str());
+				if (classIdPropertyMap->GetColumn().IsInOverflow())
+					{
+					classIdFilter.AppendFormatted("json_extract([%s].[%s], '$.%s')", table->GetName().c_str(), classIdPropertyMap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), classIdPropertyMap->GetColumn().GetName().c_str());
+					}
+				else
+					classIdFilter.AppendEscaped(table->GetName().c_str()).AppendDot().AppendEscaped(classIdPropertyMap->GetColumn().GetName().c_str());
+
                 if (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery())
                     classIdFilter.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(classIdStr).Append(")");
                 else

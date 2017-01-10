@@ -1805,7 +1805,7 @@ DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECCl
 void RelationshipClassEndTableMap::ColumnFactory::Initialize()
 	{
 	ECN::ECRelationshipConstraintCR constraint = m_relMap.GetForeignEnd() == ECN::ECRelationshipEnd_Source ? m_relMap.GetRelationshipClass().GetSource() : m_relMap.GetRelationshipClass().GetTarget();
-	for (ECN::ECClassCP constraintClass : constraint.GetClasses())
+	for (ECN::ECClassCP constraintClass : constraint.GetConstraintClasses())
 		{
 		if (ClassMapCP classMap = m_relMap.GetDbMap().GetClassMap(*constraintClass))
 			{

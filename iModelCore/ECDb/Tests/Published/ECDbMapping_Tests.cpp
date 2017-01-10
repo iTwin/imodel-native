@@ -11621,21 +11621,36 @@ TEST_F(ECDbMappingTestFixture, NonPhysicalForeignKeyRelationship)
 			"          <Class class ='SecondaryClassA' />"
 			"      </Target>"
 			"   </ECRelationshipClass>"
+			"   <ECRelationshipClass typeName='PrimaryClassAHasSecondaryClassB' strength='Referencing' modifier='Sealed'>"
+			"       <BaseClass>PrimaryClassAHasSecondaryClassA</BaseClass> "		
+			"      <Source cardinality='(0,1)' polymorphic='False'>"
+			"          <Class class ='PrimaryClassA' />"
+			"      </Source>"
+			"      <Target cardinality='(0,N)' polymorphic='False'>"
+			"          <Class class ='SecondaryClassA' />"
+			"      </Target>"
+			"   </ECRelationshipClass>"
 			"</ECSchema>"));
 
 	ASSERT_TRUE(GetECDb().IsDbOpen());
 	GetECDb().Schemas().CreateECClassViewsInDb();
 	GetECDb().SaveChanges();
 	ECClassId primaryClassAHasSecondaryClassAId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
+	ECClassId primaryClassAHasSecondaryClassBId = GetECDb().Schemas().GetECClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
+
 	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
 	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
 	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
+	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
 
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(),SqlPrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassAId.GetValue())));
+	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(),SqlPrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue())));
 	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
 	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
+	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
+	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), SqlPrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue())));
 	GetECDb().SaveChanges();
-	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassA(SourceECInstanceId, TargetECInstanceId) VALUES(103, 203)"));
+
+	ASSERT_EQ(BE_SQLITE_DONE, ECSqlHelper::ExecuteNoQuery(GetECDb(), "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
 	}
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
