@@ -17,7 +17,68 @@
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 USING_NAMESPACE_BENTLEY_EC
 
-#define STUB_FILE_ETAG "TestFakeTag"
+#include <openssl/evp.h>
+#include <Bentley/Base64Utilities.h>
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                    Dalius.Dobravolskas             09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned int * hashLen)
+    {
+    EVP_MD_CTX *mdctx;
+    if ((mdctx = EVP_MD_CTX_create()) == NULL)
+        return false;
+
+    if (!EVP_DigestInit_ex(mdctx, EVP_sha1(), NULL))
+        return false;
+
+    if (!EVP_DigestUpdate(mdctx, &input[0], input.size()))
+        return false;
+
+    if (!EVP_DigestFinal_ex(mdctx, binaryHash, hashLen))
+        return false;
+
+    EVP_MD_CTX_cleanup(mdctx);
+    EVP_MD_CTX_destroy(mdctx);
+    return true;
+    }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod                                    Dalius.Dobravolskas             09/14
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Sha1CalcToBase64(const bvector<Byte>& input, Utf8StringR hashHexStringOut)
+    {
+    unsigned int hashLen;
+    unsigned char binaryHash[EVP_MAX_MD_SIZE];
+
+    if (!Sha1Calc(input, binaryHash, &hashLen))
+        return false;
+
+    hashHexStringOut = Base64Utilities::Encode((Utf8CP) binaryHash, hashLen);
+    if (hashHexStringOut.empty())
+        return false;
+
+    return true;
+    }
+
+/*-------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+bool CalcFileHash(BeFileNameCR filePath, Utf8StringR hashHexStringOut)
+    {
+    bvector<Byte> contents;
+
+    BeFile file;
+    file.Open(filePath, BeFileAccess::Read);
+    if (BeFileStatus::Success != file.ReadEntireFile(contents))
+        return false;
+    file.Close();
+
+    if (!Sha1CalcToBase64(contents, hashHexStringOut))
+        return false;
+
+    return true;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2016
@@ -58,17 +119,11 @@ AsyncTaskPtr<WSFileResult> DiskRepositoryClient::SendGetFileRequest
 (
 ObjectIdCR objectId,
 BeFileNameCR filePath,
-Utf8StringCR eTag,
+Utf8StringCR suppliedETag,
 HttpRequest::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    if (eTag == STUB_FILE_ETAG)
-        {
-        return CreateCompletedAsyncTask(WSFileResult::Success(
-            WSFileResponse(BeFileName(), HttpStatus::NotModified, STUB_FILE_ETAG)));
-        }
-
     SchemaKey key;
     SchemaKey::ParseSchemaFullName(key, WString(objectId.remoteId.c_str(), true).c_str());
 
@@ -77,6 +132,22 @@ ICancellationTokenPtr ct
         {
         BeAssert(false);
         return CreateCompletedAsyncTask(WSFileResult::Error({}));
+        }
+
+    BeFileName schemaPath = it->second;
+
+    Utf8String hash;
+    if (!CalcFileHash(schemaPath, hash))
+        {
+        BeAssert(false);
+        return CreateCompletedAsyncTask(WSFileResult::Error({}));
+        }
+    Utf8String newETag = "DiskRepositoryClient." + hash;
+
+    if (suppliedETag == newETag)
+        {
+        return CreateCompletedAsyncTask(WSFileResult::Success(
+            WSFileResponse(BeFileName(), HttpStatus::NotModified, newETag)));
         }
 
     LOG.infov("Getting schema: %s\n", Utf8String(it->second).c_str());
@@ -88,7 +159,7 @@ ICancellationTokenPtr ct
         }
 
     return CreateCompletedAsyncTask(WSFileResult::Success(
-        WSFileResponse(filePath, HttpStatus::OK, STUB_FILE_ETAG)));
+        WSFileResponse(filePath, HttpStatus::OK, newETag)));
     }
 
 /*--------------------------------------------------------------------------------------+
