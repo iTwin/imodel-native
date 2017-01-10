@@ -864,13 +864,29 @@ void ECClass::OnBaseClassPropertyChanged(ECPropertyCR baseProperty, ECPropertyCP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    12/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, Utf8String propName)
+// static
+bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses)
     {
+    if (includeDerivedClasses && ecClass->HasDerivedClasses())
+        {
+        for (ECClassP derivedClass : ecClass->GetDerivedClasses())
+            {
+            if (ECClass::ClassesAreEqualByName(derivedClass, startingClass))
+                continue;
+
+            if (!ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, includeDerivedClasses))
+                return false;
+            }
+        }
+
     if (ecClass->HasBaseClasses())
         {
         for (ECClassP baseClass : ecClass->GetBaseClasses())
             {
-            if (!ConvertPropertyToPrimitveArray(baseClass, propName))
+            if (ECClass::ClassesAreEqualByName(baseClass, startingClass))
+                continue;
+
+            if (!ConvertPropertyToPrimitveArray(baseClass, ecClass, propName))
                 return false;
             }
         }
@@ -950,6 +966,9 @@ bool ECClass::ConvertPropertyToPrimitveArray(ECClassP ecClass, Utf8String propNa
 
     delete primProp;
 
+    for (ECClassP derivedClass : ecClass->GetDerivedClasses())
+        ConvertPropertyToPrimitveArray(derivedClass, ecClass, propName, true);
+
     return true;
     }
 
@@ -983,7 +1002,7 @@ ECObjectsStatus ECClass::FixArrayPropertyOverrides()
 
             if (ecProp->GetIsPrimitive() != baseProperty->GetIsPrimitive() || ecProp->GetIsPrimitiveArray() != baseProperty->GetIsPrimitiveArray())
                 {
-                if (!ConvertPropertyToPrimitveArray(this, propName))
+                if (!ConvertPropertyToPrimitveArray(this, this, propName))
                     return ECObjectsStatus::Error;
                 break;
                 }

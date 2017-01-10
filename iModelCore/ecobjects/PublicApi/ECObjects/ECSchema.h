@@ -1315,7 +1315,7 @@ private:
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
 
-    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, Utf8String propName);
+    static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
     ECObjectsStatus CanPropertyBeOverridden(ECPropertyCR baseProperty, ECPropertyCR newProperty) const;
     void            AddDerivedClass(ECClassCR baseClass) const;

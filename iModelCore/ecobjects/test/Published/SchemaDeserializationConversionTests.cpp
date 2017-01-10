@@ -10,6 +10,7 @@
 #include "BeXml/BeXml.h"
 
 using namespace BentleyApi::ECN;
+using namespace std;
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
@@ -778,6 +779,11 @@ void TestOverriding(Utf8CP schemaName, int readVersion, bool allowOverriding)
         "       <BaseClass>base</BaseClass>"
         "       <ECArrayProperty propertyName='IntegerProperty' typeName='int' minOccurs='0' maxOccurs='1' />"
         "       <ECProperty propertyName='IntArrayProperty' typeName='int' />"
+        "       <ECArrayProperty propertyName='childProperty' typeName='int' minOccurs='0' maxOccurs='1' />"
+        "   </ECClass>"
+        "   <ECClass typeName='child2' isDomainClass='True'>"
+        "       <BaseClass>base</BaseClass>"
+        "       <ECProperty propertyName='childProperty' typeName='int'/>"
         "   </ECClass>"
         "</ECSchema>";
 
@@ -797,7 +803,7 @@ void TestOverriding(Utf8CP schemaName, int readVersion, bool allowOverriding)
     ASSERT_TRUE(schema.IsValid()) << "The schema " << schemaName << " is invalid even though returned success";
     ASSERT_TRUE(schema->IsECVersion(ECVersion::Latest)) << "The schema " << schemaName << " deserialized to the wrong version of EC.";
 
-    bvector<Utf8CP> classNames = {"base", "child","derived"};
+    bvector<Utf8CP> classNames = {"base", "child", "derived"};
     for (Utf8CP className : classNames)
         {
         ECClassCP ecClass = schema->GetClassCP(className);
@@ -825,6 +831,23 @@ void TestOverriding(Utf8CP schemaName, int readVersion, bool allowOverriding)
         ASSERT_TRUE(nullptr != arrProp2) << "The property " << ecClass->GetFullName() << "." << ecProp2->GetName().c_str() << " is not a primitive array property when it should be.";
         EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, arrProp2->GetPrimitiveElementType()) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << "is not of the expected type.";
         }
+    
+    // Make sure once removed classes were not converted
+    ECClassCP ecClass = schema->GetClassCP("child");
+    ASSERT_TRUE(nullptr != ecClass) << "The class " << schemaName << ":child could not be found.";
+    ECPropertyP ecProp = ecClass->GetPropertyP("childProperty", false);
+    ASSERT_TRUE(nullptr != ecProp) << "The property " << ecClass->GetFullName() << ".childProperty could not be found.";
+    PrimitiveArrayECPropertyCP arrProp = ecProp->GetAsPrimitiveArrayProperty();
+    ASSERT_TRUE(nullptr != arrProp) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << " is not a primitive array property when it should be.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, arrProp->GetPrimitiveElementType()) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << "is not of the expected type.";
+    
+    ecClass = schema->GetClassCP("child2");
+    ASSERT_TRUE(nullptr != ecClass) << "The class " << schemaName << ":child2 could not be found.";
+    ecProp = ecClass->GetPropertyP("childProperty", false);
+    ASSERT_TRUE(nullptr != ecProp) << "The property " << ecClass->GetFullName() << ".childProperty could not be found.";
+    PrimitiveECPropertyCP primProp = ecProp->GetAsPrimitiveProperty();
+    ASSERT_TRUE(nullptr != primProp) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << " is not a primitive property when it should be.";
+    EXPECT_EQ(PrimitiveType::PRIMITIVETYPE_Integer, primProp->GetType()) << "The property " << ecClass->GetFullName() << "." << ecProp->GetName().c_str() << "is not of the expected type.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -842,5 +865,41 @@ TEST_F(SchemaDeserializationConversionTest, TestArrayPropertyOverriding)
     TestOverriding("Bentley_JSpace_CustomAttributes", 2, true);
     TestOverriding("Bentley_Plant", 6, true);
     }
+
+//TEST_F(SchemaDeserializationConversionTest, TestBentleyPlant)
+//    {
+//    ECSchemaReadContextPtr readContext = ECSchemaReadContext::CreateContext();
+//    readContext->AddSchemaPath(L"D:\\Files\\ECSchemas\\GraphiteTestDataSchemas_cleaned_11-30\\GraphiteTestDataSchemas_cleaned\\");
+//    readContext->AddConversionSchemaPath(L"D:\\dev\\BIM0200Dev\\src\\DgnDbSync\\DgnV8\\ECSchemas\\V3Conversion");
+//    
+//    SchemaKey plant("Bentley_Plant", 6, 0);
+//    SchemaKey ams("ams", 1, 0);
+//    SchemaKey ams_user("ams_user", 1, 0);
+//    SchemaKey jspace_CA("Bentley_JSpace_CustomAttributes", 2, 0);
+//    
+//    bvector<SchemaKey> testKeys = {plant, ams, ams_user, jspace_CA};
+//    for (SchemaKey testKey : testKeys)
+//        {
+//        ECSchemaPtr ecSchema = readContext->LocateSchema(testKey, SchemaMatchType::Exact);
+//        ASSERT_TRUE(ecSchema.IsValid());
+//        ASSERT_TRUE(ecSchema->IsECVersion(ECVersion::Latest));
+//        
+//        Utf8String outSchema;
+//        SchemaWriteStatus writeStatus = ecSchema->WriteToXmlString(outSchema);
+//        ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
+//        ASSERT_FALSE(Utf8String::IsNullOrEmpty(outSchema.c_str()));
+//
+//        WString inSchema;
+//        BeStringUtilities::Utf8ToWChar(inSchema, outSchema.c_str());
+//
+//        ECSchemaReadContextPtr newReadContext = ECSchemaReadContext::CreateContext();
+//        newReadContext->AddSchemaPath(L"D:\\Files\\ECSchemas\\GraphiteTestDataSchemas_cleaned_11-30\\GraphiteTestDataSchemas_cleaned\\");
+//        newReadContext->AddConversionSchemaPath(L"D:\\dev\\BIM0200Dev\\src\\DgnDbSync\\DgnV8\\ECSchemas\\V3Conversion");
+//        ECSchemaPtr newSchema;
+//        SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(newSchema, inSchema.c_str(), *newReadContext);
+//        ASSERT_EQ(SchemaReadStatus::Success, readStatus);
+//        ASSERT_TRUE(newSchema.IsValid());
+//        }
+//    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
