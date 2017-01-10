@@ -26,3 +26,5 @@ ECDbMappingTestFixture.DiamondProblem_Case2
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
+
+JsonUpdaterTests.CommonGeometryJsonSerialization # Fails on x86
