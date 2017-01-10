@@ -1298,7 +1298,7 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                         {
                         intersectFound = true;
                         //compare the two edges to pick the one that is in direction of ray
-                        DPoint3d pt,pt2;
+                        DPoint3d pt,pt3;
                         double paramA, paramB;
                         toNextPoint.ProjectPointUnbounded(pt, paramA, pts[(j + 1) % 3]);
                         toNextPoint.ProjectPointUnbounded(pt2, paramB, pts[(j + 2) % 3]);
@@ -1313,8 +1313,8 @@ void ApplyEndTags(MTGGraph * graphP, bvector<TaggedEdge>& featureEdges)
                         else
                             {
                             i = ((j + 2) % 3) + 1;
-                            if (bsiDPoint3d_pointEqualTolerance(&pt2, &pts[(j + 2) % 3], 1.0e-8)) //second point also on ray
-                                if (paramB > 0) intersectPt = pt2;
+                            if (bsiDPoint3d_pointEqualTolerance(&pt3, &pts[(j + 2) % 3], 1.0e-8)) //second point also on ray
+                                if (paramB > 0) intersectPt = pt3;
                             }
                         break;
                         }

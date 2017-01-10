@@ -6,7 +6,8 @@
     <Part Name="PCLWrapper" BMakeFile="PCLWrapper\PCLWrapper.mke">
       <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
       <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs"/>
-      <SubPart PartName="pcl"      PartFile="pcl"      Repository="Libsrc-Pcl"/>      
+      <SubPart PartName="pcl"      PartFile="pcl"      Repository="Libsrc-Pcl"/>   
+      <!--<SubPart PartName="Boost_1_5_7_0_Lib_Static_VS2015" PartFile="Boost_1_5_7_0_Lib_VS2015" Repository="BoostLibs_1.57"/>  -->     
       <Bindings>                              
         <Libs>Delivery\PCLWrapper.lib</Libs>        
         <PublicAPI Domain="PCLWrapper" />

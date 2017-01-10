@@ -13,7 +13,10 @@
 //#include <ImagePP/all/h/HPMIndirectCountLimitedPool.h>
 #include "Edits/DifferenceSet.h"
 #include "SMMemoryPool.h"
-#include <Bentley\BeSystemInfo.h>
+
+#ifndef VANCOUVER_API
+    #include <Bentley\BeSystemInfo.h>
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 template <typename POINT> class ScalableMeshMemoryPools
@@ -34,11 +37,28 @@ template <typename POINT> class ScalableMeshMemoryPools
         SMMemoryPoolPtr& GetVideoPool();
     };
 
+#ifdef VANCOUVER_API	
+
+inline uint64_t GetAmountOfPhysicalMemory()
+    {
+    MEMORYSTATUSEX  memoryStatus;
+    memoryStatus.dwLength = sizeof(memoryStatus);
+    GlobalMemoryStatusEx(&memoryStatus);
+    return memoryStatus.ullTotalPhys;
+    }
+
+#endif
+
+
 template <typename POINT> ScalableMeshMemoryPools<POINT>::ScalableMeshMemoryPools()
     {    
 	static double S_DEFAULT_PHYSICAL_MEM_USED_RATIO = 0.3;
-	
-	uint64_t totalPhysicalSize = BeSystemInfo::GetAmountOfPhysicalMemory();
+
+#ifdef VANCOUVER_API	
+	uint64_t totalPhysicalSize = GetAmountOfPhysicalMemory();
+#else
+    uint64_t totalPhysicalSize = BeSystemInfo::GetAmountOfPhysicalMemory();
+#endif
 	
 	//32 bits usable system memory is limited. 
 	if (sizeof(void*) == 32)
