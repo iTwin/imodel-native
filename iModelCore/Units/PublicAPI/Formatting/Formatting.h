@@ -238,159 +238,97 @@ struct FormatConstant
     {
 public:
     // FPN prefix stands for FormatParameterName
-    static Utf8String FPN_FormatName() { return "FormatName"; }
-    static Utf8String FPN_NoSign() { return "NoSign"; }
-    static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
-    static Utf8String FPN_SignAlways() { return "SignAlways"; }
-    static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
-    static Utf8String FPN_Decimal() { return "Decimal"; }
-    static Utf8String FPN_Fractional() { return "Fractional"; }
-    static Utf8String FPN_Scientific() { return "Scientific"; }
-    static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
-    static Utf8String FPN_Binary() { return "Binary"; }
-    static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
-    static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
-    static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
-    static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
-    static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
-    static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
-    static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
-    static Utf8String FPN_Precision0() { return "Precision0"; }
-    static Utf8String FPN_Precision1() { return "Precision1"; }
-    static Utf8String FPN_Precision2() { return "Precision2"; }
-    static Utf8String FPN_Precision3() { return "Precision3"; }
-    static Utf8String FPN_Precision4() { return "Precision4"; }
-    static Utf8String FPN_Precision5() { return "Precision5"; }
-    static Utf8String FPN_Precision6() { return "Precision6"; }
-    static Utf8String FPN_Precision7() { return "Precision7"; }
-    static Utf8String FPN_Precision8() { return "Precision8"; }
-    static Utf8String FPN_Precision9() { return "Precision9"; }
-    static Utf8String FPN_Precision10() { return "Precision10"; }
-    static Utf8String FPN_Precision11() { return "Precision11"; }
-    static Utf8String FPN_Precision12() { return "Precision12"; }
-    static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
-    static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
-    static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
-    static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
-    static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
-    static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
-    static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
-    static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
-    static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
-    static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
-    static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
-    static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
-    static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
-    static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
-    static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
-    static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
-    static Utf8String FPN_RoundUp() { return "RoundUp"; }
-    static Utf8String FPN_RoundDown() { return "RoundDown"; }
-    static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
-    static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
-    static Utf8String FPN_FractBarHoriz() { return "FractBarHoriz"; }
-    static Utf8String FPN_FractBarOblique() { return "FractBarOblique"; }
-    static Utf8String FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
-    static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
-    static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
-    static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
-    static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
-    static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
-    static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
-    static Utf8String FPN_RightAlign() { return "RightAlign"; }
-    static Utf8String FPN_MapName() { return "MapName"; }
-    static const double FPV_MinTreshold() { return 1.0e-16; }  // format parameter default values
-    static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
-    static const Utf8Char FPV_DecimalSeparator() { return '.'; }
-    static const Utf8Char FPV_ThousandSeparator() { return ','; }
-    static const Utf8CP DefaultName() { return "*"; }
-    static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
-    static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
-    static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
-    static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
-    static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
-    static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Sixteenth; }
-    static const FormatTraits DefaultFormatTraits() 
-        { 
-        int traits = static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero);
-        return static_cast<FormatTraits>(traits); 
-        }
-    static const double FPV_MaxTokenLength() { return 256; }
-
-    static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
-    static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
-    static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
-    static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
-    static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits
-    static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
-    static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
-    static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
-    static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
-    static const unsigned char UTF_UpperBitShift() { return  6; }
-    static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
-
-    static const bool IsLittleEndian()
-        {
-        union { short int s; char b[4]; } un;
-        un.s = 1;
-        return (un.b[0] == (char)1);
-        }
-
-    static const size_t GetSequenceLength(unsigned char c)
-        {
-        if (0 == (c & UTF_TrailingByteMark())) // ASCII - single byte
-            return 1;
-        if ((c & UTF_2ByteMask()) == UTF_2ByteMark())
-            return 2;
-        if ((c & UTF_3ByteMask()) == UTF_3ByteMark())
-            return 3;
-        if ((c & UTF_4ByteMask()) == UTF_4ByteMark())
-            return 4;
-        return 0;
-        }
-
-    static bool IsTrailingByteValid(unsigned char c)
-        {
-        return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()));
-        }
-
-    static bool GetTrailingBits(unsigned char c, CharP outBits)
-        {
-        if (nullptr != outBits)
-            {
-            *outBits = 0;
-            if (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()))
-                *outBits = c & ~UTF_TrailingByteMask();
-            return true;
-            }
-        return false;
-        }
-
-    // the trailing byte should be properly marked for being processed. It always contains only
-    //  6 bits that should be shifted accordingly to the location of the byte in the sequence
-    //  there are only 3 possible numbers of bytes in sequences: 2, 3 and 4. Accordingly the 
-    //  the range of indexes is striclty governed by the sequence lenght. The minimum index
-    //  value is always 1 and the maximum is N-1 where N is the sequence length
-    static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits)
-        {
-        if (nullptr != outBits)
-            {
-            // calculate the shift 
-            *outBits = 0;
-            int shift = ((int)seqLength - (int)index - 1);
-            if (0 > shift || 2 < shift)
-                return false;
-            if (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask()))
-                {
-                size_t temp = c & ~UTF_TrailingByteMask();
-                temp <<= shift * UTF_UpperBitShift();
-                *outBits = temp;
-                }
-            return true;
-            }
-        return false;
-        }
-    };
+    UNITS_EXPORT static Utf8String FPN_FormatName() { return "FormatName"; }
+    UNITS_EXPORT static Utf8String FPN_NoSign() { return "NoSign"; }
+    UNITS_EXPORT static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
+    UNITS_EXPORT static Utf8String FPN_SignAlways() { return "SignAlways"; }
+    UNITS_EXPORT static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+    UNITS_EXPORT static Utf8String FPN_Decimal() { return "Decimal"; }
+    UNITS_EXPORT static Utf8String FPN_Fractional() { return "Fractional"; }
+    UNITS_EXPORT static Utf8String FPN_Scientific() { return "Scientific"; }
+    UNITS_EXPORT static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
+    UNITS_EXPORT static Utf8String FPN_Binary() { return "Binary"; }
+    UNITS_EXPORT static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
+    UNITS_EXPORT static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
+    UNITS_EXPORT static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
+    UNITS_EXPORT static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
+    UNITS_EXPORT static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
+    UNITS_EXPORT static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
+    UNITS_EXPORT static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
+    UNITS_EXPORT static Utf8String FPN_Precision0() { return "Precision0"; }
+    UNITS_EXPORT static Utf8String FPN_Precision1() { return "Precision1"; }
+    UNITS_EXPORT static Utf8String FPN_Precision2() { return "Precision2"; }
+    UNITS_EXPORT static Utf8String FPN_Precision3() { return "Precision3"; }
+    UNITS_EXPORT static Utf8String FPN_Precision4() { return "Precision4"; }
+    UNITS_EXPORT static Utf8String FPN_Precision5() { return "Precision5"; }
+    UNITS_EXPORT static Utf8String FPN_Precision6() { return "Precision6"; }
+    UNITS_EXPORT static Utf8String FPN_Precision7() { return "Precision7"; }
+    UNITS_EXPORT static Utf8String FPN_Precision8() { return "Precision8"; }
+    UNITS_EXPORT static Utf8String FPN_Precision9() { return "Precision9"; }
+    UNITS_EXPORT static Utf8String FPN_Precision10() { return "Precision10"; }
+    UNITS_EXPORT static Utf8String FPN_Precision11() { return "Precision11"; }
+    UNITS_EXPORT static Utf8String FPN_Precision12() { return "Precision12"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
+    UNITS_EXPORT static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
+    UNITS_EXPORT static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
+    UNITS_EXPORT static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
+    UNITS_EXPORT static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
+    UNITS_EXPORT static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
+    UNITS_EXPORT static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
+    UNITS_EXPORT static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
+    UNITS_EXPORT static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
+    UNITS_EXPORT static Utf8String FPN_RoundUp() { return "RoundUp"; }
+    UNITS_EXPORT static Utf8String FPN_RoundDown() { return "RoundDown"; }
+    UNITS_EXPORT static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
+    UNITS_EXPORT static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
+    UNITS_EXPORT static Utf8String FPN_FractBarHoriz() { return "FractBarHoriz"; }
+    UNITS_EXPORT static Utf8String FPN_FractBarOblique() { return "FractBarOblique"; }
+    UNITS_EXPORT static Utf8String FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
+    UNITS_EXPORT static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
+    UNITS_EXPORT static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
+    UNITS_EXPORT static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
+    UNITS_EXPORT static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
+    UNITS_EXPORT static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
+    UNITS_EXPORT static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
+    UNITS_EXPORT static Utf8String FPN_RightAlign() { return "RightAlign"; }
+    UNITS_EXPORT static Utf8String FPN_MapName() { return "MapName"; }
+    UNITS_EXPORT static const double FPV_MinTreshold() { return 1.0e-16; }  // format parameter default values
+    UNITS_EXPORT static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
+    UNITS_EXPORT static const Utf8Char FPV_DecimalSeparator() { return '.'; }
+    UNITS_EXPORT static const Utf8Char FPV_ThousandSeparator() { return ','; }
+    UNITS_EXPORT static const Utf8CP DefaultName() { return "*"; }
+    UNITS_EXPORT static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
+    UNITS_EXPORT static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
+    UNITS_EXPORT static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
+    UNITS_EXPORT static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
+    UNITS_EXPORT static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
+    UNITS_EXPORT static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Sixteenth; }
+    UNITS_EXPORT static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
+    UNITS_EXPORT static const double FPV_MaxTokenLength() { return 256; }
+    UNITS_EXPORT static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
+    UNITS_EXPORT static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
+    UNITS_EXPORT static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
+    UNITS_EXPORT static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
+    UNITS_EXPORT static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits
+    UNITS_EXPORT static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
+    UNITS_EXPORT static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
+    UNITS_EXPORT static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
+    UNITS_EXPORT static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
+    UNITS_EXPORT static const unsigned char UTF_UpperBitShift() { return  6; }
+    UNITS_EXPORT static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
+    UNITS_EXPORT static const bool IsLittleEndian();
+    UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
+    UNITS_EXPORT static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
+    UNITS_EXPORT static bool GetTrailingBits(unsigned char c, CharP outBits);
+    UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
+};
 
 
 struct Utils
@@ -436,8 +374,6 @@ static Utf8CP GetParameterCategoryName(ParameterCategory parcat)
     }
 
 //#if defined(FUNCTION_NOT_USED)
-
-
 int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
 //#endif
 
@@ -532,11 +468,7 @@ static FractionalPrecision FractionalPrecisionByDenominator(size_t prec)
         }
     }
 
-
-static int FormatTraitsBit(FormatTraits zcValue)
-    {
-    return static_cast<int>(zcValue);
-    }
+static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
     };
 
 struct StdFormatName
@@ -548,7 +480,7 @@ private:
     Utf8CP m_shortName;
     bool m_isSystem;    // flag indicating immutable instance
 
-     StdFormatName(size_t code, Utf8CP fullName, Utf8CP shortName, bool isSystem)
+    StdFormatName(size_t code, Utf8CP fullName, Utf8CP shortName, bool isSystem):m_code(code), m_fullName(fullName),m_shortName(shortName)
         {
         m_code = code;
         m_fullName = fullName;
@@ -571,69 +503,7 @@ public:
     bool CompareName(Utf8P name) { return GetName() == name; }
     };
 
-struct StdFormatNameMap
-    {
-private:
 
-    bvector<StdFormatName> m_formatList;
-
-        void StdInit()
-        {
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultReal),  "DefaultReal",  "real",     true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::SignedReal),   "SignedReal",   "realSign", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::ParenthsReal), "ParenthsReal", "realPth", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultFractional), "DefaultFractional", "fract", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::SignedFractional), "SignedFractional", "fractSign", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultExp), "DefaultExp", "sci", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::SignedExp), "SignedExp", "sciSign", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::NormalExp), "NormalizedExp", "sciN", true));
-        m_formatList.push_back(StdFormatName(static_cast<int>(StdFormatCode::DefaultInt), "DefaultInt", "int", true));
-        }
-
-public:
-    static StdFormatNameMapP Map() { static StdFormatNameMap m_map; return &m_map; }
-    
-    Utf8CP GetFullName(size_t code)
-        {
-        for (auto curr = m_formatList.begin(), end = m_formatList.end(); curr != end; curr++)
-            {
-            if (curr->GetCode() == code)
-                return curr->GetName();
-            }
-        return nullptr;
-        }
-
-    Utf8CP GetShortName(size_t code)
-        {
-        for (auto curr = m_formatList.begin(), end = m_formatList.end(); curr != end; curr++)
-            {
-            if (curr->GetCode() == code)
-                return curr->GetShortName();
-            }
-        return nullptr;
-        }
-
-    size_t GetCode(Utf8CP name)
-        {
-        for (auto curr = m_formatList.begin(), end = m_formatList.end(); curr != end; curr++)
-            {
-            if (curr->GetName() == name || curr->GetShortName() == name)
-                return curr->GetCode();
-            }
-        return 0;
-        }
-        
-    StdFormatNameP GetFormatByName(Utf8CP name)
-        {
-        for (auto curr = m_formatList.begin(), end = m_formatList.end(); curr != end; curr++)
-            {
-            if (curr->GetName() == name || curr->GetShortName() == name)
-                return (StdFormatNameP)curr;
-            }
-        return nullptr;
-        }
-
-    };
 
 /* size_t GetFormatCode(Utf8P name)
 {
@@ -816,49 +686,21 @@ struct StdFormatSet
 private:
     bvector<NumericFormatP> m_formatSet;
 
-    NumericFormatP AddFormat(NumericFormatP fmtP)
-        {
-        m_formatSet.push_back(fmtP);
-        return fmtP;
-        }
-
-    void StdInit()
-        {
-        FormatTraits traits = FormatConstant::DefaultFormatTraits();
-        AddFormat(new NumericFormat("DefaultReal", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("real");
-        AddFormat(new NumericFormat("SignedReal", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realSign");
-        AddFormat(new NumericFormat("ParenthsReal", PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("realPth");
-        AddFormat(new NumericFormat("DefaultFractional", PresentationType::Decimal, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fract");
-        AddFormat(new NumericFormat("SignedFractional", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("fractSign");
-        AddFormat(new NumericFormat("DefaultExp", PresentationType::Scientific, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sci");
-        AddFormat(new NumericFormat("SignedExp", PresentationType::Scientific, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciSign");
-        AddFormat(new NumericFormat("NormalizedExp", PresentationType::ScientificNorm, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("sciN");
-        AddFormat(new NumericFormat("DefaultInt", PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()))->SetAlias("int");
-        }
-    StdFormatSet() { StdInit(); }
-    static StdFormatSet& Set() { static StdFormatSet set; return set; }
+    UNITS_EXPORT NumericFormatP AddFormat(NumericFormatP fmtP);
+    UNITS_EXPORT void StdInit();
+    UNITS_EXPORT StdFormatSet() { StdInit(); }
+    UNITS_EXPORT static StdFormatSet& Set() { static StdFormatSet set; return set; }
     
 public:
 
-    static NumericFormatP DefaultDecimal()
-        {
-        NumericFormatP fmtP;
+    UNITS_EXPORT static NumericFormatP DefaultDecimal();
 
-        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); itr++)
-            {
-            fmtP = *itr;
-            if (PresentationType::Decimal == fmtP->GetPresentationType())
-                return fmtP;
-            }
-        return nullptr;
-        }
-
-    static size_t GetFormatSetSize()
+    UNITS_EXPORT static size_t GetFormatSetSize()
         {
         return Set().m_formatSet.size();
         }
 
-    static NumericFormatP FindFormat(Utf8CP name)
+    UNITS_EXPORT static NumericFormatP FindFormat(Utf8CP name)
         {
         NumericFormatP fmtP = *Set().m_formatSet.begin();
  

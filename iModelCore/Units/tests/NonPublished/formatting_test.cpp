@@ -11,6 +11,8 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
+//#define FORMAT_DEBUG_PRINT
+
 #undef LOG
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
 //#define LOG (*BentleyApi::NativeLogging::LoggingManager::GetLogger (L"Format"))
@@ -73,8 +75,8 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("9899.5", NumericFormat::RefFormatDouble(7.0*testV, "real", 5, 0.05).c_str());
     EXPECT_STREQ ("12727.9", NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05).c_str());
     EXPECT_STREQ ("2828.45", NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05).c_str());
-    EXPECT_STREQ ("2.82843e+03", NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
-    EXPECT_STREQ ("0.28284e+04", NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
+    EXPECT_STREQ ("2.82843e+3", NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
+    EXPECT_STREQ ("0.28284e+4", NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
 
     NumericFormatP fmtP = StdFormatSet::FindFormat("real");
     fmtP->SetKeepTrailingZeroes(true);
@@ -138,7 +140,7 @@ TEST(FormattingTest, Simple)
         repStr = NumericFormat::RefFormatDouble(testV, "real", 8, 0.05).c_str();
         }
     LOG.info("Tested RefFormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet)).c_str();
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet).c_str());
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     //NumericFormat fmtD = NumericFormat("TestD", PresentationType::Decimal, ShowSignOption::SignAlways, FormatTraits::TrailingZeroes, 8);
@@ -183,13 +185,15 @@ TEST(FormattingTest, Simple)
     double fract, ingr, dnum;
     dnum = -0.003415;
     fract = modf(dnum, &ingr);
+
+#if defined FORMAT_DEBUG_PRINT
     LOG.infov("fract = %f  ingr = %f  num = %e", fract, ingr, dnum);
 
     //LOG.infov("Sizeof wchar_T is %d", sizeof(wchar_t));
     LOG.infov("FormatDescr1 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
     LOG.infov("UseSeparator = %s", numFmt.IsUse1000Separator() ? "true" : "false");
     LOG.infov("Expect: 3456.0000000000   actual %s", numFmt.FormatDouble(dval1).c_str());
-
+#endif
     double valR[4] = { 31415.9265359, 314.159265359, 3.14159265359, 314159.265359 };
     double rnd[9] = { 0.0, 1.0, 0.5, 0.01, 0.001, 10.0, 100.0, 1.0 / 3.0, 0.25 };
     double resultRnd[36] = { 31415.926536, 31416.0, 31416.0, 31415.930, 31415.927, 31420.0, 31400.0, 31416.0, 31416.0, 
@@ -225,8 +229,9 @@ TEST(FormattingTest, Simple)
     numFmt.SetSignOption(ShowSignOption::OnlyNegative);
     numFmt.SetDecimalPrecision(DecimalPrecision::Precision10);
     numFmt.SetPresentationType(PresentationType::Scientific);
+    EXPECT_STREQ ("-0.2718281828e-2", numFmt.FormatDouble(-0.0027182818284590).c_str());
+    numFmt.SetExponentZero(true);
     EXPECT_STREQ ("-0.2718281828e-02", numFmt.FormatDouble(-0.0027182818284590).c_str());
-
     //LOG.infov("Expected -0.2718281828e-02  actual %s", numFmt.FormatDouble(-0.0027182818284590).c_str());
 
 
@@ -236,9 +241,10 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("-2.7182818285e-01", numFmt.FormatDouble(-0.2718281828459045).c_str());
     EXPECT_STREQ ("-0.2718281828e+04", numFmt.FormatDouble(-2718.2818284590).c_str());
     EXPECT_STREQ ("0.2718281828e+04", numFmt.FormatDouble(2718.2818284590).c_str());
+#if defined FORMAT_DEBUG_PRINT
     LOG.infov("Expected -0.2718281828e+04  actual %s", numFmt.FormatDouble(-2718.2818284590).c_str());
     LOG.infov("Expected  0.2718281828e+04  actual %s", numFmt.FormatDouble(2718.2818284590).c_str());
-
+#endif
     EXPECT_STREQ ("01000001", numFmt.ByteToBinaryText('A').c_str());
     EXPECT_STREQ ("01100110", numFmt.ByteToBinaryText('f').c_str());
     numFmt.SetThousandSeparator(' ');
@@ -271,7 +277,7 @@ TEST(FormattingTest, Simple)
         EXPECT_EQ(fp, fp2);
         }
 
-    LOG.infov("FormatDescr2 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
+    //LOG.infov("FormatDescr2 = %s", fd.SerializeFormatDefinition(numFmt)->c_str());
 
     const char *uni = u8"ЯABГCDE型号sautéςερτcañón";  // (char*)mem;
     FormattingScannerCursor curs = FormattingScannerCursor(uni, -1);   // just a core scanner
@@ -299,9 +305,16 @@ TEST(FormattingTest, Simple)
     EXPECT_TRUE(FormatConstant::IsTrailingByteValid(uni[1]));
 
     curs.Rewind();
+
+    NumericTriad tr = NumericTriad(1000.0, 3, 12, DecimalPrecision::Precision4);
+
+    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
+    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
+    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
+
+#if defined FORMAT_DEBUG_PRINT
     size_t ucode = curs.GetNextSymbol();
     size_t scanned = curs.GetLastScanned();
-
     while (ucode != 0)
         {
         LOG.infov("Scanned %d chars  unicode %0x   %s", scanned, ucode, curs.IsASCII() ? "ASCII" : "Unicode");
@@ -311,15 +324,11 @@ TEST(FormattingTest, Simple)
 
     LOG.info("testing Triads");
 
-    NumericTriad tr = NumericTriad(1000.0, 3, 12, DecimalPrecision::Precision4);
+
     LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
     LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
     LOG.infov("1000.0 INCH = %s", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
-
-
-    EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", false).c_str());
-    EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", false).c_str());
-    EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", false).c_str());
+#endif
     }
 
 
@@ -387,8 +396,10 @@ TEST(FormattingTest, DictionaryValidation)
     EXPECT_STREQ(FormatConstant::FPN_RightAlign().c_str(), dict.CodeToName(ParameterCode::RightAlign).c_str());
     EXPECT_STREQ(FormatConstant::FPN_MapName().c_str(), dict.CodeToName(ParameterCode::MapName).c_str());
 
+#if defined FORMAT_DEBUG_PRINT
     std::time_t result = std::time(nullptr);
     LOG.infov("Formatting test End %s", std::ctime(&result));
+#endif
 }
 
 END_BENTLEY_FORMATTING_NAMESPACE
