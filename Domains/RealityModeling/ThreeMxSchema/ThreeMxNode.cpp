@@ -48,6 +48,47 @@ void Node::_DrawGraphics(DrawArgsR args) const
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent Node::_SelectTiles(bvector<TileCPtr>& selectedTiles, DrawArgsR args) const
+    {
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    auto children = _GetChildren(true);
+    if (tooCoarse && nullptr != children)
+        {
+        m_childrenLastUsed = args.m_now;
+        for (auto const& child : *children)
+            {
+            // 3mx requires that we load tiles recursively - we cannot jump directly to the tiles we actually want to draw...
+            if (!child->IsReady())
+                args.InsertMissing(*child);
+
+            child->_SelectTiles(selectedTiles, args);
+            }
+
+        return SelectParent::No;
+        }
+
+    // This node is either fine enough for the current view or has some unloaded children. We'll select it.
+    selectedTiles.push_back(this);
+
+    if (!tooCoarse)
+        {
+        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
+        _UnloadChildren(args.m_purgeOlderThan);
+        }
+
+    return SelectParent::No;
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------

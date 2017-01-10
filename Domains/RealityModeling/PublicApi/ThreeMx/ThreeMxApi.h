@@ -125,8 +125,8 @@ private:
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr) override;
 
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
+    SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
     Utf8String _GetTileName() const override {return GetChildFile();}
-    bool _CanSubstituteChildren(bool) const override {return true;}
 public:
     Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
     Utf8String GetFilePath(SceneR) const;
