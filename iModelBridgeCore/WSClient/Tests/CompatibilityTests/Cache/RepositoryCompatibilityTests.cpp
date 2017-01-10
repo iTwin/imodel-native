@@ -13,6 +13,7 @@
 
 #include "../../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 #include "../TestUtils/TestsHelper.h"
+#include "../TestUtils/TestsHost.h"
 #include "ArgumentParser.h"
 #include "DiskRepositoryClient.h"
 
@@ -40,6 +41,7 @@ void RepositoryCompatibilityTests::SetTestData(const bvector<TestRepositories>& 
 
 void RepositoryCompatibilityTests::SetUp()
     {
+    TestsHost::GetErrorLog().clear();
     s_localState = StubLocalState();
     s_proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -51,6 +53,9 @@ void RepositoryCompatibilityTests::SetUp()
 void RepositoryCompatibilityTests::TearDown()
     {
     UrlProvider::Uninitialize();
+
+    if (!TestsHost::GetErrorLog().empty())
+        ADD_FAILURE() << TestsHost::GetErrorLog();
     }
 
 void CreateDateStampFile(Utf8StringCR testName, BeFileName path)
