@@ -744,14 +744,12 @@ AnnotationTableCellIndex    AnnotationTableCellIndex::GetCellIndex(ECSqlStatemen
 void    AnnotationTableCellIndex::BindCellIndex(ECSqlStatement& statement, Utf8CP paramName, AnnotationTableCellIndexCR cellIndex)
     {
     int paramIndex = statement.GetParameterIndex(paramName);
-    IECSqlStructBinder& binder = statement.BindStruct(paramIndex);
+    IECSqlBinder& binder = statement.GetBinder(paramIndex);
 
-    ECSqlStatus status;
-
-    status = binder.GetMember(CELLINDEX_PARAM_RowIndex).BindInt(cellIndex.row);
+    ECSqlStatus status = binder[CELLINDEX_PARAM_RowIndex].BindInt(cellIndex.row);
     BeAssert(status == ECSqlStatus::Success);
 
-    status = binder.GetMember(CELLINDEX_PARAM_ColumnIndex).BindInt(cellIndex.col);
+    status = binder[CELLINDEX_PARAM_ColumnIndex].BindInt(cellIndex.col);
     BeAssert(status == ECSqlStatus::Success);
     }
 

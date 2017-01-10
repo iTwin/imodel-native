@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementGeometry.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -77,6 +77,7 @@ public:
     DGNPLATFORM_EXPORT bool GetLocalRange(DRange3dR localRange, TransformR localToWorld) const; // Expensive - copies geometry!
     DGNPLATFORM_EXPORT bool GetRange(DRange3dR range, TransformCP transform = nullptr) const;
     DGNPLATFORM_EXPORT bool TransformInPlace(TransformCR transform);
+    DGNPLATFORM_EXPORT bool IsSameStructureAndGeometry(GeometricPrimitiveCR, double tolerance) const;
 
     DGNPLATFORM_EXPORT GeometricPrimitivePtr Clone() const; // Deep copy
 
@@ -353,7 +354,7 @@ struct GeometryCollection
             SolidPrimitive      = 4,  //!< ISolidPrimitive
             BsplineSurface      = 5,  //!< MSBSplineSurface
             Polyface            = 6,  //!< Polyface
-            BRepEntity   = 7,  //!< BRepEntity
+            BRepEntity          = 7,  //!< BRepEntity
             TextString          = 8,  //!< TextString
         };
 
@@ -567,7 +568,6 @@ public:
     Placement3dCR GetPlacement3d() const {return m_placement3d;} //!< @private Current Placement3d as of last call to Append when creating a 3d GeometryStream
     Render::GeometryParamsCR GetGeometryParams() const {return m_elParams;} //!< @private Current GeometryParams as of last call to Append
     DGNPLATFORM_EXPORT BentleyStatus GetGeometryStream(GeometryStreamR); //!< @private GeometryStream being constructed by this builder
-    DGNPLATFORM_EXPORT bool MatchesGeometryPart(DgnGeometryPartId, DgnDbR db, bool ignoreSymbology = false, bool ignoreInitialSymbology = true); //!< @private Assumes already detected a range match...
 
     //! Return the GeometryStreamEntryId for the GeometricPrimitve last added to the builder. Used to identify a specific GeometricPrimitive in the GeometryStream in places like HitDetail.
     DGNPLATFORM_EXPORT GeometryStreamEntryId GetGeometryStreamEntryId() const;
