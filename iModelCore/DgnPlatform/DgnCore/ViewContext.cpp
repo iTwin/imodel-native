@@ -1218,6 +1218,12 @@ void DecorateContext::AddViewOverlay(Render::GraphicR graphic, Render::OvrGraphi
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)
     {
+    if (nullptr != m_viewlet)
+        {
+        m_viewlet->Add(graphic);
+        return;
+        }
+
     if (!m_decorations.m_flashed.IsValid())
         m_decorations.m_flashed = new GraphicList;
 
