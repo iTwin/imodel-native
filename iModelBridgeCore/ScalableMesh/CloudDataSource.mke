@@ -2,7 +2,7 @@
 #
 #     $Source: CloudDataSource.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
@@ -120,7 +120,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
     $(ContextSubpartsLibs)BeOpenSSL.lib \
     $(ContextSubpartsLibs)wastorage.lib \
-    $(ContextSubpartsLibs)cpprest120_2_6.lib
+    $(ContextSubpartsLibs)cpprest140_2_6.lib
 
 #--------------------------------------------------------------------------------------
 #   Create the library

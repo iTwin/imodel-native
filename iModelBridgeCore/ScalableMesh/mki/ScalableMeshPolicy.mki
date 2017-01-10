@@ -2,7 +2,7 @@
 #
 #     $Source: mki/ScalableMeshPolicy.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 %if defined (__ScalableMeshPolicy_mki__)
@@ -51,7 +51,9 @@ ContextSubpartsLibs = $(BuildContext)SubParts/Libs/
 #----------------------------------------------------------
 # Compile and link settings
 #----------------------------------------------------------
+%if defined(IncludeCompileLinkMki)
 %include $(SharedMki)CommonCompileLinkPolicy.mki
+%endif
 
 
 PublicApiIncludes + -I$(STMPrivateApiSrc) -I${BuildContext}/PublicAPI/ -I${BuildContext}/VendorAPI/ -I${BuildContext}/VendorAPI/cpprestsdk/ -I${BuildContext}/VendorAPI/wastorage/ -I${BuildContext}/VendorAPI/BeCurl/ -I${BuildContext}/VendorAPI/BeSQLite/
