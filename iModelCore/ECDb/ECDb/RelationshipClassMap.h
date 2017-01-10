@@ -96,10 +96,10 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 			{
 			private:
 				RelationshipClassEndTableMap const& m_relMap;
-				RelationshipMappingInfo const& m_relInfo;
+				// unused - RelationshipMappingInfo const& m_relInfo;
 			public:
 				explicit ColumnFactory(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
-					:m_relMap(relMap), m_relInfo(relInfo) {}
+					:m_relMap(relMap)/* unused - , m_relInfo(relInfo)*/ {}
 				DbColumn* AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position);
 				DbColumn* AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType);
 			};
