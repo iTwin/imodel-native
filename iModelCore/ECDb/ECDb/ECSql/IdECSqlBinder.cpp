@@ -206,19 +206,28 @@ ECSqlStatus IdECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& IdECSqlBinder::_BindStruct()
+IECSqlBinder& IdECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Id parameter.");
-    return NoopECSqlBinder::Get().BindStruct();
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& IdECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlBinder& IdECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Id parameter.");
+    return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2014
+//---------------------------------------------------------------------------------------
+IECSqlBinder& IdECSqlBinder::_AddArrayElement()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to Id parameter.");
-    return NoopECSqlBinder::Get().BindArray(initialCapacity);
+    return NoopECSqlBinder::Get();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

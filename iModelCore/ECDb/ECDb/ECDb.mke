@@ -96,7 +96,6 @@ ECDbAllHeaders = \
                 $(baseDir)ECSql/ECSqlStatementBase.h \
                 $(baseDir)ECSql/ECSqlStatementImpl.h \
                 $(baseDir)ECSql/ECSqlStatementNoopImpls.h \
-                $(baseDir)ECSql/IECSqlPrimitiveBinder.h \
                 $(baseDir)ECSql/ECSqlBinder.h \
                 $(baseDir)ECSql/ECSqlBinderFactory.h \
                 $(baseDir)ECSql/PrimitiveECSqlBinder.h \

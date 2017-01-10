@@ -9,13 +9,12 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlBinder.h"
-#include "IECSqlPrimitiveBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct PointECSqlBinder : public ECSqlBinder, IECSqlPrimitiveBinder
+struct PointECSqlBinder : public ECSqlBinder
     {
     private:
         bool m_isPoint3d;
@@ -24,10 +23,6 @@ struct PointECSqlBinder : public ECSqlBinder, IECSqlPrimitiveBinder
         int m_zSqliteIndex;
 
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
-
-        virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
-        virtual IECSqlStructBinder& _BindStruct() override;
-        virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
         virtual ECSqlStatus _BindNull() override;
         virtual ECSqlStatus _BindBoolean(bool value) override;
@@ -41,6 +36,11 @@ struct PointECSqlBinder : public ECSqlBinder, IECSqlPrimitiveBinder
         virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
         virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
         virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+
+        virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+        virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+
+        virtual IECSqlBinder& _AddArrayElement() override;
 
         bool IsPoint3d() const { return m_isPoint3d; }
     public:

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/IECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,9 +14,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct IECSqlPrimitiveBinder;
-struct IECSqlStructBinder;
-struct IECSqlArrayBinder;
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.
@@ -42,9 +39,21 @@ public:
 
 private:
     virtual ECSqlStatus _BindNull() = 0;
-    virtual IECSqlPrimitiveBinder& _BindPrimitive() = 0;
-    virtual IECSqlStructBinder& _BindStruct() = 0;
-    virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) = 0;
+    virtual ECSqlStatus _BindBoolean(bool) = 0;
+    virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) = 0;
+    virtual ECSqlStatus _BindZeroBlob(int blobSize) = 0;
+    virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) = 0;
+    virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) = 0;
+    virtual ECSqlStatus _BindDouble(double) = 0;
+    virtual ECSqlStatus _BindInt(int) = 0;
+    virtual ECSqlStatus _BindInt64(int64_t) = 0;
+    virtual ECSqlStatus _BindPoint2d(DPoint2dCR) = 0;
+    virtual ECSqlStatus _BindPoint3d(DPoint3dCR) = 0;
+    virtual ECSqlStatus _BindText(Utf8CP, IECSqlBinder::MakeCopy, int byteCount) = 0;
+
+    virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) = 0;
+    virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) = 0;
+    virtual IECSqlBinder& _AddArrayElement() = 0;
 
 public:
     virtual ~IECSqlBinder() {}
@@ -164,62 +173,17 @@ public:
     //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
     ECSqlStatus BindVirtualSet(VirtualSet const& virtualSet) { return BindInt64((int64_t) &virtualSet); }
 
-    //! Gets a binder which is used to bind struct values
-    //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
-    //! returns the appropriate error-code.
-    //! @return Struct parameter binder
-    ECDB_EXPORT IECSqlStructBinder& BindStruct();
-    
-    //! Gets a binder which is used to bind primitive array values.
-    //! @remarks In case of error, e.g. if the parameter
-    //! is not a primitive array, a no-op binder will be returned. Calling methods on the no-op binder
-    //! returns the appropriate error-code.
-    //! @param[in] initialCapacity Initial capacity of the array to bind. 
-    //! @return Array parameter binder
-    ECDB_EXPORT IECSqlArrayBinder& BindArray(uint32_t initialCapacity);
-    };
-
-//=======================================================================================
-//! IECSqlStructBinder is used to bind a struct value to a binding parameter in an ECSqlStatement.
-//! @ingroup ECDbGroup
-// @bsiclass                                                 Krischan.Eberle    01/2014
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlStructBinder : NonCopyableClass
-    {
-private:
-    virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) = 0;
-    virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) = 0;
-
-public:
-    virtual ~IECSqlStructBinder() {}
-
-    //! Binds a value to the specified struct member property
+    //! Gets a binder for the specified struct member property
     //! @param[in] structMemberPropertyName Property name of the struct member to bind the value to
-    //! @return ECSqlStatus::Success or error codes
-    ECDB_EXPORT IECSqlBinder& GetMember(Utf8CP structMemberPropertyName);
+    //! @return The binder for the specified struct member property
+    ECDB_EXPORT IECSqlBinder& operator[] (Utf8CP structMemberPropertyName);
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    IECSqlBinder& GetMember(ECN::ECPropertyId structMemberPropertyId);
+    IECSqlBinder& operator[] (ECN::ECPropertyId structMemberPropertyId);
 #endif
-    };
 
-//=======================================================================================
-//! The IECSqlArrayBinder is used to bind an array to a binding parameter
-//! in an ECSqlStatement.
-//! @ingroup ECDbGroup
-// @bsiclass                                                 Krischan.Eberle    01/2014
-//+===============+===============+===============+===============+===============+======
-struct EXPORT_VTABLE_ATTRIBUTE IECSqlArrayBinder : NonCopyableClass
-    {
-private:
-    virtual IECSqlBinder& _AddArrayElement() = 0;
-
-public:
-    virtual ~IECSqlArrayBinder() {}
-
-    //! Adds a new array element to the array to be bound to the parameter and
-    //! returns the new element's binder to bind a value to that element
-    //! @return Binder to bind a value to the new array element
+    //! Adds a new array element to the array to be bound to the parameter.
+    //! @return The binder for the new array element
     ECDB_EXPORT IECSqlBinder& AddArrayElement();
     };
 

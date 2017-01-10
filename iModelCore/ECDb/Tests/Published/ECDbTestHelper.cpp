@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECDbTestHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbTestHelper.h"
@@ -102,22 +102,6 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindPoint3D(int Parameterindex, DPoi
 ECSqlStatus ECSqlStatementHelper::Bindings::bindId(int Parameterindex, BeInt64Id id)
     {
     return m_parent.stmt.BindId(Parameterindex, id);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct(int Parameterindex)
-    {
-    return m_parent.stmt.BindStruct(Parameterindex);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray(int Parameterindex, uint32_t initialArrayCapacity)
-    {
-    return m_parent.stmt.BindArray(Parameterindex, initialArrayCapacity);
     }
 
 //*************** For Named Parameter Binding ***************************
@@ -226,23 +210,6 @@ ECSqlStatus ECSqlStatementHelper::Bindings::bindId(Utf8CP ParameterName, BeInt64
     return m_parent.stmt.BindId(index, id);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlStructBinder& ECSqlStatementHelper::Bindings::bindStruct(Utf8CP ParameterName)
-    {
-    int index = m_parent.stmt.GetParameterIndex(ParameterName);
-    return m_parent.stmt.BindStruct(index);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Maha Nasir                  12/15
-//+---------------+---------------+---------------+---------------+---------------+------
-IECSqlArrayBinder& ECSqlStatementHelper::Bindings::bindArray(Utf8CP ParameterName, uint32_t initialArrayCapacity)
-    {
-    int index = m_parent.stmt.GetParameterIndex(ParameterName);
-    return m_parent.stmt.BindArray(index, initialArrayCapacity);
-    }
 //---------------------------------------------------------------------------------------
 //! Searches the referenced schema on the default/absolute Path.
 // @bsimethod                                     Maha Nasir                  12/15

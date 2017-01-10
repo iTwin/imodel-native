@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/NavigationPropertyECSqlBinder.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,7 +15,7 @@ struct IdECSqlBinder;
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      11/2016
 //+===============+===============+===============+===============+===============+======
-struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
+struct NavigationPropertyECSqlBinder : public ECSqlBinder
     {
     friend struct ECSqlBinderFactory;
 
@@ -29,13 +29,23 @@ struct NavigationPropertyECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         //only needed at prepare time to set up the binder
         virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
 
-        //these are needed by the actual binding API
-        virtual IECSqlBinder& _GetMember(Utf8CP navPropMemberPropertyName) override;
-        virtual IECSqlBinder& _GetMember(ECN::ECPropertyId navPropMemberPropertyId) override;
         virtual ECSqlStatus _BindNull() override;
-        virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
-        virtual IECSqlStructBinder& _BindStruct() override { return *this; }
-        virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
+        virtual ECSqlStatus _BindBoolean(bool value) override;
+        virtual ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
+        virtual ECSqlStatus _BindZeroBlob(int blobSize) override;
+        virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
+        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
+        virtual ECSqlStatus _BindDouble(double value) override;
+        virtual ECSqlStatus _BindInt(int value) override;
+        virtual ECSqlStatus _BindInt64(int64_t value) override;
+        virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
+        virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
+        virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+
+        virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+        virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+
+        virtual IECSqlBinder& _AddArrayElement() override;
 
     public:
         ~NavigationPropertyECSqlBinder() {}

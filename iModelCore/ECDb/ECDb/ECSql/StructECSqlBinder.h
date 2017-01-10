@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct StructECSqlBinder : public ECSqlBinder, IECSqlStructBinder
+struct StructECSqlBinder : public ECSqlBinder
     {
     friend struct ECSqlBinderFactory;
 
@@ -50,13 +50,23 @@ struct StructECSqlBinder : public ECSqlBinder, IECSqlStructBinder
         virtual void _OnClearBindings() override;
         virtual ECSqlStatus _OnBeforeStep() override;
 
-        //these are needed by the actual binding API
-        virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) override;
-        virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) override;
         virtual ECSqlStatus _BindNull() override;
-        virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
-        virtual IECSqlStructBinder& _BindStruct() override { return *this; }
-        virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
+        virtual ECSqlStatus _BindBoolean(bool value) override;
+        virtual ECSqlStatus _BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy) override;
+        virtual ECSqlStatus _BindZeroBlob(int blobSize) override;
+        virtual ECSqlStatus _BindDateTime(uint64_t julianDayMsec, DateTime::Info const&) override;
+        virtual ECSqlStatus _BindDateTime(double julianDay, DateTime::Info const&) override;
+        virtual ECSqlStatus _BindDouble(double value) override;
+        virtual ECSqlStatus _BindInt(int value) override;
+        virtual ECSqlStatus _BindInt64(int64_t value) override;
+        virtual ECSqlStatus _BindPoint2d(DPoint2dCR) override;
+        virtual ECSqlStatus _BindPoint3d(DPoint3dCR) override;
+        virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+
+        virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+        virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+
+        virtual IECSqlBinder& _AddArrayElement() override;
 
     public:
         ~StructECSqlBinder() {}

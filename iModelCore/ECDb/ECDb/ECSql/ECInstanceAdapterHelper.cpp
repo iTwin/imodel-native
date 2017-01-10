@@ -362,12 +362,11 @@ BentleyStatus ECInstanceAdapterHelper::BindPrimitiveValue(IECSqlBinder& binder, 
 //static
 BentleyStatus ECInstanceAdapterHelper::BindStructValue(IECSqlBinder& binder, ECInstanceInfo const& instance, StructECValueBindingInfo const& valueBindingInfo)
     {
-    IECSqlStructBinder& structBinder = binder.BindStruct();
     for (auto const& kvPair : valueBindingInfo.GetMemberBindingInfos())
         {
         ECValueBindingInfo const& memberBinding = *kvPair.second;
 
-        if (SUCCESS != BindValue(structBinder.GetMember(kvPair.first), instance, memberBinding))
+        if (SUCCESS != BindValue(binder[kvPair.first], instance, memberBinding))
             return ERROR;
         }
 
@@ -396,7 +395,6 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
     BeAssert(arrayValue.IsArray());
     const ArrayInfo arrayInfo = arrayValue.GetArrayInfo();
     const uint32_t arrayLength = arrayInfo.GetCount();
-    IECSqlArrayBinder& arrayBinder = binder.BindArray(arrayLength);
 
     for (uint32_t i = 0; i < arrayLength; i++)
         {
@@ -407,7 +405,7 @@ BentleyStatus ECInstanceAdapterHelper::BindArrayValue(IECSqlBinder& binder, ECIn
         if (ECObjectsStatus::Success != instance.GetValue(elementValue, arrayPropIndex, i))
             return ERROR;
 
-        IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
+        IECSqlBinder& arrayElementBinder = binder.AddArrayElement();
 
         if (!valueBindingInfo.IsStructArray())
             {

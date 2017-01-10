@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECSqlNavigationProps_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "SchemaImportTestFixture.h"
@@ -223,9 +223,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithOptionalRelClassId)
     //now use alternative API via struct binder
     ECInstanceKey newKey;
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Info-2", IECSqlBinder::MakeCopy::No));
-    IECSqlStructBinder& navPropBinder = stmt.BindStruct(2);
-    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("Id").BindId(modelKey.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("RelECClassId").BindId(modelHasElementsClassId));
+    IECSqlBinder& navPropBinder = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder["Id"].BindId(modelKey.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder["RelECClassId"].BindId(modelHasElementsClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
     stmt.Reset();
     stmt.ClearBindings();
@@ -416,9 +416,9 @@ TEST_F(ECSqlNavigationPropertyTestFixture, BindingWithMandatoryRelClassId)
     ASSERT_TRUE(insertWasValid);
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Physical-2", IECSqlBinder::MakeCopy::No));
-    IECSqlStructBinder& navPropBinder = stmt.BindStruct(2);
-    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("Id").BindId(info1Key.GetECInstanceId()));
-    ASSERT_EQ(ECSqlStatus::Success, navPropBinder.GetMember("RelECClassId").BindId(elementOwnsPhysicalElementsClassId));
+    IECSqlBinder& navPropBinder = stmt.GetBinder(2);
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder["Id"].BindId(info1Key.GetECInstanceId()));
+    ASSERT_EQ(ECSqlStatus::Success, navPropBinder["RelECClassId"].BindId(elementOwnsPhysicalElementsClassId));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(newKey));
 
     stmt.Reset();

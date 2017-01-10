@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/ECDbTestHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -190,8 +190,6 @@ struct ECSqlStatementHelper
             ECSqlStatus bindPoint2D (int Parameterindex, DPoint2dCR value);
             ECSqlStatus bindPoint3D (int Parameterindex, DPoint3dCR value);
             ECSqlStatus bindId (int Parameterindex, BeInt64Id id);
-            IECSqlStructBinder& bindStruct (int Parameterindex);
-            IECSqlArrayBinder& bindArray (int Parameterindex, uint32_t initialArrayCapacity);
 
             //For Named Parameter binding
             ECSqlStatus bindNull (Utf8CP ParameterName);
@@ -206,8 +204,6 @@ struct ECSqlStatementHelper
             ECSqlStatus bindPoint2D (Utf8CP ParameterName, DPoint2dCR value);
             ECSqlStatus bindPoint3D (Utf8CP ParameterName, DPoint3dCR value);
             ECSqlStatus bindId (Utf8CP ParameterName, BeInt64Id id);
-            IECSqlStructBinder& bindStruct (Utf8CP ParameterName);
-            IECSqlArrayBinder& bindArray (Utf8CP ParameterName, uint32_t initialArrayCapacity);
         };
 
     Bindings m_bindValues;

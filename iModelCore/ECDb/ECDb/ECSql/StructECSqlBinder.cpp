@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      03/2014
 //---------------------------------------------------------------------------------------
 StructECSqlBinder::StructECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true), IECSqlStructBinder()
+    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, true)
     {}
 
 
@@ -104,28 +104,11 @@ ECSqlStatus StructECSqlBinder::_BindNull()
     return ECSqlStatus::Success;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& StructECSqlBinder::_BindPrimitive()
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind primitive value to ECStruct parameter.");
-    return NoopECSqlBinder::Get().BindPrimitive();
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& StructECSqlBinder::_BindArray(uint32_t initialCapacity)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to ECStruct parameter.");
-    return NoopECSqlBinder::Get().BindArray(initialCapacity);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlBinder& StructECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
+IECSqlBinder& StructECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
     auto memberProp = GetTypeInfo().GetStructType().GetPropertyP(structMemberPropertyName, true);
     if (memberProp == nullptr)
@@ -135,13 +118,13 @@ IECSqlBinder& StructECSqlBinder::_GetMember(Utf8CP structMemberPropertyName)
         return NoopECSqlBinder::Get();
         }
 
-    return _GetMember(memberProp->GetId());
+    return _BindStructMember(memberProp->GetId());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlBinder& StructECSqlBinder::_GetMember(ECN::ECPropertyId structMemberPropertyId)
+IECSqlBinder& StructECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
     {
     auto it = m_memberBinders.find(structMemberPropertyId);
     if (it == m_memberBinders.end())
@@ -163,4 +146,110 @@ IECSqlBinder& StructECSqlBinder::_GetMember(ECN::ECPropertyId structMemberProper
     return *it->second;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindBoolean(bool value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind boolean value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindBlob(const void* value, int binarySize, IECSqlBinder::MakeCopy makeCopy)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Blob value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      12/2016
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindZeroBlob(int blobSize)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Zeroblob value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2015
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindDateTime(uint64_t julianDayMsec, DateTime::Info const&)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindDateTime(double julianDay, DateTime::Info const&)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind DateTime value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindDouble(double value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind double value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindInt(int value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind integer value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindInt64(int64_t value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind int64_t value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy makeCopy, int byteCount)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind string value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindPoint2d(DPoint2dCR value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point2d value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus StructECSqlBinder::_BindPoint3d(DPoint3dCR value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind Point3d value to struct parameter.");
+    return ECSqlStatus::Error;
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2014
+//---------------------------------------------------------------------------------------
+IECSqlBinder& StructECSqlBinder::_AddArrayElement()
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to struct parameter.");
+    return NoopECSqlBinder::Get();
+    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

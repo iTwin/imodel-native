@@ -9,14 +9,13 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include "ECSqlBinder.h"
-#include "IECSqlPrimitiveBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      08/2013
 //+===============+===============+===============+===============+===============+======
-struct PrimitiveECSqlBinder : public ECSqlBinder, public IECSqlPrimitiveBinder
+struct PrimitiveECSqlBinder : public ECSqlBinder
     {
 private:
     int m_sqliteIndex;
@@ -24,10 +23,6 @@ private:
     ECSqlStatus CanBind(ECN::PrimitiveType requestedType) const;
 
     virtual void _SetSqliteIndex(int ecsqlParameterComponentIndex, size_t sqliteParameterIndex) override;
-
-    virtual IECSqlPrimitiveBinder& _BindPrimitive() override;
-    virtual IECSqlStructBinder& _BindStruct() override;
-    virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) override;
 
     virtual ECSqlStatus _BindNull() override;
     virtual ECSqlStatus _BindBoolean(bool value) override;
@@ -41,6 +36,11 @@ private:
     virtual ECSqlStatus _BindPoint2d (DPoint2dCR value) override;
     virtual ECSqlStatus _BindPoint3d (DPoint3dCR value) override;
     virtual ECSqlStatus _BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) override;
+
+    virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override;
+    virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override;
+
+    virtual IECSqlBinder& _AddArrayElement() override;
 
 public:
     PrimitiveECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& typeInfo)

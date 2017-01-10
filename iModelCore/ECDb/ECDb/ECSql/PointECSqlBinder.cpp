@@ -211,27 +211,28 @@ ECSqlStatus PointECSqlBinder::_BindText(Utf8CP stringValue, IECSqlBinder::MakeCo
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& PointECSqlBinder::_BindPrimitive()
-    {
-    return *this;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlStructBinder& PointECSqlBinder::_BindStruct()
+IECSqlBinder& PointECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Point2d / Point3d parameter.");
-    return NoopECSqlBinder::Get().BindStruct();
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PointECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlBinder& PointECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to Point2d / Point3d parameter.");
+    return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2014
+//---------------------------------------------------------------------------------------
+IECSqlBinder& PointECSqlBinder::_AddArrayElement()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to Point2d / Point3d parameter.");
-    return NoopECSqlBinder::Get().BindArray(initialCapacity);
+    return NoopECSqlBinder::Get();
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
