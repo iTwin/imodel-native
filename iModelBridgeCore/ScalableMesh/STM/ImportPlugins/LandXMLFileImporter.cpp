@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:45:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -193,24 +193,71 @@ private:
         {
         ContentDescriptor contentDesc(L"");
 
-        struct SurfaceToLayerDesc
-            {
-            RefCountedPtr<ILayerDescriptor> operator() (const Surface& surface) const
+        GCS fileGcs(GetGCSFactory().Create(Unit::GetMeter()));
+        
+        GeoCoordinates::BaseGCSPtr gcsPtr(m_landImporterP->GetGCS());
+
+        SMStatus status = S_ERROR;
+        
+        if (gcsPtr.IsValid())
+            {             
+            fileGcs = GetGCSFactory().Create(gcsPtr, status);
+            }
+
+        if (status != S_SUCCESS)
+            {            
+            FileUnit fileUnit = m_landImporterP->GetFileUnit();
+            WCharCP fileUnitStr = m_landImporterP->GetFileUnitString();
+
+            switch (fileUnit)
                 {
-                return ILayerDescriptor::CreateLayerDescriptor(surface.GetName().c_str(),
+                case FileUnit::Unknown :
+                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
+                    break;
+                case FileUnit::Millimeter:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.001));
+                    break;
+                case FileUnit::Centimeter:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.01));
+                    break;
+                case FileUnit::Meter:
+                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
+                    break;
+                case FileUnit::Kilometer:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1000));
+                    break;
+                case FileUnit::Inch:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.02540000));
+                    break;
+                case FileUnit::Foot:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.3048000));
+                    break;
+                case FileUnit::USSurveyFoot:
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1200.0 / 3937.0));
+                    break;
+                case FileUnit::Mile:                                        
+                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1609.3440));
+                    break;
+                default:
+                    assert(!"Unknown LandXML unit");
+                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
+                    break;
+                }  
+            }                              
+        
+        for (auto& surface : m_surfaces)
+            {  
+            contentDesc.push_back(ILayerDescriptor::CreateLayerDescriptor(surface.GetName().c_str(),
                                        DataTypeSet
                                             (
                                             LinearTypeTi32Pi32Pq32Gi32_3d64fCreator().Create(), 
                                             PointType3d64fCreator().Create(),
                                             TINTypeAsLinearTi32Pi32Pq32Gi32_3d64fCreator().Create()
                                             ), 
-                                        GetGCSFactory().Create(Unit::GetMeter()), 
+                                        fileGcs,
                                         0,
-                                        ScalableMeshData::GetNull());
-                }
-            };
-
-        std::transform(m_surfaces.begin(), m_surfaces.end(), back_inserter(contentDesc), SurfaceToLayerDesc());
+                                        ScalableMeshData::GetNull()));                
+            }        
 
         return contentDesc;
         }
