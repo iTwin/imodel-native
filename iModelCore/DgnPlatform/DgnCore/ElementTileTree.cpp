@@ -355,6 +355,19 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 
         return true;
         }
+
+    void Transform(TransformCR tf)
+        {
+        for (int32_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d& fpt = const_cast<FPoint3d&>(m_points[i]);
+            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+            tf.Multiply(dpt);
+            fpt.x = dpt.x;
+            fpt.y = dpt.y;
+            fpt.z = dpt.z;
+            }
+        }
 };
 
 //=======================================================================================
@@ -395,6 +408,12 @@ struct TilePolylineArgs
 
         return false;
         }
+
+    void Transform(TransformCR tf)
+        {
+        for (DPoint3dR vert : m_vertices)
+            tf.Multiply(vert);
+        }
 };
 
 //=======================================================================================
@@ -422,6 +441,12 @@ struct TilePolylineArgsList
         for (auto& args : m_args)
             args.Apply(gf);
         }
+
+    void Transform(TransformCR tf)
+        {
+        for (auto& args : m_args)
+            args.Transform(tf);
+        }
 };
 
 #if defined(ELEMENT_TILE_EXPAND_2D_RANGE)
@@ -435,12 +460,23 @@ constexpr size_t s_maxPointsPerTile = 10000;
 constexpr size_t s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 
+enum class InstancingOptions
+{
+    // Add each instance as a top-level graphic.
+    // Downside: Scene creation is slower as we have to populate much larger lists of graphics
+    AsGraphics,
+    // Add each instance as a sub-graphic with a transform
+    // Downside: qv_pushTransclip() is inordinately slow.
+    AsSubGraphics,
+    // Transform instanced geometry in place, then add as a subgraphic with identity transform
+    // Downside: Separate QvElem for each subgraphic; slower tile generation due to applying the transform. Probably best bet for now
+    AsPreTransformedSubGraphics
+};
+
 // avoid re-facetting repeated geometry - cache and reuse
 // Improves tile generation time - but that was before we enabled concurrent parasolid facetting. Requires mutexes, additional state - may not be worth it.
 static bool s_cacheInstances = true;
-// Reuse the same Graphic as a SubGraphic for instanced geometry
-// Results in significant worse framerate due to surprisingly poor performance of qv_defineTransclip()
-static bool s_instancesAsSubgraphics = false;
+static InstancingOptions s_instancingOptions = InstancingOptions::AsPreTransformedSubGraphics;
 static Render::GraphicSet s_unusedDummyGraphicSet;
 
 //=======================================================================================
@@ -1936,7 +1972,7 @@ BentleyStatus Loader::_LoadTile()
     TileMeshArgs meshArgs;
     Render::GraphicBuilderPtr graphic;
 
-    if (s_instancesAsSubgraphics)
+    if (InstancingOptions::AsSubGraphics == s_instancingOptions)
         {
         for (auto const& part : geometry.Parts())
             {
@@ -1976,7 +2012,7 @@ BentleyStatus Loader::_LoadTile()
                 }
             }
         }
-    else
+    else if (InstancingOptions::AsGraphics == s_instancingOptions)
         {
         TilePolylineArgsList polylineArgsList;
         for (auto const& part : geometry.Parts())
@@ -2006,6 +2042,57 @@ BentleyStatus Loader::_LoadTile()
 
                     instanceGraphic->Close();
                     tile.AddGraphic(*instanceGraphic);
+                    }
+                }
+            }
+        }
+    else
+        {
+        TilePolylineArgsList polylineArgsList;
+        for (auto const& part : geometry.Parts())
+            {
+            if (part->Instances().empty() || part->Meshes().empty())
+                continue;
+
+            for (auto const& mesh : part->Meshes())
+                {
+                bool haveMesh = !mesh->Triangles().empty();
+                bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+                if (!haveMesh && !havePolyline)
+                    continue;
+                else if ((haveMesh && !meshArgs.Init(*mesh, system, root.GetDgnDb())))
+                    continue;
+                else if ((havePolyline && !polylineArgsList.Init(*mesh)))
+                    continue;
+
+                if (graphic.IsNull())
+                    graphic = system._CreateGraphic(Graphic::CreateParams());
+
+                Transform invTransform = Transform::FromIdentity();
+                for (auto const& instance : part->Instances())
+                    {
+                    auto instanceGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+
+                    // ###TODO: Combine the inverse of the prev transform and the instance transform rather than applying two transform per iteration...
+                    TransformCR instanceTransform = instance.GetTransform();
+                    invTransform.InverseOf(instanceTransform);
+
+                    if (haveMesh)
+                        {
+                        meshArgs.Transform(instanceTransform);
+                        instanceGraphic->AddTriMesh(meshArgs);
+                        meshArgs.Transform(invTransform);
+                        }
+                    else
+                        {
+                        polylineArgsList.Transform(instanceTransform);
+                        polylineArgsList.Apply(*instanceGraphic);
+                        polylineArgsList.Transform(invTransform);
+                        }
+
+                    instanceGraphic->Close();
+                    graphic->AddSubGraphic(*instanceGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
                     }
                 }
             }
