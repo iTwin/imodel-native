@@ -2,9 +2,12 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Published\NotificationManager_Test.cpp">
+      <Filter>Published</Filter>	
+    </ClCompile>
+	<ClCompile Include="Published\Tag_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\Tag_Test.cpp">
+    <ClCompile Include="Published\ParaSolids_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\UnitDefinition_Test.cpp">

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ElementGeometry.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -419,6 +419,81 @@ bool GeometricPrimitive::TransformInPlace(TransformCR transform)
             BeAssert(false);
             return false;
             }
+        }
+    }
+
+/*----------------------------------------------------------------------------------*//**
+* @bsimethod                                                    Brien.Bastings  03/15
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometricPrimitive::IsSameStructureAndGeometry(GeometricPrimitiveCR primitive, double tolerance) const
+    {
+    if (GetGeometryType() != primitive.GetGeometryType())
+        return false;
+
+    switch (GetGeometryType())
+        {
+        case GeometryType::CurvePrimitive:
+            {
+            ICurvePrimitivePtr geom1 = GetAsICurvePrimitive();
+            ICurvePrimitivePtr geom2 = primitive.GetAsICurvePrimitive();
+
+            return geom1->IsSameStructureAndGeometry(*geom2, tolerance);
+            }
+
+        case GeometryType::CurveVector:
+            {
+            CurveVectorPtr geom1 = GetAsCurveVector();
+            CurveVectorPtr geom2 = primitive.GetAsCurveVector();
+
+            return geom1->IsSameStructureAndGeometry(*geom2, tolerance);
+            }
+
+        case GeometryType::SolidPrimitive:
+            {
+            ISolidPrimitivePtr geom1 = GetAsISolidPrimitive();
+            ISolidPrimitivePtr geom2 = primitive.GetAsISolidPrimitive();
+
+            return geom1->IsSameStructureAndGeometry(*geom2, tolerance);
+            }
+
+        case GeometryType::Polyface:
+            {
+            PolyfaceHeaderPtr geom1 = GetAsPolyfaceHeader();
+            PolyfaceHeaderPtr geom2 = primitive.GetAsPolyfaceHeader();
+
+            return geom1->IsSameStructureAndGeometry(*geom2, tolerance);
+            }
+
+        case GeometryType::BsplineSurface:
+            {
+            MSBsplineSurfacePtr geom1 = GetAsMSBsplineSurface();
+            MSBsplineSurfacePtr geom2 = primitive.GetAsMSBsplineSurface();
+
+            return geom1->IsSameStructureAndGeometry(*geom2, tolerance);
+            }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+        case GeometryType::BRepEntity:
+            {
+            double      solidTolerance = tolerance;
+            PK_BODY_t   bodyTag1 = PSolidUtil::GetEntityTag(*GetAsIBRepEntity());
+            PK_BODY_t   bodyTag2 = PSolidUtil::GetEntityTag(*primitive.GetAsIBRepEntity());
+
+            if (0.0 != solidTolerance)
+                {
+                Transform uorToSolid;
+ 
+                uorToSolid.InverseOf(GetAsIBRepEntity()->GetEntityTransform());
+                uorToSolid.ScaleDoubleArrayByXColumnMagnitude(&solidTolerance, 1);
+                }
+
+            return PSolidUtil::AreBodiesEqual(bodyTag1, bodyTag2, solidTolerance, nullptr);
+            }
+#endif
+
+        case GeometryType::TextString: // <- Don't currently need to compare TextString...
+        default:
+            return false;
         }
     }
 
@@ -4800,77 +4875,6 @@ GeometryBuilder::GeometryBuilder(DgnDbR dgnDb, DgnCategoryId categoryId, bool is
     m_dgnDb(dgnDb), m_writer(dgnDb) 
     {
     m_elParams.SetCategoryId(categoryId);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  05/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool GeometryBuilder::MatchesGeometryPart(DgnGeometryPartId partId, DgnDbR db, bool ignoreSymbology, bool ignoreInitialSymbology)
-    {
-    DgnGeometryPartCPtr partGeometry = db.Elements().Get<DgnGeometryPart>(partId);
-
-    if (!partGeometry.IsValid())
-        return false;
-
-    GeometryStreamIO::Collection collection(&m_writer.m_buffer.front(), (uint32_t) m_writer.m_buffer.size());
-    size_t basicSymbCount = 0;
-
-    GeometryStreamIO::Collection partCollection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
-    auto partIter = partCollection.begin();
-
-    for (auto const& egOp : collection)
-        {
-        switch (egOp.m_opCode)
-            {
-            case GeometryStreamIO::OpCode::Header:
-                break; // Part iter already advanced past header...
-
-            case GeometryStreamIO::OpCode::SubGraphicRange:
-                break; // Skip...
-
-            case GeometryStreamIO::OpCode::GeometryPartInstance:
-                return false; // Nested parts are invalid...
-
-            case GeometryStreamIO::OpCode::BasicSymbology:
-                basicSymbCount++; // Increment symbology change count and fall through...
-
-            case GeometryStreamIO::OpCode::LineStyleModifiers:
-            case GeometryStreamIO::OpCode::AreaFill:
-            case GeometryStreamIO::OpCode::Pattern:
-            case GeometryStreamIO::OpCode::Material:
-                {
-                if (ignoreSymbology)
-                    break;
-
-                if (1 == basicSymbCount && ignoreInitialSymbology)
-                    break;
-
-                return false; // NOTE: Don't need to support this currently...V8 converter doesn't need to post-instance GeometryStreams with symbology changes...
-                }
-
-            default:
-                {
-                ++partIter;
-
-                if (partIter == partCollection.end())
-                    return false;
-
-                GeometryStreamIO::Operation const& partEgOp = *partIter;
-
-                if (partEgOp.m_opCode != egOp.m_opCode)
-                    return false;
-
-                if (partEgOp.m_dataSize != egOp.m_dataSize)
-                    return false;
-
-                basicSymbCount++; // Want to return false if a symbology change is encountered AFTER the first geometric primitive.
-
-                break; // NOTE: Seems unlikely that this isn't a match (V8 converter already compared range)...if necessary add fuzzy geometry compare...
-                }
-            }
-        }
-
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
