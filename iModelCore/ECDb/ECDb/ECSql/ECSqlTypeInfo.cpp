@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/ECSqlTypeInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -42,7 +42,7 @@ ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECStructClassCR structType, bool isArray)
 // @bsimethod                                   Krischan.Eberle                     04/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
 ECSqlTypeInfo::ECSqlTypeInfo(ECN::ECPropertyCR ecProperty)
-    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max())
+    : m_structType(nullptr), m_primitiveType(static_cast<ECN::PrimitiveType>(0)), m_minOccurs(0), m_maxOccurs(std::numeric_limits<uint32_t>::max()), m_propertyMap(nullptr)
     {
     DetermineTypeInfo(ecProperty);
     }

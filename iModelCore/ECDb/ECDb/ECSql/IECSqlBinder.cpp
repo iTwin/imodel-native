@@ -2,13 +2,12 @@
 |
 |     $Source: ECDb/ECSql/IECSqlBinder.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 #include <ECDb/IECSqlBinder.h>
 #include <GeomSerialization/GeomSerializationApi.h>
-#include "IECSqlPrimitiveBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -23,18 +22,18 @@ ECSqlStatus IECSqlBinder::BindNull() { return _BindNull(); }
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy makeCopy)
     {
-    return _BindPrimitive()._BindBlob(value, blobSize, makeCopy);
+    return _BindBlob(value, blobSize, makeCopy);
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      12/2016
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindZeroBlob(int blobSize) { return _BindPrimitive()._BindZeroBlob(blobSize); }
+ECSqlStatus IECSqlBinder::BindZeroBlob(int blobSize) { return _BindZeroBlob(blobSize); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindBoolean(bool value) { return _BindPrimitive()._BindBoolean(value); }
+ECSqlStatus IECSqlBinder::BindBoolean(bool value) { return _BindBoolean(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
@@ -54,17 +53,17 @@ ECSqlStatus IECSqlBinder::BindDateTime(DateTimeCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata) { return _BindPrimitive()._BindDateTime(julianDayMsec, metadata); }
+ECSqlStatus IECSqlBinder::BindDateTime(uint64_t julianDayMsec, DateTime::Info const& metadata) { return _BindDateTime(julianDayMsec, metadata); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      07/2014
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDateTime(double julianDay, DateTime::Info const& metadata) { return _BindPrimitive()._BindDateTime(julianDay, metadata); }
+ECSqlStatus IECSqlBinder::BindDateTime(double julianDay, DateTime::Info const& metadata) { return _BindDateTime(julianDay, metadata); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindDouble(double value) { return _BindPrimitive()._BindDouble(value); }
+ECSqlStatus IECSqlBinder::BindDouble(double value) { return _BindDouble(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2014
@@ -86,36 +85,34 @@ ECSqlStatus IECSqlBinder::BindGeometry(IGeometryCR value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindInt(int value) { return _BindPrimitive()._BindInt(value); }
+ECSqlStatus IECSqlBinder::BindInt(int value) { return _BindInt(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindInt64(int64_t value) { return _BindPrimitive()._BindInt64(value); }
+ECSqlStatus IECSqlBinder::BindInt64(int64_t value) { return _BindInt64(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindPoint2d(DPoint2dCR value) { return _BindPrimitive()._BindPoint2d(value); }
+ECSqlStatus IECSqlBinder::BindPoint2d(DPoint2dCR value) { return _BindPoint2d(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindPoint3d(DPoint3dCR value) { return _BindPrimitive()._BindPoint3d(value); }
+ECSqlStatus IECSqlBinder::BindPoint3d(DPoint3dCR value) { return _BindPoint3d(value); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) { return _BindPrimitive()._BindText(value, makeCopy, byteCount); }
+ECSqlStatus IECSqlBinder::BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount) { return _BindText(value, makeCopy, byteCount); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECClassId relationshipECClassId)
     {
-    IECSqlStructBinder& navPropBinder = _BindStruct();
-
-    IECSqlBinder& idBinder = navPropBinder.GetMember(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
+    IECSqlBinder& idBinder = _BindStructMember(ECDbSystemSchemaHelper::NAVPROP_ID_PROPNAME);
     ECSqlStatus stat = idBinder.BindId(relatedInstanceId);
     if (stat != ECSqlStatus::Success)
         return stat;
@@ -123,35 +120,23 @@ ECSqlStatus IECSqlBinder::BindNavigation(BeInt64Id relatedInstanceId, ECN::ECCla
     if (!relationshipECClassId.IsValid())
         return ECSqlStatus::Success;
 
-    IECSqlBinder& relClassIdBinder = navPropBinder.GetMember(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
+    IECSqlBinder& relClassIdBinder = _BindStructMember(ECDbSystemSchemaHelper::NAVPROP_RELECCLASSID_PROPNAME);
     return relClassIdBinder.BindId(relationshipECClassId);
     }
 
+// --------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
+IECSqlBinder& IECSqlBinder::operator[](Utf8CP structMemberPropertyName) { return _BindStructMember(structMemberPropertyName); }
+
+// --------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2017
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& IECSqlBinder::BindStruct() { return _BindStruct(); }
+IECSqlBinder& IECSqlBinder::operator[](ECN::ECPropertyId structMemberPropertyId) { return _BindStructMember(structMemberPropertyId); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& IECSqlBinder::BindArray(uint32_t initialCapacity) { return _BindArray(initialCapacity); }
-
-//*********************** IECSqlStructBinder ********************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlBinder& IECSqlStructBinder::GetMember(Utf8CP structMemberPropertyName) { return _GetMember(structMemberPropertyName); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2014
-//---------------------------------------------------------------------------------------
-IECSqlBinder& IECSqlStructBinder::GetMember(ECN::ECPropertyId structMemberPropertyId) { return _GetMember(structMemberPropertyId); }
-
-//*********************** IECSqlArrayBinder ********************************
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
-//---------------------------------------------------------------------------------------
-IECSqlBinder& IECSqlArrayBinder::AddArrayElement() { return _AddArrayElement(); }
+IECSqlBinder& IECSqlBinder::AddArrayElement() { return _AddArrayElement(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

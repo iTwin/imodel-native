@@ -264,24 +264,6 @@ ECSqlStatus PrimitiveECSqlBinder::_BindInt64(int64_t value)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlBinder::_BindPoint2d (DPoint2dCR value)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2d value can only be bound to parameter of same type.");
-    return ECSqlStatus::Error;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
-ECSqlStatus PrimitiveECSqlBinder::_BindPoint3d (DPoint3dCR value)
-    {
-    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3d value can only be bound to parameter of same type.");
-    return ECSqlStatus::Error;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      08/2013
-//---------------------------------------------------------------------------------------
 ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy makeCopy, int byteCount)
     {
     const ECSqlStatus stat = CanBind(PRIMITIVETYPE_String);
@@ -306,30 +288,51 @@ ECSqlStatus PrimitiveECSqlBinder::_BindText(Utf8CP value, IECSqlBinder::MakeCopy
     return ECSqlStatus::Success;
     }
 
+
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                Krischan.Eberle      01/2014
+// @bsimethod                                                Krischan.Eberle      08/2013
 //---------------------------------------------------------------------------------------
-IECSqlPrimitiveBinder& PrimitiveECSqlBinder::_BindPrimitive()
+ECSqlStatus PrimitiveECSqlBinder::_BindPoint2d(DPoint2dCR value)
     {
-    return *this;
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point2d value can only be bound to parameter of same type.");
+    return ECSqlStatus::Error;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      08/2013
+//---------------------------------------------------------------------------------------
+ECSqlStatus PrimitiveECSqlBinder::_BindPoint3d(DPoint3dCR value)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Point3d value can only be bound to parameter of same type.");
+    return ECSqlStatus::Error;
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlStructBinder& PrimitiveECSqlBinder::_BindStruct()
+IECSqlBinder& PrimitiveECSqlBinder::_BindStructMember(Utf8CP structMemberPropertyName)
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
-    return NoopECSqlBinder::Get().BindStruct();
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      01/2014
 //---------------------------------------------------------------------------------------
-IECSqlArrayBinder& PrimitiveECSqlBinder::_BindArray(uint32_t initialCapacity)
+IECSqlBinder& PrimitiveECSqlBinder::_BindStructMember(ECN::ECPropertyId structMemberPropertyId)
+    {
+    GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind ECStruct to primitive type parameter.");
+    return NoopECSqlBinder::Get();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      01/2014
+//---------------------------------------------------------------------------------------
+IECSqlBinder& PrimitiveECSqlBinder::_AddArrayElement()
     {
     GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "Type mismatch. Cannot bind array to primitive parameter.");
-    return NoopECSqlBinder::Get().BindArray(initialCapacity);
+    return NoopECSqlBinder::Get();
     }
 
 //---------------------------------------------------------------------------------------
