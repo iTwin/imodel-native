@@ -14,8 +14,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct IECSqlPrimitiveBinder;
-struct IECSqlArrayBinder;
 
 //=======================================================================================
 //! IECSqlBinder is used to bind a value to a binding parameter in an ECSqlStatement.

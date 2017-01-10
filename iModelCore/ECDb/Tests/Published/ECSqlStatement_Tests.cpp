@@ -1680,7 +1680,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsert)
 
     ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
 
     for (int i = 0; i < count; i++)
         {
@@ -1749,7 +1749,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayUpdate)
     //add three array elements
     const uint32_t arraySize = 3;
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < arraySize; i++)
         {
         IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
@@ -3590,7 +3590,7 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
         {
         ECDbIssueListener issueListener(ecdb);
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3606,12 +3606,12 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 
     ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& arrayBinder = statement.GetBinder(2);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::BindArray is expected to succeed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
         issueListener.Reset();
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, statement.Step());
@@ -3625,18 +3625,18 @@ TEST_F(ECSqlStatementTestFixture, Geometry)
 
     ECDbIssueListener issueListener(ecdb);
     IECSqlBinder& structBinder = statement.GetBinder(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::BindStruct is expected to succeed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "ECSqlStatement::GetBinder for struct is expected to succeed";
 
     ASSERT_EQ(ECSqlStatus::Success, structBinder["Geometry"].BindGeometry(*expectedGeomSingle));
 
     issueListener.Reset();
     IECSqlBinder& arrayBinder = structBinder["Geometry_Array"];
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::BindArray is expected to succeed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array is expected to succeed";
     for (auto& geom : expectedGeoms)
         {
         issueListener.Reset();
         ASSERT_EQ(ECSqlStatus::Success, arrayBinder.AddArrayElement().BindGeometry(*geom));
-        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlArrayBinder::AddArrayElement is expected to succeed";
+        ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "IECSqlBinder::AddArrayElement is expected to succeed";
         }
 
     ASSERT_EQ((int) BE_SQLITE_DONE, (int) statement.Step());
@@ -3905,7 +3905,7 @@ TEST_F(ECSqlStatementTestFixture, StructArrayInsertWithParametersLongAndArray)
     //add three array elements
     const int count = 3;
     IECSqlBinder& arrayBinder = statement.GetBinder(1);
-    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "BindArray failed";
+    ASSERT_FALSE(issueListener.GetIssue().IsIssue()) << "GetBinder for array failed";
     for (int i = 0; i < count; i++)
         {
         issueListener.Reset();
