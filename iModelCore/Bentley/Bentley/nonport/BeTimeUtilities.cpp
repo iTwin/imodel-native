@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTimeUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -304,7 +304,7 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis (tm const& timeStructIn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI      08/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StopWatch::SetFrequency()
+void BeTimer::SetFrequency()
     {
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
     QueryPerformanceFrequency ((LARGE_INTEGER*)&m_frequency);
@@ -318,7 +318,7 @@ void StopWatch::SetFrequency()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BSI      08/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t StopWatch::Now()
+uint64_t BeTimer::Now()
     {
 #if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
     uint64_t val;

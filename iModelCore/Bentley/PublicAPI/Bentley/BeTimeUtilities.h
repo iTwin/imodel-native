@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeTimeUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -127,10 +127,9 @@ struct BeTimeUtilities
 * Measures elapsed time
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
-struct StopWatch : NonCopyableClass
+struct BeTimer
     {
 private:
-    Utf8CP      m_description;
     uint64_t    m_start;
     uint64_t    m_stop;
     uint64_t    m_frequency;
@@ -144,24 +143,16 @@ public:
     //! On Unix it is the current time in milliseconds.
     BENTLEYDLL_EXPORT static uint64_t Now();
 
-    //! Initialize the stopwatch.  If true is passed as start then it will start it as well.  Called from the constructor.
+    //! Initialize the timer.  If true is passed as start then it will start it as well.  Called from the constructor.
     void Init(bool start) {m_start=m_stop=0; SetFrequency(); if (start) Start();}
 
-    //! Create a named stopwatch and possibly start it.
-    //! @param[in] description A name for the stopwatch that can be retrieved later.  This is a convenience.
-    //! @param[in] startImmediately Pass true to start the stopwatch on creation
-    explicit StopWatch(Utf8CP description=nullptr, bool startImmediately=false) : m_description(description) {Init(startImmediately);}
+    //! Create a timer and possibly start it.
+    explicit BeTimer(bool startImmediately) {Init(startImmediately);}
 
-    //! Create a named stopwatch and possibly start it.
-    StopWatch(bool startImmediately) {Init(startImmediately);}
-
-    //! Get the description provided to the constructor
-    Utf8CP GetDescription() {return m_description;}
-
-    //! Start or restart the stopwatch.  Any future time measurements will be based on this new value.
+    //! Start or restart the timer.  Any future time measurements will be based on this new value.
     void Start(){m_start = Now();}
 
-    //! Stop the stopwatch so that the duration can be viewed later.
+    //! Stop the timer so that the duration can be viewed later.
     void Stop() {m_stop = Now();}
 
     //! Get the elapsed seconds since Start() on a running timer.
@@ -173,6 +164,27 @@ public:
     //! Queries the resolution of this timer. On Windows this is the frequency of the high-resolution performance counter.
     //! On Unix it is 1000 (milliseconds).
     uint64_t GetFrequency() const { return m_frequency; }
+    };
+
+/*=================================================================================**//**
+* A BeTimer with an optional description.
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
+struct StopWatch : BeTimer, NonCopyableClass
+    {
+private:
+    Utf8CP      m_description;
+public:
+    //! Create a named stopwatch and possibly start it.
+    //! @param[in] description A name for the stopwatch that can be retrieved later.  This is a convenience.
+    //! @param[in] startImmediately Pass true to start the stopwatch on creation
+    explicit StopWatch(Utf8CP description=nullptr, bool startImmediately=false) : BeTimer(startImmediately), m_description(description) {Init(startImmediately);}
+
+    //! Create a stopwatch with no description and possibly start it.
+    explicit StopWatch(bool startImmediately) : StopWatch(nullptr, startImmediately) { }
+
+    //! Get the description provided to the constructor
+    Utf8CP GetDescription() {return m_description;}
     };
 
 END_BENTLEY_NAMESPACE
