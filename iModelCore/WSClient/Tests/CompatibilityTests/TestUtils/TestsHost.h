@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/CompatibilityTests/TestUtils/TestsHost.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -34,4 +34,5 @@ class TestsHost : public RefCounted<BeTest::Host>
 
     public:
         static RefCountedPtr<TestsHost> Create(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel);
+        static Utf8String& GetErrorLog();
     };

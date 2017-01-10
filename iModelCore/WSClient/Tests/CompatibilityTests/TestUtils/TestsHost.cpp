@@ -24,6 +24,7 @@ USING_NAMESPACE_WSCLIENT_UNITTESTS
 #define LOGGING_CONFIG_FILE_NAME L"logging.config.xml"
 
 std::shared_ptr<TestAppPathProvider> s_pathProvider;
+Utf8String s_errorLog;
 
 TestsHost::TestsHost(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel)
     {
@@ -79,7 +80,7 @@ void TestsHost::InitLogging(int logLevel)
     GenericLogProviderActivator::Activate([=] (Bentley::NativeLogging::SEVERITY sev, WCharCP msg)
         {
         if (sev >= Bentley::NativeLogging::LOG_ERROR)
-            ADD_FAILURE() << msg;
+            s_errorLog += Utf8String(msg);
 
         if (!silent)
             fwprintf(stdout, msg);
@@ -98,6 +99,11 @@ void TestsHost::InitLogging(int logLevel)
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
 
     NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCCTESTS, Bentley::NativeLogging::LOG_INFO);
+    }
+
+Utf8String& TestsHost::GetErrorLog()
+    {
+    return s_errorLog;
     }
 
 void* TestsHost::_InvokeP(char const* function_and_args)
