@@ -126,6 +126,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     EXPECT_TRUE(elmGeom5C.IsValid());
     EXPECT_TRUE(elmGeom5C->GetGeometryType() == elmGeom5->GetGeometryType());
 
+    #ifdef BENTLEYCONFIG_PARASOLID
     // IBRepEntityPtr
     //
     IBRepEntityPtr out;
@@ -142,6 +143,7 @@ TEST_F(GeometricPrimitiveTests, Create)
     GeometricPrimitivePtr elmGeom6C = elmGeom6->Clone();
     EXPECT_TRUE(elmGeom6C.IsValid());
     EXPECT_TRUE(elmGeom6C->GetGeometryType() == elmGeom6->GetGeometryType());
+    #endif
 
     // TextString
     //
