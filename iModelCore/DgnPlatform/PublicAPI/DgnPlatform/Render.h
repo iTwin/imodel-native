@@ -1761,7 +1761,7 @@ public:
     virtual void _ChangeDecorations(Decorations& decorations) {VerifyRenderThread(); m_decorations = decorations;}
     virtual void _ChangeRenderPlan(PlanCR) = 0;
     virtual void _Redraw(Redraws&) = 0;
-    virtual void _DrawFrame(StopWatch&) = 0;
+    virtual void _DrawFrame(StopWatch&, double sceneSecondsElapsed) = 0;
     virtual Image _ReadImage(BSIRectCR viewRect, Point2dCR targetSize) = 0;
     virtual bool _WantInvertBlackBackground() {return false;}
     virtual uint32_t _SetMinimumFrameRate(uint32_t minimumFrameRate){m_minimumFrameRate = minimumFrameRate; return m_minimumFrameRate;}
