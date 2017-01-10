@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Photo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -30,17 +30,17 @@ HANDLER_DEFINE_MEMBERS(PhotoHandler)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(IECSqlStructBinder& binder, RotationMatrixTypeCR val)
+BeSQLite::EC::ECSqlStatus RotationMatrixType::BindParameter(IECSqlBinder& binder, RotationMatrixTypeCR val)
     {
-    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_00).BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_01).BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_02).BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_10).BindDouble(val.GetComponentByRowAndColumn(1, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_11).BindDouble(val.GetComponentByRowAndColumn(1, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_12).BindDouble(val.GetComponentByRowAndColumn(1, 2)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_20).BindDouble(val.GetComponentByRowAndColumn(2, 0)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_21).BindDouble(val.GetComponentByRowAndColumn(2, 1)) ||
-        ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Rotation_M_22).BindDouble(val.GetComponentByRowAndColumn(2, 2)))
+    if (ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_00].BindDouble(val.GetComponentByRowAndColumn(0, 0)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_01].BindDouble(val.GetComponentByRowAndColumn(0, 1)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_02].BindDouble(val.GetComponentByRowAndColumn(0, 2)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_10].BindDouble(val.GetComponentByRowAndColumn(1, 0)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_11].BindDouble(val.GetComponentByRowAndColumn(1, 1)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_12].BindDouble(val.GetComponentByRowAndColumn(1, 2)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_20].BindDouble(val.GetComponentByRowAndColumn(2, 0)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_21].BindDouble(val.GetComponentByRowAndColumn(2, 1)) ||
+        ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Rotation_M_22].BindDouble(val.GetComponentByRowAndColumn(2, 2)))
         {
         return ECSqlStatus::Error;
         }
@@ -131,10 +131,10 @@ void                PoseType::SetRotation(RotationMatrixTypeCR val) { m_rotation
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeSQLite::EC::ECSqlStatus PoseType::BindParameter(IECSqlStructBinder& binder, PoseTypeCR val)
+BeSQLite::EC::ECSqlStatus PoseType::BindParameter(IECSqlBinder& binder, PoseTypeCR val)
     {
-    if (ECSqlStatus::Success != binder.GetMember(Photo_PROPNAME_Pose_Center).BindPoint3D(val.GetCenter()) ||
-        ECSqlStatus::Success != RotationMatrixType::BindParameter(binder.GetMember(Photo_PROPNAME_Pose_Rotation).BindStruct(), val.GetRotation()))
+    if (ECSqlStatus::Success != binder[Photo_PROPNAME_Pose_Center].BindPoint3D(val.GetCenter()) ||
+        ECSqlStatus::Success != RotationMatrixType::BindParameter(binder[Photo_PROPNAME_Pose_Rotation], val.GetRotation()))
         {
         return ECSqlStatus::Error;
         }
@@ -255,7 +255,7 @@ CameraElementId  Photo::GetCameraId() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Photo::BindParameters(BeSQLite::EC::ECSqlStatement& statement)
     {
-    IECSqlStructBinder& structBinder = statement.BindStruct(statement.GetParameterIndex(Photo_PROPNAME_Pose));
+    IECSqlBinder& structBinder = statement.GetBinder(statement.GetParameterIndex(Photo_PROPNAME_Pose));
     if (ECSqlStatus::Success != statement.BindInt(statement.GetParameterIndex(Photo_PROPNAME_PhotoId), GetPhotoId()) ||
         ECSqlStatus::Success != PoseType::BindParameter(structBinder ,GetPose()) )
         {

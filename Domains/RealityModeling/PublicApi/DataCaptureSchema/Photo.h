@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/Photo.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -46,7 +46,7 @@ public:
         }
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, RotationMatrixTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlBinder& binder, RotationMatrixTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
     static RotationMatrixType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);
@@ -84,7 +84,7 @@ public:
     DATACAPTURE_EXPORT void SetRotation(RotationMatrixTypeCR val);
 
     //! Bind the ImageDimensionType field in a ECSQL statement
-    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlStructBinder& binder, PoseTypeCR val);
+    static BeSQLite::EC::ECSqlStatus BindParameter(BeSQLite::EC::IECSqlBinder& binder, PoseTypeCR val);
 
     //! Get the ImageDimensionType value at the specified column from a ECSQL statement
     static PoseType GetValue(BeSQLite::EC::IECSqlStructValue const& structValue);

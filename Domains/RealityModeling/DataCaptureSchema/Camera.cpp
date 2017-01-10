@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/Camera.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -36,11 +36,11 @@ BeSQLite::EC::ECSqlStatus ImageDimensionType::BindParameter(BeSQLite::EC::ECSqlS
         return BeSQLite::EC::ECSqlStatus::Error;
         }
 
-    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
+    IECSqlBinder& binder = statement.GetBinder(columnIndex);
     BeSQLite::EC::ECSqlStatus status;
-    status = binder.GetMember(CAMERA_PROPNAME_ImageDimension_Width).BindInt(val.GetWidth());
+    status = binder[CAMERA_PROPNAME_ImageDimension_Width].BindInt(val.GetWidth());
     BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_ImageDimension_Height).BindInt(val.GetHeight());
+    status = binder[CAMERA_PROPNAME_ImageDimension_Height].BindInt(val.GetHeight());
     BeAssert(status == ECSqlStatus::Success);
     return status;
     }
@@ -83,17 +83,17 @@ BeSQLite::EC::ECSqlStatus CameraDistortionType::BindParameter(BeSQLite::EC::ECSq
         return BeSQLite::EC::ECSqlStatus::Error;
         }
 
-    IECSqlStructBinder& binder = statement.BindStruct(columnIndex);
+    IECSqlBinder& binder = statement.GetBinder(columnIndex);
     BeSQLite::EC::ECSqlStatus status;
-    status = binder.GetMember(CAMERA_PROPNAME_Distortion_K1).BindDouble(val.GetK1());
+    status = binder[CAMERA_PROPNAME_Distortion_K1].BindDouble(val.GetK1());
     BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_Distortion_K2).BindDouble(val.GetK2());
+    status = binder[CAMERA_PROPNAME_Distortion_K2].BindDouble(val.GetK2());
     BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_Distortion_K3).BindDouble(val.GetK3());
+    status = binder[CAMERA_PROPNAME_Distortion_K3].BindDouble(val.GetK3());
     BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_Distortion_P1).BindDouble(val.GetP1());
+    status = binder[CAMERA_PROPNAME_Distortion_P1].BindDouble(val.GetP1());
     BeAssert(status == ECSqlStatus::Success);
-    status = binder.GetMember(CAMERA_PROPNAME_Distortion_P2).BindDouble(val.GetP2());
+    status = binder[CAMERA_PROPNAME_Distortion_P2].BindDouble(val.GetP2());
     BeAssert(status == ECSqlStatus::Success);
     return status;
     }
