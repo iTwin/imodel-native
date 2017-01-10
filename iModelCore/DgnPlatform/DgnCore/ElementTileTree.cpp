@@ -366,6 +366,16 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
             fpt.x = dpt.x;
             fpt.y = dpt.y;
             fpt.z = dpt.z;
+
+            if (nullptr != m_normals)
+                {
+                FPoint3d& fnm = const_cast<FPoint3d&>(m_normals[i]);
+                dpt = DPoint3d::FromXYZ(fnm.x, fnm.y, fnm.z);
+                tf.MultiplyMatrixOnly(dpt);
+                fnm.x = dpt.x;
+                fnm.y = dpt.y;
+                fnm.z = dpt.z;
+                }
             }
         }
 };
