@@ -599,7 +599,7 @@ static int s_forcedDepth = -1;   // change this to a non-negative value in debug
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
+Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const
     {
     DgnDb::VerifyClientThread();
 
@@ -631,8 +631,29 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args
 
             // If children are already loaded and ready to draw, draw them in place of this one
             auto children = _GetChildren(false);
-            bool allChildrenReady = nullptr != children && std::accumulate(children->begin(), children->end(), true, [](bool init, TilePtr const& arg) { return init && arg->IsReady(); });
-            if (nullptr != children && _CanSubstituteChildren(allChildrenReady))
+            bool allChildrenReady = false;
+            if (nullptr != children)
+                {
+                // We'll add visible children to the selected list while determining if all visible children are ready.
+                // This way we only need to perform the frustum test once per child.
+                size_t initialSize = selected.size();
+                allChildrenReady = std::accumulate(children->begin(), children->end(), true, [&args, &selected](bool init, TilePtr const& arg)
+                    {
+                    if (!init || arg->IsCulled(args))
+                        return init;
+                    else if (!arg->IsReady())
+                        return false;
+
+                    selected.push_back(arg);
+                    return true;
+                    });
+
+                // At least one child passed the frustum test, but it not ready. Remove any other children we added to the selected list.
+                if (!allChildrenReady)
+                    selected.resize(initialSize);
+                }
+
+            if (allChildrenReady)
                 {
                 m_childrenLastUsed = args.m_now;
                 substitutingChildren = true;
@@ -661,7 +682,7 @@ Tile::SelectParent Tile::SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args
         size_t initialSize = selected.size();
         for (auto const& child : *children)
             {
-            if (SelectParent::Yes == child->SelectTiles(selected, args))
+            if (SelectParent::Yes == child->_SelectTiles(selected, args))
                 {
                 drawParent = true;
                 // NB: We must continue iterating children so that they can be requested if missing...
@@ -748,7 +769,7 @@ void Root::DrawInView(RenderContextR context)
     DrawArgs args(context, _GetTransform(context), *this, now, now-GetExpirationTime(), _GetClipVector());
 
     bvector<TileCPtr> selectedTiles;
-    GetRootTile()->SelectTiles(selectedTiles, args);
+    GetRootTile()->_SelectTiles(selectedTiles, args);
 
 #if defined(DEBUG_TILE_DEPTHS)
     bmap<int, uint32_t> debugMap;

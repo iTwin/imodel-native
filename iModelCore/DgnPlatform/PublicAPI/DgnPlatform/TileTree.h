@@ -187,11 +187,6 @@ public:
     //! Get the maximum size, in pixels, that this Tile should occupy on the screen. If larger, use its children, if possible.
     virtual double _GetMaximumSize() const = 0;
 
-    //! Return whether this node's children should be drawn in its place if this node is too coarse to be drawn
-    //! @param[in] allChildrenReady true if all of the children are in the "Ready" state
-    //! @return true to substitute children for this node
-    virtual bool _CanSubstituteChildren(bool allChildrenReady) const { return allChildrenReady || !IsDisplayable(); }
-
     //! Describes a Tile's visibility within a viewing frustum
     enum class Visibility
     {
@@ -201,12 +196,12 @@ public:
     };
 
     //! Compute the visibility of this tile
-    Visibility GetVisibility(DrawArgsCR args) const;
+    DGNPLATFORM_EXPORT Visibility GetVisibility(DrawArgsCR args) const;
 
     enum class SelectParent { Yes, No };
 
     //! Populates a list of tiles to draw. Returns SelectParent::Yes to substitute this tile's parent in its place.
-    SelectParent SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
+    DGNPLATFORM_EXPORT virtual SelectParent _SelectTiles(bvector<TileCPtr>& selected, DrawArgsR args) const;
 
     //! Returns true if this tile is entirely outside of the viewing frustum or clipping planes
     bool IsCulled(DrawArgsCR args) const;
