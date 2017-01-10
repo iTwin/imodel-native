@@ -1174,26 +1174,36 @@ NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeConstraintECClassIdSql(bo
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
 NativeSqlBuilder ConstraintECClassIdJoinInfo::GetNativeJoinSql() const
-    {
-    if (!RequiresJoin())
-        {
-        BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeJoinSql can only be called if RequiresJoin() is true");
-        return NativeSqlBuilder();
-        }
+	{
+	if (!RequiresJoin())
+		{
+		BeAssert(false && "ConstraintECClassIdJoinInfo::GetNativeJoinSql can only be called if RequiresJoin() is true");
+		return NativeSqlBuilder();
+		}
 
-    NativeSqlBuilder sql(" INNER JOIN ");
-    sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
-        .AppendSpace()
-        .AppendEscaped(GetSqlTableAlias())
-        .Append(" ON ")
-        .AppendEscaped(GetSqlTableAlias())
-        .AppendDot()
-        .AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
-        .Append(BooleanSqlOperator::EqualTo)
-        .AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
+	NativeSqlBuilder sql(" INNER JOIN ");
+	sql.AppendEscaped(m_primaryECInstanceIdCol->GetTable().GetName().c_str())
+		.AppendSpace()
+		.AppendEscaped(GetSqlTableAlias())
+		.Append(" ON ")
+		.AppendEscaped(GetSqlTableAlias())
+		.AppendDot()
+		.AppendEscaped(m_primaryECInstanceIdCol->GetName().c_str())
+		.Append(BooleanSqlOperator::EqualTo);
 
-    return sql;
-    }
+	if (m_foreignECInstanceIdCol->IsInOverflow())
+		{
+		DbColumn const* physicalOverflowColumn = m_foreignECInstanceIdCol->GetPhysicalOverflowColumn();
+		sql.Append("json_extract(").Append(m_foreignECInstanceIdCol->GetTable().GetName().c_str(), physicalOverflowColumn->GetName().c_str()).AppendComma();
+		sql.Append("'$.").Append(m_foreignECInstanceIdCol->GetName().c_str()).Append("')");
+		}
+	else 
+		{
+		sql.AppendEscaped(m_foreignECInstanceIdCol->GetTable().GetName().c_str()).AppendDot().AppendEscaped(m_foreignECInstanceIdCol->GetName().c_str());
+		}
+
+	return sql;
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
@@ -1341,14 +1351,23 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(NavigationPropertyMap::Re
 
 
     NativeSqlBuilder relClassIdColStrBuilder;
-    if (relClassIdPropMap.IsVirtual())
-        relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
+	if (relClassIdPropMap.IsVirtual())
+		{
+		if (relClassIdPropMap.GetColumn().IsInOverflow())
+			relClassIdColStrBuilder.AppendFormatted("json_extract([%s], '$.%s')", relClassIdPropMap.GetColumn().GetPhysicalOverflowColumn()->GetName().c_str(), relClassIdPropMap.GetColumn().GetName().c_str());
+		else 
+			relClassIdColStrBuilder = NativeSqlBuilder(relClassIdPropMap.GetDefaultClassId().ToString().c_str());
+		}
     else
         relClassIdColStrBuilder.Append(m_classIdentifier, relClassIdPropMap.GetColumn().GetName().c_str());
 
     //The RelECClassId should always be logically null if the respective NavId col is null
     //case exp must have the relclassid col name as alias
-    result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
+	if (idPropMap.GetColumn().IsInOverflow())
+		result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END)", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString());
+	else
+		result.GetSqlBuilderR().AppendFormatted("(CASE WHEN %s IS NULL THEN NULL ELSE %s END) %s", idColStrBuilder.ToString(), relClassIdColStrBuilder.ToString(), relClassIdPropMap.GetColumn().GetName().c_str());
+
     return SUCCESS;
     }
 
@@ -1365,13 +1384,26 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECInstanceIdPro
         }
 
     Result& result = Record(*vmap);
-    result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-    if (m_usePropertyNameAsAliasForSystemPropertyMaps)
-        {
-        if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
-            result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
-        }
+	if (vmap->GetColumn().IsInOverflow())
+		{
+		result.GetSqlBuilderR()
+			.Append("json_extract(")
+			.Append(m_classIdentifier, vmap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str())
+			.AppendComma()
+			.Append("'$.")
+			.Append(vmap->GetColumn().GetName().c_str())
+			.Append("')");
+		}
+	else
+		{
+		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+		}
 
+	if (m_usePropertyNameAsAliasForSystemPropertyMaps)
+		{
+		if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()))
+			result.GetSqlBuilderR().AppendSpace().Append(propertyMap.GetAccessString().c_str());
+		}
     return SUCCESS;
     }
 
@@ -1390,10 +1422,25 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ECClassIdPropertyMap cons
     const bool isVirtual = propertyMap.IsVirtual(m_tableFilter);
 
     Result& result = Record(*vmap);
-    if (isVirtual)
-        result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-    else
-        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+	if (isVirtual)
+		{
+		if (vmap->GetColumn().IsInOverflow())
+			{
+			result.GetSqlBuilderR()
+				.Append("json_extract(")
+				.Append(m_classIdentifier, vmap->GetColumn().GetPhysicalOverflowColumn()->GetName().c_str())
+				.AppendComma()
+				.Append("'$.")
+				.Append(vmap->GetColumn().GetName().c_str())
+				.Append("')");
+			}
+		else
+			result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
+		}
+	else
+		{
+			result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+		}
 
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
@@ -1421,9 +1468,10 @@ BentleyStatus ViewGenerator::ToSqlVisitor::ToNativeSql(ConstraintECClassIdProper
     Result& result = Record(*vmap);
     if (isVirtual)
         result.GetSqlBuilderR().Append(propertyMap.GetDefaultECClassId());
-    else
-        result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
-
+	else
+		{
+		result.GetSqlBuilderR().Append(m_classIdentifier, vmap->GetColumn().GetName().c_str());
+		}
     if (m_usePropertyNameAsAliasForSystemPropertyMaps)
         {
         if (!vmap->GetColumn().GetName().EqualsIAscii(propertyMap.GetAccessString()) || isVirtual)

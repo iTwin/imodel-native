@@ -216,7 +216,26 @@ ECSqlStatus ECSqlInsertPreparer::GenerateNativeSqlSnippets(NativeSqlSnippets& in
         insertSqlSnippets.m_propertyNamesNativeSqlSnippets.push_back(move(nativeSqlSnippets));
 
         size_t component = 0;
-        SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
+        SearchPropertyMapVisitor visitor;
+		visitor.SetCallbackPropertyMapFilter([](PropertyMap const& propertyMap) 
+			{
+			if (Enum::Contains(PropertyMap::Type::SingleColumnData, propertyMap.GetType()))
+				{
+				return propertyMap.GetAs<SingleColumnDataPropertyMap>()->GetColumn().IsInOverflow();
+				}
+
+			return Enum::Contains(PropertyMap::Type::System, propertyMap.GetType());
+			});
+
+		visitor.SetCallbackSystemPropertyMapSelector([](SystemPropertyMap const& propertyMap) 
+			{
+			SingleColumnDataPropertyMap const* selected = nullptr;
+			if (propertyMap.GetClassMap().GetType() == ClassMap::Type::RelationshipEndTable && propertyMap.IsMappedToSingleTable())
+				selected = propertyMap.GetDataPropertyMaps().front();
+
+			return selected;
+			});
+
         propNameExp->GetPropertyMap().AcceptVisitor(visitor);
         for (PropertyMap const* childPropertyMap : visitor.Results())
             {

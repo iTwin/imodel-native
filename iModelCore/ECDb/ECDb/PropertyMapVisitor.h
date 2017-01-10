@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/PropertyMapVisitor.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -72,22 +72,32 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
 struct SearchPropertyMapVisitor final : IPropertyMapVisitor
     {
     private:
-        PropertyMap::Type m_filter;
-        bool m_recurseIntoCompoundPropertyMaps;
         mutable std::vector<PropertyMap const*> m_foundPropertyMaps;
+		std::function<bool(PropertyMap const&)> m_propertyMapFilterCallback;
+		std::function<bool(CompoundDataPropertyMap const&)> m_recurseIntoCompoundPropertyMap;
+		std::function<const SingleColumnDataPropertyMap*(SystemPropertyMap const&)> m_systemPropertySelector;
 
         virtual BentleyStatus _Visit(SingleColumnDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(CompoundDataPropertyMap const&) const override;
         virtual BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
-            : IPropertyMapVisitor(), m_filter(filter), m_recurseIntoCompoundPropertyMaps(recurseIntoCompoundPropertyMaps)
-            {}
+        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)            
+            {
+			SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) {return Enum::Contains(filter, propertyMap.GetType()); });
+			SetCallbackRecurseIntoCompoundPropertyMap([recurseIntoCompoundPropertyMaps](CompoundDataPropertyMap const&) { return recurseIntoCompoundPropertyMaps; });
+			}
+
         ~SearchPropertyMapVisitor() {}
+
+		void SetCallbackPropertyMapFilter(std::function<bool(PropertyMap const&)> callback) { m_propertyMapFilterCallback = callback; }
+		void SetCallbackRecurseIntoCompoundPropertyMap(std::function<bool(CompoundDataPropertyMap const&)> callback) { m_recurseIntoCompoundPropertyMap = callback; }
+		void SetCallbackSystemPropertyMapSelector(std::function<const SingleColumnDataPropertyMap*(SystemPropertyMap const&)> callback) { m_systemPropertySelector = callback; }
 
         std::vector<PropertyMap const*> const& Results() const { return m_foundPropertyMaps; }
     };
+
+
 
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
