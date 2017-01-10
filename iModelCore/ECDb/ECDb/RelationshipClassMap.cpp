@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-
+#include <random>
 using namespace std;
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
 //************************ RelationshipClassMap **********************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    12/2013
@@ -142,7 +141,7 @@ RelationshipClassEndTableMap::RelationshipClassEndTableMap(ECDb const& ecdb, ECR
 RelationshipClassMap::ReferentialIntegrityMethod RelationshipClassEndTableMap::_GetDataIntegrityEnforcementMethod() const
     {
     if (GetPrimaryTable().GetType() == DbTable::Type::Existing || GetRelationshipClass().GetClassModifier() == ECClassModifier::Abstract
-        || GetRelationshipClass().GetSource().GetClasses().empty() || GetRelationshipClass().GetTarget().GetClasses().empty())
+        || GetRelationshipClass().GetSource().GetConstraintClasses().empty() || GetRelationshipClass().GetTarget().GetConstraintClasses().empty())
         return ReferentialIntegrityMethod::None;
 
     if (GetRelationshipClass().GetStrength() == StrengthType::Referencing || GetRelationshipClass().GetStrength() == StrengthType::Embedding || GetRelationshipClass().GetStrength() == StrengthType::Holding)
@@ -202,18 +201,18 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //root class (no base class)
 
-    ColumnLists columns;
+    ColumnLists columns(*this, relClassMappingInfo);
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
         return ClassMappingStatus::Error;
 
     //Set tables
-    for (DbColumn const* fkTablePkCol : columns.m_ecInstanceIdColumnsPerFkTable)
+    for (DbColumn const* fkTablePkCol : columns.GetECInstanceIdColumns())
         {
         AddTable(fkTablePkCol->GetTableR());
         }
 
     //Create ECInstanceId for this classMap. This must map to current table for this class evaluate above and set through SetTable();
-    RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropMap = ECInstanceIdPropertyMap::CreateInstance(*this, columns.m_ecInstanceIdColumnsPerFkTable);
+    RefCountedPtr<ECInstanceIdPropertyMap> ecInstanceIdPropMap = ECInstanceIdPropertyMap::CreateInstance(*this, columns.GetECInstanceIdColumns());
     if (ecInstanceIdPropMap == nullptr)
         {
         BeAssert(false && "Failed to create PropertyMapECInstanceId");
@@ -223,7 +222,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     if (GetPropertyMapsR().Insert(ecInstanceIdPropMap, 0) != SUCCESS)
         return ClassMappingStatus::Error;
 
-    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns.m_relECClassIdColumnsPerFkTable);
+    RefCountedPtr<ECClassIdPropertyMap> ecClassIdPropMap = ECClassIdPropertyMap::CreateInstance(*this, GetClass().GetId(), columns.GetFkRelECClassIdColumns());
     if (ecClassIdPropMap == nullptr)
         {
         BeAssert(false && "Failed to create ECClassIdPropertyMap");
@@ -234,7 +233,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
         return ClassMappingStatus::Error;
 
     //ForeignEnd ECInstanceId PropMap
-    RefCountedPtr<ConstraintECInstanceIdPropertyMap> foreignEndIdPropertyMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, GetForeignEnd(), columns.m_ecInstanceIdColumnsPerFkTable);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> foreignEndIdPropertyMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, GetForeignEnd(), columns.GetECInstanceIdColumns());
     if (foreignEndIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -249,7 +248,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     //Create ForeignEnd ClassId propertyMap
     ECRelationshipClassCR relClass = *GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    RefCountedPtr<ConstraintECClassIdPropertyMap> foreignEndClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, foreignEndConstraint.GetClasses()[0]->GetId(), GetForeignEnd(), columns.m_classIdColumnsPerFkTable);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> foreignEndClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, foreignEndConstraint.GetConstraintClasses()[0]->GetId(), GetForeignEnd(), columns.GetECClassIdColumns());
     if (foreignEndClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -262,7 +261,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     GetConstraintMapR(GetForeignEnd()).SetECClassIdPropMap(foreignEndClassIdPropertyMap.get());
 
     //FK PropMap (aka referenced end id prop map)
-    RefCountedPtr<ConstraintECInstanceIdPropertyMap> referencePropertyMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, GetReferencedEnd(), columns.m_fkColumnsPerFkTable);
+    RefCountedPtr<ConstraintECInstanceIdPropertyMap> referencePropertyMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, GetReferencedEnd(), columns.GetFkECInstanceIdColumns());
     if (referencePropertyMap == nullptr)
         {
         BeAssert(false);
@@ -277,7 +276,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //FK ClassId PropMap (aka referenced end classid prop map)
     ECRelationshipConstraintCR referenceEndConstraint = GetReferencedEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    RefCountedPtr<ConstraintECClassIdPropertyMap> referenceClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, referenceEndConstraint.GetClasses()[0]->GetId(), GetReferencedEnd(), columns.m_referencedEndECClassIdColumns);
+    RefCountedPtr<ConstraintECClassIdPropertyMap> referenceClassIdPropertyMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, referenceEndConstraint.GetConstraintClasses()[0]->GetId(), GetReferencedEnd(), columns.GetFkECClassIdColumns());
     if (referenceClassIdPropertyMap == nullptr)
         {
         BeAssert(false);
@@ -341,18 +340,18 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
         }
 
     DbColumn const* referencedTableClassIdCol = referencedTable->GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
-    for (DbColumn const* fkCol : columns.m_fkColumnsPerFkTable)
+    for (DbColumn const* fkCol : columns.GetFkECInstanceIdColumns())
         {
         DbTable& fkTable = fkCol->GetTableR();
         const bool makeRelClassIdColNotNull = fkCol->DoNotAllowDbNull();
-        DbColumn* relClassIdCol = CreateRelECClassIdColumn(fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull);
+        DbColumn* relClassIdCol = CreateRelECClassIdColumn(columns.GetColumnFactory(), fkTable, DetermineRelECClassIdColumnName(relClass, fkCol->GetName()), makeRelClassIdColNotNull);
         if (relClassIdCol == nullptr)
             {
             BeAssert(false && "Could not create RelClassId col");
             return ERROR;
             }
 
-        ColumnLists::push_back(columns.m_relECClassIdColumnsPerFkTable, relClassIdCol);
+        columns.AddFkRelECClassIdColumn(*relClassIdCol);
         DbColumn const* fkTableClassIdCol = fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECClassId);
         //If ForeignEndClassId column is missing create a virtual one
         if (fkTableClassIdCol == nullptr)
@@ -382,11 +381,11 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                 }
             }
 
-        ColumnLists::push_back(columns.m_ecInstanceIdColumnsPerFkTable, fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId));
-        ColumnLists::push_back(columns.m_classIdColumnsPerFkTable, fkTableClassIdCol);
+        columns.AddECInstanceIdColumn(*fkTable.GetFilteredColumnFirst(DbColumn::Kind::ECInstanceId));
+        columns.AddECClassIdColumn(*fkTableClassIdCol);
 
         if (referencedTableClassIdCol != nullptr)
-            ColumnLists::push_back(columns.m_referencedEndECClassIdColumns, referencedTableClassIdCol);
+            columns.AddFkECClassIdColumn(*referencedTableClassIdCol);
         else
             {
             //referenced table doesn't have a class id col --> create a virtual one in the foreign end table
@@ -414,7 +413,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineKeyAndConstraintColumns(Col
                     }
                 }
 
-            ColumnLists::push_back(columns.m_referencedEndECClassIdColumns, fkTableReferencedEndClassIdCol);
+            columns.AddFkECClassIdColumn(*fkTableReferencedEndClassIdCol);
             }
 
         //if FK table is a joined table, CASCADE is not allowed as it would leave orphaned rows in the parent of joined table.
@@ -473,7 +472,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
             DbColumn* pkColumnP = const_cast<DbColumn*> (pkColumn);
             pkColumnP->AddKind(foreignKeyColumnKind);
 
-            columns.m_fkColumnsPerFkTable.push_back(pkColumn);
+            columns.AddFkECInstanceIdColumn(*pkColumn);
             }
 
         return SUCCESS;
@@ -506,7 +505,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
                 if (SUCCESS != ValidateForeignKeyColumn(*fkCol, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
                     return ERROR;
 
-                ColumnLists::push_back(columns.m_fkColumnsPerFkTable, fkCol);
+                columns.AddFkECInstanceIdColumn(*fkCol);
                 continue;
                 }
 
@@ -528,7 +527,7 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
             return ERROR;
 
         const PersistenceType columnPersistenceType = foreignEndTable->GetPersistenceType() == PersistenceType::Physical ? PersistenceType::Physical : PersistenceType::Virtual;
-        DbColumn* newFkCol = const_cast<DbTable*>(foreignEndTable)->CreateColumn(fkColName, DbColumn::Type::Integer, fkColPosition, foreignKeyColumnKind, columnPersistenceType);
+		DbColumn* newFkCol = columns.GetColumnFactory().AllocateForeignKeyECInstanceId(*const_cast<DbTable*>(foreignEndTable), fkColName, columnPersistenceType, fkColPosition);
         if (newFkCol == nullptr)
             {
             Issues().Report(ECDbIssueSeverity::Error, "Failed to map ECRelationshipClass '%s'. Could not create foreign key column '%s' in table '%s'.",
@@ -541,17 +540,17 @@ BentleyStatus RelationshipClassEndTableMap::DetermineFkColumns(ColumnLists& colu
         if (makeFkColNotNull)
             newFkCol->GetConstraintsR().SetNotNullConstraint();
 
-        ColumnLists::push_back(columns.m_fkColumnsPerFkTable, newFkCol);
+        columns.AddFkECInstanceIdColumn(*newFkCol);
         }
 
-    BeAssert(columns.m_fkColumnsPerFkTable.size() == foreignEndTables.size());
+    BeAssert(columns.GetFkECInstanceIdColumns().size() == foreignEndTables.size());
     return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table, Utf8StringCR relClassIdColName, bool makeNotNull) const
+DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(ColumnFactory& colfactory, DbTable& table, Utf8StringCR relClassIdColName, bool makeNotNull) const
     {
     BeAssert(!GetClass().HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
     PersistenceType persType = PersistenceType::Physical;
@@ -575,31 +574,34 @@ DbColumn* RelationshipClassEndTableMap::CreateRelECClassIdColumn(DbTable& table,
     if (!canEdit)
         table.GetEditHandleR().BeginEdit();
 
-    relClassIdCol = table.CreateColumn(relClassIdColName, DbColumn::Type::Integer, DbColumn::Kind::RelECClassId, persType);
+	relClassIdCol = colfactory.AllocateForeignKeyRelECClassId(table, relClassIdColName, persType);
     if (relClassIdCol == nullptr)
         return nullptr;
 
-    if (makeNotNull && !relClassIdCol->DoNotAllowDbNull())
-        {
-        relClassIdCol->GetConstraintsR().SetNotNullConstraint();
-        BeAssert(relClassIdCol->GetId().IsValid());
-        }
+	//! only know overflow columns have index and null constraints
+	if (false == relClassIdCol->IsInOverflow())
+		{
+		if (makeNotNull && !relClassIdCol->DoNotAllowDbNull())
+			{
+			relClassIdCol->GetConstraintsR().SetNotNullConstraint();
+			BeAssert(relClassIdCol->GetId().IsValid());
+			}
 
-    if (persType != PersistenceType::Virtual)
-        {
-        Utf8String indexName("ix_");
-        indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
-        DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, {relClassIdCol}, true, true, GetClass().GetId());
-        if (index == nullptr)
-            {
-            LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
-            return nullptr;
-            }
-        }
+		if (persType != PersistenceType::Virtual)
+			{
+			Utf8String indexName("ix_");
+			indexName.append(table.GetName()).append("_").append(relClassIdCol->GetName());
+			DbIndex* index = GetDbMap().GetDbSchemaR().CreateIndex(table, indexName.c_str(), false, { relClassIdCol }, true, true, GetClass().GetId());
+			if (index == nullptr)
+				{
+				LOG.errorv("Failed to create index on RelECClassId column %s on table %s.", relClassIdCol->GetName().c_str(), table.GetName().c_str());
+				return nullptr;
+				}
+			}
 
-    if (!canEdit)
-        table.GetEditHandleR().EndEdit();
-
+		if (!canEdit)
+			table.GetEditHandleR().EndEdit();
+		}
     return relClassIdCol;
     }
 
@@ -758,8 +760,8 @@ BentleyStatus RelationshipClassEndTableMap::_Load(ClassMapLoadContext& ctx, DbCl
         return BentleyStatus::ERROR;
 
     ECRelationshipClassCR relationshipClass = GetRelationshipClass();
-    ECClassId defaultSourceECClassId = relationshipClass.GetSource().GetClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetClasses().front()->GetId();
-    ECClassId defaultTargetECClassId = relationshipClass.GetTarget().GetClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetClasses().front()->GetId();
+    ECClassId defaultSourceECClassId = relationshipClass.GetSource().GetConstraintClasses().empty() ? ECClassId() : relationshipClass.GetSource().GetConstraintClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = relationshipClass.GetTarget().GetConstraintClasses().empty() ? ECClassId() : relationshipClass.GetTarget().GetConstraintClasses().front()->GetId();
 
     //SourceECInstanceId
     std::vector<DbColumn const*> const* mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
@@ -1231,7 +1233,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(Relationsh
     ECRelationshipClassCP relationship = mapInfo.GetECClass().GetRelationshipClassCP();
     BeAssert(relationship != nullptr);
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
-    ECClass const* foreignEndClass = foreignEndConstraint.GetClasses()[0];
+    ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
     size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(foreignEndConstraint);
 
@@ -1583,8 +1585,8 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
     auto const& sourceConstraint = relationshipClass.GetSource();
     auto const& targetConstraint = relationshipClass.GetTarget();
 
-    ECClassId defaultSourceECClassId = sourceConstraint.GetClasses().empty() ? ECClassId() : sourceConstraint.GetClasses().front()->GetId();
-    ECClassId defaultTargetECClassId = targetConstraint.GetClasses().empty() ? ECClassId() : targetConstraint.GetClasses().front()->GetId();
+    ECClassId defaultSourceECClassId = sourceConstraint.GetConstraintClasses().empty() ? ECClassId() : sourceConstraint.GetConstraintClasses().front()->GetId();
+    ECClassId defaultTargetECClassId = targetConstraint.GetConstraintClasses().empty() ? ECClassId() : targetConstraint.GetConstraintClasses().front()->GetId();
 
     auto mapColumns = mapInfo.FindColumnByAccessString(ECDbSystemSchemaHelper::SOURCEECINSTANCEID_PROPNAME);
     if (mapColumns == nullptr)
@@ -1718,5 +1720,27 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     else
         defaultConstraintClassId = ECClassId();
     }
+//************************RelationshipClassEndTableMap::ColumnFactory********************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
+DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyECInstanceId(DbTable& table, Utf8StringCR colName, PersistenceType persType, int position)
+	{
+	DbColumn::Kind colKind = m_relMap.GetReferencedEnd() == ECRelationshipEnd_Source ? 
+		DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
+
+	const DbColumn::Type colType = DbColumn::Type::Integer;
+	return table.CreateColumn(colName, colType, position, colKind, persType);
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Affan.Khan                         01/2017
+//---------------------------------------------------------------------------------------
+DbColumn* RelationshipClassEndTableMap::ColumnFactory::AllocateForeignKeyRelECClassId(DbTable& table, Utf8StringCR colName, PersistenceType persType)
+	{
+	const DbColumn::Type colType = DbColumn::Type::Integer;
+	const DbColumn::Kind colKind = DbColumn::Kind::RelECClassId;
+	return table.CreateColumn(colName, colType, colKind, persType);
+	}
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

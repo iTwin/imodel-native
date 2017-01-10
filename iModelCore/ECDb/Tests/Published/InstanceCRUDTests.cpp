@@ -585,9 +585,7 @@ void InstanceCRUDTests::insertECRelationshipClassInstances ()
 //+---------------+---------------+---------------+---------------+---------------+------
 void InstanceCRUDTests::addClassesForRelationship (ECRelationshipClassCP relClass)
     {
-    const ECConstraintClassesList& sourceClasses = relClass->GetSource ().GetClasses ();
-    const ECConstraintClassesList& targetClasses = relClass->GetTarget ().GetClasses ();
-    for (ECClassCP ecClass2: sourceClasses)
+    for (ECClassCP ecClass2: relClass->GetSource().GetConstraintClasses())
         {
         if (InstanceCRUDTests::addClass (ecClass2))
             {
@@ -611,7 +609,7 @@ void InstanceCRUDTests::addClassesForRelationship (ECRelationshipClassCP relClas
                 m_classList.push_back (ecClass4);
             }
         }
-    for (ECClassCP ecClass3: targetClasses)
+    for (ECClassCP ecClass3: relClass->GetTarget().GetConstraintClasses())
         {
         if (InstanceCRUDTests::addClass (ecClass3))
             {
@@ -880,8 +878,8 @@ void InstanceCRUDTests::checkECClassCRUDfeasibility (ECClassCP ecClass)
             }
         else
             {
-            const ECConstraintClassesList& sourceClasses = relClass->GetSource ().GetClasses ();
-            const ECConstraintClassesList& targetClasses = relClass->GetTarget ().GetClasses ();
+            const ECRelationshipConstraintClassList& sourceClasses = relClass->GetSource ().GetConstraintClasses ();
+            const ECRelationshipConstraintClassList& targetClasses = relClass->GetTarget ().GetConstraintClasses ();
             if (sourceClasses.empty () || targetClasses.empty ())
                 {
                 LOG1.infov ("Empty Source or Target Constraints: This is not a valid Relationship Class %s", relClass->GetName ().c_str ());

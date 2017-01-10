@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSchemaComparer.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -531,15 +531,17 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
         change.GetArray().MinOccurs().SetValue(ValueId::New, bArray->GetMinOccurs());
         }
 
-    auto aExtendType = a.GetAsExtendedTypeProperty();
-    auto bExtendType = b.GetAsExtendedTypeProperty();
-    if (aExtendType != nullptr && bExtendType != nullptr)
+    bool aIsExtendedType = a.GetIsPrimitive() || a.GetIsPrimitiveArray();
+    bool bIsExtendedType = b.GetIsPrimitive() || b.GetIsPrimitiveArray();
+    if (aIsExtendedType && bIsExtendedType)
         {
-        if (!aExtendType->GetExtendedTypeName().EqualsIAscii(bExtendType->GetExtendedTypeName()))
-            change.GetExtendedTypeName().SetValue(aExtendType->GetExtendedTypeName(), bExtendType->GetExtendedTypeName());
+        Utf8String aExtendedTypeName = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetExtendedTypeName() : a.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+        Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+        if (!aExtendedTypeName.EqualsIAscii(bExtendedTypeName))
+            change.GetExtendedTypeName().SetValue(aExtendedTypeName, bExtendedTypeName);
 
-        KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
-        KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
+        KindOfQuantityCP aKoq = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetKindOfQuantity() : a.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
+        KindOfQuantityCP bKoq = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetKindOfQuantity() : b.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
         if (aKoq != nullptr && bKoq != nullptr)
             {
             if (aKoq != bKoq)
@@ -550,17 +552,19 @@ BentleyStatus ECSchemaComparer::CompareECProperty(ECPropertyChange& change, ECPr
         else if (aKoq == nullptr && bKoq != nullptr)
             change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }
-    else if (aExtendType != nullptr && bExtendType == nullptr)
+    else if (aIsExtendedType && !bIsExtendedType)
         {
-        change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendType->GetExtendedTypeName());
-        KindOfQuantityCP aKoq = aExtendType->GetKindOfQuantity();
+        Utf8String aExtendedTypeName = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetExtendedTypeName() : a.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+        change.GetExtendedTypeName().SetValue(ValueId::Deleted, aExtendedTypeName);
+        KindOfQuantityCP aKoq = a.GetIsPrimitive() ? a.GetAsPrimitiveProperty()->GetKindOfQuantity() : a.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
         if (aKoq != nullptr)
             change.GetKindOfQuantity().SetValue(ValueId::Deleted, aKoq->GetFullName());
         }
-    else if (!aExtendType && bExtendType)
+    else if (!aIsExtendedType && bIsExtendedType)
         {
-        change.GetExtendedTypeName().SetValue(ValueId::New, bExtendType->GetExtendedTypeName());
-        KindOfQuantityCP bKoq = bExtendType->GetKindOfQuantity();
+        Utf8String bExtendedTypeName = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetExtendedTypeName() : b.GetAsPrimitiveArrayProperty()->GetExtendedTypeName();
+        change.GetExtendedTypeName().SetValue(ValueId::New, bExtendedTypeName);
+        KindOfQuantityCP bKoq = b.GetIsPrimitive() ? b.GetAsPrimitiveProperty()->GetKindOfQuantity() : b.GetAsPrimitiveArrayProperty()->GetKindOfQuantity();
         if (bKoq != nullptr)
             change.GetKindOfQuantity().SetValue(ValueId::New, bKoq->GetFullName());
         }

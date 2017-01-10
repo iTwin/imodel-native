@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaWriter.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #pragma once
@@ -29,8 +29,10 @@ private:
     BentleyStatus ImportECRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
     BentleyStatus ImportCustomAttributes(ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-    BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ExtendedTypeECPropertyCR);
-    BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ExtendedTypeECPropertyCR);
+    BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
+    BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
+    BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
+    BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
 
     BentleyStatus InsertECSchemaEntry(ECN::ECSchemaCR);
     BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
