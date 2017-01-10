@@ -2,7 +2,7 @@
 |
 |     $Source: BimConsole/ECSqlCommand.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Command.h"
@@ -99,8 +99,8 @@ void ECSqlCommand::ExecuteSelect(Session& session, ECSqlStatement& statement) co
                 ECN::NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
                 if (navProp->IsMultiple())
                     cellValue = "{...}";
-                else//we do not print out the rel class id by default
-                    cellValue = PrimitiveToString(value.GetStruct().GetValue(0));
+                else
+                    cellValue = StructToString(value);
                 }
 
             const int columnSize = columnSizes[(size_t) i];
