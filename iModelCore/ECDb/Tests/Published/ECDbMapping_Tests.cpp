@@ -6469,67 +6469,6 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
-    {
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='bsca' />"
-        "    <ECEntityClass typeName='ClassWithBusinessKey' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </BusinessKeySpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithSyncId' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <SyncIDSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <Property>Name</Property>"
-        "            </SyncIDSpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithGlobalId' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </GlobalIdSpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithGlobalIdAndBusinessKey' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </GlobalIdSpecification>"
-        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </BusinessKeySpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "idspectests.ecdb");
-    ASSERT_FALSE(asserted);
-
-    AssertIndex(db, "ix_ts_ClassWithBusinessKey_BusinessKeySpecification_Name", false, "ts_ClassWithBusinessKey", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithSyncId_SyncIDSpecification_Name", false, "ts_ClassWithSyncId", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithGlobalId_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalId", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithGlobalIdAndBusinessKey_BusinessKeySpecification_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalIdAndBusinessKey", {"Name"});
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, PropertyMapCAOnNavigationProperty)
