@@ -43,7 +43,7 @@ private:
             JsonValueBinder() : IECSqlBinder() {}
             JsonValueBinder(ECDbCR ecdb, ECSqlTypeInfo const& typeInfo, Json::Value& json) : IECSqlBinder(), m_ecdb(&ecdb), m_typeInfo(typeInfo), m_json(&json), m_currentArrayElementBinder(nullptr) {}
 
-            JsonValueBinder::JsonValueBinder(JsonValueBinder&&);
+            JsonValueBinder(JsonValueBinder&&);
             JsonValueBinder& operator=(JsonValueBinder&&);
 
             virtual ECSqlStatus _BindNull() override;
