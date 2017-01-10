@@ -132,7 +132,7 @@ TEST(FormattingTest, Simple)
         repStr = fmtP->FormatDouble(rval, 4, 0.05);
         }
     LOG.info("Tested fmtP->FormatDouble");
-    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet).c_str());
+    LOG.infov("Metrics for %s    %s", repStr, sw->LastIntervalMetrics(repet));
     LOG.infov("Elapsed time %s", sw->LastInterval(1.0).c_str());
 
     for (int i = 0; i < repet; i++)
