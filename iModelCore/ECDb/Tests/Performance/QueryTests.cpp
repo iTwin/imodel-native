@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiClass                                       Maha Nasir                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PopulateKitchenSinkDb : public ::testing::Test
+struct PopulateKitchenSinkDb : ECDbTestFixture
     {
     protected:
         void PopulateDb(ECDbR ecdb)
@@ -311,7 +311,7 @@ struct PerformanceQueryTests : public PopulateKitchenSinkDb
 //---------------------------------------------------------------------------------------
 // @bsiClass                                     Muhammad Hassan                  10/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct PerformanceECInstanceECSqlSelectAdapterTests : public PopulateKitchenSinkDb
+struct PerformanceQueryECInstanceECSqlSelectAdapterTests : public PopulateKitchenSinkDb
     {
     public:
         ECDb m_testDb;
@@ -324,7 +324,7 @@ struct PerformanceECInstanceECSqlSelectAdapterTests : public PopulateKitchenSink
             }
     };
 
-TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
+TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
     {
     SetUpDb();
     //printf ("Please attach to profiler and press any key...\r\n"); getchar ();
@@ -357,7 +357,7 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 05/14
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
+TEST_F(PerformanceQueryECInstanceECSqlSelectAdapterTests, SelectFromComplexClass_WithoutAdapter)
     {
     std::function<void(IECSqlValue const&)> processECSqlValue;
     processECSqlValue = [&processECSqlValue] (IECSqlValue const& ecsqlValue)

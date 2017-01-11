@@ -50,12 +50,6 @@ private:
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
 
 public:
-
-    //__PUBLISH_SECTION_END__
-    BentleyStatus SetSimpleProperty(ECN::IECInstanceR instance, IECSqlValue const& value) const {return SetPropertyData(instance, value);}
-    ECDB_EXPORT BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
-    //__PUBLISH_SECTION_START__
-
     //! Creates a new instance of the adapter
     //! @param[in] ecsqlStatement Prepared statement
     //! @see ECSqlStatement
@@ -82,6 +76,11 @@ public:
     //! @param[out] id  the ECInstanceId of the instance for the current row
     //! @returns SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus GetInstanceId(ECInstanceId& id) const;
+
+#if !defined (DOCUMENTATION_GENERATOR)
+    BentleyStatus SetSimpleProperty(ECN::IECInstanceR instance, IECSqlValue const& value) const { return SetPropertyData(instance, value); }
+    ECDB_EXPORT BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
+#endif
     };
 
 //======================================================================================
