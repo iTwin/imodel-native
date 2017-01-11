@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/Published/ParaSolids_Tests.cpp $
+|  $Source: Tests/DgnProject/Published/BRepUtil_Tests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,14 +13,14 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct ParaSolidsTests : public DgnDbTestFixture
+struct BRepUtilTests : public DgnDbTestFixture
 {
   
 };
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgncone)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgncone)
     {
     //Dgncone
     double dz = 3.0;
@@ -51,7 +51,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgncone)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnSphere)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnSphere)
     {
     //Dgn Sphere 
     DgnSphereDetail dgnsphere(DPoint3d::From(0, 0, 0), 10);
@@ -68,7 +68,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnSphere)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnbox)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnbox)
     {
     DgnBoxDetail Dgnbox(
         DPoint3d::From(1, 1, 1),
@@ -87,7 +87,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnbox)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnTorus)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnTorus)
     {
     DgnTorusPipeDetail torus(
         DPoint3d::From(0, 0, 0),
@@ -110,7 +110,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnTorus)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnExtrusion)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnExtrusion)
     {
     CurveVectorPtr ellipse = CurveVector::CreateDisk(DEllipse3d::From(0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.0, Angle::TwoPi()));
     DgnExtrusionDetail DgnExtrusion(ellipse, DVec3d::From(0, 0, 3), true);
@@ -127,7 +127,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnExtrusion)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnRotationalsweep)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRotationalsweep)
     {
     
     CurveVectorPtr ellipse = CurveVector::CreateRectangle(1,2,3,4,0.5);
@@ -146,7 +146,7 @@ TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnRotationalsweep)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ridha.Malik   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ParaSolidsTests, CreateBodyFrom_SolidPrimDgnRuledSweep)
+TEST_F(BRepUtilTests, CreateBodyFrom_SolidPrimDgnRuledSweep)
     {
     double ax = 1.0;
     double ay = 2.0;
