@@ -3075,6 +3075,147 @@ Render::GraphicPtr GeometryProcessorContext::_StrokeGeometry(GeometrySourceCR so
     return WasAborted() ? nullptr : graphic;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::TransformRange(DRange3dR range, TransformCR localTransform) const
+    {
+    if (!m_haveTransform)
+        {
+        localTransform.Multiply(range, range);
+        }
+    else if (localTransform.IsIdentity())
+        {
+        m_transform.Multiply(range, range);
+        }
+    else
+        {
+        auto tf = Transform::FromProduct(m_transform, localTransform);
+        tf.Multiply(range, range);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform)
+    {
+    DRange3d range;
+    if (!geom.TryGetRange(range))
+        return false;
+
+    TransformRange(range, transform);
+    return AddGeometry(geom, isCurved, displayParams, transform, range);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform, DRange3dCR range)
+    {
+    GeometryPtr geometry = Geometry::Create(geom, transform, range, GetElementId(), displayParams, isCurved, GetDgnDb());
+    if (geometry.IsNull())
+        return false;
+
+    m_geometries.push_back(geometry);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsR displayParams, TransformCR transform)
+    {
+    if (m_surfacesOnly && !curves.IsAnyRegionType())
+        return true;    // ignore...
+
+    bool isCurved = curves.ContainsNonLinearPrimitive();
+    CurveVectorPtr clone = curves.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return AddGeometry(*geom, isCurved, displayParams, transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsR displayParams, TransformCR transform)
+    {
+    bool isCurved = primitive.HasCurvedFaceOrEdge();
+    ISolidPrimitivePtr clone = primitive.Clone();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    return AddGeometry(*geom, isCurved, displayParams, transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddSurface(MSBsplineSurfaceCR surface, DisplayParamsR displayParams, TransformCR transform)
+    {
+    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
+    clone->CopyFrom(surface);
+    IGeometryPtr geom = IGeometry::Create(clone);
+
+    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
+    return AddGeometry(*geom, isCurved, displayParams, transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsR displayParams, TransformCR transform)
+    {
+    PolyfaceHeaderPtr clone = polyface.Clone();
+    if (!clone->IsTriangulated())
+        clone->Triangulate();
+
+    if (m_haveTransform)
+        clone->Transform(Transform::FromProduct(m_transform, transform));
+    else if (!transform.IsIdentity())
+        clone->Transform(transform);
+
+    DRange3d range = clone->PointRange();
+    IGeometryPtr geom = IGeometry::Create(clone);
+    AddGeometry(*geom, false, displayParams, Transform::FromIdentity(), range);
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddBody(IBRepEntityCR body, DisplayParamsR displayParams, TransformCR transform)
+    {
+    IBRepEntityPtr clone = const_cast<IBRepEntityP>(&body);
+
+    DRange3d range = clone->GetEntityRange();
+    Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
+    tf.Multiply(range, range);
+
+    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsR displayParams, TransformCR transform)
+    {
+    if (m_surfacesOnly)
+        return true;
+
+    static BeMutex s_tempFontMutex;
+    BeMutexHolder lock(s_tempFontMutex);    // Temporary - until we resolve the font threading issues.
+
+    TextStringPtr clone = textString.Clone();
+    Transform tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
+
+    DRange2d range2d = clone->GetRange();
+    DRange3d range = DRange3d::From(range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
+    Transform::FromProduct(tf, clone->ComputeTransform()).Multiply(range, range);
+
+    m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
+    return true;
+    }
+
 #if defined (BENTLEYCONFIG_PARASOLID) 
 // ###TODO: ugh.
 static ThreadedLocalParasolidHandlerStorageMark s_tempParasolidThreadedHandlerStorageMark;

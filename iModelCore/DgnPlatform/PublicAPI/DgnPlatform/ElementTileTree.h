@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ElementTileTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,6 +42,7 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(TriangleKey);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeomPart);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryOptions);
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Filter);
+DEFINE_POINTER_SUFFIX_TYPEDEFS(GeometryListBuilder);
 
 DEFINE_REF_COUNTED_PTR(Tile);
 DEFINE_REF_COUNTED_PTR(DisplayParams);
@@ -503,6 +504,42 @@ public:
     MeshList& Meshes()              { return m_meshes; }
     MeshPartList& Parts()           { return m_parts; }
     bool IsEmpty() const            { return m_meshes.empty() && m_parts.empty(); }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   01/17
+//=======================================================================================
+struct GeometryListBuilder
+{
+private:
+    GeometryList    m_geometries;
+    Transform       m_transform;
+    DgnDbR          m_dgndb;
+    DgnElementId    m_elementId;
+    bool            m_surfacesOnly;
+    bool            m_haveTransform;
+
+    void TransformRange(DRange3dR range, TransformCR localTransform) const;
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform);
+    bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform, DRange3dCR range);
+public:
+    GeometryListBuilder(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
+    explicit GeometryListBuilder(DgnDbR db, bool surfacesOnly=false) : m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+
+    DGNPLATFORM_EXPORT bool AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddSurface(MSBsplineSurfaceCR surface, DisplayParamsR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddPolyface(PolyfaceQueryCR polyface, bool filled, DisplayParamsR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddBody(IBRepEntityCR body, DisplayParamsR displayParams, TransformCR transform);
+    DGNPLATFORM_EXPORT bool AddTextString(TextStringCR textString, DisplayParamsR displayParams, TransformCR transform);
+
+    void Clear() { m_geometries.clear(); }
+    GeometryList const& GetGeometries() const { return m_geometries; }
+    GeometryList& GetGeometries() { return m_geometries; }
+
+    DgnDbR GetDgnDb() const { return m_dgndb; }
+    DgnElementId GetElementId() const { return m_elementId; }
+    void SetElementId(DgnElementId id) { m_elementId = id; }
 };
 
 //=======================================================================================
