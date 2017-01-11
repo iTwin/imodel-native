@@ -158,56 +158,6 @@ NumericFormat::NumericFormat(Utf8CP name, PresentationType presType, ShowSignOpt
     Init(name, presType, signOpt, formatTraits, precision);   
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 12/16
-//----------------------------------------------------------------------------------------
-// Note: if a positive value of the argument "round" is provided on the argument list it signals 
-//   that the additional rounding of the double value will be applied at the time of formatting
-NumericFormat::NumericFormat(StdFormatNameR fmtType, size_t precision, double round)
-    {
-    ShowSignOption signOpt = FormatConstant::DefaultSignOption();
-    FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    switch (fmtType.GetCode())
-        {
-        case static_cast<int>(StdFormatCode::SignedReal) :
-            Init(fmtType.GetShortName(), PresentationType::Decimal, ShowSignOption::SignAlways, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::ParenthsReal) :
-            Init(fmtType.GetShortName(), PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::DefaultFractional) :
-            Init(fmtType.GetShortName(), PresentationType::Fractional, signOpt, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::SignedFractional) :
-           Init(fmtType.GetShortName(), PresentationType::Decimal, ShowSignOption::SignAlways, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::DefaultExp) :
-            Init(fmtType.GetShortName(), PresentationType::Scientific, signOpt, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::NormalExp) :
-            Init(fmtType.GetShortName(), PresentationType::ScientificNorm, signOpt, traits, precision);
-            break;
-        case static_cast<int>(StdFormatCode::SignedExp) :
-            Init(fmtType.GetShortName(), PresentationType::Scientific, ShowSignOption::SignAlways, traits, precision);
-            break;
-
-        case static_cast<int>(StdFormatCode::DefaultReal) :
-        case static_cast<int>(StdFormatCode::DefaultInt) :
-        default:
-            Init(fmtType.GetShortName(), PresentationType::Decimal, signOpt, traits, precision);
-            break;
-        }
-    if (round >= 0.0)
-        {
-        m_roundFactor = round;
-        SetApplyRounding(true);
-        }
-    }
-
-//NumericFormat NumericFormat::StdNumericFormat(Utf8P stdName, int prec)
-//    {
-//
-//    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -1482,15 +1432,6 @@ Utf8String FormatStopWatch::LastInterval(double factor)
     }
 
 
-Utf8String Utils::ShowSignOptionName(ShowSignOption opt)
-{
-switch (opt)
-    {
-    case ShowSignOption::OnlyNegative: return "OnlyNegative";
-    case ShowSignOption::SignAlways: return "SignAlways";
-    case ShowSignOption::NegativeParentheses: return "NegativeParentheses";
-    default: return "NoSign";
-    }
-}
+
 
 END_BENTLEY_FORMATTING_NAMESPACE

@@ -11,7 +11,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/Formatting.h>
 
-//#define FORMAT_DEBUG_PRINT
+#define FORMAT_DEBUG_PRINT
 
 #undef LOG
 #define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
@@ -40,6 +40,9 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 5, 5.0));
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 4, 5.0));
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 3, 5.0));
+    LOG.info("Scientific");
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sci", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(testV, "sciN", 5).c_str());
 
     LOG.infov("Value %.6f  (real) %s ", testV, NumericFormat::RefFormatDouble(testV, "real", 8, 0.05));
     LOG.infov("Value %.6f  (real) %s ", 5.0*testV, NumericFormat::RefFormatDouble(5.0*testV, "real", 7, 0.05));
@@ -48,8 +51,8 @@ TEST(FormattingTest, Simple)
     LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "real", 4, 0.05));
     LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "real", 3, 0.05));
     LOG.info("Scientific");
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "sci", 5).c_str());
-    LOG.infov("Value %.6f  (real) %s ", 2.0*testV, NumericFormat::RefFormatDouble(2.0*testV, "sciN", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sci", 5).c_str());
+    LOG.infov("Value %.6f  (real) %s ", 9.0*testV, NumericFormat::RefFormatDouble(9.0*testV, "sciN", 5).c_str());
 #endif
     /////  end of demo print
 
