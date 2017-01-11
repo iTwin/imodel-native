@@ -2084,25 +2084,31 @@ BentleyStatus Loader::_LoadTile()
                     auto instanceGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
                     instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
 
-                    // ###TODO: Combine the inverse of the prev transform and the instance transform rather than applying two transform per iteration...
-                    TransformCR instanceTransform = instance.GetTransform();
-                    invTransform.InverseOf(instanceTransform);
+                    // Transform the geometry in-place for each instance. This way we avoid the surprising overhead of qv_pushTransClip() while
+                    // still keeping the scene's graphic list small by defining subgraphics
+                    TransformCR instanceTransform = Transform::FromProduct(instance.GetTransform(), invTransform);
+                    invTransform.InverseOf(instance.GetTransform());
 
                     if (haveMesh)
                         {
                         meshArgs.Transform(instanceTransform);
                         instanceGraphic->AddTriMesh(meshArgs);
-                        meshArgs.Transform(invTransform);
                         }
                     else
                         {
                         polylineArgsList.Transform(instanceTransform);
                         polylineArgsList.Apply(*instanceGraphic);
-                        polylineArgsList.Transform(invTransform);
                         }
 
                     instanceGraphic->Close();
                     graphic->AddSubGraphic(*instanceGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                    }
+
+                // The mesh's vertices are const and reused...if we applied a transform, undo it.
+                if (haveMesh && !invTransform.IsIdentity())
+                    {
+                    invTransform.InverseOf(invTransform);
+                    meshArgs.Transform(invTransform);
                     }
                 }
             }
