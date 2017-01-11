@@ -43,7 +43,9 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         
         void AddXYZFilePointsAsSeedPoints(TerrainModel::GroundDetection::GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder);
 
-        StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);
+        double ComputeTextureResolution();
+
+        StatusInt CreateSmTerrain(const BeFileName& coverageTempDataFolder);        
 
     protected:                   
 

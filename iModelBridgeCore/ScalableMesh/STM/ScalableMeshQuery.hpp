@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:45 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1471,6 +1471,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsTextured() const
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     return meshNode->IsTextured();
+    }
+
+template <class POINT> void ScalableMeshNode<POINT>::_GetResolutions(float& geometricResolution, float& textureResolution) const
+    {    
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+
+    meshNode->GetResolution(geometricResolution, textureResolution);    
     }
 
 template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags) const

@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1289,6 +1289,8 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
         virtual IScalableMeshTexturePtr _GetTexture() const override;
 
         virtual bool                    _IsTextured() const override;
+
+        virtual void                    _GetResolutions(float& geometricResolution, float& textureResolution) const override;
                 
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt( char relativePosX, char relativePosY, char relativePosZ) const override;
 

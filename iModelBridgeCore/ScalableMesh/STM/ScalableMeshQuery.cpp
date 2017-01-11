@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:37 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2413,6 +2413,11 @@ IScalableMeshTexturePtr IScalableMeshNode::GetTexture() const
 bool IScalableMeshNode::IsTextured() const
     {
     return _IsTextured();
+    }
+
+void IScalableMeshNode::GetResolutions(float& geometricResolution, float& textureResolution) const 
+    {
+    return _GetResolutions(geometricResolution, textureResolution);
     }
 
 //Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
