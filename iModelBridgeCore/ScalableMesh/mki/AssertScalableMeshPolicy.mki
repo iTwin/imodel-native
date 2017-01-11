@@ -6,9 +6,10 @@
 #       $Date: 2012/11/13 14:02:19 $
 #     $Author: Daryl.Holmwood $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------*/
+IncludeCompileLinkMki=1
 
 SystemPolicyMki=$(SrcBsiCommon)sharedmki/InternalSystemPolicy.mki
 FoundationPolicyMki=$(SrcRoot)ScalableMesh/mki/ScalableMeshPolicy.mki

@@ -25,11 +25,13 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     HFCPtr<HRFRasterFile> pRasterFile;
     HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
 
+#ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
         {
         pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
         }
     else
+#endif
         {
         pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
         }
@@ -49,7 +51,7 @@ HGFHMRStdWorldCluster* RasterUtilities::GetWorldCluster()
     }
 
 
-HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     {
     if (s_rasterMemPool == nullptr)
         s_rasterMemPool = new HPMPool(30000, HPMPool::None);
@@ -72,7 +74,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path)
     }
 
 
-HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordinates::BaseGCSCPtr targetCS, DRange2d extentInTargetCS)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
     {
 
     if (s_rasterMemPool == nullptr)
@@ -82,7 +84,12 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
-    GeoCoordinates::BaseGCSCP pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+	GCSCP pRasterGcs;
+#ifndef VANCOUVER_API
+     pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+#else
+	pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP()->GetBaseGCS();
+#endif
 
     HFCPtr<HGF2DTransfoModel> pReprojectionModel;
     if (pRasterGcs != nullptr && pRasterGcs->IsValid() && targetCS != nullptr && !targetCS->IsEquivalent(*pRasterGcs))
@@ -122,6 +129,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
 
     HGF2DExtent imageExtent;
 
+	#ifndef VANCOUVER_API
     // If the model doesn't preserve linearity try to simplify it. 
     if (!pReprojectionModel->PreservesLinearity())
         {
@@ -163,6 +171,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
         pRasterLogicalCS = new HGF2DCoordSys(*pRasterWorldToDgnWorldCS, pReprojCS);
         }
     else
+#endif
         {
         HVEShape rasterShape(0.0, 0.0, (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(), (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight(), pRasterPhysCS);
         rasterShape.ChangeCoordSys(pReprojCS);
@@ -188,7 +197,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
     }
 
 
-StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, ImagePP::HRARaster& raster)
+StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, HRARASTER& raster)
     {
     HFCMatrix<3, 3> transfoMatrix;
     transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
@@ -222,7 +231,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     pTextureBitmap = new HRABitmap(width,
                                    height,
                                    pTransfoModel.GetPtr(),
-                                   m_targetMosaic->GetCoordSys(),
+                                   raster.GetCoordSys(),
                                    pPixelType,
                                    8,
                                    HRABitmap::UPPER_LEFT_HORIZONTAL,
@@ -260,7 +269,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
 #ifdef VANCOUVER_API
     copyFromOptions.SetGridShapeMode(true);
-    pTextureBitmap->CopyFrom(m_targetMosaic, copyFromOptions);
+    pTextureBitmap->CopyFrom(&raster, copyFromOptions);
 #else
     pTextureBitmap->CopyFrom(raster, copyFromOptions);
 #endif

@@ -2,10 +2,10 @@
 #
 #  $Source: ScalableMesh_Vancouver.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
-     
+
 baseDir         = $(_MakeFilePath)
 PolicyFile      = $(SrcRoot)ScalableMesh/mki/AssertScalableMeshPolicy.mki
 SolutionPolicyMki=$(baseDir)ScalableMesh.mki
@@ -313,6 +313,12 @@ $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${
 $(o)MosaicTextureProvider$(oext) : $(stmDir)MosaicTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #$(o)GeneratorTextureProvider$(oext) : $(stmDir)GeneratorTextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)MapBoxTextureProvider$(oext) : $(stmDir)MapBoxTextureProvider.cpp $(stmDir)MapBoxTextureProvider.h $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores
