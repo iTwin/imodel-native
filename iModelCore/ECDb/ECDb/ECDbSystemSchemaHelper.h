@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSystemSchemaHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -90,7 +90,7 @@ public:
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      06/2013
 //+===============+===============+===============+===============+===============+======
-struct ECDbSystemSchemaHelper
+struct ECDbSystemSchemaHelper final : NonCopyableClass
     {
     public:
         static Utf8CP const ECINSTANCEID_PROPNAME;
@@ -105,10 +105,7 @@ struct ECDbSystemSchemaHelper
         static Utf8CP const POINTPROP_Y_PROPNAME;
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
-    private:
-        //static class
-        ECDbSystemSchemaHelper();
-        ~ECDbSystemSchemaHelper();
+        ECDbSchemaManager const& m_schemaManager;
 
         static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class);
         static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship);
@@ -116,21 +113,23 @@ struct ECDbSystemSchemaHelper
         static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation);
 
     public:
+        //static class
+        explicit ECDbSystemSchemaHelper(ECDbSchemaManager const& schemaManager) : m_schemaManager(schemaManager) {}
+
         //! @return System property or nullptr in case of errors
-        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Class);
-        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Relationship);
-        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Point);
-        static ECN::ECPropertyCP GetSystemProperty(ECDbSchemaManagerCR, ECSqlSystemPropertyInfo::Navigation);
+        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Class) const;
+        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Relationship) const;
+        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Point) const;
+        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Navigation) const;
 
-        static bool TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECDbSchemaManagerCR, ECN::ECPropertyCR);
+        bool TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECN::ECPropertyCR) const;
 
-        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class);
-        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship);
-        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point);
-        static bool Equals(ECDbSchemaManagerCR, ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation);
+        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class) const;
+        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship) const;
+        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point) const;
+        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation) const;
 
-
-        static ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECDbCR, ECN::PrimitiveType);
+        ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

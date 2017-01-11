@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -89,7 +89,7 @@ Exp::FinalizeParseStatus PropertyNameExp::_FinalizeParsing(ECSqlParseContext& ct
         return FinalizeParseStatus::Completed;
 
     //determine whether the exp refers to a system property
-    ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(m_sysPropInfo, ctx.GetECDb().Schemas(), GetPropertyMap().GetProperty());
+    ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().TryGetSystemPropertyInfo(m_sysPropInfo, GetPropertyMap().GetProperty());
     return FinalizeParseStatus::Completed;
     }
 

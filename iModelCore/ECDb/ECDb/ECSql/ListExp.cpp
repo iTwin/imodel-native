@@ -3,7 +3,7 @@
 |
 |     $Source: ECDb/ECSql/ListExp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -201,7 +201,7 @@ void SystemPropertyExpIndexMap::AddIfSystemProperty(PropertyNameExp const& exp, 
 void SystemPropertyExpIndexMap::AddIfSystemProperty(ECDbSchemaManager const& schemaManager, ECN::ECPropertyCR prop, size_t index)
     {
     ECSqlSystemPropertyInfo sysPropInfo;
-    if (ECDbSystemSchemaHelper::TryGetSystemPropertyInfo(sysPropInfo, schemaManager, prop))
+    if (schemaManager.GetReader().GetSystemSchemaHelper().TryGetSystemPropertyInfo(sysPropInfo, prop))
         m_sysPropIndexMap[sysPropInfo] = index;
     }
 

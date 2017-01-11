@@ -117,36 +117,36 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
 
     bool isSingleClassSelectClause = true;
     ECClassCP targetClassInSelectClause = nullptr;
-    ECDbSchemaManager const& schemaManager = m_ecSqlStatement.GetECDb()->Schemas();
+    ECDbSystemSchemaHelper const& systemSchemaHelper = m_ecSqlStatement.GetECDb()->Schemas().GetReader().GetSystemSchemaHelper();
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECSqlColumnInfo const& columnInfo = m_ecSqlStatement.GetColumnInfo(i);
         ECPropertyCP prop = columnInfo.GetProperty();
-        if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Class::ECInstanceId))
+        if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Class::ECInstanceId))
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetInstanceId);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId))
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipSource);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::SourceECClassId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Relationship::SourceECClassId))
             {
             m_columnHandlers.push_back(nullptr);
             m_sourceECClassIdColumnIndex = i;
             }
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId))
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipTarget);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
             {
             m_columnHandlers.push_back(nullptr);
             m_targetECClassIdColumnIndex = i;
             }
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Class::ECClassId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Class::ECClassId))
             {
             m_columnHandlers.push_back(nullptr);
             m_ecClassIdColumnIndex = i;
             }
         else if (prop->GetIsNavigation())
             m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetNavigationValue);
-        else if (ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Navigation::Id) ||
-                 ECDbSystemSchemaHelper::Equals(schemaManager, *prop, ECSqlSystemPropertyInfo::Navigation::RelECClassId))
+        else if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Navigation::Id) ||
+                 systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo::Navigation::RelECClassId))
             {
             LOG.error("ECInstanceECSqlSelectAdapter does not support members of a NavigationECProperty in the SELECT clause. Only the NavigationECProperty itself may be specified in the SELECT clause.");
             return ERROR;

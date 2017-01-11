@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/SystemPropertyMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -102,7 +102,7 @@ RefCountedPtr<SystemPropertyMap::PerTablePrimitivePropertyMap> SystemPropertyMap
 //static 
 RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemPropertyInfo::Class::ECInstanceId);
+    ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::Class::ECInstanceId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -123,7 +123,7 @@ RefCountedPtr<ECInstanceIdPropertyMap> ECInstanceIdPropertyMap::CreateInstance(C
 //static 
 RefCountedPtr<ECClassIdPropertyMap> ECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), ECSqlSystemPropertyInfo::Class::ECClassId);
+    ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::Class::ECClassId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -159,7 +159,7 @@ bool ECClassIdPropertyMap::IsVirtual(DbTable const& table) const
 //static 
 RefCountedPtr<ConstraintECClassIdPropertyMap> ConstraintECClassIdPropertyMap::CreateInstance(ClassMap const& classMap, ECN::ECClassId defaultEClassId, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
+    ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECClassId : ECSqlSystemPropertyInfo::Relationship::TargetECClassId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);
@@ -195,7 +195,7 @@ bool ConstraintECClassIdPropertyMap::IsVirtual(DbTable const& table) const
 //static
 RefCountedPtr<ConstraintECInstanceIdPropertyMap> ConstraintECInstanceIdPropertyMap::CreateInstance(ClassMap const& classMap, ECRelationshipEnd constraintType, std::vector<DbColumn const*> const& columns)
     {
-    ECPropertyCP systemProperty = ECDbSystemSchemaHelper::GetSystemProperty(classMap.GetDbMap().GetECDb().Schemas(), constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId : ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId);
+    ECPropertyCP systemProperty = classMap.GetDbMap().GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(constraintType == ECRelationshipEnd::ECRelationshipEnd_Source ? ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId : ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId);
     if (systemProperty == nullptr)
         {
         BeAssert(false);

@@ -160,9 +160,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\ECSqlColumnInfo.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
-    <ClInclude Include="ECDbSystemSchemaHelper.h">
-      <Filter>ECDbProfile</Filter>
-    </ClInclude>
     <ClInclude Include="ECSql\ECSqlStatementBase.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
@@ -412,6 +409,9 @@
     <ClInclude Include="ClassMapColumnFactory.h">
       <Filter>ECDbMap</Filter>
     </ClInclude>
+    <ClInclude Include="ECDbSystemSchemaHelper.h">
+      <Filter>ECDbSchemaManager</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -523,9 +523,6 @@
     </ClCompile>
     <ClCompile Include="ECSql\JsonECSqlSelectAdapter.cpp">
       <Filter>ECSql\Adapters</Filter>
-    </ClCompile>
-    <ClCompile Include="ECDbSystemSchemaHelper.cpp">
-      <Filter>ECDbProfile</Filter>
     </ClCompile>
     <ClCompile Include="ECSql\ECSqlFieldFactory.cpp">
       <Filter>ECSql\Fields</Filter>
@@ -753,6 +750,9 @@
     </ClCompile>
     <ClCompile Include="ClassMapColumnFactory.cpp">
       <Filter>ECDbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="ECDbSystemSchemaHelper.cpp">
+      <Filter>ECDbSchemaManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
