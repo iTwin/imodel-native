@@ -201,7 +201,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //root class (no base class)
 
-    ColumnLists columns(*this, relClassMappingInfo);
+    ColumnLists columns(*this);
     if (SUCCESS != DetermineKeyAndConstraintColumns(columns, relClassMappingInfo))
         return ClassMappingStatus::Error;
 
