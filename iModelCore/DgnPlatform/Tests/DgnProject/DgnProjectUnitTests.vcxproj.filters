@@ -2,12 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Published\NotificationManager_Test.cpp">
-      <Filter>Published</Filter>	
-    </ClCompile>
-	<ClCompile Include="Published\Tag_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ParaSolids_Tests.cpp">
+    <ClCompile Include="Published\Tag_Test.cpp">
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\UnitDefinition_Test.cpp">
@@ -184,8 +181,8 @@
     <ClCompile Include="Published\ElementGeometry_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-	<ClCompile Include="Published\Ecutils_Tests.cpp">
-	  <Filter>Published</Filter>
+    <ClCompile Include="Published\Ecutils_Tests.cpp">
+      <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="Published\ElementGroup_Tests.cpp">
       <Filter>Published</Filter>
@@ -281,6 +278,9 @@
       <Filter>NonPublished</Filter>
     </ClCompile>
     <ClCompile Include="Published\CreateFromInstance_Test.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\BRepUtil_Tests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
   </ItemGroup>
