@@ -389,8 +389,6 @@ $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(D
 
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
-$(o)DgnChangeIterator$(oext) :                      $(DgnCoreDir)DgnChangeIterator.cpp $(DgnCoreDir)DgnChangeIterator.h ${MultiCompileDepends}
-
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
 #----------------------------------------------------------------------

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/TileTree.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -49,8 +49,6 @@ BentleyStatus TileLoader::LoadTile()
 //----------------------------------------------------------------------------------------
 folly::Future<BentleyStatus> TileLoader::Perform()
     {
-    DgnDb::VerifyClientThread();
-
     if (m_loads)
         m_loads->m_requested.IncrementAtomicPre(std::memory_order_relaxed);
 
@@ -582,12 +580,13 @@ void Tile::Draw(DrawArgsR args, int depth) const
     if (IsDisplayable())    // some nodes are merely for structure and don't have any geometry
         {
         Frustum box(m_range);
-        box = box.TransformBy(args.GetLocation());
 
-        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box))
+        // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
+        if (FrustumPlanes::Contained::Outside == args.m_context.GetFrustumPlanes().Contains(box.TransformBy(args.GetLocation())) ||
+            ((nullptr != args.m_clip) && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == args.m_clip->ClassifyPointContainment(box.m_pts, 8))))
             {
             if (_HasChildren())
-                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum. Unload any loaded children if they're expired.
+                _UnloadChildren(args.m_purgeOlderThan);  // this node is completely outside the volume of the frustum or clip. Unload any loaded children if they're expired.
 
             return;
             }
@@ -835,7 +834,7 @@ void QuadTree::Root::DrawInView(RenderContextR context)
         }
 
     auto now = std::chrono::steady_clock::now();
-    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime());
+    DrawArgs args(context, GetLocation(), *this, now, now-GetExpirationTime(), m_clip.get());
     Draw(args);
     DEBUG_PRINTF("%s: %d graphics, %d tiles, %d missing ", _GetName(), args.m_graphics.m_entries.size(), GetRootTile()->CountTiles(), args.m_missing.size());
 

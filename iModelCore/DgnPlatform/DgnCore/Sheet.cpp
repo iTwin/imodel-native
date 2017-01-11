@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sheet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -156,9 +156,8 @@ double ViewAttachment::ComputeScale(DgnDbR db, DgnViewId viewId, ElementAlignedB
         BeAssert(false);
         return 1.0;
         }
-    auto viewExtents = viewDef->GetExtents();
 
-    return viewExtents.x / placement.GetWidth();
+    return viewDef->GetExtents().x / placement.GetWidth();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -238,7 +237,7 @@ folly::Future<BentleyStatus> Attachment::Tile::Loader::_GetFromSource()
 
     Tile& tile = static_cast<Tile&>(*m_tile);
     Tree& root = tile.GetTree();
-    return root.m_viewport->_CreateTile(m_loads, m_texture, tile, root.m_pixels);
+    return root.m_viewport->_CreateTile(m_loads, m_texture, tile, Point2d::From(root.m_pixels, root.m_pixels));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -281,7 +280,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_Super(root, id, parent)
     {
-    double tileSize = 1.0 / (1 << id.m_level); // the size of a tile for this level, in NPC
+    double tileSize = 1.0/ (1 << id.m_level); // the size of a tile for this level, in NPC
     double east  = id.m_column * tileSize;
     double west  = east + tileSize;
     double north = id.m_row * tileSize;
@@ -291,7 +290,6 @@ Attachment::Tile::Tile(Tree& root, QuadTree::TileId id, Tile const* parent) : T_
     m_corners.m_pts[1].Init(west, south, 0.0); 
     m_corners.m_pts[2].Init(east, north, 0.0); 
     m_corners.m_pts[3].Init(west, north, 0.0); 
-
     m_range.InitFrom(m_corners.m_pts, 4);
     }
 
@@ -311,7 +309,7 @@ void Attachment::Tree::Load(Render::SystemP renderSys)
 // When we draw ViweAttachments on sheets, we first create the scene asynchronusly. While that's 
 // in process we create an instance of this class to trigger the creation of the tiles when the scene becomes
 // available. Note that there is one instance of this class per attachment, so there can be many of them
-// for the same sheet at any given time.
+// for the same sheet (and of course many sheets) at any given time.
 // @bsiclass                                                    Keith.Bentley   12/16
 //=======================================================================================
 struct SceneReadyTask : ProgressiveTask
@@ -340,7 +338,6 @@ void Attachment::Tree::Draw(RenderContextR context)
     // before we can draw a ViewAttachment tree, we need to request that its scene be created.
     if (!m_sceneQueued)
         {
-        m_viewport->m_rect.Init(0, 0, m_pixels.x, m_pixels.y);
         m_viewport->_QueueScene(); // this queues the scene request on the SceneThread and returns immediately
         m_sceneQueued = true; // remember that we've already queued it
         }
@@ -353,12 +350,49 @@ void Attachment::Tree::Draw(RenderContextR context)
     
     // the scene is available, draw its tiles
     DrawInView(context);
+
+#ifdef DEBUG_ATTACHMENT_RANGE
+    ElementAlignedBox3d range(0,0,0, 1.0/m_scale.x,1.0/m_scale.y,1.0);
+    GetLocation().Multiply(&range.low, &range.low, 2);
+
+    Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
+    graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
+    graphicBbox->AddRangeBox(range);
+    context.OutputGraphic(*graphicBbox, nullptr);
+
+    Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
+    graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
+    graphicOrigin->AddPointString(1, &range.low);
+    context.OutputGraphic(*graphicOrigin, nullptr);
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Attachment::Tree::Pick(PickContext& context)
+    {
+    if (context.WasAborted())
+        return true;
+
+    if (!m_sceneReady) // we can't pick anything unless we have a valid scene.
+        return false;
+
+    Transform sheetToTile;
+    sheetToTile.InverseOf(GetLocation());
+    Frustum box = context.GetFrustum().TransformBy(sheetToTile);   // this frustum is the pick aperture
+
+    if (m_clip.IsValid() && (ClipPlaneContainment::ClipPlaneContainment_StronglyOutside == m_clip->ClassifyPointContainment(box.m_pts, 8)))
+        return false;
+
+    return context._ProcessSheetAttachment(*m_viewport);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) : T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId)
+Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnElementId attachmentId, uint32_t tileSize) : 
+                T_Super(db,Transform::FromIdentity(), "", nullptr, 12, tileSize), m_attachmentId(attachmentId), m_pixels(tileSize)
     {
     auto attach = db.Elements().Get<ViewAttachment>(attachmentId);
     if (!attach.IsValid())
@@ -376,43 +410,59 @@ Attachment::Tree::Tree(DgnDbR db, DgnElementId attachmentId, uint32_t tileSize) 
     if (!view.IsValid())
         return;
 
+    // we use square tiles. If the view's aspect ratio isn't square, expand the short side in tile (NPC) space. We'll clip out the extra area below.
     double aspect = view->GetViewDefinition().GetAspectRatio();
-
     if (aspect<1.0)
-        m_pixels.Init(tileSize*aspect, tileSize);
+        m_scale.Init(1.0/aspect, 1.0);
     else
-        m_pixels.Init(tileSize, tileSize/aspect);
+        m_scale.Init(1.0, aspect);
 
-    BeAssert(m_pixels.x>0);
-    BeAssert(m_pixels.y>0);
+    // now expand the frustum in one direction so that the view is square (so we can use square tiles)
+    m_viewport->SetRect(BSIRect::From(0, 0, m_pixels, m_pixels));
+    m_viewport->ChangeViewController(*view);
+    m_viewport->SetupFromViewController();
+
+    Frustum frust = m_viewport->GetFrustum(DgnCoordSystem::Npc).TransformBy(Transform::FromScaleFactors(m_scale.x, m_scale.y, 1.0));
+    m_viewport->NpcToWorld(frust.m_pts, frust.m_pts, NPC_CORNER_COUNT);
+    m_viewport->SetupFromFrustum(frust);
+
+    // set a clip volume around view, in tile (NPC) coorindates so we only show the original volume
+    DPoint2d clipPts[5];
+    memset(clipPts, 0, sizeof(clipPts)); 
+    clipPts[1].x = clipPts[2].x = 1.0 / m_scale.x;
+    clipPts[2].y = clipPts[3].y = 1.0 / m_scale.y;
+    m_clip = new ClipVector(ClipPrimitive::CreateFromShape(clipPts, 5, false, nullptr, nullptr, nullptr).get());
 
     auto& def=view->GetViewDefinition();
+
+    // override the background color. This is to match V8, but there should probably be an option in the "Details" about whether to do this or not.
+    def.GetDisplayStyle().SetBackgroundColor(sheetController.GetViewDefinition().GetDisplayStyle().GetBackgroundColor());
 
     SpatialViewDefinitionP spatial=def.ToSpatialViewP();
     if (spatial)
         {
         auto& env = spatial->GetDisplayStyle3d().GetEnvironmentDisplayR();
-//        env.m_groundPlane.m_enabled = false;
+        env.m_groundPlane.m_enabled = false;
         env.m_skybox.m_enabled = false;
         }
 
     // max pixel size is half the length of the diagonal.
-    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels.x, m_pixels.y));
+    m_maxPixelSize = .5 * DPoint2d::FromZero().Distance(DPoint2d::From(m_pixels, m_pixels));
 
-    auto range = attach->GetPlacement().CalculateRange();
     auto& box = attach->GetPlacement().GetElementBox();
-
+    auto range = attach->GetPlacement().CalculateRange();
     range.low.z = 0.0; // make sure we're exactly on the sheet.
-    Transform location = Transform::From(range.low);
-    location.ScaleMatrixColumns(box.GetWidth(), box.GetHeight(), 1.0);
-    SetLocation(location);
+    m_viewport->m_toParent = Transform::From(range.low);
+    m_viewport->m_toParent.ScaleMatrixColumns(box.GetWidth() * m_scale.x, box.GetHeight() * m_scale.y, 1.0);
+    SetLocation(m_viewport->m_toParent);
 
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_viewport->m_biasDistance = m_biasDistance; // for flashing hits
+
     m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
     m_loResBiasDistance = m_hiResBiasDistance * 2.0;
-    m_viewport->ChangeViewController(*view);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -453,7 +503,7 @@ void Sheet::ViewController::_LoadState()
         auto tree = FindAttachment(attachId);
 
         if (!tree.IsValid())
-            tree = new Tree(GetDgnDb(), attachId, 512);
+            tree = new Tree(GetDgnDb(), *this, attachId, 512);
 
         attachments.push_back(tree);
         }
@@ -476,7 +526,7 @@ void Sheet::ViewController::_CreateTerrain(TerrainContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      11/16
+* @bsimethod                                    Keith.Bentley                   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Sheet::ViewController::_DrawView(ViewContextR context)
     {
@@ -486,29 +536,12 @@ void Sheet::ViewController::_DrawView(ViewContextR context)
 
     context.VisitDgnModel(*model);
 
-#ifdef DEBUG_ATTACHMENT_RANGE
-    auto attachments = GetDgnDb().GetPreparedECSqlStatement("SELECT ECInstanceId,[ViewId] FROM " BIS_SCHEMA(BIS_CLASS_ViewAttachment) " WHERE ModelId=?");
-    attachments->BindId(1, model->GetModelId());
-    while (BE_SQLITE_ROW == attachments->Step())
+    if (DrawPurpose::Pick != context.GetDrawPurpose())
+        return;
+
+    for (auto& attach : m_attachments)
         {
-        auto attachment = GetDgnDb().Elements().Get<ViewAttachment>(attachments->GetValueId<DgnElementId>(0));
-        if (!attachment.IsValid())
-            continue;
-
-        auto const& placement = attachment->GetPlacement();
-        AxisAlignedBox3d range;
-        placement.GetTransform().Multiply(range, DRange3d::From(&placement.GetElementBox().low, 2, 0.0));
-
-        Render::GraphicBuilderPtr graphicBbox = context.CreateGraphic();
-        graphicBbox->SetSymbology(ColorDef::Green(), ColorDef::Green(), 2, GraphicParams::LinePixels::Code5);
-        graphicBbox->AddRangeBox(range);
-        context.OutputGraphic(*graphicBbox, nullptr);
-
-        Render::GraphicBuilderPtr graphicOrigin = context.CreateGraphic();
-        DPoint3d org = DPoint3d::From(placement.GetOrigin());
-        graphicOrigin->SetSymbology(ColorDef::Blue(), ColorDef::Blue(), 10);
-        graphicOrigin->AddPointString(1, &org);
-        context.OutputGraphic(*graphicOrigin, nullptr);
+        if (attach->Pick((PickContext&)context))
+            return;
         }
-#endif
     }

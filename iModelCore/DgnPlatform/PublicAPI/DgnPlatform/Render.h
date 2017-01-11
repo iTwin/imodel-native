@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Render.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -858,8 +858,8 @@ public:
     DGNPLATFORM_EXPORT void Resolve(DgnDbR, DgnViewportP vp=nullptr); // Resolve effective values using the supplied DgnDb and optional DgnViewport (for view bg fill and view sub-category overrides)...
     DGNPLATFORM_EXPORT void Resolve(ViewContextR); // Resolve effective values using the supplied ViewContext.
 
-    void SetCategoryId(DgnCategoryId categoryId) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
-    void SetSubCategoryId(DgnSubCategoryId subCategoryId) {m_subCategoryId = subCategoryId; memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
+    void SetCategoryId(DgnCategoryId categoryId, bool clearAppearanceOverrides = true) {m_categoryId = categoryId; m_subCategoryId = DgnCategory::GetDefaultSubCategoryId(categoryId); if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;} // Setting the Category Id also sets the SubCategory to the default.
+    void SetSubCategoryId(DgnSubCategoryId subCategoryId, bool clearAppearanceOverrides = true) {m_subCategoryId = subCategoryId; if (clearAppearanceOverrides) memset(&m_appearanceOverrides, 0, sizeof(m_appearanceOverrides)); m_resolved = false;}
     void SetWeight(uint32_t weight) {m_appearanceOverrides.m_weight = true; m_weight = weight;}
     void SetLineStyle(LineStyleInfoP styleInfo) {m_appearanceOverrides.m_style = true; m_styleInfo = styleInfo;}
     void SetLineColor(ColorDef color) {m_appearanceOverrides.m_color = true; m_lineColor = color;}
@@ -1659,13 +1659,23 @@ struct GraphicBranch
 };
 
 //=======================================================================================
+// @bsiclass                                                    Keith.Bentley   01/17
+//=======================================================================================
+struct ViewletPosition
+{
+    DPoint3d m_center;
+    double m_width;
+    double m_height;
+    ViewletPosition(DPoint3dCR center, double width, double height) : m_center(center), m_width(width), m_height(height) {}
+};
+
+//=======================================================================================
 //! A Render::System is the renderer-specific factory for creating Render::Graphics, Render::Textures, and Render::Materials.
 //! @note The methods of this class may be called from any thread.
 // @bsiclass                                                    Keith.Bentley   03/16
 //=======================================================================================
 struct System
 {
-
     Target* m_nowPainting = nullptr;
     bool CheckPainting(Target* target) {return target==m_nowPainting;}
     bool IsPainting() {return !CheckPainting(nullptr);}
@@ -1681,6 +1691,7 @@ struct System
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const = 0;
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const = 0;
     virtual GraphicPtr _CreateBranch(GraphicBranch& branch, TransformCP, ClipVectorCP) const = 0;
+    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const = 0;
 
     //! Get or create a Texture from a DgnTexture element. Note that there is a cache of textures stored on a DgnDb, so this may return a pointer to a previously-created texture.
     //! @param[in] textureId the DgnElementId of the texture element
@@ -1735,7 +1746,6 @@ struct Target : RefCounted<NonCopyableClass>
 {
 protected:
     bool m_abort;
-    bool m_tileTarget = false;
     int  m_id; // for debugging
     System& m_system;
     DevicePtr m_device;
@@ -1789,6 +1799,7 @@ public:
     virtual double _FindNearestZ(DRange2dCR) const = 0;
     virtual void _SetTileRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,GraphicListR,ClipPrimitiveCP,Point2dCR) = 0;
+    DGNPLATFORM_EXPORT virtual void _RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
 
     int GetId() const {return m_id;}
     void AbortProgressive() {m_abort=true;}
@@ -1807,7 +1818,6 @@ public:
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}
     TexturePtr CreateGeometryTexture(Render::GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const {return m_system._CreateGeometryTexture(graphic, range, useGeometryColors, forAreaPattern);}
     SystemR GetSystem() {return m_system;}
-    void SetTileTarget() {m_tileTarget=true;}
 
     static double DefaultFrameRateGoal()
         {
@@ -1827,8 +1837,7 @@ public:
     uint32_t SetMinimumFrameRate(uint32_t minimumFrameRate) {return _SetMinimumFrameRate(minimumFrameRate);}
     uint32_t GetGraphicsPerSecondScene() const {return m_graphicsPerSecondScene.load();}
     uint32_t GetGraphicsPerSecondNonScene() const {return m_graphicsPerSecondNonScene.load();}
-    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
-    DGNPLATFORM_EXPORT void RecordFrameTime(uint32_t numGraphicsInScene, double seconds, bool isFromProgressiveDisplay);
+    void RecordFrameTime(GraphicList& scene, double seconds, bool isFromProgressiveDisplay) {_RecordFrameTime(scene.GetCount(), seconds, isFromProgressiveDisplay);}
 
     //! Make the specified rectangle have the specified aspect ratio
     //! @param[in] requestedRect    The rectangle within the view that the caller would like to capture

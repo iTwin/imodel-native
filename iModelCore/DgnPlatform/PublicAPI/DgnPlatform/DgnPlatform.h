@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnPlatform.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -212,6 +212,7 @@ DGNPLATFORM_TYPEDEFS(Subject)
 DGNPLATFORM_TYPEDEFS(TerrainContext)
 DGNPLATFORM_TYPEDEFS(TextString)
 DGNPLATFORM_TYPEDEFS(TextStringStyle)
+DGNPLATFORM_TYPEDEFS(TileViewport)
 DGNPLATFORM_TYPEDEFS(TransformInfo)
 DGNPLATFORM_TYPEDEFS(TxnManager)
 DGNPLATFORM_TYPEDEFS(DgnLineStyles)

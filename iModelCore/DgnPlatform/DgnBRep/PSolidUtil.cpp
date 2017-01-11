@@ -2,7 +2,7 @@
 |
 |     $Source: DgnBRep/PSolidUtil.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1070,157 +1070,128 @@ BentleyStatus   PSolidUtil::CheckBody (PK_BODY_t body, bool checkGeometry, bool 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    RayBentley      03/2009
+* @bsimethod                                                    Brien.Bastings  01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            PSolidUtil::AreBodiesEqual (PK_BODY_t body1, PK_BODY_t body2, double tolerance, TransformCP deltaTransform1To2)
+bool            PSolidUtil::AreBodiesEqual(PK_BODY_t body1, PK_BODY_t body2, double tolerance, TransformCP deltaTransform1To2)
     {
-    // Transforming the body can be expensive (particularly with bodies containing B-Splines)
-    // so do some tests here to try to avoid it unless we are fairly certain the bodies are equal.
+    PK_BODY_type_t  bodyType1 = PK_BODY_type_unspecified_c;
+    PK_BODY_type_t  bodyType2 = PK_BODY_type_unspecified_c;
 
-    int         nVertices1, nVertices2;
-    PK_VERTEX_t *vertices1 = NULL, *vertices2 = NULL;
+    PK_BODY_ask_type(body1, &bodyType1);
+    PK_BODY_ask_type(body2, &bodyType2);
 
-    PK_BODY_ask_vertices (body1, &nVertices1, &vertices1);
-    PK_BODY_ask_vertices (body2, &nVertices2, &vertices2);
-
-    bool        verticesEqual;
-
-    if (true == (verticesEqual = (nVertices1 == nVertices2)))
-        {
-        for (int i=0; i<nVertices1 && verticesEqual; i++)
-            {
-            PK_POINT_t  point1Tag, point2Tag;
-            DPoint3d    point1, point2;
-
-            if (SUCCESS == PK_VERTEX_ask_point (vertices1[i], &point1Tag) &&
-                SUCCESS == PK_VERTEX_ask_point (vertices2[i], &point2Tag) &&
-                SUCCESS == PK_POINT_ask (point1Tag, (PK_POINT_sf_t*) &point1) &&
-                SUCCESS == PK_POINT_ask (point2Tag, (PK_POINT_sf_t*) &point2))
-                {
-                if (NULL != deltaTransform1To2)
-                    deltaTransform1To2->Multiply(point1);
-
-                verticesEqual = point1.IsEqual (point2, tolerance);
-                }
-            }
-        }
-
-    PK_MEMORY_free (vertices1);
-    PK_MEMORY_free (vertices2);
-
-    if (!verticesEqual)
+    if (bodyType1 != bodyType2)
         return false;
 
-    // The face test (evaluating and testing a point at each face) was added to address TRE# 281976 which had
-    // two rotated symettric bodes that were not distinguisued correctly by PK_DEBUG_BODY_compare.
-    int         nFaces1, nFaces2;
-    PK_FACE_t   *faces1 = NULL, *faces2 = NULL;
-
-    PK_BODY_ask_faces (body1, &nFaces1, &faces1);
-    PK_BODY_ask_faces (body2, &nFaces2, &faces2);
-
-    bool        facesEqual;
-
-    if (true == (facesEqual = (nFaces1 == nFaces2)))
+    switch (bodyType1)
         {
-        for (int i=0; i<nFaces1 && facesEqual; i++)
+        case PK_BODY_type_solid_c:
+        case PK_BODY_type_sheet_c:
             {
-            PK_SURF_t       surf1, surf2;
-            PK_PARAM_sf_t   params1[2], params2[2];
+            bvector<PK_FACE_t> faces1;
+            bvector<PK_FACE_t> faces2;
 
-            if (SUCCESS == PK_FACE_ask_surf (faces1[i], &surf1) &&
-                SUCCESS == PK_FACE_ask_surf (faces2[i], &surf2) &&
-                SUCCESS == PK_SURF_ask_params (surf1, params1) &&
-                SUCCESS == PK_SURF_ask_params (surf2, params2))
+            if (SUCCESS != PSolidTopo::GetBodyFaces(faces1, body1) || SUCCESS != PSolidTopo::GetBodyFaces(faces2, body2) || faces1.size() != faces2.size())
+                return false;
+
+            PK_VECTOR_t point;
+            PK_FACE_coi_t result;
+            PK_FACE_is_coincident_o_t options;
+
+            PK_FACE_is_coincident_o_m(options);
+
+            if (nullptr != deltaTransform1To2)
+                PSolidUtil::CreateTransf(options.transf1, *deltaTransform1To2);
+
+            bool isSame = true;
+
+            for (size_t iFace = 0; iFace < faces1.size(); ++iFace)
                 {
-                PK_UV_t         uv1 = {(params1[0].range.value[0] + params1[0].range.value[1])/2.0, (params1[1].range.value[1] + params1[1].range.value[1])/2.0},
-                                uv2 = {(params2[0].range.value[0] + params2[0].range.value[1])/2.0, (params2[1].range.value[1] + params2[1].range.value[1])/2.0};
-                DPoint3d        p1[4], p2[4];
+                if (SUCCESS == PK_FACE_is_coincident(faces1.at(iFace), faces2.at(iFace), tolerance, &options, &result, &point) && PK_FACE_coi_yes_c == result)
+                    continue;
 
-                if (SUCCESS == PK_SURF_eval (surf1, uv1, 1, 1, true, (PK_VECTOR_t*) p1) &&
-                    SUCCESS == PK_SURF_eval (surf2, uv2, 1, 1, true, (PK_VECTOR_t*) p2))
+                isSame = false;
+                break;
+                }
+
+            if (nullptr != deltaTransform1To2)
+                PK_ENTITY_delete(1, &options.transf1);
+
+            return isSame;
+            }
+
+        case PK_BODY_type_wire_c:
+            {
+            if (nullptr != deltaTransform1To2)
+                {
+                int edgeCount1 = 0;
+                int edgeCount2 = 0;
+
+                if (SUCCESS != PK_BODY_ask_edges(body1, &edgeCount1, nullptr) ||
+                    SUCCESS != PK_BODY_ask_edges(body2, &edgeCount2, nullptr) ||
+                    edgeCount1 != edgeCount2)
+                    return false;
+
+                PK_ENTITY_copy(body1, &body1);
+                PSolidUtil::TransformBody(body1, *deltaTransform1To2);
+                }
+
+            bvector<PK_EDGE_t> edges1;
+            bvector<PK_EDGE_t> edges2;
+
+            if (SUCCESS != PSolidTopo::GetBodyEdges(edges1, body1) || SUCCESS != PSolidTopo::GetBodyEdges(edges2, body2) || edges1.size() != edges2.size())
+                {
+                PK_ENTITY_delete(1, &body1);
+                return false;
+                }
+
+            bool isSame = true;
+
+            for (size_t iEdge = 0; iEdge < edges1.size(); ++iEdge)
+                {
+                PK_CURVE_t      curve1;
+                PK_CURVE_t      curve2;
+                PK_LOGICAL_t    sense1 = PK_LOGICAL_true;
+                PK_LOGICAL_t    sense2 = PK_LOGICAL_true;
+
+                if (SUCCESS != PK_EDGE_ask_oriented_curve(edges1.at(iEdge), &curve1, &sense1) || 
+                    SUCCESS != PK_EDGE_ask_oriented_curve(edges2.at(iEdge), &curve2, &sense2) ||
+                    sense1 != sense2)
                     {
-                    if (NULL != deltaTransform1To2)
-                        deltaTransform1To2->Multiply(p1[0]);
-
-                    facesEqual = p1[0].IsEqual (p2[0], tolerance);
-
-                    for (int j=1; j<3 && facesEqual; j++)
-                        {
-                        if (NULL != deltaTransform1To2)
-                            deltaTransform1To2->MultiplyMatrixOnly(p1[j]);
-
-                        facesEqual = p1[j].IsEqual (p2[j], 1.0E-8);
-                        }
+                    isSame = false;
+                    break;
                     }
+
+                PK_INTERVAL_t   interval1;
+                PK_INTERVAL_t   interval2;
+
+                if (SUCCESS != PK_EDGE_find_interval(edges1.at(iEdge), &interval1) ||
+                    SUCCESS != PK_EDGE_find_interval(edges2.at(iEdge), &interval2) ||
+                    !DoubleOps::WithinTolerance(interval1.value[0], interval2.value[0], tolerance) ||
+                    !DoubleOps::WithinTolerance(interval1.value[1], interval2.value[1], tolerance))
+                    {
+                    isSame = false;
+                    break;
+                    }
+
+                PK_LOGICAL_t coincident = PK_LOGICAL_false;
+
+                if (SUCCESS == PK_GEOM_is_coincident(curve1, curve2, &coincident) && PK_LOGICAL_true == coincident)
+                    continue;
+
+                isSame = false;
+                break;
                 }
+
+            if (nullptr != deltaTransform1To2)
+                PK_ENTITY_delete(1, &body1);
+
+            return isSame;
             }
+
+        default:
+            return false;
         }
-
-    PK_MEMORY_free (faces1);
-    PK_MEMORY_free (faces2);
-
-    // The face test (evaluating and testing a point at each face) was added to address TRE# 281976 which had
-    // two rotated symettric bodes that were not distinguisued correctly by PK_DEBUG_BODY_compare.
-    int         nEdges1, nEdges2;
-    PK_EDGE_t   *edges1 = NULL, *edges2 = NULL;
-
-    PK_BODY_ask_edges (body1, &nEdges1, &edges1);
-    PK_BODY_ask_edges (body2, &nEdges2, &edges2);
-
-    bool        edgesEqual;
-
-    if (true == (edgesEqual = (nEdges1 == nEdges2)))
-        {
-        for (int i=0; i<nEdges1 && edgesEqual; i++)
-            {
-            PK_CURVE_t      curve1, curve2;
-            DPoint3d        p1, p2;
-
-            if (SUCCESS == PK_EDGE_ask_curve (edges1[i], &curve1) &&
-                SUCCESS == PK_EDGE_ask_curve (edges2[i], &curve2) &&
-                SUCCESS == PK_CURVE_eval (curve1, 0.0, 0, (PK_VECTOR_t*) &p1) && 
-                SUCCESS == PK_CURVE_eval (curve2, 0.0, 0, (PK_VECTOR_t*) &p2))
-                {
-                if (NULL != deltaTransform1To2)
-                    deltaTransform1To2->Multiply(p1);
-
-                edgesEqual = p1.IsEqual (p2, tolerance);
-                }
-            }
-        }
-
-    PK_MEMORY_free (edges1);
-    PK_MEMORY_free (edges2);
-
-    if (!edgesEqual)
-        return false;
-
-    if (NULL != deltaTransform1To2)
-        PSolidUtil::TransformBody (body1, *deltaTransform1To2);
-
-    DRange3d        box1, box2;
-
-    if (SUCCESS != pki_get_body_box (&box1.low, &box1.high, body1) ||
-        SUCCESS != pki_get_body_box (&box2.low, &box2.high, body2))
-        return false;
-
-    if (!box1.IsEqual (box2, tolerance))
-        return false;
-
-    PK_DEBUG_BODY_compare_o_t   options;
-    PK_DEBUG_BODY_compare_r_t   results;
-
-    PK_DEBUG_BODY_compare_o_m (options);
-
-    if (SUCCESS != PK_DEBUG_BODY_compare (body1, body2, &options, &results))
-        return false;
-
-    bool    isEqual = (PK_DEBUG_global_res_no_diffs_c == results.global_result);
-
-    PK_DEBUG_BODY_compare_r_f (&results);
-
-    return isEqual;
     }
 
 /*---------------------------------------------------------------------------------**//**

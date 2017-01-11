@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Annotations/TextAnnotationElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h> 
@@ -28,7 +28,7 @@ END_BENTLEY_DGNPLATFORM_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     09/2015
 //---------------------------------------------------------------------------------------
-DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECSqlWriteToken const* writeToken)
+DgnDbStatus TextAnnotationData::_UpdateProperties(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
     {
     // T_Super::_UpdateProperties is pure; it is a link error to call super, so don't.
     

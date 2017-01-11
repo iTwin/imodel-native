@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnCategory.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -253,47 +253,6 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
         }
 
     return status;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_GetPropertyValue(ECN::ECValueR value, ElementECPropertyAccessor& accessor, PropertyArrayIndex const& arrayIdx) const
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-    if (0 == strcmp(SUBCAT_PROP_Descr, name))
-        {
-        value.SetUtf8CP(GetDescription());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(SUBCAT_PROP_Props, name))
-        {
-        value.SetUtf8CP(m_data.m_appearance.ToJson().c_str());
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_GetPropertyValue(value, accessor, arrayIdx);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-DgnDbStatus DgnSubCategory::_SetPropertyValue(ElementECPropertyAccessor& accessor, ECN::ECValueCR value, PropertyArrayIndex const& arrayIdx)
-    {
-    // *** WIP_PROPERTIES - DON'T OVERRIDE _GET/SETPROPERTYVALUE - handler should register property accessors instead
-    auto name = accessor.GetAccessString();
-
-    if (0 == strcmp(SUBCAT_PROP_Descr, name))
-        {
-        SetDescription(value.GetUtf8CP());
-        return DgnDbStatus::Success;
-        }
-    if (0 == strcmp(SUBCAT_PROP_Props, name))
-        {
-        m_data.m_appearance.FromJson(value.GetUtf8CP());
-        return DgnDbStatus::Success;
-        }
-    return T_Super::_SetPropertyValue(accessor, value, arrayIdx);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -867,6 +826,48 @@ void dgn_ElementHandler::Category::_RegisterPropertyAccessors(ECSqlClassInfo& pa
                 return DgnDbStatus::BadArg;
             DgnCategory& el = (DgnCategory&) elIn;
             el.SetRank(static_cast<DgnCategory::Rank>(value.GetInteger()));
+            return DgnDbStatus::Success;
+            });
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson                      1/17
+//--------------+---------------+---------------+---------------+---------------+-------
+void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
+    {
+    T_Super::_RegisterPropertyAccessors(params, layout);
+
+    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Descr,
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (DgnSubCategory&) elIn;
+            value.SetUtf8CP(el.GetDescription());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsString())
+                return DgnDbStatus::BadArg;
+            auto& el = (DgnSubCategory&) elIn;
+            if (el.IsDefaultSubCategory())
+                return DgnDbStatus::ReadOnly; // default sub-categories don't have a description
+            el.SetDescription(value.GetUtf8CP());
+            return DgnDbStatus::Success;
+            });
+
+    params.RegisterPropertyAccessors(layout, SUBCAT_PROP_Props, 
+        [] (ECValueR value, DgnElementCR elIn)
+            {
+            auto& el = (DgnSubCategory&) elIn;
+            value.SetUtf8CP(el.m_data.m_appearance.ToJson().c_str());
+            return DgnDbStatus::Success;
+            },
+        [] (DgnElementR elIn, ECValueCR value)
+            {
+            if (!value.IsInteger())
+                return DgnDbStatus::BadArg;
+            auto& el = (DgnSubCategory&) elIn;
+            el.m_data.m_appearance.FromJson(value.GetUtf8CP());
             return DgnDbStatus::Success;
             });
     }

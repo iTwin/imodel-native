@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Render.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -32,7 +32,7 @@ void Render::Target::Debug::Show()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Render::Target::RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 
+void Render::Target::_RecordFrameTime(uint32_t count, double seconds, bool isFromProgressiveDisplay) 
     {
     if (0 == count)
         return;

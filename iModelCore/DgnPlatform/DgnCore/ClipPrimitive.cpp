@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include    <DgnPlatformInternal.h>
+#include <DgnPlatformInternal.h>
 #include <Vu/VuApi.h>
 
 #define TINY_VALUE                      1.0E-8
@@ -15,7 +15,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPolygon::ClipPolygon(DPoint2dCP points, size_t nPoints) { Init(points, nPoints); }
+ClipPolygon::ClipPolygon(DPoint2dCP points, size_t nPoints) {Init(points, nPoints);}
 
 void ClipPolygon::Init(DPoint2dCP points, size_t nPoints)
     {
@@ -38,19 +38,19 @@ struct  ClipPlanesPrimitive : ClipPrimitive
         Mask_Default            = 0
         };
 
-    ClipPlanesPrimitive(bool invisible) { m_clipPlanes = m_maskPlanes = NULL; m_flags = invisible ? Mask_Invisible : 0; }
-    ClipPlanesPrimitive(ClipPlaneSetCR planeSet, bool invisible) : m_clipPlanes(new ClipPlaneSet(planeSet)), m_maskPlanes(NULL) { m_flags = invisible ? Mask_Invisible : 0; }
+    ClipPlanesPrimitive(bool invisible) {m_clipPlanes = m_maskPlanes = NULL; m_flags = invisible ? Mask_Invisible : 0;}
+    ClipPlanesPrimitive(ClipPlaneSetCR planeSet, bool invisible) : m_clipPlanes(new ClipPlaneSet(planeSet)), m_maskPlanes(NULL) {m_flags = invisible ? Mask_Invisible : 0;}
 
-    virtual ClipPlaneSetCP _GetClipPlanes() const override { return m_clipPlanes; }
-    virtual ClipPlaneSetCP _GetMaskPlanes() const override { return m_maskPlanes; }
-    virtual ClipPrimitive* _Clone() const override { return new ClipPlanesPrimitive(*this); }
-    virtual bool _GetInvisible() const override { return 0 != (m_flags & Mask_Invisible); }
+    virtual ClipPlaneSetCP _GetClipPlanes() const override {return m_clipPlanes;}
+    virtual ClipPlaneSetCP _GetMaskPlanes() const override {return m_maskPlanes;}
+    virtual ClipPrimitive* _Clone() const override {return new ClipPlanesPrimitive(*this);}
+    virtual bool _GetInvisible() const override {return 0 != (m_flags & Mask_Invisible);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ClipPlanesPrimitive(ClipPlanesPrimitive const& donor) 
-    { 
+    {
     m_clipPlanes = NULL == donor.m_clipPlanes ? NULL : new ClipPlaneSet(*donor.m_clipPlanes); 
     m_maskPlanes = NULL == donor.m_maskPlanes ? NULL : new ClipPlaneSet(*donor.m_maskPlanes); 
     m_flags      = donor.m_flags;
@@ -60,7 +60,7 @@ ClipPlanesPrimitive(ClipPlanesPrimitive const& donor)
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ~ClipPlanesPrimitive() 
-    { 
+    {
    DELETE_AND_CLEAR (m_clipPlanes); 
    DELETE_AND_CLEAR (m_maskPlanes); 
    }
@@ -68,8 +68,8 @@ ClipPlanesPrimitive(ClipPlanesPrimitive const& donor)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus   _TransformInPlace(TransformCR transform) override 
-    { 
+virtual BentleyStatus _TransformInPlace(TransformCR transform) override 
+    {
     if (NULL != m_clipPlanes)
         m_clipPlanes->TransformInPlace(transform);  
 
@@ -82,13 +82,13 @@ virtual BentleyStatus   _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (NULL != m_clipPlanes)
-        m_clipPlanes->MultiplyPlanesTimesMatrix (matrix);  
+        m_clipPlanes->MultiplyPlanesTimesMatrix(matrix);  
 
     if (NULL != m_maskPlanes)
-        m_maskPlanes->MultiplyPlanesTimesMatrix (matrix);  
+        m_maskPlanes->MultiplyPlanesTimesMatrix(matrix);  
 
     return SUCCESS;
     }
@@ -96,7 +96,7 @@ virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual bool    _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
+virtual bool _GetRange(DRange3dR range, TransformCP pTransform, bool returnMaskRange) const override
     {
     return (NULL == m_clipPlanes) ? false : m_clipPlanes->GetRange(range, pTransform); 
     }
@@ -125,7 +125,6 @@ virtual void    _SetInvisible(bool invisible)  override
     setPlaneInvisible(_GetClipPlanes(), invisible);
     setPlaneInvisible(_GetMaskPlanes(), invisible);
     }
-
 };   // ClipPlanesPrimitve
 
 /*=================================================================================**//**
@@ -143,7 +142,7 @@ struct   AddPlaneSetParams
     double*         m_focalLength;
 
     AddPlaneSetParams(ClipPlaneSetR inPlaneSet, double const* zLow, double const* zHigh, bool outside, bool invisible, double* focalLength) :
-                       m_planeSets(inPlaneSet), m_zLow(zLow), m_zHigh(zHigh), m_outside(outside), m_invisible(invisible), m_focalLength(focalLength)  { }
+                       m_planeSets(inPlaneSet), m_zLow(zLow), m_zHigh(zHigh), m_outside(outside), m_invisible(invisible), m_focalLength(focalLength) {}
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -170,7 +169,7 @@ static void addOutsideZClipSets(ClipPlaneSetR clipPlaneSet,  double const* zLow,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RayBentley                      03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    addZClipPlanes(ConvexClipPlaneSetR planeSet, double const* zLow, double const* zHigh, bool invisible)
+static void addZClipPlanes(ConvexClipPlaneSetR planeSet, double const* zLow, double const* zHigh, bool invisible)
     {
     if (NULL != zLow)
         planeSet.push_back(ClipPlane(DVec3d::From(0.0, 0.0, 1.0), *zLow, invisible));
@@ -179,21 +178,12 @@ static void    addZClipPlanes(ConvexClipPlaneSetR planeSet, double const* zLow, 
         planeSet.push_back(ClipPlane(DVec3d::From(0.0, 0.0, -1.0), - *zHigh, invisible));
     }                                                                             
 
-
 /*---------------------------------------------------------------------------------**//**
 Add an unbounded plane set (a) to the right of the line defined by two points, and (b) "ahead" of
    the start point.
 * @bsimethod                                    EarlinLutz              12/05
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void     addPlaneSetOutsideEdge
-(
-double              x0,
-double              y0,
-double              x1,
-double              y1,
-AddPlaneSetParams   *pParams,
-bool                invisible
-)
+static void addPlaneSetOutsideEdge(double x0, double y0, double x1, double y1, AddPlaneSetParams *pParams, bool invisible)
     {
     DVec3d          unit0, unit1;
     DVec3d          vec0;
@@ -214,11 +204,10 @@ bool                invisible
     pParams->m_planeSets.push_back(convexSet);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RayBentley                      03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static bool    isLimitEdge(double limitValue, DPoint3dR point0, DPoint3dR point1)
+static bool isLimitEdge(double limitValue, DPoint3dR point0, DPoint3dR point1)
     {
     double tol = 0.000001 * limitValue;
     // High x limit...
@@ -245,7 +234,7 @@ static bool    isLimitEdge(double limitValue, DPoint3dR point0, DPoint3dR point1
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    RayBentley                      03/01
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pUserArg)
+static void addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pUserArg)
     {
     int                     i;
     double                  area = bsiGeom_getXYPolygonArea(pPoints, nPoints);
@@ -297,23 +286,10 @@ static void    addPlaneSet(DPoint3dP pPoints, int* pFlags, int nPoints, void* pU
         pParams->m_planeSets.push_back(convexSet);
     }                                                                     
 
-        
-
 /*---------------------------------------------------------------------------------**//**      
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void   parseConvexPolygonPlanes 
-(
-ClipPlaneSetR   planeSet,
-DPoint2dCP      pVertices,
-size_t          numVerts,
-double const*   zLow,
-double const*   zHigh,
-bool            outside,
-int             direction,
-bool            invisible,
-double*         cameraFocalLength
-)
+static void parseConvexPolygonPlanes(ClipPlaneSetR planeSet, DPoint2dCP pVertices, size_t numVerts, double const* zLow, double const* zHigh, bool outside, int direction, bool invisible, double* cameraFocalLength)
     {
     struct      PolyEdge
         {
@@ -321,7 +297,7 @@ double*         cameraFocalLength
         DPoint3d    m_next;
         DVec2d      m_normal;
 
-        PolyEdge(DPoint2dCR origin, DPoint2dCR next, DVec2dCR normal, double z) : m_origin(DPoint3d::From(origin.x, origin.y, z)), m_next(DPoint3d::From(next.x, next.y, z)), m_normal(normal) { }
+        PolyEdge(DPoint2dCR origin, DPoint2dCR next, DVec2dCR normal, double z) : m_origin(DPoint3d::From(origin.x, origin.y, z)), m_next(DPoint3d::From(next.x, next.y, z)), m_normal(normal) {}
         };
 
     static double           s_samePointTolerance = 1.0E-8;
@@ -402,21 +378,10 @@ double*         cameraFocalLength
         }
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz 06/06
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void    parseConcavePolygonPlanes
-(
-ClipPlaneSetR   planeSet,
-DPoint2dCP      pVertices,
-size_t          numVerts,
-double const*   zLow,
-double const*   zHigh,
-bool            outside,
-bool            invisible,
-double*         cameraFocalLength
-)
+static void parseConcavePolygonPlanes(ClipPlaneSetR planeSet, DPoint2dCP pVertices, size_t numVerts, double const* zLow, double const* zHigh, bool outside, bool invisible, double* cameraFocalLength)
     {
     size_t                  numTotalVerts;
     AddPlaneSetParams       params(planeSet, zLow, zHigh, outside, invisible, cameraFocalLength);
@@ -488,16 +453,8 @@ double*         cameraFocalLength
 /*---------------------------------------------------------------------------------**//**      
 * @bsimethod                                                    RayBentley      03/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void   parseLinearPlanes
-(
-ClipPlaneSetR   planeSet,
-DPoint2dCR      start, 
-DPoint2dCR      end,
-double const*   zLow,
-double const*   zHigh,
-bool            invisible,
-double*         cameraFocalLength
-)       // Handles the degenerate case of 2 distinct points (used by select by line).  
+static void parseLinearPlanes(ClipPlaneSetR planeSet, DPoint2dCR start, DPoint2dCR end, double const* zLow, double const* zHigh, bool invisible, double* cameraFocalLength) 
+      // Handles the degenerate case of 2 distinct points (used by select by line).  
     {
     DVec2d      normal;
 
@@ -580,22 +537,22 @@ struct  ClipShapePrimitive : ClipPlanesPrimitive
     Transform                   m_transformToClip;;
 
 
-    virtual     GPArrayCP       _GetGPA (bool onlyIfNonLinear) const override { return (!onlyIfNonLinear || m_gpa->ContainsCurves()) ? m_gpa : NULL; }
-    virtual     double          _GetZLow()               const override  { return m_zLow; }
-    virtual     double          _GetZHigh()              const override  { return m_zHigh; }
-    virtual     bool            _ClipZLow()              const override  { return m_zLowValid; }
-    virtual     bool            _ClipZHigh()             const override  { return m_zHighValid; }
-    virtual     bool            _IsMask()                const override  { return m_isMask; }
-    virtual     ClipPolygonCP   _GetPolygon()            const override  { return &m_points; }
-    virtual     ClipPrimitive*  _Clone()                 const override  { return new ClipShapePrimitive(*this); }
-    virtual     TransformCP     _GetTransformFromClip()  const override  { return m_transformValid ? &m_transformFromClip : NULL; }
-    virtual     TransformCP     _GetTransformToClip()    const override  { return m_transformValid ? &m_transformToClip : NULL; }
+    virtual GPArrayCP       _GetGPA (bool onlyIfNonLinear) const override {return (!onlyIfNonLinear || m_gpa->ContainsCurves()) ? m_gpa : NULL;}
+    virtual double          _GetZLow()               const override  {return m_zLow;}
+    virtual double          _GetZHigh()              const override  {return m_zHigh;}
+    virtual bool            _ClipZLow()              const override  {return m_zLowValid;}
+    virtual bool            _ClipZHigh()             const override  {return m_zHighValid;}
+    virtual bool            _IsMask()                const override  {return m_isMask;}
+    virtual ClipPolygonCP   _GetPolygon()            const override  {return &m_points;}
+    virtual ClipPrimitive*  _Clone()                 const override  {return new ClipShapePrimitive(*this);}
+    virtual TransformCP     _GetTransformFromClip()  const override  {return m_transformValid ? &m_transformFromClip : NULL;}
+    virtual TransformCP     _GetTransformToClip()    const override  {return m_transformValid ? &m_transformToClip : NULL;}
 
-    virtual     void            _SetIsMask(bool isMask) override         { m_isMask = isMask; }
-    virtual     void            _SetZLow(double zLow)   override         { m_zLow = zLow;    m_zLowValid = true; }        
-    virtual     void            _SetZHigh(double zHigh) override         { m_zHigh = zHigh;  m_zHighValid = true; }      
-    virtual     void            _SetClipZLow(bool clip)                  { m_zLowValid  = clip; }
-    virtual     void            _SetClipHigh(bool clip)                  { m_zHighValid = clip; }
+    virtual void            _SetIsMask(bool isMask) override         {m_isMask = isMask;}
+    virtual void            _SetZLow(double zLow)   override         {m_zLow = zLow;    m_zLowValid = true;}        
+    virtual void            _SetZHigh(double zHigh) override         {m_zHigh = zHigh;  m_zHighValid = true;}      
+    virtual void            _SetClipZLow(bool clip)                  {m_zLowValid  = clip;}
+    virtual void            _SetClipHigh(bool clip)                  {m_zHighValid = clip;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -643,7 +600,6 @@ ClipShapePrimitive(DPoint2dCP points, size_t numPoints, bool outside, double con
     m_gpa = GPArray::Grab();
     m_gpa->Add(points, (int) numPoints);
     }
-    
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -682,7 +638,6 @@ ClipShapePrimitive(GPArrayCR gpa, ClipPolygonCR points, bool outside, double con
 
     Init(outside, zLow, zHigh, transform);
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
@@ -776,7 +731,6 @@ virtual ClipPlaneSetCP           _GetClipPlanes() const override
     return m_clipPlanes;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -840,7 +794,7 @@ virtual bool _PointInside(DPoint3dCR point, double onTolerance, bool applyTransf
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus   _TransformInPlace(TransformCR transform) override
+virtual BentleyStatus _TransformInPlace(TransformCR transform) override
     {
     if (transform.IsIdentity())
         return SUCCESS;
@@ -862,7 +816,7 @@ virtual BentleyStatus   _TransformInPlace(TransformCR transform) override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
+virtual BentleyStatus _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     {
     if (m_isMask)
         return ERROR;
@@ -870,20 +824,16 @@ virtual BentleyStatus   _MultiplyPlanesTimesMatrix(DMatrix4dCR matrix) override
     DELETE_AND_CLEAR (m_clipPlanes);
     m_clipPlanes = new ClipPlaneSet();
     parseClipPlanes(*m_clipPlanes, m_points, m_zLowValid ? &m_zLow : NULL, m_zHighValid ? &m_zHigh : NULL, m_isMask, GetInvisible(), nullptr); 
-    m_clipPlanes->MultiplyPlanesTimesMatrix (matrix);
+    m_clipPlanes->MultiplyPlanesTimesMatrix(matrix);
 
     return SUCCESS;
     }
-
-
-
 };  // ClipShapePrimitive
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ClipPrimitive::GetTransforms(TransformP fromClip, TransformP toClip)
+bool ClipPrimitive::GetTransforms(TransformP fromClip, TransformP toClip)
     {
     if (NULL != fromClip)
         *fromClip = (NULL == _GetTransformFromClip()) ? Transform::FromIdentity() : *_GetTransformFromClip();
@@ -897,7 +847,7 @@ bool    ClipPrimitive::GetTransforms(TransformP fromClip, TransformP toClip)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ClipPrimitive::ContainsZClip() const
+bool ClipPrimitive::ContainsZClip() const
     {
     ClipPlaneSetCP       clipPlanes = GetClipPlanes();
 
@@ -912,11 +862,10 @@ bool    ClipPrimitive::ContainsZClip() const
     return false;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr    ClipPrimitive::CreateCopy(ClipPrimitiveCR primitive)
+ClipPrimitivePtr ClipPrimitive::CreateCopy(ClipPrimitiveCR primitive)
     {
     return primitive._Clone();
     }
@@ -924,7 +873,7 @@ ClipPrimitivePtr    ClipPrimitive::CreateCopy(ClipPrimitiveCR primitive)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr    ClipPrimitive::CreateFromShape(DPoint2dCP points, size_t numPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
+ClipPrimitivePtr ClipPrimitive::CreateFromShape(DPoint2dCP points, size_t numPoints, bool outside, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
     {
     return new ClipShapePrimitive(points, numPoints, outside, zLow, zHigh, transform, invisible);
     }
@@ -932,7 +881,7 @@ ClipPrimitivePtr    ClipPrimitive::CreateFromShape(DPoint2dCP points, size_t num
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013  
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr    ClipPrimitive::CreateFromBlock(DPoint3dCR low, DPoint3dCR high, bool outside, ClipMask clipMask, TransformCP transform, bool invisible)
+ClipPrimitivePtr ClipPrimitive::CreateFromBlock(DPoint3dCR low, DPoint3dCR high, bool outside, ClipMask clipMask, TransformCP transform, bool invisible)
     {
     DPoint2d        blockPoints[5];
 
@@ -953,12 +902,10 @@ ClipPrimitivePtr ClipPrimitive::CreateFromGPA (GPArrayCR gpa, double chordTolera
     return new ClipShapePrimitive(gpa, chordTolerance, angleTolerance, outside, zLow, zHigh, transform, invisible);
     }
 
-
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr  ClipPrimitive::CreateFromBoundaryCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
+ClipPrimitivePtr ClipPrimitive::CreateFromBoundaryCurveVector(CurveVectorCR curveVector, double chordTolerance, double angleTolerance, double const* zLow, double const* zHigh, TransformCP transform, bool invisible)
     {
     if (CurveVector::BOUNDARY_TYPE_Outer != curveVector.GetBoundaryType() &&
         CurveVector::BOUNDARY_TYPE_Inner != curveVector.GetBoundaryType())
@@ -978,7 +925,6 @@ ClipPrimitivePtr  ClipPrimitive::CreateFromBoundaryCurveVector(CurveVectorCR cur
     return ClipPrimitive::CreateFromGPA (*loopGpa, chordTolerance, angleTolerance, CurveVector::BOUNDARY_TYPE_Inner == curveVector.GetBoundaryType(), zLow, zHigh, transform, invisible);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -990,7 +936,7 @@ ClipPrimitivePtr ClipPrimitive::CreateFromGPA (GPArrayCR gpa, ClipPolygonCR poin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClipPrimitivePtr    ClipPrimitive::CreateFromClipPlanes(ClipPlaneSetCR planes, bool invisible)
+ClipPrimitivePtr ClipPrimitive::CreateFromClipPlanes(ClipPlaneSetCR planes, bool invisible)
     {
     return new ClipPlanesPrimitive(planes, invisible);
     }
@@ -998,7 +944,7 @@ ClipPrimitivePtr    ClipPrimitive::CreateFromClipPlanes(ClipPlaneSetCR planes, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool    ClipPrimitive::IsXYPolygon() const
+bool ClipPrimitive::IsXYPolygon() const
     {
     if (NULL == GetPolygon())
         return false;
@@ -1017,7 +963,7 @@ bool    ClipPrimitive::IsXYPolygon() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool  ClipPrimitive::PointInside(DPoint3dCR point, double onTolerance) const
+bool ClipPrimitive::PointInside(DPoint3dCR point, double onTolerance) const
     {
     if (NULL != _GetMaskPlanes())
         return ! _GetMaskPlanes()->IsPointOnOrInside(point, onTolerance); 
@@ -1053,7 +999,7 @@ ClipPlaneContainment ClipPrimitive::ClassifyPointContainment(DPoint3dCP points, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void        ClipPrimitive::TransformToClip(DPoint3dR point) const
+void ClipPrimitive::TransformToClip(DPoint3dR point) const
     {
     TransformCP     transform;
 
@@ -1064,11 +1010,10 @@ void        ClipPrimitive::TransformToClip(DPoint3dR point) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      04/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-void     ClipPrimitive::TransformFromClip(DPoint3dR point) const
+void ClipPrimitive::TransformFromClip(DPoint3dR point) const
     {
     TransformCP     transform;
 
     if (NULL != (transform = GetTransformFromClip()))
         transform->Multiply(point);
     }
-

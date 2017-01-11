@@ -2483,21 +2483,6 @@ static int pki_start_modeler()
 
     PK_ATTDEF_create(&hiddenAttrDefStruct, &hiddenAttrDefTag);
 
-    // Enable concurrent facetting...
-    static char facetFuncStr[] = "PK_TOPOL_facet_2";
-    char const* facetFuncName = facetFuncStr;
-    PK_FUNCTION_t facetFunc = 0;
-    PK_FUNCTION_find_o_t findOpts;
-
-    PK_FUNCTION_find_o_m(findOpts);
-    PK_FUNCTION_find(1, &facetFuncName, &findOpts, &facetFunc);
-
-    PK_FUNCTION_run_t facetRun = PK_FUNCTION_run_mutable_conc_c;
-    PK_THREAD_set_function_run_o_t facetRunOpts;
-
-    PK_THREAD_set_function_run_o_m(facetRunOpts);
-    PK_THREAD_set_function_run(1, &facetFunc, &facetRun, &facetRunOpts);
-
     s_parasolidInitialized = 1;
 
     return failureCode;

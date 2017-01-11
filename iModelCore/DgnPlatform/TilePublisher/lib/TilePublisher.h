@@ -1,8 +1,8 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                  
 |
 |     $Source: TilePublisher/lib/TilePublisher.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -175,6 +175,7 @@ public:
 //=======================================================================================
 struct TilePublisher
 {
+
     typedef bmap<uint32_t, Utf8String> TextureIdToNameMap;
 private:
     BatchIdMap              m_batchIds;
@@ -182,6 +183,13 @@ private:
     TileNodeCR              m_tile;
     PublisherContext&       m_context;
     bmap<TileTextureImageCP, Utf8String>    m_textureImages;
+
+    enum class VertexEncoding
+        {
+        StandardQuantization,
+        UnquantizedDoubles,
+        OctEncodedNormals
+        };
 
     static WString GetNodeNameSuffix(TileNodeCR tile);
     static DPoint3d GetCentroid(TileNodeCR tile);
@@ -200,7 +208,7 @@ private:
     void AddDefaultScene (PublishTileData& tileData);
     void AddExtensions(PublishTileData& tileData);
     void AddTextures(PublishTileData& tileData, TextureIdToNameMap& texNames);
-    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, bool quantize, double const* min, double const* max);
+    Utf8String AddMeshVertexAttribute  (PublishTileData& tileData, double const* values, Utf8CP name, Utf8CP id, size_t nComponents, size_t nAttributes, char const* accessorType, VertexEncoding encoding, double const* min, double const* max);
     void AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
     Utf8String AddMeshIndices(PublishTileData& tileData, Utf8CP name, bvector<uint32_t> const& indices, Utf8StringCR idStr);
     void AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<DgnElementId> const& entityIds, Utf8StringCR idStr);
@@ -208,8 +216,8 @@ private:
     BeFileName  GetBinaryDataFileName() const;
     Utf8String AddMeshShaderTechnique (PublishTileData& tileData, bool textured, bool transparent, bool ignoreLighting, bool doBatchIds);
     Utf8String AddUnlitShaderTechnique (PublishTileData& tileData, bool doBatchIds);
-    void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
-    void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index);
+    void AddMeshPrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
+    void AddPolylinePrimitive(Json::Value& primitivesNode, PublishTileData& tileData, TileMeshR mesh, size_t index, bool doBatchIds);
 
     Utf8String AddMeshMaterial (PublishTileData& tileData, bool& isTextured, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
     Utf8String AddPolylineMaterial (PublishTileData& tileData, TileDisplayParamsCP displayParams, TileMeshCR mesh, Utf8CP suffix, bool doBatchIds);
@@ -227,6 +235,8 @@ public:
     BeFileNameCR GetDataDirectory() const { return m_context.GetDataDirectory(); }
     WStringCR GetPrefix() const { return m_context.GetRootName(); }
     TILEPUBLISHER_EXPORT static void WriteBoundingVolume(Json::Value&, DRange3dCR);
+    static WCharCP GetBinaryDataFileExtension(bool containsParts) { return containsParts ? L"cmpt" : L"b3dm"; }
+
 };
 
 //=======================================================================================

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnDb.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -44,9 +44,9 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
                  m_authorities(*this), m_ecsqlCache(50, "DgnDb"), m_searchableText(*this), m_sceneQueue(*this)
     {
     m_memoryManager.AddConsumer(m_elements, MemoryConsumer::Priority::Highest);
-    m_ecsqlWriteToken = nullptr;
+    m_eccrudWriteToken = nullptr;
     //uncomment this (and remove line above) once API for modifying Aspects has been implemented
-    //m_ecsqlWriteToken = &T_Super::EnableECSqlWriteTokenValidation();
+    //m_eccrudWriteToken = &T_Super::EnableECCrudWriteTokenValidation();
 
     m_dbSchemaModificationToken = &T_Super::EnableDbSchemaModificationTokenValidation();
     }
@@ -55,7 +55,7 @@ DgnDb::DgnDb() : m_schemaVersion(0,0,0,0), m_fonts(*this, DGN_TABLE_Font), m_dom
 //not inlined as it must not be called externally
 // @bsimethod                                Krischan.Eberle                11/2016
 //---------------+---------------+---------------+---------------+---------------+------
-ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteToken; }
+ECCrudWriteToken const* DgnDb::GetECCrudWriteToken() const { return m_eccrudWriteToken; }
 
 //--------------------------------------------------------------------------------------
 //Back door for converter
@@ -63,7 +63,7 @@ ECSqlWriteToken const* DgnDb::GetECSqlWriteToken() const { return m_ecsqlWriteTo
 //---------------+---------------+---------------+---------------+---------------+------
 extern "C" DGNPLATFORM_EXPORT void* dgnV8Converter_getToken(DgnDbR db)
     {
-    return (void*)db.GetECSqlWriteToken();
+    return (void*)db.GetECCrudWriteToken();
     }
 
 //--------------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ CachedECSqlStatementPtr DgnDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, ECSqlWriteToken const* writeToken) const
+CachedECSqlStatementPtr DgnDb::GetNonSelectPreparedECSqlStatement(Utf8CP ecsql, ECCrudWriteToken const* writeToken) const
     {
     return m_ecsqlCache.GetPreparedStatement(*this, ecsql, writeToken);
     }
@@ -224,7 +224,7 @@ DbResult DgnDb::InsertECRelationship(BeSQLite::EC::ECInstanceKey& relKey, ECN::E
                                      BeSQLite::EC::ECInstanceId targetId, ECN::IECRelationshipInstanceCP relInstanceProperties)
     {
     //WIP this might need a cache of inserters if called often
-    ECInstanceInserter inserter(*this, relClass, GetECSqlWriteToken());
+    ECInstanceInserter inserter(*this, relClass, GetECCrudWriteToken());
     if (!inserter.IsValid())
         return BE_SQLITE_ERROR;
 
@@ -260,7 +260,7 @@ DbResult DgnDb::DeleteECRelationship(EC::ECInstanceKeyCR key)
     Utf8String ecsql("DELETE FROM ");
     ecsql.append(eclass->GetECSqlName().c_str()).append(" WHERE ECInstanceId=?");
 
-    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECCrudWriteToken());
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
@@ -292,7 +292,7 @@ DbResult DgnDb::DeleteECRelationships(Utf8CP relClassECSqlName, ECInstanceId sou
     if (targetId.IsValid())
         ecsql.append("TargetECInstanceId=?");
 
-    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECSqlWriteToken());
+    CachedECSqlStatementPtr stmt = GetNonSelectPreparedECSqlStatement(ecsql.c_str(), GetECCrudWriteToken());
     if (stmt == nullptr)
         return BE_SQLITE_ERROR;
 
