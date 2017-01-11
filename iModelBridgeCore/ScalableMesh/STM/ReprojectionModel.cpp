@@ -175,7 +175,9 @@ void ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t 
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     double    X;
     uint32_t  Index;
@@ -213,7 +215,9 @@ void ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, dou
     HPRECONDITION(pio_aXInOut != NULL);
     HPRECONDITION(pio_aYInOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
@@ -282,7 +286,9 @@ void ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
 
+#ifndef VANCOUVER_API        
     StatusInt status = SUCCESS;
+#endif
     double   X;
     uint32_t Index;
     double* pCurrentX = po_pXOut;
@@ -320,7 +326,9 @@ void ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, do
     HPRECONDITION(pio_aXInOut != NULL);
     HPRECONDITION(pio_aYInOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
