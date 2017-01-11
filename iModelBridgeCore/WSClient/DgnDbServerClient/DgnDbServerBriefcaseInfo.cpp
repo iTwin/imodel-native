@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerBriefcaseInfo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbServerBriefcaseInfo.h>
@@ -94,6 +94,9 @@ bool GuidFromJson(BeGuid& guid, RapidJsonValueCR json)
         return false;
     }
 
+// avoid collision of a static function with the same name in another CPP file in this compiland...
+BEGIN_UNNAMED_NAMESPACE
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
@@ -108,6 +111,8 @@ DgnDbServerBriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json)
 
     return std::make_shared<DgnDbServerBriefcaseInfo>(id, userOwned, fileId, isReadOnly);
     }
+
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016

@@ -58,6 +58,9 @@ Utf8String DgnDbServerRevisionInfo::GetUrl() const
     return m_url;
     }
 
+// avoid collision of a static function with the same name in another CPP file in this compiland...
+BEGIN_UNNAMED_NAMESPACE
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
@@ -77,6 +80,8 @@ DgnDbServerRevisionInfoPtr ParseRapidJson(RapidJsonValueCR properties)
 
     return std::make_shared<DgnDbServerRevisionInfo>(id, parentRevisionId, dbGuid, index, url);
     }
+
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
