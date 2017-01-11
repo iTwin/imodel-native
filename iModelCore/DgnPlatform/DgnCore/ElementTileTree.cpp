@@ -469,6 +469,8 @@ constexpr uint32_t s_minElementsPerTile = 50;
 constexpr size_t s_maxPointsPerTile = 10000;
 constexpr size_t s_minLeafTolerance = 0.001;
 constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
+constexpr double s_vertexToleranceRatio    = .1;
+constexpr double s_facetAreaToleranceRatio = .1;
 
 enum class InstancingOptions
 {
@@ -2438,9 +2440,7 @@ double Tile::_GetMaximumSize() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 MeshList Tile::GenerateMeshes(GeometryOptionsCR options, GeometryList const& geometries, bool doRangeTest, LoadContextCR loadContext) const
     {
-    static const double         s_vertexToleranceRatio    = .1;
     static const double         s_vertexClusterThresholdPixels = 5.0;
-    static const double         s_facetAreaToleranceRatio = .1;
     static const size_t         s_decimatePolyfacePointCount = 100;
 
     DgnDbR  db = GetElementRoot().GetDgnDb();
@@ -3130,6 +3130,105 @@ bool GeometryListBuilder::AddTextString(TextStringCR textString, DisplayParamsR 
 
     m_geometries.push_back(Geometry::Create(*clone, tf, range, GetElementId(), displayParams, GetDgnDb()));
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+MeshList GeometryListBuilder::ToMeshes(GeometryOptionsCR options, double tolerance) const
+    {
+    MeshList meshes;
+    if (m_geometries.empty())
+        return meshes;
+
+    double vertexTolerance = tolerance * s_vertexToleranceRatio;
+    double facetAreaTolerance = tolerance * tolerance * s_facetAreaToleranceRatio;
+
+    bmap<MeshMergeKey, MeshBuilderPtr> builderMap;
+    for (auto const& geom : m_geometries)
+        {
+        auto polyfaces = geom->GetPolyfaces(tolerance, options.m_normalMode);
+        for (auto const& tilePolyface : polyfaces)
+            {
+            PolyfaceHeaderPtr polyface = tilePolyface.m_polyface;
+            if (polyface.IsNull() || 0 == polyface->GetPointCount())
+                continue;
+
+            DisplayParamsPtr displayParams = tilePolyface.m_displayParams;
+            bool hasTexture = displayParams.IsValid() && displayParams->QueryTexture(GetDgnDb()).IsValid();
+
+            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), true);
+
+            MeshBuilderPtr meshBuilder;
+            auto found = builderMap.find(key);
+            if (builderMap.end() != found)
+                meshBuilder = found->second;
+            else
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+
+            for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
+                meshBuilder->AddTriangle(*visitor, displayParams->GetMaterialId(), GetDgnDb(), geom->GetEntityId(), false, options.WantTwoSidedTriangles(), hasTexture);
+            }
+
+        if (!options.WantSurfacesOnly())
+            {
+            auto tileStrokesArray = geom->GetStrokes(*geom->CreateFacetOptions(tolerance, NormalMode::Never));
+            for (auto& tileStrokes : tileStrokesArray)
+                {
+                DisplayParamsPtr displayParams = tileStrokes.m_displayParams;
+                MeshMergeKey key(*displayParams, false, false);
+
+                MeshBuilderPtr meshBuilder;
+                auto found = builderMap.find(key);
+                if (builderMap.end() != found)
+                    meshBuilder = found->second;
+                else
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance);
+
+                for (auto& strokePoints : tileStrokes.m_strokes)
+                    meshBuilder->AddPolyline(strokePoints, geom->GetEntityId(), false);
+                }
+            }
+        }
+
+    for (auto& builder : builderMap)
+        if (!builder.second->GetMesh()->IsEmpty())
+            meshes.push_back(builder.second->GetMesh());
+
+    return meshes;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::System const& system, GeometryOptionsCR options, double tolerance) const
+    {
+    TileMeshArgs meshArgs;
+    TilePolylineArgs polylineArgs;
+
+    MeshList meshes = ToMeshes(options, tolerance);
+    for (auto const& mesh : meshes)
+        {
+        bool haveMesh = !mesh->Triangles().empty();
+        bool havePolyline = !haveMesh && !mesh->Polylines().empty();
+        if (!haveMesh && !havePolyline)
+            continue;
+
+        auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
+        subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+        if (havePolyline)
+            {
+            for (auto const& polyline : mesh->Polylines())
+                polylineArgs.InitAndApply(*subGf, mesh->Points(), polyline.GetIndices());
+            }
+        else if (meshArgs.Init(*mesh, system, GetDgnDb()))
+            {
+            subGf->AddTriMesh(meshArgs);
+            }
+
+        subGf->Close();
+        gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+        }
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
