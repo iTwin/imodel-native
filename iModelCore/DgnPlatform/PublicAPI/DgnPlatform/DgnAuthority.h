@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnAuthority.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -44,6 +44,92 @@ BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 namespace dgn_AuthorityHandler {struct DatabaseScope; struct ElementScope; struct ModelScope; struct Null;};
 
 //=======================================================================================
+// @bsistruct                                                    Shaun.Sewall    01/17
+//=======================================================================================
+struct CodeFragmentSpec
+{
+public:
+    enum class Type : uint8_t
+    {
+        Invalid = 0,
+        FixedString = 1,
+        ElementClass = 2,
+        SequenceNumber = 3,
+        PropertyValue = 4,
+        // WIP: add RelationshipPath
+    };
+
+private:
+    Type m_type = Type::Invalid; //!< the fragment type
+    Utf8String m_prompt; //!< The prompt for when the fragment is directly input by user
+    bool m_inSequenceMask=true; //!< If true, include this CodeFragmentSpec when generating the sequence mask
+    Utf8String m_param1; //!< The first variable parameter associated with the fragment (dependent on type)
+    Utf8String m_param2; //!< The second variable parameter associated with the fragment (dependent on type)
+    // WIP: format specification?
+
+    CodeFragmentSpec() {}
+    void SetType(Type type) {m_type = type;}
+    void SetPrompt(Utf8CP prompt) {m_prompt.AssignOrClear(prompt);}
+    void SetInSequenceMask(bool inSequenceMask) {m_inSequenceMask = inSequenceMask;}
+    void SetParam1(Utf8CP param) {m_param1 = param;}
+    void SetParam2(Utf8CP param) {m_param2 = param;}
+
+public:
+    Type GetType() const {return m_type;}
+    bool IsValid() const {return Type::Invalid != m_type;}
+    Utf8String GetPrompt() const {return m_prompt;}
+    bool GetInSequenceMask() const {return m_inSequenceMask;}
+    Utf8String GetFixedString() const {return (Type::FixedString == GetType()) ? m_param1 : "";}
+    Utf8String GetPropertyName() const {return (Type::PropertyValue == GetType()) ? m_param1 : "";}
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromJson(JsonValueCR);
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromFixedString(Utf8CP fixedString, Utf8CP prompt=nullptr, bool inSequenceMask=true);
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromElementClass(Utf8CP prompt=nullptr, bool inSequenceMask=true);
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromSequenceNumber(Utf8CP prompt=nullptr);
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromPropertyValue(Utf8CP propertyName, Utf8CP prompt=nullptr, bool inSequenceMask=true);
+};
+
+//=======================================================================================
+// @bsistruct                                                    Shaun.Sewall    01/17
+//=======================================================================================
+struct CodeScopeSpec
+{
+    friend struct DgnAuthority;
+
+public:
+    enum class Type : uint8_t
+    {
+        DgnDb = 1,
+        Model = 2,
+        ParentElement = 3,
+    };
+
+private:
+    Type m_type = Type::DgnDb;
+    CodeScopeSpec() {}
+    explicit CodeScopeSpec(Type type) : m_type(type) {}
+
+public:
+    Type GetType() const {return m_type;}
+    static CodeScopeSpec CreateDgnDbScope() {return CodeScopeSpec(Type::DgnDb);}
+    static CodeScopeSpec CreateModelScope() {return CodeScopeSpec(Type::Model);}
+    static CodeScopeSpec CreateParentElementScope() {return CodeScopeSpec(Type::ParentElement);}
+};
+
+typedef DgnAuthority CodeSpec;
+typedef DgnAuthority const& CodeSpecCR;
+typedef DgnAuthorityPtr CodeSpecPtr;
+typedef DgnAuthorityCPtr CodeSpecCPtr;
+typedef DgnAuthorityId CodeSpecId;
+typedef bvector<CodeFragmentSpec> CodeFragmentSpecArray;
+typedef CodeFragmentSpecArray& CodeFragmentSpecArrayR;
+typedef CodeFragmentSpecArray const& CodeFragmentSpecArrayCR;
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeFragmentSpec)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeScopeSpec)
+
+//=======================================================================================
 //! A DgnAuthority issues and validates DgnCodes for elements.
 //! There are 2 general types of codes issued by authorities:
 //!   - User/Application-supplied: The user/application supplies a DgnCode and the authority
@@ -65,10 +151,12 @@ public:
         DgnAuthorityId  m_id;
         DgnClassId      m_classId;
         Utf8String      m_name;
+        CodeScopeSpec   m_scopeSpec;
 
-        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnAuthorityId id=DgnAuthorityId()) :
-            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name) {}
+        CreateParams(DgnDbR dgndb, DgnClassId classId, Utf8CP name, DgnAuthorityId id=DgnAuthorityId(), CodeScopeSpecCR scopeSpec=CodeScopeSpec()) :
+            m_dgndb(dgndb), m_id(id), m_classId(classId), m_name(name), m_scopeSpec(scopeSpec) {}
     };
+
 protected:
     friend struct DgnAuthorities;
     friend struct dgn_AuthorityHandler::Authority;
@@ -77,6 +165,9 @@ protected:
     DgnAuthorityId  m_authorityId;
     DgnClassId      m_classId;
     Utf8String      m_name;
+
+    CodeScopeSpec m_scopeSpec;
+    CodeFragmentSpecArray m_fragmentSpecs;
     
     DGNPLATFORM_EXPORT explicit DgnAuthority(CreateParams const&);
 
@@ -95,15 +186,30 @@ protected:
     static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
 
     DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace="") const { return DgnCode(m_authorityId, value, nameSpace); }
+
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
     DgnAuthorityId GetAuthorityId() const { return m_authorityId; }
     DgnClassId GetClassId() const { return m_classId; }
     Utf8StringCR GetName() const { return m_name; }
 
+    //! Return the DgnAuthorityId of the NullAuthority
+    static DgnAuthorityId GetNullAuthorityId() {return DgnAuthorityId((uint64_t)1LL);}
+    //! Return true if the specified DgnAuthority is the NullAuthority
+    bool IsNullAuthority() const {return GetAuthorityId() == GetNullAuthorityId();}
+
     DGNPLATFORM_EXPORT AuthorityHandlerR GetAuthorityHandler() const;
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
+
+    DGNPLATFORM_EXPORT static DgnAuthorityPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateDgnDbScope());
+
+    CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
+    void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
+
+    CodeFragmentSpecArrayCR GetFragmentSpecs() const {return m_fragmentSpecs;}
+    CodeFragmentSpecArrayR GetFragmentSpecsR() {return m_fragmentSpecs;}
+    bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
 
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, DgnElementCR) const;
@@ -144,7 +250,7 @@ public:
     //! Create a null code
     static DgnCode CreateCode() {return DgnCode(GetNullAuthorityId(), "", "");}
 
-        //! Return the DgnAuthorityId of the NullAuthority
+    //! Return the DgnAuthorityId of the NullAuthority
     static DgnAuthorityId GetNullAuthorityId() {return DgnAuthorityId((uint64_t)1LL);}
     //! Return true if the specified DgnAuthority is the NullAuthority
     static bool IsNullAuthority(DgnAuthorityCR authority) {return authority.GetAuthorityId() == GetNullAuthorityId();}
@@ -272,7 +378,7 @@ namespace dgn_AuthorityHandler
 
     struct EXPORT_VTABLE_ATTRIBUTE ElementScope : Authority
     {
-       AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ElementScopeAuthority, ElementScopeAuthority, ElementScope, Authority, DGNPLATFORM_EXPORT)
+        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ElementScopeAuthority, ElementScopeAuthority, ElementScope, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

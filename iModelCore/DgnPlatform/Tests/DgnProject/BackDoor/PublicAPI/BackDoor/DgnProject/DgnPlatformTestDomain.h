@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -24,6 +24,7 @@
 
 #define DPTEST_SCHEMA_NAME                               "DgnPlatformTest"
 #define DPTEST_SCHEMA_NAMEW                             L"DgnPlatformTest"
+#define DPTEST_SCHEMA(className)                        DPTEST_SCHEMA_NAME "." className
 #define DPTEST_DUMMY_SCHEMA_NAMEW                       L"DgnPlatformTestDummy"
 #define DPTEST_TEST_ELEMENT_CLASS_NAME                   "TestElement"
 #define DPTEST_TEST_ELEMENT2d_CLASS_NAME                 "TestElement2d"
@@ -324,7 +325,7 @@ protected:
     explicit TestSpatialLocation(CreateParams const& params) : T_Super(params) {}
 
 public:
-    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialLocationModelR, Dgn::DgnCategoryId);
+    static RefCountedPtr<TestSpatialLocation> Create(Dgn::SpatialModelR, Dgn::DgnCategoryId);
 };
 
 typedef RefCountedPtr<TestSpatialLocation> TestSpatialLocationPtr;

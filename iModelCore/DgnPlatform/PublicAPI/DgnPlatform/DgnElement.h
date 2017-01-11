@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnElement.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -1608,6 +1608,7 @@ public:
     //! Generate a default code for this DgnElement
     DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
 
+    DGNPLATFORM_EXPORT DgnDbStatus GenerateCode(bool replaceExistingCode=false);
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
     DGNPLATFORM_EXPORT DgnAuthorityCPtr GetCodeAuthority() const;

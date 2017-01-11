@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnAuthority.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -253,25 +253,154 @@ DgnAuthorityCPtr DgnAuthorities::GetAuthority(Utf8CP name)
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthority::DgnAuthority(CreateParams const& params)
-    : m_dgndb(params.m_dgndb), m_authorityId(params.m_id), m_classId(params.m_classId), m_name(params.m_name)
+    : m_dgndb(params.m_dgndb), m_authorityId(params.m_id), m_classId(params.m_classId), m_name(params.m_name), m_scopeSpec(params.m_scopeSpec)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnAuthority::_ToPropertiesJson(JsonValueR json) const
     {
-    // no base properties (used to have URI)
+    Json::Value fragmentSpecArray(Json::arrayValue);
+    for (CodeFragmentSpecCR fragmentSpec : GetFragmentSpecs())
+        fragmentSpecArray.append(fragmentSpec.ToJson());
+
+    json["fragmentSpecs"] = fragmentSpecArray;
+    json["scopeSpecType"] = (int)GetScope().GetType();
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnAuthority::_FromPropertiesJson(JsonValueCR json)
     {
-    // no base properties (used to have URI)
+    JsonValueCR fragmentSpecArrayJson = json["fragmentSpecs"];
+    if (!fragmentSpecArrayJson.isNull())
+        {
+        for (JsonValueCR fragmentSpecJson : fragmentSpecArrayJson)
+            GetFragmentSpecsR().push_back(CodeFragmentSpec::FromJson(fragmentSpecJson));
+        }
+
+    JsonValueCR scopeSpecTypeJson = json["scopeSpecType"];
+    if (!scopeSpecTypeJson.isNull())
+        SetScope(CodeScopeSpec((CodeScopeSpec::Type)scopeSpecTypeJson.asInt()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value CodeFragmentSpec::ToJson() const
+    {
+    Json::Value json(Json::objectValue);
+    json["type"] = (int)GetType();
+    json["prompt"] = GetPrompt();
+    json["inSequenceMask"] = GetInSequenceMask();
+
+    switch (GetType())
+        {
+        case Type::FixedString:
+            json["fixedString"] = m_param1;
+            break;
+
+        case Type::PropertyValue:
+            json["propertyName"] = m_param1;
+            break;
+
+        case Type::ElementClass:
+        case Type::SequenceNumber:
+            // no additional data to write
+            break;
+
+        default:
+            BeAssert(false); // unexpected type
+            break;
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromJson(JsonValueCR json)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType((CodeFragmentSpec::Type)json["type"].asInt());
+    fragmentSpec.SetPrompt(json["prompt"].asCString());
+    fragmentSpec.SetInSequenceMask(json["inSequenceMask"].asBool());
+
+    switch (fragmentSpec.GetType())
+        {
+        case Type::FixedString:
+            fragmentSpec.SetParam1(json["fixedString"].asCString());
+            break;
+
+        case Type::PropertyValue:
+            fragmentSpec.SetParam1(json["propertyName"].asCString());
+            break;
+
+        case Type::ElementClass:
+        case Type::SequenceNumber:
+            // no additional data to read
+            break;
+
+        default:
+            BeAssert(false); // unexpected type
+            break;
+        }
+
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromFixedString(Utf8CP fixedString, Utf8CP prompt, bool inSequenceMask)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::FixedString);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    fragmentSpec.SetParam1(fixedString);
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromElementClass(Utf8CP prompt, bool inSequenceMask)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::ElementClass);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromSequenceNumber(Utf8CP prompt)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::SequenceNumber);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(false); // by definition, the sequence number is not part of the sequence mask
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromPropertyValue(Utf8CP propertyName, Utf8CP prompt, bool inSequenceMask)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::PropertyValue);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    fragmentSpec.SetParam1(propertyName);
+    return fragmentSpec;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -326,12 +455,22 @@ DgnDbStatus NullAuthority::Insert(DgnDbR db)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnAuthorityPtr DgnAuthority::Create(DgnDbR db, Utf8CP authorityName, CodeScopeSpecCR scopeSpec)
+    {
+    AuthorityHandlerR handler = dgn_AuthorityHandler::Authority::GetHandler();
+    CreateParams params(db, db.Domains().GetClassId(handler), authorityName, DgnAuthorityId(), scopeSpec);
+    return handler.Create(params).get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DatabaseScopeAuthorityPtr DatabaseScopeAuthority::Create(Utf8CP authorityName, DgnDbR dgndb)
     {
     AuthorityHandlerR hdlr = dgn_AuthorityHandler::DatabaseScope::GetHandler();
-    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName);
+    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateDgnDbScope());
     return static_cast<DatabaseScopeAuthority*>(hdlr.Create(params).get());
     }
 
@@ -341,7 +480,7 @@ DatabaseScopeAuthorityPtr DatabaseScopeAuthority::Create(Utf8CP authorityName, D
 ModelScopeAuthorityPtr ModelScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
     {
     AuthorityHandlerR handler = dgn_AuthorityHandler::ModelScope::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), authorityName);
+    CreateParams params(db, db.Domains().GetClassId(handler), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateModelScope());
     return static_cast<ModelScopeAuthority*>(handler.Create(params).get());
     }
 
@@ -351,7 +490,7 @@ ModelScopeAuthorityPtr ModelScopeAuthority::Create(Utf8CP authorityName, DgnDbR 
 ElementScopeAuthorityPtr ElementScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
     {
     AuthorityHandlerR handler = dgn_AuthorityHandler::ElementScope::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), authorityName);
+    CreateParams params(db, db.Domains().GetClassId(handler), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateParentElementScope());
     return static_cast<ElementScopeAuthority*>(handler.Create(params).get());
     }
 

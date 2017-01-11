@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnElement_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -2169,7 +2169,7 @@ TEST_F(DgnElementTests, TestSpatialLocation)
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     SpatialLocationModelPtr spatialLocationModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestSpatialLocationModel");
-    SpatialLocationModelPtr physicalModel = DgnDbTestUtils::InsertSpatialLocationModel(*m_db, "TestPhysicalModel");
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
 
     TestSpatialLocationPtr element1 = TestSpatialLocation::Create(*spatialLocationModel, categoryId);
     ASSERT_TRUE(element1.IsValid());
@@ -2478,4 +2478,3 @@ TEST_F(DgnElementTests, DemoArrayProblem)
     DgnElementCPtr inserted = dgnElement->Insert();
     ASSERT_TRUE(inserted != nullptr);
     }
-

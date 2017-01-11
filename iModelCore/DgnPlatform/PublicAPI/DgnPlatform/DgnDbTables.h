@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnDbTables.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -185,9 +185,9 @@ public:
     //! Determine whether this DgnCode is valid. A valid code has a valid authority Id and either:
     //!     - An empty namespace and value; or
     //!     - A non-empty value
-    bool IsValid() const {return m_authority.IsValid() && (IsEmpty() || !m_value.empty());}
+    bool IsValid() const {return m_authority.IsValid();}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
-    bool IsEmpty() const {return m_authority.IsValid() && m_nameSpace.empty() && m_value.empty();}
+    bool IsEmpty() const {return m_authority.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
     bool operator==(DgnCode const& other) const {return m_authority==other.m_authority && m_value==other.m_value && m_nameSpace==other.m_nameSpace;}
     //! Determine if two DgnCodes are not equivalent

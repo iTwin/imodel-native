@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -2856,18 +2856,6 @@ DgnDbStatus DgnElement::SetCode(DgnCodeCR newCode)
 DgnAuthorityCPtr DgnElement::GetCodeAuthority() const
     {
     return GetDgnDb().Authorities().GetAuthority(GetCode().GetAuthority());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ValidateCode() const
-    {
-    DgnAuthorityCPtr auth = GetCodeAuthority();
-    if (auth.IsNull() || !SupportsCodeAuthority(*auth))
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return auth->ValidateCode(*this);
     }
 
 /*---------------------------------------------------------------------------------**//**
