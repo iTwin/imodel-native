@@ -918,13 +918,11 @@ struct TileGeometryProcessor : IGeometryProcessor
 private:
     IFacetOptionsR              m_facetOptions;
     IFacetOptionsPtr            m_targetFacetOptions;
-    DgnElementId                m_curElemId;
     RootR                       m_root;
     GeometryList&               m_geometries;
     DRange3d                    m_range;
     DRange3d                    m_tileRange;
-    Transform                   m_transformFromDgn;
-    GeometryList                m_curElemGeometries;
+    GeometryListBuilder         m_geometryListBuilder;
 #if defined(ELEMENT_TILE_REGENERATION)
     TileModelDeltaP             m_modelDelta;
 #endif
@@ -934,12 +932,9 @@ private:
     size_t                      m_leafCountThreshold;
     size_t                      m_leafCount;
     bool                        m_is2d;
-    bool                        m_surfacesOnly;
-
 
     void PushGeometry(GeometryR geom);
     void AddElementGeometry(GeometryR geom);
-    bool ProcessGeometry(IGeometryR geometry, bool isCurved, SimplifyGraphic& gf);
 
     virtual IFacetOptionsP _GetFacetOptionsP() override { return &m_facetOptions; }
 
@@ -979,18 +974,18 @@ public:
 #else
     TileGeometryProcessor(GeometryList& geometries, RootR root, DRange3dCR range, IFacetOptionsR facetOptions, TransformCR transformFromDgn, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold, bool is2d) 
 #endif
-      : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_transformFromDgn(transformFromDgn),
+      : m_geometries (geometries), m_facetOptions(facetOptions), m_targetFacetOptions(facetOptions.Clone()), m_root(root), m_range(range), m_geometryListBuilder(root.GetDgnDb(), transformFromDgn, surfacesOnly), 
 #if defined(ELEMENT_TILE_REGENERATION)
         m_modelDelta(modelDelta),
 #endif
-        m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d), m_surfacesOnly (surfacesOnly)
+        m_leafThresholdExceeded(leafThresholdExceeded), m_leafCountThreshold(leafCountThreshold), m_leafCount(0), m_is2d(is2d)
         {
         static const double s_minTextBoxSize = 1.0;     // Below this ratio to tolerance  text is rendered as box.
 
         m_targetFacetOptions->SetChordTolerance(facetOptions.GetChordTolerance() * transformFromDgn.ColumnXMagnitude());
         m_minRangeDiagonal = s_minRangeBoxSize * tolerance;
         m_minTextBoxSize  = s_minTextBoxSize * tolerance;
-        m_transformFromDgn.Multiply (m_tileRange, m_range);
+        GetTransformFromDgn().Multiply (m_tileRange, m_range);
         }
 
     void ProcessElement(ViewContextR context, DgnElementId elementId, DRange3dCR range);
@@ -1013,11 +1008,17 @@ public:
     virtual UnhandledPreference _GetUnhandledPreference(TextStringCR textString, SimplifyGraphic& simplifyGraphic) const override 
         {
         DRange2d        range = textString.GetRange();
-        Transform       transformToTile = Transform::FromProduct(m_transformFromDgn, simplifyGraphic.GetLocalToWorldTransform(), textString.ComputeTransform());
+        Transform       transformToTile = Transform::FromProduct(GetTransformFromDgn(), simplifyGraphic.GetLocalToWorldTransform(), textString.ComputeTransform());
         double          minTileDimension = transformToTile.ColumnXMagnitude() * std::min(range.XLength(), range.YLength());
 
         return minTileDimension < m_minTextBoxSize ? UnhandledPreference::Box : UnhandledPreference::Curve;
         }
+
+    bool WantSurfacesOnly() const { return m_geometryListBuilder.WantSurfacesOnly(); }
+    DgnElementId GetCurrentElementId() const { return m_geometryListBuilder.GetElementId(); }
+    TransformCR GetTransformFromDgn() const { return m_geometryListBuilder.GetTransform(); }
+    DisplayParamsPtr CreateDisplayParams(SimplifyGraphic& gf, bool ignoreLighting) const { return DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), ignoreLighting); }
+    DisplayParamsPtr CreateDefaultDisplayParams(SimplifyGraphic& gf) const { return CreateDisplayParams(gf, m_is2d); }
 };
 
 //=======================================================================================
@@ -2743,41 +2744,23 @@ void TileGeometryProcessor::ProcessElement(ViewContextR context, DgnElementId el
             }
 #endif
 
-        m_curElemGeometries.clear();
-        m_curElemId = elemId;
+        m_geometryListBuilder.Clear();
+        m_geometryListBuilder.SetElementId(elemId);
         context.VisitElement(elemId, false);
 
-        for (auto& geom : m_curElemGeometries)
+        for (auto& geom : m_geometryListBuilder.GetGeometries())
             PushGeometry(*geom);
 
 #if defined(ELEMENT_TILE_REGENERATION)
         if (nullptr != elementState && 0 == elementState->GetFacetCount())    
-            for (auto& geom : m_curElemGeometries)
+            for (auto& geom : m_geometryListBuilder.GetGeometries())
                 elementState->SetFacetCount(elementState->GetFacetCount() + geom->GetFacetCount(*m_targetFacetOptions));
 #endif
         }
     catch (...)
         {
-        // This shouldn't be necessary - but an uncaught interception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
+        // This shouldn't be necessary - but an uncaught exception will cause the processing to continue forever. (OpenCascade error in LargeHatchPlant.)
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, SimplifyGraphic& gf)
-    {
-    DRange3d range;
-    if (!geom.TryGetRange(range))
-        return false;   // ignore and continue
-
-    auto tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    tf.Multiply(range, range);
-    
-    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
-
-    AddElementGeometry(*Geometry::Create(geom, tf, range, m_curElemId, *displayParams, isCurved, GetDgnDb()));
-    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2785,16 +2768,14 @@ bool TileGeometryProcessor::ProcessGeometry(IGeometryR geom, bool isCurved, Simp
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic& gf)
     {
-    if (m_surfacesOnly && !curves.IsAnyRegionType())
+    if (WantSurfacesOnly() && !curves.IsAnyRegionType())
         return true;
 
     bool isCurved = curves.ContainsNonLinearPrimitive();
     if (curves.IsAnyRegionType() && !isCurved)
         return false;   // process as facets.
 
-    CurveVectorPtr clone = curves.Clone();
-    IGeometryPtr geom = IGeometry::Create(clone);
-    return ProcessGeometry(*geom, isCurved, gf);
+    return m_geometryListBuilder.AddCurveVector(curves, filled, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2802,29 +2783,23 @@ bool TileGeometryProcessor::_ProcessCurveVector(CurveVectorCR curves, bool fille
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, SimplifyGraphic& gf) 
     {
-    bool hasCurvedFaceOrEdge = prim.HasCurvedFaceOrEdge();
-#ifdef NOTNOW
-    if (!hasCurvedFaceOrEdge)
-        return false;   // Process as facets.
-#endif
-
-    ISolidPrimitivePtr clone = prim.Clone();
-    Transform tf = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
-
-    DRange3d range, thisTileRange;
-    clone->GetRange(range);
-    tf.Multiply(thisTileRange, range);
-
-    if (!s_cacheInstances || !thisTileRange.IsContained(m_tileRange))
+    DisplayParamsPtr displayParams = CreateDefaultDisplayParams(gf);
+    if (s_cacheInstances)
         {
-        IGeometryPtr geom = IGeometry::Create(clone);
-        return ProcessGeometry(*geom, hasCurvedFaceOrEdge, gf);
+        DRange3d range, thisTileRange;
+        Transform tf = Transform::FromProduct(GetTransformFromDgn(), gf.GetLocalToWorldTransform());
+        prim.GetRange(range);
+        tf.Multiply(thisTileRange, range);
+        if (thisTileRange.IsContained(m_tileRange))
+            {
+            ISolidPrimitivePtr clone = prim.Clone();
+            GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, *displayParams, GetCurrentElementId());
+            AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, GetCurrentElementId(), *displayParams, GetDgnDb()));
+            return true;
+            }
         }
 
-    GeomPartPtr geomPart = m_root.FindOrInsertGeomPart(*clone, range, *displayParams, m_curElemId);
-    AddElementGeometry(*Geometry::Create(*geomPart, tf, thisTileRange, m_curElemId, *displayParams, GetDgnDb()));
-    return true;
+    return m_geometryListBuilder.AddSolidPrimitive(prim, *displayParams, gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2832,12 +2807,7 @@ bool TileGeometryProcessor::_ProcessSolidPrimitive(ISolidPrimitiveCR prim, Simpl
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, SimplifyGraphic& gf) 
     {
-    MSBsplineSurfacePtr clone = MSBsplineSurface::CreatePtr();
-    clone->CopyFrom(surface);
-    IGeometryPtr geom = IGeometry::Create(clone);
-
-    bool isCurved = (clone->GetUOrder() > 2 || clone->GetVOrder() > 2);
-    return ProcessGeometry(*geom, isCurved, gf);
+    return m_geometryListBuilder.AddSurface(surface, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2845,20 +2815,7 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
-    PolyfaceHeaderPtr clone = polyface.Clone();
-    if (!clone->IsTriangulated())
-        clone->Triangulate();
-
-    clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
-
-    DRange3d range = clone->PointRange();
-
-    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
-
-    IGeometryPtr geom = IGeometry::Create(clone);
-    AddElementGeometry(*Geometry::Create(*geom, Transform::FromIdentity(), range, m_curElemId, *displayParams, false, GetDgnDb()));
-
-    return true;
+    return m_geometryListBuilder.AddPolyface(polyface, filled, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2866,17 +2823,7 @@ bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool fill
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& gf) 
     {
-    IBRepEntityPtr  clone = const_cast<IBRepEntityP>(&solid);
-    DRange3d        range = clone->GetEntityRange();
-    Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-
-    localToTile.Multiply(range, range);
-
-    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), m_is2d);
-
-    AddElementGeometry(*Geometry::Create(*clone, localToTile, range, m_curElemId, *displayParams, GetDgnDb()));
-
-    return true;
+    return m_geometryListBuilder.AddBody(solid, *CreateDefaultDisplayParams(gf), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2884,24 +2831,7 @@ bool TileGeometryProcessor::_ProcessBody(IBRepEntityCR solid, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, SimplifyGraphic& gf) 
     {
-    if (m_surfacesOnly)
-        return true;
-
-    static BeMutex s_tempFontMutex;
-    BeMutexHolder lock(s_tempFontMutex);        // Temporary - until we resolve the font threading issues.
-
-    TextStringPtr   clone = textString.Clone();
-    Transform       localToTile = Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform());
-    DRange2d        range2d   = clone->GetRange();
-    DRange3d        range     = DRange3d::From (range2d.low.x, range2d.low.y, 0.0, range2d.high.x, range2d.high.y, 0.0);
-
-    Transform::FromProduct (localToTile, clone->ComputeTransform()).Multiply (range, range);
-                               
-    DisplayParamsPtr displayParams = DisplayParams::Create(gf.GetCurrentGraphicParams(), gf.GetCurrentGeometryParams(), true /* Ignore lighting */);
-
-    AddElementGeometry(*Geometry::Create(*clone, localToTile, range, m_curElemId, *displayParams, GetDgnDb()));
-
-    return true;
+    return m_geometryListBuilder.AddTextString(textString, *CreateDisplayParams(gf, true /*ignore lighting*/), gf.GetLocalToWorldTransform());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2910,7 +2840,7 @@ bool TileGeometryProcessor::_ProcessTextString(TextStringCR textString, Simplify
 void TileGeometryProcessor::AddElementGeometry(GeometryR geom)
     {
     // ###TODO: Only if geometry caching enabled...
-    m_curElemGeometries.push_back(&geom);
+    m_geometryListBuilder.AddGeometry(geom);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2953,25 +2883,29 @@ void TileGeometryProcessor::AddGeomPart (Render::GraphicBuilderR graphic, DgnGeo
             return;
 
         Transform                       inverseLocalToWorld;
-        AutoRestore<Transform>          saveTransform (&m_transformFromDgn, Transform::FromIdentity());
+        Transform                       builderTransform = m_geometryListBuilder.GetTransform();
+        m_geometryListBuilder.SetTransform(Transform::FromIdentity());
+
         GeometryStreamIO::Collection    collection(geomPart->GetGeometryStream().GetData(), geomPart->GetGeometryStream().GetSize());
         
         inverseLocalToWorld.InverseOf (graphic.GetLocalToWorldTransform());
 
         auto                            partBuilder = graphic.CreateSubGraphic(inverseLocalToWorld);
-        GeometryList                    saveCurrGeometries = m_curElemGeometries;;
+        GeometryList                    saveCurrGeometries = m_geometryListBuilder.GetGeometries();;;
         
-        m_curElemGeometries.clear();
+        m_geometryListBuilder.Clear();
         collection.Draw(*partBuilder, viewContext, geomParams, false, geomPart.get());
 
-        m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(geomPart->GetBoundingBox(), m_curElemGeometries)));
-        m_curElemGeometries = saveCurrGeometries;
+        m_root.AddGeomPart (partId, *(tileGeomPart = GeomPart::Create(geomPart->GetBoundingBox(), m_geometryListBuilder.GetGeometries())));
+
+        m_geometryListBuilder.SetGeometryList(saveCurrGeometries);
+        m_geometryListBuilder.SetTransform(builderTransform);
         }
 
-    Transform   tf = Transform::FromProduct(m_transformFromDgn, partToWorld);
+    Transform   tf = Transform::FromProduct(GetTransformFromDgn(), partToWorld);
     
     tf.Multiply(range, tileGeomPart->GetRange());
-    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, m_curElemId, *displayParams, GetDgnDb()));
+    AddElementGeometry(*Geometry::Create(*tileGeomPart, tf, range, GetCurrentElementId(), *displayParams, GetDgnDb()));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3078,34 +3012,16 @@ Render::GraphicPtr GeometryProcessorContext::_StrokeGeometry(GeometrySourceCR so
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void GeometryListBuilder::TransformRange(DRange3dR range, TransformCR localTransform) const
-    {
-    if (!m_haveTransform)
-        {
-        localTransform.Multiply(range, range);
-        }
-    else if (localTransform.IsIdentity())
-        {
-        m_transform.Multiply(range, range);
-        }
-    else
-        {
-        auto tf = Transform::FromProduct(m_transform, localTransform);
-        tf.Multiply(range, range);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryListBuilder::AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform)
     {
     DRange3d range;
     if (!geom.TryGetRange(range))
         return false;
 
-    TransformRange(range, transform);
-    return AddGeometry(geom, isCurved, displayParams, transform, range);
+    auto tf = m_haveTransform ? Transform::FromProduct(m_transform, transform) : transform;
+    tf.Multiply(range, range);
+
+    return AddGeometry(geom, isCurved, displayParams, tf, range);
     }
 
 /*---------------------------------------------------------------------------------**//**

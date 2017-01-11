@@ -519,12 +519,14 @@ private:
     bool            m_surfacesOnly;
     bool            m_haveTransform;
 
-    void TransformRange(DRange3dR range, TransformCR localTransform) const;
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform);
     bool AddGeometry(IGeometryR geom, bool isCurved, DisplayParamsR displayParams, TransformCR transform, DRange3dCR range);
 public:
     GeometryListBuilder(DgnDbR db, TransformCR transform, bool surfacesOnly) : m_transform(transform), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(!transform.IsIdentity()) { }
-    explicit GeometryListBuilder(DgnDbR db, bool surfacesOnly=false) : m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+    explicit GeometryListBuilder(DgnDbR db, bool surfacesOnly=false) : m_transform(Transform::FromIdentity()), m_dgndb(db), m_surfacesOnly(surfacesOnly), m_haveTransform(false) { }
+
+    void AddGeometry(GeometryR geom) { m_geometries.push_back(&geom); }
+    void SetGeometryList(GeometryList const& geometries) { m_geometries = geometries; }
 
     DGNPLATFORM_EXPORT bool AddCurveVector(CurveVectorCR curves, bool filled, DisplayParamsR displayParams, TransformCR transform);
     DGNPLATFORM_EXPORT bool AddSolidPrimitive(ISolidPrimitiveCR primitive, DisplayParamsR displayParams, TransformCR transform);
@@ -537,9 +539,14 @@ public:
     GeometryList const& GetGeometries() const { return m_geometries; }
     GeometryList& GetGeometries() { return m_geometries; }
 
-    DgnDbR GetDgnDb() const { return m_dgndb; }
     DgnElementId GetElementId() const { return m_elementId; }
     void SetElementId(DgnElementId id) { m_elementId = id; }
+
+    TransformCR GetTransform() const { return m_transform; }
+    void SetTransform(TransformCR tf) { m_transform = tf; m_haveTransform = !m_transform.IsIdentity(); }
+
+    DgnDbR GetDgnDb() const { return m_dgndb; }
+    bool WantSurfacesOnly() const { return m_surfacesOnly; }
 };
 
 //=======================================================================================
