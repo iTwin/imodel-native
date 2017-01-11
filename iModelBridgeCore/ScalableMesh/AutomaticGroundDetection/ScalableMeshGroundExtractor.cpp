@@ -281,6 +281,37 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
 
 static bool s_deactivateForMultiCoverage = true;
 static bool s_deactivateTexturing = false;
+#define DEFAULT_TEXTURE_RESOLUTION 0.05
+
+double ScalableMeshGroundExtractor::ComputeTextureResolution()
+    {
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scalableMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(m_scalableMesh->GetNbResolutions() - 1);
+       
+    bvector<IScalableMeshNodePtr> nodes;
+    meshQueryInterface->Query(nodes, m_extractionArea.begin(), (int)m_extractionArea.size(), params);
+
+    double minTextureResolution = DBL_MAX;
+    float  geometricResolution;
+    float  textureResolution;
+
+    for (auto& node : nodes)
+        {
+        node->GetResolutions(geometricResolution, textureResolution);        
+        if (textureResolution != 0)
+            {
+            minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
+            }
+        }   
+
+    if (minTextureResolution != DBL_MAX)
+        return minTextureResolution;
+
+    return DEFAULT_TEXTURE_RESOLUTION;
+    }
+
 
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
@@ -322,8 +353,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
 
         assert(textureGenerator.IsValid());
-
-        textureGenerator->SetPixelSize(0.02);
+        
+        textureGenerator->SetPixelSize(ComputeTextureResolution());
         textureGenerator->SetTextureTempDir(currentTextureDir);
 
         DRange3d covExt = DRange3d::From(m_extractionArea);
@@ -442,6 +473,9 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     if (coverageBreaklineFile.DoesPathExist())
         {
         BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
+
+        if (!dtmPtr.IsValid())
+            return;
         
         DPoint3d pt;                
         bvector<DPoint3d> addtionalSeedPts; 
