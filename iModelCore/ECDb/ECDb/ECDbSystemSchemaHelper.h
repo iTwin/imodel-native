@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
-#include <ECDb/ECDbSchemaManager.h>
+#include <ECDb/ECDb.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -105,16 +105,16 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         static Utf8CP const POINTPROP_Y_PROPNAME;
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
-        ECDbSchemaManager const& m_schemaManager;
+        ECDb const& m_ecdb;
+        mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo> m_byPropIdCache;
 
-        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class);
-        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship);
-        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point);
-        static bool PropertyNameEquals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation);
+        BentleyStatus InitializeCache() const;
+
+        ECDbSchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
 
     public:
         //static class
-        explicit ECDbSystemSchemaHelper(ECDbSchemaManager const& schemaManager) : m_schemaManager(schemaManager) {}
+        explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}
 
         //! @return System property or nullptr in case of errors
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Class) const;
@@ -122,14 +122,13 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Point) const;
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Navigation) const;
 
-        bool TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECN::ECPropertyCR) const;
+        BentleyStatus TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECN::ECPropertyCR) const;
 
-        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Class) const;
-        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Relationship) const;
-        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Point) const;
-        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo::Navigation) const;
+        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo const&) const;
 
         ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType) const;
+
+        void ClearCache() const { m_byPropIdCache.clear(); }
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

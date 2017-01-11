@@ -23,24 +23,23 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //! @ingroup ECDbGroup
 // @bsiclass                                                 Carole.MacDonald      08/2013
 //+===============+===============+===============+===============+===============+======
-struct ECInstanceECSqlSelectAdapter : NonCopyableClass
+struct ECInstanceECSqlSelectAdapter final : NonCopyableClass
     {
 private:
     typedef BentleyStatus(ECInstanceECSqlSelectAdapter::*ColumnHandler)(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     bvector<ColumnHandler> m_columnHandlers;
 
-    ECSqlStatementCR m_ecSqlStatement;
+    ECSqlStatement const& m_ecSqlStatement;
     bool m_isValid;
     int m_ecClassIdColumnIndex;
     int m_sourceECClassIdColumnIndex;
     int m_targetECClassIdColumnIndex;
     bool m_isSingleClassSelectClause;
 
-    BentleyStatus CreateColumnHandlers();
-    //column handlers
     BentleyStatus SetInstanceId(ECN::IECInstanceR instance, IECSqlValue const& value) const;
-    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const;
+    BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
     BentleyStatus SetPropertyData(ECN::IECInstanceR instance, Utf8CP parentPropertyAccessString, IECSqlValue const& value) const;
+    BentleyStatus SetPropertyData(ECN::IECInstanceR instance, IECSqlValue const& value) const { return SetPropertyData(instance, nullptr, value); }
     BentleyStatus SetRelationshipSource(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     BentleyStatus SetRelationshipTarget(ECN::IECInstanceR instance, IECSqlValue const& value) const;
 
@@ -48,39 +47,43 @@ private:
     BentleyStatus SetPrimitiveValue(ECN::ECValueR val, ECN::PrimitiveType primitiveType, IECSqlValue const& value) const;
     BentleyStatus SetNavigationValue(ECN::IECInstanceR instance, IECSqlValue const& value) const;
     ECN::IECInstancePtr FindRelationshipEndpoint(ECInstanceId endpointInstanceId, ECN::ECClassId endpointClassId, ECN::StandaloneECRelationshipInstance*, bool isSource) const;
+    BentleyStatus CreateColumnHandlers();
 
 public:
     //! Creates a new instance of the adapter
-    //! @param[in] ecsqlStatement Prepared statement
-    //! @see ECSqlStatement
-    ECDB_EXPORT explicit ECInstanceECSqlSelectAdapter(ECSqlStatementCR ecsqlStatement);
+    //! @param[in] statement Prepared ECSqlStatement
+    ECDB_EXPORT explicit ECInstanceECSqlSelectAdapter(ECSqlStatement const& statement);
 
-    //! Indicates whether this ECInstanceECSqlSelectAdapter is valid and can be used to retrieve ECInstance.
-    //! For example, it is not valid, if the adapter was created with an unprepared ECSQL statement.
+    //! Indicates whether this ECInstanceECSqlSelectAdapter is valid and can be used to retrieve ECInstances.
+    //! For example, it is not valid, if the adapter was created with an unprepared ECSqlStatement.
     bool IsValid() const { return m_isValid; }
 
-    //! Creates an IECInstancePtr from the current row of the ecSqlStatement.  
+    //! Creates an IECInstancePtr from the current row of the ECSqlStatement.  
     //! This method can only be used if the ECSQL select clause is made up of properties of a single ECClass.
     //! If the ECSQL select clause is made up of properties from more than one ECClass, this method
     //! returns nullptr. Consider calling ECInstanceECSqlSelectAdapter::GetInstance(ECN::ECClassId) instead.
     //! @return the ECInstance from the current row, or nullptr in case of errors
     ECDB_EXPORT ECN::IECInstancePtr GetInstance() const;
 
-    //! Creates an IECInstancePtr from the current row of the ecSqlStatement for the given ECClass.  If there are properties from multiple ECClasses in the row, 
-    //! only those from the requested ECClass are used and all others are ignored
+    //! Populates the specified @p ecInstance from the current row of the ECSqlStatement.  
+    //! @remarks This overload should be used if callers want the adapter to populate non-default IECInstance implementations.
+    //! If there are properties from multiple ECClasses in the row,
+    //! only those from the ECClass of @p ecInstance are used and all others are ignored.
+    //! This implies that @p ecInstance remains unmodified if non of the SELECT clause items matches with the properties
+    //! of @p ecInstance.
+    //! @param[out] ecInstance ECInstance to populate
+    //! @return SUCCESS or ERROR
+    ECDB_EXPORT BentleyStatus GetInstance(ECN::IECInstanceR ecInstance) const;
+
+    //! Creates an IECInstancePtr from the current row of the ECSqlStatement for the given ECClass.  
     ECDB_EXPORT ECN::IECInstancePtr GetInstance(ECN::ECClassId) const;
 
-    //! Retrieves the ECInstanceId from the current row in the ecSqlStatement.  
+    //! Retrieves the ECInstanceId from the current row in the ECSqlStatement.  
     //! The SELECT clause must specifically request the ECInstanceId property in order for this to work
     //! (unless doing 'SELECT *', in which case the ECInstanceId will be retrieved automatically).
     //! @param[out] id  the ECInstanceId of the instance for the current row
     //! @returns SUCCESS or ERROR
     ECDB_EXPORT BentleyStatus GetInstanceId(ECInstanceId& id) const;
-
-#if !defined (DOCUMENTATION_GENERATOR)
-    BentleyStatus SetSimpleProperty(ECN::IECInstanceR instance, IECSqlValue const& value) const { return SetPropertyData(instance, value); }
-    ECDB_EXPORT BentleyStatus SetInstanceData(ECN::IECInstanceR instance, bool usesClassIdFilter) const;
-#endif
     };
 
 //======================================================================================

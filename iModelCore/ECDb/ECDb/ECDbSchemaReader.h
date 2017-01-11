@@ -124,7 +124,7 @@ struct ECDbSchemaReader
         BentleyStatus EnsureDerivedClassesExist(Context&, ECN::ECClassId) const;
 
     public:
-        explicit ECDbSchemaReader(ECDbCR ecdb) :m_ecdb(ecdb), m_systemSchemaHelper(ecdb.Schemas()) {}
+        explicit ECDbSchemaReader(ECDbCR ecdb) :m_ecdb(ecdb), m_systemSchemaHelper(ecdb) {}
         ~ECDbSchemaReader() {}
 
         ECN::ECSchemaCP GetECSchema(ECN::ECSchemaId, bool loadSchemaEntities) const;

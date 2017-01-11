@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbSchemaReader.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +-------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -1335,6 +1335,7 @@ void ECDbSchemaReader::ClearCache() const
     m_koqCache.clear();
     m_ecClassCache.clear();
     m_ecSchemaCache.clear();
+    m_systemSchemaHelper.ClearCache();
     }
 
 //---------------------------------------------------------------------------------------
