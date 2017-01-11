@@ -2,11 +2,12 @@
 |
 |     $Source: DgnDbServerClient/DgnDbBriefcase.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
 #include <DgnDbServer/Client/DgnDbBriefcase.h>
+#include <DgnDbServer/Client/DgnDbRepositoryConnection.h>
 #include <DgnPlatform/RevisionManager.h>
 #include <DgnDbServer/Client/Logging.h>
 #include <thread>
@@ -21,18 +22,21 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
+DgnDbBriefcase::DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions)
     {
     m_db = db;
     m_repositoryConnection = connection;
+
+    if (allowPreDownloadRevisions)
+        m_repositoryConnection->SubscribeRevisionsDownload();
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection)
+DgnDbBriefcasePtr DgnDbBriefcase::Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions)
     {
-    return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection));
+    return DgnDbBriefcasePtr(new DgnDbBriefcase(db, connection, allowPreDownloadRevisions));
     }
 
 //---------------------------------------------------------------------------------------
@@ -290,7 +294,7 @@ DgnDbServerRevisionMergeTaskPtr DgnDbBriefcase::PullMergeAndPush(Utf8CP descript
 void DgnDbBriefcase::WaitForRevisionEvent() const
     {
     const Utf8String methodName = "DgnDbBriefcase::WaitForStart";
-    int iterationsLeft = 2000;
+    int iterationsLeft = 100;
     DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Starting to wait.");
 
     while (iterationsLeft > 0)

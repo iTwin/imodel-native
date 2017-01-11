@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEventManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/TxnManager.h>
@@ -18,27 +18,27 @@ USING_NAMESPACE_BENTLEY_SQLITE
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventManagerContext::DgnDbServerEventManagerContext(DgnDbRepositoryConnectionPtr repositoryConnectionPtr, DgnDbServerEventManagerPtr manager, SimpleCancellationTokenPtr cancellationToken)
+DgnDbServerEventManagerContext::DgnDbServerEventManagerContext(DgnDbRepositoryConnectionP repositoryConnectionPtr, DgnDbServerEventManagerP manager, SimpleCancellationTokenPtr cancellationToken)
     {
-    m_repositoryConnectionPtr = repositoryConnectionPtr;
-    m_managerPtr = manager;
+    m_repositoryConnectionP = repositoryConnectionPtr;
+    m_managerP = manager;
     m_cancellationTokenPtr = cancellationToken;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbRepositoryConnectionPtr DgnDbServerEventManagerContext::GetRepositoryConnectionPtr() const
+DgnDbRepositoryConnectionP DgnDbServerEventManagerContext::GetRepositoryConnectionP() const
     {
-    return m_repositoryConnectionPtr;
+    return m_repositoryConnectionP;
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventManagerPtr DgnDbServerEventManagerContext::GetEventManagerPtr() const
+DgnDbServerEventManagerP DgnDbServerEventManagerContext::GetEventManagerP() const
     {
-    return m_managerPtr;
+    return m_managerP;
     }
 
 //---------------------------------------------------------------------------------------
@@ -76,8 +76,8 @@ unsigned __stdcall EventManagerThread(void* arg)
     {
     DgnDbServerEventManagerContextPtr* managerContextPtr = (DgnDbServerEventManagerContextPtr*)arg;
     DgnDbServerEventManagerContextPtr managerContext = *managerContextPtr;
-    DgnDbRepositoryConnectionPtr repositoryConnectionPtr = managerContext->GetRepositoryConnectionPtr();
-    DgnDbServerEventManagerPtr eventManager = managerContext->GetEventManagerPtr();
+    DgnDbRepositoryConnectionP repositoryConnectionP = managerContext->GetRepositoryConnectionP();
+    DgnDbServerEventManagerP eventManager = managerContext->GetEventManagerP();
     ICancellationTokenPtr cancellationTokenPtr = managerContext->GetCancellationTokenPtr();
 
     while (true)
@@ -88,14 +88,8 @@ unsigned __stdcall EventManagerThread(void* arg)
         if (cancellationTokenPtr->IsCanceled()) 
             return 0;
 
-        if (!repositoryConnectionPtr->IsSubscribedToEvents())
-            {
-            BeThreadUtilities::BeSleep(50);
-            continue;
-            }
-
-        auto eventResult = repositoryConnectionPtr->GetEvent(true, cancellationTokenPtr)->GetResult();
-        if (eventResult.IsSuccess())
+        auto eventResult = repositoryConnectionP->GetEvent(true, cancellationTokenPtr)->GetResult();
+        if (!cancellationTokenPtr->IsCanceled() && eventResult.IsSuccess())
             {
             auto eventType = eventResult.GetValue()->GetEventType();
             for (auto callback : eventManager->GetCallbacks())
@@ -115,9 +109,9 @@ unsigned __stdcall EventManagerThread(void* arg)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             12/2016
 //---------------------------------------------------------------------------------------
-DgnDbServerEventManager::DgnDbServerEventManager(DgnDbRepositoryConnectionPtr repositoryConnectionPtr)
+DgnDbServerEventManager::DgnDbServerEventManager(DgnDbRepositoryConnectionP repositoryConnectionPtr)
     {
-    m_repositoryConnectionPtr = repositoryConnectionPtr;
+    m_repositoryConnectionP = repositoryConnectionPtr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -129,7 +123,7 @@ bool DgnDbServerEventManager::Start()
         return true;
 
     DgnDbServerLogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "DgnDbServerEventManager::Start", "Start");
-    m_eventManagerContext = std::make_shared<DgnDbServerEventManagerContext>(m_repositoryConnectionPtr, shared_from_this(), SimpleCancellationToken::Create());
+    m_eventManagerContext = std::make_shared<DgnDbServerEventManagerContext>(m_repositoryConnectionP, this, SimpleCancellationToken::Create());
     return BSISUCCESS == BeThreadUtilities::StartNewThread(1024 * 1024, EventManagerThread, &m_eventManagerContext);
     }
 
@@ -142,8 +136,21 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Stop()
         m_eventManagerContext->StopManager();
 
     m_eventCallbacks.clear();
-    if (m_repositoryConnectionPtr)
-        m_repositoryConnectionPtr->UnsubscribeToEvents();
+    if (m_repositoryConnectionP)
+        m_repositoryConnectionP->UnsubscribeToEvents();
+
+    // Wait for events thread to finish
+    int maxIterations = 100;
+    while (maxIterations > 0)
+        {
+        int useCount = m_eventManagerContext.use_count();
+        if (useCount <= 1)
+            break;
+
+        BeThreadUtilities::BeSleep(50);
+        maxIterations--;
+        }
+    BeAssert(1 == m_eventManagerContext.use_count() && "Events thread not finished!");
 
     m_eventManagerContext = nullptr;
     DgnDbServerLogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "DgnDbServerEventManager::Stop", "Stop");
@@ -183,15 +190,21 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Subscribe(DgnDbServerEventType
     if (m_eventCallbacks.find(callback) != m_eventCallbacks.end())
         return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventCallbackAlreadySubscribed));
 
-    if (!Start())
-        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventServiceSubscribingError));
 
     auto types = eventTypes ? *eventTypes : DgnDbServerEventTypeSet();
     m_eventCallbacks.Insert(callback, types);
 
     // Gather all event types
     DgnDbServerEventTypeSet* allEventTypes = GetAllSubscribedEvents();
-    return m_repositoryConnectionPtr->SubscribeToEvents(allEventTypes);
+    auto subscribeResult = m_repositoryConnectionP->SubscribeToEvents(allEventTypes);
+
+    if (!subscribeResult->GetResult().IsSuccess())
+        return subscribeResult;
+
+    if (!Start())
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Error(DgnDbServerError::Id::EventServiceSubscribingError));
+
+    return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
     }
 
 //---------------------------------------------------------------------------------------
@@ -219,7 +232,7 @@ DgnDbServerStatusTaskPtr DgnDbServerEventManager::Unsubscribe(DgnDbServerEventCa
     
     // Subscribe only to remaining events
     DgnDbServerEventTypeSet* allEventTypes = GetAllSubscribedEvents();
-    return m_repositoryConnectionPtr->SubscribeToEvents(allEventTypes);
+    return m_repositoryConnectionP->SubscribeToEvents(allEventTypes);
     }
 
 //---------------------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 #
 #     $Source: DgnDbServerClient/DgnDbServerClient.mki $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
 
@@ -34,9 +34,11 @@ DgnDbServerClientMkiHeaders =	$(DgnDbServerClientMkiPublicApiDir)DgnDbServerComm
                                 $(DgnDbServerClientMkiPublicApiDir)Client/Events/DgnDbServerDeletedEvent.h  \
                                 $(DgnDbServerClientMkiSourceDir)DgnDbServerUtils.h                          \
                                 $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.h                   \
+                                $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.h             \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/FileInfo.h                        \
                                 $(DgnDbServerClientMkiPublicApiDir)Client/RepositoryInfo.h                  \
-                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerBriefcaseInfo.h        \
+                                $(DgnDbServerClientMkiPublicApiDir)Client/DgnDbServerRevisionInfo.h
 
 #----------------------------------------------------------------------------------------
 #   Compile
@@ -58,6 +60,8 @@ $(o)RepositoryInfo$(oext)                  : $(DgnDbServerClientMkiSourceDir)Rep
 
 $(o)DgnDbServerBriefcaseInfo$(oext)        : $(DgnDbServerClientMkiSourceDir)DgnDbServerBriefcaseInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)DgnDbServerRevisionInfo$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerRevisionInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)FileInfo$(oext)                        : $(DgnDbServerClientMkiSourceDir)FileInfo.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbRepositoryConnection$(oext)       : $(DgnDbServerClientMkiSourceDir)DgnDbRepositoryConnection.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
@@ -71,6 +75,8 @@ $(o)DgnDbRepositoryAdmin$(oext)            : $(DgnDbServerClientMkiSourceDir)Dgn
 $(o)DgnDbClient$(oext)                     : $(DgnDbServerClientMkiSourceDir)DgnDbClient.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventManager$(oext)         : $(DgnDbServerClientMkiSourceDir)DgnDbServerEventManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)DgnDbServerPreDownloadManager$(oext)   : $(DgnDbServerClientMkiSourceDir)DgnDbServerPreDownloadManager.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DgnDbServerEventParser$(oext)          : $(DgnDbServerClientMkiSourceDir)DgnDbServerEvents/DgnDbServerEventParser.cpp $(DgnDbServerClientMkiHeaders) ${MultiCompileDepends}
 
