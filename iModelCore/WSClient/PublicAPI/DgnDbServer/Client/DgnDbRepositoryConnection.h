@@ -21,6 +21,7 @@
 #include <DgnDbServer/Client/Events/DgnDbServerEventParser.h>
 #include <BeHttp/AuthenticationHandler.h>
 #include <DgnDbServer/Client/DgnDbServerBriefcaseInfo.h>
+#include "DgnDbServerRevisionInfo.h"
 
 BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGNPLATFORM
@@ -39,7 +40,9 @@ typedef std::function<void(DgnDbServerEventPtr)> DgnDbServerEventCallback;
 typedef std::shared_ptr<DgnDbServerEventCallback> DgnDbServerEventCallbackPtr;
 typedef bmap<DgnDbServerEventCallbackPtr, DgnDbServerEventTypeSet> DgnDbServerEventMap;
 typedef std::shared_ptr<struct DgnDbServerEventManagerContext> DgnDbServerEventManagerContextPtr;
+DEFINE_POINTER_SUFFIX_TYPEDEFS(DgnDbServerEventManager);
 typedef std::shared_ptr<struct DgnDbServerEventManager> DgnDbServerEventManagerPtr;
+typedef std::shared_ptr<struct DgnDbServerPreDownloadManager> DgnDbServerPreDownloadManagerPtr;
 
 DEFINE_TASK_TYPEDEFS(DgnDbRepositoryConnectionPtr, DgnDbRepositoryConnection);
 DEFINE_TASK_TYPEDEFS(FileInfoPtr, DgnDbServerFile);
@@ -147,7 +150,7 @@ struct DgnDbCodeTemplateSetResultInfo
 //! This class performs all of the operations related to a single repository on the server.
 //@bsiclass                                      Karolis.Dziedzelis             10/2015
 //=======================================================================================
-struct DgnDbRepositoryConnection : std::enable_shared_from_this<DgnDbRepositoryConnection>
+struct DgnDbRepositoryConnection
 {
 //__PUBLISH_SECTION_END__
 private:
@@ -161,10 +164,15 @@ private:
     AzureServiceBusSASDTOPtr           m_eventSAS;
     DgnDbServerEventManagerPtr         m_eventManagerPtr;
 
+    bool m_subscribedForPreDownload = false;
+    static DgnDbServerPreDownloadManagerPtr s_preDownloadManager;
+
     friend struct DgnDbClient;
     friend struct DgnDbBriefcase;
     friend struct DgnDbRepositoryManager;
+    friend struct DgnDbServerPreDownloadManager;
 
+    void SubscribeRevisionsDownload();
     DgnDbRepositoryConnection (RepositoryInfoCR repository, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
     //! Sets AzureBlobStorageClient. 
@@ -215,6 +223,10 @@ private:
     //! Download a copy of the master file from the repository and initialize it as briefcase
     DgnDbServerStatusResult DownloadBriefcaseFile (BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, Utf8StringCR url,
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Download the file for this revision from server.
+    DgnDbServerStatusTaskPtr DownloadRevisionFileInternal(Utf8StringCR revisionId, Utf8StringCR revisionUrl, BeFileNameCR revisionFileName,
+        Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const;
 
     //! Download the file for this revision from server.
     DgnDbServerStatusTaskPtr DownloadRevisionFile (DgnDbServerRevisionPtr revision, Http::Request::ProgressCallbackCR callback = nullptr,
@@ -416,6 +428,11 @@ public:
     //! @return Asynchronous task that has the revision information as the result.
     DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionTaskPtr GetRevisionById (Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
+    //! Get a revision info for the specific revision id.
+    //! @param[in] revisionId Id of the revision to retrieve.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the revision information as the result.
+    DGNDBSERVERCLIENT_EXPORT DgnDbServerRevisionInfoTaskPtr GetRevisionInfoById(Utf8StringCR revisionId, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Get all of the revisions after the specific revision id.
     //! @param[in] revisionId Id of the parent revision for the first revision in the resulting collection. If empty gets all revisions on server.

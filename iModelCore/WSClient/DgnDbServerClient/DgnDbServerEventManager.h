@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbServerEventManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -18,15 +18,14 @@ BEGIN_BENTLEY_DGNDBSERVER_NAMESPACE
 struct DgnDbServerEventManagerContext
     {
     private:
-        DgnDbRepositoryConnectionPtr m_repositoryConnectionPtr;
-        DgnDbServerEventManagerPtr m_managerPtr;
+        DgnDbRepositoryConnectionP m_repositoryConnectionP;
+        DgnDbServerEventManagerP m_managerP;
         SimpleCancellationTokenPtr m_cancellationTokenPtr;
-        // unused - bool m_run = true;
 
     public:
-        DgnDbServerEventManagerContext(DgnDbRepositoryConnectionPtr repositoryConnectionPtr, DgnDbServerEventManagerPtr manager, SimpleCancellationTokenPtr cancellationToken);
-        DgnDbRepositoryConnectionPtr GetRepositoryConnectionPtr() const;
-        DgnDbServerEventManagerPtr GetEventManagerPtr() const;
+        DgnDbServerEventManagerContext(DgnDbRepositoryConnectionP repositoryConnectionPtr, DgnDbServerEventManagerP manager, SimpleCancellationTokenPtr cancellationToken);
+        DgnDbRepositoryConnectionP GetRepositoryConnectionP() const;
+        DgnDbServerEventManagerP GetEventManagerP() const;
         SimpleCancellationTokenPtr GetCancellationTokenPtr() const;
         void StopManager();
     };
@@ -37,7 +36,7 @@ struct DgnDbServerEventManagerContext
 struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventManager>
     {
     private:
-        DgnDbRepositoryConnectionPtr       m_repositoryConnectionPtr;
+        DgnDbRepositoryConnectionP         m_repositoryConnectionP;
         DgnDbServerEventMap                m_eventCallbacks;
         DgnDbServerEventManagerContextPtr  m_eventManagerContext;
         DgnDbServerEventCallbackPtr        m_pullMergeAndPushCallback;
@@ -46,7 +45,7 @@ struct DgnDbServerEventManager : std::enable_shared_from_this<DgnDbServerEventMa
         DgnDbServerEventTypeSet* GetAllSubscribedEvents();
 
     public:
-        DgnDbServerEventManager(DgnDbRepositoryConnectionPtr repositoryConnectionPtr);
+        DgnDbServerEventManager(DgnDbRepositoryConnectionP repositoryConnectionP);
         DgnDbServerStatusTaskPtr Stop();
         DgnDbServerStatusTaskPtr Subscribe(DgnDbServerEventTypeSet* eventTypes, DgnDbServerEventCallbackPtr callback);
         DgnDbServerStatusTaskPtr Unsubscribe(DgnDbServerEventCallbackPtr callback, bool* dispose);

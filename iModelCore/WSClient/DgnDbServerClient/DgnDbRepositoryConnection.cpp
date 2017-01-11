@@ -13,6 +13,9 @@
 #include <DgnDbServer/Client/Logging.h>
 #include <DgnDbServer/Client/DgnDbServerBreakHelper.h>
 #include "DgnDbServerEventManager.h"
+#include "DgnDbServerPreDownloadManager.h"
+#include <DgnDbServer/Client/Events/DgnDbServerRevisionEvent.h>
+#include <DgnDbServer/Client/DgnDbServerRevisionInfo.h>
 
 USING_NAMESPACE_BENTLEY_DGNDBSERVER
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -118,6 +121,8 @@ const DgnCodeSet& DgnDbCodeLockSetResultInfo::GetCodes() const { return m_codes;
 //---------------------------------------------------------------------------------------
 const DgnCodeInfoSet& DgnDbCodeLockSetResultInfo::GetCodeStates() const { return m_codeStates; }
 
+DgnDbServerPreDownloadManagerPtr DgnDbRepositoryConnection::s_preDownloadManager = std::make_shared<DgnDbServerPreDownloadManager>();
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
@@ -129,7 +134,6 @@ WebServices::ClientInfoPtr clientInfo,
 IHttpHandlerPtr            customHandler
 ) : m_repositoryInfo(repository)
     {
-
     m_wsRepositoryClient = WSRepositoryClient::Create(repository.GetServerURL(), repository.GetWSRepositoryName(), clientInfo, nullptr, customHandler);
     CompressionOptions options;
     options.EnableRequestCompression(true, 1024);
@@ -143,10 +147,19 @@ IHttpHandlerPtr            customHandler
 DgnDbRepositoryConnection::~DgnDbRepositoryConnection()
     {
     if (m_eventManagerPtr)
-        {
-        m_eventManagerPtr->Stop();
         m_eventManagerPtr.reset();
-        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+void DgnDbRepositoryConnection::SubscribeRevisionsDownload()
+    {
+    if (m_subscribedForPreDownload)
+        return;
+
+    m_subscribedForPreDownload = true;
+    s_preDownloadManager->SubscribeRevisionsDownload(this);
     }
 
 //---------------------------------------------------------------------------------------
@@ -774,11 +787,32 @@ ICancellationTokenPtr           cancellationToken
 ) const
     {
     const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionFile";
-    ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revision->GetRevision()->GetId());
-    
-    if (revision->GetURL().empty())
+    auto revisionFileName = revision->GetRevision()->GetRevisionChangesFile();
+
+    if (s_preDownloadManager->TryGetRevisionFile(revisionFileName, revision->GetRevision()->GetId()))
+        return CreateCompletedAsyncTask<DgnDbServerStatusResult>(DgnDbServerStatusResult::Success());
+
+    return DownloadRevisionFileInternal(revision->GetRevision()->GetId(), revision->GetURL(), revisionFileName, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::DownloadRevisionFileInternal
+(
+Utf8StringCR                      revisionId,
+Utf8StringCR                      revisionUrl,
+BeFileNameCR                      revisionFileName,
+Http::Request::ProgressCallbackCR callback,
+ICancellationTokenPtr             cancellationToken
+) const
+    {
+    const Utf8String methodName = "DgnDbRepositoryConnection::DownloadRevisionFileInternal";
+    ObjectId fileObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
+
+    if (revisionUrl.empty())
         {
-        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revision->GetRevision()->GetRevisionChangesFile(), nullptr, callback, cancellationToken)
+        return m_wsRepositoryClient->SendGetFileRequest(fileObject, revisionFileName, nullptr, callback, cancellationToken)
             ->Then<DgnDbServerStatusResult>([=](const WSFileResult& fileResult)
             {
             if (fileResult.IsSuccess())
@@ -793,8 +827,8 @@ ICancellationTokenPtr           cancellationToken
     else
         {
         // Download file directly from the url.
-        return m_azureClient->SendGetFileRequest(revision->GetURL(), revision->GetRevision()->GetRevisionChangesFile(), nullptr, cancellationToken)
-            ->Then<DgnDbServerStatusResult>([=] (const AzureResult& result)
+        return m_azureClient->SendGetFileRequest(revisionUrl, revisionFileName, nullptr, cancellationToken)
+            ->Then<DgnDbServerStatusResult>([=](const AzureResult& result)
             {
             if (result.IsSuccess())
                 return DgnDbServerStatusResult::Success();
@@ -2110,6 +2144,43 @@ ICancellationTokenPtr cancellationToken
         });
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             01/2017
+//---------------------------------------------------------------------------------------
+DgnDbServerRevisionInfoTaskPtr DgnDbRepositoryConnection::GetRevisionInfoById
+(
+Utf8StringCR          revisionId,
+ICancellationTokenPtr cancellationToken
+) const
+    {
+    const Utf8String methodName = "DgnDbRepositoryConnection::GetRevisionInfoById";
+    DgnDbServerLogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    if (revisionId.empty())
+        {
+        // Don't log error here since this is a valid case then there are no revisions locally.
+        return CreateCompletedAsyncTask<DgnDbServerRevisionInfoResult>(DgnDbServerRevisionInfoResult::Error(DgnDbServerError::Id::InvalidRevision));
+        }
+
+    double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+    ObjectId revisionObject(ServerSchema::Schema::Repository, ServerSchema::Class::Revision, revisionId);
+    return m_wsRepositoryClient->SendGetObjectRequest(revisionObject, nullptr, cancellationToken)->Then<DgnDbServerRevisionInfoResult>
+        ([=](WSObjectsResult& revisionResult)
+        {
+        if (revisionResult.IsSuccess())
+            {
+            auto revision = DgnDbServerRevisionInfo::Parse(*revisionResult.GetValue().GetInstances().begin());
+            double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "");
+            return DgnDbServerRevisionInfoResult::Success(revision);
+            }
+        else
+            {
+            DgnDbServerLogHelper::Log(SEVERITY::LOG_ERROR, methodName, revisionResult.GetError().GetMessage().c_str());
+            return DgnDbServerRevisionInfoResult::Error(revisionResult.GetError());
+            }
+        });
+    }
+
 /* EventService Methods Begin */
 
 /* Private methods start */
@@ -2561,7 +2632,7 @@ DgnDbServerStatusTaskPtr DgnDbRepositoryConnection::SubscribeEventsCallback(DgnD
     {
     if (!m_eventManagerPtr)
         {
-        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(shared_from_this());
+        m_eventManagerPtr = std::make_shared<DgnDbServerEventManager>(this);
         }
     return m_eventManagerPtr->Subscribe(eventTypes, callback);
     }

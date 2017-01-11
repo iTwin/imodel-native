@@ -498,6 +498,9 @@
     <ClCompile Include="DgnDbServerClient\DgnDbServerBriefcaseInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryAdmin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -1146,6 +1149,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerBriefcaseInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="PublicAPI\DgnDbServer\Client\FileInfo.h">

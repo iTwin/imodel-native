@@ -179,7 +179,9 @@
     <ClCompile Include="DgnDbServerClient\DgnDbRepositoryConnection.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerBreakHelper.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerBriefcaseInfo.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerRevisionInfo.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEventManager.cpp" />
+    <ClCompile Include="DgnDbServerClient\DgnDbServerPreDownloadManager.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerCodeEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerEvents\DgnDbServerDeletedEvent.cpp" />
     <ClCompile Include="DgnDbServerClient\DgnDbServerError.cpp" />
@@ -284,9 +286,11 @@
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbBriefcaseInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbRepositoryAdmin.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerBriefcaseInfo.h" />
+    <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerRevisionInfo.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerCodeEvent.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerDeletedEvent.h" />
     <ClInclude Include="DgnDbServerClient\DgnDbServerEventManager.h" />
+    <ClInclude Include="DgnDbServerClient\DgnDbServerPreDownloadManager.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventSubscription.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerResult.h" />
     <ClInclude Include="PublicAPI\DgnDbServer\Client\DgnDbServerEventParser.h" />

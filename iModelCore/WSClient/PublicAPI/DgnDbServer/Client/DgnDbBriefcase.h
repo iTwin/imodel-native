@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnDbServer/Client/DgnDbBriefcase.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -37,7 +37,7 @@ private:
     DgnDbServerEvent::DgnDbServerEventType m_lastPullMergeAndPushEvent = DgnDbServerEvent::DgnDbServerEventType::UnknownEventType;
     bool                                   m_eventsAvailable;
 
-    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    DgnDbBriefcase(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions = true);
 
     DgnDbServerRevisionsTaskPtr PullMergeAndPushInternal(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
@@ -52,9 +52,10 @@ public:
     //! Create an instance of a briefcase from previously downloaded briefcase file.
     //! @param[in] db Briefcase file. See DgnDbClient::AquireBriefcase.
     //! @param[in] connection Connection to a repository on server.
+    //! @param[in] allowPreDownloadRevisions Enable revisions pre-download as soon as they are available.
     //! @return Returns shared pointer of the created instance.
     //! @note This method is called by DgnDbClient. See DgnDbClient::OpenBriefcase.
-    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection);
+    static DgnDbBriefcasePtr Create(Dgn::DgnDbPtr db, DgnDbRepositoryConnectionPtr connection, bool allowPreDownloadRevisions = true);
     
     //! Gets used DgnDbRepositoryConnection
     //! @returns DgnDbRepositoryConnection

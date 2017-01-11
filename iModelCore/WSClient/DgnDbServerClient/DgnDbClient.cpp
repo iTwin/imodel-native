@@ -2,7 +2,7 @@
 |
 |     $Source: DgnDbServerClient/DgnDbClient.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnDbServer/Client/DgnDbClient.h>
@@ -617,7 +617,7 @@ DgnDbServerRepositoryTaskPtr DgnDbClient::CreateNewRepository(Dgn::DgnDbCR db, b
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             10/2015
 //---------------------------------------------------------------------------------------
-DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, Http::Request::ProgressCallbackCR callback,
+DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool doSync, bool allowPreDownloadRevisions, Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "DgnDbClient::OpenBriefcase";
@@ -668,7 +668,7 @@ DgnDbServerBriefcaseTaskPtr DgnDbClient::OpenBriefcase(Dgn::DgnDbPtr db, bool do
                 finalResult->SetError(validationResult.GetError());
                 return;
                 }
-            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue());
+            DgnDbBriefcasePtr briefcase = DgnDbBriefcase::Create(db, connectionResult.GetValue(), allowPreDownloadRevisions);
             if (doSync)
                 {
                 DgnDbServerLogHelper::Log(SEVERITY::LOG_INFO, methodName, "Calling PullAndMerge for briefcase %d.", briefcase->GetBriefcaseId().GetValue());
