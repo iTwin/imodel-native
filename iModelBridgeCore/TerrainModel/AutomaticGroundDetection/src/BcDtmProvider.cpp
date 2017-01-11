@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/BcDtmProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -62,6 +62,14 @@ BcDtmProvider::BcDtmProvider(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM& bcDtm)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BcDtmProvider::~BcDtmProvider()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre               12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr BcDtmProvider::GetBcDTM()
+    {
+    return m_pBcDtm;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -250,24 +258,15 @@ long BcDtmProvider::_ComputeTriangulation()
 
     long newTrianglesCount(m_pBcDtm->GetTrianglesCount());
     
-    DPoint3d* meshPtsP = 0; 
-    //long numMeshPts;
-    long* meshFacesP = 0; 
-    //long numMeshFaces;
+    bvector<DPoint3d> meshPts;
+    bvector<long> meshFaces;
 
-    DTMStatusInt status = DTM_ERROR;
-    //NEEDS_WORK_SM:change this to whatever it is in topaz (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject(m_pBcDtm->GetTinHandle(), 1, newTrianglesCount, NULL, DTMFenceType::Block, DTMFenceOption::Overlap, NULL, 0, &meshPtsP, &numMeshPts, &meshFacesP, &numMeshFaces);
+    DTMStatusInt status = (DTMStatusInt)bcdtmLoad_tinMeshFromDtmObject(m_pBcDtm->GetTinHandle(), 1, newTrianglesCount, NULL, DTMFenceType::Block, DTMFenceOption::Overlap, NULL, 0, meshPts, meshFaces);
 
     BeAssert(status == DTM_SUCCESS);
 
-    m_pMesh = nullptr; //BcDTMMesh::Create(meshPtsP, numMeshPts, meshFacesP, numMeshFaces);
+    m_pMesh = BcDTMMesh::Create(meshPts, meshFaces);
 
-    if (!meshPtsP)
-        delete[] meshPtsP;
-
-    if (!meshFacesP)
-        delete[] meshFacesP;
-    
     BeAssert(m_pMesh.IsValid());
 
     return newTrianglesCount;

@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/IPointsAccumulator.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -21,6 +21,22 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 void IGroundPointsAccumulator::AddPoints(const bvector<DPoint3d>& points)
     {
     return _AddPoints(points);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void IGroundPointsAccumulator::OutputPreview(PolyfaceQueryCR currentGround) const
+    {
+    return _OutputPreview(currentGround);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IGroundPointsAccumulator::ShouldContinue() const
+    {
+    return _ShouldContinue();
     }
 
 END_GROUND_DETECTION_NAMESPACE

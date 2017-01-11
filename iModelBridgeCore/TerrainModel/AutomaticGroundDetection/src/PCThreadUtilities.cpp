@@ -2,13 +2,13 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCThreadUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
 #include "PCThreadUtilities.h"
 
-USING_NAMESPACE_BENTLEY_LOGGING
+//USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
 
 BEGIN_GROUND_DETECTION_NAMESPACE
@@ -36,7 +36,7 @@ BEGIN_GROUND_DETECTION_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     auto item = Item::Create(element, NULL, m_first.get());
     if (m_first.IsNull())
         {
@@ -49,14 +49,14 @@ template<typename T> void ThreadSafeQueue<T>::PushFront(T element)
         m_first = item;
         }
     m_count++;
-    m_cv.Wake(true);
+    m_cv.notify_all();
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                     Grigas.Petraitis               10/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     auto item = Item::Create(element, m_last.get(), NULL);
     if (m_last.IsNull())
         {
@@ -69,7 +69,7 @@ template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
         m_last = item;
         }
     m_count++;
-    m_cv.Wake(true);
+    m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -77,7 +77,7 @@ template<typename T> void ThreadSafeQueue<T>::PushBack(T element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (m_first.IsNull())
         return false;
 
@@ -94,7 +94,7 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
         m_first = m_first->next;
         }
     m_count--;
-    m_cv.Wake(true);
+    m_cv.notify_all();
     return true;
     }
 
@@ -103,7 +103,7 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront(T* element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> bool ThreadSafeQueue<T>::PopBack(T* element)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (m_last.IsNull())
         return false;
 
@@ -120,7 +120,7 @@ template<typename T> bool ThreadSafeQueue<T>::PopBack(T* element)
         m_last = m_last->prev;
         }
     m_count--;
-    m_cv.Wake(true);
+    m_cv.notify_all();
     return true;
     }
 
@@ -164,7 +164,7 @@ template<typename T> bool ThreadSafeQueue<T>::PopFront() {return PopFront(nullpt
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::Erase(Iterator const& iterator)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (!iterator.IsValid() || m_first.IsNull())
         return;
 
@@ -188,7 +188,7 @@ template<typename T> void ThreadSafeQueue<T>::Erase(Iterator const& iterator)
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> void ThreadSafeQueue<T>::Clear()
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     auto item = m_first;
     while (item.IsValid())
         {
@@ -200,7 +200,7 @@ template<typename T> void ThreadSafeQueue<T>::Clear()
     m_first = NULL;
     m_last = NULL;
     m_count = 0;
-    m_cv.Wake(true);
+    m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -208,7 +208,7 @@ template<typename T> void ThreadSafeQueue<T>::Clear()
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> bool ThreadSafeQueue<T>::IsEmpty() const
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     return m_first.IsNull();
     }
 
@@ -217,7 +217,7 @@ template<typename T> bool ThreadSafeQueue<T>::IsEmpty() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> unsigned ThreadSafeQueue<T>::Size() const
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     return m_count;
     }
 
@@ -243,10 +243,10 @@ template struct ThreadSafeQueue<int>;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudThread::PointCloudThread(DgnPlatformLib::Host* hostToAdopt,Utf8CP threadName)
-    : m_threadId(-1), m_threadName(threadName), m_hostToAdopt(hostToAdopt)
+PointCloudThread::PointCloudThread(/*DgnPlatformLib::Host* hostToAdopt,*/Utf8CP threadName)
+    : m_threadId(-1), m_threadName(threadName)/*, m_hostToAdopt(hostToAdopt)*/
     {
-    BeAssert(NULL!=m_hostToAdopt);
+    //BeAssert(NULL!=m_hostToAdopt);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -283,9 +283,11 @@ void PointCloudThread::Run()
     {
     //According to Keith Bentley the AdoptHost function could be use the set the host created in the main thread
     //to the other working thread (see UstationLibHost.h for more information). 
+    /*
     BeAssert(DgnPlatformLib::QueryHost() == NULL);
     DgnPlatformLib::AdoptHost(*m_hostToAdopt);
     BeAssert(DgnPlatformLib::QueryHost() != NULL);
+    */
     m_threadId = BeThreadUtilities::GetCurrentThreadId();
 
     if (!m_threadName.empty())
@@ -294,10 +296,11 @@ void PointCloudThread::Run()
 
     _Run();
 
-
+    /*
     BeAssert(DgnPlatformLib::QueryHost() != NULL);
     DgnPlatformLib::ForgetHost();
     BeAssert(DgnPlatformLib::QueryHost() == NULL);
+    */
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -327,8 +330,9 @@ void PointCloudThreadPool::QueueWork(PointCloudWork& work)
 
     THREADPOOL_TIMER("QueueWork")
     THREADPOOL_MSG("QueueWork")
+    
+    BeMutexHolder lock(m_workQueueCS);
 
-    BeCriticalSectionHolder lock(m_workQueueCS);
     if (IsTerminating())
         {
         THREADPOOL_MSG("QueueWork: Ignore work item queued, terminating!")
@@ -366,13 +370,13 @@ PointCloudThreadPool::~PointCloudThreadPool()
 
     // clear the list of threads in a critical section
         {
-        BeCriticalSectionHolder threadsLock(m_threadsCV.GetCriticalSection());
+        BeMutexHolder threadsLock(m_threadsCV.GetMutex());        
         THREADPOOL_MSG("Clear threads list")
-        m_threads.clear();
-        m_threadsCV.Wake(true);
+        m_threads.clear();        
+        m_threadsCV.notify_all();
         }
-
-    BeCriticalSectionHolder workQueueLock(m_workQueueCS);
+    
+    BeMutexHolder workQueueLock(m_workQueueCS);        
     THREADPOOL_MSG("Clear work queue")
     m_workQueue.Clear();
     }
@@ -390,12 +394,12 @@ void PointCloudThreadPool::Terminate()
         }
 
     m_isTerminating = true;
-    m_workQueue.GetConditionVariable().Wake(true);
+    m_workQueue.GetConditionVariable().notify_all();
 
     // copy the threads list in a critical section
     bvector<PointCloudWorkerThreadPtr> threads;
         {
-        BeCriticalSectionHolder threadsLock(m_threadsCV.GetCriticalSection());
+        BeMutexHolder threadsLock(m_threadsCV.GetMutex());
         for (auto pair : m_threads)
             threads.push_back(pair.first);
         }
@@ -407,7 +411,7 @@ void PointCloudThreadPool::Terminate()
         thread->Terminate();
         thread->Release();
         }
-    BeCriticalSectionHolder workQueueLock(m_workQueueCS);
+    BeMutexHolder workQueueLock(m_workQueueCS);
     THREADPOOL_MSG("Clear work queue")
     m_workQueue.Clear();
     }
@@ -416,8 +420,8 @@ void PointCloudThreadPool::Terminate()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointCloudWorkerThreadPtr PointCloudThreadPool::GetIdleThread() const
-    {
-    BeCriticalSectionHolder lock(m_threadsCV.GetCriticalSection());
+    {    
+    BeMutexHolder lock(m_threadsCV.GetMutex());
     for (auto pair : m_threads)
         {
         if (!pair.second)
@@ -431,12 +435,12 @@ PointCloudWorkerThreadPtr PointCloudThreadPool::GetIdleThread() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 PointCloudWorkerThreadPtr PointCloudThreadPool::CreateThread()
     {
-    auto thread = PointCloudWorkerThread::Create(DgnPlatformLib::QueryHost(),this, "BentleyThreadPoolWorker");
+    auto thread = PointCloudWorkerThread::Create(/*DgnPlatformLib::QueryHost(),*/this, "BentleyThreadPoolWorker");
     thread->AddRef();
-    thread->Start();
-    BeCriticalSectionHolder lock(m_threadsCV.GetCriticalSection());
+    thread->Start();    
+    BeMutexHolder lock(m_threadsCV.GetMutex());
     m_threads[thread.get()] = false;
-    m_threadsCV.Wake(true);
+    m_threadsCV.notify_all();
     return thread;
     }
 
@@ -444,8 +448,8 @@ PointCloudWorkerThreadPtr PointCloudThreadPool::CreateThread()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 int PointCloudThreadPool::GetThreadsCount() const
-    {
-    BeCriticalSectionHolder lock(m_threadsCV.GetCriticalSection());
+    {    
+    BeMutexHolder lock(m_threadsCV.GetMutex());
     return(int) m_threads.size();
     }
 
@@ -465,11 +469,11 @@ bool PointCloudThreadPool::ShouldCreateNewThread() const
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudThreadPool::_OnThreadBusy(PointCloudWorkerThread& thread)
-    {
-    BeCriticalSectionHolder lock(m_threadsCV.GetCriticalSection());
+    {    
+    BeMutexHolder lock(m_threadsCV.GetMutex());
     THREADPOOL_MSG("_OnThreadBusy: Marked the thread as busy")
     m_threads[&thread] = true;
-    m_threadsCV.Wake(true);
+    m_threadsCV.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -481,8 +485,8 @@ void PointCloudThreadPool::_OnThreadIdle(PointCloudWorkerThread& thread)
 
     if (!_AssignWork(thread))
         {
-        THREADPOOL_MSG("_OnThreadIdle: No work items in queue")
-        BeCriticalSectionHolder lock(m_threadsCV.GetCriticalSection());
+        THREADPOOL_MSG("_OnThreadIdle: No work items in queue")        
+        BeMutexHolder lock(m_threadsCV.GetMutex());
         int idleThreadsCount = 0;
         for (auto pair : m_threads)
             {
@@ -509,7 +513,7 @@ void PointCloudThreadPool::_OnThreadIdle(PointCloudWorkerThread& thread)
             THREADPOOL_MSG("_OnThreadIdle: Marked the thread as idle")
             }
 
-        m_threadsCV.Wake(true);
+        m_threadsCV.notify_all();
         }
     }
 
@@ -524,7 +528,7 @@ bool PointCloudThreadPool::_AssignWork(PointCloudWorkerThread& thread)
     PointCloudWorkPtr work;
     if (true)
         {
-        BeCriticalSectionHolder lock(m_workQueueCS);
+        BeMutexHolder lock(m_workQueueCS);
         m_workQueue.Pop(work);
         }
 
@@ -562,7 +566,7 @@ public:
     AllThreadsIdlePredicate(PointCloudThreadPool const& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override 
         {
-        BeCriticalSectionHolder lock(cv.GetCriticalSection());
+        BeMutexHolder lock(cv.GetMutex());
         for (auto pair : m_pool.m_threads)
             {
             bool isThreadBusy = pair.second;
@@ -593,7 +597,7 @@ struct ThreadPoolWorkDonePredicate : IConditionVariablePredicate
         ThreadPoolWorkDonePredicate(PointCloudThreadPool const& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override
         {
-        BeCriticalSectionHolder lock(cv.GetCriticalSection());
+        BeMutexHolder lock(cv.GetMutex());
 
         //Work done if queue empty and all thread idle
         bool isQueueEmpty(m_pool.m_workQueue.IsEmpty());
@@ -614,14 +618,14 @@ struct ThreadPoolWorkDonePredicate : IConditionVariablePredicate
  /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool PointCloudThreadPool::WaitUntilWorkDone(UInt32 timeoutMillis) const
+bool PointCloudThreadPool::WaitUntilWorkDone(uint32_t timeoutMillis) const
     {
     bool isWorkDone(false);
     ThreadPoolWorkDonePredicate predicate(*this);
     isWorkDone = m_threadsCV.WaitOnCondition(&predicate, timeoutMillis);
     //If there is still work to do, wake threads - this prevent dead lock
     if (!isWorkDone)
-        m_threadsCV.Wake(true);
+        m_threadsCV.notify_all();
     return isWorkDone;
     }
 
@@ -636,7 +640,7 @@ struct ThreadPoolQueueNotFullPredicate : IConditionVariablePredicate
         ThreadPoolQueueNotFullPredicate(PointCloudThreadPool const& pool) : m_pool(pool) {}
     virtual bool _TestCondition(BeConditionVariable& cv) override
         {
-        BeCriticalSectionHolder lock(cv.GetCriticalSection());
+        BeMutexHolder lock(cv.GetMutex());
         //Lets thread pool terminate...
         if (m_pool.IsTerminating())
             return true;
@@ -677,7 +681,7 @@ bool PointCloudThreadPool::IsMemoryLimitReached(size_t memoryUsed) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudThreadPool::SetMemoryUsed(size_t memoryUsed)
     {
-    BeCriticalSectionHolder lock(m_memoryUsedCS);
+    BeMutexHolder lock(m_memoryUsedCS);
     m_memoryUsed = memoryUsed;
     }
 /*---------------------------------------------------------------------------------**//**
@@ -685,7 +689,7 @@ void PointCloudThreadPool::SetMemoryUsed(size_t memoryUsed)
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t PointCloudThreadPool::GetMemoryUsed() const
      {
-     BeCriticalSectionHolder lock(m_memoryUsedCS);
+     BeMutexHolder lock(m_memoryUsedCS);
      return m_memoryUsed;
      }
 
@@ -695,8 +699,8 @@ size_t PointCloudThreadPool::GetMemoryUsed() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PointCloudWorkerThread::PointCloudWorkerThread(DgnPlatformLib::Host* hostToAdopt, IStateListener* stateListener, Utf8CP threadName)
-    : PointCloudThread(hostToAdopt, threadName), m_cv(), m_terminate(false), m_stateListener(stateListener), m_idleSince(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_busySince(0), m_memoryUsed(0)
+PointCloudWorkerThread::PointCloudWorkerThread(/*DgnPlatformLib::Host* hostToAdopt,*/ IStateListener* stateListener, Utf8CP threadName)
+    : PointCloudThread(/*hostToAdopt,*/ threadName), m_cv(), m_terminate(false), m_stateListener(stateListener), m_idleSince(BeTimeUtilities::GetCurrentTimeAsUnixMillis()), m_busySince(0), m_memoryUsed(0)
     {
     }
 
@@ -712,7 +716,7 @@ PointCloudWorkerThread::~PointCloudWorkerThread()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudWorkerThread::SetIsBusy(bool busy)
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (busy && 0 != m_busySince || !busy && 0 != m_idleSince)
         return;
 
@@ -728,7 +732,7 @@ void PointCloudWorkerThread::SetIsBusy(bool busy)
         m_busySince = 0;
         _OnIdle();
         }
-    m_cv.Wake(true);
+    m_cv.notify_all();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -754,7 +758,7 @@ void PointCloudWorkerThread::_OnIdle()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudWorkerThread::IsBusy(uint64_t* busyTime) const
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (m_busySince != 0)
         {
         if (NULL != busyTime)
@@ -769,7 +773,7 @@ bool PointCloudWorkerThread::IsBusy(uint64_t* busyTime) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudWorkerThread::IsIdle(uint64_t* idleTime) const
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     if (m_idleSince != 0)
         {
         if (NULL != idleTime)
@@ -811,20 +815,21 @@ void PointCloudWorkerThread::_DoWork(PointCloudWork& work)
     {
     // note: if m_threadId is -1 it means that the thread hasn't been started yet
     // but that also means that we're not on that thread and should wait for idle, etc.
+    BeMutexHolder holder(m_cv.GetMutex(), BeMutexHolder::Lock::No);
     if (BeThreadUtilities::GetCurrentThreadId() != GetThreadId())
         {
         IsIdlePredicate predicate(*this);
-        m_cv.GetCriticalSection().Enter();
-        m_cv.ProtectedWaitOnCondition(&predicate, BeConditionVariable::Infinite);
+        holder.lock();              
+        m_cv.ProtectedWaitOnCondition(holder, &predicate, BeConditionVariable::Infinite);        
         }
 
     BeAssert(m_currentWork.IsNull());
     SetIsBusy(true);
     m_currentWork = &work;
-    m_cv.Wake(true);
+    m_cv.notify_all();
 
     if (BeThreadUtilities::GetCurrentThreadId() != GetThreadId())
-        m_cv.GetCriticalSection().Leave();
+        holder.unlock();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -835,21 +840,20 @@ void PointCloudWorkerThread::_Run()
     SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
     while (!m_terminate)
         {
-        m_cv.GetCriticalSection().Enter();
-        HasWorkOrTerminatesPredicate predicate(*this);
-        m_cv.ProtectedWaitOnCondition(&predicate, BeConditionVariable::Infinite);
+        BeMutexHolder holder(m_cv.GetMutex(), BeMutexHolder::Lock::Yes);        
+        HasWorkOrTerminatesPredicate predicate(*this);                                        
+        m_cv.ProtectedWaitOnCondition(holder, &predicate, BeConditionVariable::Infinite);        
 
         if (!m_terminate)
-            {
+            {            
             BeAssert(m_currentWork.IsValid());
             auto work = m_currentWork;
             m_currentWork = NULL;
-            m_cv.GetCriticalSection().Leave();
-
+            holder.unlock();
             work->_DoWork();
             }
         else
-            m_cv.GetCriticalSection().Leave();
+            holder.unlock();
 
         SetIsBusy(false);
         }
@@ -860,10 +864,16 @@ void PointCloudWorkerThread::_Run()
 * @bsimethod                                    Marc.Bedard                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PointCloudWorkerThread::Terminate()
-    {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    {   
+    BeMutexHolder lock(m_cv.GetMutex());
+    /*
+    if (m_terminate)
+        return false;
+        */
+
     m_terminate = true;
-    m_cv.Wake(true);
+    m_cv.notify_all();
+    return;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -871,7 +881,115 @@ void PointCloudWorkerThread::Terminate()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PointCloudWorkerThread::TerminateRequested() const
     {
-    BeCriticalSectionHolder lock(m_cv.GetCriticalSection());
+    BeMutexHolder lock(m_cv.GetMutex());
     return m_terminate;
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+GroundDetectionThreadPool::GroundDetectionThreadPool(int numWorkingThreads)
+: m_numWorkingThreads(numWorkingThreads)//, m_isTerminating(false)
+    {
+    m_futures = new std::future<void>[m_numWorkingThreads];
+
+    //m_workingThreads = new std::thread[m_numWorkingThreads];
+        /*
+        m_areWorkingThreadRunning = new std::atomic<bool>[m_maxThreads];
+
+        for (size_t ind = 0; ind < m_numWorkingThreads; ind++)
+            m_areWorkingThreadRunning[ind] = false;
+            */
+                
+    m_currentWorkInd = 0;
+    m_run = false;    
+    }
+
+GroundDetectionThreadPool::~GroundDetectionThreadPool()
+    {
+    WaitAndStop();
+   
+    delete[] m_futures;
+    }
+
+void GroundDetectionThreadPool::ClearQueueWork()
+    {
+    m_currentWorkInd = 0;
+    m_workQueue.clear();
+    }
+
+void GroundDetectionThreadPool::QueueWork(GroundDetectionWorkPtr& work)
+    {    
+    assert(m_run == false);
+    m_workQueue.push_back(work);
+    }
+
+void GroundDetectionThreadPool::Start(IActiveWait* activeWait)
+    { 
+    m_activeWait = activeWait;
+
+    if (m_run == false)
+        {                
+        m_run = true;
+        assert(m_currentWorkInd == 0);
+
+        //Launch a group of threads
+        for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+            {         
+            m_futures[threadId] = std::async(&GroundDetectionThreadPool::WorkThread, this, /*DgnPlatformLib::QueryHost(), */threadId);            
+            }
+        }
+    }
+
+void GroundDetectionThreadPool::WaitAndStop()
+    {         
+    std::chrono::milliseconds span(500);
+
+    for (int threadId = 0; threadId < m_numWorkingThreads; ++threadId) 
+        {
+        if (m_futures[threadId].valid())
+            {
+            if (m_activeWait == nullptr)
+                { 
+                m_futures[threadId].get();
+                }
+            else
+                {
+                while (m_futures[threadId].wait_for(span) == std::future_status::timeout)
+                    {
+                    m_activeWait->Progress();
+                    }
+                }
+            }
+/*
+        if (m_workingThreads[threadId].joinable())
+            m_workingThreads[threadId].join();                                
+*/
+        }
+    
+    m_run = false;
+    }    
+    
+void GroundDetectionThreadPool::WorkThread(/*DgnPlatformLib::Host* hostToAdopt, */int threadId)
+    {
+        //DgnPlatformLib::AdoptHost(*hostToAdopt);
+
+    GroundDetectionWorkPtr currentWork;
+
+    do
+        {  
+        currentWork = nullptr;
+        
+        uint32_t currentInd = std::atomic_exchange<uint32_t> (&m_currentWorkInd, m_currentWorkInd + 1);
+               
+        if (currentInd < m_workQueue.size())
+            {
+            currentWork = m_workQueue[currentInd];
+            currentWork->_DoWork();
+            }                
+
+        } while (m_run && (currentWork.IsValid()));
+    }
+    
 END_GROUND_DETECTION_NAMESPACE

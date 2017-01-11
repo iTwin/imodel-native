@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -12,7 +12,7 @@
 #include "GroundDetectionManagerDc.h"
 
 BEGIN_GROUND_DETECTION_NAMESPACE
-
+  
 static IGroundDetectionServices* s_pGroundDetectionManagerImpl = GroundDetectionManagerDc::GetServices();
 
 /*---------------------------------------------------------------------------------**//**

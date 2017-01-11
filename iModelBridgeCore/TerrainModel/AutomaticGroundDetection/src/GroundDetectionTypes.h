@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/GroundDetectionTypes.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -15,6 +15,7 @@ GROUND_DETECTION_TYPEDEF(TINPointContainer)
 GROUND_DETECTION_TYPEDEF(PCGroundTINMT)
 GROUND_DETECTION_TYPEDEF(Triangle)
 GROUND_DETECTION_TYPEDEF(PCGroundTriangle)
+GROUND_DETECTION_TYPEDEF(TriangleSearcher)
 //GROUND_DETECTION_TYPEDEF(QueryAllPointsForTriangleWork)
 //GROUND_DETECTION_TYPEDEF(DensifyTriangleWork)
 //GROUND_DETECTION_TYPEDEF(FindFirstSeedPointWork)

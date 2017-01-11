@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IPointsAccumulator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,17 +17,25 @@ GROUND_DETECTION_TYPEDEF(IGroundPointsAccumulator)
 BEGIN_GROUND_DETECTION_NAMESPACE
     
 /*=================================================================================**//**
-* @bsiclass                                             Marc.Bedard     12/2015
+* @bsiclass                                             Mathieu.St-Pierre     10/2016
 +===============+===============+===============+===============+===============+======*/
 struct IGroundPointsAccumulator : public RefCountedBase
     {
     protected : 
 
-        virtual void _AddPoints(const bvector<DPoint3d>& points) = 0;
+        virtual void _AddPoints(const bvector<DPoint3d>& points) = 0;        
+
+        virtual void _OutputPreview(PolyfaceQueryCR currentGround) const = 0;
+
+        virtual bool _ShouldContinue() const = 0;
 
     public : 
     
         void AddPoints(const bvector<DPoint3d>& points);        
+
+        void OutputPreview(PolyfaceQueryCR currentGround) const;
+
+        bool ShouldContinue() const;
     };
 
 END_GROUND_DETECTION_NAMESPACE

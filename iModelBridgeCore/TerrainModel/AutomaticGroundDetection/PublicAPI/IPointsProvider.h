@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IPointsProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -200,7 +200,7 @@ struct IPointsProviderCreator : public RefCountedBase
 
         IPointsProviderPtr CreatePointProvider();
 
-        void               GetAvailableRange(DRange3d& availableRange);
+        GROUND_DETECTION_EXPORT void GetAvailableRange(DRange3d& availableRange);
     };
 
 
