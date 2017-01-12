@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/SimplifyGraphic.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -1678,6 +1678,15 @@ void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
     {
     PolyfaceHeaderPtr polyface = args.ToPolyface();
     _AddPolyface(*polyface, true);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SimplifyGraphic::_AddIndexedPolyline(IndexedPolylineArgs const& args)
+    {
+    bvector<DPoint3d> points = args.ToPoints();
+    _AddLineString(static_cast<int>(points.size()), &points[0]);
     }
 
 /*---------------------------------------------------------------------------------**//**

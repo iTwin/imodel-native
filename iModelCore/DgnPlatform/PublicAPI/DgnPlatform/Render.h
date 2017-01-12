@@ -1211,6 +1211,24 @@ struct IGraphicBuilder
         DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
     };
 
+    //=======================================================================================
+    //! Information needed to draw an indexed polyline
+    // @bsistruct                                                   Paul.Connelly   01/17
+    //=======================================================================================
+    struct IndexedPolylineArgs
+    {
+        uint32_t const* m_vertIndex = nullptr;
+        FPoint3d const* m_points = nullptr;
+        uint32_t        m_numIndices = 0;
+        uint32_t        m_numPoints = 0;
+
+        IndexedPolylineArgs() { }
+        IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, uint32_t const* indices, uint32_t numIndices)
+            : m_vertIndex(indices), m_points(points), m_numIndices(numIndices), m_numPoints(numPoints) { }
+
+        DGNPLATFORM_EXPORT bvector<DPoint3d> ToPoints() const;
+    };
+
     struct TileCorners
     {
         DPoint3d m_pts[4];
@@ -1242,6 +1260,7 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
+    virtual void _AddIndexedPolyline(IndexedPolylineArgs const& args) = 0;
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
@@ -1259,6 +1278,7 @@ protected:
 struct GraphicBuilder
 {
     typedef IGraphicBuilder::TriMeshArgs TriMeshArgs;
+    typedef IGraphicBuilder::IndexedPolylineArgs IndexedPolylineArgs;
     typedef IGraphicBuilder::TileCorners TileCorners;
 private:
     friend struct GraphicBuilderPtr;
@@ -1376,6 +1396,8 @@ public:
     void AddPolyface(PolyfaceQueryCR meshData, bool filled = false) {m_builder->_AddPolyface(meshData, filled);}
 
     void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
+
+    void AddIndexedPolyline(IndexedPolylineArgs const& args) {m_builder->_AddIndexedPolyline(args);}
 
     //! Draw a 3D point cloud.
     void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}

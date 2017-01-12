@@ -559,7 +559,7 @@ public:
 
     //! Convert the geometry accumulated by this builder into a set of meshes and add it to the specified Graphic as a set of sub-graphics.
     //! The GraphicBuilder must support CreateSubGraphic() and AddSubGraphic()
-    //! The subgraphics must support ActivateGraphicParams(), AddTriMesh(), AddLineString(), and Close()
+    //! The subgraphics must support ActivateGraphicParams(), AddTriMesh(), AddIndexedPolyline(), and Close()
     //! No other GraphicBuilder methods will be invoked.
     DGNPLATFORM_EXPORT void SaveToGraphic(Render::GraphicBuilderR graphic, Render::System const& system, GeometryOptionsCR options, double tolerance=0.001) const;
 };

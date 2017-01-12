@@ -383,20 +383,27 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct TilePolylineArgs
+struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
 {
-    bvector<DPoint3d>   m_vertices;
+    bool IsValid() const { return 0 < m_numIndices; }
 
-    bool IsValid() const { return !m_vertices.empty(); }
+    void Reset()
+        {
+        m_numIndices = m_numPoints = 0;
+        m_points = nullptr;
+        m_vertIndex = nullptr;
+        }
 
     bool Init(bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
         {
-        m_vertices.clear();
-        for (auto const& index : indices)
+        Reset();
+
+        m_numIndices = static_cast<uint32_t>(indices.size());
+        m_numPoints = static_cast<uint32_t>(vertices.size());
+        if (0 < m_numIndices)
             {
-            FPoint3d const& fpt = vertices[index];
-            auto dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-            m_vertices.push_back(dpt);
+            m_vertIndex = &indices[0];
+            m_points = &vertices[0];
             }
 
         return IsValid();
@@ -405,7 +412,7 @@ struct TilePolylineArgs
     void Apply(Render::GraphicBuilderR gf)
         {
         if (IsValid())
-            gf.AddLineString(static_cast<int>(m_vertices.size()), &m_vertices[0]);
+            gf.AddIndexedPolyline(*this);
         }
 
     bool InitAndApply(Render::GraphicBuilderR gf, bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
@@ -421,8 +428,15 @@ struct TilePolylineArgs
 
     void Transform(TransformCR tf)
         {
-        for (DPoint3dR vert : m_vertices)
-            tf.Multiply(vert);
+        for (uint32_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d fpt = m_points[i];
+            DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
+            tf.Multiply(dpt);
+            fpt.x = dpt.x;
+            fpt.y = dpt.y;
+            fpt.z = dpt.z;
+            }
         }
 };
 
@@ -2161,8 +2175,17 @@ BentleyStatus Loader::_LoadTile()
         if (root.WantDebugRanges())
             {
             ColorDef color = geometry.IsEmpty() ? ColorDef::Red() : tile.IsLeaf() ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
-            graphic->SetSymbology(color, ColorDef::Green(), 0);
-            graphic->AddRangeBox(tile.GetRange());
+            GraphicParams gfParams;
+            gfParams.SetLineColor(color);
+            gfParams.SetFillColor(ColorDef::Green());
+            gfParams.SetWidth(0);
+            gfParams.SetLinePixels(GraphicParams::LinePixels::Solid);
+
+            auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+            subGraphic->ActivateGraphicParams(gfParams);
+            subGraphic->AddRangeBox(tile.GetRange());
+            subGraphic->Close();
+            graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), gfParams);
             }
 
         graphic->Close();
