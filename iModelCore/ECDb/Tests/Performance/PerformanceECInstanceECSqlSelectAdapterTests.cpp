@@ -47,6 +47,8 @@ TEST_F(PerformanceECInstanceECSqlSelectAdapterTests, Constructor)
         "SELECT ECInstanceId,ECClassId,B,Bi,D,Dt,DtUtc,P2D,P3D,MyPSA FROM ecsql.P",
         "SELECT * FROM ecsql.P",
         "SELECT * FROM ecsql.PSA",
+        "SELECT * FROM ecsql.TH5",
+        "SELECT * FROM ecsql.TC5",
         "SELECT ECInstanceId,ECClassId,SourceECInstanceId,SourceECClassId,TargetECInstanceId,TargetECClassId FROM ecsql.PSAHasP"};
 
     for (Utf8CP ecsql : testECSqls)
