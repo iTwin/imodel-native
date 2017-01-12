@@ -26,21 +26,3 @@ ECDbMappingTestFixture.DiamondProblem_Case2
 
 #TFS 639378
 ECSqlStatementTestFixture.ParametersInNestedSelectStatement
-
-ECDbMappingTestFixture.OverflowColumns_InsertComplexTypesWithUnNamedParametersAndMixOrder
-    # bim0200, x86, NDEBUG
-    # [ RUN      ] ECDbMappingTestFixture.OverflowColumns_InsertComplexTypesWithUnNamedParametersAndMixOrder
-    # F:\Bim0200\src\ECDb\Tests\Published\ECDbMapping_Tests.cpp(2758): error:       Expected: 0
-    # To be equal to: memcmp(&bin, stmt.GetValueBlob(idx++), bin.size())
-    #       Which is: 1
-    # [  FAILED  ] ECDbMappingTestFixture.OverflowColumns_InsertComplexTypesWithUnNamedParametersAndMixOrder (124 ms)
-
-ECDbMappingTestFixture.OverflowColumns_InsertComplexTypes
-    # bim0200, x86, NDEBUG
-    # [ RUN      ] ECDbMappingTestFixture.OverflowColumns_InsertComplexTypes
-    # F:\Bim0200\src\ECDb\Tests\Published\ECDbMapping_Tests.cpp(2915): error:       Expected: 0
-    # To be equal to: memcmp(&bin, stmt.GetValueBlob(idx++), bin.size())
-    #       Which is: 1
-    # [  FAILED  ] ECDbMappingTestFixture.OverflowColumns_InsertComplexTypes (108 ms)
-
-
