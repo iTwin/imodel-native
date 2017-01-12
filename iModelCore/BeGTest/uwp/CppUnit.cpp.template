@@ -3,37 +3,14 @@
 // Declare the test test runner functions
 #define BE_TEST_RUNNER(TS,TC) extern "C" EXPORT_ATTRIBUTE int run_TEST_##TS##_##TC ();
 #include <UnitTests.list.h>
-#undef  BE_TEST_RUNNER
+#undef BE_TEST_RUNNER
 
-namespace  BeTestWinRT
-{
-    namespace __REPO__
+namespace BeTestWinRT { namespace __REPO__ {
+    TEST_CLASS(__FIXTURE__)
     {
-        TEST_CLASS(__FIXTURE__)
-        {
-        public:
-            TEST_METHOD_INITIALIZE (SetUpTest) { doSetUpL10N (); }
-            TEST_METHOD_CLEANUP (TearDownTest) { doTearDownL10N (); }
-
-            TEST_CLASS_INITIALIZE (SetUpTestCase)
-                {
-                doSetUp ();
-                #define BE_TEST_SETUP(TC)       BeTest::SetUpTestCase(#TC);
-                #include <UnitTests.list.h>
-                #undef BE_TEST_SETUP
-                }
-            
-            TEST_CLASS_CLEANUP (TearDownTestCase) 
-                {
-                #define BE_TEST_TEARDOWN(TC)    BeTest::TearDownTestCase(#TC);
-                #include <UnitTests.list.h>
-                #undef BE_TEST_TEARDOWN
-                doTearDown ();
-                }
-
-            #define BE_TEST_RUNNER(TS,TC)   TEST_METHOD (TC) { Assert::IsTrue (0 == run_TEST_##TS##_##TC ()); }
-            #include <UnitTests.list.h>
-            #undef  BE_TEST_RUNNER
-        };
-    }
-}
+    public:
+        #define BE_TEST_RUNNER(TS,TC) TEST_METHOD (TC) { ensureTestClassSetUp("__FIXTURE__"); Assert::IsTrue (0 == run_TEST_##TS##_##TC ()); }
+        #include <UnitTests.list.h>
+        #undef BE_TEST_RUNNER
+    };
+}}

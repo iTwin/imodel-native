@@ -1,6 +1,5 @@
 #include <SDKDDKVer.h>
 #include "CppUnitTest.h"
-#define BETEST_NO_INCLUDE_BOOST_FOR_EACH
 #include <Bentley/BeTest.h>
 #include <Bentley/BeAssert.h>
 #include <Bentley/BeFileName.h>
@@ -11,32 +10,35 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
-static void doSetUp ()
+BEGIN_UNNAMED_NAMESPACE
+
+static void ensureTestClassSetUp(Utf8CP testClassName)
     {
-    wchar_t const* home = L"E:\\out\\WinRTx86\\static\\BuildContexts\\BeTestWinRT\\SubParts\\GUnitTests";
+    if (BeTestHost::s_currentTestClassName.Equals(testClassName))
+        return;
+    
+    if (!BeTestHost::s_currentTestClassName.empty())
+        BeTest::TearDownTestCase(BeTestHost::s_currentTestClassName.c_str());
 
-    BeTest::Initialize (*BeTestHost::Create (home));
+    BeTestHost::s_currentTestClassName = testClassName;
 
-    NativeLogging::LoggingConfig::SetOption (CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
-    NativeLogging::LoggingConfig::ActivateProvider (NativeLogging::CONSOLE_LOGGING_PROVIDER);
-    NativeLogging::LoggingConfig::SetSeverity (L"Performance", NativeLogging::LOG_ERROR);
+    if (!BeTest::IsInitialized())
+        {
+        BeTest::Initialize(*BeTestHost::Create(nullptr));
+
+        NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_DEFAULT_SEVERITY, LOG_TEXT_WARNING);
+        NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::CONSOLE_LOGGING_PROVIDER);
+        NativeLogging::LoggingConfig::SetSeverity(L"Performance", NativeLogging::LOG_ERROR);
+
+        BeFileName frameworkSqlang;
+        BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
+
+        // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
+        if (frameworkSqlang.DoesPathExist())
+            BeSQLite::L10N::Initialize(frameworkSqlang);
+        }
+
+    BeTest::SetUpTestCase(testClassName);
     }
 
-static void doTearDown ()
-    {
-    BeTest::Uninitialize ();
-    }
-
-static void doSetUpL10N ()
-    {
-    BeFileName frameworkSqlang;
-    BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlang);
-    // Some tests do not have language file. Skip L10N initialization because L10N assert will block the test.
-    if(frameworkSqlang.DoesPathExist())
-        BeSQLite::L10N::Initialize(frameworkSqlang);
-    }
-
-static void doTearDownL10N ()
-    {
-    BeSQLite::L10N::Shutdown ();
-    }
+END_UNNAMED_NAMESPACE
