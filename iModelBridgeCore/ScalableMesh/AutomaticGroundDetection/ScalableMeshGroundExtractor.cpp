@@ -586,12 +586,14 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
 
         if (transform.IsIdentity())
             { 
-            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());            
+
+            double ratioFromMeter = 1.0 / m_smGcsRatioToMeter;
 
             //Convert from UOR to SM unit.
             for (auto& pt : m_extractionArea)
                 {
-                pt.Scale(m_smGcsRatioToMeter);
+                pt.Scale(ratioFromMeter);
                 }
             }            
         else
