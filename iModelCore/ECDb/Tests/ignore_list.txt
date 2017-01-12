@@ -43,19 +43,4 @@ ECDbMappingTestFixture.OverflowColumns_InsertComplexTypes
     #       Which is: 1
     # [  FAILED  ] ECDbMappingTestFixture.OverflowColumns_InsertComplexTypes (108 ms)
 
-JsonUpdaterTests.CommonGeometryJsonSerialization
-    # bim0200dev, x86, DEBUG
-    # [ RUN      ] JsonUpdaterTests.CommonGeometryJsonSerialization
-    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\JsonUpdaterTests.cpp(28): error:       Expected: expectedCoord
-    #       Which is: 26.0726
-    # To be equal to: actualCoord
-    #       Which is: 26.0726
-    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\JsonUpdaterTests.cpp(28): error:       Expected: expectedCoord
-    #       Which is: 26.0726
-    # To be equal to: actualCoord
-    #       Which is: 26.0726
-    # F:\Bim0200Dev\src-staging\ECDb\Tests\Published\JsonUpdaterTests.cpp(28): error:       Expected: expectedCoord
-    #       Which is: 26.0726
-    # To be equal to: actualCoord
-    #       Which is: 26.0726
-    # [  FAILED  ] JsonUpdaterTests.CommonGeometryJsonSerialization (203 ms)
+

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/JsonUpdaterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -25,7 +25,7 @@ struct JsonUpdaterTests : SchemaImportTestFixture
             {
             double expectedCoord = expectedValue[ii].asDouble();
             double actualCoord = actualValue[ii].asDouble();
-            ASSERT_EQ(expectedCoord, actualCoord);
+            ASSERT_DOUBLE_EQ(expectedCoord, actualCoord);
             }
         }
     //
@@ -235,7 +235,7 @@ TEST_F(JsonUpdaterTests, UpdateProperties)
     ASSERT_EQ(SUCCESS, reader.ReadInstance(ecClassJson, key.GetECInstanceId(), JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues)));
     ASSERT_EQ(100, ecClassJson["P1"].asInt());
     ASSERT_STREQ("JsonTest", ecClassJson["P2"].asCString());
-    ASSERT_EQ(1000.10, ecClassJson["P3"].asDouble());
+    ASSERT_DOUBLE_EQ(1000.10, ecClassJson["P3"].asDouble());
     //printf ("%s\r\n", ecClassJson.toStyledString ().c_str ());
 
     // Update ecClass properties
