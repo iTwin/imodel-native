@@ -23,7 +23,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //!     WHERE IsChangedInstance(elg.GetECClassId(), elg.ECInstanceId)
 //! @bsiclass                                                 Ramanujam.Raman      08/2015
 //=======================================================================================
-struct IsChangedInstanceSqlFunction : ScalarFunction
+struct IsChangedInstanceSqlFunction final : ScalarFunction
 {
 private:
     virtual void _ComputeScalar(ScalarFunction::Context& ctx, int nArgs, DbValue* args) override;
