@@ -134,7 +134,6 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         static Utf8CP const POINTPROP_Y_PROPNAME;
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
-
         ECDb const& m_ecdb;
         mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
 
@@ -143,16 +142,11 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         ECDbSchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
 
     public:
-        //static class
         explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}
 
-        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
-
         //! @return System property or nullptr in case of errors
-        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Class) const;
-        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Relationship) const;
-        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Point) const;
-        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Navigation) const;
+        ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
+        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
 
         ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType) const;
 

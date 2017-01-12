@@ -74,117 +74,111 @@ ECSqlSystemPropertyInfo const& ECDbSystemSchemaHelper::GetSystemPropertyInfo(ECN
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                12/2016
 //+---------------+---------------+---------------+---------------+---------------+-
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo::Navigation sysProp) const
+ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo const& sysPropInfo) const
     {
-    ECClassCP systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    if (systemClass == nullptr)
+    ECClassCP systemClass = nullptr;
+    Utf8CP propName = nullptr;
+
+    switch (sysPropInfo.GetType())
+        {
+            case ECSqlSystemPropertyInfo::Type::Class:
+            {
+            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            switch (sysPropInfo.GetClass())
+                {
+                    case ECSqlSystemPropertyInfo::Class::ECInstanceId:
+                        propName = ECINSTANCEID_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Class::ECClassId:
+                        propName = ECCLASSID_PROPNAME;
+                        break;
+
+                    default:
+                        BeAssert(false);
+                        return nullptr;
+                }
+            break;
+            }
+
+            case ECSqlSystemPropertyInfo::Type::Relationship:
+            {
+            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            switch (sysPropInfo.GetRelationship())
+                {
+                    case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
+                        propName = SOURCEECINSTANCEID_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
+                        propName = SOURCEECCLASSID_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
+                        propName = TARGETECINSTANCEID_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
+                        propName = TARGETECCLASSID_PROPNAME;
+                        break;
+
+                    default:
+                        BeAssert(false);
+                        return nullptr;
+                }
+            break;
+            }
+
+            case ECSqlSystemPropertyInfo::Type::Navigation:
+            {
+            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, NAVIGATION_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            switch (sysPropInfo.GetNavigation())
+                {
+                    case ECSqlSystemPropertyInfo::Navigation::Id:
+                        propName = NAVPROP_ID_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
+                        propName = NAVPROP_RELECCLASSID_PROPNAME;
+                        break;
+
+                    default:
+                        BeAssert(false);
+                        return nullptr;
+                }
+            break;
+            }
+
+            case ECSqlSystemPropertyInfo::Type::Point:
+            {
+            systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME);
+            switch (sysPropInfo.GetPoint())
+                {
+                    case ECSqlSystemPropertyInfo::Point::X:
+                        propName = POINTPROP_X_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Point::Y:
+                        propName = POINTPROP_Y_PROPNAME;
+                        break;
+                    case ECSqlSystemPropertyInfo::Point::Z:
+                        propName = POINTPROP_Z_PROPNAME;
+                        break;
+
+                    default:
+                        BeAssert(false);
+                        return nullptr;
+                }
+            break;
+            }
+
+            default:
+                BeAssert(false);
+                return nullptr;
+        }
+
+    if (systemClass == nullptr || propName == nullptr)
         {
         BeAssert(false);
         return nullptr;
         }
 
-    switch (sysProp)
-        {
-            case ECSqlSystemPropertyInfo::Navigation::Id:
-                return systemClass->GetPropertyP(NAVPROP_ID_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Navigation::RelECClassId:
-                return systemClass->GetPropertyP(NAVPROP_RELECCLASSID_PROPNAME);
-
-            default:
-                BeAssert(false && "ECSqlSystemPropertyInfo::Navigation was changed. Need to adjust this code");
-                return nullptr;
-        }
+    return systemClass->GetPropertyP(propName);
     }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo::Point sysProp) const
-    {
-    ECClassCP systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, POINT_ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    if (systemClass == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    switch (sysProp)
-        {
-            case ECSqlSystemPropertyInfo::Point::X:
-                return systemClass->GetPropertyP(POINTPROP_X_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Point::Y:
-                return systemClass->GetPropertyP(POINTPROP_Y_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Point::Z:
-                return systemClass->GetPropertyP(POINTPROP_Z_PROPNAME);
-
-            default:
-                BeAssert(false && "ECSqlSystemPropertyInfo::Point was changed. Need to adjust this code");
-                return nullptr;
-        }
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo::Class classSysProp) const
-    {
-    ECClassCP systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, CLASS_ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    if (systemClass == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    switch (classSysProp)
-        {
-            case ECSqlSystemPropertyInfo::Class::ECInstanceId:
-                return systemClass->GetPropertyP(ECINSTANCEID_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Class::ECClassId:
-                return systemClass->GetPropertyP(ECCLASSID_PROPNAME);
-
-            default:
-                BeAssert(false && "ECSqlSystemPropertyInfo::Class was changed. Need to adjust this code");
-                return nullptr;
-        }
-    }
-
-//----------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                12/2016
-//+---------------+---------------+---------------+---------------+---------------+-
-ECPropertyCP ECDbSystemSchemaHelper::GetSystemProperty(ECSqlSystemPropertyInfo::Relationship sysProp) const
-    {
-    ECClassCP systemClass = Schemas().GetECClass(ECDBSYSTEM_SCHEMANAME, REL_ECSQLSYSTEMPROPERTIES_CLASSNAME);
-    if (systemClass == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    switch (sysProp)
-        {
-            case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
-                return systemClass->GetPropertyP(SOURCEECINSTANCEID_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
-                return systemClass->GetPropertyP(SOURCEECCLASSID_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
-                return systemClass->GetPropertyP(TARGETECINSTANCEID_PROPNAME);
-
-            case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
-                return systemClass->GetPropertyP(TARGETECCLASSID_PROPNAME);
-
-            default:
-                BeAssert(false && "ECSqlSystemPropertyInfo::Relation was changed. Need to adjust this code");
-                return nullptr;
-        }
-    }
-
-
 
 //----------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                01/2017
@@ -203,26 +197,7 @@ BentleyStatus ECDbSystemSchemaHelper::InitializeCache() const
 
     for (ECSqlSystemPropertyInfo const* sysPropInfo : allSysPropInfos)
         {
-        ECPropertyCP prop = nullptr;
-        switch (sysPropInfo->GetType())
-            {
-                case ECSqlSystemPropertyInfo::Type::Class:
-                    prop = GetSystemProperty(sysPropInfo->GetClass());
-                    break;
-                case ECSqlSystemPropertyInfo::Type::Relationship:
-                    prop = GetSystemProperty(sysPropInfo->GetRelationship());
-                    break;
-                case ECSqlSystemPropertyInfo::Type::Navigation:
-                    prop = GetSystemProperty(sysPropInfo->GetNavigation());
-                    break;
-                case ECSqlSystemPropertyInfo::Type::Point:
-                    prop = GetSystemProperty(sysPropInfo->GetPoint());
-                    break;
-                default:
-                BeAssert(false);
-                return ERROR;
-            }
-
+        ECPropertyCP prop = GetSystemProperty(*sysPropInfo);
         if (prop == nullptr || !prop->HasId())
             {
             BeAssert(false);

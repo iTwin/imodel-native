@@ -113,13 +113,13 @@ IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(Utf8CP navPropMem
 //---------------------------------------------------------------------------------------
 IECSqlBinder& NavigationPropertyECSqlBinder::_BindStructMember(ECN::ECPropertyId navPropMemberPropertyId)
     {
-    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::Navigation::Id)->GetId())
+    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationId())->GetId())
         {
         BeAssert(m_idBinder != nullptr);
         return *m_idBinder;
         }
 
-    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::Navigation::RelECClassId)->GetId())
+    if (navPropMemberPropertyId == GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemProperty(ECSqlSystemPropertyInfo::NavigationRelECClassId())->GetId())
         {
         BeAssert(m_relECClassIdBinder != nullptr);
         return *m_relECClassIdBinder;
