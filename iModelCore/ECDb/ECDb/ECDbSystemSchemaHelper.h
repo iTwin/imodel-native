@@ -52,9 +52,25 @@ public:
 
     struct LessThan
         {
-        bool operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const;
+        bool operator()(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs) const
+            {
+            return ECSqlSystemPropertyInfo::Compare(lhs, rhs) < 0;
+            }
         };
 private:
+    static const ECSqlSystemPropertyInfo s_noSystemProperty;
+    static const ECSqlSystemPropertyInfo s_ecinstanceid;
+    static const ECSqlSystemPropertyInfo s_ecclassid;
+    static const ECSqlSystemPropertyInfo s_sourceECInstanceId;
+    static const ECSqlSystemPropertyInfo s_sourceECClassId;
+    static const ECSqlSystemPropertyInfo s_targetECInstanceId;
+    static const ECSqlSystemPropertyInfo s_targetECClassId;
+    static const ECSqlSystemPropertyInfo s_navigationId;
+    static const ECSqlSystemPropertyInfo s_navigationRelECClassId;
+    static const ECSqlSystemPropertyInfo s_pointX;
+    static const ECSqlSystemPropertyInfo s_pointY;
+    static const ECSqlSystemPropertyInfo s_pointZ;
+
     Type m_type;
     union
         {
@@ -64,15 +80,15 @@ private:
         Navigation m_navKind;
         };
 
-    static int Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs);
-
-public:
     ECSqlSystemPropertyInfo() : m_type(Type::None) {}
     explicit ECSqlSystemPropertyInfo(Class kind) : m_type(Type::Class), m_classKind(kind) {}
     explicit ECSqlSystemPropertyInfo(Relationship kind) : m_type(Type::Relationship), m_relKind(kind) {}
     explicit ECSqlSystemPropertyInfo(Point kind) : m_type(Type::Point), m_pointKind(kind) {}
     explicit ECSqlSystemPropertyInfo(Navigation kind) : m_type(Type::Navigation), m_navKind(kind) {}
 
+    static int Compare(ECSqlSystemPropertyInfo const& lhs, ECSqlSystemPropertyInfo const& rhs);
+
+public:
     bool operator==(ECSqlSystemPropertyInfo const& rhs) const { return Compare(*this, rhs) == 0; }
     bool operator!=(ECSqlSystemPropertyInfo const& rhs) const { return !(*this == rhs); }
     
@@ -85,6 +101,19 @@ public:
     Navigation GetNavigation() const { BeAssert(m_type == Type::Navigation); return m_navKind; }
     //Indicates whether the system property is of an id type
     bool IsId() const { BeAssert(IsSystemProperty()); return m_type != Type::Point; }
+
+    static ECSqlSystemPropertyInfo const& ECInstanceId() { return s_ecinstanceid; }
+    static ECSqlSystemPropertyInfo const& ECClassId() { return s_ecclassid; }
+    static ECSqlSystemPropertyInfo const& SourceECInstanceId() { return s_sourceECInstanceId; }
+    static ECSqlSystemPropertyInfo const& SourceECClassId() { return s_sourceECClassId; }
+    static ECSqlSystemPropertyInfo const& TargetECInstanceId() { return s_targetECInstanceId; }
+    static ECSqlSystemPropertyInfo const& TargetECClassId() { return s_targetECClassId; }
+    static ECSqlSystemPropertyInfo const& NavigationId() { return s_navigationId; }
+    static ECSqlSystemPropertyInfo const& NavigationRelECClassId() { return s_navigationRelECClassId; }
+    static ECSqlSystemPropertyInfo const& PointX() { return s_pointX; }
+    static ECSqlSystemPropertyInfo const& PointY() { return s_pointY; }
+    static ECSqlSystemPropertyInfo const& PointZ() { return s_pointZ; }
+    static ECSqlSystemPropertyInfo const& NoSystemProperty() { return s_noSystemProperty; }
     };
 
 //=======================================================================================
@@ -105,8 +134,9 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         static Utf8CP const POINTPROP_Y_PROPNAME;
         static Utf8CP const POINTPROP_Z_PROPNAME;
 
+
         ECDb const& m_ecdb;
-        mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo> m_byPropIdCache;
+        mutable bmap<ECN::ECPropertyId, ECSqlSystemPropertyInfo const*> m_byPropIdCache;
 
         BentleyStatus InitializeCache() const;
 
@@ -116,15 +146,13 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         //static class
         explicit ECDbSystemSchemaHelper(ECDb const& ecdb) : m_ecdb(ecdb) {}
 
+        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
+
         //! @return System property or nullptr in case of errors
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Class) const;
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Relationship) const;
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Point) const;
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo::Navigation) const;
-
-        BentleyStatus TryGetSystemPropertyInfo(ECSqlSystemPropertyInfo&, ECN::ECPropertyCR) const;
-
-        bool Equals(ECN::ECPropertyCR, ECSqlSystemPropertyInfo const&) const;
 
         ECN::ECClassCP GetClassForPrimitiveArrayPersistence(ECN::PrimitiveType) const;
 

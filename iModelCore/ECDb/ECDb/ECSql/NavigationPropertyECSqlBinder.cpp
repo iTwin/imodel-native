@@ -14,7 +14,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                                Krischan.Eberle      11/2016
 //---------------------------------------------------------------------------------------
 NavigationPropertyECSqlBinder::NavigationPropertyECSqlBinder(ECSqlStatementBase& ecsqlStatement, ECSqlTypeInfo const& ecsqlTypeInfo)
-    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, false, false), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
+    : ECSqlBinder(ecsqlStatement, ecsqlTypeInfo, 0, true, false), m_idBinder(nullptr), m_relECClassIdBinder(nullptr)
     {}
 
 //---------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
 
     int totalMappedSqliteParameterCount = 0;
     NavigationPropertyMap::IdPropertyMap const& navIdPropMap = navPropMap->GetIdPropertyMap();
-    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::Id));
+    m_idBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navIdPropMap, ECSqlSystemPropertyInfo::NavigationId());
     if (m_idBinder == nullptr)
         return ERROR;
 
@@ -42,7 +42,7 @@ BentleyStatus NavigationPropertyECSqlBinder::Initialize(ECSqlPrepareContext& ctx
     totalMappedSqliteParameterCount += mappedSqliteParameterCount;
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& navRelClassIdPropMap = navPropMap->GetRelECClassIdPropertyMap();
-    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Navigation::RelECClassId));
+    m_relECClassIdBinder = ECSqlBinderFactory::CreateIdBinder(ctx, navRelClassIdPropMap, ECSqlSystemPropertyInfo::NavigationRelECClassId());
     if (m_relECClassIdBinder == nullptr)
         return ERROR;
 

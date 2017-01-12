@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECSql/PropertyNameExp.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -45,7 +45,7 @@ struct PropertyNameExp : ValueExp
 
         Utf8String m_classAlias;
         RangeClassRefExp const* m_classRefExp;
-        ECSqlSystemPropertyInfo m_sysPropInfo;
+        ECSqlSystemPropertyInfo const* m_sysPropInfo; //will never be null, but cannot declare as ref as it is set after construction
         BentleyStatus ResolveColumnRef(ECSqlParseContext&);
         BentleyStatus ResolveColumnRef(Utf8StringR error, RangeClassRefExp const&, PropertyPath& propPath);
 
@@ -71,17 +71,8 @@ struct PropertyNameExp : ValueExp
         PropertyRef const* GetPropertyRef() const { return m_propertyRef.get(); }
         PropertyRef* GetPropertyRefP() { return m_propertyRef.get(); }
         bool IsPropertyRef() const { return m_propertyRef != nullptr; }
-        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { return m_sysPropInfo; }
-        bool IsLhsAssignmentOperandExpression() const
-            {
-            if (FindParent(Exp::Type::Insert))
-                return GetParent()->GetType() == Exp::Type::PropertyNameList;
-
-            if (FindParent(Exp::Type::Update))
-                return GetParent()->GetType() == Exp::Type::Assignment;
-
-            return false;
-            }
+        ECSqlSystemPropertyInfo const& GetSystemPropertyInfo() const { BeAssert(m_sysPropInfo != nullptr); return *m_sysPropInfo; }
+        bool IsLhsAssignmentOperandExpression() const;
     };
 
 

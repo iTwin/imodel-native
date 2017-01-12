@@ -30,7 +30,7 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
     ClassNameExp const* classNameExp = exp.GetClassNameExp();
 
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = exp.GetAssignmentListExp()->GetSpecialTokenExpIndexMap();
-    if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::Class::ECInstanceId))
+    if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()))
         {
         ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "ECInstanceId is not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify auto-generated ECInstanceIds.");
         return ECSqlStatus::InvalidECSql;
@@ -53,10 +53,10 @@ ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStateme
 
     if (classMap.IsRelationshipClassMap())
         {
-        if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::Relationship::SourceECClassId)||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId) ||
-            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::Relationship::TargetECClassId))
+        if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) ||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::SourceECClassId())||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
+            specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
             ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error, "SourceECInstanceId, TargetECInstanceId, SourceECClassId, or TargetECClassId are not allowed in the SET clause of ECSQL UPDATE statement. ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.");
             return ECSqlStatus::InvalidECSql;

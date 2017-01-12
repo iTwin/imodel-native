@@ -35,7 +35,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::GetInstanceId(ECInstanceId& id) cons
     for (int i = 0; i < m_ecSqlStatement.GetColumnCount(); i++)
         {
         ECPropertyCP prop = m_ecSqlStatement.GetColumnInfo(i).GetProperty();
-        if (systemSchemaHelper.Equals(*prop, ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECInstanceId)))
+        if (systemSchemaHelper.GetSystemPropertyInfo(*prop) == ECSqlSystemPropertyInfo::ECInstanceId())
             {
             id = m_ecSqlStatement.GetValueId<ECInstanceId>(i);
             return SUCCESS;
@@ -451,10 +451,7 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
         {
         ECSqlColumnInfo const& columnInfo = m_ecSqlStatement.GetColumnInfo(i);
         ECPropertyCP prop = columnInfo.GetProperty();
-        ECSqlSystemPropertyInfo sysPropInfo;
-        if (SUCCESS != systemSchemaHelper.TryGetSystemPropertyInfo(sysPropInfo, *prop))
-            return ERROR;
-
+        ECSqlSystemPropertyInfo const& sysPropInfo = systemSchemaHelper.GetSystemPropertyInfo(*prop);
         if (!sysPropInfo.IsSystemProperty())
             {
             if (prop->GetIsNavigation())
@@ -488,15 +485,19 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
                         case ECSqlSystemPropertyInfo::Class::ECInstanceId:
                         {
                         m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetInstanceId);
-                        break;
+                        continue;
                         }
 
                         case ECSqlSystemPropertyInfo::Class::ECClassId:
                         {
                         m_columnHandlers.push_back(nullptr);
                         m_ecClassIdColumnIndex = i;
-                        break;
+                        continue;
                         }
+
+                        default:
+                            BeAssert(false);
+                            return ERROR;
                     }
                 }
 
@@ -507,25 +508,30 @@ BentleyStatus ECInstanceECSqlSelectAdapter::CreateColumnHandlers()
                         case ECSqlSystemPropertyInfo::Relationship::SourceECInstanceId:
                         {
                         m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipSource);
-                        break;
+                        continue;
                         }
                         case ECSqlSystemPropertyInfo::Relationship::SourceECClassId:
                         {
                         m_columnHandlers.push_back(nullptr);
                         m_sourceECClassIdColumnIndex = i;
-                        break;
+                        continue;
                         }
                         case ECSqlSystemPropertyInfo::Relationship::TargetECInstanceId:
                         {
                         m_columnHandlers.push_back(&ECInstanceECSqlSelectAdapter::SetRelationshipTarget);
-                        break;
+                        continue;
                         }
                         case ECSqlSystemPropertyInfo::Relationship::TargetECClassId:
                         {
                         m_columnHandlers.push_back(nullptr);
                         m_targetECClassIdColumnIndex = i;
-                        break;
+                        continue;
                         }
+
+                        default:
+                            BeAssert(false);
+                            return ERROR;
+
 
                     }
                 case ECSqlSystemPropertyInfo::Type::Navigation:

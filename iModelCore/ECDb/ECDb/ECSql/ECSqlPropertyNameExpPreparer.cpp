@@ -104,7 +104,7 @@ bool ECSqlPropertyNameExpPreparer::NeedsPreparation(ECSqlPrepareContext& ctx, EC
         //In INSERT statements, virtual columns are always ignored
         if (currentScopeECSqlType == ECSqlType::Insert)
             {
-            if (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().Equals(propertyMap.GetProperty(), ECSqlSystemPropertyInfo(ECSqlSystemPropertyInfo::Class::ECClassId)))
+            if (ctx.GetECDb().Schemas().GetReader().GetSystemSchemaHelper().GetSystemPropertyInfo(propertyMap.GetProperty()) == ECSqlSystemPropertyInfo::ECClassId())
                 return true;
 
             return allColumnsAreOverflow;
