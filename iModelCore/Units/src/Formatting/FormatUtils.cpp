@@ -138,6 +138,23 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
          }
      }
 
+  const int Utils::FractionalPrecisionDenominator(FractionalPrecision prec)
+     {
+     switch (prec)
+         {
+         case FractionalPrecision::Half: return 2;
+         case FractionalPrecision::Quarter: return 4;
+         case FractionalPrecision::Eighth: return 8;
+         case FractionalPrecision::Sixteenth: 16;
+         case FractionalPrecision::Over_32: 32;
+         case FractionalPrecision::Over_64: 64;
+         case FractionalPrecision::Over_128: 128;
+         case FractionalPrecision::Over_256: 256;
+         default:
+         case FractionalPrecision::Whole: return 1;
+         }
+     }
+
  //===================================================
  //
  // FormatStopWatchMethods
@@ -185,7 +202,9 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
 
  FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
      {
-
+      m_integral = dval;
+      m_numerator = 0;
+      m_denominator = Utils::FractionalPrecisionDenominator(fprec);
      }
 
 END_BENTLEY_FORMATTING_NAMESPACE
