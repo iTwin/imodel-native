@@ -2007,7 +2007,7 @@ BentleyStatus Loader::_LoadTile()
                     graphic = system._CreateGraphic(Graphic::CreateParams());
 
                 auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
 
                 if (haveMesh)
                     {
@@ -2051,7 +2051,7 @@ BentleyStatus Loader::_LoadTile()
                 for (auto const& instance : part->Instances())
                     {
                     auto instanceGraphic = system._CreateGraphic(Graphic::CreateParams(nullptr, instance.GetTransform()));
-                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                     if (haveMesh)
                         instanceGraphic->AddTriMesh(meshArgs);
                     else
@@ -2089,7 +2089,7 @@ BentleyStatus Loader::_LoadTile()
                 for (auto const& instance : part->Instances())
                     {
                     auto instanceGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+                    instanceGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
 
                     // Transform the geometry in-place for each instance. This way we avoid the surprising overhead of qv_pushTransClip() while
                     // still keeping the scene's graphic list small by defining subgraphics
@@ -2132,7 +2132,7 @@ BentleyStatus Loader::_LoadTile()
             graphic = system._CreateGraphic(Graphic::CreateParams());
 
         auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
 
         if (haveMesh)
             {
@@ -3219,7 +3219,7 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
             continue;
 
         auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
-        subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), &mesh->GetDisplayParams().GetGeometryParams());
+        subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
         if (havePolyline)
             {
             for (auto const& polyline : mesh->Polylines())

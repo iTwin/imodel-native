@@ -123,24 +123,28 @@ struct DisplayParams : RefCountedBase
 private:
     Render::GraphicParams           m_graphicParams;
     Render::GeometryParams          m_geometryParams;
-    mutable TextureImagePtr m_textureImage;
-    bool                    m_ignoreLighting;
+    mutable TextureImagePtr         m_textureImage;
+    bool                            m_ignoreLighting;
+    bool                            m_geometryParamsValid;
 
-    DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_geometryParams(geometryParams), m_ignoreLighting(ignoreLighting) { }
+    DisplayParams(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting) : m_graphicParams(graphicParams), m_ignoreLighting(ignoreLighting), m_geometryParamsValid(nullptr != geometryParams) { if (nullptr != geometryParams) m_geometryParams = *geometryParams; }
 public:
-    static DisplayParamsPtr Create() { return Create(Render::GraphicParams(), Render::GeometryParams()); }
+    static DisplayParamsPtr Create() { return Create(Render::GraphicParams(), nullptr); }
     static DisplayParamsPtr Create(ColorDef fillColor, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
         { Render::GraphicParams gfParams; gfParams.SetFillColor(fillColor); return Create(gfParams, geometryParams, ignoreLighting); }
     static DisplayParamsPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCR geometryParams, bool ignoreLighting=false)
+        { return Create(graphicParams, &geometryParams, ignoreLighting); }
+    static DisplayParamsPtr Create(Render::GraphicParamsCR graphicParams, Render::GeometryParamsCP geometryParams, bool ignoreLighting=false)
         { return new DisplayParams(graphicParams, geometryParams, ignoreLighting); }
 
     Render::GraphicParamsCR GetGraphicParams() const { return m_graphicParams; }
-    Render::GeometryParamsCR GetGeometryParams() const { return m_geometryParams; }
+    Render::GeometryParamsCP GetGeometryParams() const { return HasGeometryParams() ? &m_geometryParams : nullptr; }
     bool GetIgnoreLighting() const { return m_ignoreLighting; }
+    bool HasGeometryParams() const { return m_geometryParamsValid; }
 
-    DgnCategoryId GetCategoryId() const { return GetGeometryParams().GetCategoryId(); }
-    DgnSubCategoryId GetSubCategoryId() const { return GetGeometryParams().GetSubCategoryId(); }
-    DgnMaterialId GetMaterialId() const { return GetGeometryParams().GetMaterialId(); }
+    DgnCategoryId GetCategoryId() const { return HasGeometryParams() ? m_geometryParams.GetCategoryId() : DgnCategoryId(); }
+    DgnSubCategoryId GetSubCategoryId() const { return HasGeometryParams() ? GetGeometryParams()->GetSubCategoryId() : DgnSubCategoryId(); }
+    DgnMaterialId GetMaterialId() const { return HasGeometryParams() ? GetGeometryParams()->GetMaterialId() : DgnMaterialId(); }
     ColorDef GetFillColorDef() const { return GetGraphicParams().GetFillColor(); }
     uint32_t GetFillColor() const { return GetFillColorDef().GetValue(); }
     uint32_t GetRasterWidth() const { return GetGraphicParams().GetWidth(); }
