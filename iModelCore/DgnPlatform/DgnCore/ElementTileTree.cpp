@@ -2145,23 +2145,29 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsNull())
             graphic = system._CreateGraphic(Graphic::CreateParams());
 
-        auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-
         if (haveMesh)
             {
             if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
+                {
+                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                 subGraphic->AddTriMesh(meshArgs);
+                subGraphic->Close();
+                graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                }
             }
         else
             {
             BeAssert(havePolyline);
             for (auto const& polyline : mesh->Polylines())
+                {
+                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                 polylineArgs.InitAndApply(*subGraphic, mesh->Points(), polyline.GetIndices());
+                subGraphic->Close();
+                graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                }
             }
-
-        subGraphic->Close();
-        graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
 #if defined(DRAW_EMPTY_RANGE_BOXES)
@@ -3241,20 +3247,25 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
         if (!haveMesh && !havePolyline)
             continue;
 
-        auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
-        subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
         if (havePolyline)
             {
             for (auto const& polyline : mesh->Polylines())
+                {
+                auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
+                subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                 polylineArgs.InitAndApply(*subGf, mesh->Points(), polyline.GetIndices());
+                subGf->Close();
+                gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
+                }
             }
         else if (meshArgs.Init(*mesh, system, GetDgnDb()))
             {
+            auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
+            subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
             subGf->AddTriMesh(meshArgs);
+            subGf->Close();
+            gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
             }
-
-        subGf->Close();
-        gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
     }
 
