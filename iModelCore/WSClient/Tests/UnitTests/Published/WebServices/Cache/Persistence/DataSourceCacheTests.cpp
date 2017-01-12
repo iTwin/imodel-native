@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/DataSourceCacheTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -3010,7 +3010,7 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsVi
     BeTest::SetFailOnAssert(true);
     }
 
-TEST_F(DataSourceCacheTests, DISABLED_CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
     {
     // Arrange
     auto cache = GetTestCache();

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSChangesetTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -950,7 +950,7 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHand
     EXPECT_EQ(1, count);
     }
 
-TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString)
+TEST_F(WSChangesetTests, CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString)
     {
     auto testProperties = std::make_shared<Json::Value>(ToJson(R"(
         {
