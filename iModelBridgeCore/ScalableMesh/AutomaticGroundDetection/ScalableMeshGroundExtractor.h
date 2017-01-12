@@ -40,6 +40,8 @@ struct ScalableMeshGroundExtractor : public RefCounted<IScalableMeshGroundExtrac
         bvector<DPoint3d> m_extractionArea;       
         WString           m_smTerrainPath;
         IScalableMeshGroundPreviewerPtr  m_groundPreviewer;
+        double            m_smGcsRatioToMeter; 
+        
         
         void AddXYZFilePointsAsSeedPoints(TerrainModel::GroundDetection::GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder);
 
