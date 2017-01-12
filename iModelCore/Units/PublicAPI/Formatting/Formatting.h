@@ -228,8 +228,6 @@ enum class StdFormatCode
     DefaultInt = 600
     };
 
-
-
 // A collection of improtant "global" constants that are used across the whole formatting domain
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz  11/2016                                                
@@ -329,7 +327,6 @@ public:
     UNITS_EXPORT static bool GetTrailingBits(unsigned char c, CharP outBits);
     UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
 };
-
 
 struct Utils
     {
@@ -448,7 +445,6 @@ public:
     UNITS_EXPORT static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
     UNITS_EXPORT bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
     UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
-    UNITS_EXPORT int IntToChar (int n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
     UNITS_EXPORT int FormatDouble(double dval, CharP buf, int bufLen, int prec = -1, double round = -1.0);
@@ -534,32 +530,9 @@ public:
 
     UNITS_EXPORT static NumericFormatP DefaultDecimal();
 
-    UNITS_EXPORT static size_t GetFormatSetSize()
-        {
-        return Set().m_formatSet.size();
-        }
+    UNITS_EXPORT static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
 
-    UNITS_EXPORT static NumericFormatP FindFormat(Utf8CP name)
-        {
-        NumericFormatP fmtP = *Set().m_formatSet.begin();
- 
-
-        for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr )
-            {
-            fmtP = *itr;
-            if (fmtP->GetName() == name || fmtP->GetAlias() == name)
-                return fmtP;
-            }
-        return nullptr;
-        }
-
-    //static NumericFormatP FindFormatByIndex(size_t indx)
-    //    {
-    //    if (indx >= Set().GetFormatSetSize())
-    //        return nullptr;
-    //    NumericFormatP fmt = Set().m_formatSet.at(indx);
-    //    return fmt;
-    //    }
+    UNITS_EXPORT static NumericFormatP FindFormat(Utf8CP name);
     };
 
 // Format parameter traits
@@ -577,23 +550,11 @@ private:
 
 public:
 
-    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type)
-        {
-        m_paramName = name;
-        m_category = cat;
-        m_paramCode = code;
-        m_paramType = type;
-        m_intValue = 0;
-        }
+    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type) :
+        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(type), m_intValue(0) {}
 
-    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag)
-        {
-        m_paramName = name;
-        m_category = cat;
-        m_paramCode = code;
-        m_paramType = ParameterDataType::BitFlag;
-        m_intValue = bitFlag;
-        }
+    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag):
+        m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(ParameterDataType::BitFlag), m_intValue(bitFlag) {}
 
     UNITS_EXPORT Utf8StringCR GetName() { return m_paramName; }
     UNITS_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
@@ -701,16 +662,7 @@ private:
     bool m_isASCII;
 
 public:
-    UNITS_EXPORT FormattingToken(FormattingScannerCursorP cursor)
-        {
-        m_cursor = cursor;
-        m_cursorStart = m_cursor->GetCurrentPosition();
-        m_word.clear();
-        m_delim.clear();
-        m_tokenLength = 0;
-        m_tokenBytes = 0;
-        m_isASCII = false;
-        }
+    UNITS_EXPORT FormattingToken(FormattingScannerCursorP cursor);
 
     UNITS_EXPORT WString GetNextToken();
     };
@@ -728,7 +680,5 @@ public:
     UNITS_EXPORT FormatStopWatch();
     UNITS_EXPORT Utf8String LastIntervalMetrics(size_t amount);
     UNITS_EXPORT Utf8String LastInterval(double factor);
-    
-
     };
 END_BENTLEY_FORMATTING_NAMESPACE

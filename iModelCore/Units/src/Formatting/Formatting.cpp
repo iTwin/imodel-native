@@ -1098,6 +1098,18 @@ NumericFormatP StdFormatSet::DefaultDecimal()
     return nullptr;
     }
 
+NumericFormatP StdFormatSet::FindFormat(Utf8CP name)
+    {
+    NumericFormatP fmtP = *Set().m_formatSet.begin();
+
+    for (auto itr = Set().m_formatSet.begin(); itr != Set().m_formatSet.end(); ++itr)
+        {
+        fmtP = *itr;
+        if (fmtP->GetName() == name || fmtP->GetAlias() == name)
+            return fmtP;
+        }
+    return nullptr;
+    }
 //===================================================
 //
 // NumericTriadMethods
@@ -1386,52 +1398,17 @@ size_t FormattingScannerCursor::SkipBlanks()
     return m_lastScannedCount;
     }
 
-//===================================================
-//
-// FormatStopWatchMethods
-//
-//===================================================
 
-FormatStopWatch::FormatStopWatch()
-{
-    m_start = std::chrono::steady_clock::now();
-    m_lastInterval = 0.0;
-    m_totalElapsed = 0.0;
-    m_lastAmount = 0;
-    m_totalAmount = 0;
-}
 
-Utf8String FormatStopWatch::LastIntervalMetrics(size_t amount)
-{
-    //m_lastInterval = GetElapsedSeconds();
-    std::chrono::steady_clock::time_point moment = std::chrono::steady_clock::now();
-    m_lastInterval = (double)std::chrono::duration_cast<std::chrono::microseconds>(moment - m_start).count();
-    m_totalElapsed += m_lastInterval;
-    m_lastAmount = amount;
-    m_totalAmount += amount;
-    NumericFormat nfmt = NumericFormat("LIM", 6);
-    nfmt.SetUse1000Separator(true);
-    Utf8String amTxt = nfmt.FormatInteger((int)amount);
-    Utf8String duraTxt = (amount > 0) ? nfmt.FormatDouble(m_lastInterval / (double)amount) : "n/a";
-    Utf8String perfTxt = (m_lastInterval > 0.0) ? nfmt.FormatRoundedDouble((double)amount * 1.0e6/ m_lastInterval, 0.5) : "n/a";
-
-    char buf[256];
-    sprintf(buf, "Completed %s op's average duration %s mksec performance: %s op/sec", amTxt.c_str(), duraTxt.c_str(), perfTxt.c_str());
-    return buf;
-}
-
-Utf8String FormatStopWatch::LastInterval(double factor)
+FormattingToken::FormattingToken(FormattingScannerCursorP cursor)
     {
-    std::chrono::steady_clock::time_point moment = std::chrono::steady_clock::now();
-    //std::chrono::duration<double> diff = moment - m_start;
-    m_lastInterval = (double)std::chrono::duration_cast<std::chrono::microseconds>(moment - m_start).count();
-    char buf[256];
-    //m_lastInterval = GetElapsedSeconds();
-    sprintf(buf, "%.4f UOR", m_lastInterval * factor);
-    return Utf8String(buf);
+    m_cursor = cursor;
+    m_cursorStart = m_cursor->GetCurrentPosition();
+    m_word.clear();
+    m_delim.clear();
+    m_tokenLength = 0;
+    m_tokenBytes = 0;
+    m_isASCII = false;
     }
-
-
-
 
 END_BENTLEY_FORMATTING_NAMESPACE
