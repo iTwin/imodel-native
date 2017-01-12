@@ -174,7 +174,7 @@ namespace UsageDataExtractor
                     while ( (line = file.ReadLine()) != null )
                         {
 
-                        if ( line.IndexOf("@bentley.com", StringComparison.OrdinalIgnoreCase) == -1 && line.IndexOf("@mailinator.com", StringComparison.OrdinalIgnoreCase) == -1 )
+                        if ( line.IndexOf("bentley.com", StringComparison.OrdinalIgnoreCase) == -1 && line.IndexOf("@mailinator.com", StringComparison.OrdinalIgnoreCase) == -1 )
                             {
                             if ( (DateTime.Now - lastTokenTime) > limitSpan )
                                 {

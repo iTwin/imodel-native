@@ -134,6 +134,8 @@
     <Compile Include="Source\IndexNavigationModule.cs" />
     <Compile Include="Source\models.cs" />
     <Compile Include="Source\QueryProviders\IECQueryProvider.cs" />
+    <Compile Include="Source\QueryProviders\SubAPIQueryProvider.cs" />
+    <Compile Include="Source\QueryProviders\UsgsSubAPIQueryProvider.cs" />
     <Compile Include="Source\SQLQueryBuilder\GenericSQLDeleteStatementBuilder.cs" />
     <Compile Include="Source\SQLQueryBuilder\IParamNameValueMap.cs" />
     <Compile Include="Source\SQLQueryBuilder\ISQLDeleteStatementBuilder.cs" />
