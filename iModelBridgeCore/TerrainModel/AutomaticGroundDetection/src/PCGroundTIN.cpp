@@ -1235,6 +1235,12 @@ void PCGroundTIN::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
     if (s_outputPreview && 
         (((clock() - m_lastOutputPreviewTime) > outputDelay) || noDelay))
         {
+        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+        assert(ptsAccumPtr.IsValid());
+
+        Transform transform;
+        ptsAccumPtr->GetPreviewTransform(transform);
+
         BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr bcDtmPtr(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM());
 
         size_t newPointToAddSize;
@@ -1267,18 +1273,29 @@ void PCGroundTIN::OutputDtmPreview(bool noDelay, BeMutex* newPointToAddMutex)
             if (newPointToAddMutex != nullptr)
                 {
                 newPointToAddMutex->unlock();
-                }
+                }            
 
+            if (!transform.IsIdentity())
+                {
+                DTMStatusInt status = bcDtmPtr->Transform(transform);
+                assert(status == SUCCESS);
+                }
+            
             DTMStatusInt status = bcDtmPtr->Triangulate();
             assert(status == SUCCESS);
             }
-
+        else
+        if (!transform.IsIdentity())
+            {
+            bcDtmPtr = bcDtmPtr->Clone();
+            DTMStatusInt status = bcDtmPtr->Transform(transform);
+            assert(status == SUCCESS);
+            }
+        
         DTMMeshEnumeratorPtr en = DTMMeshEnumerator::Create(*bcDtmPtr);
     
         en->SetExcludeAllRegions();
-        en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);
-
-        IGroundPointsAccumulatorPtr ptsAccumPtr(GetParamR().GetGroundPointsAccumulator());
+        en->SetMaxTriangles(((BcDtmProvider*)m_pBcDtm.get())->GetBcDTM()->GetTrianglesCount() * 2);        
 
         for (PolyfaceQueryP pf : *en)
             {

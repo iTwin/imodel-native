@@ -24,6 +24,14 @@ void IGroundPointsAccumulator::AddPoints(const bvector<DPoint3d>& points)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu.St-Pierre                01/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void IGroundPointsAccumulator::GetPreviewTransform(Transform& transform) const
+    {
+    return _GetPreviewTransform(transform);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Mathieu.St-Pierre                12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void IGroundPointsAccumulator::OutputPreview(PolyfaceQueryCR currentGround) const
