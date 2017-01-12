@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ECDb/ChangeSummary.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,11 +14,17 @@
 ECDB_TYPEDEFS(ChangeSummary);
 ECDB_TYPEDEFS(InstancesTable);
 ECDB_TYPEDEFS(ValuesTable);
+ECDB_TYPEDEFS(ChangeIterator);
+ECDB_TYPEDEFS(ChangeExtractor);
+ECDB_TYPEDEFS(SqlChange);
+ECDB_TYPEDEFS(TableMap);
+ECDB_TYPEDEFS(TableClassMap);
+ECDB_TYPEDEFS(ColumnMap);
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-struct ChangeExtractor;
-typedef ChangeExtractor* ChangeExtractorP;
+typedef RefCountedPtr<TableMap> TableMapPtr;
+typedef bmap<Utf8String, ColumnMapP> ColumnMapByAccessString;
 
 //=======================================================================================
 //! @private internal use only
@@ -40,8 +46,203 @@ public:
 };
 
 //=======================================================================================
-//! A set of changes to database rows interpreted as EC instances. 
-//! @see ChangeSet
+//! Utility to iterate over change records and interpret it as ECInstances. 
+//!
+//! @remarks The utility provides a forward only iterator over the rows of a change set/stream, 
+//! and has methods to interpret the raw SQLite changes as ECInstances, taking into account
+//! the mapping between the ECSchema and the persisted SQLite Db. 
+//!
+//! The changes to ECInstances and ECRelationshipInstances may be spread over multiple 
+//! tables, and the may be streamed in no particular order. This utility does not attempt 
+//! to consolidate the EC information, and doesn't provide information on the relationships. 
+//! It must be used only for cases of mining specific EC information from the ChangeSet-s 
+//! without incurring the performance penalty of creating change summaries. 
+//!
+//! Use ChangeSummary instead to get a consolidated view of the changed ECInstances and 
+//! ECRelationshipInstance-s - extracting and consolidating this information involves two 
+//! passes with this iterator.
+//!
+//! @see ChangeSet, ChangeSummary
+//! @ingroup ECDbGroup
+//! @bsiclass                                               Ramanujam.Raman      12/2016
+//=======================================================================================
+struct ChangeIterator
+{
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(RowEntry);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnIterator);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnEntry);
+    typedef bmap<Utf8String, TableMapPtr> TableMapByName;
+    typedef TableMapByName* TableMapByNameP;
+
+    //! An entry in the ChangeIterator.
+    struct RowEntry
+    {
+    friend ChangeIterator;
+
+    private:
+        ECDbCR m_ecdb;
+        ChangeIteratorCR m_iterator;
+        Changes::Change m_change;
+
+        SqlChangeCP m_sqlChange;
+        TableMapCP m_tableMap;
+        ECInstanceId m_primaryInstanceId;
+        ECN::ECClassCP m_primaryClass;
+        static const Utf8String s_emptyString;
+
+        RowEntry(ChangeIteratorCR iterator, Changes::Change const& change);
+
+        void Initialize();
+        void InitPrimaryInstance();
+        void InitSqlChange();
+        void FreeSqlChange();
+        void Reset();
+
+    public:
+        ECDB_EXPORT ~RowEntry();
+
+        //! Returns true if the entry points to a row that's mapped to a ECClass
+        ECDB_EXPORT bool IsMapped() const;
+
+        //! Get the table name of the current change
+        ECDB_EXPORT Utf8StringCR GetTableName() const;
+
+        //! Return true if the current change is in a joined table (and not primary table)
+        ECDB_EXPORT bool IsJoinedTable() const;
+
+        //! Get the DbOpcode of the current change
+        ECDB_EXPORT DbOpcode GetDbOpcode() const;
+
+        //! Get the primary class of the current change
+        ECN::ECClassCP GetPrimaryClass() const { return m_primaryClass; }
+
+        //! Get the (primary) instance id of the current change
+        ECInstanceId GetPrimaryInstanceId() const { return m_primaryInstanceId; }
+
+        //! Make an iterator over the changed columns of the specified class
+        ECDB_EXPORT ColumnIterator MakeColumnIterator(ECN::ECClassCR ecClass) const;
+
+        //! Make an iterator over the changed columns of the primary class mapped to the table
+        ECDB_EXPORT ColumnIterator MakePrimaryColumnIterator() const;
+
+        //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
+        ECDB_EXPORT int GetIndirect() const;
+
+        ECDB_EXPORT RowEntry& operator++();
+
+        RowEntry const& operator* () const { return *this; }
+        bool operator!=(RowEntry const& rhs) const { return m_change != rhs.m_change; }
+        bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
+
+        ECDbCR GetDb() const { return m_ecdb; } //!< @private
+        SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
+        TableMapCP GetTableMap() const { return m_tableMap; } //!< @private
+        ChangeIteratorCR GetChangeIterator() const {return m_iterator;}  //!< @private
+        ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
+    };
+
+    //! An entry in the ColumnInterator
+    struct ColumnEntry
+    {
+    friend ColumnIterator;
+
+    private:
+        ECDbCR m_ecdb;
+        SqlChangeCP m_sqlChange;
+        ColumnIteratorCR m_columnIterator;
+        ColumnMapByAccessString::const_iterator m_columnMapIterator;
+        bool m_isValid = false;
+        static const Utf8String s_emptyString;
+
+        ColumnEntry(ColumnIteratorCR columnIterator);
+        ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString::const_iterator columnMapIterator);
+
+        DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap) const;
+        
+    public:
+        //! Get the access string for the EC property corresponding to this column
+        ECDB_EXPORT Utf8StringCR GetPropertyAccessString() const;
+            
+        //! Get the old or new value from the change
+        ECDB_EXPORT DbDupValue GetValue(Changes::Change::Stage stage) const;
+
+        //! Query the current value from the Db
+        ECDB_EXPORT DbDupValue QueryValueFromDb() const;
+
+        //! Returns true if the column stores the primary key
+        ECDB_EXPORT bool IsPrimaryKeyColumn() const;
+
+        ECDB_EXPORT ColumnEntry& operator++();
+
+        ColumnEntry const& operator*() const { return *this; }
+        ECDB_EXPORT bool operator!=(ColumnEntry const& rhs) const;
+        ECDB_EXPORT bool operator==(ColumnEntry const& rhs) const;
+    };
+
+    //! Iterator to go over changed columns
+    struct ColumnIterator
+    {
+    friend RowEntry;
+
+    private:
+        RowEntryCR m_rowEntry;
+        ECDbCR m_ecdb;
+        SqlChangeCP m_sqlChange;
+        TableClassMapCP m_tableClassMap;
+
+        ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCP ecClass);
+
+    public:
+        //! Get the column for the specified property access string
+        ECDB_EXPORT ColumnEntry GetColumn(Utf8CP propertyAccessString) const;
+
+        typedef ColumnEntry const_iterator;
+        typedef ColumnEntry iterator;
+        ECDB_EXPORT ColumnEntry begin() const;
+        ECDB_EXPORT ColumnEntry end() const;
+
+        ECDbCR GetDb() const { return m_ecdb; } //!< @private
+        RowEntryCR GetRowEntry() const { return m_rowEntry; } //!< @private
+        SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
+    };
+
+    private:
+        ECDbCR m_ecdb;
+        Changes m_changes;
+        mutable TableMapByNameP m_tableMapByName = nullptr;
+
+        void InitTableMap();
+        void AddTableToMap(Utf8StringCR tableName) const;
+        void FreeTableMap();
+
+    public:
+        //! Construct a ChangeSummary from a BeSQLite ChangeSet
+        ECDB_EXPORT explicit ChangeIterator(ECDbCR ecdb, IChangeSet& changeSet);
+
+        //! Destructor
+        ECDB_EXPORT ~ChangeIterator();
+
+        typedef RowEntry const_iterator;
+        typedef RowEntry iterator;
+        ECDB_EXPORT RowEntry begin() const;
+        ECDB_EXPORT RowEntry end() const;
+
+        ECDbCR GetDb() const { return m_ecdb; } //!< @private
+        TableMapCP GetTableMap(Utf8StringCR tableName) const;  //!< @private
+};
+
+//=======================================================================================
+//! Utility to interpret a set of changes to the database as EC instances. 
+//! 
+//! @remarks The utility iterates over the raw Sqlite changes to consolidate and extract 
+//! information on the contained ECInstances and ECRelationshipInstances. 
+//! 
+//! Internally two passes are made over the changes with the @ref ChangeIterator. The
+//! second pass allows consolidation of instances and relationship instances that may be 
+//! spread across multiple tables. The results are stored in temporary tables, and this 
+//! allows iteration and queries of the changes as EC instances. 
+//! 
+//! @see ChangeSet, ChangeIterator
 //! @ingroup ECDbGroup
 //! @bsiclass                                                 Ramanujam.Raman      07/2015
 //=======================================================================================
@@ -49,7 +250,7 @@ struct ChangeSummary : NonCopyableClass
 {
     //! DbOpcodes that can be bitwise combined to pass as arguments to query methods
     enum class QueryDbOpcode
-        {
+    {
         None            = 0,
         Insert          = 1,
         Delete          = 1 << 1,
@@ -57,19 +258,19 @@ struct ChangeSummary : NonCopyableClass
         All             = Insert | Delete | Update,
         InsertUpdate    = Insert | Update,
         InsertDelete    = Insert | Delete,
-        UpdateDelete    = Update | Delete,
-        };
+        UpdateDelete    = Update | Delete
+    };
 
     //! Options to control extraction of the change summary
     struct Options
-        {
-        private:
-            bool m_includeRelationshipInstances;
-        public:
-            Options() : m_includeRelationshipInstances(true) {}
-            void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
-            bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
-        };
+    {
+    private:
+        bool m_includeRelationshipInstances;
+    public:
+        Options() : m_includeRelationshipInstances(true) {}
+        void SetIncludeRelationshipInstances(bool value) { m_includeRelationshipInstances = value; }
+        bool GetIncludeRelationshipInstances() const { return m_includeRelationshipInstances; }
+    };
 
     struct Instance;
     struct InstanceIterator;
@@ -132,7 +333,7 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT DbDupValue GetNewValue(Utf8CP accessString) const;
                 
         //! Make an iterator over the changed values in a changed instance.
-        ValueIterator MakeValueIterator(ChangeSummaryCR changeSummary) const { return ChangeSummary::ValueIterator(changeSummary, m_classId, m_instanceId); }
+        ValueIterator MakeValueIterator() const { return ChangeSummary::ValueIterator(*m_changeSummary, m_classId, m_instanceId); }
     };
 
     typedef Instance const& InstanceCR;
@@ -173,37 +374,37 @@ struct ChangeSummary : NonCopyableClass
 
         //! An entry in the table.
         struct Entry : DbTableIterator::Entry, std::iterator<std::input_iterator_tag, Entry const>
-            {
-            private:
-                friend struct InstanceIterator;
-                ChangeSummaryCR m_changeSummary;
-                Entry(ChangeSummaryCR changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
+        {
+        private:
+            friend struct InstanceIterator;
+            ChangeSummaryCR m_changeSummary;
+            Entry(ChangeSummaryCR changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
 
-            public:
-                //! Get the class id of the current change
-                ECN::ECClassId GetClassId() const {return (ECN::ECClassId) m_sql->GetValueUInt64(0);}
+        public:
+            //! Get the class id of the current change
+            ECN::ECClassId GetClassId() const {return (ECN::ECClassId) m_sql->GetValueUInt64(0);}
 
-                //! Get the instance id of the current change
-                ECInstanceId GetInstanceId() const { return m_sql->GetValueId<ECInstanceId>(1); }
+            //! Get the instance id of the current change
+            ECInstanceId GetInstanceId() const { return m_sql->GetValueId<ECInstanceId>(1); }
 
-                //! Get the DbOpcode of the current change
-                DbOpcode GetDbOpcode() const { return (DbOpcode) m_sql->GetValueInt(2); }
+            //! Get the DbOpcode of the current change
+            DbOpcode GetDbOpcode() const { return (DbOpcode) m_sql->GetValueInt(2); }
 
-                //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
-                int GetIndirect() const { return m_sql->GetValueInt(3); }
+            //! Get the flag indicating if the current change was "indirectly" caused by a database trigger or other means. 
+            int GetIndirect() const { return m_sql->GetValueInt(3); }
                 
-                //! Get the entire instance representing the current change.
-                ECDB_EXPORT Instance GetInstance() const;
+            //! Get the entire instance representing the current change.
+            ECDB_EXPORT Instance GetInstance() const;
 
-                Entry const& operator*() const { return *this; }
+            Entry const& operator*() const { return *this; }
 
-                ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; } //!< @private
-            };
+            ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; } //!< @private
+        };
 
         typedef Entry const_iterator;
         typedef Entry iterator;
         ECDB_EXPORT const_iterator begin() const;
-        const_iterator end() const { return Entry(m_changeSummary, m_stmt.get(), false); }
+        ECDB_EXPORT const_iterator end() const;
         ECDB_EXPORT int QueryCount() const;
     }; // InstanceIterator
 
@@ -247,102 +448,6 @@ struct ChangeSummary : NonCopyableClass
         ECDB_EXPORT int QueryCount() const;
     }; // ValueIterator
 
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnMap);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(TableMap);
-    typedef RefCountedPtr<TableMap> TableMapPtr;
-
-    //! @private
-    //! Information on mappings to a column
-    struct ColumnMap
-    {
-    private:
-        Utf8String m_columnName;
-        int m_columnIndex;
-        bool m_isSystemColumn;
-    public:
-        //! Constructor
-        ColumnMap() {}
-
-        //! Constructor
-        ColumnMap(Utf8StringCR columnName, int columnIndex, bool isSystemColumn) : m_columnName(columnName), m_columnIndex(columnIndex), m_isSystemColumn(isSystemColumn) {}
-
-        //! Gets the name of the column
-        Utf8StringCR GetName() const { return m_columnName; }
-
-        //! Gets the index of the column in the table
-        int GetIndex() const { return m_columnIndex; }
-
-        //! Returns true if the column is one of the system columns storing ECClassId, ECInstanceId, etc. 
-        bool IsSystemColumn() const { return m_isSystemColumn; }
-    };
-
-    //! @private
-    //! Information on mappings to a table
-    struct TableMap : RefCounted<NonCopyableClass>
-    {
-    friend struct ChangeSummary;
-    private:
-        struct TableMapDetail* m_impl;
-
-        TableMap(ECDbCR ecdb, Utf8StringCR tableName);
-        TableMap(ECDbCR ecdb, ECN::ECClassCR ecClass);
-
-    public:
-        //! @private
-        //! Create the table map for a table with the specified name
-        static TableMapPtr Create(ECDbCR ecdb, Utf8StringCR tableName) {return new TableMap(ecdb, tableName);}
-
-        //! @private
-        //! Create the table map for the primary table of the specified class
-        static TableMapPtr Create(ECDbCR ecdb, ECN::ECClassCR ecClass) { return new TableMap(ecdb, ecClass); }
-
-        //! Destructor
-        ECDB_EXPORT ~TableMap();
-
-        //! Returns true if the table is mapped to a ECClass. false otherwise. 
-        ECDB_EXPORT bool IsMapped() const;
-
-        //! Gets the name of the table
-        ECDB_EXPORT Utf8StringCR GetTableName() const;
-        
-        //! Returns true if the table contains a column for the specified property (access string)
-        ECDB_EXPORT bool ContainsColumn(Utf8CP propertyAccessString) const;
-
-        //! Gets column map for the specified property (access string)
-        ECDB_EXPORT ColumnMap const& GetColumn(Utf8CP propertyAccessString) const;
-        
-        //! Returns true if the table contains a column storing ECClassId (if the table stores multiple classes)
-        ECDB_EXPORT bool ContainsECClassIdColumn() const;
-
-        //! Gets the primary ECClassId column if the table stores multiple classes
-        //! @see ContainsECClassIdColumn()
-        ECDB_EXPORT ColumnMap const& GetECClassIdColumn() const;
-
-        //! Gets the primary ECClassId if the table stores a single class
-        ECDB_EXPORT ECN::ECClassId GetECClassId() const;
-        
-        //! Gets the primary ECInstanceId column
-        ECDB_EXPORT ColumnMap const& GetECInstanceIdColumn() const;
-
-        //! @private
-        //! Queries the value stored in the table at the specified column, for the specified instanceId
-        DbDupValue QueryValue(Utf8StringCR columnName, ECInstanceId instanceId) const;
-
-        //! @private
-        //! Queries the id value stored in the table at the specified column, for the specified instanceId
-        template <class T_Id> T_Id QueryValueId(Utf8StringCR columnName, ECInstanceId instanceId) const
-            {
-            DbDupValue value = QueryValue(columnName, instanceId);
-            if (!value.IsValid() || value.IsNull())
-                return T_Id();
-            return value.GetValueId<T_Id>();
-            }
-
-        // @private
-        // For internal uses
-        TableMapDetail* GetDetail() const { return m_impl; }
-    };
-
 private:
     ECDbCR m_ecdb;
     bool m_isValid = false;
@@ -366,20 +471,21 @@ public:
     //! Destructor
     ECDB_EXPORT ~ChangeSummary();
 
-    //! Get the Db used by this change set
-    ECDbCR GetDb() const { return m_ecdb; }
-
-    //! Create a ChangeSummary from the contents of a BeSQLite ChangeSet
+    //! Populate the ChangeSummary from the contents of a BeSQLite ChangeSet
     //! @remarks The ChangeSummary needs to be new or freed before this call. 
     //! @see MakeIterator, GetInstancesTableName
     ECDB_EXPORT BentleyStatus FromChangeSet(BeSQLite::IChangeSet& changeSet, Options const& options = Options());
 
     //! Free the data held by this ChangeSummary.
-    //! @note Normally the destructor will call Free. After this call the ChangeSet is invalid.
+    //! @note After this call the ChangeSet becomes invalid. Need not be called if used only once - 
+    //! the destructor will automatically call Free. 
     ECDB_EXPORT void Free();
 
-    //! Determine whether this ChangeSet holds valid data or not.
+    //! Determine whether this ChangeSet holds extracted data or not.
     bool IsValid() const { return m_isValid; }
+
+    //! Get the Db used by this change set
+    ECDbCR GetDb() const { return m_ecdb; }
 
     //! Dump to stdout for debugging purposes.
     ECDB_EXPORT void Dump() const;
@@ -408,12 +514,8 @@ public:
     //! Query for all changed instances of the specified class (and it's sub classes). 
     ECDB_EXPORT void QueryByClass(bmap<ECInstanceId, ChangeSummary::Instance>& changes, ECN::ECClassId classId, bool isPolymorphic = true, QueryDbOpcode queryDbOpcodes = QueryDbOpcode::All) const;
 
-    //! @private
-    Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const;
-
-    //! @private internal use only
-    //! Utility to get the mapping information on the primary table containing the class
-    ECDB_EXPORT static TableMapPtr GetPrimaryTableMap(ECDbCR ecdb, ECN::ECClassCR cls);
+    Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const; //! @private
+    ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb); //!< @private
 };
 
 ENUM_IS_FLAGS(ChangeSummary::QueryDbOpcode);

@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/ECDbMap.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
@@ -794,7 +794,7 @@ size_t ECDbMap::GetTableCountOnRelationshipEnd(ECRelationshipConstraintCR relati
         return SIZE_MAX;
 
     std::map<PersistenceType, std::set<DbTable const*>> tables;
-    bool abstractEndPoint = relationshipEnd.GetClasses().size() == 1 && relationshipEnd.GetClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
     for (ClassMap const* classMap : classMaps)
         {
         if (abstractEndPoint)
@@ -821,7 +821,7 @@ std::set<ClassMap const*> ECDbMap::GetClassMapsFromRelationshipEnd(ECRelationshi
         *hasAnyClass = false;
 
     std::set<ClassMap const*> classMaps;
-    for (ECClassCP ecClass : constraint.GetClasses())
+    for (ECClassCP ecClass : constraint.GetConstraintClasses())
         {
         if (ClassMap::IsAnyClass(*ecClass))
             {

@@ -88,8 +88,6 @@ static_assert(1 == (int) ECN::ECClassType::Relationship, "Persisted enum ECN::EC
 static_assert(2 == (int) ECN::ECClassType::Struct, "Persisted enum ECN::ECClassType has changed");
 #define SQLVAL_ECClassType_CustomAttribute "3"
 static_assert(3 == (int) ECN::ECClassType::CustomAttribute, "Persisted enum ECN::ECClassType has changed");
-#define SQLVAL_ECClassType_Interface "4"
-static_assert(4 == (int) ECN::ECClassType::Interface, "Persisted enum ECN::ECClassType has changed");
 
 //** Enum JoinedTableInfo
 #define SQLVAL_JoinedTableInfo_None "0"
@@ -121,23 +119,22 @@ static_assert(5 == (int) MapStrategy::ForeignKeyRelationshipInSourceTable, "Pers
 static_assert(6 == (int) MapStrategy::ForeignKeyRelationshipInTargetTable, "Persisted enum MapStrategy has changed");
 
 //List here all other enums whose values are persisted to detect enum changes.
-static_assert((int) ECN::CustomAttributeContainerType::Any == 30655 &&
-(int) ECN::CustomAttributeContainerType::AnyClass == 62 &&
-(int) ECN::CustomAttributeContainerType::AnyProperty == 6016 &&
-(int) ECN::CustomAttributeContainerType::AnyRelationshipConstraint == 24576 &&
-(int) ECN::CustomAttributeContainerType::PrimitiveArrayProperty == 512 &&
+static_assert((int) ECN::CustomAttributeContainerType::Any == 4095 &&
+(int) ECN::CustomAttributeContainerType::AnyClass == 30 &&
+(int) ECN::CustomAttributeContainerType::AnyProperty == 992 &&
+(int) ECN::CustomAttributeContainerType::AnyRelationshipConstraint == 3072 &&
+(int) ECN::CustomAttributeContainerType::PrimitiveArrayProperty == 128 &&
 (int) ECN::CustomAttributeContainerType::CustomAttributeClass == 4 &&
 (int) ECN::CustomAttributeContainerType::EntityClass == 2 &&
-(int) ECN::CustomAttributeContainerType::NavigationProperty == 4096 &&
-(int) ECN::CustomAttributeContainerType::PrimitiveProperty == 128 &&
+(int) ECN::CustomAttributeContainerType::NavigationProperty == 512 &&
+(int) ECN::CustomAttributeContainerType::PrimitiveProperty == 32 &&
 (int) ECN::CustomAttributeContainerType::RelationshipClass == 16 &&
 (int) ECN::CustomAttributeContainerType::Schema == 1 &&
-(int) ECN::CustomAttributeContainerType::SourceRelationshipConstraint == 8192 &&
-(int) ECN::CustomAttributeContainerType::StructProperty == 256 &&
-(int) ECN::CustomAttributeContainerType::StructArrayProperty == 1024 &&
+(int) ECN::CustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+(int) ECN::CustomAttributeContainerType::StructProperty == 64 &&
+(int) ECN::CustomAttributeContainerType::StructArrayProperty == 256 &&
 (int) ECN::CustomAttributeContainerType::StructClass == 8 &&
-(int) ECN::CustomAttributeContainerType::InterfaceClass == 32 &&
-(int) ECN::CustomAttributeContainerType::TargetRelationshipConstraint == 16384, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
+(int) ECN::CustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECN::CustomAttributeContainerType.");
 
 
 static_assert((int) DbColumn::Type::Any == 0 &&
@@ -156,8 +153,7 @@ static_assert((int) ECN::ECClassModifier::Abstract == 1 &&
 static_assert((int) ECN::ECClassType::CustomAttribute == 3 &&
 (int) ECN::ECClassType::Entity == 0 &&
 (int) ECN::ECClassType::Relationship == 1 &&
-(int) ECN::ECClassType::Struct == 2 &&
-(int) ECN::ECClassType::Interface == 4, "Persisted Enum has changed: ECN::ECClassType.");
+(int) ECN::ECClassType::Struct == 2, "Persisted Enum has changed: ECN::ECClassType.");
 
 
 static_assert((int) ECPropertyKind::Navigation == 4 &&
@@ -183,11 +179,11 @@ static_assert((int) ForeignKeyDbConstraint::ActionType::Cascade == 1 &&
 (int) ForeignKeyDbConstraint::ActionType::SetDefault == 4 &&
 (int) ForeignKeyDbConstraint::ActionType::SetNull == 3, "Persisted Enum has changed: ForeignKeyDbConstraint::ActionType.");
 
-static_assert((int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 62 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 6016 &&
+static_assert((int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Class == 30 &&
+(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Property == 992 &&
 (int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::Schema == 1 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 8192 &&
-(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 16384, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
+(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::SourceRelationshipConstraint == 1024 &&
+(int) ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType::TargetRelationshipConstraint == 2048, "Persisted Enum has changed: ECDbSchemaPersistenceHelper::GeneralizedCustomAttributeContainerType.");
 
 static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 (int) ECN::PrimitiveType::PRIMITIVETYPE_Boolean == 0x201 &&

@@ -11,14 +11,13 @@
 #include <ECDb/IECSqlValue.h>
 #include "ECSqlField.h"
 #include "IECSqlPrimitiveValue.h"
-#include "IECSqlPrimitiveBinder.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //**************** NoopECSqlBinder **************************************
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle    05/2013
 //+===============+===============+===============+===============+===============+======
-struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStructBinder, IECSqlArrayBinder
+struct NoopECSqlBinder : public IECSqlBinder
     {
     private:
         ECSqlStatus m_errorStatus;
@@ -26,14 +25,7 @@ struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStruc
 
         NoopECSqlBinder() : m_errorStatus(ECSqlStatus::Error) {}
 
-        virtual IECSqlPrimitiveBinder& _BindPrimitive() override { return *this; }
-        virtual IECSqlStructBinder& _BindStruct() override { return *this; }
-
-        virtual IECSqlArrayBinder& _BindArray(uint32_t initialCapacity) { return *this; }
-
         virtual ECSqlStatus _BindNull() override { return m_errorStatus; }
-
-        // IECSqlPrimitiveBinder
         virtual ECSqlStatus _BindBoolean(bool value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindBlob(const void* value, int blobSize, IECSqlBinder::MakeCopy) override { return m_errorStatus; }
         virtual ECSqlStatus _BindZeroBlob(int blobSize) override { return m_errorStatus; }
@@ -46,17 +38,12 @@ struct NoopECSqlBinder : public IECSqlBinder, IECSqlPrimitiveBinder, IECSqlStruc
         virtual ECSqlStatus _BindPoint3d(DPoint3dCR value) override { return m_errorStatus; }
         virtual ECSqlStatus _BindText(Utf8CP stringValue, IECSqlBinder::MakeCopy, int byteCount) override { return m_errorStatus; }
 
-        // IECSqlStructBinder
-        virtual IECSqlBinder& _GetMember(Utf8CP structMemberPropertyName) override { return *this; }
-        virtual IECSqlBinder& _GetMember(ECN::ECPropertyId structMemberPropertyId) override { return *this; }
+        virtual IECSqlBinder& _BindStructMember(Utf8CP structMemberPropertyName) override { return *this; }
+        virtual IECSqlBinder& _BindStructMember(ECN::ECPropertyId structMemberPropertyId) override { return *this; }
 
-        // IECSqlArrayBinder
         virtual IECSqlBinder& _AddArrayElement() override { return *this; }
 
-
     public:
-        IECSqlPrimitiveBinder& BindPrimitive() { return _BindPrimitive(); }
-
         static NoopECSqlBinder& Get();
     };
 

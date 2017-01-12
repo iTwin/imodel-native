@@ -1035,69 +1035,6 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
             }
         }
 
-    return CreateFromIdSpecificationCAs(indexInfos, ecdb, ecClass);
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus IndexMappingInfo::CreateFromIdSpecificationCAs(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECN::ECClassCR ecClass)
-    {
-    std::vector<std::pair<Utf8CP, Utf8CP>> idSpecCAs;
-    idSpecCAs.push_back(std::make_pair("BusinessKeySpecification", "PropertyName"));
-    idSpecCAs.push_back(std::make_pair("GlobalIdSpecification", "PropertyName"));
-    idSpecCAs.push_back(std::make_pair("SyncIDSpecification", "Property"));
-
-    bmap<Utf8String, bvector<Utf8CP>, CompareIUtf8Ascii> distinctPropNames;
-
-    for (std::pair<Utf8CP, Utf8CP> const& idSpecCA : idSpecCAs)
-        {
-        Utf8CP caName = idSpecCA.first;
-        Utf8CP caPropName = idSpecCA.second;
-        IECInstancePtr ca = ecClass.GetCustomAttribute(caName);
-        if (ca == nullptr)
-            continue;
-
-        ECValue v;
-        if (ECObjectsStatus::Success != ca->GetValue(v, caPropName) || v.IsNull() || Utf8String::IsNullOrEmpty(v.GetUtf8CP()))
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                          "Failed to map ECClass %s. Its custom attribute %s is invalid. Could not retrieve value of property '%s' from the custom attribute.",
-                                                          ecClass.GetFullName(), caName, caPropName);
-            return ERROR;
-            }
-
-        Utf8CP idPropName = v.GetUtf8CP();
-        if (ecClass.GetPropertyP(idPropName) == nullptr)
-            {
-            ecdb.GetECDbImplR().GetIssueReporter().Report(ECDbIssueSeverity::Error,
-                                                          "Failed to map ECClass %s. Its custom attribute %s is invalid. The property '%s' specified in the custom attribute does not exist in the ECClass.",
-                                                          ecClass.GetFullName(), caName, idPropName);
-            return ERROR;
-            }
-
-        distinctPropNames[idPropName].push_back(caName);
-        }
-
-    for (bpair<Utf8String, bvector<Utf8CP>> const& kvPair : distinctPropNames)
-        {
-        Utf8String indexName("ix_");
-        indexName.append(ecClass.GetSchema().GetAlias()).append("_").append(ecClass.GetName()).append("_");
-
-        for (Utf8CP caName : kvPair.second)
-            {
-            indexName.append(caName).append("_");
-            }
-
-        Utf8StringCR idPropName = kvPair.first;
-        indexName.append(idPropName);
-
-        std::vector<Utf8String> indexPropNameVector;
-        indexPropNameVector.push_back(idPropName);
-        indexInfos.push_back(new IndexMappingInfo(indexName.c_str(), false, indexPropNameVector, false));
-        }
-
     return SUCCESS;
     }
 

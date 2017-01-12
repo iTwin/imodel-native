@@ -199,22 +199,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatement : NonCopyableClass
         //! @see @ref ECDbCodeSampleECSqlStatementVirtualSets
         ECSqlStatus BindVirtualSet(int parameterIndex, VirtualSet const& virtualSet) { return GetBinder(parameterIndex).BindVirtualSet(virtualSet); }
 
-        //! Gets a binder which is used to bind a struct value to the specified parameter
-        //! @param[in] parameterIndex Parameter index
-        //! @remarks In case of error, e.g. if the parameter is not a struct, a no-op binder will be returned. Calling methods on the no-op binder
-        //! returns the appropriate error-code.
-        //! @return Struct parameter binder
-        IECSqlStructBinder& BindStruct(int parameterIndex) { return GetBinder(parameterIndex).BindStruct(); }
-
-        //! Gets a binder which is used to bind an array to the specified parameter
-        //! @param[in] parameterIndex Parameter index
-        //! @param[in] initialArrayCapacity Initial capacity of the array to bind. 
-        //! @remarks In case of error, e.g. if the parameter
-        //! is not an array, a no-op binder will be returned. Calling methods on the no-op binder
-        //! returns the appropriate error-code.
-        //! @return Array parameter binder
-        IECSqlArrayBinder& BindArray(int parameterIndex, uint32_t initialArrayCapacity) { return GetBinder(parameterIndex).BindArray(initialArrayCapacity); }
-
         //! Gets a binder to bind a value to the parameter at the specified index.
         //! @param[in] parameterIndex Parameter index
         //! @remarks In case of error, e.g. if the parameter index is out of bounds

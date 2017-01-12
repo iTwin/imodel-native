@@ -2666,46 +2666,43 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypesWithUnNamedPara
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pCode, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, pS, IECSqlBinder::MakeCopy::No));
-    IECSqlArrayBinder& arrayOfST1 = stmt.BindArray(idx++, 3);
+    IECSqlBinder& arrayOfST1 = stmt.GetBinder(idx++);
     {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[0]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[0]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[0]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[0]));
+    IECSqlBinder& arrayElementBinder = arrayOfST1.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["D1"].BindDouble(pArrayOfST1_D1[0]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[0]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["D2"].BindDouble(pArrayOfST1_D2[0]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["P3D"].BindPoint3d(pArrayOfST1_P3D[0]));
     }
     {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[1]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[1]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[1]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[1]));
+    IECSqlBinder& arrayElementBinder = arrayOfST1.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["D1"].BindDouble(pArrayOfST1_D1[1]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[1]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["D2"].BindDouble(pArrayOfST1_D2[1]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["P3D"].BindPoint3d(pArrayOfST1_P3D[1]));
     }
     {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[2]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[2]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[2]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[2]));
+    IECSqlBinder& arrayElementBinder = arrayOfST1.AddArrayElement();
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["D1"].BindDouble(pArrayOfST1_D1[2]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[2]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["D2"].BindDouble(pArrayOfST1_D2[2]));
+    ASSERT_EQ(ECSqlStatus::Success, arrayElementBinder["ST2P"]["P3D"].BindPoint3d(pArrayOfST1_P3D[2]));
     }
     
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(idx++, pI));
 
-    IECSqlArrayBinder& arrayOfP3d = stmt.BindArray(idx++, 3);
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[0]));
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[1]));
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[2]));
+    IECSqlBinder& arrayOfP3d = stmt.GetBinder(idx++);
+    for (size_t i = 0; i < 3; i++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[i]));
+        }
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idx++, pL));
-    IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
-    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
-    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("P2D").BindPoint2d(pST1P_P2D));
-    IECSqlStructBinder& st2p = st1p.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("D2").BindDouble(pST1P_ST2P_D2));
-    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("P3D").BindPoint3d(pST1P_ST2P_P3D));
+    IECSqlBinder& st1p = stmt.GetBinder(idx++);
+    ASSERT_EQ(ECSqlStatus::Success, st1p["D1"].BindDouble(pST1P_D1));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["P2D"].BindPoint2d(pST1P_P2D));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["D2"].BindDouble(pST1P_ST2P_D2));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["P3D"].BindPoint3d(pST1P_ST2P_P3D));
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindDouble(idx++, pD));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindDateTime(idx++, pDt));
@@ -2850,43 +2847,27 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
 
-    IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
-    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
-    ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("P2D").BindPoint2d(pST1P_P2D));
-    IECSqlStructBinder& st2p = st1p.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("D2").BindDouble(pST1P_ST2P_D2));
-    ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("P3D").BindPoint3d(pST1P_ST2P_P3D));
+    IECSqlBinder& st1p = stmt.GetBinder(idx++);
+    ASSERT_EQ(ECSqlStatus::Success, st1p["D1"].BindDouble(pST1P_D1));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["P2D"].BindPoint2d(pST1P_P2D));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["D2"].BindDouble(pST1P_ST2P_D2));
+    ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["P3D"].BindPoint3d(pST1P_ST2P_P3D));
 
-    IECSqlArrayBinder& arrayOfP3d = stmt.BindArray(idx++, 3);
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[0]));
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[1]));
-    ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[2]));
+    IECSqlBinder& arrayOfP3d = stmt.GetBinder(idx++);
+    for (size_t i = 0; i < 3; i++)
+        {
+        ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[i]));
+        }
 
-    IECSqlArrayBinder& arrayOfST1 = stmt.BindArray(idx++, 3);
-    {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[0]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[0]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[0]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[0]));
-    }
-    {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[1]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[1]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[1]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[1]));
-    }
-    {
-    IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[2]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[2]));
-    IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[2]));
-    ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[2]));
-    }
+    IECSqlBinder& arrayOfST1 = stmt.GetBinder(idx++);
+    for (size_t i = 0; i < 3; i++)
+        {
+        IECSqlBinder& elementBinder = arrayOfST1.AddArrayElement();
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder["D1"].BindDouble(pArrayOfST1_D1[i]));
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[i]));
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D2"].BindDouble(pArrayOfST1_D2[i]));
+        ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
+        }
 
     //SELECT * .. []
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -3025,43 +3006,27 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_InsertComplexTypes)
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint3d(idx++, pP3D));
         ASSERT_EQ(ECSqlStatus::Success, stmt.BindBlob(idx++, &bin, static_cast<int>(bin.size()), IECSqlBinder::MakeCopy::No));
 
-        IECSqlStructBinder& st1p = stmt.BindStruct(idx++);
-        ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("D1").BindDouble(pST1P_D1));
-        ASSERT_EQ(ECSqlStatus::Success, st1p.GetMember("P2D").BindPoint2d(pST1P_P2D));
-        IECSqlStructBinder& st2p = st1p.GetMember("ST2P").BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("D2").BindDouble(pST1P_ST2P_D2));
-        ASSERT_EQ(ECSqlStatus::Success, st2p.GetMember("P3D").BindPoint3d(pST1P_ST2P_P3D));
+        IECSqlBinder& st1p = stmt.GetBinder(idx++);
+        ASSERT_EQ(ECSqlStatus::Success, st1p["D1"].BindDouble(pST1P_D1));
+        ASSERT_EQ(ECSqlStatus::Success, st1p["P2D"].BindPoint2d(pST1P_P2D));
+        ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["D2"].BindDouble(pST1P_ST2P_D2));
+        ASSERT_EQ(ECSqlStatus::Success, st1p["ST2P"]["P3D"].BindPoint3d(pST1P_ST2P_P3D));
 
-        IECSqlArrayBinder& arrayOfP3d = stmt.BindArray(idx++, 3);
-        ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[0]));
-        ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[1]));
-        ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[2]));
+        IECSqlBinder& arrayOfP3d = stmt.GetBinder(idx++);
+        for (size_t i = 0; i < 3; i++)
+            {
+            ASSERT_EQ(ECSqlStatus::Success, arrayOfP3d.AddArrayElement().BindPoint3d(pArrayOfP3d[i]));
+            }
 
-        IECSqlArrayBinder& arrayOfST1 = stmt.BindArray(idx++, 3);
-        {
-        IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[0]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[0]));
-        IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[0]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[0]));
-        }
-        {
-        IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[1]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[1]));
-        IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[1]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[1]));
-        }
-        {
-        IECSqlStructBinder& sp1El = arrayOfST1.AddArrayElement().BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("D1").BindDouble(pArrayOfST1_D1[2]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El.GetMember("P2D").BindPoint2d(pArrayOfST1_P2D[2]));
-        IECSqlStructBinder& sp1El_st2p = sp1El.GetMember("ST2P").BindStruct();
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("D2").BindDouble(pArrayOfST1_D2[2]));
-        ASSERT_EQ(ECSqlStatus::Success, sp1El_st2p.GetMember("P3D").BindPoint3d(pArrayOfST1_P3D[2]));
-        }
+        IECSqlBinder& arrayOfST1 = stmt.GetBinder(idx++);
+        for (size_t i = 0; i < 3; i++)
+            {
+            IECSqlBinder& elementBinder = arrayOfST1.AddArrayElement();
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder["D1"].BindDouble(pArrayOfST1_D1[i]));
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder["P2D"].BindPoint2d(pArrayOfST1_P2D[i]));
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["D2"].BindDouble(pArrayOfST1_D2[i]));
+            ASSERT_EQ(ECSqlStatus::Success, elementBinder["ST2P"]["P3D"].BindPoint3d(pArrayOfST1_P3D[i]));
+            }
 
         //SELECT * .. []
         ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
@@ -4342,81 +4307,81 @@ TEST_F(ECDbMappingTestFixture, ConstraintCheckOnProperties)
 // @bsimethod                                   Maha Nasir                     10/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMappingTestFixture, DuplicateRelationshipsFlagForSubClassesInLinkTable)
-	{
-		auto assertECSql = [](Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
-		{
-			ECSqlStatement statement;
-			ASSERT_EQ(sqlStatus, statement.Prepare(ecdb, ecsql));
-			ASSERT_EQ(dbResult, statement.Step());
-			statement.Finalize();
-		};
+    {
+    auto assertECSql = [] (Utf8CP ecsql, ECDbR ecdb, ECSqlStatus sqlStatus = ECSqlStatus::InvalidECSql, DbResult dbResult = DbResult::BE_SQLITE_ERROR)
+        {
+        ECSqlStatement statement;
+        ASSERT_EQ(sqlStatus, statement.Prepare(ecdb, ecsql));
+        ASSERT_EQ(dbResult, statement.Step());
+        statement.Finalize();
+        };
 
-		SchemaItem testItem(
-			"<?xml version='1.0' encoding='utf-8'?>"
-			"<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-			"<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-			"<ECEntityClass typeName='A' modifier='Abstract' >"
-			"        <ECCustomAttributes>"
-			"            <ClassMap xmlns='ECDbMap.02.00'>"
-			"                <MapStrategy>TablePerHierarchy</MapStrategy>"
-            "            </ClassMap>"
-            "        </ECCustomAttributes>"
-			"   <ECProperty propertyName='A_Prop' typeName='string' />"
-			"</ECEntityClass>"
-			"<ECEntityClass typeName='B' modifier='None' >"
-			"   <BaseClass>A</BaseClass>"
-			"   <ECProperty propertyName='B_Prop' typeName='string' />"
-			"</ECEntityClass>"
-			"<ECEntityClass typeName='C' modifier='None' >"
-			"   <BaseClass>B</BaseClass>"
-			"   <ECProperty propertyName='C_Prop' typeName='string' />"
-			"</ECEntityClass>"
-			"<ECRelationshipClass typeName='AHasA' modifier='Abstract' strength='referencing'>"
-			"        <ECCustomAttributes>"
-			"            <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
-			"               <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
-			"            </LinkTableRelationshipMap>"
-			"        </ECCustomAttributes>"
-			"    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='A'>"
-			"      <Class class='A' />"
-			"    </Source>"
-			"    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='A'>"
-			"      <Class class='A' />"
-			"    </Target>"
-			"</ECRelationshipClass>"
-			"<ECRelationshipClass typeName='BHasB' modifier='Sealed' strength='referencing'>"
-			"   <BaseClass>AHasA</BaseClass>"
-			"    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='B'>"
-			"      <Class class='B' />"
-			"    </Source>"
-			"    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='B'>"
-			"      <Class class='B' />"
-			"    </Target>"
-			"</ECRelationshipClass>"
-			"<ECRelationshipClass typeName='CHasC' modifier='Sealed' strength='referencing'>"
-			"   <BaseClass>AHasA</BaseClass>"
-			"    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='C'>"
-			"      <Class class='C' />"
-			"    </Source>"
-			"    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='C'>"
-			"      <Class class='C' />"
-			"    </Target>"
-			"</ECRelationshipClass>"
-			"</ECSchema>", true, "");
+    SchemaItem testItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='t' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "<ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "<ECEntityClass typeName='A' modifier='Abstract' >"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "        </ECCustomAttributes>"
+        "   <ECProperty propertyName='A_Prop' typeName='string' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='B' modifier='None' >"
+        "   <BaseClass>A</BaseClass>"
+        "   <ECProperty propertyName='B_Prop' typeName='string' />"
+        "</ECEntityClass>"
+        "<ECEntityClass typeName='C' modifier='None' >"
+        "   <BaseClass>B</BaseClass>"
+        "   <ECProperty propertyName='C_Prop' typeName='string' />"
+        "</ECEntityClass>"
+        "<ECRelationshipClass typeName='AHasA' modifier='Abstract' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+        "               <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+        "            </LinkTableRelationshipMap>"
+        "        </ECCustomAttributes>"
+        "    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='A'>"
+        "      <Class class='A' />"
+        "    </Source>"
+        "    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='A'>"
+        "      <Class class='A' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "<ECRelationshipClass typeName='BHasB' modifier='Sealed' strength='referencing'>"
+        "   <BaseClass>AHasA</BaseClass>"
+        "    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='B'>"
+        "      <Class class='B' />"
+        "    </Source>"
+        "    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='B'>"
+        "      <Class class='B' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "<ECRelationshipClass typeName='CHasC' modifier='Sealed' strength='referencing'>"
+        "   <BaseClass>AHasA</BaseClass>"
+        "    <Source multiplicity='(1..*)' polymorphic='true' roleLabel='C'>"
+        "      <Class class='C' />"
+        "    </Source>"
+        "    <Target multiplicity='(1..*)' polymorphic='true' roleLabel='C'>"
+        "      <Class class='C' />"
+        "    </Target>"
+        "</ECRelationshipClass>"
+        "</ECSchema>", true, "");
 
-		ECDb db;
-		bool asserted = false;
-		AssertSchemaImport(db, asserted, testItem, "DuplicateRelationshipsFlagForSubClassesInLinkTable.ecdb");
-		ASSERT_FALSE(asserted);
+    ECDb db;
+    bool asserted = false;
+    AssertSchemaImport(db, asserted, testItem, "DuplicateRelationshipsFlagForSubClassesInLinkTable.ecdb");
+    ASSERT_FALSE(asserted);
 
-		ECSqlStatement stmt;
-		assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-		assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-		assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-		assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-		assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-		assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
-	}
+    ECSqlStatement stmt;
+    assertECSql("INSERT INTO t.B(ECInstanceId, B_Prop) VALUES(1, 'B1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.C(ECInstanceId, C_Prop) VALUES(2, 'C1')", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(1, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.BHasB(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(2, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(3, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    assertECSql("INSERT INTO t.CHasC(ECInstanceId, SourceECInstanceId, TargetECInstanceId) VALUES(4, 1, 2)", db, ECSqlStatus::Success, DbResult::BE_SQLITE_DONE);
+    }
 
 //---------------------------------------------------------------------------------------
 //*Test to verify the CRUD operations for a schema having similar Class and Property name
@@ -6501,67 +6466,6 @@ TEST_F(ECDbMappingTestFixture, UserDefinedIndexTest)
 
                     AssertIndex(db, "ix_dgnelement_model_id_code", false, "ts9_DgnElement", {"ModelId","Code"});
                     }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     02/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECDbMappingTestFixture, IdSpecificationCustomAttributes)
-    {
-    SchemaItem testItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' alias='bsca' />"
-        "    <ECEntityClass typeName='ClassWithBusinessKey' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </BusinessKeySpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithSyncId' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <SyncIDSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <Property>Name</Property>"
-        "            </SyncIDSpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithGlobalId' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </GlobalIdSpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassWithGlobalIdAndBusinessKey' modifier='None'>"
-        "        <ECCustomAttributes>"
-        "            <GlobalIdSpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </GlobalIdSpecification>"
-        "            <BusinessKeySpecification xmlns='Bentley_Standard_CustomAttributes.01.13'>"
-        "               <PropertyName>Name</PropertyName>"
-        "            </BusinessKeySpecification>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Id' typeName='long' />"
-        "        <ECProperty propertyName='Name' typeName='string' />"
-        "    </ECEntityClass>"
-        "</ECSchema>");
-
-    ECDb db;
-    bool asserted = false;
-    AssertSchemaImport(db, asserted, testItem, "idspectests.ecdb");
-    ASSERT_FALSE(asserted);
-
-    AssertIndex(db, "ix_ts_ClassWithBusinessKey_BusinessKeySpecification_Name", false, "ts_ClassWithBusinessKey", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithSyncId_SyncIDSpecification_Name", false, "ts_ClassWithSyncId", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithGlobalId_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalId", {"Name"});
-    AssertIndex(db, "ix_ts_ClassWithGlobalIdAndBusinessKey_BusinessKeySpecification_GlobalIdSpecification_Name", false, "ts_ClassWithGlobalIdAndBusinessKey", {"Name"});
     }
 
 //---------------------------------------------------------------------------------------
@@ -11441,10 +11345,10 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     {//===================================================================
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "UPDATE ts.TestElement SET Mtx4x4 = ? WHERE Code = ?"));
-    IECSqlStructBinder& mtx = stmt.BindStruct(1);
+    IECSqlBinder& mtx = stmt.GetBinder(1);
     for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
-        ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesA[i]));
+        ASSERT_EQ(ECSqlStatus::Success, mtx[mtx4x4Properties[i]].BindDouble(mtx4x4ValuesA[i]));
         }
 
     stmt.BindText(2, codeA, IECSqlBinder::MakeCopy::No);
@@ -11457,10 +11361,10 @@ TEST_F(ECDbMappingTestFixture, OverflowColumns_PartiallyMapStructToOverFlow)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, Mtx4x4) VALUES (?,?)"));
     stmt.BindText(1, codeB, IECSqlBinder::MakeCopy::No);
-    IECSqlStructBinder& mtx = stmt.BindStruct(2);
+    IECSqlBinder& mtx = stmt.GetBinder(2);
     for (size_t i = 0; i < mtx4x4Properties.size(); i++)
         {
-        ASSERT_EQ(ECSqlStatus::Success, mtx.GetMember(mtx4x4Properties[i]).BindDouble(mtx4x4ValuesB[i]));
+        ASSERT_EQ(ECSqlStatus::Success, mtx[mtx4x4Properties[i]].BindDouble(mtx4x4ValuesB[i]));
         }
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());

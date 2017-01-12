@@ -33,7 +33,7 @@ struct RelationshipConstraintMap : NonCopyableClass
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
         void SetECClassIdPropMap(ConstraintECClassIdPropertyMap const* ecClassIdPropMap) { m_ecClassIdPropMap = ecClassIdPropMap; }
         bool TryGetSingleClassIdFromConstraint(ECN::ECClassId&) const;
-        bool IsSingleAbstractClass() const { return m_constraint.GetClasses().size() == 1 && m_constraint.GetClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
+        bool IsSingleAbstractClass() const { return m_constraint.GetConstraintClasses().size() == 1 && m_constraint.GetConstraintClasses().front()->GetClassModifier() == ECN::ECClassModifier::Abstract; }
         ECN::ECRelationshipConstraintCR GetRelationshipConstraint() const { return m_constraint; }
     };
 
@@ -111,39 +111,40 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
 		struct ColumnLists final : NonCopyableClass
 			{
 			private:
+                ColumnFactory m_columnFactory;
+
 				//Following is not created
 				std::vector<DbColumn const*> m_secondaryTableECInstanceIdColumns; //secondary table primary key
 				std::vector<DbColumn const*> m_secondaryTableECClassIdColumns;  //secondary table classId
 
-				//Following are actully create for each secondary table.
+				//Following are actaully create for each secondary table.
 				std::vector<DbColumn const*> m_secondaryTableFkRelECClassIdColumns; //Point to relationship classid associated with following
 				std::vector<DbColumn const*> m_secondaryTableFkECInstanceIdColumns; //Point to primary table but created in secondary 
 
 				//Following is not really created but just referenced 
 				std::vector<DbColumn const*> m_primaryTableFkECClassIdColumns;     //Point to primary table ECClassId and we just store reference to it to act as FkECClassId.
-				static void push_back(std::vector<DbColumn const*>& list, DbColumn const* column)
+				
+                static void Add(std::vector<DbColumn const*>& list, DbColumn const* column)
 					{
 					BeAssert(column != nullptr);
 					if (std::find(list.begin(), list.end(), column) == list.end())
 						list.push_back(column);
 					}
-				ColumnFactory m_columnFactory;
 
 			public:
-				void AddECInstanceIdColumn(DbColumn const& column) { push_back(m_secondaryTableECInstanceIdColumns, &column); }
-				void AddECClassIdColumn(DbColumn const& column) { push_back(m_secondaryTableECClassIdColumns, &column); }
-				void AddFkECInstanceIdColumn(DbColumn const& column) { push_back(m_secondaryTableFkECInstanceIdColumns, &column); }
-				void AddFkRelECClassIdColumn(DbColumn const& column) { push_back(m_secondaryTableFkRelECClassIdColumns, &column); }
-				void AddFkECClassIdColumn(DbColumn const& column) { push_back(m_primaryTableFkECClassIdColumns, &column); }
+                explicit ColumnLists(RelationshipClassEndTableMap const& relMap) : m_columnFactory(relMap) {}
+
+				void AddECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableECInstanceIdColumns, &column); }
+				void AddECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableECClassIdColumns, &column); }
+				void AddFkECInstanceIdColumn(DbColumn const& column) { Add(m_secondaryTableFkECInstanceIdColumns, &column); }
+				void AddFkRelECClassIdColumn(DbColumn const& column) { Add(m_secondaryTableFkRelECClassIdColumns, &column); }
+				void AddFkECClassIdColumn(DbColumn const& column) { Add(m_primaryTableFkECClassIdColumns, &column); }
 				std::vector<DbColumn const*> const& GetECInstanceIdColumns() const { return m_secondaryTableECInstanceIdColumns; }
 				std::vector<DbColumn const*> const& GetECClassIdColumns() const { return m_secondaryTableECClassIdColumns; }
 				std::vector<DbColumn const*> const& GetFkECInstanceIdColumns() const { return m_secondaryTableFkECInstanceIdColumns; }
 				std::vector<DbColumn const*> const& GetFkRelECClassIdColumns() const { return m_secondaryTableFkRelECClassIdColumns; }
 				std::vector<DbColumn const*> const& GetFkECClassIdColumns() const { return m_primaryTableFkECClassIdColumns; }
 				ColumnFactory& GetColumnFactory() { return m_columnFactory; }		
-				ColumnLists(RelationshipClassEndTableMap const& relMap, RelationshipMappingInfo const& relInfo)
-					:m_columnFactory(relMap, relInfo)
-					{}
 			};
 
         struct ForeignKeyColumnInfo : NonCopyableClass

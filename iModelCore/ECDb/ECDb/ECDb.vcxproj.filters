@@ -233,9 +233,6 @@
     <ClInclude Include="ECSql\IECSqlPrimitiveValue.h">
       <Filter>ECSql\ECSqlStatement</Filter>
     </ClInclude>
-    <ClInclude Include="ECSql\IECSqlPrimitiveBinder.h">
-      <Filter>ECSql\ECSqlStatement</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbLogger.h" />
     <ClInclude Include="ECSchemaValidator.h">
       <Filter>ECDbSchemaManager</Filter>

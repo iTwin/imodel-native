@@ -2,7 +2,7 @@
 |
 |     $Source: ECDb/docs/samplecode/ECDbCRUD.sample.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ECDb/ECDbApi.h>
@@ -427,17 +427,17 @@ BentleyStatus ECDb_ECSqlStatementBindingStructs()
     if (!stat.IsSuccess())
         return ERROR;
 
-    IECSqlStructBinder& addressBinder = statement.BindStruct(3);
+    IECSqlBinder& addressBinder = statement.GetBinder(3);
 
-    stat = addressBinder.GetMember("Street").BindText("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
+    stat = addressBinder["Street"].BindText("2000 Main Street", IECSqlBinder::MakeCopy::Yes);
     if (!stat.IsSuccess())
         return ERROR;
 
-    stat = addressBinder.GetMember("Zip").BindInt(10014);
+    stat = addressBinder["Zip"].BindInt(10014);
     if (!stat.IsSuccess())
         return ERROR;
 
-    stat = addressBinder.GetMember("City").BindText("New York", IECSqlBinder::MakeCopy::Yes);
+    stat = addressBinder["City"].BindText("New York", IECSqlBinder::MakeCopy::Yes);
     if (!stat.IsSuccess())
         return ERROR;
 
@@ -472,14 +472,12 @@ BentleyStatus ECDb_ECSqlStatementBindingPrimArrays()
 
     // Bind values to parameters
     // Note: bind parameter indices are 1-based!
-    IECSqlArrayBinder& phoneNumbersBinder = statement.BindArray(1, //parameter index
-                                                                3); //initial array capacity
-
+    IECSqlBinder& phoneNumbersBinder = statement.GetBinder(1);
     std::vector<Utf8String> phoneNumbers = {"+1 (610) 726-4312", "+1 (610) 726-4444", "+1 (610) 726-4112"};
     for (Utf8StringCR phoneNumber : phoneNumbers)
         {
-        IECSqlBinder& phoneNumberBinder = phoneNumbersBinder.AddArrayElement();
-        ECSqlStatus stat = phoneNumberBinder.BindText(phoneNumber.c_str(), IECSqlBinder::MakeCopy::Yes);
+        IECSqlBinder& arrayElementBinder = phoneNumbersBinder.AddArrayElement();
+        ECSqlStatus stat = arrayElementBinder.BindText(phoneNumber.c_str(), IECSqlBinder::MakeCopy::Yes);
         if (!stat.IsSuccess())
             return ERROR;
         }
@@ -517,18 +515,16 @@ BentleyStatus ECDb_ECSqlStatementBindingStructArrays()
 
     // Bind values to parameters
     // Note: bind parameter indices are 1-based!
-    IECSqlArrayBinder& certificationsBinder = statement.BindArray(1, //parameter index
-                                                                  2); //initial array capacity
+    IECSqlBinder& certificationsBinder = statement.GetBinder(1);
 
-      //AddArrayElement gets a binder for the array element. As the array element is a struct, we need to call
-      //BindStruct (just as with other struct properties)
-    IECSqlStructBinder& firstCertBinder = certificationsBinder.AddArrayElement().BindStruct();
-    firstCertBinder.GetMember("Name").BindText("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
-    firstCertBinder.GetMember("StartsOn").BindDateTime(DateTime(2014, 01, 28));
+    //AddArrayElement gets a binder for the array element.
+    IECSqlBinder& arrayElementBinder = certificationsBinder.AddArrayElement();
+    arrayElementBinder["Name"].BindText("Certified Engineer Assoc.", IECSqlBinder::MakeCopy::Yes);
+    arrayElementBinder["StartsOn"].BindDateTime(DateTime(2014, 01, 28));
 
-    IECSqlStructBinder& secondCertBinder = certificationsBinder.AddArrayElement().BindStruct();
-    secondCertBinder.GetMember("Name").BindText("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
-    secondCertBinder.GetMember("StartsOn").BindDateTime(DateTime(2011, 05, 14));
+    IECSqlBinder& arrayElementBinder2 = certificationsBinder.AddArrayElement();
+    arrayElementBinder2["Name"].BindText("Professional Engineers", IECSqlBinder::MakeCopy::Yes);
+    arrayElementBinder2["StartsOn"].BindDateTime(DateTime(2011, 05, 14));
 
     //now bind to parameter 2 and 3 (primitive binding) (skipping error handling for better readability)
     statement.BindText(2, "Patty", IECSqlBinder::MakeCopy::Yes);

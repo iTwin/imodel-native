@@ -1314,47 +1314,6 @@ TEST_F(ECDbSchemaManagerTests, CreateECClassViewsForCombinationofValidInvalidCla
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplemental schema whose Targeted primary schema's minor version is less then minor Version of schema to supplement.
-TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasLowerMinorVersion)
-    {
-    ECDbTestFixture::Initialize();
-    ECDb testecdb;
-    auto stat = ECDbTestUtility::CreateECDb(testecdb, nullptr, L"supplementalSchematest.ecdb");
-    ASSERT_TRUE(stat == BE_SQLITE_OK);
-
-    ECSchemaReadContextPtr context = nullptr;
-    ECSchemaCachePtr schemacache = ECSchemaCache::Create();
-
-    ECSchemaPtr schemaptr;
-    ECDbTestUtility::ReadECSchemaFromDisk(schemaptr, context, L"BasicSchema.01.70.ecschema.xml", nullptr);
-    ASSERT_TRUE(schemaptr != NULL);
-    schemacache->AddSchema(*schemaptr);
-
-    ECSchemaPtr supple;
-    //With new supplementation Behaviour, this one will not be ignored though it is not targeting the primary schema's exact version.
-    ECDbTestUtility::ReadECSchemaFromDisk(supple, context, L"BasicSchema_Supplemental_Localization.01.69.ecschema.xml", nullptr);
-    ASSERT_TRUE(supple != NULL);
-    schemacache->AddSchema(*supple);
-
-    ASSERT_EQ(SUCCESS, testecdb.Schemas().ImportECSchemas(schemacache->GetSchemas())) << "couldn't import the schema";
-    ECSchemaCP basicSupplSchema = testecdb.Schemas().GetECSchema("BasicSchema", true);
-    ASSERT_TRUE(basicSupplSchema != NULL);
-
-    ECClassCP ecclassBase = basicSupplSchema->GetClassCP("Base");
-    ASSERT_TRUE(ecclassBase != NULL);
-    //get custom attributes from base class (false)
-    ECCustomAttributeInstanceIterable iterator1 = ecclassBase->GetCustomAttributes(false);
-    int i = 0;
-    for (IECInstancePtr instance : iterator1)
-        {
-        i++;
-        }
-    EXPECT_EQ(1, i) << "the number of custom attributes on the Class Base do not match the original";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                     Muhammad Hassan                  11/14
-//+---------------+---------------+---------------+---------------+---------------+------
 //supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
 TEST_F(ECDbSchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
     {

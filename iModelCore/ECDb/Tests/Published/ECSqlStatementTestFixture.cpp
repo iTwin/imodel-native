@@ -59,11 +59,10 @@ void ECSqlStatementTestFixture::BindFromJson(BentleyStatus& succeeded, ECSqlStat
                 }
             else //struct
                 {
-                IECSqlStructBinder& structBinder = binder.BindStruct();
                 for (Utf8StringCR memberName : jsonValue.getMemberNames())
                     {
                     Json::Value const& member = jsonValue[memberName.c_str()];
-                    auto& memberBinder = structBinder.GetMember(memberName.c_str());
+                    auto& memberBinder = binder[memberName.c_str()];
 
                     BindFromJson(succeeded, statement, member, memberBinder);
                     if (succeeded != SUCCESS)
@@ -75,11 +74,10 @@ void ECSqlStatementTestFixture::BindFromJson(BentleyStatus& succeeded, ECSqlStat
             }
             case Json::arrayValue:
             {
-            IECSqlArrayBinder& arrayBinder = binder.BindArray((uint32_t) jsonValue.size());
             for (JsonValueCR arrayElement : jsonValue)
                 {
-                IECSqlBinder& arrayElementBinder = arrayBinder.AddArrayElement();
-                BindFromJson(succeeded, statement, arrayElement, arrayElementBinder);
+                IECSqlBinder& elementBinder = binder.AddArrayElement();
+                BindFromJson(succeeded, statement, arrayElement, elementBinder);
                 if (succeeded != SUCCESS)
                     return;
                 }

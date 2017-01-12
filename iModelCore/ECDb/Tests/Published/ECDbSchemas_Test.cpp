@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/ECDbSchemas_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
@@ -1059,10 +1059,10 @@ struct SchemaDiffTests : public ECDbTestFixture
             ASSERT_TRUE(ecClass != nullptr);
             ECRelationshipClassCP ecRelationshipClass = ecClass->GetRelationshipClassCP();
             ASSERT_TRUE(ecRelationshipClass != nullptr);
-            ASSERT_EQ(ecRelationshipClass->GetSource().GetClasses().size(), 1);
-            ASSERT_EQ(ecRelationshipClass->GetTarget().GetClasses().size(), 1);
-            ASSERT_TRUE(ecRelationshipClass->GetSource().GetClasses().at(0)->GetName().Equals(sourceClass));
-            ASSERT_TRUE(ecRelationshipClass->GetTarget().GetClasses().at(0)->GetName().Equals(targetClass));
+            ASSERT_EQ(ecRelationshipClass->GetSource().GetConstraintClasses().size(), 1);
+            ASSERT_EQ(ecRelationshipClass->GetTarget().GetConstraintClasses().size(), 1);
+            ASSERT_TRUE(ecRelationshipClass->GetSource().GetConstraintClasses().at(0)->GetName().Equals(sourceClass));
+            ASSERT_TRUE(ecRelationshipClass->GetTarget().GetConstraintClasses().at(0)->GetName().Equals(targetClass));
             }
     };
 
