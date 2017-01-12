@@ -11,20 +11,7 @@
 #include <BeSQLite/BeSQLite.h>
 #include <BeSQLite/ChangeSet.h>
 
-ECDB_TYPEDEFS(ChangeSummary);
-ECDB_TYPEDEFS(InstancesTable);
-ECDB_TYPEDEFS(ValuesTable);
-ECDB_TYPEDEFS(ChangeIterator);
-ECDB_TYPEDEFS(ChangeExtractor);
-ECDB_TYPEDEFS(SqlChange);
-ECDB_TYPEDEFS(TableMap);
-ECDB_TYPEDEFS(TableClassMap);
-ECDB_TYPEDEFS(ColumnMap);
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
-
-typedef RefCountedPtr<TableMap> TableMapPtr;
-typedef bmap<Utf8String, ColumnMapP> ColumnMapByAccessString;
 
 //=======================================================================================
 //! @private internal use only
@@ -44,6 +31,11 @@ public:
     IsChangedInstanceSqlFunction() : ScalarFunction("IsChangedInstance", 3, DbValueType::IntegerVal) {}
     ~IsChangedInstanceSqlFunction() {}
 };
+
+struct TableMap;
+struct TableClassMap;
+struct ColumnMap;
+struct SqlChange;
 
 //=======================================================================================
 //! Utility to iterate over change records and interpret it as ECInstances. 
@@ -68,11 +60,9 @@ public:
 //=======================================================================================
 struct ChangeIterator
 {
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(RowEntry);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnIterator);
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(ColumnEntry);
-    typedef bmap<Utf8String, TableMapPtr> TableMapByName;
-    typedef TableMapByName* TableMapByNameP;
+    struct ColumnIterator;
+
+    typedef bmap<Utf8String, RefCountedPtr<TableMap>> TableMapByName;
 
     //! An entry in the ChangeIterator.
     struct RowEntry
@@ -81,16 +71,16 @@ struct ChangeIterator
 
     private:
         ECDbCR m_ecdb;
-        ChangeIteratorCR m_iterator;
+        ChangeIterator const& m_iterator;
         Changes::Change m_change;
 
-        SqlChangeCP m_sqlChange;
-        TableMapCP m_tableMap;
+        SqlChange const* m_sqlChange;
+        TableMap const* m_tableMap;
         ECInstanceId m_primaryInstanceId;
         ECN::ECClassCP m_primaryClass;
         static const Utf8String s_emptyString;
 
-        RowEntry(ChangeIteratorCR iterator, Changes::Change const& change);
+        RowEntry(ChangeIterator const& iterator, Changes::Change const& change);
 
         void Initialize();
         void InitPrimaryInstance();
@@ -135,9 +125,9 @@ struct ChangeIterator
         bool operator==(RowEntry const& rhs) const { return m_change == rhs.m_change; }
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
-        SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
-        TableMapCP GetTableMap() const { return m_tableMap; } //!< @private
-        ChangeIteratorCR GetChangeIterator() const {return m_iterator;}  //!< @private
+        SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
+        TableMap const* GetTableMap() const { return m_tableMap; } //!< @private
+        ChangeIterator const& GetChangeIterator() const {return m_iterator;}  //!< @private
         ECN::ECClassId GetClassIdFromChangeOrTable(Utf8CP classIdColumnName, ECInstanceId whereInstanceIdIs) const; //!< @private
     };
 
@@ -148,16 +138,16 @@ struct ChangeIterator
 
     private:
         ECDbCR m_ecdb;
-        SqlChangeCP m_sqlChange;
-        ColumnIteratorCR m_columnIterator;
-        ColumnMapByAccessString::const_iterator m_columnMapIterator;
+        SqlChange const* m_sqlChange;
+        ColumnIterator const& m_columnIterator;
+        bmap<Utf8String, ColumnMap*>::const_iterator m_columnMapIterator;
         bool m_isValid = false;
         static const Utf8String s_emptyString;
 
-        ColumnEntry(ColumnIteratorCR columnIterator);
-        ColumnEntry(ColumnIteratorCR columnIterator, ColumnMapByAccessString::const_iterator columnMapIterator);
+        explicit ColumnEntry(ColumnIterator const&);
+        ColumnEntry(ColumnIterator const&, bmap<Utf8String, ColumnMap*>::const_iterator columnMapIterator);
 
-        DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const& columnMap) const;
+        DbDupValue ExtractOverflowValue(DbValue const& columnValue, ColumnMap const&) const;
         
     public:
         //! Get the access string for the EC property corresponding to this column
@@ -185,12 +175,12 @@ struct ChangeIterator
     friend RowEntry;
 
     private:
-        RowEntryCR m_rowEntry;
+        RowEntry const& m_rowEntry;
         ECDbCR m_ecdb;
-        SqlChangeCP m_sqlChange;
-        TableClassMapCP m_tableClassMap;
+        SqlChange const* m_sqlChange;
+        TableClassMap const* m_tableClassMap;
 
-        ColumnIterator(RowEntryCR rowEntry, ECN::ECClassCP ecClass);
+        ColumnIterator(RowEntry const&, ECN::ECClassCP);
 
     public:
         //! Get the column for the specified property access string
@@ -202,14 +192,14 @@ struct ChangeIterator
         ECDB_EXPORT ColumnEntry end() const;
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
-        RowEntryCR GetRowEntry() const { return m_rowEntry; } //!< @private
-        SqlChangeCP GetSqlChange() const { return m_sqlChange; } //!< @private
+        RowEntry const& GetRowEntry() const { return m_rowEntry; } //!< @private
+        SqlChange const* GetSqlChange() const { return m_sqlChange; } //!< @private
     };
 
     private:
         ECDbCR m_ecdb;
         Changes m_changes;
-        mutable TableMapByNameP m_tableMapByName = nullptr;
+        mutable TableMapByName* m_tableMapByName = nullptr;
 
         void InitTableMap();
         void AddTableToMap(Utf8StringCR tableName) const;
@@ -228,8 +218,15 @@ struct ChangeIterator
         ECDB_EXPORT RowEntry end() const;
 
         ECDbCR GetDb() const { return m_ecdb; } //!< @private
-        TableMapCP GetTableMap(Utf8StringCR tableName) const;  //!< @private
+        TableMap const* GetTableMap(Utf8StringCR tableName) const;  //!< @private
 };
+
+typedef ChangeIterator const& ChangeIteratorCR;
+typedef ChangeIterator const* ChangeIteratorCP;
+
+struct InstancesTable;
+struct ValuesTable;
+struct ChangeExtractor;
 
 //=======================================================================================
 //! Utility to interpret a set of changes to the database as EC instances. 
@@ -280,7 +277,7 @@ struct ChangeSummary : NonCopyableClass
     struct Instance
     {
     private:
-        ChangeSummaryCP m_changeSummary = nullptr;
+        ChangeSummary const* m_changeSummary = nullptr;
         ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
         DbOpcode m_dbOpcode;
@@ -295,7 +292,7 @@ struct ChangeSummary : NonCopyableClass
         Instance() {}
 
         //! Constructor
-        Instance(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName) :
+        Instance(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId, DbOpcode dbOpcode, int indirect, Utf8StringCR tableName) :
             m_changeSummary(&changeSummary), m_classId(classId), m_instanceId(instanceId), m_dbOpcode(dbOpcode), m_indirect(indirect), m_tableName(tableName)
             {}
 
@@ -351,7 +348,7 @@ struct ChangeSummary : NonCopyableClass
             bool m_polymorphic;
             QueryDbOpcode m_opcodes;
 
-            Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummaryCR summary) const;
+            Utf8String ToSelectStatement(Utf8CP columnsToSelect, ChangeSummary const& summary) const;
             void Bind(BeSQLite::Statement& stmt) const;
         public:
             explicit Options(ECN::ECClassId classId=ECN::ECClassId(), bool polymorphic=true, QueryDbOpcode queryDbOpcodes=QueryDbOpcode::All)
@@ -364,12 +361,12 @@ struct ChangeSummary : NonCopyableClass
             bool IsEmpty() const { return !m_classId.IsValid(); }
         };
     private:
-        ChangeSummaryCR m_changeSummary;
+        ChangeSummary const& m_changeSummary;
         Options m_options;
         
         Utf8String MakeSelectStatement(Utf8CP columns) const;
     public:
-        explicit InstanceIterator(ChangeSummaryCR changeSummary, Options const& options=Options())
+        explicit InstanceIterator(ChangeSummary const& changeSummary, Options const& options=Options())
             : DbTableIterator((BeSQLite::DbCR) changeSummary.GetDb()), m_changeSummary(changeSummary), m_options(options) { }
 
         //! An entry in the table.
@@ -377,8 +374,8 @@ struct ChangeSummary : NonCopyableClass
         {
         private:
             friend struct InstanceIterator;
-            ChangeSummaryCR m_changeSummary;
-            Entry(ChangeSummaryCR changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
+            ChangeSummary const& m_changeSummary;
+            Entry(ChangeSummary const& changeSummary, BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry(sql, isValid), m_changeSummary(changeSummary) {}
 
         public:
             //! Get the class id of the current change
@@ -398,7 +395,7 @@ struct ChangeSummary : NonCopyableClass
 
             Entry const& operator*() const { return *this; }
 
-            ChangeSummaryCR GetChangeSummary() const { return m_changeSummary; } //!< @private
+            ChangeSummary const& GetChangeSummary() const { return m_changeSummary; } //!< @private
         };
 
         typedef Entry const_iterator;
@@ -412,12 +409,12 @@ struct ChangeSummary : NonCopyableClass
     struct ValueIterator : BeSQLite::DbTableIterator
     {
     private:
-        ChangeSummaryCR m_changeSummary;
+        ChangeSummary const& m_changeSummary;
         ECN::ECClassId m_classId;
         ECInstanceId m_instanceId;
 
     public:
-        ValueIterator(ChangeSummaryCR changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
+        ValueIterator(ChangeSummary const& changeSummary, ECN::ECClassId classId, ECInstanceId instanceId)
             : DbTableIterator(changeSummary.GetDb()), m_changeSummary (changeSummary), m_classId(classId), m_instanceId(instanceId)
             {}
 
@@ -451,9 +448,9 @@ struct ChangeSummary : NonCopyableClass
 private:
     ECDbCR m_ecdb;
     bool m_isValid = false;
-    InstancesTableP m_instancesTable;
-    ValuesTableP m_valuesTable;
-    ChangeExtractorP m_changeExtractor;
+    InstancesTable* m_instancesTable;
+    ValuesTable* m_valuesTable;
+    ChangeExtractor* m_changeExtractor;
 
     static int s_count;
     static IsChangedInstanceSqlFunction* s_isChangedInstanceSqlFunction;
@@ -517,6 +514,9 @@ public:
     Utf8String ConstructWhereInClause(QueryDbOpcode queryDbOpcodes) const; //! @private
     ECDB_EXPORT static BentleyStatus GetMappedPrimaryTable(Utf8StringR tableName, bool& isTablePerHierarcy, ECN::ECClassCR ecClass, ECDbCR ecdb); //!< @private
 };
+
+typedef ChangeSummary const& ChangeSummaryCR;
+typedef ChangeSummary const* ChangeSummaryCP;
 
 ENUM_IS_FLAGS(ChangeSummary::QueryDbOpcode);
 

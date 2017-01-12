@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ChangeSummary.cpp" />
+    <ClCompile Include="ChangeSummaryImpl.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
     <ClCompile Include="ClassMapper.cpp" />
@@ -143,6 +143,7 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
+    <ClInclude Include="ChangeSummaryImpl.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
     <ClInclude Include="ClassMapper.h" />

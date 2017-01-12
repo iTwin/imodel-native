@@ -11,6 +11,7 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+typedef RefCountedPtr<TableMap> TableMapPtr;
 typedef RefCountedPtr<TableClassMap> TableClassMapPtr;
 
 //=======================================================================================
@@ -128,7 +129,7 @@ struct TableMap : RefCounted<NonCopyableClass>
 
         bool QueryInstance(ECInstanceId instanceId) const;
 
-        TableClassMapCP GetTableClassMap(ECN::ECClassCR ecClass) const;
+        TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
     };
 
 //=======================================================================================
@@ -139,13 +140,13 @@ struct TableClassMap : RefCounted<NonCopyableClass>
     {
     private:
         ECDbCR m_ecdb;
-        TableMapCR m_tableMap;
+        TableMap const& m_tableMap;
         ECN::ECClassCR m_class;
         ClassMapCP m_classMap = nullptr;
 
-        ColumnMapByAccessString m_columnMapByAccessString;
+        bmap<Utf8String, ColumnMap*> m_columnMapByAccessString;
  
-        TableClassMap(ECDbCR ecdb, TableMapCR tableMap, ECN::ECClassCR ecClass);
+        TableClassMap(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass);
         void Initialize();
         void InitPropertyColumnMaps();
         void AddColumnMapsForProperty(SingleColumnDataPropertyMap const&);
@@ -154,7 +155,7 @@ struct TableClassMap : RefCounted<NonCopyableClass>
     public:
         //! @private
         //! Create the table map for the primary table of the specified class
-        static TableClassMapPtr Create(ECDbCR ecdb, TableMapCR tableMap, ECN::ECClassCR ecClass);
+        static TableClassMapPtr Create(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass);
 
         //! Returns true if the class is really mapped
         bool IsMapped() const { return m_classMap != nullptr; }
@@ -167,11 +168,11 @@ struct TableClassMap : RefCounted<NonCopyableClass>
 
         ECN::ECClassCR GetClass() const { return m_class; }
 
-        TableMapCR GetTableMap() const { return m_tableMap; }
+        TableMap const& GetTableMap() const { return m_tableMap; }
 
         ClassMapCP GetClassMap() const { return m_classMap; }
 
-        ColumnMapByAccessString const& GetColumnMapByAccessString() const { return m_columnMapByAccessString; }
+        bmap<Utf8String, ColumnMap*> const& GetColumnMapByAccessString() const { return m_columnMapByAccessString; }
     };
 
 //=======================================================================================
@@ -274,7 +275,7 @@ struct ValuesTable : NonCopyableClass
         void FinalizeStatements();
 
     public:
-        ValuesTable(InstancesTableCR instancesTable);
+        ValuesTable(InstancesTable const&);
         ~ValuesTable() { Free(); }
 
         void Initialize();
@@ -311,23 +312,23 @@ struct ChangeExtractor : NonCopyableClass
 
         BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
 
-        void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
-        ECN::ECClassId GetRelEndClassId(ChangeIterator::RowEntryCR rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
+        void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
+        ECN::ECClassId GetRelEndClassId(ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
         static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
-        int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntryCR rowEntry) const;
+        int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntry const& rowEntry) const;
 
-        void ExtractInstance(ChangeIterator::RowEntryCR rowEntry);
-        void RecordInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, bool recordOnlyIfUpdatedProperties);
-        bool RecordValue(ChangeSummary::InstanceCR instance, ChangeIterator::ColumnEntryCR columnEntry);
+        void ExtractInstance(ChangeIterator::RowEntry const& rowEntry);
+        void RecordInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, bool recordOnlyIfUpdatedProperties);
+        bool RecordValue(ChangeSummary::InstanceCR instance, ChangeIterator::ColumnEntry const& columnEntry);
 
-        void ExtractRelInstances(ChangeIterator::RowEntryCR rowEntry);
-        void ExtractRelInstanceInLinkTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassLinkTableMap const& relClassMap);
-        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntryCR rowEntry, RelationshipClassEndTableMap const& relClassMap);
+        void ExtractRelInstances(ChangeIterator::RowEntry const& rowEntry);
+        void ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap);
+        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassEndTableMap const& relClassMap);
         bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const;
-        bool RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntryCR rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
+        bool RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
 
     public:
-        ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTableR instancesTable, ValuesTableR valuesTable);
+        ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable);
         BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);
     };
 
