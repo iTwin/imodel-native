@@ -516,7 +516,6 @@ public:
         struct CodeAdmin : IHostObject
         {
         private:
-            DgnDbStatus GenerateCodeFragment(Utf8StringR, DgnElementCR, CodeSpecCR, CodeFragmentSpecCR) const;
             DgnElementId GetCodeScopeElementId(DgnElementCR, CodeScopeSpecCR) const;
 
         public:
@@ -532,13 +531,17 @@ public:
             //! Generate a DgnCode for the specified element using the specified CodeSpec
             DGNPLATFORM_EXPORT virtual DgnCode _GenerateCode(DgnElementCR, CodeSpecCR) const;
             
+            //! Build the sequence mask needed by _GetNextSequenceNumber
+            //! @note Called by _GenerateCode
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _BuildSequenceMask(Utf8StringR, CodeSpecCR, CodeFragmentStringListCR) const;
+
             //! Get the next sequence number given an element and CodeSpec context
             //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeSpecCR, CodeFragmentSpecCR) const;
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeFragmentSpecCR, CodeScopeSpecCR, Utf8StringCR) const;
 
             //! Get the class name for the specified element
             //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementClassName(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
+            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
 
             //! Get the value of a property as specified by the CodeFragmentSpec
             //! @note Called by _GenerateCode

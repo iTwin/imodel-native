@@ -54,15 +54,55 @@ DgnCode DgnPlatformLib::Host::CodeAdmin::_GenerateCode(DgnElementCR element, Cod
     if (!codeSpec.CanGenerateCode())
         return DgnCode();
 
-    Utf8String codeValue;
+    CodeFragmentSpecList fragmentSpecs = codeSpec.GetFragmentSpecs();
+    CodeFragmentStringList fragmentStrings;
+    fragmentStrings.resize(fragmentSpecs.size());
+    int i = 0;
+
     for (CodeFragmentSpecCR fragmentSpec : codeSpec.GetFragmentSpecs())
         {
+        DgnDbStatus status = DgnDbStatus::BadRequest;
         Utf8String fragmentString;
-        if (DgnDbStatus::Success != GenerateCodeFragment(fragmentString, element, codeSpec, fragmentSpec))
+
+        switch (fragmentSpec.GetType())
+            {
+            case CodeFragmentSpec::Type::FixedString:
+                fragmentString = fragmentSpec.GetFixedString();
+                status = DgnDbStatus::Success;
+                break;
+
+            case CodeFragmentSpec::Type::SequenceNumber:
+                {
+                Utf8String sequenceMask;
+                status = _BuildSequenceMask(sequenceMask, codeSpec, fragmentStrings);
+                if (DgnDbStatus::Success == status)
+                    status = _GetNextSequenceNumber(fragmentString, element, fragmentSpec, codeSpec.GetScope(), sequenceMask);
+                break;
+                }
+
+            case CodeFragmentSpec::Type::ElementTypeCode:
+                status = _GetElementTypeCode(fragmentString, element, fragmentSpec);
+                break;
+
+            case CodeFragmentSpec::Type::PropertyValue:
+                status = _GetPropertyValue(fragmentString, element, fragmentSpec);
+                break;
+
+            default:
+                BeAssert(false);
+                break;
+            }
+
+        if (DgnDbStatus::Success != status)
             return DgnCode();
 
-        codeValue.append(fragmentString);
+        fragmentStrings[i] = fragmentString;
+        i++;
         }
+
+    Utf8String codeValue;
+    for (Utf8String fragmentString : fragmentStrings)
+        codeValue.append(fragmentString);
 
     DgnElementId scopeElementId = GetCodeScopeElementId(element, codeSpec.GetScope());
     if (scopeElementId.IsValid())
@@ -75,33 +115,34 @@ DgnCode DgnPlatformLib::Host::CodeAdmin::_GenerateCode(DgnElementCR element, Cod
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Shaun.Sewall    01/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::CodeAdmin::GenerateCodeFragment(Utf8StringR fragmentString, DgnElementCR element, CodeSpecCR codeSpec, CodeFragmentSpecCR codeFragmentSpec) const
+DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_BuildSequenceMask(Utf8StringR sequenceMask, CodeSpecCR codeSpec, CodeFragmentStringListCR fragmentStrings) const
     {
-    switch (codeFragmentSpec.GetType())
+    int i = 0;
+    for (CodeFragmentSpecCR fragmentSpec : codeSpec.GetFragmentSpecs())
         {
-        case CodeFragmentSpec::Type::FixedString:
-            fragmentString = codeFragmentSpec.GetFixedString();
-            return DgnDbStatus::Success;
+        if (fragmentSpec.IsInSequenceMask())
+            {
+            sequenceMask.append(fragmentStrings[i]);
+            }
+        else
+            {
+            for (int j=0; j<fragmentSpec.GetMinChars(); j++)
+                sequenceMask.append("?");
 
-        case CodeFragmentSpec::Type::SequenceNumber:
-            return _GetNextSequenceNumber(fragmentString, element, codeSpec, codeFragmentSpec);
+            if (fragmentSpec.GetMinChars() < fragmentSpec.GetMaxChars())
+                sequenceMask.append("*");
+            }
 
-        case CodeFragmentSpec::Type::ElementClass:
-            return _GetElementClassName(fragmentString, element, codeFragmentSpec);
-
-        case CodeFragmentSpec::Type::PropertyValue:
-            return _GetPropertyValue(fragmentString, element, codeFragmentSpec);
-
-        default:
-            BeAssert(false);
-            return DgnDbStatus::BadRequest;
+        i++;
         }
+
+    return DgnDbStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Shaun.Sewall    01/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_GetNextSequenceNumber(Utf8StringR fragmentString, DgnElementCR element, CodeSpecCR codeSpec, CodeFragmentSpecCR fragmentSpec) const
+DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeFragmentSpecCR, CodeScopeSpecCR, Utf8StringCR) const
     {
     BeAssert(false);
     return DgnDbStatus::BadRequest; // proper implementation requires an external service
@@ -110,7 +151,7 @@ DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_GetNextSequenceNumber(Utf8StringR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Shaun.Sewall    01/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_GetElementClassName(Utf8StringR className, DgnElementCR element, CodeFragmentSpecCR fragmentSpec) const
+DgnDbStatus DgnPlatformLib::Host::CodeAdmin::_GetElementTypeCode(Utf8StringR className, DgnElementCR element, CodeFragmentSpecCR fragmentSpec) const
     {
     className = element.GetElementClass()->GetName();
     return DgnDbStatus::Success;
@@ -138,7 +179,7 @@ DgnElementId DgnPlatformLib::Host::CodeAdmin::GetCodeScopeElementId(DgnElementCR
     {
     switch (codeScopeSpec.GetType())
         {
-        case CodeScopeSpec::Type::DgnDb:            
+        case CodeScopeSpec::Type::Repository:            
             return element.GetDgnDb().Elements().GetRootSubjectId();          
 
         case CodeScopeSpec::Type::Model:            

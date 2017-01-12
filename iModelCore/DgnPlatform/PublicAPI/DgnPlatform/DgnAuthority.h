@@ -53,39 +53,51 @@ public:
     {
         Invalid = 0,
         FixedString = 1,
-        ElementClass = 2,
+        ElementTypeCode = 2,
         SequenceNumber = 3,
         PropertyValue = 4,
         // WIP: add RelationshipPath
     };
 
+    static const int MIN_MinChars = 1;      //!< Minimum value for MinChars
+    static const int MAX_MaxChars = 256;    //!< Maximum value for MaxChars
+
 private:
-    Type m_type = Type::Invalid; //!< the fragment type
-    Utf8String m_prompt; //!< The prompt for when the fragment is directly input by user
-    bool m_inSequenceMask=true; //!< If true, include this CodeFragmentSpec when generating the sequence mask
-    Utf8String m_param1; //!< The first variable parameter associated with the fragment (dependent on type)
-    Utf8String m_param2; //!< The second variable parameter associated with the fragment (dependent on type)
+    Type m_type = Type::Invalid;    //!< the fragment type
+    Utf8String m_prompt;            //!< The prompt for when the fragment is directly input by user
+    bool m_inSequenceMask = true;   //!< If true, include this CodeFragmentSpec when generating the sequence mask
+    int m_minChars = MIN_MinChars;  //!< The minimum number of characters in the resulting fragment string
+    int m_maxChars = MAX_MaxChars;  //!< The maximum number of characters in the resulting fragment string
+    Utf8String m_param1;            //!< The first variable parameter associated with the fragment (dependent on type)
+    Utf8String m_param2;            //!< The second variable parameter associated with the fragment (dependent on type)
     // WIP: format specification?
 
     CodeFragmentSpec() {}
     void SetType(Type type) {m_type = type;}
-    void SetPrompt(Utf8CP prompt) {m_prompt.AssignOrClear(prompt);}
-    void SetInSequenceMask(bool inSequenceMask) {m_inSequenceMask = inSequenceMask;}
     void SetParam1(Utf8CP param) {m_param1 = param;}
     void SetParam2(Utf8CP param) {m_param2 = param;}
 
 public:
     Type GetType() const {return m_type;}
     bool IsValid() const {return Type::Invalid != m_type;}
-    Utf8String GetPrompt() const {return m_prompt;}
-    bool GetInSequenceMask() const {return m_inSequenceMask;}
     Utf8String GetFixedString() const {return (Type::FixedString == GetType()) ? m_param1 : "";}
     Utf8String GetPropertyName() const {return (Type::PropertyValue == GetType()) ? m_param1 : "";}
+
+    Utf8String GetPrompt() const {return m_prompt;}
+    void SetPrompt(Utf8CP prompt) {m_prompt.AssignOrClear(prompt);}
+
+    bool IsInSequenceMask() const {return m_inSequenceMask;}
+    void SetInSequenceMask(bool inSequenceMask) {m_inSequenceMask = inSequenceMask;}
+
+    int GetMinChars() const {return m_minChars;}
+    int GetMaxChars() const {return m_maxChars;}
+    void SetMinChars(int minChars) {if ((minChars >= MIN_MinChars) && (minChars <= m_maxChars)) m_minChars = minChars;}
+    void SetMaxChars(int maxChars) {if ((maxChars <= MAX_MaxChars) && (maxChars >= m_minChars)) m_maxChars = maxChars;}
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT static CodeFragmentSpec FromJson(JsonValueCR);
     DGNPLATFORM_EXPORT static CodeFragmentSpec FromFixedString(Utf8CP fixedString, Utf8CP prompt=nullptr, bool inSequenceMask=true);
-    DGNPLATFORM_EXPORT static CodeFragmentSpec FromElementClass(Utf8CP prompt=nullptr, bool inSequenceMask=true);
+    DGNPLATFORM_EXPORT static CodeFragmentSpec FromElementTypeCode(Utf8CP prompt=nullptr, bool inSequenceMask=true);
     DGNPLATFORM_EXPORT static CodeFragmentSpec FromSequenceNumber(Utf8CP prompt=nullptr);
     DGNPLATFORM_EXPORT static CodeFragmentSpec FromPropertyValue(Utf8CP propertyName, Utf8CP prompt=nullptr, bool inSequenceMask=true);
 };
@@ -100,19 +112,20 @@ struct CodeScopeSpec
 public:
     enum class Type : uint8_t
     {
-        DgnDb = 1,
+        Repository = 1,
         Model = 2,
         ParentElement = 3,
+        // WIP: ArbitraryElement = 4 (identified by relationship)
     };
 
 private:
-    Type m_type = Type::DgnDb;
+    Type m_type = Type::Repository;
     CodeScopeSpec() {}
     explicit CodeScopeSpec(Type type) : m_type(type) {}
 
 public:
     Type GetType() const {return m_type;}
-    static CodeScopeSpec CreateDgnDbScope() {return CodeScopeSpec(Type::DgnDb);}
+    static CodeScopeSpec CreateRepositoryScope() {return CodeScopeSpec(Type::Repository);}
     static CodeScopeSpec CreateModelScope() {return CodeScopeSpec(Type::Model);}
     static CodeScopeSpec CreateParentElementScope() {return CodeScopeSpec(Type::ParentElement);}
 };
@@ -122,9 +135,11 @@ typedef DgnAuthority const& CodeSpecCR;
 typedef DgnAuthorityPtr CodeSpecPtr;
 typedef DgnAuthorityCPtr CodeSpecCPtr;
 typedef DgnAuthorityId CodeSpecId;
-typedef bvector<CodeFragmentSpec> CodeFragmentSpecArray;
-typedef CodeFragmentSpecArray& CodeFragmentSpecArrayR;
-typedef CodeFragmentSpecArray const& CodeFragmentSpecArrayCR;
+typedef bvector<CodeFragmentSpec> CodeFragmentSpecList;
+typedef CodeFragmentSpecList& CodeFragmentSpecListR;
+typedef CodeFragmentSpecList const& CodeFragmentSpecListCR;
+typedef bvector<Utf8String> CodeFragmentStringList;
+typedef CodeFragmentStringList const& CodeFragmentStringListCR;
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeFragmentSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(CodeScopeSpec)
@@ -167,7 +182,7 @@ protected:
     Utf8String      m_name;
 
     CodeScopeSpec m_scopeSpec;
-    CodeFragmentSpecArray m_fragmentSpecs;
+    CodeFragmentSpecList m_fragmentSpecs;
     
     DGNPLATFORM_EXPORT explicit DgnAuthority(CreateParams const&);
 
@@ -202,13 +217,13 @@ public:
 
     DGNPLATFORM_EXPORT DgnDbStatus Insert();
 
-    DGNPLATFORM_EXPORT static DgnAuthorityPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateDgnDbScope());
+    DGNPLATFORM_EXPORT static DgnAuthorityPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
 
-    CodeFragmentSpecArrayCR GetFragmentSpecs() const {return m_fragmentSpecs;}
-    CodeFragmentSpecArrayR GetFragmentSpecsR() {return m_fragmentSpecs;}
+    CodeFragmentSpecListCR GetFragmentSpecs() const {return m_fragmentSpecs;}
+    CodeFragmentSpecListR GetFragmentSpecsR() {return m_fragmentSpecs;}
     bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
 
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;

@@ -15,7 +15,36 @@ USING_NAMESPACE_BENTLEY_DPTEST
 //========================================================================================
 struct CodeAdminTests : public DgnDbTestFixture
 {
+    void RoundtripCodeFragmentSpec(CodeFragmentSpecCR, CodeFragmentSpec::Type, Utf8CP, bool, int, int, Utf8CP fixedString=nullptr, Utf8CP propertyName=nullptr);
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    01/2017
+//---------------------------------------------------------------------------------------
+void CodeAdminTests::RoundtripCodeFragmentSpec(CodeFragmentSpecCR specIn, CodeFragmentSpec::Type type, Utf8CP prompt, bool inSequenceMask, int minChars, int maxChars, Utf8CP fixedString, Utf8CP propertyName)
+    {
+    CodeFragmentSpec specOut = CodeFragmentSpec::FromJson(specIn.ToJson());
+    BeAssert(specIn.IsValid());
+    BeAssert(specOut.IsValid());
+    BeAssert(specIn.GetType() == specOut.GetType());
+    BeAssert(specIn.GetType() == type);
+    BeAssert(specIn.IsInSequenceMask() == specOut.IsInSequenceMask());
+    BeAssert(specIn.IsInSequenceMask() == inSequenceMask);
+    BeAssert(0 == strcmp(specIn.GetPrompt().c_str(), prompt));
+    BeAssert(0 == strcmp(specOut.GetPrompt().c_str(), prompt));
+
+    if (nullptr != fixedString)
+        {
+        BeAssert(0 == strcmp(specIn.GetFixedString().c_str(), fixedString));
+        BeAssert(0 == strcmp(specOut.GetFixedString().c_str(), fixedString));
+        }
+
+    if (nullptr != propertyName)
+        {
+        BeAssert(0 == strcmp(specIn.GetPropertyName().c_str(), propertyName));
+        BeAssert(0 == strcmp(specOut.GetPropertyName().c_str(), propertyName));
+        }
+    }
 
 //========================================================================================
 // @bsiclass                                                    Shaun.Sewall    01/2017
@@ -28,8 +57,8 @@ struct TestCodeAdmin : DgnPlatformLib::Host::CodeAdmin
     TestCodeAdmin();
     DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName) override;
     CodeSpecId _GetDefaultCodeSpecId(DgnDbR, ECN::ECClassCR) const override;
-    DgnDbStatus _GetElementClassName(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const override;
-    DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeSpecCR, CodeFragmentSpecCR) const override;
+    DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const override;
+    DgnDbStatus _GetNextSequenceNumber(Utf8StringR, DgnElementCR, CodeFragmentSpecCR, CodeScopeSpecCR, Utf8StringCR) const override;
 };
 
 //---------------------------------------------------------------------------------------
@@ -72,7 +101,7 @@ CodeSpecId TestCodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECN::ECClassCR inputC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus TestCodeAdmin::_GetElementClassName(Utf8StringR classShortName, DgnElementCR element, CodeFragmentSpecCR fragmentSpec) const
+DgnDbStatus TestCodeAdmin::_GetElementTypeCode(Utf8StringR classShortName, DgnElementCR element, CodeFragmentSpecCR fragmentSpec) const
     {
     WString className(element.GetElementClass()->GetName().c_str(), BentleyCharEncoding::Utf8);
     classShortName = Utf8String(className.substr(0,1).ToUpper());
@@ -82,7 +111,7 @@ DgnDbStatus TestCodeAdmin::_GetElementClassName(Utf8StringR classShortName, DgnE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Shaun.Sewall                    01/2017
 //---------------------------------------------------------------------------------------
-DgnDbStatus TestCodeAdmin::_GetNextSequenceNumber(Utf8StringR fragmentString, DgnElementCR element, CodeSpecCR codeSpec, CodeFragmentSpecCR fragmentSpec) const
+DgnDbStatus TestCodeAdmin::_GetNextSequenceNumber(Utf8StringR fragmentString, DgnElementCR element, CodeFragmentSpecCR fragmentSpec, CodeScopeSpecCR scopeSpec, Utf8StringCR sequenceMask) const
     {
     static uint32_t sequenceNumber=0;
     ++sequenceNumber;
@@ -103,74 +132,50 @@ TEST_F(CodeAdminTests, CodeAdmin)
         {
         Utf8CP fixedString = "-";
         Utf8CP prompt = "FixedStringPrompt";
-        CodeFragmentSpec fragmentSpec1 = CodeFragmentSpec::FromFixedString(fixedString, prompt);
-        CodeFragmentSpec fragmentSpec2 = CodeFragmentSpec::FromJson(fragmentSpec1.ToJson());
-        ASSERT_TRUE(fragmentSpec1.IsValid());
-        ASSERT_TRUE(fragmentSpec2.IsValid());
-        ASSERT_EQ(fragmentSpec1.GetType(), fragmentSpec2.GetType());
-        ASSERT_EQ(fragmentSpec1.GetType(), CodeFragmentSpec::Type::FixedString);
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), fragmentSpec2.GetInSequenceMask());
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), true);
-        ASSERT_STREQ(fragmentSpec1.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec2.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec1.GetFixedString().c_str(), fixedString);
-        ASSERT_STREQ(fragmentSpec2.GetFixedString().c_str(), fixedString);
+        bool inSequenceMask = true;
+        CodeFragmentSpec fragmentSpec = CodeFragmentSpec::FromFixedString(fixedString, prompt);
+        RoundtripCodeFragmentSpec(fragmentSpec, CodeFragmentSpec::Type::FixedString, prompt, inSequenceMask, strlen(fixedString), strlen(fixedString), fixedString);
         }
     
     // CodeFragmentSpec::To/FromJson for ElementClass
         {
         Utf8CP prompt = "ElementClassPrompt";
-        CodeFragmentSpec fragmentSpec1 = CodeFragmentSpec::FromElementClass(prompt);
-        CodeFragmentSpec fragmentSpec2 = CodeFragmentSpec::FromJson(fragmentSpec1.ToJson());
-        ASSERT_TRUE(fragmentSpec1.IsValid());
-        ASSERT_TRUE(fragmentSpec2.IsValid());
-        ASSERT_EQ(fragmentSpec1.GetType(), fragmentSpec2.GetType());
-        ASSERT_EQ(fragmentSpec1.GetType(), CodeFragmentSpec::Type::ElementClass);
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), fragmentSpec2.GetInSequenceMask());
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), true);
-        ASSERT_STREQ(fragmentSpec1.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec2.GetPrompt().c_str(), prompt);
+        bool inSequenceMask = true;
+        int minChars = CodeFragmentSpec::MIN_MinChars;
+        int maxChars = 1;
+        CodeFragmentSpec fragmentSpec = CodeFragmentSpec::FromElementTypeCode(prompt);
+        fragmentSpec.SetMaxChars(maxChars);
+        RoundtripCodeFragmentSpec(fragmentSpec, CodeFragmentSpec::Type::ElementTypeCode, prompt, inSequenceMask, minChars, maxChars);
         }
     
     // CodeFragmentSpec::To/FromJson for SequenceNumber
         {
         Utf8CP prompt = "SequenceNumberPrompt";
-        CodeFragmentSpec fragmentSpec1 = CodeFragmentSpec::FromSequenceNumber(prompt);
-        CodeFragmentSpec fragmentSpec2 = CodeFragmentSpec::FromJson(fragmentSpec1.ToJson());
-        ASSERT_TRUE(fragmentSpec1.IsValid());
-        ASSERT_TRUE(fragmentSpec2.IsValid());
-        ASSERT_EQ(fragmentSpec1.GetType(), fragmentSpec2.GetType());
-        ASSERT_EQ(fragmentSpec1.GetType(), CodeFragmentSpec::Type::SequenceNumber);
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), fragmentSpec2.GetInSequenceMask());
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), false);
-        ASSERT_STREQ(fragmentSpec1.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec2.GetPrompt().c_str(), prompt);
+        bool inSequenceMask = false;
+        int minChars = CodeFragmentSpec::MIN_MinChars;
+        int maxChars = 4;
+        CodeFragmentSpec fragmentSpec = CodeFragmentSpec::FromSequenceNumber(prompt);
+        fragmentSpec.SetMaxChars(maxChars);
+        RoundtripCodeFragmentSpec(fragmentSpec, CodeFragmentSpec::Type::SequenceNumber, prompt, inSequenceMask, minChars, maxChars);
         }
     
     // CodeFragmentSpec::To/FromJson for PropertyValue
         {
         Utf8CP propertyName = "PropertyName";
         Utf8CP prompt = "PropertyValuePrompt";
-        CodeFragmentSpec fragmentSpec1 = CodeFragmentSpec::FromPropertyValue(propertyName, prompt, false);
-        CodeFragmentSpec fragmentSpec2 = CodeFragmentSpec::FromJson(fragmentSpec1.ToJson());
-        ASSERT_TRUE(fragmentSpec1.IsValid());
-        ASSERT_TRUE(fragmentSpec2.IsValid());
-        ASSERT_EQ(fragmentSpec1.GetType(), fragmentSpec2.GetType());
-        ASSERT_EQ(fragmentSpec1.GetType(), CodeFragmentSpec::Type::PropertyValue);
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), fragmentSpec2.GetInSequenceMask());
-        ASSERT_EQ(fragmentSpec1.GetInSequenceMask(), false);
-        ASSERT_STREQ(fragmentSpec1.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec2.GetPrompt().c_str(), prompt);
-        ASSERT_STREQ(fragmentSpec1.GetPropertyName().c_str(), propertyName);
-        ASSERT_STREQ(fragmentSpec2.GetPropertyName().c_str(), propertyName);
+        bool inSequenceMask = false;
+        int minChars = CodeFragmentSpec::MIN_MinChars;
+        int maxChars = CodeFragmentSpec::MAX_MaxChars;
+        CodeFragmentSpec fragmentSpec = CodeFragmentSpec::FromPropertyValue(propertyName, prompt, false);
+        RoundtripCodeFragmentSpec(fragmentSpec, CodeFragmentSpec::Type::PropertyValue, prompt, inSequenceMask, minChars, maxChars, nullptr, propertyName);
         }
 
     // CodeScopeSpec static Create* methods
         {
-        CodeScopeSpec dgnDbScope = CodeScopeSpec::CreateDgnDbScope();
+        CodeScopeSpec repositoryScope = CodeScopeSpec::CreateRepositoryScope();
         CodeScopeSpec modelScope = CodeScopeSpec::CreateModelScope();
         CodeScopeSpec parentElementScope = CodeScopeSpec::CreateParentElementScope();
-        ASSERT_EQ(CodeScopeSpec::Type::DgnDb, dgnDbScope.GetType());
+        ASSERT_EQ(CodeScopeSpec::Type::Repository, repositoryScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::Model, modelScope.GetType());
         ASSERT_EQ(CodeScopeSpec::Type::ParentElement, parentElementScope.GetType());
         }
@@ -190,8 +195,8 @@ TEST_F(CodeAdminTests, CodeAdmin)
         {
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestSpatialLocation));
         ASSERT_TRUE(codeSpec.IsValid());
-        ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::DgnDb);
-        codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementClass("Enter class name"));
+        ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Repository);
+        codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString("-"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("UserLabel", "Enter UserLabel value", false));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString("-"));
@@ -204,7 +209,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_TEST_ELEMENT_CLASS_NAME), CodeScopeSpec::CreateModelScope());
         ASSERT_TRUE(codeSpec.IsValid());
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Model);
-        codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementClass("Enter class name"));
+        codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString(":"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("i", "Enter integer value"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString("_"));
@@ -229,6 +234,9 @@ TEST_F(CodeAdminTests, CodeAdmin)
         ASSERT_EQ(DgnDbStatus::Success, element->GenerateCode());
         ASSERT_TRUE(element->GetCode().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
+        Utf8String className;
+        ASSERT_EQ(DgnDbStatus::Success, T_HOST.GetCodeAdmin()._GetElementTypeCode(className, *element, CodeFragmentSpec::FromElementTypeCode()));
+        ASSERT_STREQ("T", className.c_str());
         }
 
     for (int i=0; i<5; i++)
@@ -241,6 +249,9 @@ TEST_F(CodeAdminTests, CodeAdmin)
         ASSERT_EQ(DgnDbStatus::Success, element->GenerateCode());
         ASSERT_TRUE(element->GetCode().IsValid());
         ASSERT_TRUE(element->Insert().IsValid());
+        Utf8String className;
+        ASSERT_EQ(DgnDbStatus::Success, T_HOST.GetCodeAdmin()._GetElementTypeCode(className, *element, CodeFragmentSpec::FromElementTypeCode()));
+        ASSERT_STREQ("T", className.c_str());
         }
 
     for (int i=0; i<4; i++)
@@ -253,5 +264,8 @@ TEST_F(CodeAdminTests, CodeAdmin)
         ASSERT_NE(DgnDbStatus::Success, element->GenerateCode());
         ASSERT_TRUE(element->Insert().IsValid());
         ASSERT_TRUE(element->GetCode().IsValid());
+        Utf8String className;
+        ASSERT_EQ(DgnDbStatus::Success, T_HOST.GetCodeAdmin()._GetElementTypeCode(className, *element, CodeFragmentSpec::FromElementTypeCode()));
+        ASSERT_STREQ("P", className.c_str());
         }
     }

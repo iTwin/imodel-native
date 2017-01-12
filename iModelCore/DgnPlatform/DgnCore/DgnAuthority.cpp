@@ -288,122 +288,6 @@ void DgnAuthority::_FromPropertiesJson(JsonValueCR json)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value CodeFragmentSpec::ToJson() const
-    {
-    Json::Value json(Json::objectValue);
-    json["type"] = (int)GetType();
-    json["prompt"] = GetPrompt();
-    json["inSequenceMask"] = GetInSequenceMask();
-
-    switch (GetType())
-        {
-        case Type::FixedString:
-            json["fixedString"] = m_param1;
-            break;
-
-        case Type::PropertyValue:
-            json["propertyName"] = m_param1;
-            break;
-
-        case Type::ElementClass:
-        case Type::SequenceNumber:
-            // no additional data to write
-            break;
-
-        default:
-            BeAssert(false); // unexpected type
-            break;
-        }
-
-    return json;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromJson(JsonValueCR json)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType((CodeFragmentSpec::Type)json["type"].asInt());
-    fragmentSpec.SetPrompt(json["prompt"].asCString());
-    fragmentSpec.SetInSequenceMask(json["inSequenceMask"].asBool());
-
-    switch (fragmentSpec.GetType())
-        {
-        case Type::FixedString:
-            fragmentSpec.SetParam1(json["fixedString"].asCString());
-            break;
-
-        case Type::PropertyValue:
-            fragmentSpec.SetParam1(json["propertyName"].asCString());
-            break;
-
-        case Type::ElementClass:
-        case Type::SequenceNumber:
-            // no additional data to read
-            break;
-
-        default:
-            BeAssert(false); // unexpected type
-            break;
-        }
-
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromFixedString(Utf8CP fixedString, Utf8CP prompt, bool inSequenceMask)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::FixedString);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    fragmentSpec.SetParam1(fixedString);
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromElementClass(Utf8CP prompt, bool inSequenceMask)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::ElementClass);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromSequenceNumber(Utf8CP prompt)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::SequenceNumber);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(false); // by definition, the sequence number is not part of the sequence mask
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-CodeFragmentSpec CodeFragmentSpec::FromPropertyValue(Utf8CP propertyName, Utf8CP prompt, bool inSequenceMask)
-    {
-    CodeFragmentSpec fragmentSpec;
-    fragmentSpec.SetType(Type::PropertyValue);
-    fragmentSpec.SetPrompt(prompt);
-    fragmentSpec.SetInSequenceMask(inSequenceMask);
-    fragmentSpec.SetParam1(propertyName);
-    return fragmentSpec;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnAuthority::ReadProperties(Utf8StringCR jsonStr)
@@ -470,7 +354,7 @@ DgnAuthorityPtr DgnAuthority::Create(DgnDbR db, Utf8CP authorityName, CodeScopeS
 DatabaseScopeAuthorityPtr DatabaseScopeAuthority::Create(Utf8CP authorityName, DgnDbR dgndb)
     {
     AuthorityHandlerR hdlr = dgn_AuthorityHandler::DatabaseScope::GetHandler();
-    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateDgnDbScope());
+    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateRepositoryScope());
     return static_cast<DatabaseScopeAuthority*>(hdlr.Create(params).get());
     }
 
@@ -785,4 +669,132 @@ Utf8CP DgnCode::Iterator::Options::GetECSql() const
 DgnCode::Iterator::Iterator(DgnDbR db, Options options)
     {
     Prepare(db, options.GetECSql(), 3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value CodeFragmentSpec::ToJson() const
+    {
+    Json::Value json(Json::objectValue);
+    json["type"] = (int)GetType();
+    json["prompt"] = GetPrompt();
+    json["inSequenceMask"] = IsInSequenceMask();
+    json["minChars"] = GetMinChars();
+    json["maxChars"] = GetMaxChars();
+
+    switch (GetType())
+        {
+        case Type::FixedString:
+            json["fixedString"] = m_param1;
+            break;
+
+        case Type::PropertyValue:
+            json["propertyName"] = m_param1;
+            break;
+
+        case Type::ElementTypeCode:
+        case Type::SequenceNumber:
+            // no additional data to write
+            break;
+
+        default:
+            BeAssert(false); // unexpected type
+            break;
+        }
+
+    return json;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromJson(JsonValueCR json)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType((CodeFragmentSpec::Type)json["type"].asInt());
+    fragmentSpec.SetPrompt(json["prompt"].asCString());
+    fragmentSpec.SetInSequenceMask(json["inSequenceMask"].asBool());
+    fragmentSpec.SetMinChars(json.get("minChars", MIN_MinChars).asInt());
+    fragmentSpec.SetMaxChars(json.get("maxChars", MAX_MaxChars).asInt());
+
+    switch (fragmentSpec.GetType())
+        {
+        case Type::FixedString:
+            fragmentSpec.SetParam1(json["fixedString"].asCString());
+            break;
+
+        case Type::PropertyValue:
+            fragmentSpec.SetParam1(json["propertyName"].asCString());
+            break;
+
+        case Type::ElementTypeCode:
+        case Type::SequenceNumber:
+            // no additional data to read
+            break;
+
+        default:
+            BeAssert(false); // unexpected type
+            break;
+        }
+
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromFixedString(Utf8CP fixedString, Utf8CP prompt, bool inSequenceMask)
+    {
+    if (!fixedString || !*fixedString)
+        return CodeFragmentSpec();
+
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::FixedString);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    fragmentSpec.SetMinChars(strlen(fixedString));
+    fragmentSpec.SetMaxChars(strlen(fixedString));
+    fragmentSpec.SetParam1(fixedString);
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromElementTypeCode(Utf8CP prompt, bool inSequenceMask)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::ElementTypeCode);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromSequenceNumber(Utf8CP prompt)
+    {
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::SequenceNumber);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(false); // by definition, the sequence number is not part of the sequence mask
+    return fragmentSpec;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeFragmentSpec CodeFragmentSpec::FromPropertyValue(Utf8CP propertyName, Utf8CP prompt, bool inSequenceMask)
+    {
+    if (!propertyName || !*propertyName)
+        return CodeFragmentSpec();
+
+    CodeFragmentSpec fragmentSpec;
+    fragmentSpec.SetType(Type::PropertyValue);
+    fragmentSpec.SetPrompt(prompt);
+    fragmentSpec.SetInSequenceMask(inSequenceMask);
+    fragmentSpec.SetParam1(propertyName);
+    return fragmentSpec;
     }
