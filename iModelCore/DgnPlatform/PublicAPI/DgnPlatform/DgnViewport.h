@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnViewport.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -555,8 +555,10 @@ public:
 struct TileViewport : DgnViewport
 {
     BSIRect m_rect;
-    Transform m_toParent = Transform::FromIdentity();
+    Transform m_toParent = Transform::FromIdentity(); // tile NPC to sheet world
+    double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
     Render::GraphicListPtr m_terrain;
+
     virtual void _QueueScene() = 0;
     virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
     BSIRect _GetViewRect() const override {return m_rect;}

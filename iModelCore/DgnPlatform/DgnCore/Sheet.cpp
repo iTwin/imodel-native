@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/Sheet.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -459,6 +459,8 @@ Attachment::Tree::Tree(DgnDbR db, Sheet::ViewController& sheetController, DgnEle
     SetExpirationTime(std::chrono::seconds(5)); // only save unused sheet tiles for 5 seconds
 
     m_biasDistance = Render::Target::DepthFromDisplayPriority(attach->GetDisplayPriority());
+    m_viewport->m_biasDistance = m_biasDistance; // for flashing hits
+
     m_hiResBiasDistance = Render::Target::DepthFromDisplayPriority(-1);
     m_loResBiasDistance = m_hiResBiasDistance * 2.0;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/HitDetail.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -178,7 +178,7 @@ protected:
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewportP, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewport*, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
 
@@ -187,6 +187,7 @@ public:
     void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
+    DgnViewport* GetSheetViewport() const {return m_sheetViewport;}
 
     void Draw(ViewContextR context) const {_Draw(context);}
     void GetInfoString(Utf8StringR descr, Utf8CP delimiter) const {_GetInfoString(descr, delimiter);}

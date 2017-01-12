@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/ViewContext.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -134,6 +134,7 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
+    DGNPLATFORM_EXPORT Transform GetSheetToTileTransform(TileViewportCR tileVp); // sheet view to tile view
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
@@ -458,10 +459,14 @@ struct DecorateContext : RenderContext
 private:
     bool    m_isFlash = false;
     Render::Decorations& m_decorations;
+    Render::GraphicBranch* m_viewlet = nullptr;
+
+    StatusInt VisitSheetHit(HitDetailCR hit);
     void _AddContextOverrides(Render::OvrGraphicParamsR ovrMatSymb, GeometrySourceCP source) override;
     void _OutputGraphic(Render::GraphicR graphic, GeometrySourceCP) override;
     StatusInt _VisitHit(HitDetailCR hit) override;
     DecorateContext(DgnViewportR vp, Render::Decorations& decorations) : RenderContext(vp, DrawPurpose::Decorate), m_decorations(decorations) {}
+
 public:
     //! Display world coordinate graphic with flash/hilite treatment.
     DGNPLATFORM_EXPORT void AddFlashed(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovr=nullptr);
