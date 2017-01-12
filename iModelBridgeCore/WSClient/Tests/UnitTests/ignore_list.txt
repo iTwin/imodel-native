@@ -47,3 +47,11 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
     #          Expected: to be called once
     #            Actual: never called - unsatisfied and active
     # *********************************************************************************
+#Following tests were disabled and are added to ignore list instead
+ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
+ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
+DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
+WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString

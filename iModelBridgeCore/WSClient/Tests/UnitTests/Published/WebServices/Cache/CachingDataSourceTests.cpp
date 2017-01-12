@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingDataSourceTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -2318,7 +2318,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_NoChanges_DoesNoRequestsAndSucce
     ASSERT_TRUE(result.GetValue().empty());
     }
 
-TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -2352,7 +2352,7 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     EXPECT_NE("", r2.GetError().GetMessage());
     }
 
-TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
@@ -2384,7 +2384,7 @@ TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnecti
     ASSERT_TRUE(r2.IsSuccess());
     }
 
-TEST_F(CachingDataSourceTests, DISABLED_SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds)
+TEST_F(CachingDataSourceTests, SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds)
     {
     auto cache1 = std::make_shared<NiceMock<MockDataSourceCache>>();
     auto cache2 = std::make_shared<NiceMock<MockDataSourceCache>>();
