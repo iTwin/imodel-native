@@ -418,7 +418,6 @@ public:
     UNITS_EXPORT bool IsNegativeParentheses() { return (m_signOption == ShowSignOption::NegativeParentheses); }
     UNITS_EXPORT bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
     UNITS_EXPORT bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
-
     UNITS_EXPORT void SetAlias(Utf8CP alias);
     UNITS_EXPORT Utf8String GetAlias() { return m_alias; }
     UNITS_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
@@ -513,7 +512,6 @@ public:
     UNITS_EXPORT double GetlowValue() { return m_lowValue; }
     UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
     UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero);
-
     };
 
 struct StdFormatSet

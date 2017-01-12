@@ -183,5 +183,9 @@ Utf8String Utils::DecimalPrecisionName(DecimalPrecision prec)
      return Utf8String(buf);
      }
 
+ FractionalNumeric::FractionalNumeric(double dval, FractionalPrecision fprec)
+     {
+
+     }
 
 END_BENTLEY_FORMATTING_NAMESPACE
