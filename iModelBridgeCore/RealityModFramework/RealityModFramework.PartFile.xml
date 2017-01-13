@@ -16,7 +16,8 @@
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="BeCurl"                     PartFile="BeCurl"                    Repository="Libsrc-Curl"/>
         <SubPart PartName="BeHttp"                     PartFile="BeHttp"                    Repository="BeHttp"/>
-        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/>        
+        <SubPart PartName="BeJsonCpp"                  PartFile="BeJsonCpp"                 Repository="Libsrc-JsonCpp"/> 
+        <SubPart PartName="BentleyDesktopClient-Api"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
             <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
@@ -127,6 +128,16 @@
         </Bindings>
     </Part>
 
+    <Part Name="WSGServicesExample" BentleyBuildMakeFile="RealityPlatform\Example\WSGServicesExample.mke">
+        <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
+        <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
+        <SubPart PartName="RealityPlatform"/>
+        <SubPart PartName="RealityPackage"/>
+        <Bindings>
+            <Assemblies>Delivery/WSGServicesExample.exe</Assemblies>
+        </Bindings>
+    </Part>
+
     <Part Name="ConversionToolsTester" BentleyBuildMakeFile="RealityAdmin\Example\ConversionToolsTester.mke">
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="BentleyDll"          PartFile="Bentley"      Repository="Bentley" />
@@ -149,6 +160,7 @@
     
     <Part Name="Reality-Examples">
         <SubPart PartName="DownloadEngineExample"/>
+        <SubPart PartName="WSGServicesExample"/>
         <SubPart PartName="RealityDbECPlugin"/>
         <SubPart PartName="RealityDbECPluginC"/>
         <SubPart PartName="UsageDataExtractor"/>
