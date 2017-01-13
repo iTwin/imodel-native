@@ -2320,22 +2320,6 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
                     finalIndexNb = newIndices.size();
                     }
 
-                if (!m_reprojectionTransform.IsIdentity())
-                    {
-                    DPoint3d projectedCentroid = centroid;
-                    m_reprojectionTransform.Multiply(projectedCentroid);
-                    for (size_t idx = 0; idx < finalPointNb; idx += 3)
-                        {
-                        DPoint3d pt = DPoint3d::From(finalPointPtr[idx], finalPointPtr[idx + 1], finalPointPtr[idx + 2]);
-                        pt.SumOf(centroid, pt);
-                        m_reprojectionTransform.Multiply(pt);
-                        finalPointPtr[idx] = pt.x - projectedCentroid.x;
-                        finalPointPtr[idx + 1] = pt.y - projectedCentroid.y;
-                        finalPointPtr[idx + 2] = pt.z - projectedCentroid.z;
-                        }
-                    centroid = projectedCentroid;
-                    }
-
                 SmCachedDisplayMesh* cachedDisplayMesh = 0;
 
                 if (s_deactivateTexture || !meshNode->IsTextured())

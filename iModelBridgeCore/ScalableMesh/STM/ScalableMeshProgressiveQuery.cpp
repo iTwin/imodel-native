@@ -1078,18 +1078,13 @@ template <class POINT> int BuildQueryObject(//ScalableMeshQuadTreeViewDependentM
     double rootToViewMatrix[4][4];
 
     memcpy(rootToViewMatrix, queryParam->GetRootToViewMatrix(), sizeof(double) * 4 * 4);
-
-    ClipVectorPtr clipVec = queryParam->GetViewClipVector();
-    Transform trans;
-    trans.InverseOf(smP->GetReprojectionTransform());
-    clipVec->TransformInPlace(trans);
-
+    
     ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>* viewDependentQueryP = new ScalableMeshQuadTreeViewDependentMeshQuery<POINT, Extent3dType>(queryExtent,
         rootToViewMatrix,
         viewportRotMatrix,
         queryParam->GetViewBox(),
         false,
-        clipVec,
+        queryParam->GetViewClipVector(),
         100000000);
 
     // viewDependentQueryP->SetTracingXMLFileName(AString("E:\\MyDoc\\SS3 - Iteration 17\\STM\\Bad Resolution Selection\\visitingNodes.xml"));
