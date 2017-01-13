@@ -166,9 +166,7 @@ struct ScalableMeshModel : IMeshSpatialModel
 
         SCALABLEMESH_SCHEMA_EXPORT static WString GetTerrainModelPath(BentleyApi::Dgn::DgnDbCR dgnDb);
 
-        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();
-
-        SCALABLEMESH_SCHEMA_EXPORT Transform GetUorsToStorage();
+        SCALABLEMESH_SCHEMA_EXPORT IScalableMesh* GetScalableMesh();        
 
         SCALABLEMESH_SCHEMA_EXPORT void SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint64_t>& previouslyActiveClips);
 

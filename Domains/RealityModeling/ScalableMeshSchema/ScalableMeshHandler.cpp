@@ -1245,13 +1245,14 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
+
+    DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
     
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
         dgnGcsPtr->UorsFromCartesian(scale, scale);
-
-        DgnGCSPtr projGCS = dgnProject.Units().GetDgnGCS();
+        
         if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
             DRange3d smExtent, smExtentUors;
@@ -1272,9 +1273,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
                 m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
 
                 DRange3d smExtentInDestGCS;
-                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);
-
-                m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
+                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);                
                 }
             }
         else
@@ -1289,6 +1288,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
            
+    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
+
     DPoint3d translation = {0,0,0};
     
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                    
@@ -1343,18 +1344,6 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     dgnDb.SaveChanges();
     return model;
     }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                 Elenie.Godzaridis     2/2016
-//----------------------------------------------------------------------------------------
-Transform ScalableMeshModel::GetUorsToStorage()
-    {
-    Transform t;
-    t.InitFrom(m_storageToUorsTransfo);
-    t = t.ValidatedInverse();
-    return t;
-    }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
