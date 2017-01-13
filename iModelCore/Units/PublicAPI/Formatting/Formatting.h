@@ -492,7 +492,7 @@ private:
     bool   m_negative;
 
     UNITS_EXPORT void Convert();
-    void SetValue(double dval, DecimalPrecision prec);
+    UNITS_EXPORT void SetValue(double dval, DecimalPrecision prec);
     NumericTriad();
     static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
 public:
