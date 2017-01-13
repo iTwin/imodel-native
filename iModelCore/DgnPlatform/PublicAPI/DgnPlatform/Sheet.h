@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/Sheet.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -174,6 +174,20 @@ public:
     DgnDbStatus SetDisplayPriority(int32_t v) {return SetPropertyValue(str_DisplayPriority(), v);}
     double GetScale() const {return GetPropertyValueDouble(str_Scale());}
     DgnDbStatus SetScale(double v) {return SetPropertyValue(str_Scale(), v);}
+
+    //! Get the clip to be applied to this attachment, if any. 
+    //! @return a clip vector or an invalid ptr if the attachment is not clipped.
+    //! @see SetClip
+    DGNPLATFORM_EXPORT ClipVectorPtr GetClip() const;
+
+    //! Set the clip to be applied to this attachment.
+    //! @return non-zero error status if the clip is invalid
+    //! @see ClearClip
+    DGNPLATFORM_EXPORT DgnDbStatus SetClip(ClipVectorCR);
+
+    //! Set this attachment to be unclipped.
+    //! @see SetClip
+    DGNPLATFORM_EXPORT void ClearClip();
     };
 
 //=======================================================================================
