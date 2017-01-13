@@ -32,6 +32,12 @@ DRange2d MapBoxTextureProvider::_GetTextureExtent()
 
 StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
+    double unitsPerPixelX = (area.high.x - area.low.x) / width;
+    double unitsPerPixelY = (area.high.y - area.low.y) / height;
+    area.low.x -= 5 * unitsPerPixelX;
+    area.low.y -= 5 * unitsPerPixelY;
+    area.high.x += 5 * unitsPerPixelX;
+    area.high.y += 5 * unitsPerPixelY;
     return SUCCESS;
     }
 

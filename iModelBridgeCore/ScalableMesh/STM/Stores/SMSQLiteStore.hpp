@@ -2,12 +2,97 @@
 
 #include "SMSQLiteStore.h"
 #include "SMStreamedSourceStore.h"
+#include "..\ScalableMeshSourcesPersistance.h"
+#include <ScalableMesh/IScalableMeshSourceImportConfig.h>
+#include <ScalableMesh/IScalableMeshDocumentEnv.h>
+#include <ScalableMesh/IScalableMeshSourceVisitor.h>
+
+#include <ScalableMesh/Import/SourceReference.h>
+
+#include <ScalableMesh/Import/Source.h>
+#include "..\RasterUtilities.h"
 
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr database)
     : SMSQLiteSisterFile(database)
     {
     m_smSQLiteFile = database;   
+
+    SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
+    m_smSQLiteFile->LoadSources(*sourcesData);
+
+    WString wktStr;
+    m_smSQLiteFile->GetWkt(wktStr);
+
+
+    if (!wktStr.empty())
+        {
+        ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+
+        BaseGCS::WktFlavor wktFlavor;
+
+        bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
+
+        assert(result);
+
+        SMStatus gcsFromWKTStatus = SMStatus::S_SUCCESS;
+        GCS fileGCS(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsFromWKTStatus));
+        if (!fileGCS.IsNull()) m_cs = fileGCS.GetGeoRef().GetBasePtr();
+        }
+
+    DocumentEnv sourceEnv(L"");
+    bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(m_sources, *sourcesData, sourceEnv);
+
+    SMIndexMasterHeader<EXTENT> indexHeader;
+    if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
+        {
+        //we create the raster only once per dataset. Apparently there is some race condition if we do it in the render threads.
+        if (indexHeader.m_textured == IndexTexture::Streaming) 
+            {
+
+            SQLiteNodeHeader nodeHeader;
+            nodeHeader.m_nodeID = indexHeader.m_rootNodeBlockID.m_integerID;
+            if (!m_smSQLiteFile->GetNodeHeader(nodeHeader))
+                {
+                assert(!"Dataset is empty");
+                return;
+                }
+            SMIndexNodeHeader<EXTENT> header;
+            header = nodeHeader;
+            if (nodeHeader.m_parentNodeID == -1)  m_totalExtent = header.m_contentExtentDefined ? header.m_contentExtent : header.m_nodeExtent;
+
+            const IDTMSource* rasterSource = nullptr;
+            for (IDTMSourceCollection::const_iterator sourceIt = m_sources.Begin(), sourcesEnd = m_sources.End(); sourceIt != sourcesEnd;
+                 ++sourceIt)
+                {
+                const IDTMSource& source = *sourceIt;
+                if (source.GetSourceType() == DTM_SOURCE_DATA_IMAGE)
+                    {
+                    rasterSource = &source;
+                    break;
+                    }
+                }
+
+            if (rasterSource == nullptr)
+                {
+                assert(false && "Trying to use a streamed source but no raster source found!");
+                return;
+                }
+            WString path;
+            if (rasterSource->GetPath().StartsWith(L"http://"))
+                {
+                path = rasterSource->GetPath();
+                }
+            else
+                {
+                path = WString(L"file://") + rasterSource->GetPath();
+                }
+
+            DRange2d extent2d = DRange2d::From(m_totalExtent);
+            m_raster = RasterUtilities::LoadRaster(path, m_cs, extent2d);
+            }
+        }
+
     }
 
 template <class EXTENT> SMSQLiteStore<EXTENT>::~SMSQLiteStore()
@@ -169,7 +254,7 @@ template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISMTextureD
         {
         if (indexHeader.m_textured == IndexTexture::Streaming)
             {
-            dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent);
+           dataStore = new SMStreamedSourceStore<Byte, EXTENT>(SMStoreDataType::Texture, nodeHeader, m_smSQLiteFile, m_totalExtent, m_raster);
             return true;
             }
         }

@@ -1381,7 +1381,7 @@ public:
     -----------------------------------------------------------------------------*/
     bool                IsBalanced() const;
 
-    bool                IsTextured() const;
+    IndexTexture                IsTextured() const;
 
     void              SetTextured(IndexTexture textureState);
 
