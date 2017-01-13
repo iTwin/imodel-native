@@ -2,7 +2,7 @@
 |
 |     $Source: PCLWrapper/RansacUtility.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "PCLWrapperPch.h"
@@ -15,6 +15,7 @@ BEGIN_PCLWRAPPER_NAMESPACE
 IStatusPtr IRansacUtility::GetOutliersFromBestPlaneFit(DPoint3d*& pOutliers, DPoint3d*& pInliers, size_t& nOutliers, size_t& nInliers, const DPoint3d* pPoints, size_t numberOfPoints, double distThreshold)
     {
     IStatus::Type status = IStatus::ERROR;
+    #if 0
     pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>());
     for (int i = 0; i < numberOfPoints; i++)
         {
@@ -38,12 +39,14 @@ IStatusPtr IRansacUtility::GetOutliersFromBestPlaneFit(DPoint3d*& pOutliers, DPo
         if (std::find(inliers.begin(), inliers.end(), (int)i) != inliers.end()) pInliers[nI++] = pPoints[i];
         else pOutliers[nO++] = pPoints[i];
         }
+   #endif
     return IStatus::CreateStatus(status);
     }
 
 IStatusPtr IRansacUtility::FitModelAndReturnInliers(DPoint3d*& pInliers, int*& pInlierIds, size_t& nInliers, const DPoint3d* pTestDataSet, size_t nTestDataSet, const DPoint3d* pPoints, size_t  numberOfPoints, double distThreshold)
     {
     IStatus::Type status = IStatus::ERROR;
+    #if 0
     pcl::PointCloud<pcl::PointXYZ>::Ptr points(new pcl::PointCloud<pcl::PointXYZ>());
     for (int i = 0; i < numberOfPoints; i++)
         {
@@ -73,6 +76,7 @@ IStatusPtr IRansacUtility::FitModelAndReturnInliers(DPoint3d*& pInliers, int*& p
     pInlierIds = new int[nInliers];
     memcpy(pInliers, &testInliers[0], nInliers*sizeof(DPoint3d));
     memcpy(pInlierIds, &inlierIds[0], nInliers*sizeof(int));
+    #endif
     return IStatus::CreateStatus(status);
     }
 

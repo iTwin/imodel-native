@@ -398,7 +398,19 @@ public:
     -----------------------------------------------------------------------------*/
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > GetSubNodeNoSplit() const;
 
+    /**----------------------------------------------------------------------------
+    Returns the minimum resolution between the geometric resolution and texture resolution..
+
+    @return The minimum resolution or 0 if the information is not available.
+    -----------------------------------------------------------------------------*/
     double GetMinResolution() const;
+
+    /**----------------------------------------------------------------------------
+    Returns the geometric and texture resolutions.
+
+    @return The resolutions or 0 if not available.
+    -----------------------------------------------------------------------------*/
+    void GetResolution(float& geometricResolution, float& textureResolution) const;
 
     /**----------------------------------------------------------------------------
     Indicates if the node or one of its sub-nodes contains data.

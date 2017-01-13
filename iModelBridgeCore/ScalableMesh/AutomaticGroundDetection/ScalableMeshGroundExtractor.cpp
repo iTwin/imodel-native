@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -56,6 +56,22 @@ BeFileName GetTempXyzFilePath()
     }
 
 /*----------------------------------------------------------------------------+
+|IScalableMeshGroundPreviewer - Begin
++----------------------------------------------------------------------------*/
+bool IScalableMeshGroundPreviewer::IsCurrentPreviewEnough() const
+    {
+    return _IsCurrentPreviewEnough();
+    }
+
+StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGround)
+    {
+    return _UpdatePreview(currentGround);
+    }
+/*----------------------------------------------------------------------------+
+|IScalableMeshGroundPreviewer - End
++----------------------------------------------------------------------------*/
+
+/*----------------------------------------------------------------------------+
 |IScalableMeshGroundExtractor - Begin
 +----------------------------------------------------------------------------*/
 IScalableMeshGroundExtractorPtr IScalableMeshGroundExtractor::Create(const WString& smTerrainPath, IScalableMeshPtr& scalableMesh)
@@ -74,6 +90,11 @@ StatusInt IScalableMeshGroundExtractor::SetExtractionArea(const bvector<DPoint3d
     return _SetExtractionArea(area);
     }        
 
+StatusInt IScalableMeshGroundExtractor::SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer)
+    {
+    return _SetGroundPreviewer(groundPreviewer);
+    }
+
 void IScalableMeshGroundExtractor::GetTempDataLocation(BeFileName& textureSubFolderName, BeFileName& extraLinearFeatureFileName)
     {
     textureSubFolderName = BeFileName(L"\\Textures\\");    
@@ -89,12 +110,14 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
     {
     private : 
 
-        FILE*    m_xyzFile;
-        size_t   m_nbPoints;
+        FILE*                           m_xyzFile;
+        size_t                          m_nbPoints;
+        IScalableMeshGroundPreviewerPtr m_groundPreviewer;
+        Transform                       m_previewTransform;
 
     protected : 
 
-        void _AddPoints(const bvector<DPoint3d>& points) override
+        virtual void _AddPoints(const bvector<DPoint3d>& points) override
             {
             char buffer[1000];
 
@@ -114,13 +137,34 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             m_nbPoints += points.size();
             }
 
+        virtual void _GetPreviewTransform(Transform& transform) const
+            {
+            transform = m_previewTransform;
+            }
+
+        virtual void _OutputPreview(PolyfaceQueryCR currentGround) const override
+            {
+            if (m_groundPreviewer.IsValid())
+                m_groundPreviewer->UpdatePreview(currentGround);
+            }
+
+        virtual bool _ShouldContinue() const override
+            {
+            if (m_groundPreviewer.IsValid())
+                return !m_groundPreviewer->IsCurrentPreviewEnough();
+
+            return true;
+            }        
+
     public :
 
-        ScalableMeshPointsAccumulator()
+        ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer, Transform previewTransform)
             {            
             BeFileName xyzFile(GetTempXyzFilePath());
             m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
             m_nbPoints = 0;
+            m_groundPreviewer = groundPreviewer;
+            m_previewTransform = previewTransform;
             }
 
         ~ScalableMeshPointsAccumulator()
@@ -137,7 +181,6 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             {
             return m_nbPoints;
             }
-
     };
 
 
@@ -151,6 +194,9 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     {
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
+
+    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
+    m_smGcsRatioToMeter = gcs.GetUnit().GetRatioToBase();
     }
 
 ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
@@ -244,6 +290,37 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
 
 static bool s_deactivateForMultiCoverage = true;
 static bool s_deactivateTexturing = false;
+#define DEFAULT_TEXTURE_RESOLUTION 0.05
+
+double ScalableMeshGroundExtractor::ComputeTextureResolution()
+    {
+    IScalableMeshMeshQueryPtr meshQueryInterface = m_scalableMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+    bvector<IScalableMeshNodePtr> returnedNodes;
+    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+    params->SetLevel(m_scalableMesh->GetNbResolutions() - 1);
+       
+    bvector<IScalableMeshNodePtr> nodes;
+    meshQueryInterface->Query(nodes, m_extractionArea.begin(), (int)m_extractionArea.size(), params);
+
+    double minTextureResolution = DBL_MAX;
+    float  geometricResolution;
+    float  textureResolution;
+
+    for (auto& node : nodes)
+        {
+        node->GetResolutions(geometricResolution, textureResolution);        
+        if (textureResolution != 0)
+            {
+            minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
+            }
+        }   
+        
+    if (minTextureResolution != DBL_MAX)
+        return minTextureResolution * m_smGcsRatioToMeter;
+
+    return DEFAULT_TEXTURE_RESOLUTION * m_smGcsRatioToMeter;
+    }
+
 
 StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverageTempDataFolder)
     {
@@ -285,8 +362,8 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         IScalableMeshTextureGeneratorPtr textureGenerator(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetTextureGenerator());
 
         assert(textureGenerator.IsValid());
-
-        textureGenerator->SetPixelSize(0.02);
+        
+        textureGenerator->SetPixelSize(ComputeTextureResolution());
         textureGenerator->SetTextureTempDir(currentTextureDir);
 
         DRange3d covExt = DRange3d::From(m_extractionArea);
@@ -376,19 +453,52 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
 //#define LARGEST_STRUCTURE_SIZE_DEFAULT 60 
 #define LARGEST_STRUCTURE_SIZE_DEFAULT 30 
-
+/*
 static double s_anglePercentile = 30;
 static double s_heightPercentile = 60;
+*/
 
-/*NEEDS_WORK_MST : For ground optimization
+/*NEEDS_WORK_MST : For ground optimization*/
 static double s_anglePercentile = 65;
 static double s_heightPercentile = 65;
-*/
-static bool   s_useMultiThread = false;
+
+static bool   s_useMultiThread = true;
 
 static double s_time;
 static size_t s_nbPoints;
 static bool   s_activateLog = false;
+
+void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionParametersPtr& params, const BeFileName& coverageTempDataFolder)
+    {
+    BeFileName textureSubFolderName;
+    BeFileName extraLinearFeatureFileName;
+
+    IScalableMeshGroundExtractor::GetTempDataLocation(textureSubFolderName, extraLinearFeatureFileName);
+
+    BeFileName coverageBreaklineFile(coverageTempDataFolder);
+    coverageBreaklineFile.AppendString(L"\\");
+    coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
+
+    if (coverageBreaklineFile.DoesPathExist())
+        {
+        BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
+
+        if (!dtmPtr.IsValid())
+            return;
+        
+        DPoint3d pt;                
+        bvector<DPoint3d> addtionalSeedPts; 
+
+        for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
+            {             
+            DTMStatusInt status = dtmPtr->GetPoint(ptInd, pt);
+            assert(status == SUCCESS);
+            addtionalSeedPts.push_back(pt);
+            }
+
+        params->AddAdditionalSeedPoints(addtionalSeedPts);        
+        }    
+    }
 
 StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& coverageTempDataFolder)
     {    
@@ -403,6 +513,8 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     params->SetHeightPercentileFactor(s_heightPercentile);
 
     params->SetUseMultiThread(s_useMultiThread);        
+    
+    AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
 
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
@@ -422,7 +534,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());     
     params->SetPointsProviderCreator(ptsProviderCreator);        
 
-    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator());    
+    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
     params->SetGroundPointsAccumulator(accumPtr);
 
@@ -469,19 +581,42 @@ static bool s_fixTest = false;
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
     {
     if (!s_fixTest)
-        m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+        {                 
+        Transform transform(m_scalableMesh->GetReprojectionTransform());
+
+        if (transform.IsIdentity())
+            { 
+            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());            
+
+            double ratioFromMeter = 1.0 / m_smGcsRatioToMeter;
+
+            //Convert from UOR to SM unit.
+            for (auto& pt : m_extractionArea)
+                {
+                pt.Scale(ratioFromMeter);
+                }
+            }            
+        else
+            {        
+            Transform transformToSm;
+            bool result = transformToSm.InverseOf(transform);
+            assert(result == true);            
+            transformToSm.Multiply(m_extractionArea, area);
+            }               
+        }
     else
         {        
-        /*Small
+        /*Small Melaka*/
         m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));
         m_extractionArea.push_back(DPoint3d::From(194165.08343336626, 243603.61276573580, -3.6304642277846142));
         m_extractionArea.push_back(DPoint3d::From(194270.10891005833, 243574.39524382990, -4.7820067383618152));
         m_extractionArea.push_back(DPoint3d::From(194276.55219083698, 243624.66656828567, -4.6135505912207009));
         m_extractionArea.push_back(DPoint3d::From(194147.68657526391, 243662.26264426752, -3.6141459398750158));
         m_extractionArea.push_back(DPoint3d::From(194146.39791910816, 243662.47747898742, -3.6220131969348586));
-        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));       
-        */
+        m_extractionArea.push_back(DPoint3d::From(194142.31717461502, 243656.46210683032, -3.4523928137150506));               
 
+        /*Big Melaka*/
+        /*
         m_extractionArea.push_back(DPoint3d::From(194534.61905953390, 243398.93278513860, -5.8858629763999488));
         m_extractionArea.push_back(DPoint3d::From(194475.43182124716, 243320.97185519966, -5.5277979698057607));
         m_extractionArea.push_back(DPoint3d::From(194520.70126835266, 243294.30101074686, -5.7520366628632473));
@@ -497,10 +632,27 @@ StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d
         m_extractionArea.push_back(DPoint3d::From(194588.10575891405, 243347.54587653195, -6.0620844558270619));
         m_extractionArea.push_back(DPoint3d::From(194589.00309018759, 243358.31679448404, -6.2144776919703872));
         m_extractionArea.push_back(DPoint3d::From(194534.61905953390, 243398.93278513860, -5.8858629763999488));
+*/
+
+        //Small nagpur
+/*
+        m_extractionArea.push_back(DPoint3d::From(298487.32047431514, 2331963.9819948073, 239.52607983687085));
+        m_extractionArea.push_back(DPoint3d::From(298520.54010478914, 2332041.1416489473, 239.85987082856627));
+        m_extractionArea.push_back(DPoint3d::From(298556.39099312248, 2332025.8413337343, 238.89883979226761));
+        m_extractionArea.push_back(DPoint3d::From(298525.30925965920, 2331972.7015292840, 238.74582114152690));
+        m_extractionArea.push_back(DPoint3d::From(298503.60138231976, 2331953.4527456285, 238.32288249351404));
+        m_extractionArea.push_back(DPoint3d::From(298496.20096959040, 2331955.0979408128, 240.18742513359939));
+        m_extractionArea.push_back(DPoint3d::From(298487.32047431514, 2331963.9819948073, 239.52607983687085));
+*/
         }
 
     return SUCCESS;
     }
 
+StatusInt ScalableMeshGroundExtractor::_SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer)
+    {
+    m_groundPreviewer = groundPreviewer;
+    return SUCCESS;
+    }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

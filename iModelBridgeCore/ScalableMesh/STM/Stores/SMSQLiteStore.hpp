@@ -170,9 +170,9 @@ template <class EXTENT> size_t SMSQLiteStore<EXTENT>::LoadNodeHeader(SMIndexNode
     return sizeof(*header);
     }    
 
-template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+template <class EXTENT> bool SMSQLiteStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation)
     {
-    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath, inCreation);
     }    
 
 template <class EXTENT> bool SMSQLiteStore<EXTENT>::GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType)

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ SMSQLiteSisterFile::~SMSQLiteSisterFile()
         }
     }
 
-SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType)
+SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType, bool inCreation)
     {
     SMSQLiteFilePtr sqlFilePtr;
 
@@ -106,6 +106,9 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
+                if (inCreation)
+                    _wremove(sqlFileName.c_str());
+                    
                 StatusInt status;
                 m_smClipSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_DIFFSETS_FILE);
 
@@ -129,6 +132,9 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
                 WString sqlFileName;
                 GetSisterSQLiteFileName(sqlFileName, dataType);
 
+                if (inCreation)
+                    _wremove(sqlFileName.c_str());
+
                 StatusInt status;
                 m_smClipDefinitionSQLiteFile = SMSQLiteFile::Open(sqlFileName, false, status, SQLDatabaseType::SM_CLIP_DEF_FILE);
 
@@ -150,7 +156,7 @@ SMSQLiteFilePtr SMSQLiteSisterFile::GetSisterSQLiteFile(SMStoreDataType dataType
     return sqlFilePtr;
     }
 
-bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
+bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath, bool inCreation)
     {
     if (m_projectFilesPath.length() > 0)
         return false;
@@ -159,8 +165,8 @@ bool SMSQLiteSisterFile::SetProjectFilesPath(BeFileName & projectFilesPath)
 
     //NEEDS_WORK_SM : Ugly, load/creation of the project files should be done explicitly
     //Force the opening/creation of project file in main thread to avoid global mutex.
-    GetSisterSQLiteFile(SMStoreDataType::DiffSet);
-    GetSisterSQLiteFile(SMStoreDataType::Skirt);
+    GetSisterSQLiteFile(SMStoreDataType::DiffSet, inCreation);
+    GetSisterSQLiteFile(SMStoreDataType::Skirt, inCreation);
 
     return true;
     }

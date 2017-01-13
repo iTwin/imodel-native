@@ -1473,6 +1473,13 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsTextured() const
     return meshNode->IsTextured();
     }
 
+template <class POINT> void ScalableMeshNode<POINT>::_GetResolutions(float& geometricResolution, float& textureResolution) const
+    {    
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
+
+    meshNode->GetResolution(geometricResolution, textureResolution);    
+    }
+
 template <class POINT> IScalableMeshMeshPtr ScalableMeshCachedMeshNode<POINT>::_GetMesh(IScalableMeshMeshFlagsPtr& flags) const
     {        
     //NEEDS_WORK_TEXTURE use m_loadedMesh

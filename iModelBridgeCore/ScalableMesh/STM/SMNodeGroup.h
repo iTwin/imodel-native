@@ -365,7 +365,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
 
             WString path(m_outputDirPath + L"\\g_");
             wchar_t buffer[10000];
-            swprintf(buffer, L"%s%llu.bin", path.c_str(), this->GetID());
+            swprintf(buffer, L"%s%llu.bin", path.c_str(), (uint64_t) this->GetID());
             std::wstring group_filename(buffer);
             BeFile file;
             if (BeFileStatus::Success == OPEN_FILE(file, group_filename.c_str(), BeFileAccess::Write) ||
@@ -539,7 +539,7 @@ class SMNodeGroup : public HFCShareableObject<SMNodeGroup>
                 return;
 
             wchar_t buffer[10000];
-            swprintf(buffer, L"%s%llu.bin", m_dataSourceName.c_str(), this->GetID());
+            swprintf(buffer, L"%s%llu.bin", m_dataSourceName.c_str(), (uint64_t) this->GetID());
 
             DataSourceURL dataSourceURL(buffer);
 

@@ -65,8 +65,8 @@ void ScalableMeshScheduler::ScheduleTask(SMTask& t, uint8_t priority)
         {
         if (unassignedTasks[p].size() > 0)
             {
-            SMTask& t = unassignedTasks[p].front();
-            if (workers->TryAssignTask(t))
+            SMTask& task = unassignedTasks[p].front();
+            if (workers->TryAssignTask(task))
                 {
                 unassignedTasks[p].pop();
                 }

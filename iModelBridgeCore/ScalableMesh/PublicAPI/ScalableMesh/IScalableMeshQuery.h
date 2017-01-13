@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -439,7 +439,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshTexturePtr _GetTexture() const = 0;    
 
-        virtual bool                    _IsTextured() const = 0;
+        virtual bool                    _IsTextured() const = 0;        
+
+        virtual void                    _GetResolutions(float& geometricResolution, float& textureResolution) const = 0;
         
         virtual bvector<IScalableMeshNodePtr> _GetNeighborAt(char relativePosX, char relativePosY, char relativePosZ) const = 0;
 
@@ -512,11 +514,13 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture() const;   
 
         BENTLEY_SM_EXPORT bool                    IsTextured() const;           
+
+        BENTLEY_SM_EXPORT void                    GetResolutions(float& geometricResolution, float& textureResolution) const;
                 
         //Gets neighbors by relative position. For example, neighbor (-1, 0, 0) shares the node's left face. (1,1,0) shares the node's top-right diagonal. 
         BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetNeighborAt(char relativePosX,  char relativePosY,  char relativePosZ) const;
 
-        BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;
+        BENTLEY_SM_EXPORT bvector<IScalableMeshNodePtr> GetChildrenNodes() const;        
 
         BENTLEY_SM_EXPORT void     ApplyAllExistingClips() const;
 

@@ -209,7 +209,6 @@ bool IsModelAttachedReprojected (DgnModelRefP  modelRef)
     return ATTACHMETHOD_GeographicProjected == attachMethod ||
            ATTACHMETHOD_GeographicTransformed == attachMethod;
     
-    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**

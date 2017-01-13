@@ -5732,15 +5732,26 @@ const EXTENT& SMPointIndexNode<POINT, EXTENT>::GetContentExtent() const
 
 template<class POINT, class EXTENT>
 double SMPointIndexNode<POINT, EXTENT>::GetMinResolution() const
-{
+    {
     // We do not call invariants for simple accessors as they are extensively called within reorganising methods
 
     if (!IsLoaded())
         Load();
 
     return std::min(m_nodeHeader.m_geometricResolution, m_nodeHeader.m_textureResolution);
-}
+    }
 
+
+template<class POINT, class EXTENT>
+void SMPointIndexNode<POINT, EXTENT>::GetResolution(float& geometricResolution, float& textureResolution) const
+    {
+    // We do not call invariants for simple accessors as they are extensively called within reorganising methods
+    if (!IsLoaded())
+        Load();
+
+    geometricResolution = m_nodeHeader.m_geometricResolution;
+    textureResolution = m_nodeHeader.m_textureResolution;    
+    }
 
 //=======================================================================================
 // @bsimethod                                                   Alain.Robert 10/10

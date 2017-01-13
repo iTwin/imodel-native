@@ -100,6 +100,11 @@ int64_t  IScalableMeshNodeCreator::AddTexture(int width, int height, int nOfChan
     {
     return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddTexture(width,height,nOfChannels, texData);
     }
+    
+    void  IScalableMeshNodeCreator::AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID)
+    {
+    return dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->AddTexture(width,height,nOfChannels, texData, texID);
+    }
 
 void IScalableMeshNodeCreator::NotifyAllChildrenAdded(const IScalableMeshNodePtr& parentNode,
                                                       StatusInt&                  status,
@@ -285,6 +290,40 @@ int64_t  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int n
     auto texPoolId = m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
     m_pDataIndex->GetMemoryPool()->RemoveItem(texPoolId, texID, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()));
     return (int64_t) texID;
+    }
+    
+    
+    void  IScalableMeshNodeCreator::Impl::AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID)
+    {
+    if (m_pDataIndex == 0)
+        {
+        if (CreateScalableMesh(true) != BSISUCCESS)
+            {
+            return;
+            }
+        }
+
+    ISMTextureDataStorePtr nodeDataStore;
+    SMIndexNodeHeader<PointIndexExtentType> nodeHeader;
+    bool result = m_pDataIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &nodeHeader);
+    assert(result == true);
+
+    size_t size = width*height*nOfChannels + 3 * sizeof(int);
+    bvector<uint8_t> texture(size);
+    memcpy(texture.data(), &width, sizeof(int));
+    memcpy(texture.data()+sizeof(int), &height, sizeof(int));
+    memcpy(texture.data() + 2 * sizeof(int), &nOfChannels, sizeof(int));
+    memcpy(texture.data() + 3 * sizeof(int), texData, width*height*nOfChannels);
+    RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
+#ifndef VANCOUVER_API
+        new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, texture.data(), size, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()))
+#else
+        SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, texture.data(), size,SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()))
+#endif
+        );
+    SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
+    auto texPoolId = m_pDataIndex->GetMemoryPool()->AddItem(memPoolItemPtr);
+    m_pDataIndex->GetMemoryPool()->RemoveItem(texPoolId, texID, SMStoreDataType::Texture, (uint64_t)(m_pDataIndex.GetPtr()));
     }
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

@@ -19,9 +19,9 @@
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
             <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest120_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 
@@ -67,7 +67,7 @@
     </Part>
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh" />   
+        <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
         <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />        
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMStreamingDataStore.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -51,9 +51,9 @@ template <class EXTENT> SMStreamingStore<EXTENT>::SMStreamingStore(DataSourceMan
     if (s_stream_from_disk)
         {
         // Create base directory structure to store information if not already done
-        BeFileName path (m_dataSourceAccount->getPrefixPath().c_str());
-        path.AppendToPath(m_pathToHeaders.c_str());
-        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(path);
+        BeFileName diskPath (m_dataSourceAccount->getPrefixPath().c_str());
+        diskPath.AppendToPath(m_pathToHeaders.c_str());
+        BeFileNameStatus createStatus = BeFileName::CreateNewDirectory(diskPath);
         assert(createStatus == BeFileNameStatus::Success || createStatus == BeFileNameStatus::AlreadyExists);
         }
     }
@@ -692,9 +692,9 @@ template <class EXTENT> size_t SMStreamingStore<EXTENT>::LoadNodeHeader(SMIndexN
     return 1;
     }
 
-template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath)
+template <class EXTENT> bool SMStreamingStore<EXTENT>::SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation)
     {
-    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath);
+    return SMSQLiteSisterFile::SetProjectFilesPath(projectFilesPath, inCreation);
     }
 
 template <class EXTENT> HFCPtr<SMNodeGroup> SMStreamingStore<EXTENT>::FindGroup(HPMBlockID blockID)

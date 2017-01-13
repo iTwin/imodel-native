@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -619,7 +619,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher3d);
 
         BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath);
+        dataStore->SetProjectFilesPath(projectFilesPath, true);
 
         pDataIndex->SetGenerating(true);        
         }           
