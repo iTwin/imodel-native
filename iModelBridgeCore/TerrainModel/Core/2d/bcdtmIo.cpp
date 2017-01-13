@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmIo.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1770,6 +1770,14 @@ BENTLEYDTM_Public int bcdtmReadStream_dtmObject(BC_DTM_OBJ *dtmP,BENTLEY_NAMESPA
     bcdtmWrite_message(1,0,0,"Error Reading Header Dtm Object %p ",dtmP) ;
     goto errexit ;
    }
+
+ // Reset the partition
+
+ dtmP->featurePartitionSize = DTM_PARTITION_SIZE_FEATURE;
+ dtmP->pointPartitionSize = DTM_PARTITION_SIZE_POINT;
+ dtmP->nodePartitionSize = DTM_PARTITION_SIZE_NODE;
+ dtmP->clistPartitionSize = DTM_PARTITION_SIZE_CLIST;
+ dtmP->flistPartitionSize = DTM_PARTITION_SIZE_FLIST;
 
  bcdtmObject_checkLastModifiedDate(dtmP);
 /*

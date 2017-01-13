@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/TriangleSearcher.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "AutomaticGroundDetectionPch.h"
@@ -20,7 +20,7 @@
 #include <cmath>
 */
 
-typedef Tree::Point_and_primitive_id Point_and_primitive_id;
+typedef CTree::Point_and_primitive_id Point_and_primitive_id;
 
 BEGIN_GROUND_DETECTION_NAMESPACE
 
@@ -67,12 +67,12 @@ TriangleSearcher::~TriangleSearcher()
     {
 
     }
-/*
+
 TriangleSearcherPtr TriangleSearcher::Create()
     {
     return new TriangleSearcher;
     }
-*/
+
 void TriangleSearcher::AddTriangle(CTriangle& triangle)
     {
     bvector<CTriangle> triangles;
@@ -95,6 +95,7 @@ void TriangleSearcher::SearchNearestTri(CTriangle& nearestTriangle, double& dist
 
     CPoint searchPt(location.x, location.y, location.z);    
     Point_and_primitive_id pp = m_searchTree.closest_point_and_primitive(searchPt);
+    nearestTriangle = *pp.second;
     }
 
 

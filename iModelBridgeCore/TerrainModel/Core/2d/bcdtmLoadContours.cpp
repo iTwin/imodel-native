@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmLoadContours.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1604,10 +1604,11 @@ BENTLEYDTM_EXPORT int bcdtmLoad_contoursCreateDepressionDtmObject
              testTime = bcdtmClock();
              intOffset = (long)((contourParams.conMin - contourParams.conReg) / contourParams.interval);
              firstContour = contourParams.conReg + ((double)intOffset) * contourParams.interval;
+             long firstContourIndex = intOffset;
              intOffset = (long)((contourParams.conMax - contourParams.conReg) / contourParams.interval) + 1;
              lastContour = contourParams.conReg + ((double)intOffset) * contourParams.interval;
 
-             long numContours = (long)((lastContour - firstContour) / contourParams.interval);
+             long numContours = intOffset - firstContourIndex;
 
              ContourProcessing processing(contourParams, numContours, firstContour, tinLine2P, dtmP, clipDtmP, voidsInDtm, contourIndex, fenceParamsP, pondAppData, loadFunctionP, userP);
              if (processing.Process()) goto errexit;
@@ -1705,7 +1706,7 @@ BENTLEYDTM_Private int bcdtmLoad_plotContourDtmObject
  long   startTime=0 ;
  double zMin,zMax ;
  const BC_DTM_FEATURE  *fP ;
- long zsp1 = DTM_NULL_PNT, zsp2 = 0;
+ long zsp1 = DTM_NULL_PNT, zsp2 = DTM_NULL_PNT;
 /*
 ** Initialise
 */
@@ -1972,8 +1973,8 @@ BENTLEYDTM_Private int bcdtmLoad_traceContourDtmObject
  long   test = 1, scan, contourScanned = FALSE, zeroSlopeLine, zeroSlopeTriangle;
  long contourDirection = 0;
  long   weight=0,p3,sp1,sp2,lp2,lp1,llp1 ;
- double ra,zp1 = 0.0,zp2 = 0.0,lzp1,xc,yc,xlc=0.0,ylc=0.0 ;
- static long conSeq=0 ;
+ double ra,zp1=0.0,zp2=0.0,lzp1,xc,yc,xlc=0.0,ylc=0.0 ;
+ thread_local static long conSeq=0 ;
 /*
 ** Write Entry Message
 */
@@ -6264,7 +6265,7 @@ BENTLEYDTM_Private int bcdtmLoad_markTriangleEdgesThatSpanTheFenceDtmObject
 */
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long   ap,cp,p1,p2,p3,np1,np2,np3,fndType,drapeType = 0;
+ long   ap,cp,p1,p2,p3,np1,np2,np3,fndType,drapeType(0) ;
  long   onLine,processDrape,hullPnt1,hullPnt2 ;
  double nd,xi,yi,zi,xls,yls,zls,xle,yle ;
  DPoint3d *pnt1P,*pnt2P ;

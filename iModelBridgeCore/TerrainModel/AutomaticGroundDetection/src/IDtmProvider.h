@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/IDtmProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -168,6 +168,8 @@ public:
     bool        FindNearestTriangleDistanceFromPoint(Triangle* pTri, double& distance, DPoint3d const& point) const { return _FindNearestTriangleDistanceFromPoint(pTri, distance, point); }
     void        ComputeStatisticsFromDTM(DiscreetHistogram& angleStats, DiscreetHistogram& heightStats) { return _ComputeStatisticsFromDTM(angleStats, heightStats); }     
      StatusInt  GetDTMPoints(DPoint3d* pPoints) const { return _GetDTMPoints(pPoints); }
+
+     
 
 protected:
     virtual const_iterator _begin() const=0;

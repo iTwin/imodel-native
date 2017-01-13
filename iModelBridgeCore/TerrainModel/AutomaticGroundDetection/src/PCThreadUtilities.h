@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCThreadUtilities.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 | Notice: This file is an adaptation of <DgnPlatform\RealityDataCache.h> which I was not sure we can use directly.
 |         see original file as a reference...
@@ -287,7 +287,12 @@ public:
 * @bsiclass                                             Marc.Bedard     09/2015
 +===============+===============+===============+===============+===============+======*/
 struct EXPORT_VTABLE_ATTRIBUTE GroundDetectionThreadPool : public RefCountedBase //: RefCounted<PointCloudWorkerThread::IStateListener>
-{       
+    {           
+    struct IActiveWait  
+        {
+        virtual void Progress() = 0;         
+        };
+
     /*
     friend struct AllThreadsIdlePredicate;
     friend struct ThreadPoolWorkDonePredicate;
@@ -301,13 +306,15 @@ private:
     atomic<bool>                        m_run;
     //mutable BeConditionVariable         m_threadsCV;
     //mutable BeMutex                     m_workQueueCS;
-    //mutable BeMutex                     m_memoryUsedCS;
-    std::thread*                          m_workingThreads;    
+    //mutable BeMutex                     m_memoryUsedCS;    
+    std::future<void>*                    m_futures;
+
     //bmap<PointCloudWorkerThread*, bool> m_threads;
     //GroundDetectionWorkQueue            m_workQueue;
     bvector<GroundDetectionWorkPtr>       m_workQueue;    
     std::mutex                            m_workQueueMutex;
     std::atomic<uint32_t>                 m_currentWorkInd; 
+    IActiveWait*                          m_activeWait; 
     //size_t                              m_memoryUsed;
 
     
@@ -343,7 +350,7 @@ public:
 
     void QueueWork(GroundDetectionWorkPtr& work);    
    
-    void Start();
+    void Start(IActiveWait* activeWait = nullptr);
 
     void WaitAndStop();
 
@@ -351,7 +358,7 @@ public:
     //bool WaitUntilWorkDone(uint32_t timeoutMillis) const;
     //void WaitUntilQueueIsNotFull() const;
     //void Terminate();
-};
+    };
 
 //__PUBLISH_SECTION_START__
 

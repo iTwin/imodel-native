@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/bcDTMClass.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable: 4018)
@@ -2151,8 +2151,8 @@ DTMStatusInt BcDTM::CalculatePrismoidalVolumeToElevation (BcDTMVolumeAreaResult&
     DTMStatusInt status=DTM_SUCCESS ;
 
     // Clear Existing Volume Polygons
-
-    volumePolygonsP->clear() ;
+    if (volumePolygonsP)
+        volumePolygonsP->clear();
 
     // Call Core Dtm Function
     if (_dtmTransformHelper.IsValid ())

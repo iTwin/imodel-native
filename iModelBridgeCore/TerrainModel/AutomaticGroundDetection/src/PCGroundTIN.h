@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/src/PCGroundTIN.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -297,6 +297,7 @@ static const size_t MAX_HISTO_STEP;
 static const size_t MAX_NB_SEEDPOINTS_TO_ADD;
 static const double SEED_BORDER_FACTOR;
 
+
 public:
     enum FindTriangleResult
         {
@@ -357,7 +358,9 @@ protected:
     PCGroundTIN(GroundDetectionParameters& params, ProgressReport& report);
     virtual ~PCGroundTIN();
 
-    void                ComputeParameterFromTINPoints();
+    void ComputeParameterFromTINPoints();
+
+    virtual void OutputDtmPreview(bool noDelay = false, BeMutex* newPointToAddMutex = nullptr);
     
     virtual GridCellEntryPtr _CreateGridCellEntry(DRange3d const& boundingBox);
     virtual bool _GetDistanceToTriangleFromPoint(double& distance, DPoint3d const& point) const;
@@ -377,7 +380,8 @@ private:
     // IDPoint3dCriteria implementation
     virtual bool _IsAccepted(DPoint3d const& point) const override;
 
-
+    void CreatePolyfaceQuery();
+    
     DRange3d                            m_boundingBoxMeter;
     bool                                m_shouldStopIteration;
     DiscreetHistogramPtr                m_pAnglesHisto;
@@ -385,6 +389,7 @@ private:
     short                               m_strikeToStopComputeParameters;
     double                              m_oldAllowedAngle;
     double                              m_oldAllowedHeight;
+    clock_t                             m_lastOutputPreviewTime; 
 
 }; // PCGroundTIN
 
@@ -396,12 +401,16 @@ struct    PCGroundTINMT : public PCGroundTIN
 DEFINE_T_SUPER(PCGroundTIN)
 
 public:
+    
     static const unsigned int MAX_NUMBER_THREAD;
 
     static PCGroundTINPtr Create(GroundDetectionParameters& params, ProgressReport& report);
 
    PointCloudThreadPool& GetThreadPool();
 
+protected : 
+
+   virtual void OutputDtmPreview(bool noDelay = false, BeMutex* newPointToAddMutex = nullptr) override;
 
 private:
         
