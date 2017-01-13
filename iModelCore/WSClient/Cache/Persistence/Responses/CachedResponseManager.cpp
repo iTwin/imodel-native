@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -612,7 +612,7 @@ BentleyStatus CachedResponseManager::AddAdditionalInstance(CachedResponseKeyCR r
         {
         if (SUCCESS != InsertInfo(info))
             return ERROR;
-        if (SUCCESS != SetResponseCompleted(responseKey, true))
+        if (CacheStatus::OK != SetResponseCompleted(responseKey, true))
             return ERROR;
         }
 
@@ -913,12 +913,12 @@ BentleyStatus CachedResponseManager::TrimPages(CachedResponseKeyCR responseKey, 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-BentleyStatus CachedResponseManager::SetResponseCompleted(CachedResponseKeyCR responseKey, bool isCompleted)
+CacheStatus CachedResponseManager::SetResponseCompleted(CachedResponseKeyCR responseKey, bool isCompleted)
     {
     ECInstanceKey infoKey = FindInfo(responseKey);
     if (!infoKey.IsValid())
         {
-        return ERROR;
+        return CacheStatus::DataNotCached;
         }
 
     auto statement = m_statementCache->GetPreparedStatement("CachedResponseManager::SetResponseCompleted", [&]
@@ -934,10 +934,10 @@ BentleyStatus CachedResponseManager::SetResponseCompleted(CachedResponseKeyCR re
     if (ECSqlStepStatus::Done != statement->Step())
         {
         BeAssert(false);
-        return ERROR;
+        return CacheStatus::Error;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

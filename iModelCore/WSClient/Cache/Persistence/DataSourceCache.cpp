@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/DataSourceCache.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1449,7 +1449,7 @@ DateTime DataSourceCache::ReadRootSyncDate(Utf8StringCR rootName)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DataSourceCache::CacheResponse
+CacheStatus DataSourceCache::CacheResponse
 (
 CachedResponseKeyCR responseKey,
 WSObjectsResponseCR response,
@@ -1462,14 +1462,14 @@ ICancellationTokenPtr ct
     LogCacheDataForMethod();
     if (!responseKey.IsValid())
         {
-        return ERROR;
+        return CacheStatus::Error;
         }
 
     if (!response.IsModified())
         {
         if (SUCCESS != m_state->GetCachedResponseManager().UpdatePageCachedDate(responseKey, page))
             {
-            return ERROR;
+            return CacheStatus::Error;
             }
         }
     else
@@ -1482,12 +1482,12 @@ ICancellationTokenPtr ct
             if (nullptr == rejectedOut)
                 {
                 BeAssert(false);
-                return ERROR;
+                return CacheStatus::Error;
                 }
 
             if (SUCCESS != m_state->GetRootManager().GetInstancesByPersistence(CacheRootPersistence::Full, fullyPersistedInstances))
                 {
-                return ERROR;
+                return CacheStatus::Error;
                 }
 
             partialCachingState = std::make_shared<InstanceCacheHelper::PartialCachingState>
@@ -1505,13 +1505,13 @@ ICancellationTokenPtr ct
         if (SUCCESS != m_state->GetInstanceHelper().CacheInstances(instances, cachedInstances, partialCachingState.get(), nullptr, ct) ||
             SUCCESS != m_state->GetCachedResponseManager().SavePage(responseKey, page, response.GetETag(), cachedInstances))
             {
-            return ERROR;
+            return CacheStatus::Error;
             }
 
         if (nullptr != partialCachingState &&
             SUCCESS != m_state->GetCachedResponseManager().InvalidateFullResponsePagesContainingInstances(partialCachingState->GetOverriddenFullInstances()))
             {
-            return ERROR;
+            return CacheStatus::Error;
             }
         }
 
@@ -1519,7 +1519,7 @@ ICancellationTokenPtr ct
         {
         if (SUCCESS != m_state->GetCachedResponseManager().TrimPages(responseKey, page))
             {
-            return ERROR;
+            return CacheStatus::Error;
             }
         }
 
@@ -1537,13 +1537,12 @@ ICancellationTokenPtr ct
 
     if (wasCompleted != nowCompleted)
         {
-        if (SUCCESS != m_state->GetCachedResponseManager().SetResponseCompleted(responseKey, nowCompleted))
-            {
-            return ERROR;
-            }
+        auto status = m_state->GetCachedResponseManager().SetResponseCompleted(responseKey, nowCompleted);
+        if (CacheStatus::OK != status)
+            return status;
         }
 
-    return SUCCESS;
+    return CacheStatus::OK;
     }
 
 /*--------------------------------------------------------------------------------------+

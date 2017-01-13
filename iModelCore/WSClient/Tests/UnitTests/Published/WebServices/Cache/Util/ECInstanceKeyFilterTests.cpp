@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Util/ECInstanceKeyFilterTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -199,7 +199,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_EmptyLabelPassed_FindsNoInstance
     instances.Add({"TestSchema.TestLabeledClass", "1"}, {{"Name", "Label1"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
 
@@ -228,7 +228,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilter_MultipleClasses_FiltersByLabel)
     instances.Add({"TestSchema.TestFileClass4", "2"}, {{"Name", "Label2"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
     
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
     auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "2"}));
@@ -267,7 +267,7 @@ TEST_F(ECInstanceKeyFilterTests, AddLabelFilterAndByClass_MultipleClasses_Filter
     instances.Add({"TestSchema.TestFileClass4", "2"}, {{"Name", "Label2"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
     auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "2"}));
@@ -302,7 +302,7 @@ TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_SingleClas_FiltersBy
     instances.Add({"TestSchema.TestClass", "3"}, {{"TestProperty", "B"}, {"TestProperty2", "B"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestClass", "1"}));
     auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestClass", "2"}));
@@ -338,7 +338,7 @@ TEST_F(ECInstanceKeyFilterTests, AddAnyPropertiesLikeFilter_MultipleClasses_Filt
     instances.Add({"TestSchema.TestFileClass3", "1"}, {{"TestName", "BBABB"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestClass", "1"}));
     auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestFileClass3", "1"}));
@@ -403,7 +403,7 @@ TEST_F(ECInstanceKeyFilterTests, SetLimit_OnLabelFilter_ReturnsLimitedInstances)
     instances.Add({"TestSchema.TestLabeledClass", "2"}, {{"Name", "Label2"}});
 
     CachedResponseKey key(txn.GetCache().FindOrCreateRoot("ResponceRoot"), "KeyName");
-    ASSERT_EQ(SUCCESS, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(key, instances.ToWSObjectsResponse()));
 
     auto instanceKeyPair1 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "1"}));
     auto instanceKeyPair2 = ECDbHelper::ToPair(txn.GetCache().FindInstance({"TestSchema.TestLabeledClass", "2"}));

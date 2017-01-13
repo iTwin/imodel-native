@@ -350,7 +350,7 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                     }
 
                 auto txn = StartCacheTransaction();
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, objectsResult.GetValue()))
+                if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, objectsResult.GetValue()))
                     {
                     result->SetError(Status::InternalCacheError);
                     return;
@@ -785,7 +785,7 @@ ICancellationTokenPtr ct
                 WSObjectsResponseCR response = objectsResult.GetValue();
 
                 bset<ObjectId> rejected;
-                if (SUCCESS != txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct))
+                if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct))
                     {
                     result->SetError({ICachingDataSource::Status::InternalCacheError, ct});
                     return;

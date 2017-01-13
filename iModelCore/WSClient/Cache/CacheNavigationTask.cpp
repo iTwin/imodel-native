@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CacheNavigationTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -383,7 +383,7 @@ bool retrievingFullData
 
     if (retrievingFullData)
         {
-        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), nullptr, nullptr, 0, GetCancellationToken()))
+        if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, result.GetValue(), nullptr, nullptr, 0, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;
@@ -397,7 +397,7 @@ bool retrievingFullData
         WSQuery query("", "");
         query.SetSelect("$id");
 
-        if (SUCCESS != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &rejected, &query, 0, GetCancellationToken()))
+        if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, result.GetValue(), &rejected, &query, 0, GetCancellationToken()))
             {
             SetError({CachingDataSource::Status::InternalCacheError, GetCancellationToken()});
             return;

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/MockDataSourceCache.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,7 +74,7 @@ struct MockDataSourceCache : public IDataSourceCache
         MOCK_CONST_METHOD1 (ObjectIdFromJsonInstance,
             ObjectId (JsonValueCR instance));
         MOCK_METHOD6 (CacheResponse,
-            BentleyStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>* rejectedOut, const WSQuery* query, uint64_t, ICancellationTokenPtr));
+            CacheStatus (CachedResponseKeyCR responseKey, WSObjectsResponseCR response, bset<ObjectId>* rejectedOut, const WSQuery* query, uint64_t, ICancellationTokenPtr));
         MOCK_METHOD3 (CacheInstanceAndLinkToRoot,
             BentleyStatus (ObjectIdCR objectId, WSObjectsResponseCR response, Utf8StringCR rootName));
         MOCK_METHOD4 (CacheInstanceAndLinkToRoot,
