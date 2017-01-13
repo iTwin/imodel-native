@@ -341,10 +341,11 @@ struct Utils
     UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);  
     UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
     static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
+    UNITS_EXPORT static const int FractionalPrecisionDenominator(FractionalPrecision prec);
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
-    //static const int FractionalPrecisionDenominator(FractionalPrecision prec);
+
     //#endif
     };
 
@@ -355,11 +356,9 @@ struct Utils
 struct FractionalNumeric
     {
 private:
-#if defined (NEEDS_WORK_BUILD_FAILURE)
     double m_integral;
     int m_numerator;
     int m_denominator;
-#endif
 public:
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
     };

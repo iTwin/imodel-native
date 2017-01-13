@@ -10,22 +10,7 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-//static int FractionalPrecisionDenominator(FractionalPrecision prec)
-//    {
-//    switch (prec)
-//        {
-//        case FractionalPrecision::Half: return 2;
-//        case FractionalPrecision::Quarter: return 4;
-//        case FractionalPrecision::Eighth: return 8;
-//        case FractionalPrecision::Sixteenth: 16;
-//        case FractionalPrecision::Over_32: 32;
-//        case FractionalPrecision::Over_64: 64;
-//        case FractionalPrecision::Over_128: 128;
-//        case FractionalPrecision::Over_256: 256;
-//        default:
-//        case FractionalPrecision::Whole: return 1;
-//        }
-//    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
