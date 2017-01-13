@@ -245,12 +245,6 @@
             </ClassHasHandler>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="TestAuthority">
-        <BaseClass>bis:Authority</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECStructClass typeName="TestStruct">
         <ECProperty propertyName="TestStructDoubleMember" typeName="double"/>
         <ECProperty propertyName="TestStructIntMember" typeName="int"/>

@@ -2,7 +2,7 @@
 |
 |  $Source: PublicAPI/DgnPlatform/UnitTests/DgnDbTestUtils.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once 
@@ -99,8 +99,8 @@ public:
     //! @see InsertSpatialCategory
     static DgnCategoryId GetFirstSpatialCategoryId(DgnDbR);
 
-    //! Create a new CodeAuthority
-    static DgnAuthorityId InsertDatabaseScopeAuthority(DgnDbR, Utf8CP authorityName);
+    //! Create a new CodeSpec
+    static DgnAuthorityId InsertCodeSpec(DgnDbR, Utf8CP codeSpecName);
     
     //! Update the project extents
     static void UpdateProjectExtents(DgnDbR);

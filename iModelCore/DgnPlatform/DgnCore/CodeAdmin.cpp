@@ -23,7 +23,7 @@ CodeSpecId DgnPlatformLib::Host::CodeAdmin::_GetDefaultCodeSpecId(DgnDbR db, ECC
     if (!inputClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_Element))
         return CodeSpecId();
 
-    return NullAuthority::GetNullAuthorityId();
+    return CodeSpec::GetNullAuthorityId();
     }
 
 //---------------------------------------------------------------------------------------

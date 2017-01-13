@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/BisCoreDomain_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -256,31 +256,31 @@ TEST_F(BisCoreDomainTests, ValidateAutoCreatedAuthorities)
     // validate that authorities were properly inserted by DgnDb::CreateAuthorities
     ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_NullAuthority).IsValid());
 
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationFrameStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationLeaderStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_AnnotationTextStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_CategorySelector).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_DisplayStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_GeometryPart).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_LightDefinition).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_LineStyle).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_MaterialElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_ModelSelector).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_Session).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_SpatialCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_TextAnnotationSeed).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_Texture).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_TrueColor).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<DatabaseScopeAuthority>(BIS_AUTHORITY_ViewDefinition).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_AnnotationFrameStyle).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_AnnotationLeaderStyle).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_AnnotationTextStyle).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_CategorySelector).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_DisplayStyle).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_GeometryPart).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_LightDefinition).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_LineStyle).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_MaterialElement).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_ModelSelector).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_Session).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_SpatialCategory).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_TextAnnotationSeed).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_Texture).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_TrueColor).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_ViewDefinition).IsValid());
 
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_Drawing).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_DrawingCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_LinkElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ModelScopeAuthority>(BIS_AUTHORITY_Sheet).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_Drawing).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_DrawingCategory).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_LinkElement).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_Sheet).IsValid());
 
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_InformationPartitionElement).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_SubCategory).IsValid());
-    ASSERT_TRUE(m_db->Authorities().Get<ElementScopeAuthority>(BIS_AUTHORITY_Subject).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_InformationPartitionElement).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_SubCategory).IsValid());
+    ASSERT_TRUE(m_db->Authorities().GetAuthority(BIS_AUTHORITY_Subject).IsValid());
 
     ASSERT_EQ(24, DgnDbTestUtils::SelectCountFromTable(*m_db, BIS_TABLE(BIS_CLASS_Authority)));
     }

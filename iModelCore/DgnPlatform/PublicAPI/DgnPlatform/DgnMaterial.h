@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/DgnMaterial.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -91,7 +91,7 @@ protected:
 
     virtual uint32_t _GetMemSize() const override { return T_Super::_GetMemSize() + m_data.GetMemSize(); }
     virtual DgnCode _GenerateDefaultCode() const override { return DgnCode(); }
-    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !NullAuthority::IsNullAuthority(authority); }
+    virtual bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override { return !authority.IsNullAuthority(); }
     
 //__PUBLISH_SECTION_END__
 public:
@@ -137,7 +137,7 @@ public:
     BentleyStatus GetRenderingAsset(JsonValueR value) const {return GetAsset(value, MATERIAL_ASSET_Rendering);}
 
     //! Creates a DgnCode for a material. The palette name serves as the namespace, and the material name as the value.
-    static DgnCode CreateCode(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) {return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_MaterialElement, db, materialName, paletteName);}
+    static DgnCode CreateCode(DgnDbR db, Utf8StringCR paletteName, Utf8StringCR materialName) {return CodeSpec::CreateCode(db, BIS_AUTHORITY_MaterialElement, materialName, paletteName);}
 
     //! Looks up the ID of the material with the specified code.
     DGNPLATFORM_EXPORT static DgnMaterialId QueryMaterialId(DgnDbR db, DgnCodeCR code);

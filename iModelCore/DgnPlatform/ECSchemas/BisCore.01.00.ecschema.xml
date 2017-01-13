@@ -84,7 +84,7 @@
     <!-- // BIS-related core classes -->
     <!-- ////////////////////////////////////////////////////////////////////////////// -->
 
-    <ECEntityClass typeName="Authority">
+    <ECEntityClass typeName="Authority" modifier="Sealed">
         <!-- Authority for element codes and classifications -->
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -103,34 +103,6 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Properties" typeName="string" description="Json string containing properties like URI"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="NullAuthority" modifier="Sealed">
-        <!-- Authority that issues null codes -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="DatabaseScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique name+namespace combinations within the scope of the database -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ModelScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a model -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="ElementScopeAuthority" modifier="Sealed">
-        <!-- Authority for elements that must have unique names within the scope of a "parent" element -->
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-        <BaseClass>Authority</BaseClass>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="AuthorityIssuesElementCode" description="Element has a code which was issued by the given authority" strength="referencing" modifier="Sealed">

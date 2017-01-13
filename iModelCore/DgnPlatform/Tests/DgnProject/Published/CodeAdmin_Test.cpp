@@ -196,6 +196,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestSpatialLocation));
         ASSERT_TRUE(codeSpec.IsValid());
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Repository);
+        ASSERT_TRUE(codeSpec->IsRepositoryScope());
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString("-"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("UserLabel", "Enter UserLabel value", false));
@@ -209,6 +210,7 @@ TEST_F(CodeAdminTests, CodeAdmin)
         CodeSpecPtr codeSpec = CodeSpec::Create(*m_db, DPTEST_SCHEMA(DPTEST_TEST_ELEMENT_CLASS_NAME), CodeScopeSpec::CreateModelScope());
         ASSERT_TRUE(codeSpec.IsValid());
         ASSERT_EQ(codeSpec->GetScope().GetType(), CodeScopeSpec::Type::Model);
+        ASSERT_TRUE(codeSpec->IsModelScope());
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromElementTypeCode("Enter class name"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromFixedString(":"));
         codeSpec->GetFragmentSpecsR().push_back(CodeFragmentSpec::FromPropertyValue("i", "Enter integer value"));

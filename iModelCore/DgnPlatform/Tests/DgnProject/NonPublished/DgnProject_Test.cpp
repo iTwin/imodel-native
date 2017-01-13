@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnProject_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -720,7 +720,7 @@ struct ElementUriTests : ::testing::Test
     static void TearDownTestCase();
 
     ScopedDgnHost m_host;
-    Dgn::DatabaseScopeAuthorityPtr m_codeAuthority;
+    Dgn::CodeSpecPtr m_codeAuthority;
 
     static DgnPlatformSeedManager::SeedDbInfo s_seedFileInfo;
 
@@ -730,11 +730,11 @@ struct ElementUriTests : ::testing::Test
         DgnPlatformTestDomain::Register();
         }
 
-    DatabaseScopeAuthority& GetTestCodeAuthority(DgnDbR db)
+    CodeSpec& GetTestCodeSpec(DgnDbR db)
         {
         if (!m_codeAuthority.IsValid())
             {
-            m_codeAuthority = DatabaseScopeAuthority::Create("TestAuthority", db);
+            m_codeAuthority = CodeSpec::Create(db, "TestCodeSpec");
             DgnDbStatus status = m_codeAuthority->Insert();
             BeAssert(status == DgnDbStatus::Success);
             }
@@ -743,7 +743,7 @@ struct ElementUriTests : ::testing::Test
 
     DgnCode CreateCode(DgnDbR db, Utf8CP ns, Utf8CP elementCode)
         {
-        return GetTestCodeAuthority(db).CreateCode(elementCode, ns);
+        return GetTestCodeSpec(db).CreateCode(elementCode, ns);
         }
 
 };
@@ -834,10 +834,10 @@ TEST_F(ElementUriTests, Test1)
         ASSERT_EQ(BSISUCCESS, db->Elements().CreateElementUri(dbUri, *el, true, true));
         ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI(dbUri.c_str()));
 
-        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI("/DgnDb?Code=E1&A=TestAuthority&N=TestNS"));
+        ASSERT_TRUE(el->GetElementId() == db->Elements().QueryElementIdByURI("/DgnDb?Code=E1&A=TestCodeSpec&N=TestNS"));
 
         BeTest::SetFailOnAssert(false);
-        ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestAuthority&N=TestNS").IsValid());
+        ASSERT_TRUE(!db->Elements().QueryElementIdByURI("/DgnDb?CodXYZ=E1&A=TestCodeSpec&N=TestNS").IsValid());
         BeTest::SetFailOnAssert(true);
         }
 

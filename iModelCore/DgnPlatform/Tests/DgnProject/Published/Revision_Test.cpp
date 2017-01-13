@@ -420,7 +420,7 @@ TEST_F(RevisionTestFixture, Codes)
 
     // Create two elements with a code, and one with a default (empty) code. We only care about non-empty codes.
     auto defaultCode = DgnCode::CreateEmpty();
-    auto auth = DatabaseScopeAuthority::Create("MyAuthority", db);
+    auto auth = CodeSpec::Create(db, "MyCodeSpec");
     EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
 
     auto cpElX1 = InsertPhysicalElementByCode(auth->CreateCode("X", "1")),

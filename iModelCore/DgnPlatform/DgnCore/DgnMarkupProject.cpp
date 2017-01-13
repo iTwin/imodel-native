@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/DgnMarkupProject.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
@@ -159,9 +159,9 @@ static void createImageCategory(DgnDbR db)
 //---------------------------------------------------------------------------------------
 static void createRedlineCodeAuthority(DgnDbR db)
     {
-    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create(MARKUP_AUTHORITY_Redline, db);
-    if (authority.IsValid())
-        authority->Insert();
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, MARKUP_AUTHORITY_Redline);
+    if (codeSpec.IsValid())
+        codeSpec->Insert();
     }
 
 /*---------------------------------------------------------------------------------**//**

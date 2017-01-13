@@ -198,9 +198,8 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnElementCR element) const;
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RegenerateCode(DgnCodeR regeneratedCode, DgnElementCR element) const;
 
-    static DgnCode CreateCode(DgnAuthorityId authorityId, Utf8StringCR value, Utf8StringCR nameSpace) { return DgnCode(authorityId, value, nameSpace); }
-
-    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace="") const { return DgnCode(m_authorityId, value, nameSpace); }
+private:
+    static DgnDbStatus Insert(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId codeSpecId=CodeSpecId());
 
 public:
     DgnDbR GetDgnDb() const { return m_dgndb; }
@@ -221,10 +220,20 @@ public:
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
+    bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
+    bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}
+    bool IsParentElementScope() const {return CodeScopeSpec::Type::ParentElement == GetScope().GetType();}
 
     CodeFragmentSpecListCR GetFragmentSpecs() const {return m_fragmentSpecs;}
     CodeFragmentSpecListR GetFragmentSpecsR() {return m_fragmentSpecs;}
     bool CanGenerateCode() const {return m_fragmentSpecs.size() > 0;}
+
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value);
+    DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value);
+    DGNPLATFORM_EXPORT DgnCode CreateCode(Utf8StringCR value) const;
+    DGNPLATFORM_EXPORT static DgnCode CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value, Utf8StringCR nameSpace); // WIP: Deprecate?
+    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace) const { return DgnCode(m_authorityId, value, nameSpace); } // WIP: Deprecate?
 
     DGNPLATFORM_EXPORT DgnDbStatus ValidateCode(DgnElementCR) const;
     DGNPLATFORM_EXPORT DgnDbStatus RegenerateCode(DgnCodeR newCode, DgnElementCR) const;
@@ -243,111 +252,6 @@ public:
 
         DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name); //!< Parse action name from ClassHasHandler custom attribute
     };
-};
-
-//=======================================================================================
-//! The built-in authority that issues null codes.
-// @bsistruct                                                    Paul.Connelly   09/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE NullAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority)
-    friend struct dgn_AuthorityHandler::Null;
-    friend struct DgnDb;
-
-private:
-    static DgnDbStatus Insert(DgnDbR db);
-
-protected:
-    NullAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a null code
-    static DgnCode CreateCode() {return DgnCode(GetNullAuthorityId(), "", "");}
-
-    //! Return the DgnAuthorityId of the NullAuthority
-    static DgnAuthorityId GetNullAuthorityId() {return DgnAuthorityId((uint64_t)1LL);}
-    //! Return true if the specified DgnAuthority is the NullAuthority
-    static bool IsNullAuthority(DgnAuthorityCR authority) {return authority.GetAuthorityId() == GetNullAuthorityId();}
-};
-
-//=======================================================================================
-//! A generic DgnAuthority which behaves like a namespace for user-/application-defined codes.
-// @bsistruct                                                    Paul.Connelly   09/15
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE DatabaseScopeAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority)
-    friend struct dgn_AuthorityHandler::DatabaseScope;
-
-protected:
-    DatabaseScopeAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a new DatabaseScopeAuthority using the specified authorityName
-    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
-    DGNPLATFORM_EXPORT static DatabaseScopeAuthorityPtr Create(Utf8CP name, DgnDbR dgndb);
-
-    //! Create a DgnCode using the DatabaseScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace="");
-    //! Create a DgnCode using this DatabaseScopeAuthority
-    DgnCode CreateCode(Utf8StringCR value, Utf8StringCR nameSpace = "") const {return DgnCode(GetAuthorityId(), value, nameSpace);}
-};
-
-//=======================================================================================
-//! A generic DgnAuthority which enforces uniquess within the scope of a DgnModel.
-// @bsistruct                                                    Shaun.Sewall    11/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ModelScopeAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::ModelScope;
-
-protected:
-    DgnDbStatus _ValidateCode(DgnElementCR) const override;
-    ModelScopeAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a new ModelScopeAuthority using the specified authorityName
-    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
-    DGNPLATFORM_EXPORT static ModelScopeAuthorityPtr Create(Utf8CP authorityName, DgnDbR db);
-
-    //! Create a DgnCode using the ModelScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value);
-    //! Create a DgnCode using the ModelScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value);
-    //! Create a DgnCode using this ModelScopeAuthority
-    DGNPLATFORM_EXPORT DgnCode CreateCode(DgnModelCR model, Utf8StringCR value) const;
-    //! Create a DgnCode using this ModelScopeAuthority
-    DgnCode CreateCode(DgnModelId modelId, Utf8StringCR value) const {return DgnCode(GetAuthorityId(), value, modelId);}
-};
-
-//=======================================================================================
-//! A generic DgnAuthority which enforces uniquess within another DgnElement that is providing the scope.
-// @bsistruct                                                    Shaun.Sewall    11/16
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ElementScopeAuthority : DgnAuthority
-{
-    DEFINE_T_SUPER(DgnAuthority);
-    friend struct dgn_AuthorityHandler::ElementScope;
-
-protected:
-    DgnDbStatus _ValidateCode(DgnElementCR) const override;
-    ElementScopeAuthority(CreateParams const& params) : T_Super(params) {}
-
-public:
-    //! Create a new ElementScopeAuthority using the specified authorityName
-    //! @note The best practice is to incorporate your domain name into the authorityName to make sure that it is unique
-    DGNPLATFORM_EXPORT static ElementScopeAuthorityPtr Create(Utf8CP authorityName, DgnDbR db);
-
-    //! Create a DgnCode using the ElementScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnElementCR scopeElement, Utf8StringCR value);
-    //! Create a DgnCode using the ElementScopeAuthority of the specified name
-    DGNPLATFORM_EXPORT static DgnCode CreateCode(Utf8CP authorityName, DgnDbR db, DgnElementId scopeElementId, Utf8StringCR value);
-    //! Create a DgnCode using this ElementScopeAuthority
-    DGNPLATFORM_EXPORT DgnCode CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const;
-    //! Create a DgnCode using this ElementScopeAuthority
-    DgnCode CreateCode(DgnElementId scopeElementId, Utf8StringCR value) const {return DgnCode(GetAuthorityId(), value, scopeElementId);}
 };
 
 //=======================================================================================
@@ -374,26 +278,6 @@ namespace dgn_AuthorityHandler
         DGNPLATFORM_EXPORT static AuthorityHandlerP FindHandler(DgnDb const& dgndb, DgnClassId classId);
 
         DgnAuthorityPtr Create(DgnAuthority::CreateParams const& params) { return _CreateInstance(params); }
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE Null : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_NullAuthority, NullAuthority, Null, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE DatabaseScope : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_DatabaseScopeAuthority, DatabaseScopeAuthority, DatabaseScope, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE ModelScope : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ModelScopeAuthority, ModelScopeAuthority, ModelScope, Authority, DGNPLATFORM_EXPORT)
-    };
-
-    struct EXPORT_VTABLE_ATTRIBUTE ElementScope : Authority
-    {
-        AUTHORITYHANDLER_DECLARE_MEMBERS (BIS_CLASS_ElementScopeAuthority, ElementScopeAuthority, ElementScope, Authority, DGNPLATFORM_EXPORT)
     };
 };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/BisCoreDomain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -92,10 +92,6 @@ HANDLER_DEFINE_MEMBERS(Aspect)
 namespace dgn_AuthorityHandler
 {
 HANDLER_DEFINE_MEMBERS(Authority)
-HANDLER_DEFINE_MEMBERS(DatabaseScope)
-HANDLER_DEFINE_MEMBERS(ModelScope)
-HANDLER_DEFINE_MEMBERS(ElementScope)
-HANDLER_DEFINE_MEMBERS(Null)
 };
 
 END_BENTLEY_DGN_NAMESPACE
@@ -206,11 +202,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(Sheet::Handlers::AttachmentElement::GetHandler());
 
     RegisterHandler(dgn_AuthorityHandler::Authority::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::DatabaseScope::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::ModelScope::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::ElementScope::GetHandler());
-    RegisterHandler(dgn_AuthorityHandler::Null::GetHandler());
-
+    
     RegisterTableHandler(dgn_TableHandler::Element::GetHandler());
     RegisterTableHandler(dgn_TableHandler::Model::GetHandler());
     RegisterTableHandler(dgn_TableHandler::ElementDep::GetHandler());

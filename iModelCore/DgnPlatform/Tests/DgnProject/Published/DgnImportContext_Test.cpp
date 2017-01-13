@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/DgnImportContext_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -487,11 +487,11 @@ TEST_F(ImportTest, ImportElementsWithAuthorities)
     // ******************************
     //  Create some Authorities. 
     DgnAuthorityId sourceAuthorityId;
-    RefCountedPtr<DatabaseScopeAuthority> auth1;
+    RefCountedPtr<CodeSpec> auth1;
     {
-        auto auth0 = DatabaseScopeAuthority::Create("TestAuthority_NotUsed", *m_db);
-        auth1 = DatabaseScopeAuthority::Create("TestAuthority", *m_db);
-        auto auth2 = DatabaseScopeAuthority::Create("TestAuthority_AlsoNotUsed", *m_db);
+        auto auth0 = CodeSpec::Create(*m_db, "TestCodeSpec_NotUsed");
+        auth1 = CodeSpec::Create(*m_db, "TestCodeSpec");
+        auto auth2 = CodeSpec::Create(*m_db, "TestCodeSpec_AlsoNotUsed");
         ASSERT_EQ(DgnDbStatus::Success, auth0->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth1->Insert());
         ASSERT_EQ(DgnDbStatus::Success, auth2->Insert());

@@ -1,6 +1,6 @@
 //-------------------------------------------------------------------------------------- 
 //     $Source: Tests/DgnProject/Published/ChangeTestFixture.cpp $
-//  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 
 #include "ChangeTestFixture.h"
@@ -37,7 +37,7 @@ void ChangeTestFixture::_SetupDgnDb()
 
     TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
 
-    m_defaultAuthorityId = InsertDatabaseScopeAuthority("TestAuthority");
+    m_defaultAuthorityId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestAuthority");
     ASSERT_TRUE(m_defaultAuthorityId.IsValid());
 
     m_db->SaveChanges();
@@ -61,7 +61,7 @@ void ChangeTestFixture::OpenDgnDb()
     m_db = DgnDb::OpenDgnDb(&openStatus, m_testFileName, openParams);
     ASSERT_TRUE(m_db.IsValid()) << "Could not open test project";
 
-    m_defaultAuthority = m_db->Authorities().Get<DatabaseScopeAuthority>(m_defaultAuthorityId);
+    m_defaultAuthority = m_db->Authorities().GetAuthority(m_defaultAuthorityId);
     ASSERT_TRUE(m_defaultAuthority.IsValid());
 
     m_defaultModel = m_db->Models().Get<PhysicalModel>(m_defaultModelId);
@@ -94,20 +94,6 @@ DgnCategoryId ChangeTestFixture::InsertCategory(Utf8CP categoryName)
 
     return persistentCategory->GetCategoryId();
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Ramanujam.Raman                    08/2015
-//---------------------------------------------------------------------------------------
-DgnAuthorityId ChangeTestFixture::InsertDatabaseScopeAuthority(Utf8CP authorityName)
-    {
-    RefCountedPtr<DatabaseScopeAuthority> testAuthority = DatabaseScopeAuthority::Create(authorityName, *m_db);
-
-    DgnDbStatus status = testAuthority->Insert();
-    BeAssert(status == DgnDbStatus::Success);
-
-    return testAuthority->GetAuthorityId();
-    }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    11/2016

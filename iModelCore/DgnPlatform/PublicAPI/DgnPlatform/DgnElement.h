@@ -2724,6 +2724,7 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationPartitionElement : InformationContentE
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !authority.IsNullAuthority();}
     DGNPLATFORM_EXPORT static DgnElement::CreateParams InitCreateParams(SubjectCR parentSubject, Utf8CP name, DgnDomain::Handler& handler);
     explicit InformationPartitionElement(CreateParams const& params) : T_Super(params) {}
 
@@ -2913,6 +2914,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnSubModelInsert(DgnModelCR model) const override;
+    bool _SupportsCodeAuthority(DgnAuthorityCR authority) const override {return !authority.IsNullAuthority();}
 
     explicit Subject(CreateParams const& params) : T_Super(params) {}
 

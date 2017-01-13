@@ -300,7 +300,7 @@ DgnDbStatus DefinitionElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Session::CreateCode(DgnDbR db, Utf8StringCR name)
     {
-    return DatabaseScopeAuthority::CreateCode(BIS_AUTHORITY_Session, db, name);
+    return CodeSpec::CreateCode(db, BIS_AUTHORITY_Session, name);
     }
                                                                                                                                                     
 /*---------------------------------------------------------------------------------**//**
@@ -451,7 +451,7 @@ DgnElement::CreateParams InformationPartitionElement::InitCreateParams(SubjectCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode InformationPartitionElement::CreateCode(SubjectCR parentSubject, Utf8CP name)
     {
-    return ElementScopeAuthority::CreateCode(BIS_AUTHORITY_InformationPartitionElement, parentSubject, name);
+    return CodeSpec::CreateCode(BIS_AUTHORITY_InformationPartitionElement, parentSubject, name);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,7 +685,7 @@ DgnDbStatus RoleElement::_OnInsert()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode Drawing::CreateCode(DocumentListModelCR model, Utf8CP name)
     {
-    return ModelScopeAuthority::CreateCode(BIS_AUTHORITY_Drawing, model, name);
+    return CodeSpec::CreateCode(BIS_AUTHORITY_Drawing, *model.GetModeledElement(), name);
     }
 
 /*---------------------------------------------------------------------------------**//**

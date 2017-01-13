@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnAuthority_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../TestFixture/DgnDbTestFixtures.h"
@@ -28,9 +28,9 @@ struct DgnAuthoritiesTest : public DgnDbTestFixture
         EXPECT_EQ(authId, id);
         }
 
-    DatabaseScopeAuthorityPtr Create(Utf8CP name, bool insert = true)
+    CodeSpecPtr Create(Utf8CP name, bool insert = true)
         {
-        auto auth = DatabaseScopeAuthority::Create(name, GetDgnDb());
+        auto auth = CodeSpec::Create(GetDgnDb(), name);
         if (insert)
             {
             EXPECT_EQ(DgnDbStatus::Success, auth->Insert());
@@ -167,7 +167,7 @@ TEST_F(DgnAuthoritiesTest, ImportAuthority)
     {
     SetupSeedProject();
     // Create new authority
-    DatabaseScopeAuthorityPtr auth1 = Create("Auth1");
+    CodeSpecPtr auth1 = Create("Auth1");
     DgnAuthorityId auth1Id=auth1->GetAuthorityId();
     // Test persistent
     Compare(auth1Id, "Auth1");

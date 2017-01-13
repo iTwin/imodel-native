@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/MissingHandler_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -194,7 +194,7 @@ void MissingHandlerTest::InitDb(DgnDbR db)
     m_defaultCategoryId = DgnDbTestUtils::GetFirstSpatialCategoryId(db);
     m_alternateCategoryId = DgnDbTestUtils::InsertSpatialCategory(db, "AltCategory");
 
-    auto authority = DatabaseScopeAuthority::Create("MissingHandlerTest", db);
+    auto authority = CodeSpec::Create(db, "MissingHandlerTest");
     ASSERT_TRUE(authority.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, db.Authorities().Insert(*authority));
     m_authorityId = authority->GetAuthorityId();
@@ -274,7 +274,7 @@ void MissingHandlerTest::TestRestrictions(ElemInfo const& info, DgnDbR db, uint6
     // Change code
     static char s_codeChar = 'A';
     Utf8String codeValue(1, s_codeChar++);
-    auto code = db.Authorities().Get<DatabaseScopeAuthority>(m_authorityId)->CreateCode(codeValue);
+    auto code = db.Authorities().GetAuthority(m_authorityId)->CreateCode(codeValue);
     status = pElem->SetCode(code);
     EXPECT_EQ(DgnDbStatus::MissingHandler == status, !ALLOWED(Restriction::SetCode));
 

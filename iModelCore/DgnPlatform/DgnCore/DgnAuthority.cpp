@@ -328,17 +328,6 @@ AuthorityHandlerR DgnAuthority::GetAuthorityHandler() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus NullAuthority::Insert(DgnDbR db)
-    {
-    AuthorityHandlerR handler = dgn_AuthorityHandler::Null::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), BIS_AUTHORITY_NullAuthority);
-    DgnAuthorityPtr authority = handler.Create(params);
-    return authority.IsValid() ? authority->Insert() : DgnDbStatus::InvalidCodeAuthority;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnAuthorityPtr DgnAuthority::Create(DgnDbR db, Utf8CP authorityName, CodeScopeSpecCR scopeSpec)
@@ -349,135 +338,19 @@ DgnAuthorityPtr DgnAuthority::Create(DgnDbR db, Utf8CP authorityName, CodeScopeS
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
+* @bsimethod                                                    Shaun.Sewall    01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DatabaseScopeAuthorityPtr DatabaseScopeAuthority::Create(Utf8CP authorityName, DgnDbR dgndb)
+static DgnDbStatus insertCodeSpec(DgnDbR db, Utf8CP name, CodeScopeSpecCR scope, CodeSpecId expectedId=CodeSpecId())
     {
-    AuthorityHandlerR hdlr = dgn_AuthorityHandler::DatabaseScope::GetHandler();
-    CreateParams params(dgndb, dgndb.Domains().GetClassId(hdlr), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateRepositoryScope());
-    return static_cast<DatabaseScopeAuthority*>(hdlr.Create(params).get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ModelScopeAuthorityPtr ModelScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
-    {
-    AuthorityHandlerR handler = dgn_AuthorityHandler::ModelScope::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateModelScope());
-    return static_cast<ModelScopeAuthority*>(handler.Create(params).get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-ElementScopeAuthorityPtr ElementScopeAuthority::Create(Utf8CP authorityName, DgnDbR db)
-    {
-    AuthorityHandlerR handler = dgn_AuthorityHandler::ElementScope::GetHandler();
-    CreateParams params(db, db.Domains().GetClassId(handler), authorityName, DgnAuthorityId(), CodeScopeSpec::CreateParentElementScope());
-    return static_cast<ElementScopeAuthority*>(handler.Create(params).get());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DatabaseScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbCR db, Utf8StringCR value, Utf8StringCR nameSpace)
-    {
-    DatabaseScopeAuthorityCPtr authority = db.Authorities().Get<DatabaseScopeAuthority>(authorityName);
-    BeAssert(authority.IsValid());
-    return authority.IsValid() ? authority->CreateCode(value, nameSpace) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnModelCR model, Utf8StringCR value)
-    {
-    ModelScopeAuthorityCPtr authority = model.GetDgnDb().Authorities().Get<ModelScopeAuthority>(authorityName);
-    BeAssert(authority.IsValid() && model.GetModelId().IsValid());
-    return authority.IsValid() && model.GetModelId().IsValid() ? authority->CreateCode(model.GetModelId(), value) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbCR db, DgnModelId modelId, Utf8StringCR value)
-    {
-    ModelScopeAuthorityCPtr authority = db.Authorities().Get<ModelScopeAuthority>(authorityName);
-    BeAssert(authority.IsValid() && db.Models().GetModel(modelId).IsValid());
-    return authority.IsValid() && modelId.IsValid() ? authority->CreateCode(modelId, value) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ModelScopeAuthority::CreateCode(DgnModelCR model, Utf8StringCR value) const
-    {
-    return CreateCode(model.GetModelId(), value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ElementScopeAuthority::CreateCode(Utf8CP authorityName, DgnElementCR scopeElement, Utf8StringCR value)
-    {
-    ElementScopeAuthorityCPtr authority = scopeElement.GetDgnDb().Authorities().Get<ElementScopeAuthority>(authorityName);
-    BeAssert(authority.IsValid() && scopeElement.GetElementId().IsValid());
-    return authority.IsValid() && scopeElement.GetElementId().IsValid() ? authority->CreateCode(scopeElement.GetElementId(), value) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ElementScopeAuthority::CreateCode(Utf8CP authorityName, DgnDbR db, DgnElementId scopeElementId, Utf8StringCR value)
-    {
-    ElementScopeAuthorityCPtr authority = db.Authorities().Get<ElementScopeAuthority>(authorityName);
-    BeAssert(authority.IsValid() && db.Elements().GetElement(scopeElementId).IsValid());
-    return authority.IsValid() && scopeElementId.IsValid() ? authority->CreateCode(scopeElementId, value) : DgnCode();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode ElementScopeAuthority::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
-    {
-    return CreateCode(scopeElement.GetElementId(), value);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus insertDatabaseScopeAuthority(Utf8CP authorityName, DgnDbR db)
-    {
-    DatabaseScopeAuthorityPtr authority = DatabaseScopeAuthority::Create(authorityName, db);
-    if (!authority.IsValid())
+    CodeSpecPtr codeSpec = CodeSpec::Create(db, name, scope);
+    if (!codeSpec.IsValid())
         return DgnDbStatus::InvalidCodeAuthority;
 
-    return authority->Insert();
-    }
+    DgnDbStatus insertStatus = codeSpec->Insert();
+    if (expectedId.IsValid() && (expectedId != codeSpec->GetAuthorityId()))
+        return DgnDbStatus::InvalidId;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus insertModelScopeAuthority(Utf8CP authorityName, DgnDbR db)
-    {
-    ModelScopeAuthorityPtr authority = ModelScopeAuthority::Create(authorityName, db);
-    if (!authority.IsValid())
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return authority->Insert();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static DgnDbStatus insertElementScopeAuthority(Utf8CP authorityName, DgnDbR db)
-    {
-    ElementScopeAuthorityPtr authority = ElementScopeAuthority::Create(authorityName, db);
-    if (!authority.IsValid())
-        return DgnDbStatus::InvalidCodeAuthority;
-
-    return authority->Insert();
+    return insertStatus;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -485,33 +358,33 @@ static DgnDbStatus insertElementScopeAuthority(Utf8CP authorityName, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult DgnDb::CreateAuthorities()
     {
-    if ((DgnDbStatus::Success != NullAuthority::Insert(*this)) ||
-        // DatabaseScopeAuthorities
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationFrameStyle, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationLeaderStyle, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_AnnotationTextStyle, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_CategorySelector, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_DisplayStyle, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_GeometryPart, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_LightDefinition, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_LineStyle, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_MaterialElement, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_ModelSelector, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_Session, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_SpatialCategory, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_TextAnnotationSeed, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_Texture, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_TrueColor, *this)) ||
-        (DgnDbStatus::Success != insertDatabaseScopeAuthority(BIS_AUTHORITY_ViewDefinition, *this)) || 
-        // ModelScopeAuthorities
-        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Drawing, *this)) ||
-        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_DrawingCategory, *this)) ||
-        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_LinkElement, *this)) ||
-        (DgnDbStatus::Success != insertModelScopeAuthority(BIS_AUTHORITY_Sheet, *this)) ||
-        // ElementScopeAuthorities
-        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_InformationPartitionElement, *this)) ||
-        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_SubCategory, *this)) ||
-        (DgnDbStatus::Success != insertElementScopeAuthority(BIS_AUTHORITY_Subject, *this)))
+    if (// CodeSpecs with Repository scope
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_NullAuthority, CodeScopeSpec::CreateRepositoryScope(), CodeSpec::GetNullAuthorityId())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_AnnotationFrameStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_AnnotationLeaderStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_AnnotationTextStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_CategorySelector, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_DisplayStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_GeometryPart, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_LightDefinition, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_LineStyle, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_MaterialElement, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_ModelSelector, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_Session, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_SpatialCategory, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_TextAnnotationSeed, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_Texture, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_TrueColor, CodeScopeSpec::CreateRepositoryScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_ViewDefinition, CodeScopeSpec::CreateRepositoryScope())) || 
+        // CodeSpecs with Model scope
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_Drawing, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_DrawingCategory, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_LinkElement, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_Sheet, CodeScopeSpec::CreateModelScope())) ||
+        // CodeSpecs with ParentElement scope
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_InformationPartitionElement, CodeScopeSpec::CreateParentElementScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_SubCategory, CodeScopeSpec::CreateParentElementScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_AUTHORITY_Subject, CodeScopeSpec::CreateParentElementScope())))
         {
         BeAssert(false);
         return BE_SQLITE_ERROR;
@@ -521,11 +394,59 @@ DbResult DgnDb::CreateAuthorities()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value, Utf8StringCR nameSpace)
+    {
+    CodeSpecCPtr codeSpec = db.Authorities().GetAuthority(codeSpecName);
+    BeAssert(codeSpec.IsValid());
+    return codeSpec.IsValid() ? codeSpec->CreateCode(value, nameSpace) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, Utf8StringCR value)
+    {
+    CodeSpecCPtr codeSpec = db.Authorities().GetAuthority(codeSpecName);
+    BeAssert(codeSpec.IsValid());
+    return codeSpec.IsValid() ? codeSpec->CreateCode(value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(Utf8StringCR value) const
+    {
+    BeAssert(IsRepositoryScope());
+    return IsRepositoryScope() ? DgnCode(GetAuthorityId(), value, GetDgnDb().Elements().GetRootSubjectId()) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf8StringCR value)
+    {
+    CodeSpecCPtr codeSpec = scopeElement.GetDgnDb().Authorities().GetAuthority(codeSpecName);
+    BeAssert(codeSpec.IsValid());
+    return codeSpec.IsValid() ? codeSpec->CreateCode(scopeElement, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
+    {
+    BeAssert(scopeElement.GetElementId().IsValid());
+    return scopeElement.GetElementId().IsValid() ? DgnCode(GetAuthorityId(), value, scopeElement.GetElementId()) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty()
     {
-    return NullAuthority::CreateCode();
+    return DgnCode(CodeSpec::GetNullAuthorityId(), "", "");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -588,30 +509,30 @@ DgnDbStatus DgnAuthority::_RegenerateCode(DgnCodeR regeneratedCode, DgnElementCR
     return DgnDbStatus::Success; 
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ModelScopeAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    DgnCodeCR code = element.GetCode();
-    if (code.GetValue().empty() || code.GetNamespace().empty())
-        return DgnDbStatus::InvalidName;
-
-    return T_Super::_ValidateCode(element);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus ElementScopeAuthority::_ValidateCode(DgnElementCR element) const
-    {
-    DgnCodeCR code = element.GetCode();
-    if (code.GetValue().empty() || code.GetNamespace().empty())
-        return DgnDbStatus::InvalidName;
-
-    return T_Super::_ValidateCode(element);
-    }
-
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Shaun.Sewall    11/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//DgnDbStatus ModelScopeAuthority::_ValidateCode(DgnElementCR element) const
+//    {
+//    DgnCodeCR code = element.GetCode();
+//    if (code.GetValue().empty() || code.GetNamespace().empty())
+//        return DgnDbStatus::InvalidName;
+//
+//    return T_Super::_ValidateCode(element);
+//    }
+//
+///*---------------------------------------------------------------------------------**//**
+//* @bsimethod                                                    Shaun.Sewall    11/16
+//+---------------+---------------+---------------+---------------+---------------+------*/
+//DgnDbStatus ElementScopeAuthority::_ValidateCode(DgnElementCR element) const
+//    {
+//    DgnCodeCR code = element.GetCode();
+//    if (code.GetValue().empty() || code.GetNamespace().empty())
+//        return DgnDbStatus::InvalidName;
+//
+//    return T_Super::_ValidateCode(element);
+//    }
+//
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
