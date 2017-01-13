@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Responses/CachedResponseManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -158,7 +158,7 @@ struct CachedResponseManager : public IDeleteHandler
             );
 
         //! Set response completed when it has all pages cached
-        BentleyStatus SetResponseCompleted(CachedResponseKeyCR responseKey, bool isCompleted);
+        CacheStatus SetResponseCompleted(CachedResponseKeyCR responseKey, bool isCompleted);
 
         //! Check if response has all pages cached
         bool IsResponseCompleted(CachedResponseKeyCR responseKey);

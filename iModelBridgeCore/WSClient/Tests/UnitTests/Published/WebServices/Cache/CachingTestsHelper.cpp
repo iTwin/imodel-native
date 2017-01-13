@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/CachingTestsHelper.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -376,7 +376,7 @@ ECInstanceKey StubInstanceInCacheJson(IDataSourceCache& cache, ObjectIdCR object
 CachedResponseKey StubInstancesInCache(IDataSourceCache& cache, StubInstances& instances, Utf8StringCR root, Utf8String responseName)
     {
     CachedResponseKey resultsKey(cache.FindOrCreateRoot(root), responseName);
-    if (SUCCESS != cache.CacheResponse(resultsKey, instances.ToWSObjectsResponse()))
+    if (CacheStatus::OK != cache.CacheResponse(resultsKey, instances.ToWSObjectsResponse()))
         {
         EXPECT_TRUE(false);
         }

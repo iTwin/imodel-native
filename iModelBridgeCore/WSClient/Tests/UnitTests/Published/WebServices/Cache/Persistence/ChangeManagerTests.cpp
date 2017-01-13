@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/Persistence/ChangeManagerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -1873,7 +1873,7 @@ TEST_F(ChangeManagerTests, CommitInstanceRevision_NewRemoteIdExistsInCacheAndInC
     instances.Add({"TestSchema.TestClass", "Foo"});
     instances.Add({"TestSchema.TestClass", "Other"});
 
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
     EXPECT_THAT(cache->ReadResponseCacheTag(responseKey), Eq("TestTag"));
 
     auto newInstance = StubCreatedObjectInCache(*cache, "TestSchema.TestClass");
@@ -2050,7 +2050,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedRespon
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
     instances.Add({"TestSchema.TestClass", "Other"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
     EXPECT_THAT(cache->ReadResponseCacheTag(responseKey), Eq("TestTag"));
 
     instances.Clear();
@@ -2145,7 +2145,7 @@ TEST_F(ChangeManagerTests, UpdateCreatedInstance_OldInstanceExistsInCachedRespon
     StubInstances instances;
     instances.Add({"TestSchema.TestClass", "Foo"});
     instances.Add({"TestSchema.TestClass", "Other"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, instances.ToWSObjectsResponse("TestTag")));
     EXPECT_THAT(cache->ReadResponseCacheTag(responseKey), Eq("TestTag"));
 
     instances.Clear();
@@ -2931,7 +2931,7 @@ TEST_F(ChangeManagerTests, AddCreatedInstanceToResponse_CreatedObjectAndExisting
     StubInstances stubInstances;
     stubInstances.Add({"TestSchema.TestClass", "A"});
     stubInstances.Add({"TestSchema.TestClass", "B"});
-    ASSERT_EQ(SUCCESS, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
+    ASSERT_EQ(CacheStatus::OK, cache->CacheResponse(responseKey, stubInstances.ToWSObjectsResponse()));
 
     auto instance = StubCreatedObjectInCache(*cache);
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().AddCreatedInstanceToResponse(responseKey, instance));

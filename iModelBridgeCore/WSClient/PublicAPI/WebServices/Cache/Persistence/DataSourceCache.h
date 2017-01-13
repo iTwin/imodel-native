@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/DataSourceCache.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -88,7 +88,7 @@ struct DataSourceCache : public IDataSourceCache
         //  Saving data to cache
         //--------------------------------------------------------------------------------------------------------------------------------+
 
-        WSCACHE_EXPORT BentleyStatus CacheResponse
+        WSCACHE_EXPORT CacheStatus CacheResponse
             (
             CachedResponseKeyCR responseKey,
             WSObjectsResponseCR response,
