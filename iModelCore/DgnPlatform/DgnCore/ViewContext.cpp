@@ -792,23 +792,6 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Returns a transform from sheet view coordinates to tile view coordinates.
-* @Note this can only be called with a ViewContext currently attached to a sheet.
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-Transform ViewContext::GetSheetToTileTransform(TileViewportCR tileVp)
-    {
-    Frustum frust = tileVp.GetFrustum(DgnCoordSystem::Npc).TransformBy(tileVp.m_toParent); 
-    WorldToView(frust.m_pts, frust.m_pts, 8);
-    Transform tileToSheet = Transform::From4Points(frust.m_pts[NPC_LeftTopRear], frust.m_pts[NPC_RightTopRear], frust.m_pts[NPC_LeftBottomRear], frust.m_pts[NPC_LeftTopFront]);
-    tileToSheet.ScaleMatrixColumns(1.0/tileVp.m_rect.corner.x, 1.0/tileVp.m_rect.corner.y, 1.0/frust.m_pts[NPC_LeftTopFront].z);
-
-    Transform sheetToTile;
-    sheetToTile.InverseOf(tileToSheet);
-    return sheetToTile;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                                    07/02
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GraphicParams::Init()

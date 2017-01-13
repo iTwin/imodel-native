@@ -47,7 +47,6 @@ struct FitViewParams
     bool m_limitByVolume = false;
 };
 
-struct TileViewport;
 //=======================================================================================
 /**
  A DgnViewport maps a set of DgnModels to an output device through a camera (a view frustum) and filters (e.g. categories, view flags, etc). 
@@ -107,7 +106,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnViewport : RefCounted<NonCopyableClass>
     {
         virtual ~Tracker() {}
         virtual void _OnViewChanged() const {} //!< Called after this DgnViewport has been modified, e.g. through a viewing tool
-        virtual void _OnViewClose() const {} //!< Called when this DgnViewport is about to be closed.
+        virtual void _OnViewClose() const {}   //!< Called when this DgnViewport is about to be closed.
     };
 
 protected:
@@ -217,10 +216,10 @@ public:
     void ClearUndo();
     void ChangeDynamics(Render::GraphicListP list, Render::Task::Priority);
     DGNVIEW_EXPORT void ChangeRenderPlan(Render::Task::Priority);
-    void ApplyViewState(ViewDefinitionCR val, int animationTime);
+    void ApplyViewState(ViewDefinitionCR val, std::chrono::milliseconds animationTime);
     DGNVIEW_EXPORT void Refresh(Render::Task::Priority);
-    DGNVIEW_EXPORT void ApplyNext(int animationTime);
-    DGNVIEW_EXPORT void ApplyPrevious(int animationTime);
+    DGNVIEW_EXPORT void ApplyNext(std::chrono::milliseconds animationTime); 
+    DGNVIEW_EXPORT void ApplyPrevious(std::chrono::milliseconds animationTime);
     DGNPLATFORM_EXPORT static Render::Queue& RenderQueue();
 
     // Find world distance to nearest element in view rect.
@@ -425,7 +424,7 @@ public:
     DGNPLATFORM_EXPORT void ViewToWorld(DPoint3dP worldPts, DPoint3dCP viewPts, int nPts) const;
 
     //! Transform a point from DgnCoordSystem::View into DgnCoordSystem::World.
-    DPoint3d ViewToWorld(DPoint3dCR viewPt) {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
+    DPoint3d ViewToWorld(DPoint3dCR viewPt) const {DPoint3d worldPt; ViewToWorld(&worldPt, &viewPt, 1); return worldPt;}
 /** @} */
 
 /** @name DgnViewport Parameters */
@@ -546,7 +545,7 @@ public:
     //! @note The viewRect is adjusted as necessary to preserve the aspect ratio.
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
-    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize={0,0});
+    DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize=Point2d::From(0,0));
 };
 
 //=======================================================================================
@@ -559,12 +558,21 @@ struct TileViewport : DgnViewport
     double m_biasDistance = 0.0; // distance in z to position tile in parent viewport's z-buffer (should be obtained by calling DepthFromDisplayPriority)
     Render::GraphicListPtr m_terrain;
 
-    virtual void _QueueScene() = 0;
-    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize) = 0;
+    virtual void _QueueScene();
+    virtual folly::Future<BentleyStatus> _CreateTile(TileTree::TileLoadStatePtr, Render::TexturePtr&, TileTree::QuadTree::Tile&, Point2dCR tileSize);
     BSIRect _GetViewRect() const override {return m_rect;}
     void _AdjustAspectRatio(ViewControllerR viewController, bool expandView) override {}
     void SetRect(BSIRect rect) {m_rect=rect; m_renderTarget->_SetTileRect(rect);}
     TileViewport();
+
+    //! Get the transfrom from attachment view coordinates to sheet view coordinates
+    DGNPLATFORM_EXPORT Transform GetTransformToSheet(DgnViewportCR sheetVp);
+
+    //! Get the transfrom from sheet view coordinates to attachment view coordinates
+    Transform GetTransformFromSheet(DgnViewportCR sheetVp) {Transform trans=GetTransformToSheet(sheetVp); trans.InverseOf(trans); return trans;}
+
+    //! Convert a point from tile world coordinates to sheet world coordinates (z will always be 0).
+    DGNPLATFORM_EXPORT DPoint3d ToSheetPoint(DgnViewportCR sheetVp, DPoint3dCR tileWorld);
 };
 
 //=======================================================================================

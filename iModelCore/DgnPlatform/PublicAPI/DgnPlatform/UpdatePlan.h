@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/UpdatePlan.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -113,6 +113,7 @@ struct StopEvents
 
         ForFullUpdate  = OnWheel | OnAbortUpdate | OnReset, // doesn't stop on keystrokes, data buttons, or touch
         ForQuickUpdate = ForFullUpdate | OnKeystrokes | OnButton | OnTouch,
+        ForViewTransition = OnWheel | OnReset| OnKeystrokes | OnButton | OnTouch, // don't stop for "updateabort"
         };
 
     void Clear()

@@ -178,7 +178,7 @@ protected:
     virtual void _SetHilited(DgnElement::Hilited) const;
 
 public:
-    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewport*, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
+    DGNPLATFORM_EXPORT HitDetail(DgnViewportR, DgnViewport* sheetVp, GeometrySourceCP, DPoint3dCR testPoint, HitSource, GeomDetailCR);
     DGNPLATFORM_EXPORT explicit HitDetail(HitDetailCR from);
     DGNPLATFORM_EXPORT virtual ~HitDetail();
 
@@ -187,6 +187,7 @@ public:
     void SetTestPoint(DPoint3dCR pt) {_SetTestPoint(pt);}
     void SetHilited(DgnElement::Hilited state) const {_SetHilited(state);}
     void SetSubSelectionMode(SubSelectionMode mode) {_SetSubSelectionMode(mode);}
+    bool IsSheetHit() const {return nullptr!=m_sheetViewport;}
     DgnViewport* GetSheetViewport() const {return m_sheetViewport;}
 
     void Draw(ViewContextR context) const {_Draw(context);}
@@ -200,7 +201,6 @@ public:
     DgnViewportR GetViewport() const {return m_viewport;}
     HitSource GetLocateSource() const {return m_locateSource;}
     DPoint3dCR GetTestPoint() const {return m_testPoint;}
-
     DPoint3dCR GetHitPoint() const {return _GetHitPoint();}
     HitDetailType GetHitType() const {return _GetHitType();}
     SubSelectionMode GetSubSelectionMode() const {return _GetSubSelectionMode(); }
@@ -213,9 +213,8 @@ public:
     void SetElemTopology(IElemTopologyP topo) {m_elemTopo = topo;}
 };
 
-typedef RefCountedPtr<HitDetail> HitDetailPtr;
-typedef RefCountedCPtr<HitDetail> HitDetailCPtr;
-typedef bvector<RefCountedPtr<HitDetail>> HitDetailArray;
+DEFINE_REF_COUNTED_PTR(HitDetail)
+typedef bvector<HitDetailPtr> HitDetailVector;
 
 //=======================================================================================
 //! The result of a "locate" is a sorted list of objects that
@@ -223,7 +222,7 @@ typedef bvector<RefCountedPtr<HitDetail>> HitDetailArray;
 //! are somehow "better" than those later on.
 // @bsiclass                                                      KeithBentley    04/01
 //=======================================================================================
-struct  HitList : private HitDetailArray
+struct  HitList : private HitDetailVector
 {
     // NOTE: use private inheritance -- we don't want anybody calling the base class "empty" method!
     int             m_currHit;

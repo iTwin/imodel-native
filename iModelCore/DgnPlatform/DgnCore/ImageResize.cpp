@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/ImageResize.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -43,12 +43,12 @@ struct Resizer
     int                     m_bytesPerPixel;
     bvector<int32_t>        m_pBuf, m_oBuf1, m_oBuf2;
 
-    Byte*                   GetCurrentOutputRow () { return m_output.data() + m_currentOutputRow * m_bytesPerPixel * m_outSize.x; }
+    Byte*                   GetCurrentOutputRow() {return m_output.data() + m_currentOutputRow * m_bytesPerPixel * m_outSize.x;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage) : m_output(output), m_currentInputRow(0), m_currentOutputRow (0), m_sourceRow(0)
+Resizer(ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage) : m_output(output), m_currentInputRow(0), m_currentOutputRow(0), m_sourceRow(0)
     {
     m_input = sourceImage.GetByteStream().data();
     m_inSize.x = (int32_t) sourceImage.GetWidth();
@@ -57,17 +57,17 @@ Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageC
     m_outSize.y = (int32_t) targetHeight;
 
     m_bytesPerPixel = sourceImage.GetBytesPerPixel();
-    m_pBuf.resize (m_bytesPerPixel * targetWidth);
-    m_oBuf1.resize (m_bytesPerPixel * targetWidth);
-    m_oBuf2.resize (m_bytesPerPixel * targetWidth);
+    m_pBuf.resize(m_bytesPerPixel * targetWidth);
+    m_oBuf1.resize(m_bytesPerPixel * targetWidth);
+    m_oBuf2.resize(m_bytesPerPixel * targetWidth);
 
-    m_xMode = BuildSquetchTable (m_inSize.x, m_outSize.x, m_xTable);
-    m_yMode = BuildSquetchTable (m_inSize.y, m_outSize.y, m_yTable);
+    m_xMode = BuildSquetchTable(m_inSize.x, m_outSize.x, m_xTable);
+    m_yMode = BuildSquetchTable(m_inSize.y, m_outSize.y, m_yTable);
 
     if (m_yMode == EXPAND)
         {
-        LoadLineSquetch (m_oBuf1.data());
-        LoadLineSquetch (m_oBuf2.data());
+        LoadLineSquetch(m_oBuf1.data());
+        LoadLineSquetch(m_oBuf2.data());
         }
 
     m_output.Resize(m_bytesPerPixel * targetWidth * targetHeight);
@@ -76,7 +76,7 @@ Resizer (ByteStream& output, uint32_t targetWidth, uint32_t targetHeight, ImageC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-SquetchMode BuildSquetchTable (int32_t n, /* go from n pixels */ int32_t m, /* to m pixels */ T_SquetchTable&   squetchTable)
+SquetchMode BuildSquetchTable(int32_t n, /* go from n pixels */ int32_t m, /* to m pixels */ T_SquetchTable&   squetchTable)
     {
     int         i,j, count=0;
     double      x, dx;
@@ -86,7 +86,7 @@ SquetchMode BuildSquetchTable (int32_t n, /* go from n pixels */ int32_t m, /* t
 
     if (n > m)  /* compression */
         {
-        squetchTable.resize (n);
+        squetchTable.resize(n);
         dx = (double) m/(double) n;
         x = 0;
         for (i=0,j=0;i<n;i++)
@@ -192,18 +192,18 @@ int32_t*            outBuf          /* output Buffer */
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
-void LoadLineSquetch (int32_t*  pBuf)
+void LoadLineSquetch(int32_t*  pBuf)
     {
     Byte const*     pInputRow = m_input + m_inSize.x * m_bytesPerPixel * m_sourceRow++;
 
     for (int i=0; i<m_bytesPerPixel; i++)
-        LoadSquetch (m_xMode, m_inSize.x, m_outSize.x, m_xTable, pInputRow + i, pBuf + i * m_outSize.x);
+        LoadSquetch(m_xMode, m_inSize.x, m_outSize.x, m_xTable, pInputRow + i, pBuf + i * m_outSize.x);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ExtractLineSquetch (int32_t *pBuf, Byte* pOutput, int scale) 
+void ExtractLineSquetch(int32_t *pBuf, Byte* pOutput, int scale) 
     {
     for (int i=0; i<m_bytesPerPixel; i++)
         {
@@ -223,9 +223,9 @@ void ExtractLineSquetch (int32_t *pBuf, Byte* pOutput, int scale)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SwapOutputBuffers ()
+void SwapOutputBuffers()
     {
-    bvector<int32_t>        temp (m_oBuf1);
+    bvector<int32_t>        temp(m_oBuf1);
 
     m_oBuf1 = m_oBuf2;
     m_oBuf2 = temp;
@@ -234,7 +234,7 @@ void SwapOutputBuffers ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
-int ExpandRows (int32_t* inBufA, int32_t* inBufB, int32_t* outBuf)
+int ExpandRows(int32_t* inBufA, int32_t* inBufB, int32_t* outBuf)
     {
     int32_t wa = m_yTable[m_currentInputRow].wa;
     int32_t wb = m_yTable[m_currentInputRow].wb;
@@ -254,7 +254,7 @@ int ExpandRows (int32_t* inBufA, int32_t* inBufB, int32_t* outBuf)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
-int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
+int CompressRows(int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
     {
     int         w;
     int32_t*    t;
@@ -281,7 +281,7 @@ int CompressRows (int32_t* inBuf, int32_t* outBufA, int32_t* outBufB)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/1990
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool GetRow ()
+bool GetRow()
     {
     if (m_yMode == RGBCOMPRESS)
         {
@@ -290,45 +290,45 @@ bool GetRow ()
             if (m_currentInputRow > m_inSize.y)
                 break;
 
-            LoadLineSquetch (m_pBuf.data());
+            LoadLineSquetch(m_pBuf.data());
 
             int s = 0;
 
             for (int i=0; i<m_bytesPerPixel; i++)
-                s |= CompressRows (m_pBuf.data()  + i * m_outSize.x, m_oBuf1.data() + i * m_outSize.x, m_oBuf2.data() + i * m_outSize.x);
+                s |= CompressRows(m_pBuf.data()  + i * m_outSize.x, m_oBuf1.data() + i * m_outSize.x, m_oBuf2.data() + i * m_outSize.x);
 
             if (s)
                 {
-                ExtractLineSquetch (m_oBuf1.data(), GetCurrentOutputRow(), 18);
+                ExtractLineSquetch(m_oBuf1.data(), GetCurrentOutputRow(), 18);
                 SwapOutputBuffers();
                 m_currentInputRow++;
                 return (0);
                 }
             m_currentInputRow++;
             }
-        ExtractLineSquetch (m_oBuf1.data(), GetCurrentOutputRow(), 18);
-        return(0);
+        ExtractLineSquetch(m_oBuf1.data(), GetCurrentOutputRow(), 18);
+        return (0);
         }
     else if (m_yMode == EXPAND)
         {
         int s = 0;
 
         for (int i=0; i<m_bytesPerPixel; i++)
-            s |= ExpandRows (m_oBuf1.data() + i * m_outSize.x,  m_oBuf2.data() + i * m_outSize.x, m_pBuf.data() + i * m_outSize.x);
+            s |= ExpandRows(m_oBuf1.data() + i * m_outSize.x,  m_oBuf2.data() + i * m_outSize.x, m_pBuf.data() + i * m_outSize.x);
 
          if (s)
             {
             SwapOutputBuffers();
-            LoadLineSquetch (m_oBuf2.data());
+            LoadLineSquetch(m_oBuf2.data());
             }
         m_currentInputRow++;
-        ExtractLineSquetch (m_pBuf.data(), GetCurrentOutputRow(), 18);
-        return(0);
+        ExtractLineSquetch(m_pBuf.data(), GetCurrentOutputRow(), 18);
+        return (0);
         }
     else
         {
-        LoadLineSquetch (m_pBuf.data());
-        ExtractLineSquetch (m_pBuf.data(), GetCurrentOutputRow(), 9);
+        LoadLineSquetch(m_pBuf.data());
+        ExtractLineSquetch(m_pBuf.data(), GetCurrentOutputRow(), 9);
         m_currentInputRow++;
         }
     return m_currentInputRow < m_inSize.y;
@@ -340,7 +340,7 @@ bool GetRow ()
 void    DoResize()
     {
     for (m_currentOutputRow=0; m_currentOutputRow < m_outSize.y; m_currentOutputRow++)
-        GetRow ();
+        GetRow();
 
     }
 
@@ -348,34 +348,34 @@ void    DoResize()
 
 
 #ifdef DEBUG_IMAGES
-static void writeImageFile (Byte const* data, uint32_t width, uint32_t height, char* name, int32_t bytesPerPixel)
+static void writeImageFile(Byte const* data, uint32_t width, uint32_t height, char* name, int32_t bytesPerPixel)
     {
     bool            rgba = 4 == bytesPerPixel;
     Image           image(width, height, ByteStream(data, width * height * bytesPerPixel), (rgba) ? Image::Format::Rgba : Image::Format::Rgb);
-    ImageSource     imageSource (image, rgba ? ImageSource::Format::Png: ImageSource::Format::Jpeg);
+    ImageSource     imageSource(image, rgba ? ImageSource::Format::Png: ImageSource::Format::Jpeg);
 
-    FILE*               file = fopen (name, "wb");
+    FILE*               file = fopen(name, "wb");
     ByteStream const&   byteStream = imageSource.GetByteStream();
 
-    fwrite (byteStream.data(), 1, byteStream.size(), file);
-    fclose (file);
+    fwrite(byteStream.data(), 1, byteStream.size(), file);
+    fclose(file);
     }
 #endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Image Image::FromResizedImage (uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage)
+Image Image::FromResizedImage(uint32_t targetWidth, uint32_t targetHeight, ImageCR sourceImage)
     {
     ByteStream  outputImage;
-    Resizer     resizer (outputImage, targetWidth, targetHeight, sourceImage);
+    Resizer     resizer(outputImage, targetWidth, targetHeight, sourceImage);
 
     resizer.DoResize();
 
 #ifdef DEBUG_IMAGES
-    writeImageFile (sourceImage.GetByteStream().data(), sourceImage.GetWidth(), sourceImage.GetHeight(), "d:\\tmp\\inputImage.png", sourceImage.GetBytesPerPixel());
-    writeImageFile (outputImage.data(), targetWidth, targetHeight, "d:\\tmp\\resizedImage.png", sourceImage.GetBytesPerPixel());
+    writeImageFile(sourceImage.GetByteStream().data(), sourceImage.GetWidth(), sourceImage.GetHeight(), "d:\\tmp\\inputImage.png", sourceImage.GetBytesPerPixel());
+    writeImageFile(outputImage.data(), targetWidth, targetHeight, "d:\\tmp\\resizedImage.png", sourceImage.GetBytesPerPixel());
 #endif
 
-    return Image (targetWidth, targetHeight, std::move (outputImage), sourceImage.GetFormat());
+    return Image(targetWidth, targetHeight, std::move(outputImage), sourceImage.GetFormat());
     }
