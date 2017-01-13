@@ -236,94 +236,94 @@ struct FormatConstant
     {
 public:
     // FPN prefix stands for FormatParameterName
-    UNITS_EXPORT static Utf8String FPN_FormatName() { return "FormatName"; }
-    UNITS_EXPORT static Utf8String FPN_NoSign() { return "NoSign"; }
-    UNITS_EXPORT static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
-    UNITS_EXPORT static Utf8String FPN_SignAlways() { return "SignAlways"; }
-    UNITS_EXPORT static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
-    UNITS_EXPORT static Utf8String FPN_Decimal() { return "Decimal"; }
-    UNITS_EXPORT static Utf8String FPN_Fractional() { return "Fractional"; }
-    UNITS_EXPORT static Utf8String FPN_Scientific() { return "Scientific"; }
-    UNITS_EXPORT static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
-    UNITS_EXPORT static Utf8String FPN_Binary() { return "Binary"; }
-    UNITS_EXPORT static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
-    UNITS_EXPORT static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
-    UNITS_EXPORT static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
-    UNITS_EXPORT static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
-    UNITS_EXPORT static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
-    UNITS_EXPORT static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
-    UNITS_EXPORT static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
-    UNITS_EXPORT static Utf8String FPN_Precision0() { return "Precision0"; }
-    UNITS_EXPORT static Utf8String FPN_Precision1() { return "Precision1"; }
-    UNITS_EXPORT static Utf8String FPN_Precision2() { return "Precision2"; }
-    UNITS_EXPORT static Utf8String FPN_Precision3() { return "Precision3"; }
-    UNITS_EXPORT static Utf8String FPN_Precision4() { return "Precision4"; }
-    UNITS_EXPORT static Utf8String FPN_Precision5() { return "Precision5"; }
-    UNITS_EXPORT static Utf8String FPN_Precision6() { return "Precision6"; }
-    UNITS_EXPORT static Utf8String FPN_Precision7() { return "Precision7"; }
-    UNITS_EXPORT static Utf8String FPN_Precision8() { return "Precision8"; }
-    UNITS_EXPORT static Utf8String FPN_Precision9() { return "Precision9"; }
-    UNITS_EXPORT static Utf8String FPN_Precision10() { return "Precision10"; }
-    UNITS_EXPORT static Utf8String FPN_Precision11() { return "Precision11"; }
-    UNITS_EXPORT static Utf8String FPN_Precision12() { return "Precision12"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
-    UNITS_EXPORT static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
-    UNITS_EXPORT static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
-    UNITS_EXPORT static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
-    UNITS_EXPORT static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
-    UNITS_EXPORT static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
-    UNITS_EXPORT static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
-    UNITS_EXPORT static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
-    UNITS_EXPORT static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
-    UNITS_EXPORT static Utf8String FPN_RoundUp() { return "RoundUp"; }
-    UNITS_EXPORT static Utf8String FPN_RoundDown() { return "RoundDown"; }
-    UNITS_EXPORT static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
-    UNITS_EXPORT static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
-    UNITS_EXPORT static Utf8String FPN_FractBarHoriz() { return "FractBarHoriz"; }
-    UNITS_EXPORT static Utf8String FPN_FractBarOblique() { return "FractBarOblique"; }
-    UNITS_EXPORT static Utf8String FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
-    UNITS_EXPORT static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
-    UNITS_EXPORT static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
-    UNITS_EXPORT static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
-    UNITS_EXPORT static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
-    UNITS_EXPORT static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
-    UNITS_EXPORT static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
-    UNITS_EXPORT static Utf8String FPN_RightAlign() { return "RightAlign"; }
-    UNITS_EXPORT static Utf8String FPN_MapName() { return "MapName"; }
-    UNITS_EXPORT static const double FPV_MinTreshold() { return 1.0e-16; }  // format parameter default values
-    UNITS_EXPORT static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
-    UNITS_EXPORT static const Utf8Char FPV_DecimalSeparator() { return '.'; }
-    UNITS_EXPORT static const Utf8Char FPV_ThousandSeparator() { return ','; }
-    UNITS_EXPORT static const Utf8CP DefaultName() { return "*"; }
-    UNITS_EXPORT static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
-    UNITS_EXPORT static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
-    UNITS_EXPORT static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
-    UNITS_EXPORT static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
-    UNITS_EXPORT static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
-    UNITS_EXPORT static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Sixteenth; }
-    UNITS_EXPORT static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
-    UNITS_EXPORT static const double FPV_MaxTokenLength() { return 256; }
-    UNITS_EXPORT static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
-    UNITS_EXPORT static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
-    UNITS_EXPORT static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
-    UNITS_EXPORT static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
-    UNITS_EXPORT static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits
-    UNITS_EXPORT static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
-    UNITS_EXPORT static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
-    UNITS_EXPORT static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
-    UNITS_EXPORT static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
-    UNITS_EXPORT static const unsigned char UTF_UpperBitShift() { return  6; }
-    UNITS_EXPORT static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
-    UNITS_EXPORT static const bool IsLittleEndian();
+    static Utf8String FPN_FormatName() { return "FormatName"; }
+    static Utf8String FPN_NoSign() { return "NoSign"; }
+    static Utf8String FPN_OnlyNegative() { return "OnlyNegative"; }
+    static Utf8String FPN_SignAlways() { return "SignAlways"; }
+    static Utf8String FPN_NegativeParenths() { return "NegativeParenths"; }
+    static Utf8String FPN_Decimal() { return "Decimal"; }
+    static Utf8String FPN_Fractional() { return "Fractional"; }
+    static Utf8String FPN_Scientific() { return "Scientific"; }
+    static Utf8String FPN_ScientificNorm() { return "ScientificNorm"; }
+    static Utf8String FPN_Binary() { return "Binary"; }
+    static Utf8String FPN_DefaultZeroes() { return "DefaultZeroes"; }
+    static Utf8String FPN_LeadingZeroes() { return "LeadingZeroes"; }
+    static Utf8String FPN_TrailingZeroes() { return "TrailingZeroes"; }
+    static Utf8String FPN_KeepDecimalPoint() { return "KeepDecimalPoint"; }
+    static Utf8String FPN_ZeroEmpty() { return "ZeroEmpty"; }
+    static Utf8String FPN_KeepSingleZero() { return "KeepSingleZero"; }
+    static Utf8String FPN_ExponentZero() { return "ExponentZero"; }
+    static Utf8String FPN_Precision0() { return "Precision0"; }
+    static Utf8String FPN_Precision1() { return "Precision1"; }
+    static Utf8String FPN_Precision2() { return "Precision2"; }
+    static Utf8String FPN_Precision3() { return "Precision3"; }
+    static Utf8String FPN_Precision4() { return "Precision4"; }
+    static Utf8String FPN_Precision5() { return "Precision5"; }
+    static Utf8String FPN_Precision6() { return "Precision6"; }
+    static Utf8String FPN_Precision7() { return "Precision7"; }
+    static Utf8String FPN_Precision8() { return "Precision8"; }
+    static Utf8String FPN_Precision9() { return "Precision9"; }
+    static Utf8String FPN_Precision10() { return "Precision10"; }
+    static Utf8String FPN_Precision11() { return "Precision11"; }
+    static Utf8String FPN_Precision12() { return "Precision12"; }
+    static Utf8String FPN_FractPrec1() { return "FractPrec1"; }
+    static Utf8String FPN_FractPrec2() { return "FractPrec2"; }
+    static Utf8String FPN_FractPrec4() { return "FractPrec4"; }
+    static Utf8String FPN_FractPrec8() { return "FractPrec8"; }
+    static Utf8String FPN_FractPrec16() { return "FractPrec16"; }
+    static Utf8String FPN_FractPrec32() { return "FractPrec32"; }
+    static Utf8String FPN_FractPrec64() { return "FractPrec64"; }
+    static Utf8String FPN_FractPrec128() { return "FractPrec128"; }
+    static Utf8String FPN_FractPrec256() { return "FractPrec256"; }
+    static Utf8String FPN_DecimalComma() { return "DecimalComma"; }
+    static Utf8String FPN_DecimalPoint() { return "DecimalPoint"; }
+    static Utf8String FPN_DecimalSepar() { return "DecimalSepar"; }
+    static Utf8String FPN_ThousandSepComma() { return "ThousandSepComma"; }
+    static Utf8String FPN_ThousandSepPoint() { return "ThousandSepPoint"; }
+    static Utf8String FPN_ThousandsSepar() { return "ThousandsSepar"; }
+    static Utf8String FPN_Use1000Separ() { return "Use1000Separator"; }
+    static Utf8String FPN_RoundUp() { return "RoundUp"; }
+    static Utf8String FPN_RoundDown() { return "RoundDown"; }
+    static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
+    static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
+    static Utf8String FPN_FractBarHoriz() { return "FractBarHoriz"; }
+    static Utf8String FPN_FractBarOblique() { return "FractBarOblique"; }
+    static Utf8String FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
+    static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
+    static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
+    static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }
+    static Utf8String FPN_PaddingSymbol() { return "PaddingSymbol"; }
+    static Utf8String FPN_CenterAlign() { return "CenterAlign"; }
+    static Utf8String FPN_LeftAlign() { return "LeftAlign"; }
+    static Utf8String FPN_RightAlign() { return "RightAlign"; }
+    static Utf8String FPN_MapName() { return "MapName"; }
+    static const double FPV_MinTreshold() { return 1.0e-16; }  // format parameter default values
+    static const double FPV_RoundFactor() { return 0.50000000001; }  // rounding additive
+    static const Utf8Char FPV_DecimalSeparator() { return '.'; }
+    static const Utf8Char FPV_ThousandSeparator() { return ','; }
+    static const Utf8CP DefaultName() { return "*"; }
+    static const PresentationType DefaultPresentaitonType() { return PresentationType::Decimal; }
+    static const ShowSignOption DefaultSignOption() { return ShowSignOption::OnlyNegative; }
+    static const DecimalPrecision DefaultDecimalPrecision() { return  DecimalPrecision::Precision6; }
+    static const size_t DefaultDecimalPrecisionIndex() { return static_cast<int>(DefaultDecimalPrecision()); }
+    static const size_t MaxDecimalPrecisionIndex() { return static_cast<int>(DecimalPrecision::Precision12); }
+    static const FractionalPrecision DefaultFractionalPrecision() { return  FractionalPrecision::Sixteenth; }
+    static const FormatTraits DefaultFormatTraits() { return static_cast<FormatTraits>(static_cast<int>(FormatTraits::KeepDecimalPoint) | static_cast<int>(FormatTraits::KeepSingleZero)); }
+    static const double FPV_MaxTokenLength() { return 256; }
+    static const unsigned char UTF_2ByteMask() { return  0xE0; }      // 11100000 - complement will select 5 upper bits
+    static const unsigned char UTF_2ByteMark() { return  0xC0; }      // 11000000
+    static const unsigned char UTF_3ByteMask() { return  0xF0; }    // 11110000  - complement will select 4 upper bits
+    static const unsigned char UTF_3ByteMark() { return  0xE0; }    // 11100000
+    static const unsigned char UTF_4ByteMask() { return   0xF8; }   // 11111000  - complement will select 3 upper bits
+    static const unsigned char UTF_4ByteMark() { return  0xF0; }    // 11110000
+    static const unsigned char UTF_TrailingByteMask() { return  0xC0; } // 11000000 - complement will select trailing bits
+    static const unsigned char UTF_TrailingByteMark() { return  0x80; } // 10000000 - indicator of the trailing bytes and also an ASCII char
+    static const unsigned char UTF_TrailingBitsMask() { return  0x3F; }    // 00111111
+    static const unsigned char UTF_UpperBitShift() { return  6; }
+    static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
+    static const bool IsLittleEndian();
     UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
-    UNITS_EXPORT static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
+    static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
     UNITS_EXPORT static bool GetTrailingBits(unsigned char c, CharP outBits);
     UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
 };
@@ -331,7 +331,7 @@ public:
 struct Utils
     {
     UNITS_EXPORT static Utf8String ShowSignOptionName(ShowSignOption opt);
-    UNITS_EXPORT static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
+    static int DecimalPrecisionToInt(DecimalPrecision decP) { return static_cast<int>(decP); }
     UNITS_EXPORT static DecimalPrecision DecimalPrecisionByIndex(size_t num);
     UNITS_EXPORT static double DecimalPrecisionFactor(DecimalPrecision decP, int index);
     UNITS_EXPORT static Utf8CP GetParameterCategoryName(ParameterCategory parcat);
@@ -340,7 +340,7 @@ struct Utils
     UNITS_EXPORT static Utf8String DecimalPrecisionName(DecimalPrecision prec);
     UNITS_EXPORT static Utf8String FractionallPrecisionName(FractionalPrecision prec);  
     UNITS_EXPORT static FractionalPrecision FractionalPrecisionByDenominator(size_t prec);
-    UNITS_EXPORT static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
+    static int FormatTraitsBit(FormatTraits zcValue) { return static_cast<int>(zcValue); }
     //#if defined(FUNCTION_NOT_USED)
     //int StdFormatCodeValue(StdFormatCode code) { return static_cast<int>(code); }
     //static double DecimalPrecisionFactor(DecimalPrecision decP, int index = -1);
@@ -355,9 +355,11 @@ struct Utils
 struct FractionalNumeric
     {
 private:
+#if defined (NEEDS_WORK_BUILD_FAILURE)
     double m_integral;
     int m_numerator;
     int m_denominator;
+#endif
 public:
     UNITS_EXPORT FractionalNumeric(double dval, FractionalPrecision fprec);
     };
@@ -387,62 +389,63 @@ private:
     UNITS_EXPORT double RoundedValue(double dval, double round);
     UNITS_EXPORT int TrimTrailingZeroes(CharP buf, int index);
     UNITS_EXPORT int InsertChar(CharP buf, int index, char c, int num);
-    UNITS_EXPORT NumericFormat() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormat() { DefaultInit("*", FormatConstant::DefaultDecimalPrecisionIndex()); }
+
 public:
-    UNITS_EXPORT NumericFormat(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
-    UNITS_EXPORT NumericFormat(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
+    NumericFormat(Utf8CP name) { DefaultInit(name, FormatConstant::DefaultDecimalPrecisionIndex()); }
+    NumericFormat(Utf8CP name, size_t precision) { DefaultInit(name, precision); }
     UNITS_EXPORT NumericFormat(StdFormatNameR fmtType, size_t precision, double round = -1.0);
     UNITS_EXPORT NumericFormat(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormat(NumericFormatCR other);
     //UNITS_EXPORT static NumericFormat StdNumericFormat(Utf8P stdName, int prec, double round);
-    UNITS_EXPORT void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
-    UNITS_EXPORT FormatTraits GetFormatTraits() const { return m_formatTraits; }
+    void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
+    FormatTraits GetFormatTraits() const { return m_formatTraits; }
     UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
-    UNITS_EXPORT bool IsKeepTrailingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
+    bool IsKeepTrailingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
     UNITS_EXPORT void SetUseLeadingZeroes(bool use);
-    UNITS_EXPORT bool IsUseLeadingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
+    bool IsUseLeadingZeroes() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
     UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
-    UNITS_EXPORT bool IsKeepDecimalPoint() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
+    bool IsKeepDecimalPoint() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
     UNITS_EXPORT void SetKeepSingleZero(bool keep);
-    UNITS_EXPORT bool IsKeepSingleZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
+    bool IsKeepSingleZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
     UNITS_EXPORT void SetExponentZero(bool keep);
-    UNITS_EXPORT bool IsExponentZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
+    bool IsExponentZero() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
     UNITS_EXPORT void SetZeroEmpty(bool empty);
-    UNITS_EXPORT bool IsZeroEmpty() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
+    bool IsZeroEmpty() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
     UNITS_EXPORT void SetUse1000Separator(bool use);
-    UNITS_EXPORT bool IsUse1000Separator() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
+    bool IsUse1000Separator() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
     UNITS_EXPORT void SetApplyRounding(bool use);
-    UNITS_EXPORT bool IsApplyRounding() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }  
-    UNITS_EXPORT bool IsInsertSeparator(bool confirm) { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
-    UNITS_EXPORT void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
-    UNITS_EXPORT bool IsNegativeParentheses() { return (m_signOption == ShowSignOption::NegativeParentheses); }
-    UNITS_EXPORT bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
-    UNITS_EXPORT bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
+    bool IsApplyRounding() { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); }  
+    bool IsInsertSeparator(bool confirm) { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
+    void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
+    bool IsNegativeParentheses() { return (m_signOption == ShowSignOption::NegativeParentheses); }
+    bool IsOnlyNegative() { return (m_signOption == ShowSignOption::OnlyNegative); }
+    bool IsSignAlways() { return (m_signOption == ShowSignOption::SignAlways); }
     UNITS_EXPORT void SetAlias(Utf8CP alias);
-    UNITS_EXPORT Utf8String GetAlias() { return m_alias; }
-    UNITS_EXPORT void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-    UNITS_EXPORT DecimalPrecision GetDecimalPrecision() { return m_decPrecision; }
+    Utf8String GetAlias() { return m_alias; }
+    void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    DecimalPrecision GetDecimalPrecision() { return m_decPrecision; }
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec);// {return DecimalPrecisionToInt(m_decPrecision); };
     UNITS_EXPORT double GetDecimalPrecisionFactor(int prec); // { return DecimalPrecisionFactor(m_decPrecision); }
-    UNITS_EXPORT FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
-    UNITS_EXPORT FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
-    UNITS_EXPORT double SetRoundingFactor(double round) { return m_roundFactor = round; }
-    UNITS_EXPORT double GetRoundingFactor() const { return m_roundFactor; }
+    FractionalPrecision SetFractionaPrecision(FractionalPrecision precision) { return m_fractPrecision = precision; }
+    FractionalPrecision GetFractionalPrecision() const { return m_fractPrecision; }
+    double SetRoundingFactor(double round) { return m_roundFactor = round; }
+    double GetRoundingFactor() const { return m_roundFactor; }
     UNITS_EXPORT void SetPrecisionByValue(int prec);
-    UNITS_EXPORT void SetPresentationType(PresentationType type) { m_presentationType = type; }
-    UNITS_EXPORT PresentationType GetPresentationType() const { return m_presentationType; }
-    UNITS_EXPORT void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-    UNITS_EXPORT ShowSignOption GetSignOption() const { return m_signOption; }
-    UNITS_EXPORT Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
-    UNITS_EXPORT Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
-    UNITS_EXPORT Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
-    UNITS_EXPORT Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
+    void SetPresentationType(PresentationType type) { m_presentationType = type; }
+    PresentationType GetPresentationType() const { return m_presentationType; }
+    void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
+    ShowSignOption GetSignOption() const { return m_signOption; }
+    Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
+    Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
+    Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
+    Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
-    UNITS_EXPORT static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-    UNITS_EXPORT static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
-    UNITS_EXPORT static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
-    UNITS_EXPORT bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
+    static bool IsNegligible(double dval) { return (fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsIgnored(double dval) { return (dval < 0.0 || fabs(dval) < FormatConstant::FPV_MinTreshold()); }
+    static bool IsMagnitudeOne(double dval) { return (fabs(1.0 - fabs(dval)) < FormatConstant::FPV_MinTreshold()); }
+    bool IsPrecisionZero() {    return (m_decPrecision == DecimalPrecision::Precision0);}
     UNITS_EXPORT int IntPartToText(double n, CharP bufOut, int bufLen, bool useSeparator);
     UNITS_EXPORT int FormatInteger (int n, CharP bufOut, int bufLen);
     UNITS_EXPORT int FormatIntegerSimple (int n, CharP bufOut, int bufLen, bool showSign, bool extraZero);
@@ -488,13 +491,13 @@ private:
     bool   m_lowAssigned;
     bool   m_negative;
 
-    void Convert();
+    UNITS_EXPORT void Convert();
     void SetValue(double dval, DecimalPrecision prec);
     NumericTriad();
     static bool IsNameNullOrEmpty(Utf8CP name) { return (nullptr == name || strlen(name) == 0); }
 public:
     
-    UNITS_EXPORT NumericTriad(double dval, int topMid, int midLow, DecimalPrecision prec)
+    NumericTriad(double dval, int topMid, int midLow, DecimalPrecision prec)
         {
         SetValue(dval, prec);
         m_topToMid = topMid;
@@ -503,13 +506,13 @@ public:
         Convert();
         }
 
-    UNITS_EXPORT double GetWhole() { return m_negative ? -m_dval: m_dval; }
-    UNITS_EXPORT void ProcessValue(double dval, DecimalPrecision prec)  {  SetValue(dval, prec);  Convert(); }
-    UNITS_EXPORT void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
-    UNITS_EXPORT void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
-    UNITS_EXPORT double GetTopValue() { return m_topValue; }
-    UNITS_EXPORT double GetMidValue() { return m_midValue; }
-    UNITS_EXPORT double GetlowValue() { return m_lowValue; }
+    double GetWhole() { return m_negative ? -m_dval: m_dval; }
+    void ProcessValue(double dval, DecimalPrecision prec)  {  SetValue(dval, prec);  Convert(); }
+    void SetRatio(int topToMid, int midToLow) { m_topToMid = topToMid; m_midToLow = midToLow; }
+    void SetPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
+    double GetTopValue() { return m_topValue; }
+    double GetMidValue() { return m_midValue; }
+    double GetlowValue() { return m_lowValue; }
     UNITS_EXPORT Utf8String FormatWhole(DecimalPrecision prec);
     UNITS_EXPORT Utf8String FormatTriad(Utf8CP topName, Utf8CP midName, Utf8CP lowName, Utf8CP space, bool includeZero);
     };
@@ -519,16 +522,16 @@ struct StdFormatSet
 private:
     bvector<NumericFormatP> m_formatSet;
 
-    UNITS_EXPORT NumericFormatP AddFormat(NumericFormatP fmtP);
-    UNITS_EXPORT void StdInit();
-    UNITS_EXPORT StdFormatSet() { StdInit(); }
-    UNITS_EXPORT static StdFormatSet& Set() { static StdFormatSet set; return set; }
+    NumericFormatP AddFormat(NumericFormatP fmtP);
+    void StdInit();
+    StdFormatSet() { StdInit(); }
+    static StdFormatSet& Set() { static StdFormatSet set; return set; }
     
 public:
 
     UNITS_EXPORT static NumericFormatP DefaultDecimal();
 
-    UNITS_EXPORT static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
+    static size_t GetFormatSetSize() { return Set().m_formatSet.size(); }
 
     UNITS_EXPORT static NumericFormatP FindFormat(Utf8CP name);
     };
@@ -547,19 +550,18 @@ private:
     int m_intValue;            // for binary flags and other integer values
 
 public:
-
-    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type) :
+    FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, ParameterDataType type) :
         m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(type), m_intValue(0) {}
 
-    UNITS_EXPORT FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag):
+    FormatParameter(Utf8StringCR name, ParameterCategory cat, ParameterCode code, int bitFlag):
         m_paramName(name), m_category(cat), m_paramCode(code), m_paramType(ParameterDataType::BitFlag), m_intValue(bitFlag) {}
 
-    UNITS_EXPORT Utf8StringCR GetName() { return m_paramName; }
-    UNITS_EXPORT int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
-    UNITS_EXPORT ParameterCategory GetCategory() { return m_category; }
-    UNITS_EXPORT CharCP GetCategoryName() { return Utils::GetParameterCategoryName(m_category); }
-    UNITS_EXPORT ParameterCode GetParameterCode() { return m_paramCode; }
-    UNITS_EXPORT size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
+    Utf8StringCR GetName() { return m_paramName; }
+    int CompareName(Utf8StringCR other) { return strcmp(m_paramName.c_str(), other.c_str()); }
+    ParameterCategory GetCategory() { return m_category; }
+    CharCP GetCategoryName() { return Utils::GetParameterCategoryName(m_category); }
+    ParameterCode GetParameterCode() { return m_paramCode; }
+    size_t GetParameterCodeValue() { return (size_t)m_paramCode; }
 };
 
 //=======================================================================================
@@ -571,13 +573,13 @@ private:
     bvector<FormatParameter> m_paramList;
 
     UNITS_EXPORT void InitLoad();
-    UNITS_EXPORT Utf8StringP ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix);
+    Utf8StringP ParameterValuePair(Utf8StringCR name, Utf8StringCR value, char quote, Utf8StringCR prefix);
 
 public:
 
-    UNITS_EXPORT FormatDictionary() { InitLoad(); }
-    UNITS_EXPORT int GetCount() { return (int)m_paramList.size(); }
-    UNITS_EXPORT void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
+    FormatDictionary() { InitLoad(); }
+    int GetCount() { return (int)m_paramList.size(); }
+    void AddParameter(FormatParameterCR par) { m_paramList.push_back(par); return; }
     UNITS_EXPORT FormatParameterP FindParameterByName(Utf8StringCR paramName);
     UNITS_EXPORT FormatParameterP FindParameterByCode(ParameterCode paramCode);
     UNITS_EXPORT FormatParameterP GetParameterByIndex(int index);
@@ -621,9 +623,9 @@ private:
     // takes an logical index to an array of ordered bytes representing an integer entity in memory and 
     // returns the physical index of the same array adjusted by endianness. The little endian is default 
     //  and the index will be returned unchaged. This function does not check if supplied 
-    UNITS_EXPORT size_t TrueIndex(size_t index, size_t wordSize);
-    UNITS_EXPORT int AddTrailingByte();
-    UNITS_EXPORT size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
+    size_t TrueIndex(size_t index, size_t wordSize);
+    int AddTrailingByte();
+    size_t SetCurrentPosition(size_t position) { return m_cursorPosition = position; }
     //UNITS_EXPORT int ProcessTrailingByte(char c, int* bits);
 
 public:
@@ -631,19 +633,19 @@ public:
 
     UNITS_EXPORT FormattingScannerCursor(CharCP utf8Text, int scanLength);
     UNITS_EXPORT FormattingScannerCursor(FormattingScannerCursorCR other);
-    UNITS_EXPORT UnicodeConstant* GetConstants() { return m_unicodeConst; }
-    UNITS_EXPORT size_t GetCurrentPosition() { return m_cursorPosition; }
+    UnicodeConstant* GetConstants() { return m_unicodeConst; }
+    size_t GetCurrentPosition() { return m_cursorPosition; }
     UNITS_EXPORT size_t GetNextSymbol();
     UNITS_EXPORT size_t GetNextCodePoint();
-    UNITS_EXPORT bool IsError() { return (m_status != ScannerCursorStatus::Success); }
-    UNITS_EXPORT bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
-    UNITS_EXPORT ScannerCursorStatus GetOperationStatus() { return m_status;}
-    UNITS_EXPORT bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
-    UNITS_EXPORT bool IsASCII() { return m_isASCII; }
+    bool IsError() { return (m_status != ScannerCursorStatus::Success); }
+    bool IsSuccess() { return (m_status == ScannerCursorStatus::Success); }
+    ScannerCursorStatus GetOperationStatus() { return m_status;}
+    bool IsEndOfLine() { return (m_text[m_cursorPosition] == '\0'); }
+    bool IsASCII() { return m_isASCII; }
     UNITS_EXPORT int CodePointCount();
     UNITS_EXPORT void Rewind();
-    UNITS_EXPORT size_t GetUnicode() { return m_uniCode; }
-    UNITS_EXPORT size_t GetLastScanned() { return m_lastScannedCount; }
+    size_t GetUnicode() { return m_uniCode; }
+    size_t GetLastScanned() { return m_lastScannedCount; }
     UNITS_EXPORT size_t SkipBlanks();
     UNITS_EXPORT Utf8String SelectKeyWord();
     };
