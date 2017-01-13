@@ -1580,7 +1580,7 @@ struct FrustumPlanes
     FrustumPlanes() {}
     ~FrustumPlanes() {}
     explicit FrustumPlanes(FrustumCR frustum){Init(frustum);}
-    void Init(FrustumCR frustum);
+    DGNPLATFORM_EXPORT void Init(FrustumCR frustum);
     bool IsValid() const {return m_isValid;}
     enum struct Contained {Outside = 0, Partly = 1,Inside = 2,};
     Contained Contains(FrustumCR box) const {return Contains(box.m_pts, 8);}
