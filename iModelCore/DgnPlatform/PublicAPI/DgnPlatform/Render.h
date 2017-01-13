@@ -591,14 +591,14 @@ private:
     double      m_maxCompress;
     double      m_totalLength;      // length of entire element.
     double      m_xElemPhase;       // where we left off from last element (for compound elements)
+    double      m_styleWidth;
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
+    bool        m_preferStroker;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
-    bool        m_useStroker;
     RotMatrix   m_planeByRows;
     TexturePtr  m_texture;
-
 
 public:
     DGNPLATFORM_EXPORT LineStyleSymb();
@@ -621,6 +621,7 @@ public:
     double GetMaxCompress() const {return m_maxCompress;}
     int GetNumIterations() const {return m_nIterate;}
     DGNPLATFORM_EXPORT double GetMaxWidth() const;
+    double GetStyleWidth() const {return m_styleWidth;}
     double GetTotalLength() const {return m_totalLength;}
     DVec3dCP GetStartTangent() const {return &m_startTangent;}
     DVec3dCP GetEndTangent() const{return &m_endTangent;}
@@ -669,8 +670,8 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
-    bool UseStroker() const {return m_useStroker;}
-    void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
+    bool GetPreferStroker() const {return m_preferStroker;}
+    void SetPreferStroker(bool preferStroker) {m_preferStroker = preferStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
@@ -879,9 +880,9 @@ public:
     double GetNetFillTransparency() const {BeAssert(m_resolved); return m_netFillTransparency;}
 
     int32_t GetNetDisplayPriority() const {BeAssert(m_resolved); return m_netPriority;} // Get net display priority (2d only).
-    int32_t GetNetDisplayPriority(ViewContextR context) {Resolve(context); return m_netPriority;} // Resolve and return net display priority (2d only).
     void SetNetDisplayPriority(int32_t priority) {m_netPriority = priority;} // RASTER USE ONLY!!!
 
+    bool IsResolved() const {return m_resolved;}
     bool IsLineColorFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_color;}
     bool IsWeightFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_weight;}
     bool IsLineStyleFromSubCategoryAppearance() const {return !m_appearanceOverrides.m_style;}

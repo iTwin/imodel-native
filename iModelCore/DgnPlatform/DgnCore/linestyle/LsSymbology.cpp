@@ -2,7 +2,7 @@
 |
 |     $Source: DgnCore/linestyle/LsSymbology.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
@@ -23,15 +23,15 @@ double LsPointComponent::_GetLength () const
 void LineStyleSymb::Init (ILineStyleCP lStyle)
     {
     m_lStyle = lStyle;
-    memset (&m_options, 0, sizeof(m_options));
+    memset(&m_options, 0, sizeof(m_options));
     m_nIterate = 0;
     m_scale = m_dashScale = m_gapScale = 1.0;
-    m_orgWidth = m_endWidth = m_phaseShift = m_autoPhase = 0.0;
+    m_orgWidth = m_endWidth = m_phaseShift = m_autoPhase = m_styleWidth = 0.0;
     m_maxCompress = 0.3;
     m_planeByRows.InitIdentity();
     m_texture = nullptr;
     m_useLinePixels = false;
-    m_useStroker = false;
+    m_preferStroker = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -472,54 +472,49 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     bool xElemPhaseSet = m_options.xElemPhaseSet; // Save current value before Init clears it...
 
     Init(nameRec);
-    bool willForceTexture = context.Is3dView();
-
     BeAssert(0 == (styleParams.modifiers & (STYLEMOD_DSCALE | STYLEMOD_GSCALE)));
     
     m_options.isContinuous = nameRec->IsContinuous();
-    if (!willForceTexture)
+
+    //  Instances of the texture are applied uniformly so none of these options make sense.
+    SetTangents(startTangent, endTangent);
+
+    if ((nullptr != startTangent) && xElemPhaseSet)
         {
-        //  Instances of the texture are applied uniformly so none of these options make sense.
-        SetTangents(startTangent, endTangent);
-
-        if ((nullptr != startTangent) && xElemPhaseSet)
-            {
-            // if there's a start tangent, then that means we're continuing from a previous call.
-            // the phase shift value should be valid too.
-            m_options.phaseShift = true;
-            m_options.autoPhase = false;
-            m_options.continuationXElems = true;
-            m_phaseShift = m_xElemPhase;
-            }
-
-        if (!m_options.phaseShift)
-            {
-            if (styleParams.modifiers & STYLEMOD_DISTPHASE)
-                SetPhaseShift(true, styleParams.distPhase);
-            else if (styleParams.modifiers & STYLEMOD_FRACTPHASE)
-                SetFractionalPhase(true, styleParams.fractPhase);
-            else if (styleParams.modifiers & STYLEMOD_CENTERPHASE)
-                SetCenterPhase(true);
-            }
-
-        //  It appears that QV takes care of keeping the texture parallel to the view.
-        if (styleParams.modifiers & STYLEMOD_NORMAL)
-            SetNormalVec(&styleParams.normal);
-
-        if (styleParams.modifiers & STYLEMOD_RMATRIX)
-            SetPlaneAsMatrixRows(&styleParams.rMatrix);
-
-        SetTreatAsSingleSegment((styleParams.modifiers & STYLEMOD_NOSEGMODE) && !(styleParams.modifiers & STYLEMOD_SEGMODE));
-
-        //  I don't see a way to set these in the user interface so I am assuming these are not important.  Therefore, I will
-        //  not try to figure out how to make the texture generator deal with these.
-        if (styleParams.modifiers & STYLEMOD_DSCALE)
-            SetDashScale(styleParams.dashScale);
-
-        if (styleParams.modifiers & STYLEMOD_GSCALE)
-            SetGapScale(styleParams.gapScale);
+        // if there's a start tangent, then that means we're continuing from a previous call.
+        // the phase shift value should be valid too.
+        m_options.phaseShift = true;
+        m_options.autoPhase = false;
+        m_options.continuationXElems = true;
+        m_phaseShift = m_xElemPhase;
         }
 
+    if (!m_options.phaseShift)
+        {
+        if (styleParams.modifiers & STYLEMOD_DISTPHASE)
+            SetPhaseShift(true, styleParams.distPhase);
+        else if (styleParams.modifiers & STYLEMOD_FRACTPHASE)
+            SetFractionalPhase(true, styleParams.fractPhase);
+        else if (styleParams.modifiers & STYLEMOD_CENTERPHASE)
+            SetCenterPhase(true);
+        }
+
+    //  It appears that QV takes care of keeping the texture parallel to the view.
+    if (styleParams.modifiers & STYLEMOD_NORMAL)
+        SetNormalVec(&styleParams.normal);
+
+    if (styleParams.modifiers & STYLEMOD_RMATRIX)
+        SetPlaneAsMatrixRows(&styleParams.rMatrix);
+
+    SetTreatAsSingleSegment((styleParams.modifiers & STYLEMOD_NOSEGMODE) && !(styleParams.modifiers & STYLEMOD_SEGMODE));
+
+    //  I don't see a way to set these in the user interface so I am assuming these are not important.  Therefore, I will
+    //  not try to figure out how to make the texture generator deal with these.
+    if (styleParams.modifiers & STYLEMOD_DSCALE)
+        SetDashScale(styleParams.dashScale);
+
+    if (styleParams.modifiers & STYLEMOD_GSCALE)
+        SetGapScale(styleParams.gapScale);
 
 #ifdef DGNV10FORMAT_CHANGES_WIP
     //  DgnDb does not support physical units or model-based line style scale.
@@ -556,25 +551,21 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
     if (styleParams.modifiers & STYLEMOD_EWIDTH)
         SetEndWidth(endWidth);
 
-    if (willForceTexture && (styleParams.modifiers & (STYLEMOD_EWIDTH | STYLEMOD_SWIDTH)))
-        {
-        //  Using a generated texture does not support using different start and end widths.  Supporting different start and end widths
-        //  doesn't seem very useful anyway.
-        double width = std::max(startWidth, endWidth);
-        SetOriginWidth(width);
-        SetEndWidth(width);
-        }
-
     SetScale(scaleWithUnits);
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
-    //
-    //  We want to remove the requirement tht the Texture is required for 3d.  Make the appropriate changes
-    //  to ElementGeometry and then add something like:
-    //
-    //      if (GetTexture failed) SetUseStroker(true)
     uint32_t weight = context.GetViewFlags().m_weights ? params.GetWeight() : 0;
     m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), weight);
+
+    if (!m_texture.IsValid() || LsOkayForTextureGeneration::NoChangeRequired != topComponent->_IsOkayForTextureGeneration())
+        SetPreferStroker(true);
+
+    // Get the width of this linestyle to use for "discernable" checks...
+    m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()));
+
+    // Account for start/end width modifiers if they would affect the linestyle...
+    if (topComponent->_IsAffectedByWidth(false))
+        m_styleWidth = DoubleOps::Max(m_styleWidth, GetMaxWidth());
     }
 
 /*---------------------------------------------------------------------------------**//**
