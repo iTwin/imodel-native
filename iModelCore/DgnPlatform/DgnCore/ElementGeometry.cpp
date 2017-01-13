@@ -3288,7 +3288,7 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                         LineStyleSymbCR currLsSymb = lsInfo->GetLineStyleSymb();
                         ILineStyleCP currLStyle = currLsSymb.GetILineStyle();
 
-                        if (nullptr != currLStyle && currLsSymb.GetPreferStroker())
+                        if (nullptr != currLStyle && currLsSymb.GetUseStroker())
                             {
                             // NEEDSWORK: Add Render::Graphic discernable check/pixel range...FacetOptions for arc/bcurve...
                             double maxWidth = currLsSymb.GetStyleWidth();
@@ -3300,14 +3300,14 @@ void GeometryStreamIO::Collection::Draw(Render::GraphicBuilderR mainGraphic, Vie
                                 }
                             else
                                 {
-                                Render::GraphicParams graphicParamsLS(graphicParams);
+                                if (nullptr != graphicParams.GetLineTexture())
+                                    {
+                                    Render::GraphicParams graphicParamsLS(graphicParams);
+                                    graphicParamsLS.SetLineTexture(nullptr);
+                                    currGraphic->ActivateGraphicParams(graphicParamsLS, &geomParams);
+                                    }
 
-                                graphicParamsLS.SetLineTexture(nullptr);
-                                graphicParamsLS.SetTrueWidthStart(0.0);
-                                graphicParamsLS.SetTrueWidthEnd(0.0);
-                                currGraphic->ActivateGraphicParams(graphicParamsLS, &geomParams);
-
-                                LineStyleContext lsContext(*currGraphic, graphicParamsLS, &context);
+                                LineStyleContext lsContext(*currGraphic, graphicParams, &context);
                                 currLStyle->_GetComponent()->_StrokeLineString(lsContext, currLsSymb, pts, nPts, false);
                                 currGraphic->UpdatePixelSizeRange(0.0, maxWidth/pixelThreshold);
                                 break;

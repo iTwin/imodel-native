@@ -31,7 +31,7 @@ void LineStyleSymb::Init (ILineStyleCP lStyle)
     m_planeByRows.InitIdentity();
     m_texture = nullptr;
     m_useLinePixels = false;
-    m_preferStroker = false;
+    m_useStroker = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -555,10 +555,10 @@ void LineStyleSymb::Init(DgnStyleId styleId, LineStyleParamsCR styleParams, DVec
 
     // NEEDSWORK_LINESTYLES -- this probably is the right place to get a raster texture based on an image.
     uint32_t weight = context.GetViewFlags().m_weights ? params.GetWeight() : 0;
-    m_texture = nameRec->GetTexture(context, *this, context.Is3dView(), weight);
+    m_texture = nameRec->GetTexture(context, *this, false, weight);
 
     if (!m_texture.IsValid() || LsOkayForTextureGeneration::NoChangeRequired != topComponent->_IsOkayForTextureGeneration())
-        SetPreferStroker(true);
+        SetUseStroker(true);
 
     // Get the width of this linestyle to use for "discernable" checks...
     m_styleWidth = ((nameRec->_GetMaxWidth() * GetScale()));

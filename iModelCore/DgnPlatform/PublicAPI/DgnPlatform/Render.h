@@ -594,7 +594,7 @@ private:
     double      m_styleWidth;
     DVec3d      m_startTangent;
     DVec3d      m_endTangent;
-    bool        m_preferStroker;
+    bool        m_useStroker;
     bool        m_useLinePixels;
     uint32_t    m_linePixels;
     RotMatrix   m_planeByRows;
@@ -670,8 +670,8 @@ public:
     bool UseLinePixels() const {return m_useLinePixels;}
     uint32_t GetLinePixels() const {return m_linePixels;}
     void SetUseLinePixels(uint32_t linePixels){m_linePixels = linePixels; m_useLinePixels = true;}
-    bool GetPreferStroker() const {return m_preferStroker;}
-    void SetPreferStroker(bool preferStroker) {m_preferStroker = preferStroker;}
+    bool GetUseStroker() const {return m_useStroker;}
+    void SetUseStroker(bool useStroker) {m_useStroker = useStroker;}
 
     bool ContinuationXElems() const {return m_options.continuationXElems;}
     DGNPLATFORM_EXPORT void ClearContinuationData();
