@@ -175,6 +175,43 @@ DgnDbStatus Sheet::ViewAttachment::CheckValid() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ClipVectorPtr Sheet::ViewAttachment::GetClip() const
+    {
+    auto clipJsonStr = GetPropertyValueString("Clip");
+    if (clipJsonStr.empty())
+        return nullptr;
+
+    Json::Value clipJson(Json::arrayValue);
+    if (!Json::Reader::Parse(clipJsonStr, clipJson))
+        return nullptr;
+
+    ClipVectorPtr clip = ClipVector::Create();
+    JsonUtils::ClipVectorFromJson(*clip, clipJson);
+    return clip;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus Sheet::ViewAttachment::SetClip(ClipVectorCR clipVector)
+    {
+    Json::Value clipJson(Json::arrayValue);
+    JsonUtils::ClipVectorToJson(clipJson, clipVector);
+
+    return SetPropertyValue("Clip", Json::FastWriter::ToString(clipJson).c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void Sheet::ViewAttachment::ClearClip()
+    {
+    SetPropertyValue("Clip", ECValue());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Sheet::Model::_OnInsert()

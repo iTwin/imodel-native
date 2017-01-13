@@ -133,7 +133,6 @@ protected:
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
-    DGNPLATFORM_EXPORT Transform GetSheetToTileTransform(TileViewportCR tileVp); // sheet view to tile view
     DMap4dCR GetWorldToView() const {return m_worldToView;}
     DMap4dCR GetWorldToNpc() const {return m_worldToNpc;}
     bool GetWantMaterials() {return m_wantMaterials;};
