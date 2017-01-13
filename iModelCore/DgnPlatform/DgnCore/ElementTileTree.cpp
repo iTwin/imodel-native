@@ -345,8 +345,9 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 
         Set(m_numIndices, m_vertIndex, m_indices);
         Set(m_numPoints, m_points, mesh.Points());
-        Set(m_normals, mesh.Normals());
         Set(m_textureUV, mesh.Params());
+        if (!mesh.GetDisplayParams().GetIgnoreLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
+            Set(m_normals, mesh.Normals());
 
         auto const& displayParams = mesh.GetDisplayParams();
         displayParams.ResolveTextureImage(db);
