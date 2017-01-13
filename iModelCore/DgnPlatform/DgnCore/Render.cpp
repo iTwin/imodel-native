@@ -494,19 +494,16 @@ PolyfaceHeaderPtr GraphicBuilder::TriMeshArgs::ToPolyface() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<DPoint3d> GraphicBuilder::IndexedPolylineArgs::ToPoints() const
+void GraphicBuilder::IndexedPolylineArgs::Polyline::ToPoints(bvector<DPoint3d>& dpts, FPoint3d const* fpts) const
     {
-    bvector<DPoint3d> points;
-    points.reserve(m_numIndices);
+    dpts.clear();
+    dpts.reserve(m_numIndices);
     for (uint32_t i = 0; i < m_numIndices; i++)
         {
         uint32_t index = m_vertIndex[i];
-        FPoint3d const& fpt = m_points[index];
-        DPoint3d dpt = DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z);
-        points.push_back(dpt);
+        FPoint3d const& fpt = fpts[index];
+        dpts.push_back(DPoint3d::FromXYZ(fpt.x, fpt.y, fpt.z));
         }
-
-    return points;
     }
 
 /*---------------------------------------------------------------------------------**//**

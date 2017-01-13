@@ -383,27 +383,63 @@ struct TileMeshArgs : IGraphicBuilder::TriMeshArgs
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   12/16
 //=======================================================================================
-struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
+struct IndexedPolyline : IGraphicBuilder::IndexedPolylineArgs::Polyline
 {
     bool IsValid() const { return 0 < m_numIndices; }
 
     void Reset()
         {
-        m_numIndices = m_numPoints = 0;
-        m_points = nullptr;
+        m_numIndices = 0;
         m_vertIndex = nullptr;
         }
 
-    bool Init(bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
+    bool Init(ElementTileTree::PolylineCR line)
         {
         Reset();
 
-        m_numIndices = static_cast<uint32_t>(indices.size());
-        m_numPoints = static_cast<uint32_t>(vertices.size());
-        if (0 < m_numIndices)
+        m_numIndices = static_cast<uint32_t>(line.GetIndices().size());
+        m_vertIndex = &line.GetIndices()[0];
+
+        return IsValid();
+        }
+};
+
+//=======================================================================================
+// @bsistruct                                                   Paul.Connelly   12/16
+//=======================================================================================
+struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
+{
+    bvector<IndexedPolyline>    m_polylines;
+
+    bool IsValid() const { return !m_polylines.empty(); }
+
+    void Reset()
+        {
+        m_numPoints = m_numLines = 0;
+        m_points = nullptr;
+        m_lines = nullptr;
+        m_polylines.clear();
+        }
+
+    bool Init(ElementTileTree::MeshCR mesh)
+        {
+        Reset();
+
+        m_numPoints = static_cast<uint32_t>(mesh.Points().size());
+        m_points = &mesh.Points()[0];
+        m_polylines.reserve(mesh.Polylines().size());
+
+        for (auto const& polyline : mesh.Polylines())
             {
-            m_vertIndex = &indices[0];
-            m_points = &vertices[0];
+            IndexedPolyline indexedPolyline;
+            if (indexedPolyline.Init(polyline))
+                m_polylines.push_back(indexedPolyline);
+            }
+
+        if (IsValid())
+            {
+            m_numLines = static_cast<uint32_t>(m_polylines.size());
+            m_lines = &m_polylines[0];
             }
 
         return IsValid();
@@ -412,12 +448,12 @@ struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
     void Apply(Render::GraphicBuilderR gf)
         {
         if (IsValid())
-            gf.AddIndexedPolyline(*this);
+            gf.AddIndexedPolylines(*this);
         }
 
-    bool InitAndApply(Render::GraphicBuilderR gf, bvector<FPoint3d> const& vertices, bvector<uint32_t> const& indices)
+    bool InitAndApply(Render::GraphicBuilderR gf, ElementTileTree::MeshCR mesh)
         {
-        if (Init(vertices, indices))
+        if (Init(mesh))
             {
             Apply(gf);
             return true;
@@ -437,39 +473,6 @@ struct TilePolylineArgs : IGraphicBuilder::IndexedPolylineArgs
             fpt.y = dpt.y;
             fpt.z = dpt.z;
             }
-        }
-};
-
-//=======================================================================================
-// @bsistruct                                                   Paul.Connelly   12/16
-//=======================================================================================
-struct TilePolylineArgsList
-{
-    bvector<TilePolylineArgs>   m_args;
-
-    bool Init(ElementTileTree::MeshCR mesh)
-        {
-        m_args.clear();
-        for (auto const& polyline : mesh.Polylines())
-            {
-            TilePolylineArgs theseArgs;
-            if (theseArgs.Init(mesh.Points(), polyline.GetIndices()))
-                m_args.push_back(std::move(theseArgs));
-            }
-
-        return !m_args.empty();
-        }
-
-    void Apply(Render::GraphicBuilderR gf)
-        {
-        for (auto& args : m_args)
-            args.Apply(gf);
-        }
-
-    void Transform(TransformCR tf)
-        {
-        for (auto& args : m_args)
-            args.Transform(tf);
         }
 };
 
@@ -2030,8 +2033,7 @@ BentleyStatus Loader::_LoadTile()
                     }
                 else
                     {
-                    for (auto const& polyline : mesh->Polylines())
-                        polylineArgs.InitAndApply(*subGraphic, mesh->Points(), polyline.GetIndices());
+                    polylineArgs.InitAndApply(*subGraphic, *mesh);
                     }
 
                 subGraphic->Close();
@@ -2045,7 +2047,6 @@ BentleyStatus Loader::_LoadTile()
         }
     else if (InstancingOptions::AsGraphics == s_instancingOptions)
         {
-        TilePolylineArgsList polylineArgsList;
         for (auto const& part : geometry.Parts())
             {
             if (part->Instances().empty() || part->Meshes().empty())
@@ -2059,7 +2060,7 @@ BentleyStatus Loader::_LoadTile()
                     continue;
                 else if ((haveMesh && !meshArgs.Init(*mesh, system, &root.GetDgnDb())))
                     continue;
-                else if ((havePolyline && !polylineArgsList.Init(*mesh)))
+                else if ((havePolyline && !polylineArgs.Init(*mesh)))
                     continue;
 
                 for (auto const& instance : part->Instances())
@@ -2069,7 +2070,7 @@ BentleyStatus Loader::_LoadTile()
                     if (haveMesh)
                         instanceGraphic->AddTriMesh(meshArgs);
                     else
-                        polylineArgsList.Apply(*instanceGraphic);
+                        polylineArgs.Apply(*instanceGraphic);
 
                     instanceGraphic->Close();
                     tile.AddGraphic(*instanceGraphic);
@@ -2079,7 +2080,6 @@ BentleyStatus Loader::_LoadTile()
         }
     else
         {
-        TilePolylineArgsList polylineArgsList;
         for (auto const& part : geometry.Parts())
             {
             if (part->Instances().empty() || part->Meshes().empty())
@@ -2093,7 +2093,7 @@ BentleyStatus Loader::_LoadTile()
                     continue;
                 else if ((haveMesh && !meshArgs.Init(*mesh, system, &root.GetDgnDb())))
                     continue;
-                else if ((havePolyline && !polylineArgsList.Init(*mesh)))
+                else if ((havePolyline && !polylineArgs.Init(*mesh)))
                     continue;
 
                 if (graphic.IsNull())
@@ -2117,8 +2117,8 @@ BentleyStatus Loader::_LoadTile()
                         }
                     else
                         {
-                        polylineArgsList.Transform(instanceTransform);
-                        polylineArgsList.Apply(*instanceGraphic);
+                        polylineArgs.Transform(instanceTransform);
+                        polylineArgs.Apply(*instanceGraphic);
                         }
 
                     instanceGraphic->Close();
@@ -2145,29 +2145,22 @@ BentleyStatus Loader::_LoadTile()
         if (graphic.IsNull())
             graphic = system._CreateGraphic(Graphic::CreateParams());
 
+        auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
+        subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
+
         if (haveMesh)
             {
             if (meshArgs.Init(*mesh, system, &root.GetDgnDb()))
-                {
-                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
                 subGraphic->AddTriMesh(meshArgs);
-                subGraphic->Close();
-                graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-                }
             }
         else
             {
             BeAssert(havePolyline);
-            for (auto const& polyline : mesh->Polylines())
-                {
-                auto subGraphic = graphic->CreateSubGraphic(Transform::FromIdentity());
-                subGraphic->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-                polylineArgs.InitAndApply(*subGraphic, mesh->Points(), polyline.GetIndices());
-                subGraphic->Close();
-                graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-                }
+            polylineArgs.InitAndApply(*subGraphic, *mesh);
             }
+
+        subGraphic->Close();
+        graphic->AddSubGraphic(*subGraphic, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
 
 #if defined(DRAW_EMPTY_RANGE_BOXES)
@@ -3247,25 +3240,16 @@ void GeometryListBuilder::SaveToGraphic(Render::GraphicBuilderR gf, Render::Syst
         if (!haveMesh && !havePolyline)
             continue;
 
+        auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
+        subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
+
         if (havePolyline)
-            {
-            for (auto const& polyline : mesh->Polylines())
-                {
-                auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
-                subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
-                polylineArgs.InitAndApply(*subGf, mesh->Points(), polyline.GetIndices());
-                subGf->Close();
-                gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-                }
-            }
+            polylineArgs.InitAndApply(*subGf, *mesh);
         else if (meshArgs.Init(*mesh, system, GetDgnDb()))
-            {
-            auto subGf = gf.CreateSubGraphic(Transform::FromIdentity());
-            subGf->ActivateGraphicParams(mesh->GetDisplayParams().GetGraphicParams(), mesh->GetDisplayParams().GetGeometryParams());
             subGf->AddTriMesh(meshArgs);
-            subGf->Close();
-            gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
-            }
+
+        subGf->Close();
+        gf.AddSubGraphic(*subGf, Transform::FromIdentity(), mesh->GetDisplayParams().GetGraphicParams());
         }
     }
 

@@ -1212,21 +1212,34 @@ struct IGraphicBuilder
     };
 
     //=======================================================================================
-    //! Information needed to draw an indexed polyline
+    //! Information needed to draw a set of indexed polylines using a shared vertex buffer.
     // @bsistruct                                                   Paul.Connelly   01/17
     //=======================================================================================
     struct IndexedPolylineArgs
     {
-        uint32_t const* m_vertIndex = nullptr;
+        //! An individual polyline which indexes into a shared set of vertices
+        struct Polyline
+        {
+            uint32_t const* m_vertIndex = nullptr;
+            uint32_t        m_numIndices = 0;
+
+            Polyline() { }
+            Polyline(uint32_t const* indices, uint32_t numIndices) : m_vertIndex(indices), m_numIndices(numIndices) { }
+
+            DGNPLATFORM_EXPORT void ToPoints(bvector<DPoint3d>& points, FPoint3d const* verts) const;
+        };
+
         FPoint3d const* m_points = nullptr;
-        uint32_t        m_numIndices = 0;
+        Polyline const* m_lines = nullptr;
         uint32_t        m_numPoints = 0;
+        uint32_t        m_numLines = 0;
 
         IndexedPolylineArgs() { }
-        IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, uint32_t const* indices, uint32_t numIndices)
-            : m_vertIndex(indices), m_points(points), m_numIndices(numIndices), m_numPoints(numPoints) { }
+        IndexedPolylineArgs(FPoint3d const* points, uint32_t numPoints, Polyline const* lines, uint32_t numLines)
+            : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines) { }
 
-        DGNPLATFORM_EXPORT bvector<DPoint3d> ToPoints() const;
+        void PolylineToPoints(bvector<DPoint3d>& points, Polyline const& polyline) const { polyline.ToPoints(points, m_points); }
+        bvector<DPoint3d> PolylineToPoints(Polyline const& polyline) const { bvector<DPoint3d> pts; PolylineToPoints(pts, polyline); return pts; }
     };
 
     struct TileCorners
@@ -1260,7 +1273,7 @@ protected:
     virtual void _AddBSplineSurface(MSBsplineSurfaceCR surface) = 0;
     virtual void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) = 0;
     virtual void _AddTriMesh(TriMeshArgs const& args) = 0;
-    virtual void _AddIndexedPolyline(IndexedPolylineArgs const& args) = 0;
+    virtual void _AddIndexedPolylines(IndexedPolylineArgs const& args) = 0;
     virtual void _AddBody(IBRepEntityCR) = 0;
     virtual void _AddTextString(TextStringCR text) = 0;
     virtual void _AddTextString2d(TextStringCR text, double zDepth) = 0;
@@ -1397,7 +1410,7 @@ public:
 
     void AddTriMesh(TriMeshArgs const& args) {m_builder->_AddTriMesh(args);}
 
-    void AddIndexedPolyline(IndexedPolylineArgs const& args) {m_builder->_AddIndexedPolyline(args);}
+    void AddIndexedPolylines(IndexedPolylineArgs const& args) {m_builder->_AddIndexedPolylines(args);}
 
     //! Draw a 3D point cloud.
     void AddPointCloud(int32_t numPoints, DPoint3dCR origin, FPoint3d const* points, ByteCP colors) {m_builder->_AddPointCloud(numPoints, origin, points, colors);}

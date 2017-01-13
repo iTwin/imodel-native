@@ -1683,10 +1683,14 @@ void SimplifyGraphic::_AddTriMesh(TriMeshArgs const& args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SimplifyGraphic::_AddIndexedPolyline(IndexedPolylineArgs const& args)
+void SimplifyGraphic::_AddIndexedPolylines(IndexedPolylineArgs const& args)
     {
-    bvector<DPoint3d> points = args.ToPoints();
-    _AddLineString(static_cast<int>(points.size()), &points[0]);
+    bvector<DPoint3d> line;
+    for (uint32_t i = 0; i < args.m_numLines; i++)
+        {
+        args.PolylineToPoints(line, args.m_lines[i]);
+        _AddLineString(static_cast<int>(line.size()), &line[0]);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**

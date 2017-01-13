@@ -52,7 +52,7 @@ protected:
     DGNPLATFORM_EXPORT void _AddBSplineSurface(MSBsplineSurfaceCR) override;
     DGNPLATFORM_EXPORT void _AddPolyface(PolyfaceQueryCR meshData, bool filled = false) override;
     DGNPLATFORM_EXPORT void _AddTriMesh(TriMeshArgs const&) override;
-    DGNPLATFORM_EXPORT void _AddIndexedPolyline(IndexedPolylineArgs const&) override;
+    DGNPLATFORM_EXPORT void _AddIndexedPolylines(IndexedPolylineArgs const&) override;
     DGNPLATFORM_EXPORT void _AddBody(IBRepEntityCR entity) override;
     DGNPLATFORM_EXPORT void _AddTextString(TextStringCR text) override;
     DGNPLATFORM_EXPORT void _AddTextString2d(TextStringCR text, double zDepth) override;
