@@ -282,6 +282,8 @@ public:
     void reserve (size_type = 0);
 
     void clear () {
+        if (_C_pref() == _C_nullref())
+           return;
         if (size_type (1) < size_type (_C_pref ()->_C_get_ref ()))
             _C_unlink (_C_nullref ()->data ());
         else {
