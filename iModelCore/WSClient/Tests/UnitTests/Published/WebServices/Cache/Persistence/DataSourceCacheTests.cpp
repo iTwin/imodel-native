@@ -2887,6 +2887,16 @@ TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsParentInstanceAndP
     EXPECT_FALSE(cache->GetCachedObjectInfo({"TestSchema.TestClass", "Parent"}).IsInCache());
     }
 
+TEST_F(DataSourceCacheTests, CacheResponse_ParentIsRemoved_NewResponseIsNotCached)
+    {
+    auto cache = GetTestCache();
+    auto parent = StubInstanceInCache(*cache, {"TestSchema.TestClass", "A"});
+    CachedResponseKey responseKey(parent, "Foo");
+
+    ASSERT_EQ(CacheStatus::OK, cache->RemoveInstance({"TestSchema.TestClass", "A"}));
+    ASSERT_EQ(CacheStatus::DataNotCached, cache->CacheResponse(responseKey, StubInstances().ToWSObjectsResponse()));
+    }
+
 TEST_F(DataSourceCacheTests, CacheResponse_ResponseContainsItsHolderInstanceAndHolderRootIsRemoved_QueryResultsAndHolderDeleted)
     {
     auto cache = GetTestCache();
