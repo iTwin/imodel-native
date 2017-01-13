@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/ScalableMeshPointsProvider.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -76,6 +76,9 @@ ScalableMeshPointsProvider::~ScalableMeshPointsProvider()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshPointsProvider::_PrefetchPoints()
     {
+    //NEEDS_WORK_MST : Crash in multithread with that, might not be required, remove all the _Prefetch logic if so.
+    return; 
+    #if 0 
     InternalQueryPoints();
 
     //if we have a threshold on the number of points if it's goes past that clear the vector
@@ -84,6 +87,7 @@ void ScalableMeshPointsProvider::_PrefetchPoints()
         m_prefetchedPoints.clear();
         m_prefetchPoints = false;
         }
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -115,6 +119,13 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
     {    
     assert(m_smesh.IsValid());
     assert(clip != nullptr);
+	assert(m_prefetchPoints == false);
+/*
+    if (m_prefetchPoints)
+        {        
+        points.insert(points.end(), m_prefetchedPoints.begin(), m_prefetchedPoints.end());
+        }
+		*/
     
     ScalableMesh::IScalableMeshMeshQueryPtr meshQueryInterface = m_smesh->GetMeshQueryInterface(ScalableMesh::MESH_QUERY_FULL_RESOLUTION);
     bvector<ScalableMesh::IScalableMeshNodePtr> returnedNodes;

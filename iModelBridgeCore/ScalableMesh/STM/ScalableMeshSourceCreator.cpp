@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 10:41:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
 #include <ImagePP\all\h\HRFUtility.h>
 #include "MosaicTextureProvider.h"
-
+#include "RasterUtilities.h"
 
 using namespace ISMStore;
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -73,7 +73,7 @@ size_t nGraphReleases = 0;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-static HPMPool* s_rasterMemPool = nullptr;
+//static HPMPool* s_rasterMemPool = nullptr;
 IScalableMeshSourceCreatorPtr IScalableMeshSourceCreator::GetFor(const WChar*  filePath,
 StatusInt&      status)
     {
@@ -644,7 +644,11 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
     pDataIndex = 0;
 
-    if (s_rasterMemPool != nullptr) delete s_rasterMemPool;
+    if (RasterUtilities::s_rasterMemPool != nullptr)
+        {
+        delete RasterUtilities::s_rasterMemPool;
+        RasterUtilities::s_rasterMemPool = nullptr;
+        }
             
     return BSISUCCESS;
     }
@@ -786,9 +790,8 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
                                              fileGCS,
                                              targetScalableMeshData);
     if (filteredSources.empty()) return BSISUCCESS;
-    s_rasterMemPool = new HPMPool(30000, HPMPool::None);
-    auto cluster = new HGFHMRStdWorldCluster();
-    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(cluster->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
+            
+    pMosaicP = new HIMMosaic(HFCPtr<HGF2DCoordSys>(RasterUtilities::GetWorldCluster()->GetWorldReference(HGF2DWorld_HMRWORLD).GetPtr()));
     HIMMosaic::RasterList rasterList;
     
     for (auto& source : filteredSources)
@@ -805,12 +808,12 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
             }
             
             
-        HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
-        HFCPtr<HRSObjectStore> pObjectStore;
-        HFCPtr<HRFRasterFile>  pRasterFile;
+       // HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
+        //HFCPtr<HRSObjectStore> pObjectStore;
+//HFCPtr<HRFRasterFile>  pRasterFile;
         HFCPtr<HRARaster>      pRaster;
         // HFCPtr<HRAOnDemandRaster> pOnDemandRaster;
-
+        /*
 #ifdef MAPBOX_PROTOTYPE
         HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
 
@@ -833,16 +836,16 @@ int IScalableMeshSourceCreator::Impl::GetRasterSources(HFCPtr<HIMMosaic>& pMosai
                                           pLogicalCoordSys);
 
         // Get the raster from the store
-        pRaster = pObjectStore->LoadRaster();
+        pRaster = pObjectStore->LoadRaster();*/
+        pRaster = RasterUtilities::LoadRaster(path);
        
         HASSERT(pRaster != NULL);
         //NEEDS_WORK_SM: do not do this if raster does not intersect sm extent
         rasterList.push_back(pRaster.GetPtr());
         pRaster = 0;
         }
-    pMosaicP->Add(rasterList);
+    pMosaicP->Add(rasterList);    
     rasterList.clear();
-    delete cluster;
     return status;
     }
 

@@ -10,11 +10,13 @@
 
 #include "SMSQLiteStore.h"
 #include "SMSQLiteStore.hpp"
+#include "SMStreamedSourceStore.hpp"
 
 template class SMSQLiteStore<DRange3d>;
 
 template class SMSQLiteNodeDataStore<DPoint3d, DRange3d>;
     
+template class SMStreamedSourceStore<byte, DRange3d>;
 
 SMSQLiteClipDefinitionExtOps::SMSQLiteClipDefinitionExtOps(SMSQLiteFilePtr& smSQLiteFile)
     {

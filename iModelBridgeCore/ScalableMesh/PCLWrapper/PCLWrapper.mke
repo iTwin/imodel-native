@@ -2,7 +2,7 @@
 #
 #     $Source: PCLWrapper/PCLWrapper.mke $
 #
-#   $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 # Lots of problems in a third-party library that we aren't going to fix. 
@@ -79,6 +79,7 @@ linkLibs = \
     $(ContextSubpartsLibs)pclRegistration$(libext) \
     $(ContextSubpartsLibs)pclKeypoints$(libext) \
     $(ContextSubpartsLibs)pclTracking$(libext) \
+%if defined(BUILD_USING_VS2013)
     $(ContextSubpartsLibs)libboost_atomic-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_chrono-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_context-vc120-mt-1_57$(libext) \
@@ -110,6 +111,39 @@ linkLibs = \
     $(ContextSubpartsLibs)libboost_unit_test_framework-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_wave-vc120-mt-1_57$(libext) \
     $(ContextSubpartsLibs)libboost_wserialization-vc120-mt-1_57$(libext) \
+%elif defined(BUILD_USING_VS2015)
+    $(ContextSubpartsLibs)libboost_atomic-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_chrono-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_context-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_coroutine-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_date_time-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_exception-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_filesystem-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_graph-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_iostreams-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_locale-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_log_setup-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_log-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99f-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_c99l-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1f-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_math_tr1l-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_prg_exec_monitor-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_program_options-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_random-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_regex-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_serialization-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_signals-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_system-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_test_exec_monitor-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_thread-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_timer-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_unit_test_framework-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_wave-vc140-mt-1_57$(libext) \
+    $(ContextSubpartsLibs)libboost_wserialization-vc140-mt-1_57$(libext) \
+%endif
 
 
 #----------------------------------------------------------------------

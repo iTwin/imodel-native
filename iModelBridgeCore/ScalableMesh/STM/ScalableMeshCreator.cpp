@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -74,6 +74,7 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #endif
 
 #include "MosaicTextureProvider.h"
+#include "MapBoxTextureProvider.h"
 
 #define SCALABLE_MESH_TIMINGS
 
@@ -308,6 +309,10 @@ StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provide
     return m_implP->SetTextureProvider(provider, unitTransform);
     }
 
+StatusInt IScalableMeshCreator::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+    {
+    return m_implP->SetTextureStreamFromUrl(url, unitTransform);
+    }
 
 
 StatusInt IScalableMeshCreator::SetBaseGCS (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& gcsPtr)
@@ -391,6 +396,18 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Trans
     if (m_scmPtr.get() == nullptr) return ERROR;
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
     m_scmPtr->TextureFromRaster(mosaicPtr, unitTransform);
+    return SUCCESS;
+    }
+
+StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+    {
+    if (m_scmPtr.get() == nullptr) return ERROR;
+    DRange3d range;
+    m_scmPtr->GetRange(range);
+    BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
+    ITextureProviderPtr mapboxPtr = new MapBoxTextureProvider(url, range, cs);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Streaming);
+    m_scmPtr->TextureFromRaster(mapboxPtr, unitTransform);
     return SUCCESS;
     }
 
@@ -602,7 +619,7 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        pMesher3d);
 
         BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath);
+        dataStore->SetProjectFilesPath(projectFilesPath, true);
 
         pDataIndex->SetGenerating(true);        
         }           

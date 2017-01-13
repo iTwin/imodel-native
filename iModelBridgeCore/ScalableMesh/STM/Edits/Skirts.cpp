@@ -74,8 +74,8 @@ void FindSegmentHoleBoundaries(bvector<HoleBoundary>&            holeBoundaries,
                     if (sampleInd - 1 >= 0)
                         {
                         DPoint3d lastValidDrapedPt;
-                        DTMStatusInt status = GET_POINT_AT_INDEX(drapedLinePtr,lastValidDrapedPt, 0, 0, (int)(sampleInd - 1));
-                        assert(status == DTM_SUCCESS);
+                        DTMStatusInt statusDrape = GET_POINT_AT_INDEX(drapedLinePtr,lastValidDrapedPt, 0, 0, (int)(sampleInd - 1));
+                        assert(statusDrape == DTM_SUCCESS);
 
                         DPoint3d reprojectedPt;
 

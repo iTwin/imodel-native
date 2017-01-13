@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/Stores/SMSQLiteSisterFile.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -38,9 +38,9 @@ class SMSQLiteSisterFile
 
         ~SMSQLiteSisterFile();
 
-        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType);
+        SMSQLiteFilePtr GetSisterSQLiteFile(SMStoreDataType dataType, bool inCreation = false);
 
-        bool SetProjectFilesPath(BeFileName& projectFilesPath);
+        bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation = false);
 
         bool IsProjectFilesPathSet();
 

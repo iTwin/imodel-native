@@ -38,7 +38,7 @@ USING_NAMESPACE_BENTLEY_DGNPLATFORM
 //TEMP copied because geomlibs lkg was not up to date
 static double s_defaultRelTol = 1.0e-12;
 static double s_defaultAbsTol = 1.0e-14;
-
+#if 0
 /*--------------------------------------------------------------------------------**//**
                                                                                      * @bsimethod                                                    EarlinLutz      04/2012
                                                                                      +--------------------------------------------------------------------------------------*/
@@ -116,7 +116,7 @@ bool DVec3dZYXSortComparison::operator () (const DVec3d& vecA, const DVec3d &vec
     {
     return sort_zyx<double>(vecA.x, vecA.y, vecA.z, vecB.x, vecB.y, vecB.z);
     }
-
+#endif
 
 void SortPoints(bvector<DPoint3d>& allVerts, bvector<int>& allIndices)
     {
@@ -291,14 +291,16 @@ int loadFunc(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DP
 
 void RunDTMClipTest()
     {
-    WString pathMeshes = L"E:\\dgndb06SM\\testData\\meshes\\";
-    WString pathPolys = L"E:\\dgndb06SM\\testData\\polys\\";
+    WString pathMeshes = L"E:\\makeTM\\meshes\\";
+    WString pathPolys = L"E:\\makeTM\\polys\\";
     bvector<int> meshes(1);
     meshes[0] = 0;
-    bvector<int> polys(3);
-    polys[0] = 0;
-    polys[1] = 1;
-    polys[2] = 2;
+    bvector<int> polys(1);
+    for (size_t polyn = 11; polyn < 12; polyn++)
+        polys[polyn-11] = (int)polyn;
+    polys.push_back(43);
+    //polys[1] = 1;
+   // polys[2] = 2;
 
     bvector<bvector<DPoint3d>> polyDefs(polys.size());
     vector<TerrainModel::BcDTMPtr> meshDefs(meshes.size());
@@ -379,11 +381,39 @@ void RunDTMClipTest()
             mesh->GetBcDTM()->GetPoint((int)i, pt);
             mapOfPoints[pt] = (int)i;
             }
+        bvector<DPoint3d> newVertices;
+        bvector<int32_t> newIndices;
+        std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
         for (PolyfaceQueryP pf : *en)
             {
             PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
             vec->CopyFrom(*pf);
+            for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                {
+                DPoint3d face[3];
+                int32_t idx[3] = { -1, -1, -1 };
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    face[i] = addedFacets->GetPointCP()[i];
+                    idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                    }
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    if (idx[i] == -1)
+                        {
+                        newVertices.push_back(face[i]);
+                        idx[i] = (int)newVertices.size();
+                        mapOfPoints2[face[i]] = idx[i] - 1;
+                        }
+                    else idx[i]++;
+                    }
+                newIndices.push_back(idx[0]);
+                newIndices.push_back(idx[1]);
+                newIndices.push_back(idx[2]);
+                }
             }
+        WString name = L"E:\\makeTM\\testClip.m";
+        LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
         for (size_t j = 0; j < polys.size(); ++j)
             {
             en->Reset();
@@ -1241,9 +1271,9 @@ Dgn::DgnPlatformLib::Initialize(host, false);
     RunPrecisionTest(stmFileName);*/
 
 
-    //RunDTMClipTest();
+    RunDTMClipTest();
     //RunDTMTriangulateTest();
-   RunDTMSTMTriangulateTest();
+   //RunDTMSTMTriangulateTest();
   //  RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);

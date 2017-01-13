@@ -11,6 +11,7 @@
 #include <ImagePP/all/h/HCDCodecIJG.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
 #include <ImagePP\all\h\HCDPacket.h>
+#include "RasterUtilities.h"
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
@@ -38,7 +39,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
     area.low.y -= 5 * unitsPerPixelY;
     area.high.x += 5 * unitsPerPixelX;
     area.high.y += 5 * unitsPerPixelY;
-
+    
     HFCMatrix<3, 3> transfoMatrix;
     transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
     transfoMatrix[0][1] = 0;
@@ -65,7 +66,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
 #ifdef VANCOUVER_API
     HFCPtr<HCDCodec>     pCodec(new HCDCodecIdentity());
 #endif
-    texData.resize(3 * sizeof(int) + width * height * 3);
+   // texData.resize(3 * sizeof(int) + width * height * 3);
 
 #ifdef VANCOUVER_API
     pTextureBitmap = new HRABitmap(width,
@@ -85,7 +86,7 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
                                        8);
 #endif
     m_minExt.ChangeCoordSys(pTextureBitmap->GetCoordSys());
-    byte* pixelBufferPRGBA = new byte[width * height * 4];
+   /* byte* pixelBufferPRGBA = new byte[width * height * 4];
     pTextureBitmap->GetPacket()->SetBuffer(pixelBufferPRGBA, width * height * 4);
     pTextureBitmap->GetPacket()->SetBufferOwnership(false);
 
@@ -131,7 +132,10 @@ StatusInt MosaicTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, i
         }
     delete[] pixelBufferPRGBA;
     pTextureBitmap = 0;
-    return SUCCESS;
+    return SUCCESS;*/
+    pTextureBitmap = 0;
+
+    return RasterUtilities::CopyFromArea(texData, width, height, area, *m_targetMosaic);
     }
 
 MosaicTextureProvider::MosaicTextureProvider(HIMMosaic* mosaic)

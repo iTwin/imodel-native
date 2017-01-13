@@ -50,6 +50,8 @@ struct IScalableMeshNodeCreator::Impl : public IScalableMeshCreator::Impl
                                     bool computeNeighbors);
 
         int64_t AddTexture(int width, int height, int nOfChannels, const byte* texData);
+        
+        void AddTexture(int width, int height, int nOfChannels, const byte* texData, int64_t texID);
 
         void SetDataResolution(float resolution);
 

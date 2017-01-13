@@ -198,4 +198,10 @@
       <Filter>Header Files\include</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\CloudDataSource.mke" />
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\CloudDataSource.PartFile.xml" />
+  </ItemGroup>
 </Project>
