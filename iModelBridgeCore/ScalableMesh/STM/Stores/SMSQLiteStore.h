@@ -3,12 +3,18 @@
 #include "ISMDataStore.h"
 #include "SMSQLiteSisterFile.h"
 #include "SMStoreUtils.h"
+#include "..\ScalableMeshSources.h"
+#include <ImagePP/all/h/HRARaster.h>
 
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
     private:
         SMSQLiteFilePtr m_smSQLiteFile;
         DRange3d m_totalExtent;
+        GeoCoordinates::BaseGCSCPtr m_cs;
+        IDTMSourceCollection m_sources;
+        HFCPtr<ImagePP::HRARaster> m_raster;
+
 
     public : 
     

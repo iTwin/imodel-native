@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.hpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -647,6 +647,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Load()
         }
     UNCONSTTHIS->m_nodeHeader.m_SplitTreshold = UNCONSTTHIS->m_SMIndex->GetSplitTreshold();
     m_loaded = true;
+
 
     // Validate invariants
     ValidateInvariantsSoft();
@@ -8791,11 +8792,11 @@ bool SMPointIndex<POINT, EXTENT>::IsBalanced() const
     }
 
 template<class POINT, class EXTENT>
-bool SMPointIndex<POINT, EXTENT>::IsTextured() const
+IndexTexture SMPointIndex<POINT, EXTENT>::IsTextured() const
     {
     HINVARIANTS;
 
-    return(m_indexHeader.m_textured != IndexTexture::None);
+    return m_indexHeader.m_textured;
     }
 
 template<class POINT, class EXTENT>

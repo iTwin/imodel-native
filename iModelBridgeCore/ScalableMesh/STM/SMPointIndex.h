@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/SMPointIndex.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -1369,7 +1369,7 @@ public:
     -----------------------------------------------------------------------------*/
     bool                IsBalanced() const;
 
-    bool                IsTextured() const;
+    IndexTexture                IsTextured() const;
 
     void              SetTextured(IndexTexture textureState);
 
