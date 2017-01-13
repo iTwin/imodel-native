@@ -137,9 +137,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider)
     {
-    return _TextureFromRaster(provider, unitTransform);
+    return _TextureFromRaster(provider);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -1466,12 +1466,16 @@ template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider)
     {
     auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(provider, unitTransform);
+
+    double ratioToMeter(GetGCS().GetUnit().GetRatioToBase());
+    Transform smUnitToMeterTransform(Transform::FromScaleFactors(ratioToMeter, ratioToMeter, ratioToMeter));
+
+    m_scmIndexPtr->TextureFromRaster(provider, smUnitToMeterTransform);
     m_scmIndexPtr->Store();
     m_smSQLitePtr->CommitAll();
     m_scmIndexPtr = 0;
@@ -2395,7 +2399,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider)
     {}
 
 // Inherited from IDTM   

@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -195,9 +195,9 @@ struct IScalableMeshCreator::Impl
 
         virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureProvider(ITextureProviderPtr provider);
+        StatusInt  SetTextureStreamFromUrl(WString url);
 
         StatusInt                           Filter                         ();
 

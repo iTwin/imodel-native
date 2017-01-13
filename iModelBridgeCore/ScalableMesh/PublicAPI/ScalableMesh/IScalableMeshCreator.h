@@ -6,7 +6,7 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -75,8 +75,8 @@ public:
 
         BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider);
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
@@ -128,7 +128,7 @@ public:
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&     scmPtr,
                                                                                      StatusInt&                  status);
 
-        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url);
 
        /* BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
 

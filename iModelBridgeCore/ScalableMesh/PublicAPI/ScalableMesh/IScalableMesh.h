@@ -221,7 +221,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         virtual void                               _SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes) = 0;
 
-        virtual void                               _TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity()) = 0;
+        virtual void                               _TextureFromRaster(ITextureProviderPtr provider) = 0;
 
         virtual void                               _SetEditFilesBasePath(const Utf8String& path) = 0;
 
@@ -253,7 +253,7 @@ struct IScalableMesh abstract:  IRefCounted
         //! Gets the draping interface.
         //! @return The draping interface.
 
-        void TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
+        void TextureFromRaster(ITextureProviderPtr provider);
 
         BENTLEY_SM_EXPORT __int64          GetPointCount();
 
