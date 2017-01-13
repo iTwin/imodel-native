@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeTimeUtilities.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -299,35 +299,5 @@ uint64_t BeTimeUtilities::ConvertTmToUnixMillis (tm const& timeStructIn)
 #error unknown runtime
 #endif
     return time*1000LL;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BSI      08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-void StopWatch::SetFrequency()
-    {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
-    QueryPerformanceFrequency ((LARGE_INTEGER*)&m_frequency);
-#elif defined (__unix__)
-    m_frequency = 1000;
-#else
-#error unknown runtime
-#endif
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BSI      08/03
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t StopWatch::Now()
-    {
-#if defined (BENTLEY_WIN32)||defined(BENTLEY_WINRT)
-    uint64_t val;
-    QueryPerformanceCounter ((LARGE_INTEGER*)&val);
-    return  val;
-#elif defined (__unix__)
-    return BeTimeUtilities::GetCurrentTimeAsUnixMillis ();
-#else
-#error unknown runtime
-#endif
     }
 

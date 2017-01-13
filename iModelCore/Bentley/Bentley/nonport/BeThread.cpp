@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeThread.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
@@ -266,11 +266,11 @@ uint32_t BeNumerical::ResetFloatingPointExceptions(uint32_t newFpuMask)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-void BeThreadUtilities::BeSleep(uint32_t millis)
+void BeThreadUtilities::BeSleep(std::chrono::milliseconds millis)
     {
 #if defined (BENTLEY_WIN32)
 
-    ::Sleep(millis);
+    ::Sleep((uint32_t)millis.count());
 
 #elif defined (BENTLEY_WINRT)
 
@@ -289,13 +289,14 @@ void BeThreadUtilities::BeSleep(uint32_t millis)
         }
 
     // Emulate sleep by waiting with timeout on an event that is never signalled.
-    WaitForSingleObjectEx(s_sleepEvent, millis, false);
+    WaitForSingleObjectEx(s_sleepEvent, (uint32_t)millis.count(), false);
 
 #elif defined (__unix__)
-
+    uint32_t count = (uint32_t) millis.count();
+    
     struct timespec sleepSpec;
-    sleepSpec.tv_sec = millis/1000;
-    sleepSpec.tv_nsec = (millis % 1000) * 1000000;
+    sleepSpec.tv_sec = count/1000;
+    sleepSpec.tv_nsec = (count % 1000) * 1000000;
     nanosleep(&sleepSpec, nullptr);
 
 #else
