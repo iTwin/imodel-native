@@ -33,13 +33,15 @@ struct DataCaptureTestsFixture : ::testing::Test
         //! Called after each test
         void TearDown() {}
 
-        //Create Sample camera-photos project
-        void CreateSamplePhotoProjectWithCamera(Dgn::DgnDbR dgndb, Utf8CP cameraLable);
+        //Create Sample cameraDevice-photos project
+        void CreateSampleShotProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable);
 
     public:
         static DataCaptureProjectHost& GetHost() { return *m_host; }
 
         static Dgn::DgnModelId QueryFirstSpatialModelId(Dgn::DgnDbR db);
+        static Dgn::DgnModelId QueryFirstDefinitionModelId(DgnDbR db);
+
 
         //! Creates and caches a fresh "created" file to make the whole process faster
         static Dgn::DgnDbPtr CreateProject(WCharCP, bool needsSetBriefcase = false);
