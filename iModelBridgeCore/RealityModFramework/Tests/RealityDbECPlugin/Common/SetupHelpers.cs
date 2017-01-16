@@ -84,7 +84,7 @@ namespace IndexECPlugin.Tests.Common
 
         static public IECInstance CreateParentSED (IECSchema schema)
             {
-            IECClass ecClass = schema.GetClass("SpatialEntityset");
+            IECClass ecClass = schema.GetClass("SpatialEntityDataset");
             IECInstance instance = ecClass.CreateInstance();
             instance.InstanceId = "543e6b86e4b0fd76af69cf4c";
 
