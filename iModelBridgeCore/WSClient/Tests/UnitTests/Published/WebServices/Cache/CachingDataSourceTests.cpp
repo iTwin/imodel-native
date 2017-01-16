@@ -4808,6 +4808,60 @@ TEST_F(CachingDataSourceTests, SyncCachedData_CachePartialInstancesRejectsInstan
     EXPECT_THAT(result.GetValue(), IsEmpty());
     }
 
+TEST_F(CachingDataSourceTests, SyncCachedData_InitialInstanceRemovesPathToChild_ChildInstanceIsRemovedAndNotCached)
+    {
+    auto ds = GetTestDataSourceV2();
+    auto provider = std::make_shared<MockQueryProvider>();
+
+    ObjectId objectIdParent("TestSchema.TestClass", "Parent");
+    ObjectId objectIdA("TestSchema.TestClass", "A");
+    ObjectId objectIdB("TestSchema.TestClass", "B");
+
+    auto txn = ds->StartCacheTransaction();
+    StubInstances instances;
+    instances.Add(objectIdParent);
+    CachedResponseKey responseKeyParent(txn.GetCache().FindOrCreateRoot(nullptr), nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyParent, instances.ToWSObjectsResponse()));
+    auto instanceKeyParent = txn.GetCache().FindInstance(objectIdParent);
+    ASSERT_TRUE(instanceKeyParent.IsValid());
+
+    instances.Clear();
+    instances.Add(objectIdA);
+    CachedResponseKey responseKeyA(instanceKeyParent, nullptr);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyA, instances.ToWSObjectsResponse()));
+    auto instanceKeyA = txn.GetCache().FindInstance(objectIdA);
+    ASSERT_TRUE(instanceKeyA.IsValid());
+
+    CachedResponseKey responseKeyB(instanceKeyA, nullptr);
+    instances.Clear();
+    instances.Add(objectIdB);
+    ASSERT_EQ(CacheStatus::OK, txn.GetCache().CacheResponse(responseKeyB, instances.ToWSObjectsResponse()));
+    auto instanceKeyB = txn.GetCache().FindInstance(objectIdB);
+    ASSERT_TRUE(instanceKeyB.IsValid());
+    txn.Commit();
+
+    IQueryProvider::Query queryParent(responseKeyA, std::make_shared<WSQuery>("SchemaA", "ClassA"));
+    IQueryProvider::Query queryB(CachedResponseKey(instanceKeyB, nullptr), std::make_shared<WSQuery>("SchemaB", "ClassB"));
+
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyParent, _)).WillOnce(Return(StubBVector({queryParent})));
+    EXPECT_CALL(*provider, GetQueries(_, instanceKeyB, _)).WillOnce(Return(StubBVector({queryB})));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyParent, _)).WillOnce(Return(false));
+    EXPECT_CALL(*provider, DoUpdateFile(_, instanceKeyB, _)).WillOnce(Return(false));
+
+    StubInstances remoteInstances;
+    remoteInstances.Add(objectIdB);
+    remoteInstances.Add(objectIdParent);
+
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(_, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(remoteInstances.ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryParent.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+    EXPECT_CALL(GetMockClient(), SendQueryRequest(*queryB.query, _, _, _)).WillOnce(Return(CreateCompletedAsyncTask(StubInstances().ToWSObjectsResult())));
+
+    auto result = ds->SyncCachedData(StubBVector({ instanceKeyB, instanceKeyParent }), bvector<IQueryProvider::Query>(), StubBVector<IQueryProviderPtr>(provider), nullptr, nullptr)->GetResult();
+    ASSERT_TRUE(result.IsSuccess());
+    EXPECT_THAT(result.GetValue(), SizeIs(1));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetCachedObjectInfo(objectIdB).IsInCache());
+    }
+
 TEST_F(CachingDataSourceTests, SyncCachedData_QueryProviderReturnsToUpdateFile_DownloadsAndCachesFileToSetupAutoLocation)
     {
     auto cache = std::make_shared<NiceMock<MockDataSourceCache>>();

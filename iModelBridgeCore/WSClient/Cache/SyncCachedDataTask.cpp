@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/SyncCachedDataTask.cpp $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -256,7 +256,8 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKeyCR responseKey, CachingDataSource::ErrorCR error)
     {
-    if (WSError::Status::ReceivedError == error.GetWSError().GetStatus())
+    if (WSError::Status::ReceivedError == error.GetWSError().GetStatus() ||
+        ICachingDataSource::Status::DataNotCached == error.GetStatus())
         {
         AddFailedObject(txn, txn.GetCache().FindInstance(responseKey.GetParent()), error);
         }

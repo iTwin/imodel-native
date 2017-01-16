@@ -785,9 +785,15 @@ ICancellationTokenPtr ct
                 WSObjectsResponseCR response = objectsResult.GetValue();
 
                 bset<ObjectId> rejected;
-                if (CacheStatus::OK != txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct))
+                auto status = txn.GetCache().CacheResponse(responseKey, response, &rejected, &query, page, ct);
+                if (CacheStatus::OK != status)
                     {
-                    result->SetError({ICachingDataSource::Status::InternalCacheError, ct});
+                    if (CacheStatus::DataNotCached == status)
+                        {
+                        result->SetError({ ICachingDataSource::Status::DataNotCached, ct });
+                        return;
+                        }
+                    result->SetError({ ICachingDataSource::Status::InternalCacheError, ct });
                     return;
                     }
 
