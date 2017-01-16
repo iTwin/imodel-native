@@ -2,7 +2,7 @@
 |
 |     $Source: DataCaptureSchema/CameraDevice.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DataCaptureSchemaInternal.h"
@@ -127,6 +127,8 @@ void   TangentialDistortion::SetP2(double val) { m_p2 = val; }
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<Dgn::DgnElement::Aspect> TangentialDistortionHandler::_CreateInstance() 
     { return TangentialDistortion::Create(); }
+
+
 
 
 
@@ -283,7 +285,6 @@ DgnCode CameraDeviceModel::_GenerateDefaultCode() const
     Utf8String defaultName = DataCaptureDomain::BuildDefaultName(MyECClassName(), GetElementId());
     return CreateCode(GetDgnDb(), defaultName);
     }
-
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -866,6 +867,29 @@ CameraDevice::ShotIterator CameraDevice::MakeShotIterator(Dgn::DgnDbCR dgndb, Ca
     return iterator;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                     Daniel.McKenzie 01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint2d CameraDevice::ComputeFieldOfView(CameraDeviceCR camDevice)
+{
+    const double ratio = (double)camDevice.GetImageHeight() / (double)camDevice.GetImageWidth();
+
+    DPoint2d fieldofView;
+
+    //NEEDSWORK : Where does the sensorSize comes from?
+    if (1 > ratio)
+    {
+        fieldofView.x = atan2(1/*sensorInfo.sensorSize*/, (2 * camDevice.GetFocalLength()));
+        fieldofView.y = atan2((1/*sensorInfo.sensorSize*/ * ratio), (2 * camDevice.GetFocalLength()));
+    }
+    else
+    {
+        fieldofView.y = atan2(1/*sensorInfo.sensorSize*/, (2 * camDevice.GetFocalLength()));
+        fieldofView.x = atan2((1/*sensorInfo.sensorSize*/ * ratio), (2 * camDevice.GetFocalLength()));
+    }
+
+    return fieldofView;
+}
 
 
 END_BENTLEY_DATACAPTURE_NAMESPACE
