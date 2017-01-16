@@ -2,7 +2,7 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/ICachingDataSource.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -331,6 +331,7 @@ struct ICachingDataSource::Error : public AsyncError
 
     private:
         static ICachingDataSource::Status ConvertCacheStatus(CacheStatus status);
+        void HandleStatusCanceled(ICancellationTokenPtr ct);
 
     public:
         //! Constructs error with Status::Success.
@@ -339,6 +340,9 @@ struct ICachingDataSource::Error : public AsyncError
         WSCACHE_EXPORT Error(ICachingDataSource::Status status);
         //! Constructs error with matching status and localized message.
         WSCACHE_EXPORT Error(CacheStatus status);
+        //! Constructs error with matching status and or status Canceled if cancellation token is non null and already canceled.
+        //! Used when operation might have been canceled but status does not indicate that.
+        WSCACHE_EXPORT Error(CacheStatus status, ICancellationTokenPtr ct);
         //! Constructs error with specificed server error with status NetworkErrorsOccured or Canceled.
         WSCACHE_EXPORT Error(WSErrorCR error);
         //! Constructs error with status InternalCacheError and message with desription from specified error.
